@@ -31,10 +31,44 @@ describe('Truffle', () => {
     const back = wings.container.querySelector('.truffle__accessory--back')!;
     expect(back.compareDocumentPosition(wings.container.querySelector('.truffle__body')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
-  it('gives each instance its own grain filter id', () => {
-    const { container } = render(<><Truffle /><Truffle /></>);
-    const ids = [...container.querySelectorAll('filter')].map((f) => f.id);
-    expect(new Set(ids).size).toBe(2);
+  it('has no live filters (spec §6): the grain is gone from the moving parts', () => {
+    const { container } = render(<Truffle mood="neutral" />);
+    expect(container.querySelector('filter, [filter]')).toBeNull();
+  });
+  it('is built from parts: separate ears, lidded eyes, brows, a mouth, a tail, and a rounded body top', () => {
+    const { container } = render(<Truffle mood="neutral" />);
+    for (const part of ['ear-l', 'ear-r', 'iris-l', 'iris-r', 'lid-top-l', 'lid-top-r', 'lid-bottom-l', 'brow-l', 'brow-r', 'mouth', 'blush-l', 'tail']) {
+      expect(container.querySelector(`[data-part="${part}"]`), part).toBeTruthy();
+    }
+    expect(container.querySelector('.truffle__body path')!.getAttribute('d')).toMatch(/^M110 186 C112 158 208 158 210 186/); // rounded top under the head: no seam when he leans
+  });
+  it('shows the preset for its mood (sulk → grumpy, side → curious) and an explicit expression overrides the mood', () => {
+    expect(render(<Truffle mood="side" />).container.querySelector('svg')!.getAttribute('data-expression')).toBe('curious');
+    expect(render(<Truffle mood="sulk" expression="joy" />).container.querySelector('svg')!.getAttribute('data-expression')).toBe('joy');
+  });
+  it('joy draws closed ^ eyes; neutral draws open ones', () => {
+    const joy = render(<Truffle expression="joy" />).container;
+    expect(joy.querySelector('[data-part="lid-closed-l"]')!.getAttribute('opacity')).toBe('1');
+    const neutral = render(<Truffle expression="neutral" />).container;
+    expect(neutral.querySelector('[data-part="lid-closed-l"]')!.getAttribute('opacity')).toBe('0');
+  });
+  it('curious brings its question mark; neutral has no marks', () => {
+    expect(render(<Truffle expression="curious" />).container.querySelector('[data-part="extra-curious"]')!.getAttribute('opacity')).toBe('1');
+    expect(render(<Truffle expression="neutral" />).container.querySelector('[data-part="extra-curious"]')!.getAttribute('opacity')).toBe('0');
+  });
+  it('the lids are his fur colour under every outfit (review focus 4)', async () => {
+    const { COSTUMES } = await import('../../fun/costumes');
+    for (const c of COSTUMES) {
+      const { container, unmount } = render(<Truffle outfit={c.id} />);
+      expect(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('fill'), c.id).toBe('#b8b3b6');
+      unmount();
+    }
+  });
+  it('glasses ride in the head group, and a hood still hides his ears (review focus 4)', () => {
+    const g = render(<Truffle accessory="sunglasses" />).container;
+    expect(g.querySelector('g[transform^="rotate"] .truffle__accessory--face')).toBeTruthy();
+    const hood = render(<Truffle outfit="rabbit" />).container;
+    expect(hood.querySelector('[data-part="ear-l"]')).toBeNull();
   });
   it('can be decorative', () => {
     const { container } = render(<Truffle label={null} />);

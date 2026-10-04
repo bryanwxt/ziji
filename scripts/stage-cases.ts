@@ -44,6 +44,26 @@ for (const size of SIZES) {
   if (Math.abs(neutral - good) > 2) problems.push(`${size.name} sheet: the card shrinks ${Math.round(neutral - good)}px when feedback appears`);
   await page.close();
 }
+// every expression × looks: nothing of him pokes out of his box (a seam, an ear, a mark), and a sheet to read by eye
+{
+  const page = await browser.newPage({ viewport: { width: 1100, height: 560 } });
+  await page.goto(`file://${dir}/index.html?case=faces`);
+  await page.waitForTimeout(400);
+  mkdirSync('fit-shots/stage-cases', { recursive: true });
+  await page.screenshot({ path: 'fit-shots/stage-cases/faces.png', fullPage: true });
+  problems.push(...(await page.evaluate(() => {
+    const out: string[] = [];
+    for (const svg of document.querySelectorAll('svg.truffle')) {
+      const box = svg.getBoundingClientRect();
+      const rig = svg.querySelector('[data-part="rig"]')!.getBoundingClientRect();
+      const tilted = ['curious', 'embarrassed', 'proud'].includes(svg.getAttribute('data-expression') ?? '');
+      const m = tilted ? 14 : 4; // a tilted head swings a hat a little past the box; Truffle is never clipped on screen
+      if (rig.left < box.left - m || rig.right > box.right + m || rig.top < box.top - m || rig.bottom > box.bottom + m) out.push(`faces: ${svg.getAttribute('data-expression')} (${svg.getAttribute('data-outfit') ?? svg.getAttribute('data-accessory') ?? svg.getAttribute('data-power') ?? 'plain'}) pokes out of his box`);
+    }
+    return out;
+  })));
+  await page.close();
+}
 await browser.close();
 console.log(problems.length ? problems.map((p) => `FAIL ${p}`).join('\n') : 'stage cases: ok');
 process.exit(problems.length ? 1 : 0);
