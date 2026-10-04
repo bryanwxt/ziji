@@ -66,6 +66,27 @@ describe('Truffle powers', () => {
 });
 
 describe('Truffle costumes', () => {
+  it("every onesie's ears, horns and spikes stay inside his box (30 20 260 270), so a tile or a clipped screen never cuts them", async () => {
+    const { ONESIES } = await import('../../fun/costumes');
+    const { costumeLayer } = await import('./costumes');
+    const out: string[] = [];
+    for (const c of ONESIES) {
+      const l = costumeLayer(c.id)!;
+      const art = l.back + l.head;
+      for (const m of art.matchAll(/<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"/g)) {
+        const [x, y, r] = [Number(m[1]), Number(m[2]), Number(m[3])];
+        if (x - r < 31.6 || x + r > 288.4 || y - r < 21.6) out.push(`${c.id} circle ${x},${y} r${r}`);
+      }
+      for (const m of art.matchAll(/ d="(M[^"]*)"/g)) {
+        if (/[a-z]/.test(m[1]!.replace(/Z/g, ''))) continue; // relative paths are small details inside
+        for (const v of m[1]!.matchAll(/[ML] ?([\d.]+) ([\d.]+)/g)) {
+          const [x, y] = [Number(v[1]), Number(v[2])];
+          if (x < 31.6 || x > 288.4 || y < 21.6) out.push(`${c.id} point ${x},${y}`);
+        }
+      }
+    }
+    expect(out).toEqual([]);
+  });
   it('renders every costume with body and head layers', async () => {
     const { COSTUMES } = await import('../../fun/costumes');
     for (const c of COSTUMES) {

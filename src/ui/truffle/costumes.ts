@@ -37,19 +37,19 @@ const ANIMAL: Record<string, (c: Costume) => [string, string]> = {
       `<ellipse cx="${f(56)}" cy="150" rx="8" ry="36" transform="rotate(${f(56) < 160 ? 12 : -12} ${f(56)} 150)" fill="#f6c9cf"/>`),
   ],
   dragon: () => [
-    pair((f) => `<path d="M${f(116)} 38 L${f(104)} 20 L${f(128)} 32 Z" fill="#ffc94a" ${s2}/>`),
+    pair((f) => `<path d="M${f(116)} 38 L${f(104)} 24 L${f(128)} 32 Z" fill="#ffc94a" ${s2}/>`),
     pair((f) => `<path d="M${f(46)} 104 L${f(32)} 98 L${f(48)} 90 Z M${f(54)} 78 L${f(42)} 68 L${f(60)} 64 Z" fill="#3f9e55" ${s2}/>`),
   ],
   snake: () => ['', [80, 100, 130, 160, 190, 220, 240].map((x, i) => `<circle cx="${x}" cy="${[70, 50, 38, 34, 38, 50, 70][i]}" r="6" fill="#4f9e4a"/>`).join('')],
   horse: (c) => [
-    pair((f) => `<path d="M${f(96)} 48 L${f(92)} 20 L${f(116)} 38 Z" fill="${c.color}" ${S}/>`),
+    pair((f) => `<path d="M${f(96)} 48 L${f(92)} 24 L${f(116)} 38 Z" fill="${c.color}" ${S}/>`),
     `<path d="M112 36 Q122 18 132 31 Q142 16 152 29 Q160 14 168 29 Q178 16 188 31 Q198 18 208 36 Z" fill="#7a4a2a" ${s2}/>`,
   ],
   goat: () => [
     '',
     pair((f) => `<circle cx="${f(58)}" cy="78" r="18" fill="#e8dcc0" ${S}/><path d="M${f(58)} 78 m-9 0 a9 9 0 1 1 9 9 a5 5 0 1 1 -4 -6" fill="none" ${s2}/>`),
   ],
-  monkey: (c) => [pair((f) => `<circle cx="${f(48)}" cy="134" r="20" fill="${c.color}" ${S}/><circle cx="${f(48)}" cy="134" r="11" fill="#e8c39a"/>`), ''],
+  monkey: (c) => [pair((f) => `<circle cx="${f(52)}" cy="134" r="20" fill="${c.color}" ${S}/><circle cx="${f(52)}" cy="134" r="11" fill="#e8c39a"/>`), ''],
   rooster: () => ['', `<path d="M136 44 Q140 24 150 36 Q156 20 166 34 Q174 22 182 44 Z" fill="#b81d1d" ${s2}/>`],
   dog: () => [
     '',
