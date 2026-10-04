@@ -27,8 +27,9 @@ function levelName(bands: Word[][], band: number): string {
  * First-run (and re-run) placement check (spec §19 part 6): 3 warm-up reading questions, then an adaptive walk over 30 bands
  * with five question styles, finding a reading level and an understanding level. No right/wrong is shown (§14).
  * tapGuardMs: taps are ignored this long after each question appears, so a double tap can't answer the next one.
+ * seed: picks the questions; a fresh one each visit unless given (tests pass a fixed one).
  */
-export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGuardMs?: number; voice?: boolean } = {}) {
+export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { tapGuardMs?: number; voice?: boolean; seed?: number } = {}) {
   const { db, now, go, refresh, kid, voice: appVoice, settings } = useApp();
   const rerun = settings.placementDone; // started again from Settings: he can go back home
   const voice = voiceProp ?? appVoice;
@@ -37,7 +38,8 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGua
   const [question, setQuestion] = useState<PlacementQuestion | null>(null);
   const [result, setResult] = useState<{ known: number; reading: number; understanding: number } | null>(null);
   const [asked, setAsked] = useState(0);
-  const rng = useMemo(() => mulberry32(Date.now() >>> 0), []);
+  const [shown, setShown] = useState(-1); // which question is on screen (0 = the first), so a test can wait for the next one
+  const rng = useMemo(() => mulberry32((seed ?? Date.now()) >>> 0), []);
   const used = useRef(new Set<string>());
   const styles = useRef<Style[]>([]); // the rest of this visit's styles
   const prevStyle = useRef<Style | null>(null);
@@ -64,6 +66,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGua
     used.current.add(q.wordId);
     prevStyle.current = q.style;
     setQuestion(q);
+    setShown((n) => n + 1);
     if (q.style === 'listen') speak(q.text);
   }, [walk]);
 
@@ -122,7 +125,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGua
     </button>
   );
   return (
-    <div class="screen placement" data-ready={ready ? 'true' : 'false'} data-asked={asked}>
+    <div class="screen placement" data-ready={ready ? 'true' : 'false'} data-asked={asked} data-question={shown}>
       <Scene kind="home" />
       {rerun && (
         <button type="button" class="icon-btn placement__home" aria-label="回家" onClick={() => go({ name: 'home' })}>

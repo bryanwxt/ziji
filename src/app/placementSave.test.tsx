@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/preact';
+import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../content';
 import { putWords } from '../store/repo';
@@ -13,8 +13,12 @@ describe('placement when saving fails (review of plan 14)', () => {
     const app = await makeAppData();
     await putWords(app.db, builtinWords(0));
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    renderWithApp(<PlacementScreen tapGuardMs={0} />, app);
-    for (let i = 0; i < 60 && !screen.queryByText('开始！'); i++) fireEvent.click(await screen.findByText(/不知道|开始！/));
-    expect(await screen.findByText('开始！')).toBeTruthy();
+    renderWithApp(<PlacementScreen tapGuardMs={0} seed={20261002} />, app);
+    for (let i = 0; i < 80 && !screen.queryByText('开始！'); i++) {
+      // each question once it is on screen, never a stale one twice
+      await waitFor(() => expect(document.querySelector(`[data-question="${i}"]`) ?? screen.queryByText('开始！')).toBeTruthy(), { timeout: 10_000 });
+      if (!screen.queryByText('开始！')) fireEvent.click(screen.getByText('不知道'));
+    }
+    expect(screen.getByText('开始！')).toBeTruthy();
   });
 });
