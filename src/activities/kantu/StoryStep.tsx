@@ -4,7 +4,7 @@ import { speak, stopSpeaking } from '../../audio/speech';
 import { showStarters } from '../../kantu/flow';
 import { STORY_PARTS, type Scene, type StoryPart } from '../../kantu/scenes';
 import type { KidState } from '../../types';
-import { BottomBar } from '../../ui/BottomBar';
+import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { InkIcon } from '../../ui/icons/InkIcon';
 import { Label } from '../../ui/Label';
 import { Pet } from '../../ui/Pet';
@@ -91,7 +91,7 @@ function StoryScreen({ scene, screen, told, kid, last, blocked, onNext }: { scen
         )}
         {heardModel && <p class="kantu__model"><Label zh={screen.model} /></p>}
       </div>
-      <BottomBar actionLabel={last ? '完成' : '继续'} disabled={!tried} onAction={() => onNext(rec.result, rec.state === 'blocked')} />
+      <FeedbackSheet actionLabel={last ? '完成' : '继续'} disabled={!tried} onAction={() => onNext(rec.result, rec.state === 'blocked')} />
     </>
   );
 }

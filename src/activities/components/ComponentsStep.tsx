@@ -4,7 +4,7 @@ import { speak } from '../../audio/speech';
 import { getCharInfo } from '../../content';
 import { radicalMeaning } from '../../content/radicals';
 import type { KidState } from '../../types';
-import { BottomBar } from '../../ui/BottomBar';
+import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { InkIcon } from '../../ui/icons/InkIcon';
 import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
@@ -78,9 +78,9 @@ export function ComponentsStep({ items, kid, resting, onAnswer, onDone, onProgre
         </div>
       </div>
       {!done ? (
-        <BottomBar actionLabel="继续" disabled onAction={() => {}} />
+        <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (
-        <BottomBar
+        <FeedbackSheet
           tone={correct ? 'good' : 'oops'}
           title={correct ? '钓到了！' : '是这个！'}
           detail={

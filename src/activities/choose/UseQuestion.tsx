@@ -5,7 +5,7 @@ import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32, shuffle } from '../../lib/random';
 import { fullSentence, type UseItem } from '../../practice/useItems';
 import type { KidState } from '../../types';
-import { BottomBar } from '../../ui/BottomBar';
+import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
@@ -87,9 +87,9 @@ export function UseQuestion({ item, kid, resting, bubble, closing, onAnswer, onN
         </div>
       </div>
       {!done ? (
-        <BottomBar actionLabel="继续" disabled onAction={() => {}} />
+        <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (
-        <BottomBar
+        <FeedbackSheet
           tone={correct ? 'good' : 'oops'}
           title={closing ? '明天再来！' : correct ? lines.cheer : lines.comfort}
           detail={

@@ -55,9 +55,9 @@ describe('collection contrast', () => {
 describe('字辨 feedback fits its bar on a tablet', () => {
   it('the explanation is compact one-line rows, and 继续 never sticks out past the bar', () => {
     expect(css).toMatch(/\.zibian__why \{[^}]*flex-direction: column/);
-    expect(css).toMatch(/\.bottombar__detail \.zibian__radical \{[^}]*white-space: nowrap/);
+    expect(css).toMatch(/\.sheet__detail \.zibian__radical \{[^}]*white-space: nowrap/);
     // on every size, not only the phone: the text column may shrink, the button may not
-    expect(css).toMatch(/\n\.bottombar__msg, \.bottombar__msg > div \{ min-width: 0; \}\n\.bottombar:not\(\.bottombar--neutral\) \.btn \{ flex: none; \}/);
+    expect(css).toMatch(/\n\.sheet__msg, \.sheet__msg > div \{ min-width: 0; \}\n\.sheet:not\(\.sheet--neutral\) \.btn \{ flex: none; \}/);
   });
 });
 
@@ -152,9 +152,9 @@ describe('adaptive layouts (spec §18)', () => {
     expect(adaptive).toMatch(/\.home \.home__cards, \.home \.home__path \{ pointer-events: none; \}/);
   });
   it('lessons: the ground shows under a floating 继续 card that clears the home indicator', () => {
-    expect(adaptive).toMatch(/\.bottombar \{[^}]*position: sticky;[^}]*bottom: 0;[^}]*margin: auto 0 0;[^}]*border-radius: 18px;/);
+    expect(adaptive).toMatch(/\.sheet \{[^}]*position: sticky;[^}]*bottom: 0;[^}]*margin: auto 0 0;[^}]*border-radius: 18px;/);
     expect(adaptive).toMatch(/\.screen:has\(\.lessonbar\) \{[^}]*padding-bottom: max\(16px, env\(safe-area-inset-bottom\)\);/);
-    expect(adaptive).toMatch(/\.bottombar--neutral \{[^}]*background: transparent;[^}]*border-color: transparent;[^}]*pointer-events: none;/);
+    expect(adaptive).toMatch(/\.sheet--neutral \{[^}]*background: transparent;[^}]*border-color: transparent;[^}]*pointer-events: none;/);
     expect(css).not.toContain('.world-strip');
   });
   it('朗读: a long passage scrolls inside its card; 看图说话: theme words never push the page, and stay tappable', () => {
@@ -172,7 +172,7 @@ describe('adaptive layouts (spec §18)', () => {
   });
   it('the review fixes: paper behind the big character and the 钓鱼 question; a centred feedback card on an upright iPad; no Chinese under 16px', () => {
     expect(adaptive).toMatch(/\.flash__prompt \.hanzi--xl, \.whichpart__char, \.pond-q \{[^}]*background: var\(--surface\);[^}]*border: var\(--panel-border\);/);
-    expect(adaptive).toMatch(/@media \(orientation: portrait\) and \(min-width: 600px\) \{[^@]*\.bottombar \{[^}]*width: min\(100%, 680px\);[^}]*align-self: center;/);
+    expect(adaptive).toMatch(/@media \(orientation: portrait\) and \(min-width: 600px\) \{[^@]*\.sheet \{[^}]*width: min\(100%, 680px\);[^}]*align-self: center;/);
     expect(adaptive).toMatch(/\.label-tag \{ font-size: 16px; \}/);
     expect(adaptive).toMatch(/\.hold__label \{ font-size: 16px; \}/);
   });
@@ -205,5 +205,10 @@ describe('adaptive layouts (spec §18)', () => {
   it('a rare 字卡 has a frame you can see (a 4px blue ring and a corner mark), not a pale hairline', () => {
     expect(css).toMatch(/\.zika\.card--rare \{[^}]*inset 0 0 0 4px #7db8f0/);
     expect(css).toMatch(/\.zika\.card--rare::after \{/);
+  });
+  it('the feedback sheet keeps 继续 on the bar: the text column can shrink, the button cannot (review focus 1)', () => {
+    expect(css).toMatch(/\.sheet__msg \{[^}]*min-width: 0/);
+    expect(css).toMatch(/\.sheet \.btn \{[^}]*flex: none/);
+    expect(css).not.toMatch(/\.bottombar/);
   });
 });

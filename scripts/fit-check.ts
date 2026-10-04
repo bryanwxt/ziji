@@ -25,7 +25,7 @@ const results: Result[] = [];
 const ONLY = process.env.FIT_ONLY ? new RegExp(process.env.FIT_ONLY) : null; // e.g. FIT_ONLY=home npm run fit
 
 /* ---------- in-page probes (plain JS: they run inside WebKit) ---------- */
-const MAIN = '.choice, .bottombar .btn, .path__node, .mic-btn, .tabbar__item, .fishtile, .bubble-opt';
+const MAIN = '.choice, .sheet .btn, .path__node, .mic-btn, .tabbar__item, .fishtile, .bubble-opt';
 const SCROLLERS = '.scroll-panel, .filters, .kantu__words, .passage, .langdu__passage';
 
 function probe(args: { main: string; scrollers: string }): string[] {
@@ -106,7 +106,7 @@ function signature(): string {
   const s = document.querySelector('.screen');
   const marks = ['.home', '.flash', '.usage-opts', '.intro', '.write', '.components', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.arrival', '.zika-big', '.rotate-hint'];
   const on = marks.filter((m) => s?.matches(m) || s?.querySelector(m) || document.querySelector(`${m}:not(.rotate-hint)`));
-  const tone = document.querySelector('.bottombar')?.className ?? '';
+  const tone = document.querySelector('.sheet')?.className ?? '';
   const words = (s?.querySelector('.kantu__q, .langdu__step, .pet__bubble, h1, h2')?.textContent ?? '').slice(0, 14);
   return `${on.join(',')}|${tone}|${words}`;
 }
@@ -120,7 +120,7 @@ function advance(): boolean {
   const tap = (el: HTMLElement | undefined) => (el ? (el.click(), true) : false);
   if (tap(byText('停止'))) return true;
   if (!document.querySelector('.kantu__model') && tap(byText('听松露说'))) return true; // show the model once: the tallest state
-  if (tap(first('.bottombar .btn'))) return true;
+  if (tap(first('.sheet .btn'))) return true;
   if (tap(byText('开始录音'))) return true;
   for (const t of ['我记住了', '下一句', '开始朗读', '听听你自己', '开始！', '走吧', '继续', '回家']) if (tap(byText(t))) return true;
   if (tap(first('.choice'))) return true;

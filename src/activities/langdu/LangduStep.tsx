@@ -7,7 +7,7 @@ import type { ReadingPassage } from '../../langdu/cycle';
 import { introLines, pinyinMode } from '../../langdu/intro';
 import { displayText, splitPhrases } from '../../langdu/phrases';
 import type { KidState, OralInfo } from '../../types';
-import { BottomBar } from '../../ui/BottomBar';
+import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Label } from '../../ui/Label';
 import { Pet } from '../../ui/Pet';
 import { MicButton, useRecorder } from '../shared/recording';
@@ -73,7 +73,7 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
           <MicButton rec={intro} withLevel={false} />
           {intro.state === 'done' && <p class="langdu__ok"><Label zh="很好！" /></p>}
         </div>
-        <BottomBar actionLabel="继续" disabled={intro.state === 'ready' || intro.state === 'recording'} onAction={() => setPart('echo')} />
+        <FeedbackSheet actionLabel="继续" disabled={intro.state === 'ready' || intro.state === 'recording'} onAction={() => setPart('echo')} />
       </>
     );
   }
@@ -89,7 +89,7 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
             <Volume2 size={24} strokeWidth={2.5} /> <Label zh="再听" />
           </button>
         </div>
-        <BottomBar actionLabel={last ? '开始朗读' : '下一句'} onAction={() => (last ? setPart('read') : setPhrase(phrase + 1))} />
+        <FeedbackSheet actionLabel={last ? '开始朗读' : '下一句'} onAction={() => (last ? setPart('read') : setPhrase(phrase + 1))} />
       </>
     );
   }
@@ -102,7 +102,7 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
           <p class="passage langdu__passage"><Label zh={displayText(passage.text)} /></p>
           <MicButton rec={read} withLevel />
         </div>
-        <BottomBar actionLabel="完成" disabled={read.state !== 'blocked'} onAction={finish} />
+        <FeedbackSheet actionLabel="完成" disabled={read.state !== 'blocked'} onAction={finish} />
       </>
     );
   }
@@ -115,7 +115,7 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
         <button type="button" class="btn" onClick={() => { read.reset(); setPart('read'); }}><Label zh="重录" /></button>
         {withWarmup && <p class="langdu__line langdu__thanks"><Label zh={lines.thanks} /></p>}
       </div>
-      <BottomBar actionLabel="完成" onAction={finish} />
+      <FeedbackSheet actionLabel="完成" onAction={finish} />
     </>
   );
 }

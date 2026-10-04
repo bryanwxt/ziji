@@ -173,23 +173,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 /* Bottom bar and tab bar */
-.bottombar, .tabbar {
+.sheet, .tabbar {
   position: sticky; bottom: 0; z-index: 5; margin: auto calc(-1 * var(--pad-x)) calc(-1 * var(--pad-b));
   background: var(--surface); border-top: 2px solid var(--line);
 }
-.bottombar { display: flex; align-items: center; gap: 18px; padding: 18px var(--pad-x) max(18px, var(--pad-b)); }
-.bottombar .btn { min-width: 240px; }
-.bottombar--good, .bottombar--oops { border-top-color: transparent; animation: sheet-up var(--dur-slow) var(--spring); }
-.bottombar--good { background: var(--green-soft); }
-.bottombar--oops { background: var(--orange-soft); }
+.sheet { display: flex; align-items: center; gap: 18px; padding: 18px var(--pad-x) max(18px, var(--pad-b)); }
+.sheet .btn { min-width: 240px; }
+.sheet--good, .sheet--oops { border-top-color: transparent; animation: sheet-up var(--dur-slow) var(--spring); }
+.sheet--good { background: var(--green-soft); }
+.sheet--oops { background: var(--orange-soft); }
 @keyframes sheet-up { from { transform: translateY(100%); } }
-.bottombar__msg { flex: 1; display: flex; align-items: center; gap: 16px; }
-.bottombar__badge { width: 58px; height: 58px; flex: none; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; }
-.bottombar--good .bottombar__msg { color: var(--green-ink); }
-.bottombar--oops .bottombar__msg { color: var(--orange-ink); }
-.bottombar__title { font-size: 28px; font-weight: 900; }
-.bottombar__detail { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; margin-top: 4px; }
-.bottombar__detail .hanzi { font-size: 38px; }
+.sheet__msg { flex: 1; display: flex; align-items: center; gap: 16px; }
+.sheet__badge { width: 58px; height: 58px; flex: none; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; }
+.sheet--good .sheet__msg { color: var(--green-ink); }
+.sheet--oops .sheet__msg { color: var(--orange-ink); }
+.sheet__title { font-size: 28px; font-weight: 900; }
+.sheet__detail { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; margin-top: 4px; }
+.sheet__detail .hanzi { font-size: 38px; }
 .tabbar { display: flex; justify-content: space-around; gap: 8px; padding: 8px var(--pad-x) max(10px, var(--pad-b)); }
 .tabbar__item {
   flex: 1; max-width: 170px; min-height: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
@@ -197,8 +197,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .tabbar__item.is-active { color: var(--blue); background: var(--blue-soft); border-color: #bfdcfb; }
 @media (orientation: portrait) {
-  .bottombar { flex-direction: column; align-items: stretch; }
-  .bottombar .btn { width: 100%; }
+  .sheet { flex-direction: column; align-items: stretch; }
+  .sheet .btn { width: 100%; }
 }
 
 /* Flashcards */
@@ -473,8 +473,8 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .choice.is-oops, .fishtile.is-oops, .choice.is-dim { opacity: 0.45; }
 
 /* Bars */
-.bottombar, .tabbar { background: var(--paper); border-top: 3px solid var(--ink); }
-.bottombar--good { background: var(--green-soft); } .bottombar--oops { background: var(--orange-soft); }
+.sheet, .tabbar { background: var(--paper); border-top: 3px solid var(--ink); }
+.sheet--good { background: var(--green-soft); } .sheet--oops { background: var(--orange-soft); }
 .tabbar__item { color: var(--ink); border-radius: 14px; }
 .tabbar__item.is-active { background: var(--green); border: 2.5px solid var(--ink); }
 .progressbar__track, .progress { background: var(--surface); border: 2.5px solid var(--ink); }
@@ -804,13 +804,13 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 /* Lessons: the whole world behind every step; 继续 and feedback float as a card with ground around it */
 .screen:has(.lessonbar) { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
-.bottombar { position: sticky; bottom: 0; margin: auto 0 0; border-radius: 18px; border: var(--panel-border); box-shadow: var(--panel-shadow); padding: 12px 14px; gap: 14px; }
-.bottombar--neutral { background: transparent; border-color: transparent; box-shadow: none; padding: 0; pointer-events: none; justify-content: center; }
-.bottombar--neutral .btn { pointer-events: auto; }
-.bottombar .btn { min-width: 200px; min-height: var(--tap-main); }
-.bottombar__title { font-size: 24px; }
-.bottombar__badge { width: 48px; height: 48px; }
-@media (orientation: portrait) { .bottombar { flex-direction: row; align-items: center; } .bottombar .btn { width: auto; } .bottombar--neutral .btn { width: min(100%, 520px); } }
+.sheet { position: sticky; bottom: 0; margin: auto 0 0; border-radius: 18px; border: var(--panel-border); box-shadow: var(--panel-shadow); padding: 12px 14px; gap: 14px; }
+.sheet--neutral { background: transparent; border-color: transparent; box-shadow: none; padding: 0; pointer-events: none; justify-content: center; }
+.sheet--neutral .btn { pointer-events: auto; }
+.sheet .btn { min-width: 200px; min-height: var(--tap-main); }
+.sheet__title { font-size: 24px; }
+.sheet__badge { width: 48px; height: 48px; }
+@media (orientation: portrait) { .sheet { flex-direction: row; align-items: center; } .sheet .btn { width: auto; } .sheet--neutral .btn { width: min(100%, 520px); } }
 .lessonbar .icon-btn { width: 52px; height: 52px; }
 
 /* 认一认 and placement */
@@ -829,21 +829,21 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .flash__pet .pet__bubble::after { left: -7px; bottom: auto; top: 50%; transform: translateY(-50%) rotate(135deg); }
   .flash__main { gap: 12px; }
   .choices { gap: 10px; }
-  .bottombar { padding: 10px 12px; }
-  .bottombar .btn { min-width: 0; padding: 10px 22px; font-size: 22px; }
-  .bottombar__title { font-size: 20px; }
-  .bottombar__detail { font-size: 16px; }
-  .bottombar__detail .hanzi { font-size: 28px; }
-  .bottombar__badge { display: none; }
-  .bottombar:not(.bottombar--neutral) .btn { flex: none; min-width: 96px; padding: 10px 16px; }
-  .bottombar .label__cells { flex-wrap: nowrap; }
-  .bottombar__msg { min-width: 0; }
-  .bottombar__detail { gap: 6px; flex-wrap: wrap; }
-  .bottombar__detail .speak { width: 48px; height: 48px; }
+  .sheet { padding: 10px 12px; }
+  .sheet .btn { min-width: 0; padding: 10px 22px; font-size: 22px; }
+  .sheet__title { font-size: 20px; }
+  .sheet__detail { font-size: 16px; }
+  .sheet__detail .hanzi { font-size: 28px; }
+  .sheet__badge { display: none; }
+  .sheet:not(.sheet--neutral) .btn { flex: none; min-width: 96px; padding: 10px 16px; }
+  .sheet .label__cells { flex-wrap: nowrap; }
+  .sheet__msg { min-width: 0; }
+  .sheet__detail { gap: 6px; flex-wrap: wrap; }
+  .sheet__detail .speak { width: 48px; height: 48px; }
 }
 @media (orientation: landscape) and (min-height: 600px) {
-  .bottombar { align-self: flex-end; max-width: 62%; }
-  .bottombar--neutral { max-width: none; align-self: stretch; justify-content: flex-end; }
+  .sheet { align-self: flex-end; max-width: 62%; }
+  .sheet--neutral { max-width: none; align-self: stretch; justify-content: flex-end; }
 }
 
 /* 写一写 */
@@ -971,7 +971,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .flash__prompt .hanzi--xl, .whichpart__char { padding: 0.04em 0.18em 0.08em; line-height: 1.05; }
 .pond-q { padding: 4px 16px; }
 @media (orientation: portrait) and (min-width: 600px) {
-  .bottombar { width: min(100%, 680px); align-self: center; } /* tablet portrait: the card is centred, not full width */
+  .sheet { width: min(100%, 680px); align-self: center; } /* tablet portrait: the card is centred, not full width */
 }
 .label-tag { font-size: 16px; }
 .hold__label { font-size: 16px; }
@@ -1036,9 +1036,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .zibian__radical { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-size: 20px; }
 /* its feedback: one compact row per character (银：钅 金), and 继续 always inside the bar */
 .zibian__why { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-.bottombar__detail .zibian__radical { white-space: nowrap; font-size: 28px; margin-right: 0; }
-.bottombar__msg, .bottombar__msg > div { min-width: 0; }
-.bottombar:not(.bottombar--neutral) .btn { flex: none; }
+.sheet__detail .zibian__radical { white-space: nowrap; font-size: 28px; margin-right: 0; }
+.sheet__msg, .sheet__msg > div { min-width: 0; }
+.sheet:not(.sheet--neutral) .btn { flex: none; }
 
 /* the placement check (spec §19 part 6) */
 .placement__levels { font-size: 20px; color: var(--ink-soft); margin: 0; }
@@ -1082,3 +1082,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .path__bubble { white-space: nowrap; }
   .path__bubble .label__cells { flex-wrap: nowrap; }
 }
+
+/* ===== Stage (spec 2026-10-04 §3) ===== */
+.sheet__msg { min-width: 0; flex: 1; display: flex; align-items: center; gap: 12px; }
+.sheet__text { min-width: 0; }
+.sheet__detail { display: grid; gap: 2px; justify-items: start; }
+.sheet .btn { flex: none; }

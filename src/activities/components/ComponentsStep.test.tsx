@@ -24,10 +24,10 @@ describe('ComponentsStep — 字辨 in the pond (spec §20 part 8)', () => {
     fireEvent.click(screen.getByRole('button', { name: '跟' }));
     expect(onAnswer).toHaveBeenCalledWith(item, false);
     expect(speak).toHaveBeenLastCalledWith('树根');
-    const bar = document.querySelector('.bottombar')!.textContent!;
+    const bar = document.querySelector('.sheet')!.textContent!;
     expect(bar).toMatch(/根.*木/); // 根's radical meaning
     expect(bar).toMatch(/跟.*足/); // the one he chose
-    expect(document.querySelectorAll('.bottombar .zibian__why > .zibian__radical')).toHaveLength(2); // one row each
+    expect(document.querySelectorAll('.sheet .zibian__why > .zibian__radical')).toHaveLength(2); // one row each
   });
   it('a catch, then 继续 ends the round', () => {
     const onDone = vi.fn();
@@ -42,7 +42,7 @@ describe('ComponentsStep — 字辨 in the pond (spec §20 part 8)', () => {
     const same = { wordId: 'p:3', word: '银行', index: 0, answer: '银', options: ['银', '铁', '根', '很'] };
     render(<ComponentsStep items={[same]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '铁' }));
-    expect(document.querySelectorAll('.bottombar .zibian__radical')).toHaveLength(1);
+    expect(document.querySelectorAll('.sheet .zibian__radical')).toHaveLength(1);
   });
 });
 

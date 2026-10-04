@@ -5,7 +5,7 @@ import { speak } from '../../audio/speech';
 import { hanChars } from '../../content';
 import { loadStrokeData } from '../../content/strokes';
 import type { KidState, Word } from '../../types';
-import { BottomBar } from '../../ui/BottomBar';
+import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { burst } from '../../ui/motion';
 import { isHardWrite } from '../../fun/mood';
 import { Closeup } from '../../app/Closeup';
@@ -132,9 +132,9 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
         <div ref={host} class="tianzige" />
       </div>
       {charMisses === null ? (
-        <BottomBar actionLabel={last ? '完成' : '下一个字'} disabled onAction={() => {}} />
+        <FeedbackSheet actionLabel={last ? '完成' : '下一个字'} disabled onAction={() => {}} />
       ) : (
-        <BottomBar tone="good" title={charMisses === 0 ? '完美！' : '写得好！'} actionLabel={last ? '完成' : '下一个字'} onAction={next} />
+        <FeedbackSheet tone="good" title={charMisses === 0 ? '完美！' : '写得好！'} actionLabel={last ? '完成' : '下一个字'} onAction={next} />
       )}
       {showCloseup && <Closeup kid={kid} />}
     </>

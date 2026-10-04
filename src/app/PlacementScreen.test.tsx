@@ -35,7 +35,7 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     const bubbles = new Set<string>();
     await walkThrough(dontKnow, () => {
       bubbles.add(bubble());
-      expect(document.querySelector('.is-wrong, .is-right, .is-answer, .bottombar--oops')).toBeNull();
+      expect(document.querySelector('.is-wrong, .is-right, .is-answer, .sheet--oops')).toBeNull();
     });
     expect(bubbles.size).toBeGreaterThanOrEqual(3);
   });

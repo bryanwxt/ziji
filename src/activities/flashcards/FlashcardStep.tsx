@@ -5,7 +5,7 @@ import { getCharInfo, hanChars } from '../../content';
 import { radicalMeaning } from '../../content/radicals';
 import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32, shuffle } from '../../lib/random';
-import { BottomBar } from '../../ui/BottomBar';
+import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { burst, flyAlong } from '../../ui/motion';
 import type { CardRecord, FlashItem, KidState, Word } from '../../types';
 import { Closeup } from '../../app/Closeup';
@@ -174,10 +174,10 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
         </div>
       </div>
       {showCloseup && <Closeup kid={kid} />}
-      {phase === 'intro' && <BottomBar actionLabel="我记住了！" onAction={() => setPhase('quiz')} />}
-      {phase === 'quiz' && <BottomBar actionLabel="继续" disabled onAction={() => {}} />}
+      {phase === 'intro' && <FeedbackSheet actionLabel="我记住了！" onAction={() => setPhase('quiz')} />}
+      {phase === 'quiz' && <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />}
       {phase === 'feedback' && result && (
-        <BottomBar
+        <FeedbackSheet
           tone={result.correct ? 'good' : 'oops'}
           title={result.correct ? quiz.cheer : quiz.comfort}
           detail={

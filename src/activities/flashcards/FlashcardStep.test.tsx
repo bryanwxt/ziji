@@ -37,7 +37,7 @@ describe('FlashcardStep', () => {
     render(<FlashcardStep {...base} item={review} voice={false} onDone={onDone} />);
     const wrong = [...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!;
     fireEvent.click(wrong);
-    expect(document.querySelector('.bottombar__detail')?.textContent).toContain(he.pinyin);
+    expect(document.querySelector('.sheet__detail')?.textContent).toContain(he.pinyin);
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
   });
@@ -180,13 +180,13 @@ describe('Truffle reactions', () => {
 describe('feedback sheet', () => {
   it('slides up green with a cheer when right, orange with the answer when wrong', () => {
     const { unmount } = render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
-    expect(document.querySelector('.bottombar--neutral button')!.hasAttribute('disabled')).toBe(true);
+    expect(document.querySelector('.sheet--neutral button')!.hasAttribute('disabled')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
-    expect(document.querySelector('.bottombar--good')).toBeTruthy();
+    expect(document.querySelector('.sheet--good')).toBeTruthy();
     unmount();
     render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
     fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
-    expect(document.querySelector('.bottombar--oops')!.textContent).toContain('正确答案');
+    expect(document.querySelector('.sheet--oops')!.textContent).toContain('正确答案');
   });
 });
 
