@@ -168,4 +168,12 @@ describe('adaptive layouts (spec §18)', () => {
   it("the evening lantern string never runs across a lesson's progress bar on a landscape iPad", () => {
     expect(css).toMatch(/@media \(orientation: landscape\) and \(min-height: 600px\) \{\s*\.screen:has\(\.lessonbar\) \[data-part="lanterns"\] \{ display: none; \}/);
   });
+  it('labels on Home (the path names, Truffle\'s bubble) let a tap through to the world target under them', () => {
+    expect(css).toMatch(/\.home \.path__row > \.path__name, \.home \.pet__bubble \{ pointer-events: none; \}/);
+  });
+  it("Truffle's Home box lets taps through: only Truffle himself opens the wardrobe", () => {
+    expect(css).toMatch(/\.home__pet \{[^}]*pointer-events: none;/);
+    expect(css).toMatch(/\.home__pet \.truffle \{ pointer-events: auto; \}/);
+    expect(css).not.toMatch(/\.home__pet \.pet__bubble \{ pointer-events: auto/);
+  });
 });

@@ -89,9 +89,15 @@ function probe(args: { main: string; scrollers: string }): string[] {
     if (w > 6 && h > 6) { const key = `${name(A)} × ${name(B)}`; if (!seenPair.has(key)) { seenPair.add(key); out.push(`overlap: ${key}`); } }
   }
   for (const t of document.querySelectorAll('.world-taps .tap > *')) {
+    // the centre and four points around it: a target is lost when its centre is covered, or half of it (2 of the 4 points)
     const r = t.getBoundingClientRect();
-    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    if (!top?.closest('.world-taps .tap')) out.push(`world tap at ${Math.round(r.left + r.width / 2)},${Math.round(r.top + r.height / 2)} covered by ${top ? (typeof top.className === 'string' ? top.className : top.tagName) || top.tagName : 'nothing (off screen)'}`);
+    const covered = [[0.5, 0.5], [0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]].map(([fx, fy]) => {
+      const x = r.left + r.width * fx!, y = r.top + r.height * fy!;
+      const top = document.elementFromPoint(x, y);
+      return top?.closest('.world-taps .tap') ? null : `${Math.round(x)},${Math.round(y)} covered by ${top ? (typeof top.className === 'string' ? top.className : top.tagName) || top.tagName : 'nothing (off screen)'}`;
+    });
+    const hits = covered.filter((c): c is string => !!c);
+    if (covered[0] || hits.length >= 2) out.push(`world tap at ${hits.join('; ')}`);
   }
   return out;
 }
@@ -216,7 +222,10 @@ async function sweep(browser: Browser, size: Size) {
   // Home: not started, and done-for-today with every optional card; world taps in every world
   await run('home', AFTERNOON, {}, (p) => check(p, size, 'home', 0));
   await run('home-done', AFTERNOON, { doneToday: true }, (p) => check(p, size, 'home-done', 0));
-  for (const w of WORLDS) await run(`home-${w.id}`, AFTERNOON, { world: w.id }, (p) => check(p, size, `home-${w.id}`, 0));
+  for (const w of WORLDS) {
+    await run(`home-${w.id}`, AFTERNOON, { world: w.id }, (p) => check(p, size, `home-${w.id}`, 0));
+    await run(`home-done-${w.id}`, AFTERNOON, { world: w.id, doneToday: true }, (p) => check(p, size, `home-done-${w.id}`, 0)); // the done card and 再玩一会儿 sit differently
+  }
   // First run
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));
   await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));

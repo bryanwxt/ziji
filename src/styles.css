@@ -772,11 +772,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .path__name { margin-top: 4px; font-size: 16px; }
 .path__bubble { top: -36px; font-size: 16px; }
 .home .path__row > .path__bubble { pointer-events: none; } /* a label: a tap on it is a tap on the stop */
-.home__pet { position: absolute; z-index: 2; bottom: calc(var(--nav-h) + 4px); left: 50%; transform: translateX(-50%); }
+.home .path__row > .path__name, .home .pet__bubble { pointer-events: none; } /* labels too: a tap goes through to the world target under them */
+.home__pet { position: absolute; z-index: 2; bottom: calc(var(--nav-h) + 4px); left: 50%; transform: translateX(-50%); pointer-events: none; }
 .home__pet .truffle { width: var(--pet-home); height: auto; }
 .home__pet .pet__bubble { font-size: 17px; }
-.home__pet .pet-button { pointer-events: none; } /* his box is as wide as his bubble; only Truffle and the bubble catch taps */
-.home__pet .truffle, .home__pet .pet__bubble { pointer-events: auto; }
+.home__pet .pet-button { pointer-events: none; } /* his box is as wide as his bubble; only Truffle catches taps (the bubble often sits over a world target) */
+.home__pet .truffle { pointer-events: auto; }
 
 @media (max-width: 599px) {
   /* the top of a phone is sky: cards may be full width there */
