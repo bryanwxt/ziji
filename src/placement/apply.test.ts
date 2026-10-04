@@ -60,7 +60,7 @@ describe('two levels (spec §19 part 6)', () => {
     await applyPlacement(db, { readingIds: ['b:a', 'b:b'], understandingIds: ['b:a', 'b:b'], missed: [], reading: 0, understanding: 0 }, now);
     await addReviewLog(db, { cardId: 'b:a:meaning', wordId: 'b:a', kind: 'meaning', at: now.getTime(), rating: 3, correct: true });
     await applyPlacement(db, { readingIds: [], understandingIds: [], missed: [], reading: -1, understanding: -1 }, now);
-    expect((await allCards(db)).map((c) => c.id).sort()).toEqual(['b:a:meaning', 'b:a:recognise']);
+    expect((await allCards(db)).map((c) => c.id).sort()).toEqual(['b:a:meaning']); // its practised meaning stays; the unpractised reading guess goes
   });
   it('an empty result (knows nothing) seeds nothing and still finishes placement', async () => {
     const db = await freshDb();
@@ -101,5 +101,26 @@ describe('placementIds', () => {
     const firstDay = meaning.filter((c) => day(c) === 0).map((c) => rankOf.get(c.wordId)!);
     const later = meaning.filter((c) => day(c) > 0).map((c) => rankOf.get(c.wordId)!);
     expect(Math.max(...firstDay)).toBeLessThan(Math.min(...later)); // easiest first
+  });
+});
+
+describe('re-runs (deferred minors, plans 11 and 14)', () => {
+  it('practising only its meaning does not keep a guessed reading card the new result drops', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('很', { id: 'b:a', rank: 1 })]);
+    const now = new Date(2026, 9, 5, 9);
+    await applyPlacement(db, { readingIds: ['b:a'], understandingIds: ['b:a'], missed: [], reading: 0, understanding: 0 }, now);
+    await addReviewLog(db, { cardId: 'b:a:meaning', wordId: 'b:a', kind: 'meaning', at: now.getTime(), rating: 3, correct: true });
+    await applyPlacement(db, { readingIds: [], understandingIds: [], missed: [], reading: -1, understanding: -1 }, now);
+    expect((await allCards(db)).map((c) => c.id)).toEqual(['b:a:meaning']);
+  });
+  it('a word understood before and only read now gets a meaning check again (its old known card is replaced)', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('很', { id: 'b:a', rank: 1 })]);
+    const now = new Date(2026, 9, 5, 9);
+    await applyPlacement(db, { readingIds: ['b:a'], understandingIds: ['b:a'], missed: [], reading: 0, understanding: 0 }, now);
+    await applyPlacement(db, { readingIds: ['b:a'], understandingIds: [], missed: [], reading: 0, understanding: -1 }, now);
+    const meaning = (await allCards(db)).find((c) => c.id === 'b:a:meaning')!;
+    expect(meaning.fsrs.due.getTime()).toBeLessThanOrEqual(now.getTime());
   });
 });

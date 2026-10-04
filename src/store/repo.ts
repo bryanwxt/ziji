@@ -1,7 +1,7 @@
 import { WORLDS, worldById } from '../fun/worlds';
 import { normalizeFinds } from '../fun/finds';
 import { migrateAccessory } from '../fun/accessories';
-import { DEFAULT_KID, DEFAULT_READING, DEFAULT_SETTINGS, type AnswerLog, type CardRecord, type ParentPassage, type ReadingState, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
+import { DEFAULT_KID, DEFAULT_READING, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type ReadingState, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
 import type { AppDb } from './db';
 
 const MAIN = 'main';
@@ -102,6 +102,13 @@ export async function deleteCards(db: AppDb, ids: string[]): Promise<void> {
 }
 
 /** Words he has actually answered in a lesson (any review logged), with when he last did. Placement guesses have none. */
+/** The words he has answered in lessons, by card kind: practising a word's meaning doesn't make its reading practised. */
+export async function practisedByKind(db: AppDb): Promise<Map<CardKind, Set<string>>> {
+  const out = new Map<CardKind, Set<string>>();
+  for (const l of await db.getAll('reviewLogs')) (out.get(l.kind) ?? out.set(l.kind, new Set()).get(l.kind)!).add(l.wordId);
+  return out;
+}
+
 export async function practisedWords(db: AppDb): Promise<Map<string, number>> {
   const out = new Map<string, number>();
   for (const l of await db.getAll('reviewLogs')) out.set(l.wordId, Math.max(out.get(l.wordId) ?? 0, l.at));

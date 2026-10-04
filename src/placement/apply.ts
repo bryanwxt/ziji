@@ -2,7 +2,7 @@ import { meaningCue } from '../activities/flashcards/meaning';
 import { NEW_MEANING_PER_DAY } from '../session/plan';
 import { newCard } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
-import { allCards, allWords, deleteCards, practisedWords, putCards, updateSettings } from '../store/repo';
+import { allCards, allWords, deleteCards, practisedByKind, putCards, updateSettings } from '../store/repo';
 import type { CardRecord, Word } from '../types';
 import { seedPlacementCards } from './placement';
 import { placementLevels, type WalkAnswer } from './walk';
@@ -30,7 +30,8 @@ export function placementIds(bands: Word[][], answers: WalkAnswer[]): { readingI
  * the word since. Returns the number of new reading cards.
  */
 export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date): Promise<number> {
-  const [words, cards, practised] = await Promise.all([allWords(db), allCards(db), practisedWords(db)]);
+  const [words, cards, byKind] = await Promise.all([allWords(db), allCards(db), practisedByKind(db)]);
+  const practised = (c: CardRecord) => !!byKind.get(c.kind)?.has(c.wordId); // practice of that kind: a meaning answer doesn't keep a guessed reading
   const byId = new Map(words.map((w) => [w.id, w]));
   const hasCue = (id: string) => { const w = byId.get(id); return !!w && meaningCue(w) !== null; };
   const read = new Set(r.readingIds);
@@ -38,8 +39,10 @@ export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date):
   const meaningNow = new Set(r.readingIds.filter((id) => !understood.has(id) && hasCue(id)));
   const supported = (c: CardRecord) =>
     c.kind === 'recognise' ? read.has(c.wordId) : c.kind === 'meaning' ? understood.has(c.wordId) || meaningNow.has(c.wordId) : true;
-  await deleteCards(db, cards.filter((c) => c.kind !== 'write' && !practised.has(c.wordId) && !supported(c)).map((c) => c.id));
-  const kept = new Set(cards.filter((c) => c.kind === 'write' || practised.has(c.wordId) || supported(c)).map((c) => c.id));
+  // unpractised meaning cards are always re-seeded from this result (understood → known, read-only → a check due soon)
+  const replaced = (c: CardRecord) => c.kind !== 'write' && !practised(c) && (!supported(c) || c.kind === 'meaning');
+  await deleteCards(db, cards.filter(replaced).map((c) => c.id));
+  const kept = new Set(cards.filter((c) => !replaced(c)).map((c) => c.id));
   const seeds = [
     ...seedPlacementCards(words, r.readingIds, now, 'recognise'),
     ...seedPlacementCards(words, [...understood], now, 'meaning'),

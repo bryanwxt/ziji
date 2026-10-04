@@ -41,8 +41,9 @@ describe('buildSessionPlan', () => {
   it('pauses new words when more than 40 cards are due', () => {
     const ws = words(50);
     const due = (n: number) => ws.slice(0, n).map((w) => makeCard(w.id, 'recognise', hoursAgo(1)));
-    expect(buildSessionPlan({ cards: due(41), words: ws, settings: settings(), now }).newWordIds).toEqual([]);
-    expect(buildSessionPlan({ cards: due(40), words: ws, settings: settings(), now }).newWordIds).toHaveLength(DEFAULT_SETTINGS.newPerDay);
+    const practised = new Map(ws.map((w) => [w.id, 1]));
+    expect(buildSessionPlan({ cards: due(41), words: ws, settings: settings(), now, practised }).newWordIds).toEqual([]);
+    expect(buildSessionPlan({ cards: due(40), words: ws, settings: settings(), now, practised }).newWordIds).toHaveLength(DEFAULT_SETTINGS.newPerDay);
   });
 
   it('offers due write cards first, then at most 2 new ones for known writeable words', () => {
@@ -150,5 +151,15 @@ describe('meaning checks for words he already knows (parent: more volume, 2026-1
     const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
     const plan = buildSessionPlan({ cards, words: ws, settings: settings(), now });
     expect(plan.newMeaningIds).toHaveLength(12);
+  });
+});
+
+describe('the new-word pause (deferred minor, plan 5)', () => {
+  it('first rechecks of placement guesses never pause new words; a real backlog of practised words does', () => {
+    const ws = words(80);
+    const dueSoon = (n: number) => ws.slice(0, n).map((w) => makeCard(w.id, 'recognise', hoursAgo(1)));
+    expect(buildSessionPlan({ cards: dueSoon(60), words: ws, settings: settings(), now }).newWordIds.length).toBeGreaterThan(0); // unpractised: placement rechecks
+    const practised = new Map(ws.slice(0, 60).map((w) => [w.id, 1]));
+    expect(buildSessionPlan({ cards: dueSoon(60), words: ws, settings: settings(), now, practised }).newWordIds).toEqual([]);
   });
 });

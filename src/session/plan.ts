@@ -42,7 +42,9 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const recognise = ofKind('recognise');
   const started = new Set(recognise.map((c) => c.wordId));
   const dueRecognise = dueOf(recognise);
-  const newLimit = dueRecognise.length > BACKLOG_PAUSE ? 0 : settings.newPerDay;
+  // a real backlog pauses new words; first rechecks of placement guesses (never practised) don't
+  const backlog = dueRecognise.filter((c) => practised.has(c.wordId)).length;
+  const newLimit = backlog > BACKLOG_PAUSE ? 0 : settings.newPerDay;
 
   const write = ofKind('write');
   const hasWrite = new Set(write.map((c) => c.wordId));
