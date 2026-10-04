@@ -6,7 +6,7 @@ describe('accessories v2', () => {
     expect(ACCESSORY_DEFS).toHaveLength(16);
     expect(new Set(ACCESSORY_IDS).size).toBe(16);
     expect(new Set(ACCESSORY_DEFS.map((a) => a.slot))).toEqual(new Set(['face', 'neck', 'held', 'back']));
-    expect(accessoryById('brush')).toMatchObject({ zh: '毛笔', py: 'máobǐ', slot: 'held' });
+    expect(accessoryById('brush')).toMatchObject({ zh: '毛笔', py: 'máo bǐ', slot: 'held' });
   });
   it('maps every old emoji accessory to a distinct new one', () => {
     const targets = Object.values(LEGACY_ACCESSORY);

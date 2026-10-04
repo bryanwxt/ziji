@@ -164,12 +164,12 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
                 {chest.kind === 'costume' ? (
                   <div class="prize__costume">
                     <Truffle mood="cheer" outfit={chest.id} accessory={null} size={190} bounce />
-                    <Label zh={costumeById(chest.id)?.zh ?? ''} />
+                    <Label zh={costumeById(chest.id)?.zh ?? ''} py={costumeById(chest.id)?.py} />
                   </div>
                 ) : chest.kind === 'accessory' ? (
                   <div class="prize__costume">
                     <Truffle mood="cheer" outfit={kid.outfit} accessory={chest.item} size={190} bounce />
-                    <Label zh={accessoryById(chest.item)?.zh ?? ''} />
+                    <Label zh={accessoryById(chest.item)?.zh ?? ''} py={accessoryById(chest.item)?.py} />
                   </div>
                 ) : (
                   <span class="prize__stars"><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /></span>

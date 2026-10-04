@@ -28,10 +28,10 @@ export const ONESIES: Costume[] = [
 ];
 
 export const OUTFITS: Costume[] = [
-  f('astronaut', '宇航员', 'yǔhángyuán', '#f2f4f8'), f('chef', '厨师', 'chúshī', '#fffdf7'),
-  f('wizard', '魔法师', 'mófǎshī', '#7b5cd6'), f('explorer', '探险家', 'tànxiǎnjiā', '#c9a86a'),
-  f('pirate', '海盗', 'hǎidào', '#2f4a7a'), f('hero', '超人', 'chāorén', '#ff4a3d'),
-  f('pixel', '像素', 'xiàngsù', '#5ccf7a'), f('raincoat', '雨衣', 'yǔyī', '#ffd23f'),
+  f('astronaut', '宇航员', 'yǔ háng yuán', '#f2f4f8'), f('chef', '厨师', 'chú shī', '#fffdf7'),
+  f('wizard', '魔法师', 'mó fǎ shī', '#7b5cd6'), f('explorer', '探险家', 'tàn xiǎn jiā', '#c9a86a'),
+  f('pirate', '海盗', 'hǎi dào', '#2f4a7a'), f('hero', '超人', 'chāo rén', '#ff4a3d'),
+  f('pixel', '像素', 'xiàng sù', '#5ccf7a'), f('raincoat', '雨衣', 'yǔ yī', '#ffd23f'),
 ];
 
 export const COSTUMES: Costume[] = [...ONESIES, ...OUTFITS];

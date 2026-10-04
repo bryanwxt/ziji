@@ -88,7 +88,7 @@ export function Wardrobe() {
                         onClick={() => void save({ ...k, outfit: k.outfit === c.id ? null : c.id })}
                       >
                         <span class="outfit__swatch" style={{ background: owned ? c.color : undefined }}>{owned ? '' : <InkIcon name="lock" size={20} />}</span>
-                        <span class="outfit__name"><Label zh={c.zh} /></span>
+                        <span class="outfit__name"><Label zh={c.zh} py={c.py} /></span>
                       </button>
                     );
                   })}
@@ -116,7 +116,7 @@ export function Wardrobe() {
                         ) : (
                           <InkIcon name="lock" size={32} />
                         )}
-                        <span class="outfit__name"><Label zh={d.zh} /></span>
+                        <span class="outfit__name"><Label zh={d.zh} py={d.py} /></span>
                       </button>
                     );
                   })}

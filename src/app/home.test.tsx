@@ -83,6 +83,11 @@ describe('HomeScreen', () => {
 });
 
 describe('Wardrobe', () => {
+  it('accessory names use their own pinyin (星星 is xīng xing)', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedAccessories: ['starglasses'] } });
+    renderWithApp(<Wardrobe />, app);
+    await waitFor(() => expect([...document.querySelectorAll('.outfit__name .label')].some((l) => l.getAttribute('data-py') === 'xīng xing yǎn jìng')).toBe(true));
+  });
   it('room tabs: each controls its panel, and the arrow keys move between them', async () => {
     const app = await makeAppData();
     renderWithApp(<Wardrobe />, app);

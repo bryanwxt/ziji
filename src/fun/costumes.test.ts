@@ -75,3 +75,10 @@ describe('chest result types', () => {
     expect(bad.kind).toBe('costume');
   });
 });
+
+describe('costume and accessory names', () => {
+  it('carry one pinyin syllable per character, so the room labels read 星星 xīng xing, not a guess', async () => {
+    const { ACCESSORY_DEFS } = await import('./accessories');
+    for (const d of [...COSTUMES, ...ACCESSORY_DEFS]) expect(d.py.split(' ').length, d.zh).toBe([...d.zh].length);
+  });
+});
