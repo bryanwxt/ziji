@@ -593,3 +593,43 @@ The parent asked to "fix the deferred minors", then reported placement questions
 - 包子 test passes even if the example disappears
 - fit sweep doesn't cover the re-run placement (回家 button vs bubble on a phone)
 - (declined to judge) VoiceOver activation of the Home pet button; ~20 grain-filtered Truffles in Wardrobe on an old iPad; close-up on a 写一写 redo pass
+
+## Stage phase A (2026-10-05): the stage and the paper yard
+
+Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md; plan docs/superpowers/plans/2026-10-04-ziji-stage-a.md; branch design/stage; Native, opus final review. Suite 847/847; `npm run fit` 586 screens, 0 problems, plus scripts/stage-cases.ts (WebKit cases for states the walk can't reach).
+
+- FeedbackSheet replaces BottomBar; Stage (Truffle spot, paper lesson card, docked sheet) for 认一认, 选一选/用一用, 字辨, 写一写, 朗读 and placement; one box per activity; question ≥ 64px iPad / 48px phone, tiles 40–48px, sentences ≥ 28px with pinyin and a speaker (before the answer it reads around the gap).
+- The 后院 redrawn in storybook paper (kit in src/ui/worlds/kit) with Truffle's bowl, red ball, birdhouse and the sprinkler on Home's tap target; evening painted over its sky.
+- The sweep checks stage invariants, type sizes, frame time and clipping inside the card.
+
+### Rulings
+- Task 3: stale test selectors (.hanzi--xl → [data-q] / .hanzi--q), intent unchanged — cost: none
+- Task 3: shared .flash CSS removed in Task 4 (UseQuestion still used it) — cost: dead CSS one task longer
+- Task 3: sheet detail is one wrapping row; 字辨 rows explicit — cost: none
+- Task 4: a fill-in of ≤ 4 characters is question-sized (.meaning-cue--short) — cost: none
+- Task 4: data-q only on word-sized prompts; sentences have their own size check — cost: none
+- Task 4/9: no boxes inside the stage card (meaning cue, intro card, placement prompt, write cue, 朗读 chips) — cost: less "framed" cues
+- Task 6: writing box resized in place (hanzi-writer updateDimensions), measured from the box's offsetTop — cost: none
+- Task 9: the plan-6 "ink worlds" test skips the paper yard; yard.test holds its rules — cost: none
+- Task 10: stage compared within activity + context; Truffle/sheet across lesson activities only — cost: a placement-vs-lesson shift is unflagged
+- Task 10 / Final: frame-time proxy p95 ≤ 20 ms on the Mac; the parent checks the iPad — cost: older-iPad jank seen by eye only
+- Final: no pinyin on placement's sentence cue (spec §3 names 选一选/用对了吗) — cost: a weak reader may skip a sentence he could sound out
+- Final: punctuation starting a Label line left as is (pre-existing) — cost: occasional awkward breaks
+
+### Final review fixes
+- I3 evening hidden under the paper yard's sky — yard.test RED→GREEN
+- I4 sweep blind inside the card — clip probe (sabotage-proved), evening-yard shot, stage-cases harness
+- I1 SE wrong answer with a bank clue clipped the sentence — stage-cases 'clue' RED→GREEN
+- I2 tablet card shrank 24px at feedback (clipped the 田字格) — stage-cases 'sheet' RED→GREEN
+- found by the new probe: the 认字 card overflowed an SE since Task 3 — fixed (no own padding, rows keep height, scrolls)
+
+### Deferred minors
+- yard spray origin y 396 vs sprinkler nozzle y 370; sprinkler small/low-contrast
+- placement 不知道 is the dark primary button (needs a secondary sheet variant)
+- re-run placement 回家 ✕ sits on the card corner (not swept)
+- card still lifts at feedback with detail rows (字辨 on SE, Truffle on iPad landscape)
+- bubble max-width inert (nowrap) — latent
+- kit lift() strips fills only (future fill="none" strokes)
+- fit-check signature() still names .flash/.write/.components
+- placement's short fit prompt lacks data-q
+- dead CSS overridden by the stage (write cue / 朗读 script paper, intro/prompt chrome, .flash__prompt .hanzi--xl)
