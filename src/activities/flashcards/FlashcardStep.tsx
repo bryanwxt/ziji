@@ -237,7 +237,7 @@ function Intro({ word }: { word: Word }) {
             </div>
           );
         })}
-        {word.examples?.slice(0, line && Array.from(line.full).length > 3 ? 1 : 2).map((e) => ( // two 组词 fit every screen (one beside a sentence); all of them feed the meaning questions
+        {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, line && Array.from(line.full).length > 3 ? 1 : 2).map((e) => ( // two 组词 fit every screen (one beside a sentence), never the one the usage line already shows; all of them feed the meaning questions
           <div class="example" key={e.text}>
             <span class="pinyin">{e.pinyin}</span>
             <span class="hanzi">{e.text}</span>

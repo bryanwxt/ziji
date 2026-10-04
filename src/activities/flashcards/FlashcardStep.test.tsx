@@ -90,6 +90,20 @@ describe('feedback effects', () => {
   });
 });
 
+describe('new-word card (parent report: it repeated the example phrases)', () => {
+  it('never shows the same phrase twice: an example already in the usage line is not listed again', () => {
+    const counts: string[] = [];
+    for (const w of pool.filter((x) => (x.examples?.length ?? 0) >= 2).slice(0, 300)) {
+      const { unmount } = render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+      const usage = document.querySelector('.usage__text')?.textContent ?? '';
+      const examples = [...document.querySelectorAll('.intro .example .hanzi')].map((e) => e.textContent!);
+      if (examples.some((e) => usage === e || usage.includes(e)) || new Set(examples).size !== examples.length) counts.push(`${w.text}: ${usage} | ${examples.join(' ')}`);
+      unmount();
+    }
+    expect(counts).toEqual([]);
+  });
+});
+
 describe('Truffle reactions', () => {
   const mood = () => document.querySelector('svg.truffle')!.getAttribute('data-mood');
   const relearn = () => ({ id: `${he.id}:recognise`, wordId: he.id, kind: 'recognise' as const, fsrs: { ...createEmptyCard(new Date()), state: State.Relearning } });
