@@ -83,6 +83,13 @@ describe('HomeScreen', () => {
 });
 
 describe('Wardrobe', () => {
+  it('an owned costume shows a small Truffle wearing it; a locked one shows the lock', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['tiger'] } });
+    renderWithApp(<Wardrobe />, app);
+    const tiger = await screen.findByRole('button', { name: '虎' });
+    expect(tiger.querySelector('svg.truffle')?.getAttribute('data-outfit')).toBe('tiger');
+    expect(screen.getByRole('button', { name: '牛' }).querySelector('svg.truffle')).toBeNull();
+  });
   it('accessory names use their own pinyin (星星 is xīng xing)', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedAccessories: ['starglasses'] } });
     renderWithApp(<Wardrobe />, app);

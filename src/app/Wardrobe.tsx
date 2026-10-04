@@ -10,6 +10,7 @@ import { Label } from '../ui/Label';
 import { Pet } from '../ui/Pet';
 import { Scene } from '../ui/Scene';
 import { TabBar } from '../ui/TabBar';
+import { Truffle } from '../ui/truffle/Truffle';
 import { useApp } from './AppContext';
 import { loadKnowledge } from './knowledge';
 import { InkIcon } from '../ui/icons/InkIcon';
@@ -87,7 +88,11 @@ export function Wardrobe() {
                         disabled={!owned}
                         onClick={() => void save({ ...k, outfit: k.outfit === c.id ? null : c.id })}
                       >
-                        <span class="outfit__swatch" style={{ background: owned ? c.color : undefined }}>{owned ? '' : <InkIcon name="lock" size={20} />}</span>
+                        {owned ? (
+                          <span class="outfit__preview" aria-hidden="true"><Truffle mood="content" outfit={c.id} accessory={null} size={64} /></span>
+                        ) : (
+                          <span class="outfit__swatch"><InkIcon name="lock" size={20} /></span>
+                        )}
                         <span class="outfit__name"><Label zh={c.zh} py={c.py} /></span>
                       </button>
                     );
