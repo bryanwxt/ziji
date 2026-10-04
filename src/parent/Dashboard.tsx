@@ -43,7 +43,9 @@ export function Dashboard({ onNavigate }: { onNavigate: (tab: ParentTab) => void
 
   const t = now();
   const today = localDateKey(t);
-  const trouble = troubleWords(d.logs.filter((l) => l.at >= addDays(t, -30).getTime()));
+  // reading only: meaning, words in use, 字辨 and writing each have their own row in Skills
+  const readingLogs = d.logs.filter((l) => l.kind === 'recognise');
+  const trouble = troubleWords(readingLogs.filter((l) => l.at >= addDays(t, -30).getTime()));
   const backupDue = settings.lastBackupAt === null || t.getTime() - settings.lastBackupAt > BACKUP_NUDGE_DAYS * 86_400_000;
   const pct = (n: number, target: number) => `${Math.min(100, Math.round((n / target) * 100))}%`;
 
@@ -89,18 +91,19 @@ export function Dashboard({ onNavigate }: { onNavigate: (tab: ParentTab) => void
       </div>
       <section class="panel"><MinutesChart data={minutesPerDay(d.sessions, today)} /></section>
       <section class="panel">
-        <h2>Weekly accuracy</h2>
+        <h2>Reading accuracy by week</h2>
+        <p>Meaning, words in use, 字辨 and writing are in Skills.</p>
         <table class="table">
           <thead><tr><th>Week starting</th><th>Correct</th></tr></thead>
           <tbody>
-            {weeklyAccuracy(d.logs, t).map((w) => (
+            {weeklyAccuracy(readingLogs, t).map((w) => (
               <tr key={w.weekStart}><td>{w.weekStart}</td><td>{w.accuracy === null ? '—' : `${Math.round(w.accuracy * 100)}%`}</td></tr>
             ))}
           </tbody>
         </table>
       </section>
       <section class="panel">
-        <h2>Trouble words (last 30 days)</h2>
+        <h2>Hard to read (last 30 days)</h2>
         {trouble.length === 0 ? (
           <p>None yet. 🎉</p>
         ) : (

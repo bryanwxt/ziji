@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { hashPin } from '../lib/hash';
 import { createSessionRecord } from '../session/runner';
-import { getSettings, listRewards, putCards, putWords, saveSession } from '../store/repo';
+import { addReviewLog, getSettings, listRewards, putCards, putWords, saveSession } from '../store/repo';
 import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS, type SessionPlan } from '../types';
@@ -50,6 +50,21 @@ describe('Dashboard', () => {
     expect(screen.getByText('No Chinese voice found.')).toBeTruthy();
     expect(screen.getByText(/Last backup: never/)).toBeTruthy();
     expect(screen.getByRole('img', { name: '2026-10-01: 15 minutes' })).toBeTruthy();
+  });
+});
+
+describe('Dashboard reading figures (deferred minor, plan 11)', () => {
+  it('weekly accuracy and trouble words are about reading; meaning lives in Skills', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, [makeWord('大'), makeWord('小')]);
+    const at = app.now().getTime() - 3_600_000;
+    await addReviewLog(app.db, { cardId: 'b:大:recognise', wordId: 'b:大', kind: 'recognise', at, rating: 3, correct: true });
+    await addReviewLog(app.db, { cardId: 'b:小:meaning', wordId: 'b:小', kind: 'meaning', at, rating: 1, correct: false });
+    renderWithApp(<Dashboard onNavigate={vi.fn()} />, app);
+    expect(await screen.findByText('Reading accuracy by week')).toBeTruthy();
+    expect(screen.getByText('100%')).toBeTruthy(); // the meaning miss is not mixed in
+    expect(screen.getByText('Hard to read (last 30 days)')).toBeTruthy();
+    expect(screen.queryByText('小')).toBeNull();
   });
 });
 
