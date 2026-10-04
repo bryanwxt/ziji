@@ -86,7 +86,7 @@ function FaceRig({ f, expr, id }: { f: Face; expr: Expression; id: string }) {
 }
 
 /** Truffle 松露: his drawing cut into parts and posed by the face rig (spec 2026-10-04 §4.1). */
-export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 0, label = '松露', bounce = false, power = null, powerTier = 0, outfit = null, expression, alive = false, calm = false, onPart }: Props) {
+export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 0, label = '松露', bounce = false, power = null, powerTier = 0, outfit = null, expression, alive = false, calm = false, react = null, onPart }: Props) {
   const id = `truffle-${useId()}`;
   const a11y = label === null ? { 'aria-hidden': 'true' as const } : { role: 'img' as const, 'aria-label': label };
   const expr = expression ?? MOOD_EXPRESSION[mood];
@@ -95,7 +95,7 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
   const first = useRef(expr);
   const drawnExpr = alive ? first.current : expr;
   const f = PRESETS[drawnExpr];
-  useRig(svgRef, { alive, target: PRESETS[expr], expr, reduced: reducedMotion() });
+  useRig(svgRef, { alive, expr, reduced: reducedMotion(), react });
   const tilt = clamp(f.tilt + clamp(lookAt, -1, 1) * 4, -8, 8);
   const acc = accessoryLayer(accessory);
   const wear = costumeLayer(outfit);

@@ -1,6 +1,7 @@
 import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
-import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, springStep, upperLid, type Expression, type Face } from './rig';
+import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
+import { REACTIONS, REST, TRACKS, type Motion, type Reaction, type Track } from './timelines';
 
 type Key = keyof Face;
 const KEYS = ['lidTop', 'lidBottom', 'lidArc', 'pupil', 'browY', 'browAngle', 'browShow', 'browAsym', 'smile', 'mouthOpen', 'earL', 'earR', 'blush', 'tilt'] as const satisfies readonly Key[];
@@ -52,12 +53,15 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
 
 export interface RigOptions {
   alive: boolean;
-  target: Face;
+  /** his own expression (from the mood or the screen); a reaction holds another one for a moment */
   expr: Expression;
   reduced: boolean;
-  /** called each frame before painting, to pose the body and gaze (Tasks 4–5) */
-  pose?: (now: number, cur: Face) => Pose;
+  react?: Reaction | null;
 }
+
+/** Whole-body motion as a transform about his feet (160, 276): lean, jump, squash (crouch/land) or stretch. */
+export const rigTransform = (m: Motion, shimmer = 0) =>
+  `translate(${(m.lean + shimmer).toFixed(2)} ${m.y.toFixed(2)}) translate(160 276) scale(${(1 + m.squash * 0.6).toFixed(4)} ${(1 - m.squash).toFixed(4)}) translate(-160 -276)`;
 
 /**
  * The loop that brings a live Truffle to life (spec 2026-10-04 §4.1): every face value springs toward the target, and the
@@ -66,13 +70,29 @@ export interface RigOptions {
 export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
   const o = useRef(opts);
   o.current = opts;
-  const cur = useRef<Face>({ ...opts.target });
+  const cur = useRef<Face>({ ...PRESETS[opts.expr] });
+  // a reaction: an expression held for a while (then perhaps another), and a body track
+  const hold = useRef<{ expr: Expression; until: number; then?: Expression } | null>(null);
+  const after = useRef<Expression | null>(null);
+  const track = useRef<{ fn: Track; start: number; purr: boolean } | null>(null);
+  const lag = useRef({ y: 0, v: 0 });
   const vel = useRef<Record<string, number>>({});
   const extras = useRef<Record<string, number>>(Object.fromEntries(EXTRA_KEYS.map((e) => [e, e === opts.expr ? 1 : 0])));
   const extraVel = useRef<Record<string, number>>({});
   const raf = useRef(0);
   const visible = useRef(true);
   const onScreen = useRef(true);
+
+  // a new reaction replaces a running one (review focus 2)
+  useEffect(() => {
+    const r = opts.react;
+    if (!r) return;
+    const def = REACTIONS[r.kind];
+    const now = performance.now();
+    hold.current = { expr: def.expr, until: now + def.holdMs, then: def.then };
+    after.current = null;
+    track.current = def.track && !o.current.reduced ? { fn: TRACKS[def.track], start: now, purr: def.track === 'purr' } : null;
+  }, [opts.react?.key]);
 
   useEffect(() => {
     if (!opts.alive) return;
@@ -85,7 +105,15 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
     };
     const frame = (now: number) => {
       raf.current = 0;
-      const { target, expr, reduced, pose } = o.current;
+      const { reduced } = o.current;
+      // which expression shows now: a held reaction, what follows it, or his own
+      if (hold.current && now >= hold.current.until) {
+        after.current = hold.current.then ?? null;
+        hold.current = null;
+      }
+      const expr = hold.current?.expr ?? after.current ?? o.current.expr;
+      const target = PRESETS[expr];
+      if (svg.getAttribute('data-expression') !== expr) svg.setAttribute('data-expression', expr);
       const [stiff, damp] = reduced ? [0.3, 0.5] : [0.16, 0.7]; // reduced motion: a quick cross-fade, no overshoot
       for (const k of KEYS) {
         const [x, v] = springStep(cur.current[k], vel.current[k] ?? 0, target[k], stiff, damp);
@@ -97,7 +125,20 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         extras.current[e] = x;
         extraVel.current[e] = v;
       }
-      paint(els, cur.current, pose ? pose(now, cur.current) : REST_POSE, extras.current);
+      // the body: the reaction's track (ending at rest), the head lagging a little behind a jump
+      let m: Motion = REST;
+      let shimmer = 0;
+      if (track.current) {
+        const sample = track.current.fn(now - track.current.start);
+        if (sample) {
+          m = sample;
+          if (track.current.purr) shimmer = Math.sin(now / 1000 * 95) * 0.5;
+        } else track.current = null;
+      }
+      lag.current.v = (lag.current.v + (-m.y * 0.18 - lag.current.y) * 0.2) * 0.7;
+      lag.current.y += lag.current.v;
+      const pose: Pose = { ...REST_POSE, tilt: m.shake, headY: lag.current.y, rig: rigTransform(m, shimmer) };
+      paint(els, cur.current, pose, extras.current);
       start();
     };
     const start = () => {
