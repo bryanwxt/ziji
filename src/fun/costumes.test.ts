@@ -82,3 +82,10 @@ describe('costume and accessory names', () => {
     for (const d of [...COSTUMES, ...ACCESSORY_DEFS]) expect(d.py.split(' ').length, d.zh).toBe([...d.zh].length);
   });
 });
+
+describe('chest replays', () => {
+  it('the same day and the same owned things always give the same prize after the first chest', () => {
+    const first = openChest(DEFAULT_KID, '2026-10-02', 'tiger').kid;
+    expect(openChest(first, '2026-10-05', 'tiger').result).toEqual(openChest(first, '2026-10-05', 'tiger').result);
+  });
+});

@@ -58,6 +58,11 @@ describe('Truffle powers', () => {
     const { container } = render(<Truffle power="fire" powerTier={1} lookAt={1} />);
     expect(container.querySelector('g[transform^="rotate"] .truffle__power-head')).toBeTruthy();
   });
+  it('an unknown power id (old or damaged data) draws nothing and never throws', () => {
+    const { container } = render(<Truffle power="lightning" powerTier={3} />);
+    expect(container.querySelector('svg.truffle')).toBeTruthy();
+    expect(container.querySelector('.truffle__power-head, .truffle__power-front')).toBeNull();
+  });
   it('draws nothing for tier 0 or no power', () => {
     const { container } = render(<Truffle power="fire" powerTier={0} />);
     expect(container.querySelector('.truffle__power-front, .truffle__power-head')).toBeNull();

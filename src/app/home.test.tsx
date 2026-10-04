@@ -90,6 +90,12 @@ describe('Wardrobe', () => {
     expect(tiger.querySelector('svg.truffle')?.getAttribute('data-outfit')).toBe('tiger');
     expect(screen.getByRole('button', { name: '牛' }).querySelector('svg.truffle')).toBeNull();
   });
+  it('accessories he has not won yet are locked', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedAccessories: ['scarf'] } });
+    renderWithApp(<Wardrobe />, app);
+    expect(((await screen.findByRole('button', { name: '围巾' })) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole('button', { name: '墨镜' }) as HTMLButtonElement).disabled).toBe(true);
+  });
   it('accessory names use their own pinyin (星星 is xīng xing)', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedAccessories: ['starglasses'] } });
     renderWithApp(<Wardrobe />, app);
@@ -168,6 +174,21 @@ describe('CollectionScreen', () => {
     fireEvent.keyDown(dialog, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(document.activeElement).toBe(card));
+  });
+  it('金卡 shows only cards he can read and write; none yet shows none', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    await putCards(app.db, [makeCard('b:河', 'recognise', new Date(2026, 9, 20), true)]);
+    renderWithApp(<CollectionScreen />, app);
+    await screen.findByRole('button', { name: '河' });
+    fireEvent.click(screen.getByText(/金卡/));
+    expect(document.querySelectorAll('.zika-grid .zika')).toHaveLength(0);
+  });
+  it('a child who knows nothing yet sees 0 caught and no crash', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    renderWithApp(<CollectionScreen />, app);
+    expect(await screen.findByText(/^0 \/ /)).toBeTruthy();
   });
   it('puts the 金卡 filter right after 全部 so it is on screen', async () => {
     const app = await makeAppData();

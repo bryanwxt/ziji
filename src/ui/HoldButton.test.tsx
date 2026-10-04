@@ -91,4 +91,13 @@ describe('HoldButton', () => {
     fireEvent(btn(), new Event('pointerup', { bubbles: true }));
     expect(tapped).toHaveBeenCalledTimes(1);
   });
+  it('letting go at 1199 ms is still too early', () => {
+    const done = vi.fn();
+    render(<HoldButton label="按住打开" onComplete={done} />);
+    down(btn());
+    act(() => { vi.advanceTimersByTime(1199); });
+    fireEvent(btn(), new Event('pointerup', { bubbles: true }));
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(done).not.toHaveBeenCalled();
+  });
 });
