@@ -30,3 +30,13 @@ describe('sticker families', () => {
     expect(real[0]!.chars.length).toBeGreaterThanOrEqual(10);
   });
 });
+
+describe('sticker badges with HSK 1–9 content', () => {
+  it('families count HSK 1–2 characters only, so badges stay as earnable as they were tuned', () => {
+    const level = new Map(BUILTIN.map((c) => [c.char, c.level]));
+    const fams = stickerFamilies(BUILTIN);
+    expect(fams.flatMap((f) => f.chars).every((ch) => level.get(ch)! <= 2)).toBe(true);
+    expect(fams.find((f) => f.component === '氵')!.chars.length).toBeLessThan(40);
+  });
+});
+

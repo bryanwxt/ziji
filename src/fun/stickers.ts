@@ -9,12 +9,14 @@ export interface StickerFamily {
   chars: string[];
 }
 
+/** Families count HSK 1–2 characters only, like the powers: the badges were tuned for those 600 (HSK 1–9 made 氵 159 long). */
 export function stickerFamilies(builtin: BuiltinChar[]): StickerFamily[] {
+  const pool = builtin.filter((c) => c.level <= 2);
   return Object.entries(RADICALS)
     .map(([component, meaning]) => ({
       component,
       meaning,
-      chars: builtin
+      chars: pool
         .filter((c) => c.char !== component && c.radical === component)
         .sort((a, b) => a.rank - b.rank)
         .map((c) => c.char),
