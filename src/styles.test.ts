@@ -162,4 +162,7 @@ describe('adaptive layouts (spec §18)', () => {
   it('the meaning cue never wraps and shrinks to fit its length', () => {
     expect(css).toMatch(/\.meaning-cue \{[^}]*white-space: nowrap;[^}]*font-size: min\(var\(--hanzi-xl\), calc\(\d+vw \/ var\(--len, 2\)\)\);/);
   });
+  it('a long self-introduction scrolls inside its card instead of pushing the buttons off an SE', () => {
+    expect(css).toMatch(/\.langdu__script \{[^}]*max-height: [^;]*dvh[^}]*overflow-y: auto/);
+  });
 });

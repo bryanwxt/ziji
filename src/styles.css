@@ -630,7 +630,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .meter__target { position: absolute; top: -2px; bottom: -2px; border-left: 3px dashed var(--ink); }
 .meter__msg { font-size: 22px; font-weight: 900; min-width: 5em; }
 .langdu { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
-.langdu__script { display: flex; flex-direction: column; gap: 10px; }
+.langdu__script { display: flex; flex-direction: column; gap: 10px; flex: 0 1 auto; min-height: 0; max-height: 46dvh; overflow-y: auto; overscroll-behavior: contain; }
 .langdu__line { margin: 0; font-size: 34px; font-family: var(--hanzi); }
 .langdu__step { margin: 0; font-size: 20px; font-weight: 800; }
 .langdu__phrase { margin: 8px 0; font-size: 52px; font-family: var(--hanzi); background: var(--surface); border: var(--panel-border); box-shadow: var(--panel-shadow); border-radius: var(--radius-lg); padding: 16px 28px; }
