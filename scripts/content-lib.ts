@@ -82,7 +82,10 @@ export function buildBuiltin(input: BuildInput): BuiltinChar[] {
 
   CHAR_SECTIONS.forEach((section, s) => {
     const chars = input.hskChars.get(section);
-    if (!chars) throw new Error(`Missing section ${section}`);
+    if (!chars) {
+      if (s === 0) throw new Error(`Missing section ${section}`); // level 1 is required; higher levels are optional
+      return;
+    }
     chars.forEach((char, index) => {
       if (seen.has(char)) return;
       const entry = input.dictionary.get(char);
