@@ -35,4 +35,3 @@ export function closeupAllowed(cardsSince: number, reduced: boolean): boolean {
   return !reduced && cardsSince >= CLOSEUP_EVERY;
 }
 
-export const REACTION_MS = { side: 1000, content: 1000, wow: 1200 } as const;

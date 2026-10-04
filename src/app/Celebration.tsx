@@ -16,12 +16,16 @@ import { burst, flyAlong } from '../ui/motion';
 import { Pet } from '../ui/Pet';
 import { Scene } from '../ui/Scene';
 import { Truffle } from '../ui/truffle/Truffle';
+import type { Reaction } from '../ui/truffle/timelines';
 import { useApp } from './AppContext';
 import { loadKnowledge } from './knowledge';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { accessoryById } from '../fun/accessories';
 
 type Phase = 'stars' | 'chest' | 'power' | 'badges';
+// his moments here (spec 2026-10-04 §4.4): an overjoyed hop at the stars, then proud; a pounce as the chest's prize appears
+const DONE: Reaction = { kind: 'done', key: 1 };
+const POUNCE: Reaction = { kind: 'pounce', key: 1 };
 
 interface Sequence {
   order: Phase[];
@@ -163,12 +167,12 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
               <div class="prize">
                 {chest.kind === 'costume' ? (
                   <div class="prize__costume">
-                    <Truffle mood="cheer" outfit={chest.id} accessory={null} size={190} bounce />
+                    <Truffle mood="cheer" outfit={chest.id} accessory={null} size={190} alive react={POUNCE} />
                     <Label zh={costumeById(chest.id)?.zh ?? ''} py={costumeById(chest.id)?.py} />
                   </div>
                 ) : chest.kind === 'accessory' ? (
                   <div class="prize__costume">
-                    <Truffle mood="cheer" outfit={kid.outfit} accessory={chest.item} size={190} bounce />
+                    <Truffle mood="cheer" outfit={kid.outfit} accessory={chest.item} size={190} alive react={POUNCE} />
                     <Label zh={accessoryById(chest.item)?.zh ?? ''} py={accessoryById(chest.item)?.py} />
                   </div>
                 ) : (
@@ -217,7 +221,8 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
             mood="cheer"
             size={phase === 'badges' ? 200 : 170}
             bubble={phase === 'stars' ? '喵！' : undefined}
-            bounce
+            react={phase === 'stars' ? DONE : null}
+            bounce={phase !== 'stars'}
           />
         )}
         {(phase === 'chest' ? !!chest : phase === 'power' ? powered : true) && (

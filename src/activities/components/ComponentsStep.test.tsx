@@ -65,3 +65,18 @@ describe('字辨 on the stage (spec 2026-10-04 §3)', () => {
     expect(stage.querySelector('.stage__card .pond')).toBeTruthy();
   });
 });
+
+describe('Truffle in 字辨 (spec 2026-10-04 §4.3–4.4)', () => {
+  it('calm before the answer; happy after a catch', () => {
+    render(<ComponentsStep items={[item]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: '根' }));
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBeNull();
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('happy');
+  });
+  it('curious after a miss', () => {
+    render(<ComponentsStep items={[item]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '跟' }));
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('curious');
+  });
+});

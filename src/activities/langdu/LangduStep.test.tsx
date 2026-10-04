@@ -181,3 +181,13 @@ describe('朗读 on the stage (spec 2026-10-04 §3)', () => {
     onStage(); // listen back
   });
 });
+
+describe('Truffle in 朗读 (spec 2026-10-04 §4.3–4.4)', () => {
+  it('is calm while recording', async () => {
+    render(<LangduStep passage={passage} oral={oral} warmups={0} knownChars={new Set()} kid={DEFAULT_KID} withWarmup onDone={vi.fn()} />);
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBeNull();
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('停止');
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBe('true');
+  });
+});

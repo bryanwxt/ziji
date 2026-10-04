@@ -136,7 +136,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
       )}
       <Stage
         activity="placement"
-        truffle={<Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={180} />}
+        truffle={<Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={180} calm />}
         sheet={<FeedbackSheet actionLabel="不知道" actionIcon={<InkIcon name="think" size={30} />} onAction={() => void answer(false)} />}
       >
         {q && (

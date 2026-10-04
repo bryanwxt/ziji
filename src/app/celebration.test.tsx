@@ -171,3 +171,20 @@ describe('Celebration accessory prize', () => {
     expect(document.querySelector('.prize svg.truffle')?.getAttribute('data-accessory')).toBeTruthy();
   });
 });
+
+describe('Truffle in the celebration (spec 2026-10-04 §4.4)', () => {
+  it('joy at the stars', async () => {
+    await setup('2026-10-02', ['flashcards']);
+    expect(document.querySelector('.celebrate svg.truffle')!.getAttribute('data-expression')).toBe('joy');
+  });
+  it('the Truffle the chest gives him is alive and pounces as it opens', async () => {
+    await setup('2026-10-02', ['flashcards']);
+    fireEvent.click(screen.getByText('继续'));
+    fireEvent(await screen.findByRole('button', { name: '按住打开宝箱' }), new Event('pointerdown', { bubbles: true }));
+    await hold();
+    await screen.findByText('松露有新衣服了！');
+    const prize = document.querySelector('.prize svg.truffle')!;
+    expect(prize.getAttribute('data-alive')).toBe('true');
+    expect(prize.getAttribute('data-expression')).toBe('joy');
+  });
+});

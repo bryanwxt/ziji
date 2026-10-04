@@ -116,3 +116,13 @@ describe('placement on the stage (spec 2026-10-04 §3)', () => {
     expect(stage.querySelector('.stage__sheet .sheet button')!.textContent).toContain('不知道');
   });
 });
+
+describe('Truffle in placement (spec 2026-10-04 §4.4, spec §14: no right or wrong)', () => {
+  it('is calm on every question', async () => {
+    const app = await setup();
+    renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
+    await walkThrough(dontKnow, () => {
+      expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBe('true');
+    });
+  });
+});

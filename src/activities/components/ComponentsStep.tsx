@@ -65,7 +65,7 @@ export function ComponentsStep({ items, kid, resting, onAnswer, onDone, onProgre
   return (
     <Stage
       activity="zibian"
-      truffle={<Pet kid={kid} size={180} mood={!done ? resting : correct ? 'pleased' : 'side'} bubble={!done ? '钓鱼啦！' : null} />}
+      truffle={<Pet kid={kid} size={180} mood={!done ? resting : correct ? 'pleased' : 'side'} bubble={!done ? '钓鱼啦！' : null} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: index + 1 } : null} />}
       sheet={!done ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (

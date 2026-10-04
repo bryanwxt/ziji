@@ -140,24 +140,27 @@ describe('new-word card in English too (parent, 2026-10-04)', () => {
 describe('Truffle reactions', () => {
   const mood = () => document.querySelector('svg.truffle')!.getAttribute('data-mood');
   const relearn = () => ({ id: `${he.id}:recognise`, wordId: he.id, kind: 'recognise' as const, fsrs: { ...createEmptyCard(new Date()), state: State.Relearning } });
-  it('rests during the quiz, side-eyes a wrong answer and goes wide-eyed for a hard one', () => {
+  // the reaction lives in the rig now (stage spec §4.4): data-expression holds it, data-mood stays his resting mood
+  const expression = () => document.querySelector('svg.truffle')!.getAttribute('data-expression');
+  it('rests during the quiz, is curious at a wrong answer and overjoyed at a hard one', () => {
     const { unmount } = render(<FlashcardStep {...base} card={relearn()} item={review} voice={false} onDone={vi.fn()} />);
     expect(mood()).toBe('sulk');
     fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
-    expect(mood()).toBe('wow');
+    expect(expression()).toBe('joy');
+    expect(mood()).toBe('sulk');
     unmount();
     render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
     fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
-    expect(mood()).toBe('side');
+    expect(expression()).toBe('curious');
   });
-  it('a reaction is short (spec: about a second), then he rests again while the answer stays up', async () => {
+  it('a reaction is short (REACTIONS.wrong.holdMs), then he rests again while the answer stays up', async () => {
     vi.useFakeTimers();
     try {
       render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
       fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
-      expect(mood()).toBe('side');
-      await act(async () => { vi.advanceTimersByTime(1100); });
-      expect(mood()).toBe('sulk');
+      expect(expression()).toBe('curious');
+      await act(async () => { vi.advanceTimersByTime(1800); });
+      expect(expression()).toBe('grumpy'); // back to his resting (sulk) face
       expect(screen.getByText('继续')).toBeTruthy();
     } finally {
       vi.useRealTimers();
@@ -324,5 +327,20 @@ describe('认一认 on the stage (spec 2026-10-04 §3)', () => {
     vi.mocked(speak).mockClear();
     fireEvent.click(cue.querySelector('.speak')!);
     expect(vi.mocked(speak).mock.calls.at(-1)![0]).not.toContain('保持');
+  });
+});
+
+describe('Truffle in 认一认 (spec 2026-10-04 §4.3–4.4)', () => {
+  it('is calm while the question is up, and reacts after the answer', () => {
+    render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBe('true');
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
+    const svg = document.querySelector('.stage__truffle svg.truffle')!;
+    expect(svg.getAttribute('data-calm')).toBeNull();
+    expect(svg.getAttribute('data-expression')).toBe('curious'); // a wrong answer: curious, never sad
+  });
+  it('a new word: surprised when it is shown', () => {
+    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('surprised');
   });
 });

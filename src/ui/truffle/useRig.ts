@@ -98,7 +98,10 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
 
   // a new reaction replaces a running one (review focus 2)
   useEffect(() => {
-    if (opts.react) pending.current = opts.react;
+    if (!opts.react) return;
+    pending.current = opts.react;
+    // the reaction's expression is the state of him from now on (screens and tests read it); the loop eases the face there
+    if (o.current.alive) svgRef.current?.setAttribute('data-expression', REACTIONS[opts.react.kind].expr);
   }, [opts.react?.key]);
 
   useEffect(() => {

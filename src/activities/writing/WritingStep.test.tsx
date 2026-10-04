@@ -6,7 +6,7 @@ import { speak } from '../../audio/speech';
 import HanziWriter from 'hanzi-writer';
 import { WritingStep } from './WritingStep';
 
-type QuizOpts = { onComplete: (s: { totalMistakes: number }) => void; onMistake?: (d: { mistakesOnStroke: number }) => void };
+type QuizOpts = { onComplete: (s: { totalMistakes: number }) => void; onCorrectStroke?: (d: unknown) => void; onMistake?: (d: { mistakesOnStroke: number }) => void };
 const quizzes: QuizOpts[] = [];
 let loadError: (() => void) | undefined;
 
@@ -147,5 +147,24 @@ describe('写一写 on the stage (spec 2026-10-04 §3)', () => {
     act(() => { window.dispatchEvent(new Event('resize')); });
     expect(writer.updateDimensions).toHaveBeenCalledWith({ width: expect.any(Number), height: expect.any(Number) });
     expect(vi.mocked(HanziWriter.create).mock.calls.length).toBe(creates); // resized in place: the quiz and his strokes stay
+  });
+});
+
+describe('Truffle in 写一写 (spec 2026-10-04 §4.3–4.4)', () => {
+  it('calm while writing; a nod (happy) on each right stroke; happy when the character is done', () => {
+    quizzes.length = 0;
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBe('true');
+    act(() => quizzes.at(-1)!.onCorrectStroke?.({}));
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('happy');
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 0 }));
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBeNull();
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('happy');
+  });
+  it('a new word from memory with no misses: joy (the hard moment)', () => {
+    quizzes.length = 0;
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew pass="recall" onDone={vi.fn()} />);
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 0 }));
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('joy');
   });
 });

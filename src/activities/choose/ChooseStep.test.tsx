@@ -78,3 +78,18 @@ describe('选一选 / 用一用 on the stage (spec 2026-10-04 §3)', () => {
     expect(document.querySelector('.meaning-cue--short[data-q]')).toBeTruthy();
   });
 });
+
+describe('Truffle in 选一选 (spec 2026-10-04 §4.3–4.4)', () => {
+  it('calm before the answer; happy after a right one', () => {
+    render(<ChooseStep items={[fit]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: '很' }));
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-calm')).toBeNull();
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('happy');
+  });
+  it('curious after a wrong one', () => {
+    render(<ChooseStep items={[fit]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '在' }));
+    expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('curious');
+  });
+});

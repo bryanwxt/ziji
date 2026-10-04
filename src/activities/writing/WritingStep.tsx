@@ -11,6 +11,7 @@ import { burst } from '../../ui/motion';
 import { isHardWrite } from '../../fun/mood';
 import { Closeup } from '../../app/Closeup';
 import { Pet } from '../../ui/Pet';
+import type { Reaction } from '../../ui/truffle/timelines';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { Label, spokenBlanks } from '../../ui/Label';
 import { SpeakButton } from '../../ui/SpeakButton';
@@ -47,6 +48,10 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
   const startedAt = useRef(performance.now());
   const hinted = useRef(false);
   const writer = useRef<ReturnType<typeof HanziWriter.create> | null>(null);
+  // he nods at each right stroke and reacts when a character is done (spec 2026-10-04 §4.4)
+  const reactN = useRef(0);
+  const [react, setReact] = useState<Reaction | null>(null);
+  const fire = (kind: Reaction['kind']) => setReact({ kind, key: ++reactN.current });
   /** The 田字格 size for the stage card it sits in, below the cue and dots (spec 2026-10-04 §3): measured from where the box starts. */
   const boxSize = (el: HTMLElement) => {
     const card = el.closest('.stage__card') as HTMLElement | null;
@@ -95,6 +100,9 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
     writer.current = hw;
     if (pass === 'hint') hw.highlightStroke(0); // the first stroke shows the way
     void hw.quiz({
+      onCorrectStroke: () => {
+        if (!cancelled) fire('nod');
+      },
       onMistake: (d) => {
         if (pass === 'recall' && d.mistakesOnStroke >= 2) hinted.current = true;
       },
@@ -105,6 +113,8 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
         if (r) burst(r.left + r.width / 2, r.top + r.height / 2, { count: summary.totalMistakes === 0 ? 14 : 8 });
         setMisses((m) => m + summary.totalMistakes);
         setCharMisses(summary.totalMistakes);
+        // a new word finished from memory with no misses is the hard moment; misses counts the characters before this one
+        fire(pass === 'recall' && index === chars.length - 1 && isHardWrite(isNew, misses + summary.totalMistakes) ? 'hard' : 'right');
       },
     });
     return () => {
@@ -130,6 +140,8 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
             size={180}
             mood={charMisses === null ? resting : charMisses > 3 ? 'neutral' : last && isHardWrite(isNew, misses) ? 'wow' : 'pleased'}
             bubble={charMisses === null ? PASS_BUBBLE[pass] : null}
+            calm={charMisses === null}
+            react={react}
           />
         }
         sheet={charMisses === null ? (

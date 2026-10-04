@@ -63,7 +63,7 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
   };
 
   // Truffle stays with him through every part (spec 2026-10-04 §3)
-  const pet = <Pet kid={kid} mood="neutral" size={180} bubble={part === 'warmup' ? '你好！' : part === 'echo' ? '跟我说！' : part === 'read' ? '大声读！' : '真棒！'} />;
+  const pet = <Pet kid={kid} mood="neutral" size={180} calm={intro.state === 'recording' || read.state === 'recording'} bubble={part === 'warmup' ? '你好！' : part === 'echo' ? '跟我说！' : part === 'read' ? '大声读！' : '真棒！'} />;
 
   if (part === 'warmup') {
     return (

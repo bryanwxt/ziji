@@ -11,9 +11,10 @@ import { Label } from '../../ui/Label';
 import { burst, flyAlong } from '../../ui/motion';
 import type { CardRecord, FlashItem, KidState, Word } from '../../types';
 import { Closeup } from '../../app/Closeup';
-import { isHardRecognition, REACTION_MS, reactionMood } from '../../fun/mood';
+import { isHardRecognition, reactionMood } from '../../fun/mood';
 import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
+import type { Reaction } from '../../ui/truffle/timelines';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
@@ -62,6 +63,9 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const [choice, setChoice] = useState<string | null>(null);
   const [result, setResult] = useState<{ correct: boolean; hard: boolean; responseMs: number } | null>(null);
   const shownAt = useRef(performance.now());
+  // what he reacts to (spec 2026-10-04 §4.4): a new word when it is shown, then each answer
+  const reactN = useRef(0);
+  const [react, setReact] = useState<Reaction | null>(() => (item.isNew && !item.retry ? { kind: 'newWord', key: ++reactN.current } : null));
   const quizAt = useRef(performance.now());
   const petRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -84,7 +88,9 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     if (phase !== 'quiz') return;
     const correct = option === quiz.answer;
     setChoice(option);
-    setResult({ correct, hard: isHardRecognition(card?.fsrs), responseMs: Math.round(performance.now() - quizAt.current) });
+    const hard = isHardRecognition(card?.fsrs);
+    setResult({ correct, hard, responseMs: Math.round(performance.now() - quizAt.current) });
+    setReact({ kind: !correct ? 'wrong' : hard ? 'hard' : combo + 1 >= 3 ? 'streak' : 'right', key: ++reactN.current });
     setPhase('feedback');
     const btn = optionRefs.current.get(option);
     if (correct) {
@@ -109,17 +115,9 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     return o === choice ? 'is-wrong' : 'is-dim';
   };
 
-  const reacting = phase === 'feedback' && result ? reactionMood({ correct: result.correct, hard: result.hard, combo: result.correct ? combo + 1 : 0 }) : null;
-  // a reaction is a beat (about a second), then he rests again while the answer stays up
-  const [reactionOver, setReactionOver] = useState(false);
-  useEffect(() => {
-    setReactionOver(false);
-    if (!reacting) return;
-    const t = setTimeout(() => setReactionOver(true), REACTION_MS[reacting as keyof typeof REACTION_MS] ?? 1000);
-    return () => clearTimeout(t);
-  }, [result, reacting]);
-  const reaction = reactionOver ? null : reacting;
-  const mood: TruffleMood = phase === 'intro' ? 'neutral' : (reaction ?? resting);
+  const reaction = phase === 'feedback' && result ? reactionMood({ correct: result.correct, hard: result.hard, combo: result.correct ? combo + 1 : 0 }) : null;
+  // his reaction is a beat in the rig (REACTIONS[kind].holdMs), then he rests on his own mood while the answer stays up
+  const mood: TruffleMood = phase === 'intro' ? 'neutral' : resting;
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害', content: '呼噜～' };
   const bubble = phase === 'intro' ? '新字来了！' : phase === 'quiz' ? (quiz.cue ? '哪个字对？' : quiz.listen ? '我想吃这个字！' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
@@ -149,7 +147,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     <>
       <Stage
         activity="flash"
-        truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} bounce={phase === 'feedback' && !!result?.correct} /></div>}
+        truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} calm={phase === 'quiz'} react={react} /></div>}
         sheet={sheet}
       >
         {phase === 'intro' ? <Intro word={word} /> : (
