@@ -987,7 +987,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 /* 认一认 meaning question: the 组词 word with the character blanked (spec §19) */
 .meaning-prompt { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.meaning-cue { font-size: var(--hanzi-xl); line-height: 1.05; background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); padding: 0.04em 0.2em 0.08em; }
+.meaning-cue { white-space: nowrap; font-size: min(var(--hanzi-xl), calc(70vw / var(--len, 2))); line-height: 1.05; background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); padding: 0.04em 0.2em 0.08em; }
 .meaning-cue__blank { color: var(--muted); border-bottom: 4px dashed var(--ink); padding: 0 0.05em; }
 @media (max-width: 599px) {
   /* the new-word card on a phone: smaller speak buttons (still ≥44px), tighter rows */

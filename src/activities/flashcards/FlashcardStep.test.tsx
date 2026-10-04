@@ -179,5 +179,9 @@ describe('认一认 meaning questions (spec §19)', () => {
     expect(document.body.textContent).toContain('珍惜');
     expect(document.body.textContent).not.toContain('cherish');
   });
+  it('a long 组词 (四面八方) stays on one line: the cue knows its length', () => {
+    const ba = { ...makeWord('八', { id: 'b:八', pinyin: 'bā' }), examples: [{ text: '四面八方', pinyin: 'sì miàn bā fāng' }] };
+    render(<FlashcardStep {...base} word={ba} item={{ wordId: 'b:八', isNew: false, retry: false, mode: 'meaning' }} voice onDone={vi.fn()} />);
+    expect(document.querySelector<HTMLElement>('.meaning-cue')!.style.getPropertyValue('--len')).toBe('4');
+  });
 });
-

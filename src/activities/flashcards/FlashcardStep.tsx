@@ -122,7 +122,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
               <div class="flash__prompt">
                 {quiz.cue ? (
                   <div class="meaning-prompt">
-                    <div class="hanzi meaning-cue" lang="zh">
+                    <div class="hanzi meaning-cue" lang="zh" style={`--len:${Array.from(quiz.cue.full).length}`}>
                       {quiz.cue.before}
                       <span class="meaning-cue__blank" aria-label="空格">{phase === 'feedback' ? word.text : '？'}</span>
                       {quiz.cue.after}

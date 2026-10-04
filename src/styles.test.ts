@@ -159,4 +159,7 @@ describe('adaptive layouts (spec §18)', () => {
   it('a screen clips with overflow: clip, so nothing (a focus, a browser scroll-into-view) can ever scroll it', () => {
     expect(css).toMatch(/\.screen \{[^}]*overflow: hidden; overflow: clip;/); // hidden is the fallback for Safari before 16
   });
+  it('the meaning cue never wraps and shrinks to fit its length', () => {
+    expect(css).toMatch(/\.meaning-cue \{[^}]*white-space: nowrap;[^}]*font-size: min\(var\(--hanzi-xl\), calc\(\d+vw \/ var\(--len, 2\)\)\);/);
+  });
 });
