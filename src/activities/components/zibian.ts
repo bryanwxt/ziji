@@ -36,6 +36,19 @@ export function lookAlikeChars(ch: string): string[] {
   return [...g.phonetic, ...g.radical];
 }
 
+/**
+ * The missing character of a word and 3 look-alikes, shuffled, or null when there aren't 3. His own mistake first (the same
+ * phonetic part), then the same radical; characters he knows before ones near his level; none makes another real word there.
+ */
+export function fillChoices(chars: string[], k: number, rng: Rng, known: ReadonlySet<string> = new Set()): string[] | null {
+  const answer = chars[k]!;
+  const fits = (o: string) => HSK_WORDS.has(chars.map((c, j) => (j === k ? o : c)).join(''));
+  const g = lookAlikeGroups(answer);
+  const usable = (list: string[], knownOnly: boolean) => list.filter((c) => !fits(c) && (knownOnly ? known.has(c) : !known.has(c) && (level.get(c) ?? 7) <= (level.get(answer) ?? 7) + 1));
+  const wrong = [usable(g.phonetic, true), usable(g.radical, true), usable(g.phonetic, false), usable(g.radical, false)].flatMap((l) => shuffle(l, rng)).slice(0, 3);
+  return wrong.length < 3 ? null : shuffle([answer, ...wrong], rng);
+}
+
 export interface ZibianInput {
   words: Word[];
   knownChars: ReadonlySet<string>;
@@ -60,14 +73,9 @@ export function buildZibianRound(i: ZibianInput): ZibianItem[] | null {
     const chars = Array.from(word);
     const positions = own.length > 1 ? chars.map((_, k) => k) : [chars.indexOf(w.text)];
     for (const k of shuffle(positions, i.rng)) {
-      const answer = chars[k]!;
-      const fits = (o: string) => HSK_WORDS.has(chars.map((c, j) => (j === k ? o : c)).join(''));
-      // his own mistake first (same phonetic part), then same radical; characters he knows before ones near his level
-      const g = lookAlikeGroups(answer);
-      const usable = (list: string[], knownOnly: boolean) => list.filter((c) => !fits(c) && (knownOnly ? i.knownChars.has(c) : !i.knownChars.has(c) && (level.get(c) ?? 7) <= (level.get(answer) ?? 7) + 1));
-      const wrong = [usable(g.phonetic, true), usable(g.radical, true), usable(g.phonetic, false), usable(g.radical, false)].flatMap((l) => shuffle(l, i.rng)).slice(0, 3);
-      if (wrong.length < 3) continue;
-      out.push({ wordId: w.id, word, index: k, answer, options: shuffle([answer, ...wrong], i.rng) });
+      const options = fillChoices(chars, k, i.rng, i.knownChars);
+      if (!options) continue;
+      out.push({ wordId: w.id, word, index: k, answer: chars[k]!, options });
       break;
     }
   }
