@@ -25,4 +25,11 @@ describe('trapReadings (his worksheet mistakes)', () => {
     expect(trapReadings(w('捡'))).not.toContain('shǒu');
     expect(trapReadings(w('捡'))).toContain('qiān'); // 佥
   });
+  it('across every built-in character, traps are real pinyin syllables from real characters, never glyphs or stroke names', () => {
+    const SYL = /^([a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]+)( [a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]+)*$/;
+    for (const w of builtinWords(0)) for (const p of trapReadings(w)) expect(p, `${w.text} → ${p}`).toMatch(SYL);
+    // the reviewer's examples: a stroke or enclosure's dictionary name is never offered
+    const stroke: [string, string][] = [['儿', 'piě'], ['几', 'piě'], ['九', 'piě'], ['口', 'jiōng'], ['见', 'jiōng'], ['书', 'gǔn'], ['小', 'jué'], ['门', 'zhǔ']];
+    for (const [ch, name] of stroke) expect(trapReadings(w(ch)), `${ch}`).not.toContain(name);
+  });
 });

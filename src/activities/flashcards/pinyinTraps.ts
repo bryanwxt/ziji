@@ -6,6 +6,9 @@ import { syllableTone, withTone } from './tones';
 /** Radical side forms that never stand alone as words (扌 isn't read shǒu): never offered as a reading. */
 const SIDE_FORMS = new Set([...'扌氵亻讠忄纟钅饣衤礻犭阝刂冫冖宀廴辶艹⺮尸彳攵丬牜疒罒覀耂⺌⺈⻊⻏⻖⺗⺼']);
 
+/** Single strokes and enclosure parts: their dictionary names (piě, jiōng…) are not readings a child would confuse. */
+const STROKES = new Set([...'丿乀丶丨亅乙乚冂冖凵匚匸亠丷乛丨𠃌𠃊']);
+
 const INITIALS = ['zh', 'ch', 'sh', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's', 'y', 'w'];
 const INITIAL_SWAPS: Record<string, string[]> = { j: ['z', 'zh'], q: ['c', 'ch'], x: ['s', 'sh'], z: ['j', 'zh'], c: ['q', 'ch'], s: ['x', 'sh'], zh: ['z', 'j'], ch: ['c', 'q'], sh: ['s', 'x'] };
 const FINAL_SWAPS: [string, string][] = [['ie', 'ia'], ['uo', 'ou'], ['in', 'ing'], ['an', 'ang'], ['en', 'eng'], ['ian', 'iang'], ['un', 'ong']];
@@ -42,8 +45,9 @@ export function trapReadings(word: Word): string[] {
     const info = getCharInfo(chars[0]!);
     for (const part of info?.components ?? []) {
       if (part === chars[0] || SIDE_FORMS.has(part) || !/\p{Script=Han}/u.test(part)) continue; // a radical side form (扌, 氵…) is never what he misreads; the sounding part is
+      if (STROKES.has(part)) continue; // strokes and enclosures (丿 冂 丨…) have dictionary names, not readings he'd say
       const p = pinyin(part);
-      if (p && p !== word.pinyin) out.push(p);
+      if (p && p !== word.pinyin && VALID.has(syllableTone(p).base)) out.push(p); // a real syllable, never a glyph pinyin-pro passes through
     }
   }
   syllables.forEach((s, i) => {
