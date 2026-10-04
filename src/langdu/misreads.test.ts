@@ -48,3 +48,31 @@ describe('applyMisreads', () => {
     expect(plan.newWordIds.slice(0, 2)).toEqual(['b:天', 'b:山']);
   });
 });
+
+describe('saving misreads again (deferred minors, plan 8)', () => {
+  const setup = async () => {
+    const db = await freshDb();
+    await putWords(db, builtinWords(0));
+    await saveKid(db, { ...DEFAULT_KID, reading: { passageId: 'pp:1', days: 3, extra: 0, lastDay: '2026-10-05', lastRead: {}, warmups: 0 } });
+    const rec = { id: 'r1', createdAt: 0, prompt: { kind: 'passage' as const, passageId: 'pp:1' }, blob: new Blob(), mime: 'audio/mp4', durationSec: 12 };
+    await addRecording(db, rec);
+    return { db, rec };
+  };
+  const now = new Date(2026, 9, 5, 17);
+  it('counts only the characters it could bring back', async () => {
+    const { db, rec } = await setup();
+    expect(await applyMisreads(db, rec, ['天', '𠀀'], now)).toEqual({ updated: 1, notInApp: ['𠀀'] });
+  });
+  it('a second save of the same recording adds no second extra day', async () => {
+    const { db, rec } = await setup();
+    await applyMisreads(db, rec, ['天'], now);
+    await applyMisreads(db, { ...rec, misread: ['天'] }, ['天', '地'], now);
+    expect((await getKid(db))!.reading.extra).toBe(1);
+  });
+  it('unmarking a character takes away the priority it was given', async () => {
+    const { db, rec } = await setup();
+    await applyMisreads(db, rec, ['天'], now);
+    await applyMisreads(db, { ...rec, misread: ['天'] }, [], now);
+    expect((await getWord(db, 'b:天'))!.listedAt).toBeUndefined();
+  });
+});

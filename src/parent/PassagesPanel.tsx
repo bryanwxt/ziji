@@ -1,3 +1,4 @@
+import { newId } from '../lib/id';
 import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { hanChars } from '../content';
@@ -26,7 +27,7 @@ export function PassagesPanel() {
   };
   const save = async () => {
     if (!canSave) return;
-    const base = editing ?? { id: `pp:${crypto.randomUUID()}`, createdAt: Date.now() };
+    const base = editing ?? { id: `pp:${newId()}`, createdAt: Date.now() }; // newId works on plain-http hosts too
     await saveParentPassage(db, { ...base, title: title.trim(), text: text.trim() });
     reset();
     await reload();

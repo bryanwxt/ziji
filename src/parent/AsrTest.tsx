@@ -1,4 +1,4 @@
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 
 export const SAMPLE = '我家有五个人。爸爸是医生，妈妈是老师。';
 
@@ -41,6 +41,7 @@ export function AsrTest() {
   const [heard, setHeard] = useState('');
   const [err, setErr] = useState('');
   const rec = useRef<Recognizer | null>(null);
+  useEffect(() => () => rec.current?.stop(), []); // leaving Settings mid-test stops listening
 
   if (!Rec) return <p>Speech recognition isn't available in this browser.</p>;
 

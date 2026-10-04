@@ -34,7 +34,7 @@ export function SettingsPanel() {
 
   const save = async (patch: Partial<Settings>) => {
     const next = await updateSettings(db, patch);
-    setS(next);
+    setS({ ...next, oral: oral.current }); // a save that comes back late keeps what he has typed since
     setSpeechRate(next.speechRate);
     setSfxEnabled(next.soundEffects);
     await refresh();

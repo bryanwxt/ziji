@@ -53,7 +53,7 @@ const describe = ({ prompt }: Recording, texts: Texts) => {
 function MisreadMarker({ recording, text, onSaved }: { recording: Recording; text: string; onSaved: () => Promise<void> }) {
   const { db, now } = useApp();
   const [marked, setMarked] = useState<Set<string>>(new Set(recording.misread ?? []));
-  const [saved, setSaved] = useState<number | null>(null);
+  const [saved, setSaved] = useState<{ updated: number; notInApp: string[] } | null>(null);
   const toggle = (ch: string) => {
     const next = new Set(marked);
     if (next.has(ch)) next.delete(ch);
@@ -62,8 +62,7 @@ function MisreadMarker({ recording, text, onSaved }: { recording: Recording; tex
     setSaved(null);
   };
   const save = async () => {
-    await applyMisreads(db, recording, [...marked], now());
-    setSaved(marked.size);
+    setSaved(await applyMisreads(db, recording, [...marked], now()));
     await onSaved();
   };
   return (
@@ -78,7 +77,12 @@ function MisreadMarker({ recording, text, onSaved }: { recording: Recording; tex
         )}
       </p>
       <button type="button" class="small-btn" onClick={() => void save()}>Save misread characters</button>
-      {saved !== null && <span class="misreads__done"> Saved: {saved} character{saved === 1 ? '' : 's'} will come up in practice.</span>}
+      {saved !== null && (
+        <span class="misreads__done">
+          {' '}Saved: {saved.updated} character{saved.updated === 1 ? '' : 's'} will come up in practice.
+          {saved.notInApp.length > 0 && ` ${saved.notInApp.join('、')} isn't in the app yet (add it in Words).`}
+        </span>
+      )}
     </div>
   );
 }

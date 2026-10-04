@@ -101,6 +101,8 @@ describe('LangduStep', () => {
     await recordOnce();
     expect(screen.queryByText('谢谢老师！')).toBeNull();
     fireEvent.click(screen.getByText('完成'));
+    fireEvent.click(screen.getByText('完成')); // a double tap saves the reading once (deferred minor, plan 8)
+    expect(onDone).toHaveBeenCalledTimes(1);
     expect(onDone).toHaveBeenCalledWith({ intro: null, read: expect.objectContaining({ durationSec: 5 }) });
   });
 

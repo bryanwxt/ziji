@@ -8,21 +8,39 @@ import type { Recording } from '../types';
  * (an existing card is due now; otherwise the built-in word jumps to the front of new words), and the
  * passage gets one extra day if it is still today's passage.
  */
-export async function applyMisreads(db: AppDb, recording: Recording, chars: string[], now: Date): Promise<void> {
+export async function applyMisreads(db: AppDb, recording: Recording, chars: string[], now: Date): Promise<{ updated: number; notInApp: string[] }> {
+  const before = new Set(recording.misread ?? []);
   await updateRecording(db, { ...recording, misread: chars });
+  let updated = 0;
+  const notInApp: string[] = [];
   for (const ch of chars) {
     const id = `b:${ch}`;
     const card = await getCard(db, `${id}:recognise`);
     if (card) {
       await putCards(db, [{ ...card, fsrs: { ...card.fsrs, due: now } }]);
+      updated++;
       continue;
     }
     const word = await getWord(db, id);
     // ahead of every school list (lists use their add time); the newest marks come first
-    if (word) await putWords(db, [{ ...word, listedAt: -now.getTime() }]);
+    if (word) {
+      await putWords(db, [{ ...word, listedAt: -now.getTime() }]);
+      updated++;
+    } else notInApp.push(ch);
   }
-  if (chars.length && recording.prompt.kind === 'passage') {
+  // unmarked since the last save: the priority it was given goes (a misread mark is the only negative listedAt)
+  for (const ch of before) {
+    if (chars.includes(ch)) continue;
+    const word = await getWord(db, `b:${ch}`);
+    if (word && (word.listedAt ?? 0) < 0) {
+      const { listedAt: _drop, ...rest } = word;
+      await putWords(db, [rest]);
+    }
+  }
+  // the passage's extra day comes with the first marks only: saving again doesn't add another
+  if (chars.length && before.size === 0 && recording.prompt.kind === 'passage') {
     const kid = await getKid(db);
     if (kid) await saveKid(db, { ...kid, reading: addExtraDay(kid.reading, recording.prompt.passageId) });
   }
+  return { updated, notInApp };
 }

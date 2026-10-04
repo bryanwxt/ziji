@@ -76,7 +76,15 @@ export async function startRecording(onAutoStop: () => void, onLevel?: (level: n
     throw e;
   }
   const mime = pickMime();
-  const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  let recorder: MediaRecorder;
+  try {
+    recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  } catch (e) {
+    // couldn't record after all: let go of the microphone and the meter
+    stream.getTracks().forEach((t) => t.stop());
+    void meterCtx?.close().catch(() => {});
+    throw e;
+  }
   const chunks: Blob[] = [];
   recorder.ondataavailable = (e) => {
     if (e.data.size) chunks.push(e.data);
@@ -89,7 +97,13 @@ export async function startRecording(onAutoStop: () => void, onLevel?: (level: n
     meter?.stop();
     stream.getTracks().forEach((t) => t.stop());
   };
-  recorder.start();
+  try {
+    recorder.start();
+  } catch (e) {
+    release();
+    void meterCtx?.close().catch(() => {});
+    throw e;
+  }
   return {
     stop: () =>
       new Promise((resolve) => {

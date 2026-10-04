@@ -85,3 +85,21 @@ describe('recording levels', () => {
     expect(track.stop).toHaveBeenCalled();
   });
 });
+
+describe('a recorder that fails to start (deferred minor, plan 8)', () => {
+  it('lets go of the microphone and the meter', async () => {
+    const track = { stop: vi.fn() };
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [track] })) } });
+    vi.stubGlobal('MediaRecorder', class { static isTypeSupported = () => true; constructor() { throw new Error('NotSupported'); } });
+    const close = vi.fn(async () => {});
+    vi.stubGlobal('AudioContext', class {
+      resume = vi.fn(async () => {});
+      createMediaStreamSource() { return { connect: () => {} }; }
+      createAnalyser() { return { fftSize: 4, getFloatTimeDomainData: () => {} }; }
+      close = close;
+    });
+    await expect(startRecording(() => {}, () => {})).rejects.toThrow();
+    expect(track.stop).toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
+  });
+});

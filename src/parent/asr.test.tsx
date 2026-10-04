@@ -41,3 +41,15 @@ describe('AsrTest', () => {
     expect(marks).toEqual(['狮']);
   });
 });
+
+describe('leaving the speech test (deferred minor, plan 8)', () => {
+  it('stops listening when the parent leaves Settings mid-test', () => {
+    const stop = vi.fn();
+    class FakeRec { lang = ''; interimResults = true; continuous = false; start() {} stop = stop; }
+    vi.stubGlobal('webkitSpeechRecognition', FakeRec);
+    const { unmount } = render(<AsrTest />);
+    fireEvent.click(screen.getByText('Start test'));
+    unmount();
+    expect(stop).toHaveBeenCalled();
+  });
+});

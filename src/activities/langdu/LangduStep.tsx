@@ -1,5 +1,5 @@
 import { Volume2 } from 'lucide-preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { FinishedRecording } from '../../audio/recorder';
 import { playSfx } from '../../audio/sfx';
 import { speak } from '../../audio/speech';
@@ -54,7 +54,12 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
     }
   }, [read.state]);
 
-  const finish = () => onDone({ intro: intro.result, read: read.result });
+  const finished = useRef(false);
+  const finish = () => {
+    if (finished.current) return; // a double tap on 完成 saves the reading once
+    finished.current = true;
+    onDone({ intro: intro.result, read: read.result });
+  };
 
   if (part === 'warmup') {
     return (
