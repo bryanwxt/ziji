@@ -25,8 +25,8 @@ export interface PlanInput {
   practised?: ReadonlyMap<string, number>; // words answered in lessons → when last; placement guesses aren't here
 }
 
-export const FLASH_SHARE = 7 / 30; // 认一认's share of the lesson (spec §19: 7 of 30 minutes)
-export const NEW_MEANING_PER_DAY = 6;
+export const FLASH_SHARE = 9 / 30; // 认一认's share of the lesson: 9 of 30 minutes (spec §20 part 5; 7 until the parent asked for more volume)
+export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
 
 export function buildSessionPlan({ cards, words, settings, now, practised = new Map() }: PlanInput): SessionPlan {

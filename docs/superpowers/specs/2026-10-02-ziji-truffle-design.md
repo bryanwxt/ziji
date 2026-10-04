@@ -1393,7 +1393,7 @@ This builds the §19 sentence bank and 选一选, and adds one question style.
 
 | # | Step | ~min | Change from §19 |
 |---|---|---|---|
-| 1 | 认一认 | 7 | The extra repetition fits in the same time |
+| 1 | 认一认 | 9 | The extra repetition, and 12 meaning checks a day for words he already knows (was 6; the parent asked for more volume on 2026-10-04, so the lesson runs about 32 minutes) |
 | 2 | 选一选 | 5 | Shared with 用对了吗 |
 | 3 | 钓鱼 (字辨) | 3 | The radical grid is replaced by 字辨 (part 8) |
 | 4 | 写一写 | 7 | Three passes for new words |
