@@ -137,7 +137,7 @@ export function WordsPanel() {
         <h2>School 听写 mistakes</h2>
         <p>Words he wrote wrong in a school 听写 — often with a same-sound character (新家坡 for 新加坡). Type the right word, one per line. Each comes back first in 写一写.</p>
         <div class="field">
-          <label for="tx-mistakes">Words he wrote wrong</label>
+          <label for="tx-mistakes">The right words, one per line</label>
           <textarea id="tx-mistakes" rows={3} value={mistakes} onInput={(e) => setMistakes(e.currentTarget.value)} />
         </div>
         <button
@@ -147,6 +147,7 @@ export function WordsPanel() {
           onClick={async () => {
             const r = await applyDictationMistakes(db, mistakes, now());
             const parts = [r.marked.length ? `${r.marked.join('、')} comes back first in 写一写.` : 'Nothing to bring back.'];
+            if (r.added.length) parts.push(`${r.added.join('、')} is new to the app — check the spelling (type the right word, not what he wrote).`);
             if (r.skipped.length) parts.push(`Skipped: ${r.skipped.join(', ')} (not 1–4 Chinese characters).`);
             setMistakeMessage(parts.join(' '));
             setMistakes('');

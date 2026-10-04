@@ -116,9 +116,10 @@ describe('school 听写 mistakes (spec §19 part 3)', () => {
   it('marks words he wrote wrong: they come back first in 写一写', async () => {
     const app = await makeAppData();
     renderWithApp(<WordsPanel />, app);
-    fireEvent.input(await screen.findByLabelText('Words he wrote wrong'), { target: { value: '新加坡\nxyz' } });
+    fireEvent.input(await screen.findByLabelText('The right words, one per line'), { target: { value: '新加坡\nxyz' } });
     fireEvent.click(screen.getByRole('button', { name: 'Bring back' }));
     expect(await screen.findByText(/新加坡 comes back first in 写一写/)).toBeTruthy();
+    expect(screen.getByText(/新加坡 is new to the app/)).toBeTruthy(); // so a misspelling typed by mistake is noticed
     expect(screen.getByText(/Skipped: xyz/)).toBeTruthy();
     expect((await allCards(app.db)).some((c) => c.kind === 'write')).toBe(true);
   });

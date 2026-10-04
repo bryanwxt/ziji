@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../content';
-import { allCards, allWords, getSettings, putCards, putWords } from '../store/repo';
+import { allCards, allWords, getSettings, putCards, putWords, seedBuiltinWords } from '../store/repo';
 import { freshDb, makeCard } from '../test/fixtures';
 import { buildSessionPlan } from './plan';
 import { applyDictationMistakes } from './dictation';
@@ -59,5 +59,21 @@ describe('school 听写 mistakes (spec §19 part 3)', () => {
     await applyDictationMistakes(db, '市区', now);
     const plan = buildSessionPlan({ cards: await allCards(db), words: await allWords(db), settings: await getSettings(db), now: new Date(2026, 9, 6, 9) });
     expect((await allWords(db)).find((w) => w.id === plan.writeCandidates[0]!.wordId)!.text).toBe('市区');
+  });
+  it('a built-in character stays writeable after the next app launch re-seeds the built-ins', async () => {
+    const db = await freshDb();
+    const ws = builtinWords(0);
+    const zui = ws.find((w) => !w.writeable)!;
+    await putWords(db, ws);
+    await applyDictationMistakes(db, zui.text, now);
+    await seedBuiltinWords(db, builtinWords(0));
+    const w = (await allWords(db)).find((x) => x.id === zui.id)!;
+    expect([w.writeable, w.listName]).toEqual([true, '听写 mistakes']);
+  });
+  it('a word he has never written starts with tracing (a new write word), not from memory', async () => {
+    const db = await freshDb();
+    await applyDictationMistakes(db, '新加坡', now);
+    const plan = buildSessionPlan({ cards: await allCards(db), words: await allWords(db), settings: await getSettings(db), now: new Date(2026, 9, 6, 9) });
+    expect(plan.writeCandidates[0]).toMatchObject({ isNew: true });
   });
 });
