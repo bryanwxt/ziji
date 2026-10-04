@@ -937,7 +937,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .room .pet { position: static; background: none; }
 .room .pet .truffle { width: var(--pet); height: auto; }
 .room [role="tabpanel"] { align-content: start; padding: 4px 4px 12px; }
-.zika-grid { grid-template-columns: repeat(auto-fill, minmax(clamp(84px, 22vw, 104px), 1fr)); }
+.zika-grid { grid-template-columns: repeat(auto-fill, minmax(clamp(84px, 22vw, 104px), 1fr)); padding: 0 4px 4px 0; } /* room for the cards' shadow: the scroll panel clips it */
 .error__msg { max-height: 40dvh; overflow: auto; white-space: pre-wrap; font-size: 14px; }
 
 /* Parent area: may scroll down, never sideways */

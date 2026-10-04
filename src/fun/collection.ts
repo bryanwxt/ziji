@@ -1,4 +1,4 @@
-import { builtinWordId } from '../content';
+import { builtinReading, builtinWordId } from '../content';
 import { isEarned } from '../srs/scheduler';
 import type { Knowledge } from '../stats/stats';
 import type { BuiltinChar } from '../types';
@@ -37,7 +37,7 @@ export function collectionCards(builtin: BuiltinChar[], know: Knowledge): CharCa
       const write = know.cardsById.get(`${id}:write`);
       return {
         char: c.char,
-        pinyin: c.pinyin,
+        pinyin: builtinReading(c),
         example: c.examples[0]?.text ?? null,
         power: powerOf(c),
         caught,

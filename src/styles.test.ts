@@ -44,6 +44,9 @@ describe('pinyin labels', () => {
 });
 
 describe('collection contrast', () => {
+  it("the grid leaves room for the cards' 4px shadow, so the right-hand column is not cut off by the scroll panel", () => {
+    expect(css).toMatch(/\.zika-grid \{[^}]*padding: 0 4px 4px 0/);
+  });
   it('stars on gold cards are ink, not gold-on-gold', () => {
     expect(css).toMatch(/\.card--gold \.zika__stars \{[^}]*color: var\(--ink\)/);
   });

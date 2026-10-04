@@ -38,7 +38,7 @@ export function builtinWords(now: number): Word[] {
   return BUILTIN.map((c) => ({
     id: builtinWordId(c.char),
     text: c.char,
-    pinyin: READING_FIXES[c.char] ?? c.pinyin,
+    pinyin: builtinReading(c),
     meaning: MEANING_FIXES[c.char] ?? c.meaning,
     level: c.level,
     rank: c.rank,
@@ -52,6 +52,8 @@ export function builtinWords(now: number): Word[] {
 
 /** The reading a P2 child meets, where the dictionary's citation reading isn't it (了 is le every day, liǎo only in 了解). */
 export const READING_FIXES: Record<string, string> = { 了: 'le' };
+/** A built-in character's reading as his lessons teach it. */
+export const builtinReading = (c: BuiltinChar): string => READING_FIXES[c.char] ?? c.pinyin;
 /** 组词 readings the source data gets wrong (包子's 子 is 轻声). */
 /** Meanings that go with a fixed reading: 了 read le is the particle, not liǎo "clear, to finish". */
 export const MEANING_FIXES: Record<string, string> = { 了: '(marks a finished action or a change)' };

@@ -19,6 +19,10 @@ describe('collection', () => {
     expect(cards.find((c) => c.char === '大')).toMatchObject({ caught: false, stars: 0, gold: false });
     expect(new Set(cards.map((c) => c.rarity))).toEqual(new Set(['common', 'rare']));
   });
+  it('shows the reading his lessons teach, not the dictionary one (了 is le, not liǎo)', () => {
+    const cards = collectionCards(BUILTIN, summarize(builtinWords(0), []));
+    expect(cards.find((c) => c.char === '了')?.pinyin).toBe('le');
+  });
   it('shows the HSK levels he is working in: every caught card, and backs up to one level past his highest', () => {
     const lv = (c: string) => BUILTIN.find((b) => b.char === c)!.level;
     const hsk4 = BUILTIN.find((b) => b.level === 4)!.char;
