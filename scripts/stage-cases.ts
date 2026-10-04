@@ -64,6 +64,37 @@ for (const size of SIZES) {
   })));
   await page.close();
 }
+// a live Truffle: smooth while idle and while reacting, back at rest after, and still while a question is up
+{
+  const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+  // a string, so the bundler's name helpers never reach the page
+  const p95 = () => page.evaluate<number>(`new Promise((done) => {
+    const t = [];
+    const tick = (now) => { t.push(now); if (t.length <= 120) requestAnimationFrame(tick); else { const d = t.slice(1).map((x, i) => x - t[i]).sort((a, b) => a - b); done(d[Math.floor(d.length * 0.95)]); } };
+    requestAnimationFrame(tick);
+  })`);
+  await page.goto(`file://${dir}/index.html?case=alive`);
+  await page.waitForTimeout(500);
+  if (!(await page.$('svg.truffle[data-alive="true"]'))) problems.push('alive: no live Truffle rendered');
+  const idle = await p95();
+  if (idle > 20) problems.push(`alive: slow frames while idle: p95 ${idle.toFixed(1)}ms over 120 frames`);
+  await page.evaluate(() => (window as unknown as { react: (k: string) => void }).react('right'));
+  const reacting = await p95();
+  if (reacting > 20) problems.push(`alive: slow frames while reacting: p95 ${reacting.toFixed(1)}ms over 120 frames`);
+  await page.waitForTimeout(1500); // REACTIONS.right: a 910 ms hop, a 1200 ms hold
+  const rest = await page.evaluate(() => document.querySelector('[data-part="rig"]')!.getAttribute('transform') ?? '');
+  if (!/^translate\(0\.00 0\.00\) translate\(160 276\) scale\(1\.0000 1\.0000\)/.test(rest)) problems.push(`alive: not back at rest after a reaction (${rest})`);
+  if (process.env.DEBUG_CASES) console.log('alive p95 idle', idle, 'reacting', reacting, 'rest', rest);
+  await page.goto(`file://${dir}/index.html?case=alive-calm`);
+  await page.waitForTimeout(300);
+  const ears = new Set<string>();
+  for (let i = 0; i < 16; i++) {
+    ears.add(await page.evaluate(() => ['ear-l', 'ear-r'].map((p) => (document.querySelector(`[data-part="${p}"]`) as SVGGElement).style.transform).join('|')));
+    await page.waitForTimeout(250);
+  }
+  if (ears.size > 1) problems.push(`alive-calm: his ears moved while a question was up (${[...ears].slice(0, 3).join(' / ')})`);
+  await page.close();
+}
 await browser.close();
 console.log(problems.length ? problems.map((p) => `FAIL ${p}`).join('\n') : 'stage cases: ok');
 process.exit(problems.length ? 1 : 0);

@@ -108,11 +108,12 @@ function probe(args: { main: string; scrollers: string }): string[] {
 
 function signature(): string {
   const s = document.querySelector('.screen');
-  const marks = ['.home', '.flash', '.usage-opts', '.intro', '.write', '.components', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.arrival', '.zika-big', '.rotate-hint'];
+  const marks = ['.home', '.usage-opts', '.intro', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.arrival', '.zika-big', '.rotate-hint'];
   const on = marks.filter((m) => s?.matches(m) || s?.querySelector(m) || document.querySelector(`${m}:not(.rotate-hint)`));
   const tone = document.querySelector('.sheet')?.className ?? '';
   const words = (s?.querySelector('.kantu__q, .langdu__step, .pet__bubble, h1, h2')?.textContent ?? '').slice(0, 14);
-  return `${on.join(',')}|${tone}|${words}`;
+  const stage = document.querySelector('[data-stage]')?.getAttribute('data-stage') ?? ''; // the lesson activity (phase A's stage), not stale class markers
+  return `${stage}|${on.join(',')}|${tone}|${words}`;
 }
 
 /** One forward tap through a lesson. Returns false when nothing could be tapped. */
