@@ -1082,3 +1082,236 @@ Each one fits one screen in all three arrangements:
    and each step's three arrangements.
 5. The other child screens.
 6. Sweep at all sizes, screenshot review, and fixes.
+
+## 19. Class-aligned practice: words in use, HSK 1–9, a worksheet importer and a fairer placement (added 2026-10-04 at the parent's request)
+
+### Why
+
+The parent shared 8 packs of his enrichment class's worksheets: Berries 百力果 P2 高华. They review the school's 小学高级华文 2A/2B textbook, lessons 1–19. Five packs are marked. His error rates:
+
+| Exercise | Wrong | What goes wrong |
+|---|---|---|
+| 词语选择 (the word that fits a sentence) | 63% (17/27) | He misses pairings printed in his own lists (保持安静, 觉得口渴, 排得整齐), confuses near-synonyms (知道/明白, 开始/开头), picks adjectives by mood, and ignores connectives (虽然…但是). |
+| 字辨 (look-alike characters) | 47% | Every miss keeps the shared part but takes the wrong radical (跟→根, 抢→苍, 漂→票, 容→室). |
+| 拼音选择 | 43% | Mostly initials and finals, not tones. He reads the phonetic part (静→qīng), and mixes j/q/x with z/c/s (群→cūn, 建→ziàn). |
+| 填写汉字 | 40% | He writes a same-sound character (新加坡→新家坡, 市区→是去). |
+| 习字 / copying | ~3% | Fine. |
+
+The parent also reports that he forgets both how to read words and what they mean.
+
+Three findings drive this section:
+- The app trains character recognition, with pinyin distractors that differ only by tone. His gaps are word meaning in context, radicals, and sounds beyond the tone.
+- About 44% of his class characters (114 of 257) aren't in the app at all. HSK 1–2 covers 56% of them, HSK 1–4 84%, and HSK 1–6 98%.
+- Placement only checks reading, so a child can "know" 595 words and still not understand them.
+
+### Rules that hold throughout
+
+- **Nothing from the Berries packs or the school textbook goes into the repo or the public site.** Their word lists, sentences and passages enter only through the parent area and stay on the iPad (IndexedDB). They are included in backups, like the rest of his data.
+- What ships with the app is:
+  - the MIT-licensed HSK 3.0 lists (elkmovie/hsk30, from Pleco);
+  - sentences written for this app;
+  - openly licensed sentences, credited in the app's credits screen. Tatoeba is CC BY 2.0 FR; each sentence is parent-approved before use.
+- Child screens still follow §13 (ink, no emoji) and §18 (one screen, fit sweep).
+- The child's name from the worksheets is never used or stored.
+
+### 1. Built-in content: HSK 3.0 levels 1–9
+
+- The build (`scripts/build-content.ts`) keeps every HSK character, not just the first 600.
+  - That's about 3,000 characters, in rank order: level 1 first, then level 2, and so on, by frequency within a level.
+  - Each character carries its HSK level (1–6, or 7 for 七—九级).
+  - The internal `LEVEL_SIZE` banding is replaced by the HSK level.
+- **Words:** the HSK word list (about 11,000 words) is bundled too, as a word dictionary. It's used for:
+  - **组词:** common words built from a character, shown as its meaning cue (惜 → 珍惜, 可惜);
+  - the importer's word-joining and spelling checks;
+  - distractors.
+- **Writing:** `writeable` comes from the HSK handwriting lists (初等/中等/高等手写字表). It is no longer an app rule.
+- **Pinyin:** in-word readings use pinyin-pro plus the existing `pinyinFixes`. 轻声 is marked (认识 rèn shi).
+- **His progress is kept.** Existing cards and words keep their ids. New characters arrive as new words.
+- **Size:** the bundled content has to stay small enough for an offline PWA. The plan measures it; a target of no more than 1.5 MB gzipped for the JSON.
+
+### 2. Words, not just characters; reading and meaning tracked separately
+
+- **School words lead the new-word queue.** These are listed words, newest list first, then HSK words by rank. School words are usually two-character words (欺负, 保持).
+- **Two kinds of memory per word.** Each word gets two review cards:
+  - **reading** (`recognise`): how it's read;
+  - **meaning** (new kind `meaning`): what it means and how it's used.
+- They are scheduled separately with FSRS, as now. A miss on one doesn't reset the other.
+- Placement can set them differently (part 7).
+- **Meaning cue, in order of preference:**
+  1. A sentence from his imported class material containing the word.
+  2. A sentence-bank sentence (part 4).
+  3. A parent-typed example.
+  4. 组词 from the HSK words.
+  - Picture cue: an ink icon where one exists (§13 icon set). Abstract words have none.
+  - Never English. The parent chose Chinese examples so he thinks in Chinese.
+
+### 3. The 30-minute lesson
+
+The default `sessionMinutes` becomes 30, and the parent can still change it. Each step's item count scales with the minutes. There is no break; the chest comes at the end as now.
+
+| # | Step | ~min | Change |
+|---|---|---|---|
+| 1 | 认一认 | 7 | Reading and meaning, for words |
+| 2 | **选一选** | 6 | New step (`choose`) |
+| 3 | 钓鱼 + 字辨 | 5 | 字辨 items added after the fishing round |
+| 4 | 写一写 | 6 | Becomes 听写 of whole words |
+| 5 | 朗读 | 6 | Imported class passages first |
+
+`StepKind` gains `choose`, with its own parent toggle like the others. A word missed in any step has its matching card brought forward. The rules:
+- A missed reading → `recognise`.
+- A missed fit in 选一选 → `meaning`.
+- A missed 字辨 → the word's `write` card. If it has none, its `recognise` card.
+
+**认一认**
+- **New word:** an intro card with the word, pinyin, Truffle reading it, the meaning cue with the word highlighted, and the picture if there is one.
+- **Reviews alternate between two question types:**
+  - **How is it read?** Four pinyin choices; the wrong ones are his traps:
+    - the phonetic component's own reading (静 → qīng);
+    - j/q/x ↔ z/c/s ↔ zh/ch/sh;
+    - close finals (ie/ia, uo/ou, in/ing, an/ang);
+    - for 轻声 words, the full-tone reading.
+    - Tone-only distractors become one option at most.
+  - **Which fits?** The meaning cue with the word blanked, and three words to choose from. They're the same kind of word (noun/verb/adjective, from the sentence bank's tags or HSK word type) where possible.
+
+**选一选 (new)**
+- About 8 items a day at 30 minutes: a sentence with a blank and four words.
+- **Sources, in order:**
+  1. imported class sentences containing a due or new school word;
+  2. the sentence bank;
+  3. approved Tatoeba sentences.
+- **Wrong choices:** hand-picked for bank sentences. For imported sentences they're chosen automatically: near words from his lists with the same length and type, plus look-alikes.
+- **After the answer,** Truffle reads the whole sentence. The pairing shows if one is known (保持 + 安静).
+- **On a miss,** the clue shows if the item carries one ("看'虽然'，后面用'但是'"). Only bank items carry clues.
+
+**钓鱼 + 字辨**
+- After the fishing round come 4 字辨 items: a school or recent word with one character missing, and 4 look-alike characters that share its phonetic or shape component.
+- After answering, the correct character's radical and its meaning show (扌 = 手的动作).
+- The radical-meaning table (`src/content/radicals.ts`) grows to cover the radicals this material needs: 足, 宀, 弓, 氵, 木, 艹, 口, 贝, 讠, 辶, 心/忄, 日, 女, 纟, 钅, 土, 火, 目 and so on.
+- Look-alike sets come from a component index built from makemeahanzi's decomposition, which the build already reads.
+
+**写一写 (听写)**
+- Truffle says a whole word; he writes each character in turn.
+- The cue shows only the word's pinyin and its meaning cue, with no character shown, so it is recall, not copying.
+- A word he wrote with a same-sound character comes back sooner. The parent marks these, as with 朗读 misreads, or 字辨 misses do it automatically.
+- Hint strokes still appear after 2 misses.
+
+**朗读**
+- Unchanged (§16), except that imported class passages come before built-in ones.
+
+### 4. The sentence bank (ships with the app)
+
+- **Written for this app:** child-level, Singapore-friendly sentences (地铁, 巴士, 小贩中心, 组屋).
+- **Coverage:** the P2 Higher Chinese vocabulary in the packs, plus any of the 2A/2B word lists the parent imports, about 250 words with 2 sentences each.
+- **Each item:** target word, sentence with a blank, 3 hand-picked wrong choices, the word's type, an optional pairing, and an optional clue.
+- **The wrong choices are always:**
+  - one near-synonym or same-topic word;
+  - one word that would fit the mood but not the frame;
+  - one look-alike or same-sound word.
+- **Placement items:** about 4 per placement band, about 120 in all.
+- **A content test checks every item:**
+  - the blank appears exactly once;
+  - the target and choices are different real words;
+  - the sentence's characters are no more than one HSK level above the target's level;
+  - no item repeats a sentence.
+- **Tatoeba (optional extra):**
+  - The parent area can fetch a filtered set of Mandarin sentences (CC BY 2.0 FR) that contain his words and use only characters at or below his level.
+  - Each sentence is shown for approval before use. Approved ones become 选一选 items with automatic wrong choices.
+  - Credited in the credits screen.
+
+### 5. Worksheet importer (parent area → "Add from a worksheet")
+
+1. **Input, either:**
+   - **Paste** text, e.g. copied with the iPad's Live Text from Camera, Photos or Files.
+   - **Add a photo.** The app shows it full size so the parent can use Live Text on it in place, then **Paste text**. This must be confirmed on a real iPad home-screen app; the fallback is selecting in Photos.
+   - There is no in-app OCR. An on-device Tesseract test on his scans produced unusable output for word tables and about 4% wrong characters in passages, while Apple's engine read the passage near-perfectly.
+2. **Tidy:**
+   - Join characters split across table cells back into words, using the HSK word dictionary plus his existing words (欺 + 负 → 欺负).
+   - Drop headings, page codes (P2-L30-高华-PG16), instructions, copyright lines and numbering.
+   - Flag anything that isn't a known word, with a suggestion where one is found. Suggestions come from same-pinyin or one-character-off dictionary words (告坼 → 告诉).
+3. **Sort:**
+   - **words** (1–4 characters, including 量词 phrases like 一阵阵);
+   - **pairings** (two words on a line or in adjacent cells: 保持 安静);
+   - **成语** (four-character words found in the 成语 sections, tagged);
+   - **sentences** (end in 。！？);
+   - **passages** (3 or more sentences together).
+   - The lesson header (第三十课) names the import when found.
+4. **Preview:** grouped by type. Each item can be unticked, edited, or moved to another group.
+5. **Add saves:**
+   - words → a school word list (the existing list mechanism);
+   - pairings and sentences → attached to their words;
+   - passages → Reading texts.
+   - Everything stays on the iPad.
+
+### 6. Placement check, redesigned
+
+**Adaptive.**
+- The 3,000 characters form 30 bands of about 100, in rank order.
+- The check starts at about HSK 2, band 7. Each visited band gets 4 mixed questions.
+- It steps up after 4/4 or 3/4, and down after 1/4 or 0/4. A 2/4 visits the band once more.
+- It stops when the boundary has been crossed twice, or after 40 questions.
+- About 10 minutes. A short reading check, 3 easy questions, opens it so a nervous start doesn't skew the result.
+
+**Five question styles, mixed, never the same style twice in a row:**
+
+| Style | Item | Checks |
+|---|---|---|
+| 读一读 | a word → its pinyin, with trap distractors | reading |
+| 听一听 | Truffle says a word → pick it from 4 look-alike words | sound to word |
+| 真的假的？ | a real word or a made-up look-alike (欺负 / 欺服) | word knowledge |
+| 补一补 | a word with one character missing → pick from 4 look-alikes | 字辨 |
+| 选一选 | a short sentence → the word that fits (placement bank) | understanding |
+
+**Two results:**
+- **Reading level:** the highest band where reading-type questions (读一读, 听一听, 补一补, 真的假的) hold.
+- **Understanding level:** the same, using 选一选.
+
+**What the result does:**
+- Words up to the understanding level get both cards seeded as known, spread over days 7–28 (§14).
+- Words between the two levels get a known `recognise` card and a **due-now `meaning` card**.
+- Words above the reading level stay new.
+- **A re-run replaces earlier placement guesses**, the rule deployed 2026-10-04: unpractised placement cards that the new result doesn't support are cleared. Practised words stay.
+- **For the parent:** the result screen shows both levels with HSK labels ("读：HSK 4 · 懂：HSK 2") and a few sample missed words.
+- **For the child:** no right/wrong during the check (§14), and the same encouraging close.
+
+### 7. Skills panel (parent area)
+
+- **Recent accuracy, last 14 days,** for: reading (认一认 reading questions), meaning (认一认 meaning questions and 选一选), 字辨, 听写 and 朗读 (time and loudness, as now).
+- **Comparison:** the class baselines from the packs, so the parent sees the trend (e.g. 选一选 against the 63% 词语选择 error rate).
+- **Top missed words** per skill, each with a "practise more" button that brings its cards forward.
+
+### 8. Checking
+
+- **Unit tests:**
+  - the importer's tidy and sort, against fixtures written to look like OCR output (not copied from Berries);
+  - distractor rules;
+  - placement's band walk and two-level result;
+  - the reading and meaning card scheduling;
+  - the sentence-bank content test.
+- **Fit sweep (§18):** gains the new screens (选一选, 字辨, 听写, the importer and the new placement styles) at all six sizes.
+- **On a real iPad:** Live Text on a photo inside the home-screen app; the 30-minute lesson's pacing.
+
+### Out of scope
+
+- In-app OCR.
+- English meanings.
+- AI-generated sentences.
+- A separate pairing-matching exercise; pairings only feed 选一选.
+- 看图说话, which is still parked.
+
+### Build order
+
+Four plans, each shippable on its own:
+
+1. **Plan 11 — content and words:**
+   - HSK 1–9 built-in content, the word dictionary, 组词 and writeable lists;
+   - the `meaning` card kind;
+   - the 30-minute default;
+   - 认一认 reading and meaning questions, with the new pinyin traps.
+2. **Plan 12 — the importer:** paste and photo with Live Text, tidy, sort, preview, and saving words, pairings, sentences and passages.
+3. **Plan 13 — practice in use:**
+   - the sentence bank (written and content-tested);
+   - the 选一选 step;
+   - 字辨 in 钓鱼 with the radical table and component index;
+   - 听写;
+   - optional Tatoeba sentences.
+4. **Plan 14 — placement and Skills:** the adaptive five-style check with two levels, and the Skills panel.
