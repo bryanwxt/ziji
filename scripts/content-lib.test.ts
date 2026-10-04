@@ -82,3 +82,14 @@ describe('HSK 1–9', () => {
     expect(buildWordDictionary(words)).toEqual([['爸爸', 1], ['珍惜', 7]]);
   });
 });
+
+describe('组词 examples a child can use', () => {
+  it('prefer short, easy words: 四 gets 四周 (周 is one level up), not the idiom 四面八方', () => {
+    const mmah = (c: string) => ({ character: c, pinyin: [], decomposition: '？', radical: c, matches: [[0]], definition: 'x' });
+    const chars = new Map([['一级汉字表', ['四', '面', '八', '方']], ['二级汉字表', ['周']]]);
+    const words = new Map([['五级词汇表', ['四周']], ['七一九级词汇表', ['四面八方']]]);
+    const out = buildBuiltin({ hskChars: chars, hskWords: words, dictionary: new Map([...'四面八方周'].map((c) => [c, mmah(c)])), pinyinOf: () => 'x' });
+    expect(out.find((c) => c.char === '四')!.examples.map((e) => e.text)).toEqual(['四周', '四面八方']);
+  });
+});
+

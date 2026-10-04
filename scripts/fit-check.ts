@@ -34,11 +34,13 @@ function probe(args: { main: string; scrollers: string }): string[] {
   if (de.scrollWidth > innerWidth + 1) out.push(`page scrolls sideways ${de.scrollWidth - innerWidth}px`);
   // a .screen clips its own overflow (height: 100dvh; overflow: hidden), so the document never scrolls: look for content past the screen's edges
   const cut = new Set<string>();
+  for (const sc of document.querySelectorAll('.screen')) if (sc.scrollTop > 0 || sc.scrollLeft > 0) out.push(`screen scrolled by ${sc.scrollTop}px (a clipped screen moved: its top is hidden)`);
+  if ((document.scrollingElement?.scrollTop ?? 0) > 0) out.push(`page scrolled by ${document.scrollingElement!.scrollTop}px`);
   const past = (el: Element) => {
     if (el.closest('[aria-hidden="true"], .sr-only, .world-taps, [hidden], .scene') || el.parentElement?.closest(args.scrollers)) return;
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height || getComputedStyle(el).visibility === 'hidden') return;
-    if (r.bottom > innerHeight + 1 || r.top < -1 || r.right > innerWidth + 1 || r.left < -1) cut.add(`content cut off: ${(el.textContent ?? el.className.toString()).trim().slice(0, 16)}`);
+    if (r.bottom > innerHeight + 1 || r.top < -1 || r.right > innerWidth + 1 || r.left < -1) { const r2 = el.getBoundingClientRect(); cut.add(`content cut off: ${(el.textContent ?? '').trim().slice(0, 16) || `<${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}">`} at ${Math.round(r2.left)},${Math.round(r2.top)}–${Math.round(r2.right)},${Math.round(r2.bottom)}`); }
   };
   const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let n = tw.nextNode(); n; n = tw.nextNode()) if ((n.textContent ?? '').trim() && n.parentElement) past(n.parentElement);

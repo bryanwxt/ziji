@@ -56,7 +56,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .screen {
   --pad-x: max(20px, env(safe-area-inset-left), env(safe-area-inset-right));
   --pad-b: max(16px, env(safe-area-inset-bottom));
-  position: relative; z-index: 1; height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; gap: 16px;
+  position: relative; z-index: 1; height: 100vh; height: 100dvh; overflow: hidden; overflow: clip; display: flex; flex-direction: column; gap: 16px;
   padding: max(16px, env(safe-area-inset-top)) var(--pad-x) var(--pad-b);
 }
 .loading { align-items: center; justify-content: center; font-size: 80px; }
@@ -994,4 +994,11 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .intro__card { padding: 10px 18px; gap: 2px; }
   .intro .speak { width: 48px; height: 48px; }
   .intro .example { font-size: 22px; gap: 8px; }
+}
+@media (max-width: 599px) {
+  /* 写一写's cue card on a phone: a 48px speak button and tighter rows leave the 田字格 its full size */
+  .write__cue { padding: 6px 12px; gap: 2px; }
+  .write__cue .speak { width: 48px; height: 48px; }
+  .write__prompt { font-size: 24px; gap: 10px; }
+  .write__blank { font-size: 24px; }
 }

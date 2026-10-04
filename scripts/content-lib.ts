@@ -100,9 +100,11 @@ export function buildBuiltin(input: BuildInput): BuiltinChar[] {
   pool.sort((a, b) => a.hsk - b.hsk || a.strokes - b.strokes || a.index - b.index);
 
   const levelOf = new Map<string, Level>(pool.map((p) => [p.char, p.hsk as Level]));
+  // 组词 a child can use: short words first, then easier (lower HSK level) words.
   const words = buildWordDictionary(input.hskWords)
-    .map(([w]) => w)
-    .filter((w) => w.length <= 4);
+    .filter(([w]) => w.length <= 4)
+    .sort((a, b) => a[0].length - b[0].length || a[1] - b[1])
+    .map(([w]) => w);
 
   return pool.map((p, rank) => {
     const level = levelOf.get(p.char)!;
@@ -110,7 +112,7 @@ export function buildBuiltin(input: BuildInput): BuiltinChar[] {
     for (const w of words) {
       if (examples.length >= MAX_EXAMPLES) break;
       if (!w.includes(p.char) || examples.some((e) => e.text === w)) continue;
-      if (![...w].every((c) => (levelOf.get(c) ?? 99) <= level)) continue;
+      if (![...w].every((c) => (levelOf.get(c) ?? 99) <= Math.max(level + 1, 2))) continue; // characters up to one level up
       examples.push({ text: w, pinyin: input.pinyinOf(w) });
     }
     return {

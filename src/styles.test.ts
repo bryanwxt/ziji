@@ -156,4 +156,7 @@ describe('adaptive layouts (spec §18)', () => {
     expect(adaptive).toMatch(/\.label-tag \{ font-size: 16px; \}/);
     expect(adaptive).toMatch(/\.hold__label \{ font-size: 16px; \}/);
   });
+  it('a screen clips with overflow: clip, so nothing (a focus, a browser scroll-into-view) can ever scroll it', () => {
+    expect(css).toMatch(/\.screen \{[^}]*overflow: hidden; overflow: clip;/); // hidden is the fallback for Safari before 16
+  });
 });
