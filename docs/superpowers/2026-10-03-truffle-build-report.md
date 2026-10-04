@@ -633,3 +633,56 @@ Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md; plan docs/superpowe
 - fit-check signature() still names .flash/.write/.components
 - placement's short fit prompt lacks data-q
 - dead CSS overridden by the stage (write cue / 朗读 script paper, intro/prompt chrome, .flash__prompt .hanzi--xl)
+
+## Stage phase B (2026-10-05): the living Truffle
+
+Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md §4; plan docs/superpowers/plans/2026-10-05-ziji-stage-b.md; branch stage-b; Native, opus final review. Suite 901/901; `npm run fit` 606 screens, 0 problems; stage cases ok (faces × costumes sheet; a live Truffle's frame work p95 ~1 ms of an 8 ms budget, back at rest after a reaction, still while calm).
+
+- Truffle is a rig: one face model (11 expressions) springing between poses, drawn from parts (rounded body, ears behind the head, lids in his fur under every outfit), no live filters.
+- One rAF loop per live Truffle (Pet), painting through the DOM; it pauses when the page is hidden or he is off screen. Previews (Wardrobe tiles, close-ups) stay static.
+- Reactions with body moves anchored at his feet (hop, big hop, flinch + head shake, pounce, nod, wiggle, purr); a new one replaces the old.
+- Idle life: breathing, blinks (some double), ear flicks, a tail swish, eyes on the child's finger; calm during a question (breathes, blinks, looks at the card).
+- Touch: stroke him and he purrs (synthesised) with drawn hearts; tap his head for 哼！, his tail for a pounce and 喵！. On Home a tap plays with him; his room is the 松露 tab.
+- Every lesson, placement and the celebration send calm and reactions per spec §4.4.
+
+### Rulings
+- Task 4: the plan's reaction tests asserted only end states (passed before the code) — added mid-reaction asserts, watched RED — cost: none
+- Task 4: RigOptions derives the face from the held expression (no target/pose options) — cost: one option re-added
+- Task 5: calm-ears test passed vacuously — added "free: he flicks an ear and blinks"; cumulative test clock — cost: none
+- Task 5: breathing scales about his feet — cost: invisible
+- Task 5: reactions start on the next frame, in frame time — cost: ≤ 1 frame
+- Task 6: Home's Truffle no longer opens the wardrobe; a tap plays with him, the room is the 松露 tab — cost: one wrapper restored
+- Task 6: head-tap shake folded into the flinch track (one reaction) — cost: none
+- Task 6: tail-tap 喵！ kept 450 ms after the pounce; test advances fake timers — cost: none
+- Task 6: test-only PointerEvent + SVG pointer props in src/test/setup.ts — cost: test-only
+- Task 6: touch-action: none on a touchable Truffle so strokes don't scroll — cost: a drag starting on him can't scroll
+- Task 7: 认一认's 1 s reaction timer removed; the rig's holdMs (1.2–2.2 s) times it; the reaction bubble stays while the answer is up — cost: one timer on the bubble
+- Task 7: two older 认一认 tests rewritten to data-expression — cost: none
+- Task 7: useRig writes data-expression at once when a reaction arrives — cost: none
+- Task 7: celebration 'excited' (watching the chest) deferred to phase D (no Truffle on that screen yet); 'pounce' on the prize Truffle — cost: no chest wiggle-watch until phase D
+- Task 7: CSS bounce dropped where a rig reaction moves him — cost: one prop
+- Task 7: REACTION_MS removed (dead) — cost: none
+- Task 7: 写一写 'hard' needs the recall pass — cost: a no-miss copy pass gets a small hop
+- Task 8: rAF probe passed as a string (esbuild __name) — cost: none
+- Task 8: fit-check signature() uses [data-stage] (phase A minor) — cost: none
+- Final (declined to judge): question bubbles stay during calm (they are the instructions) — cost: hide later
+- Final (declined to judge): Truffle remounts per item in keyed steps — cost: hoist Pet later
+- Final (declined to judge): celebration power-phase Truffle static — cost: one prop
+- Final (declined to judge): the "z z" / "?" marks are glyphs, not English — cost: two marks
+- Final (declined to judge): purr audibility on iPad speakers — parent's iPad check
+
+### Final review fixes
+- I1 grumpy face while being stroked — Pet renews the purr reaction while stroking — pet.test RED→GREEN
+- I2 reaction state leaking into a question (a "?" through every new-word quiz; mid-hop on a fast 继续) — calm onset clears the held face and eases a running move to rest in 200 ms — useRig tests RED→GREEN
+- I3 frozen ears after a onesie comes off — the part cache re-looks-up missing/detached parts — useRig test RED→GREEN
+- I4 frame check blind to the 8 ms budget — stage-cases times each frame's script + layout (sabotage-proved with 10 ms)
+
+### Deferred minors
+- a new reaction mid-move snaps him to the ground for a frame
+- 看图说话 (StoryStep) not calm while 松露问你 asks / he records
+- spec items dropped by the plan without a ruling: streak hearts + purr on streaks; new word "leans toward the card"; tail tap "looks at it"; ground shadow scaling with height; 对了！/嗯？ bubbles
+- paint() rewrites every attribute each frame; svg rect read each free frame after a pointer move
+- finger gaze target never expires (after a 写一写 drag)
+- IntersectionObserver uses entries[0], not the last entry
+- first stroke's purr may be silent on the iPad until a tap has played a sound
+- a touch bubble can carry ≤ 1.2 s into the next question (字辨, 写一写)
