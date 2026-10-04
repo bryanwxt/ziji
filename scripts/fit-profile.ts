@@ -44,7 +44,8 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
     { id: `${w.id}:recognise`, wordId: w.id, kind: 'recognise' as const, fsrs: seededKnownCard(o.now) },
     { id: `${w.id}:meaning`, wordId: w.id, kind: 'meaning' as const, fsrs: { ...seededKnownCard(o.now), due: new Date(t - 3_600_000) } },
   ]));
-  await applyPlacement(db, [...words.slice(0, 80), ...school].map((w) => w.id), o.now);
+  const placed = [...words.slice(0, 80), ...school].map((w) => w.id);
+  await applyPlacement(db, { readingIds: placed, understandingIds: placed.slice(0, 40), missed: [], reading: 0, understanding: 0 }, o.now);
   await updateSettings(db, {
     pinHash: o.pin === false ? null : 'fit-check',
     placementDone: o.placementDone ?? true,

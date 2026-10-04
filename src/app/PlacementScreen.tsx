@@ -46,7 +46,7 @@ export function PlacementScreen({ tapGuardMs = 350 }: { tapGuardMs?: number } = 
     const next = placementStep(state, bands, correct, current.id);
     setState(next);
     if (next.done) {
-      await applyPlacement(db, placementKnownIds(next, bands), now());
+      await applyPlacement(db, { readingIds: placementKnownIds(next, bands), understandingIds: [], missed: [], reading: 0, understanding: -1 }, now()); // the old check: reading only (Task 5 replaces it)
       setKnown((await loadKnowledge(db)).known);
     }
   };
