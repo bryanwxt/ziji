@@ -24,11 +24,11 @@ export async function recordRecognition(
 }
 
 export async function recordMeaning(
-  db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date,
+  db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date, source?: 'use',
 ): Promise<CardRecord> {
   const rating = toRating({ kind: 'meaning', ...outcome });
   const card = await reviewCard(db, wordId, 'meaning', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, ...outcome });
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, ...outcome, ...(source ? { source } : {}) });
   return card;
 }
 
@@ -48,9 +48,9 @@ export async function bringForward(db: AppDb, wordId: string, kind: CardKind, du
 }
 
 /** A word used in context (选一选, 用对了吗, 用一用): the day's first answer rates its meaning card; a later miss brings it forward. */
-export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date): Promise<CardRecord> {
+export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date, responseMs = 0): Promise<CardRecord> {
   const existing = await getCard(db, `${wordId}:meaning`);
-  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs: 0 }, now);
+  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs }, now, 'use'); // logged as from 选一选/用一用, so Skills counts it once
   if (!correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
   return (await getCard(db, `${wordId}:meaning`))!;
 }

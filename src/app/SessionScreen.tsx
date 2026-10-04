@@ -181,7 +181,7 @@ export function SessionScreen({ free }: { free: boolean }) {
       const item = flashItem!;
       if (!item.retry && !rec.free) {
         const outcome = { correct: r.correct, responseMs: r.responseMs };
-        const card = item.mode === 'meaning' ? await recordMeaning(db, item.wordId, outcome, now()) : await recordRecognition(db, item.wordId, outcome, now());
+        const card = r.asked === 'meaning' ? await recordMeaning(db, item.wordId, outcome, now()) : await recordRecognition(db, item.wordId, outcome, now());
         know.cardsById.set(card.id, card);
       }
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
@@ -207,10 +207,10 @@ export function SessionScreen({ free }: { free: boolean }) {
     })();
 
   /** A word used in context (选一选): rate its meaning once a day, and count the recall for 用一用 (spec §20 part 7). */
-  const onUseAnswer = async (item: UseItem, correct: boolean) => {
+  const onUseAnswer = async (item: UseItem, correct: boolean, responseMs = 0) => {
     if (!item.wordId) return; // a bank word, not one of his own: practice only
     if (!rec.free) {
-      know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, correct, now()));
+      know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, correct, now(), responseMs));
       await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct }); // every answer, for the Skills panel
     }
     if (correct) setCorrect((n) => n + 1);
@@ -316,7 +316,7 @@ export function SessionScreen({ free }: { free: boolean }) {
         />
       )}
       {step === 'choose' && state.choose && state.choose.length > 0 && (
-        <ChooseStep key="choose" items={state.choose} kid={kid} resting={resting} onAnswer={(item, c) => void onUseAnswer(item, c)} onDone={() => void finishTimedStep('choose')} />
+        <ChooseStep key="choose" items={state.choose} kid={kid} resting={resting} onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)} onDone={() => void finishTimedStep('choose')} />
       )}
       {step === 'wrapup' && state.wrapup && state.wrapup.length > 0 && (
         <WrapupStep
@@ -324,7 +324,7 @@ export function SessionScreen({ free }: { free: boolean }) {
           items={state.wrapup}
           kid={kid}
           resting={resting}
-          onAnswer={(item, c) => void onUseAnswer(item, c)}
+          onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)}
           onGiveUp={onGiveUp}
           onDone={() => void finishTimedStep('wrapup')}
           makeRetry={(item) => {

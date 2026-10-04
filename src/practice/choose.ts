@@ -46,7 +46,7 @@ export function planChoose(i: ChooseInput): UseItem[] {
   const readable = (s: string) => Array.from(s).every((ch) => !HAN.test(ch) || i.knownChars.has(ch));
   for (const b of shuffle([...SENTENCE_BANK], i.rng)) {
     if (out.length >= i.count) break;
-    if (his.has(b.word) || !readable(b.word + b.gaps[0].text + b.gaps[1].text + b.misuse)) continue;
+    if (his.has(b.word) || !readable(b.word + b.gaps.map((g) => g.text + g.wrong.join('')).join('') + b.misuse)) continue; // the wrong choices too
     const temp: Word = { id: '', text: b.word, pinyin: '', level: null, rank: null, source: 'builtin', writeable: false, paused: false, createdAt: 0 };
     add((k) => (k === 'fit' ? fitItem(temp, active, i.rng) : usageItem(b.word, null)));
   }

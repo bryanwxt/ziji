@@ -78,6 +78,7 @@ export async function deleteWord(db: AppDb, id: string): Promise<void> {
     tx.objectStore('words').delete(id),
     tx.objectStore('cards').delete(`${id}:recognise`),
     tx.objectStore('cards').delete(`${id}:write`),
+    tx.objectStore('cards').delete(`${id}:meaning`),
     tx.done,
   ]);
 }

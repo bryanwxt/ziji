@@ -102,3 +102,11 @@ describe('weekDays', () => {
     expect(weekDays([], '2026-10-04').findIndex((d) => d.today)).toBe(6);
   });
 });
+
+describe('stars (deferred minor, plan 13)', () => {
+  it('用一用 closes the lesson but is not a star of its own: one star per activity', async () => {
+    const { totalStars } = await import('./stats');
+    const s = { completedSteps: ['flashcards', 'choose', 'components', 'writing', 'speaking', 'wrapup'] } as unknown as import('../types').SessionRecord;
+    expect(totalStars([s], 0)).toBe(5);
+  });
+});

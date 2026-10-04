@@ -29,7 +29,7 @@ describe('FlashcardStep', () => {
     render(<FlashcardStep {...base} item={review} voice={false} onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
     fireEvent.click(screen.getByText('继续'));
-    expect(onDone).toHaveBeenCalledWith({ correct: true, hard: false, responseMs: expect.any(Number), elapsedMs: expect.any(Number), inContext: false });
+    expect(onDone).toHaveBeenCalledWith({ correct: true, hard: false, responseMs: expect.any(Number), elapsedMs: expect.any(Number), inContext: false, asked: 'read' });
   });
 
   it('a wrong answer reveals the right one', () => {
@@ -226,6 +226,18 @@ describe('the usage line (spec §20 part 1)', () => {
     render(<FlashcardStep {...base} word={w} pool={[w, ...pool]} item={{ wordId: 'p:9', isNew: false, retry: false }} voice={false} onDone={vi.fn()} />);
     fireEvent.click(document.querySelector<HTMLButtonElement>('.choices button')!);
     expect(document.querySelector('.usage')).toBeNull();
+    cleanup();
+  });
+});
+
+describe('what was asked (deferred minor, plan 11)', () => {
+  it('a meaning item for a word with no cue asks for its reading, and says so, so the reading card is the one rated', () => {
+    const w = makeWord('欺负', { id: 'p:9', pinyin: 'qī fu', level: null, source: 'parent' });
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} word={w} pool={[w, ...pool]} item={{ wordId: 'p:9', isNew: false, retry: false, mode: 'meaning' }} voice={false} onDone={onDone} />);
+    fireEvent.click(screen.getByRole('button', { name: 'qī fu' }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'read' }));
     cleanup();
   });
 });

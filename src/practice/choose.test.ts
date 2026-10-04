@@ -18,7 +18,7 @@ describe('planChoose (spec §19 part 3, §20 part 4)', () => {
     expect(items.every((i) => i.wordId?.startsWith('b:'))).toBe(true);
   });
   it('too few words of his own: bank words he can read fill in, unrecorded (wordId null)', () => {
-    const items = planChoose({ ...base(), words: [], cards: [], newWordIds: [], meaningDueIds: [], knownChars: new Set('今天很热这个书包大我一在妈家里做饭桌子上和'.split('')) });
+    const items = planChoose({ ...base(), words: [], cards: [], newWordIds: [], meaningDueIds: [], knownChars: new Set('今天很热这个书包大我一在妈家里做饭桌子上和跟给'.split('')) });
     expect(items.length).toBeGreaterThan(0);
     expect(items.every((i) => i.wordId === null)).toBe(true);
   });
@@ -27,5 +27,14 @@ describe('planChoose (spec §19 part 3, §20 part 4)', () => {
   });
   it('about 8 items at 30 minutes, fewer in a shorter lesson, never under 4', () => {
     expect([chooseCount(30), chooseCount(20), chooseCount(10)]).toEqual([8, 5, 4]);
+  });
+});
+
+describe('readable choices (deferred minor, plan 13)', () => {
+  it("a bank word he can read only joins if its wrong choices are readable too", () => {
+    // every character of 很's sentences and misuse, but not its wrong choices 在/和/跟/给
+    const known = new Set('今天热这个书包大我很一'.split(''));
+    const items = planChoose({ ...base(), words: [], cards: [], newWordIds: [], meaningDueIds: [], knownChars: known });
+    expect(items.map((i) => i.word)).not.toContain('很');
   });
 });

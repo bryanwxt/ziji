@@ -23,6 +23,7 @@ export interface FlashResult {
   responseMs: number;
   elapsedMs: number;
   inContext: boolean; // a meaning question on a sentence (spec §20 part 7)
+  asked: 'read' | 'meaning'; // what was really asked: a meaning item with no cue falls back to reading
 }
 
 interface Props {
@@ -111,7 +112,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const bubble = phase === 'intro' ? '新字来了！' : phase === 'quiz' ? (quiz.cue ? '哪个字对？' : quiz.listen ? '我想吃这个字！' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
-    if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence' });
+    if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : 'read' });
   };
 
   return (

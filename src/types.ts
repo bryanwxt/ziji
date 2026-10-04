@@ -71,6 +71,7 @@ export interface ReviewLog {
   correct: boolean;
   responseMs?: number;
   misses?: number;
+  source?: 'use'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use)
 }
 
 /** The parent can switch each of these on or off; 用一用 (wrapup) closes the lesson whenever 认一认 or 选一选 runs (spec §20). */

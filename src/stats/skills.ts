@@ -10,7 +10,7 @@ const LOG_SKILL: Record<CardKind, Skill> = { recognise: 'reading', meaning: 'mea
 /** Each answer as (skill, word, right?): review logs for reading, meaning and writing; the answer log for 选一选/用一用 and 字辨. */
 function outcomes(logs: ReviewLog[], answers: AnswerLog[]): { skill: Skill; wordId: string; correct: boolean }[] {
   return [
-    ...logs.map((l) => ({ skill: LOG_SKILL[l.kind], wordId: l.wordId, correct: l.correct })),
+    ...logs.filter((l) => l.source !== 'use').map((l) => ({ skill: LOG_SKILL[l.kind], wordId: l.wordId, correct: l.correct })), // a 选一选 rating is in the answer log already
     ...answers.map((a) => ({ skill: a.skill, wordId: a.wordId, correct: a.correct })),
   ];
 }

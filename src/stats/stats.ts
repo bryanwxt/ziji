@@ -47,8 +47,11 @@ export function streak(sessions: SessionRecord[], today: string): number {
   return n;
 }
 
+/** One star per finished activity; 用一用 closes the lesson but isn't a star of its own. */
+export const starsOf = (steps: readonly string[]) => steps.filter((s) => s !== 'wrapup').length;
+
 export function totalStars(sessions: SessionRecord[], bonusStars: number): number {
-  return sessions.reduce((sum, s) => sum + s.completedSteps.length, 0) + bonusStars;
+  return sessions.reduce((sum, s) => sum + starsOf(s.completedSteps), 0) + bonusStars;
 }
 
 export function minutesPerDay(sessions: SessionRecord[], today: string, days = 30): { date: string; minutes: number }[] {

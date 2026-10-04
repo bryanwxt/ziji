@@ -24,3 +24,11 @@ describe('skills (spec §19 part 7)', () => {
     expect(topMissed([log('recognise', 'x', false)], [], 'reading')).toEqual([{ wordId: 'x', misses: 1 }]);
   });
 });
+
+describe('no double counting (deferred minor, plan 14)', () => {
+  it("the Meaning row leaves out the day's first 选一选 answer (it is counted under Words in use)", () => {
+    const acc = skillAccuracy([{ ...log('meaning', 'a', true), source: 'use' as const }, log('meaning', 'b', false)], [{ at: 1, wordId: 'a', skill: 'use', correct: true }]);
+    expect(acc.meaning).toEqual({ right: 0, total: 1 });
+    expect(acc.use).toEqual({ right: 1, total: 1 });
+  });
+});

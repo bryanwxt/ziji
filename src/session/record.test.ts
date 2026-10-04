@@ -113,3 +113,13 @@ describe('words used in context (spec §20 part 4, §19 part 3)', () => {
     expect((await allCards(db))[0]!.fsrs.due).toEqual(new Date(2026, 9, 2, 12));
   });
 });
+
+describe('response time in words-in-use answers (deferred minor, plan 13)', () => {
+  it('recordUse keeps the response time, so a slow right answer can rate Hard', async () => {
+    const db = await freshDb();
+    await recordUse(db, 'b:很', true, new Date(2026, 9, 5, 10), 25_000);
+    const logs = await logsSince(db, 0);
+    expect(logs[0]!.responseMs).toBe(25_000);
+    expect(logs[0]!.source).toBe('use');
+  });
+});

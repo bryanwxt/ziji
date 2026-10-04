@@ -175,3 +175,13 @@ describe('answer log (spec §19 part 7)', () => {
     expect((await answersSince(db, 15)).map((a) => [a.wordId, a.skill, a.correct])).toEqual([['b:根', 'zibian', false]]);
   });
 });
+
+describe('deleting a word (deferred minor, plan 11)', () => {
+  it('removes its meaning card too', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('欺负', { id: 'p:1', source: 'parent' })]);
+    await putCards(db, [makeCard('p:1', 'recognise', new Date()), makeCard('p:1', 'meaning', new Date()), makeCard('p:1', 'write', new Date())]);
+    await deleteWord(db, 'p:1');
+    expect(await allCards(db)).toEqual([]);
+  });
+});

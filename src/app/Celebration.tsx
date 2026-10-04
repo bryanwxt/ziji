@@ -5,7 +5,7 @@ import { radicalMeaning } from '../content/radicals';
 import { canOpenChest, costumeById, openChest, visibleAccessory, type ChestResult } from '../fun/costumes';
 import { newTiers, powerDef, powerFamilies, powerProgress, type PowerId } from '../fun/powers';
 import { newBadges, stickerFamilies } from '../fun/stickers';
-import { totalStars } from '../stats/stats';
+import { totalStars, starsOf } from '../stats/stats';
 import { allSessions, getKid, saveKid } from '../store/repo';
 import { DEFAULT_KID, type KidState, type SessionRecord } from '../types';
 import { Chest } from '../ui/Chest';
@@ -43,7 +43,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const [chest, setChest] = useState<ChestResult | null>(null);
   const [landed, setLanded] = useState(0);
   const [powered, setPowered] = useState(false);
-  const stars = rec.free ? 0 : rec.completedSteps.length;
+  const stars = rec.free ? 0 : starsOf(rec.completedSteps);
 
   useEffect(() => {
     celebrate();
