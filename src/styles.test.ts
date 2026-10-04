@@ -7,8 +7,8 @@ const inkLayer = css.slice(css.indexOf('/* ===== Ink layer'));
 const reducedBlocks = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]);
 
 describe('ink layer contracts (paint rules jsdom cannot see)', () => {
-  it('the hold ring still fills over 1.2 s with reduced motion', () => {
-    expect(reducedBlocks.some((b) => /\.hold\.is-holding \.hold__ring circle \{[^}]*transition: stroke-dashoffset 1200ms linear !important/.test(b))).toBe(true);
+  it('the hold ring still fills over the hold time (1.2 s by default) with reduced motion', () => {
+    expect(reducedBlocks.some((b) => /\.hold\.is-holding \.hold__ring circle \{[^}]*transition: stroke-dashoffset var\(--hold-ms, 1200ms\) linear !important/.test(b))).toBe(true);
   });
   it('small text on the red celebration block gets an ink shadow', () => {
     expect(inkLayer).toMatch(/\.celebrate--night p[^{]*\{[^}]*text-shadow/);

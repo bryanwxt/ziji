@@ -292,6 +292,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .chest { background: none; border: none; padding: 0; }
 .chest svg { overflow: visible; }
 .chest:not(.is-open) svg { transform-origin: 50% 100%; animation: chest-shake 1.8s ease-in-out infinite; }
+/* a tap instead of a hold: the chest wiggles and the hold ring nudges */
+.chest-hint .chest { animation: wobble 450ms ease-in-out 2; }
+.chest-hint .hold { animation: bump 450ms ease-out; }
 @keyframes chest-shake { 0%, 70%, 100% { transform: rotate(0); } 76% { transform: rotate(-4deg); } 84% { transform: rotate(4deg); } 92% { transform: rotate(-2deg); } }
 .chest__lid { transform-box: fill-box; transform-origin: 0% 100%; transition: transform var(--dur-slow) var(--spring-bouncy); }
 .chest.is-open .chest__lid { transform: translate(-8px, -30px) rotate(-30deg); }
@@ -514,7 +517,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .hold { color: var(--ink); position: relative; width: 112px; height: 112px; border-radius: 50%; border: var(--panel-border); background: var(--surface); box-shadow: var(--panel-shadow); display: grid; place-items: center; touch-action: none; }
 .hold__ring { position: absolute; inset: -3px; transform: rotate(-90deg); pointer-events: none; }
 .hold__ring circle { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linecap: round; stroke-dasharray: 327; stroke-dashoffset: 327; transition: stroke-dashoffset 300ms ease-out; }
-.hold.is-holding .hold__ring circle { stroke-dashoffset: 0; transition: stroke-dashoffset 1200ms linear; }
+.hold.is-holding .hold__ring circle { stroke-dashoffset: 0; transition: stroke-dashoffset var(--hold-ms, 1200ms) linear; }
 .hold.is-done .hold__ring circle { stroke-dashoffset: 0; transition: none; }
 .hold__label { display: flex; flex-direction: column; align-items: center; font-weight: 900; font-size: 15px; letter-spacing: 0.12em; }
 
@@ -536,7 +539,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .celebrate--night p, .celebrate--night .label__py { text-shadow: 2px 2px 0 var(--ink); }
 .celebrate--night p { font-size: 26px; font-weight: 900; }
 @media (prefers-reduced-motion: reduce) {
-  .hold.is-holding .hold__ring circle { transition: stroke-dashoffset 1200ms linear !important; }
+  .hold.is-holding .hold__ring circle { transition: stroke-dashoffset var(--hold-ms, 1200ms) linear !important; }
 }
 
 .power-intro { font-size: 30px; font-weight: 900; margin: 0; display: flex; align-items: center; gap: 10px; }

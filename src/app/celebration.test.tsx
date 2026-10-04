@@ -51,6 +51,20 @@ describe('Celebration chest', () => {
     await waitFor(async () => expect((await getKid(app.db))?.lastChestDate).toBe('2026-10-01'));
   });
 
+  it('Truffle cheers 喵！ at the stars', async () => {
+    await setup('2026-10-02', ['flashcards']);
+    expect(document.querySelector('.pet__bubble')?.textContent).toContain('喵');
+  });
+  it('a tap on the chest (not a hold) wiggles it as a hint to hold', async () => {
+    await setup('2026-10-02', ['flashcards']);
+    fireEvent.click(screen.getByText('继续'));
+    const chest = await screen.findByRole('button', { name: '按住打开宝箱' });
+    fireEvent(chest, new Event('pointerdown', { bubbles: true }));
+    fireEvent(chest, new Event('pointerup', { bubbles: true }));
+    expect(document.querySelector('.chest-hint')).toBeTruthy();
+    fireEvent.click(document.querySelector('.chest-art')!); // the picture of the chest says the same
+    expect(document.querySelector('.chest-hint')).toBeTruthy();
+  });
   it('gives no chest for a session with no activities in it', async () => {
     await setup('2026-10-02', []);
     expect(screen.getByText('回家')).toBeTruthy();

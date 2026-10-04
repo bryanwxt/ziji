@@ -58,4 +58,37 @@ describe('HoldButton', () => {
     act(() => { vi.advanceTimersByTime(2000); });
     expect(done).not.toHaveBeenCalled();
   });
+  it('losing focus mid-hold cancels (a keyboard hold that tabs away)', () => {
+    const done = vi.fn();
+    render(<HoldButton label="按住打开" onComplete={done} />);
+    fireEvent.keyDown(btn(), { key: 'Enter' });
+    act(() => { vi.advanceTimersByTime(600); });
+    fireEvent.blur(btn());
+    expect(btn().className).not.toContain('is-holding');
+    act(() => { vi.advanceTimersByTime(2000); });
+    expect(done).not.toHaveBeenCalled();
+  });
+  it("a second finger lifting does not cancel the first finger's hold", () => {
+    const done = vi.fn();
+    render(<HoldButton label="按住打开" onComplete={done} />);
+    const ev = (type: string, pointerId: number) => fireEvent(btn(), Object.assign(new Event(type, { bubbles: true }), { pointerId }));
+    ev('pointerdown', 1);
+    act(() => { vi.advanceTimersByTime(400); });
+    ev('pointerdown', 2);
+    ev('pointerup', 2);
+    act(() => { vi.advanceTimersByTime(800); });
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+  it('the ring fills over the hold time it was given', () => {
+    render(<HoldButton label="按住打开" onComplete={vi.fn()} holdMs={2000} />);
+    expect(btn().style.getPropertyValue('--hold-ms')).toBe('2000ms');
+  });
+  it('a quick tap tells the caller (so the chest can wiggle a hint)', () => {
+    const tapped = vi.fn();
+    render(<HoldButton label="按住打开" onComplete={vi.fn()} onTooShort={tapped} />);
+    down(btn());
+    act(() => { vi.advanceTimersByTime(200); });
+    fireEvent(btn(), new Event('pointerup', { bubbles: true }));
+    expect(tapped).toHaveBeenCalledTimes(1);
+  });
 });

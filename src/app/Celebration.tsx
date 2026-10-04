@@ -43,6 +43,8 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const [chest, setChest] = useState<ChestResult | null>(null);
   const [landed, setLanded] = useState(0);
   const [powered, setPowered] = useState(false);
+  const [nudge, setNudge] = useState(0); // a tap, not a hold, on the chest: it wiggles as a hint (children tap first)
+  const hint = () => setNudge((n) => n + 1);
   const stars = rec.free ? 0 : starsOf(rec.completedSteps);
 
   useEffect(() => {
@@ -174,9 +176,9 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
                 )}
               </div>
             )}
-            <div ref={chestRef}>
-              <Chest open={!!chest} />
-              {!chest && <HoldButton label="按住打开宝箱" onComplete={() => void open()} />}
+            <div ref={chestRef} key={nudge} class={nudge && !chest ? 'chest-hint' : undefined}>
+              <div class="chest-art" onClick={chest ? undefined : hint}><Chest open={!!chest} /></div>
+              {!chest && <HoldButton label="按住打开宝箱" onComplete={() => void open()} onTooShort={hint} />}
             </div>
             {!chest && <p><Label zh="按住，打开宝箱！" /></p>}
           </>
@@ -214,6 +216,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
             kid={kid}
             mood="cheer"
             size={phase === 'badges' ? 200 : 170}
+            bubble={phase === 'stars' ? '喵！' : undefined}
             bounce
           />
         )}
