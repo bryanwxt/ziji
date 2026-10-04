@@ -9,7 +9,7 @@ import { BottomBar } from '../../ui/BottomBar';
 import { burst, flyAlong } from '../../ui/motion';
 import type { CardRecord, FlashItem, KidState, Word } from '../../types';
 import { Closeup } from '../../app/Closeup';
-import { isHardRecognition, reactionMood } from '../../fun/mood';
+import { isHardRecognition, REACTION_MS, reactionMood } from '../../fun/mood';
 import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { SpeakButton } from '../../ui/SpeakButton';
@@ -106,7 +106,16 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     return o === choice ? 'is-wrong' : 'is-dim';
   };
 
-  const reaction = phase === 'feedback' && result ? reactionMood({ correct: result.correct, hard: result.hard, combo: result.correct ? combo + 1 : 0 }) : null;
+  const reacting = phase === 'feedback' && result ? reactionMood({ correct: result.correct, hard: result.hard, combo: result.correct ? combo + 1 : 0 }) : null;
+  // a reaction is a beat (about a second), then he rests again while the answer stays up
+  const [reactionOver, setReactionOver] = useState(false);
+  useEffect(() => {
+    setReactionOver(false);
+    if (!reacting) return;
+    const t = setTimeout(() => setReactionOver(true), REACTION_MS[reacting as keyof typeof REACTION_MS] ?? 1000);
+    return () => clearTimeout(t);
+  }, [result, reacting]);
+  const reaction = reactionOver ? null : reacting;
   const mood: TruffleMood = phase === 'intro' ? 'neutral' : (reaction ?? resting);
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害', content: '呼噜～' };
   const bubble = phase === 'intro' ? '新字来了！' : phase === 'quiz' ? (quiz.cue ? '哪个字对？' : quiz.listen ? '我想吃这个字！' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;

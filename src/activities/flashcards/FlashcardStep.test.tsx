@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../../content';
 import { createEmptyCard, State } from 'ts-fsrs';
@@ -102,6 +102,19 @@ describe('Truffle reactions', () => {
     render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
     fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
     expect(mood()).toBe('side');
+  });
+  it('a reaction is short (spec: about a second), then he rests again while the answer stays up', async () => {
+    vi.useFakeTimers();
+    try {
+      render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
+      fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
+      expect(mood()).toBe('side');
+      await act(async () => { vi.advanceTimersByTime(1100); });
+      expect(mood()).toBe('sulk');
+      expect(screen.getByText('继续')).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it('shows the close-up only when allowed, and reports hard', () => {
     const onDone = vi.fn();
