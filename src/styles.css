@@ -202,9 +202,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 /* Flashcards */
-.flash { flex: 1; display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; align-items: center; }
-.flash__pet { display: flex; justify-content: center; }
-.flash__main { display: flex; flex-direction: column; align-items: center; gap: 22px; }
 .flash__prompt { display: flex; justify-content: center; align-items: center; min-height: 168px; }
 .choices { display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 16px; width: 100%; max-width: 560px; }
 .choice { position: relative; min-height: 112px; font-size: 30px; font-weight: 900; color: var(--ink); }
@@ -227,7 +224,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .intro__en, .example__en { margin: 0; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.25; color: var(--ink-soft); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .example__en { flex-basis: 100%; text-align: center; margin-top: -4px; }
 .intro__say { display: flex; align-items: center; justify-content: center; gap: 10px; max-width: 100%; }
-@media (orientation: portrait) { .flash { grid-template-columns: 1fr; } }
 
 /* Writing */
 .write { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -814,20 +810,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .lessonbar .icon-btn { width: 52px; height: 52px; }
 
 /* 认一认 and placement */
-.flash { min-height: 0; }
-.flash__pet .truffle { width: var(--pet); height: auto; }
 .flash__prompt { min-height: 0; }
 .choice { min-height: clamp(var(--tap-main), 10dvh, 112px); font-size: clamp(22px, 3.4dvh, 30px); }
 .choices--hanzi .choice { font-size: clamp(44px, 7dvh, 70px); }
 .intro__card { padding: 14px 28px; gap: 4px; max-height: 100%; overflow-y: auto; }
 .choice.is-dim { opacity: 1; color: var(--muted); border-color: var(--line-strong); box-shadow: 4px 4px 0 var(--line-strong); } /* faded, but still paper: no scenery through it */
 @media (max-width: 599px) {
-  .flash { grid-template-columns: 1fr; gap: 10px; align-content: start; }
-  .flash__pet { justify-content: flex-start; }
-  .flash__pet .pet { flex-direction: row-reverse; align-items: center; gap: 8px; }
-  .flash__pet .pet__bubble { margin-bottom: 0; font-size: 17px; }
-  .flash__pet .pet__bubble::after { left: -7px; bottom: auto; top: 50%; transform: translateY(-50%) rotate(135deg); }
-  .flash__main { gap: 12px; }
   .choices { gap: 10px; }
   .sheet { padding: 10px 12px; }
   .sheet .btn { min-width: 0; padding: 10px 22px; font-size: 22px; }
@@ -1024,8 +1012,6 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 /* 选一选 and 用对了吗 (spec §20 part 4) */
 .choices--words .choice { font-size: clamp(28px, 4.4dvh, 44px); }
-.usage-opts { display: grid; gap: 12px; width: min(100%, 640px); }
-.usage-opt.choice { font-size: clamp(22px, 3.2dvh, 32px); font-weight: 400; text-align: left; padding: 12px 18px; min-height: var(--tap-main); line-height: 1.4; }
 .pair { font-weight: 700; }
 .clue { color: var(--ink-soft); }
 
@@ -1129,3 +1115,14 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 }
 .stage__card .speak--big { width: clamp(64px, 11dvh, 136px); height: clamp(64px, 11dvh, 136px); flex: none; }
 .stage__card .speak--big svg { width: 45%; height: 45%; }
+
+.usage-opts { display: grid; gap: 12px; width: min(100%, 640px); }
+.usage-row { display: flex; align-items: center; gap: 10px; }
+.usage-row .usage-opt { flex: 1; min-width: 0; font-size: var(--sentence); font-weight: 400; text-align: left; padding: 12px 18px; min-height: var(--tap-main); line-height: 1.4; }
+.usage-row .usage-opt .label__cells { justify-content: flex-start; }
+@media (max-width: 599px) {
+  .stage__truffle .pet__bubble { font-size: 17px; }
+}
+.meaning-cue.meaning-cue--short { font-size: min(var(--q-hanzi), calc(52vw / var(--len, 2))); flex-wrap: nowrap; }
+.meaning-cue--short .label__cells { flex-wrap: nowrap; }
+.stage__card .meaning-cue { border: none; box-shadow: none; background: none; padding: 0; max-width: 100%; } /* the card is the paper: no box inside it */

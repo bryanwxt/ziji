@@ -158,7 +158,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
               {quiz.cue ? (
                 <div class="meaning-prompt">
                   {quiz.cue.kind === 'sentence' ? (
-                    <div class="meaning-cue meaning-cue--sentence" lang="zh" data-q>
+                    <div class={`meaning-cue meaning-cue--sentence${Array.from(quiz.cue.full).length <= 4 ? ' meaning-cue--short' : ''}`} lang="zh" data-q={Array.from(quiz.cue.full).length <= 4 || undefined} style={`--len:${Array.from(quiz.cue.full).length}`}>
                       <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} />
                       <SpeakButton text={phase === 'feedback' ? quiz.cue.full : `${quiz.cue.before}，，${quiz.cue.after}`} />
                     </div>

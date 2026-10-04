@@ -6,6 +6,9 @@ import { mulberry32, shuffle } from '../../lib/random';
 import { fullSentence, type UseItem } from '../../practice/useItems';
 import type { KidState } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
+import { Stage } from '../../ui/stage/Stage';
+import { Label } from '../../ui/Label';
+import { SpeakButton } from '../../ui/SpeakButton';
 import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
@@ -50,43 +53,14 @@ export function UseQuestion({ item, kid, resting, bubble, closing, onAnswer, onN
   const state = (o: string) => (!done ? '' : o === answer ? (o === choice ? 'is-eaten is-right' : 'is-answer') : o === choice ? 'is-wrong' : 'is-dim');
   const ask = item.kind === 'fit' ? '哪个词对？' : '哪句话用对了？';
   const multi = item.kind === 'fit' && item.options.some((o) => Array.from(o).length > 1);
+  // a fill-in of four characters or fewer is a word question: question-sized, not sentence-sized (spec 2026-10-04 §3)
+  const short = item.kind === 'fit' && Array.from(item.before + item.word + item.after).length <= 4;
 
   return (
-    <>
-      <div class="flash use">
-        <div class="flash__pet">
-          <Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : resting} bubble={done ? (closing ? '明天再来！' : null) : (bubble ?? ask)} size={180} bounce={done && correct} />
-        </div>
-        <div class="flash__main">
-          {item.kind === 'fit' ? (
-            <>
-              <div class="flash__prompt">
-                <div class="hanzi meaning-cue meaning-cue--sentence" lang="zh">
-                  {item.before}
-                  <span class="meaning-cue__blank" aria-label="空格">{done ? item.word : '？'}</span>
-                  {item.after}
-                </div>
-              </div>
-              <div class={`choices stagger choices--hanzi${multi ? ' choices--words' : ''}`}>
-                {item.options.map((o) => (
-                  <button key={o} type="button" class={`choice press ${state(o)}`} disabled={done} onClick={(e) => choose(o, e.currentTarget)}>
-                    {o}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div class="usage-opts stagger" lang="zh">
-              {lines.order.map((s) => (
-                <button key={s} type="button" class={`choice usage-opt hanzi press ${state(s)}`} disabled={done} onClick={(e) => choose(s, e.currentTarget)}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-      {!done ? (
+    <Stage
+      activity="use"
+      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : resting} bubble={done ? (closing ? '明天再来！' : null) : (bubble ?? ask)} size={180} bounce={done && correct} />}
+      sheet={!done ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (
         <FeedbackSheet
@@ -105,6 +79,35 @@ export function UseQuestion({ item, kid, resting, bubble, closing, onAnswer, onN
           onAction={onNext}
         />
       )}
-    </>
+    >
+      {item.kind === 'fit' ? (
+        <>
+          <div class="flash__prompt">
+            <div class={`meaning-cue meaning-cue--sentence${short ? ' meaning-cue--short' : ''}`} lang="zh" data-q={short || undefined} style={`--len:${Array.from(item.before + item.word + item.after).length}`}>
+              <Label zh={`${item.before}${done ? item.word : '＿'.repeat(Array.from(item.word).length)}${item.after}`} />
+              <SpeakButton text={done ? fullSentence(item) : `${item.before}，，${item.after}`} />
+            </div>
+          </div>
+          <div class={`choices stagger choices--hanzi${multi ? ' choices--words' : ''}`}>
+                {item.options.map((o) => (
+                  <button key={o} type="button" class={`choice press ${state(o)}`} disabled={done} onClick={(e) => choose(o, e.currentTarget)}>
+                    {o}
+                  </button>
+                ))}
+          </div>
+        </>
+      ) : (
+        <div class="usage-opts stagger" lang="zh">
+          {lines.order.map((s) => (
+            <div class="usage-row" key={s}>
+              <button type="button" class={`choice usage-opt press ${state(s)}`} disabled={done} onClick={(e) => choose(s, e.currentTarget)}>
+                <Label zh={s} />
+              </button>
+              <SpeakButton text={s} />
+            </div>
+          ))}
+        </div>
+      )}
+    </Stage>
   );
 }
