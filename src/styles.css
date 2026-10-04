@@ -1088,3 +1088,31 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .sheet__text { min-width: 0; }
 .sheet__detail { display: grid; gap: 2px; justify-items: start; }
 .sheet .btn { flex: none; }
+:root { --stage-pet: clamp(64px, 10dvh, 96px); --q-hanzi: 48px; --tile-hanzi: 40px; --sentence: 22px; }
+@media (min-width: 600px) {
+  :root { --q-hanzi: clamp(64px, 11dvh, 128px); --tile-hanzi: clamp(40px, 6dvh, 48px); --sentence: clamp(28px, 3.6dvh, 34px); }
+}
+@media (max-width: 599px) {
+  :root { --q-hanzi: clamp(48px, 9dvh, 88px); }
+}
+.stage { flex: 1; min-height: 0; display: grid; gap: clamp(8px, 1.4dvh, 14px); grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; grid-template-areas: "card" "truffle" "sheet"; }
+.stage__card {
+  grid-area: card; min-height: 0; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.6dvh, 18px);
+  padding: clamp(12px, 2dvh, 24px); background: #fffaf0; border-radius: 22px; box-shadow: 0 8px 22px rgba(43, 58, 42, 0.18);
+}
+.stage__truffle { grid-area: truffle; min-height: 0; display: flex; align-items: flex-end; justify-content: flex-start; }
+.stage__truffle .pet { flex-direction: row-reverse; align-items: center; gap: 8px; }
+.stage__truffle .truffle { width: var(--stage-pet); height: auto; }
+.stage__truffle .pet__bubble { margin-bottom: 0; max-width: calc(100vw - var(--stage-pet) - 3 * var(--pad-x, 20px)); }
+.stage__sheet { grid-area: sheet; min-width: 0; }
+.stage__sheet .sheet { position: static; margin: 0; }
+@media (orientation: portrait) and (min-width: 600px) {
+  :root { --stage-pet: clamp(110px, 13dvh, 150px); }
+}
+@media (orientation: landscape) and (min-height: 600px) {
+  :root { --stage-pet: clamp(150px, 24dvh, 210px); }
+  .stage { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "truffle card" "sheet sheet"; column-gap: clamp(16px, 3vw, 40px); }
+  .stage__truffle { justify-content: center; padding-bottom: 8px; }
+  .stage__truffle .pet { flex-direction: column; } /* his bubble above him */
+}

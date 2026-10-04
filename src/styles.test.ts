@@ -211,4 +211,14 @@ describe('adaptive layouts (spec §18)', () => {
     expect(css).toMatch(/\.sheet \.btn \{[^}]*flex: none/);
     expect(css).not.toMatch(/\.bottombar/);
   });
+  it('the stage: one grid, card / Truffle / sheet regions, a sideways layout on a landscape iPad (spec 2026-10-04 §3)', () => {
+    expect(css).toMatch(/\.stage \{[^}]*display: grid;[^}]*grid-template-areas: "card" "truffle" "sheet"/);
+    expect(css).toMatch(/@media \(orientation: landscape\) and \(min-height: 600px\) \{[^@]*\.stage \{[^}]*grid-template-areas: "truffle card" "sheet sheet"/);
+    expect(css).toMatch(/\.stage__card \{[^}]*min-height: 0;[^}]*overflow: hidden/);
+    expect(css).toMatch(/\.stage__truffle \.pet__bubble \{[^}]*max-width:/); // review focus 3
+  });
+  it('question hanzi ≥ 64px on an iPad and ≥ 48px on a phone; tiles 40–48px; sentences ≥ 28px on an iPad (spec §3)', () => {
+    expect(css).toMatch(/:root \{[^}]*--q-hanzi: 48px;[^}]*--tile-hanzi: 40px;[^}]*--sentence: 22px;/);
+    expect(css).toMatch(/@media \(min-width: 600px\) \{\s*:root \{ --q-hanzi: clamp\(64px, [^)]*\); --tile-hanzi: clamp\(40px, [^)]*, 48px\); --sentence: clamp\(28px, [^)]*\); \}/);
+  });
 });

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { FeedbackSheet } from './FeedbackSheet';
+import { Stage } from './Stage';
 
 describe('FeedbackSheet (spec 2026-10-04 §3)', () => {
   it('neutral: only the action button, no message', () => {
@@ -30,5 +31,15 @@ describe('FeedbackSheet (spec 2026-10-04 §3)', () => {
   it("an optional icon sits after the label (placement's 不知道)", () => {
     render(<FeedbackSheet actionLabel="不知道" actionIcon={<i class="probe" />} onAction={vi.fn()} />);
     expect(screen.getByRole('button').querySelector('.probe')).toBeTruthy();
+  });
+});
+
+describe('Stage (spec 2026-10-04 §3)', () => {
+  it('puts Truffle, the card and the sheet in their own regions, marked by activity', () => {
+    render(<Stage activity="flash" truffle={<i class="t" />} sheet={<i class="s" />}><i class="c" /></Stage>);
+    const stage = document.querySelector('.stage.stage--flash[data-stage="flash"]')!;
+    expect(stage.querySelector(':scope > .stage__truffle > .t')).toBeTruthy();
+    expect(stage.querySelector(':scope > section.stage__card > .c')).toBeTruthy();
+    expect(stage.querySelector(':scope > .stage__sheet > .s')).toBeTruthy();
   });
 });
