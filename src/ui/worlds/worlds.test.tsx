@@ -5,8 +5,8 @@ import { SCENES, timeLayers } from './scenes';
 import { WorldScene } from './WorldScene';
 
 describe('world scenes', () => {
-  it('every world has ink-outlined art with no gradients or filters', () => {
-    for (const w of WORLDS) {
+  it('every world still in ink art has ink outlines and no gradients or filters (the yard is storybook paper: yard.test.ts)', () => {
+    for (const w of WORLDS.filter((x) => x.id !== 'yard')) {
       const s = SCENES[w.id];
       expect(s.length).toBeGreaterThan(400);
       expect(s).toContain('#2a2630');

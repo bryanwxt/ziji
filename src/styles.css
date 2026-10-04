@@ -1112,3 +1112,4 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 .stage--placement .stage__card { justify-content: center; gap: clamp(10px, 2dvh, 20px); }
 .stage--placement .placement__prompt { border: none; box-shadow: none; background: none; } /* the card is the paper; the box keeps its fixed size */
+.stage .intro__card { border: none; box-shadow: none; background: none; } /* the card is the paper */
