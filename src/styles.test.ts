@@ -11,8 +11,16 @@ describe('ink layer contracts (paint rules jsdom cannot see)', () => {
     expect(reducedBlocks.some((b) => /\.hold\.is-holding \.hold__ring circle \{[^}]*transition: stroke-dashoffset var\(--hold-ms, 1200ms\) linear !important/.test(b))).toBe(true);
   });
   it('small text on the red celebration block gets an ink shadow', () => {
-    expect(inkLayer).toMatch(/\.celebrate--night p[^{]*\{[^}]*text-shadow/);
-    expect(inkLayer).toMatch(/\.celebrate--night \.label__py[^{]*\{[^}]*text-shadow|\.celebrate--night p, \.celebrate--night \.label__py/);
+    expect(inkLayer).toMatch(/\.celebrate--night > p[^{]*\{[^}]*text-shadow/);
+    expect(inkLayer).toMatch(/\.celebrate--night > h1 \.label__py[^{]*\{[^}]*text-shadow/);
+  });
+  it("the celebration's cream text and ink shadow stay on its own headings, not Truffle's bubble or the hold button", () => {
+    // a colour or shadow on the whole block leaks into nested things: cream 喵！ on the white bubble, a smeared 按住
+    expect(css).not.toMatch(/\.celebrate--night \{[^}]*color:/);
+    expect(css).not.toMatch(/\.celebrate--night \.label__py[^{]*\{[^}]*text-shadow/);
+    expect(css).not.toMatch(/\.celebrate--night p[ ,{]/); // only its own paragraphs (> p), not any p inside
+    expect(inkLayer).toMatch(/\.celebrate--night > h1, \.celebrate--night > p[^{]*\{[^}]*color: var\(--paper\)/);
+    expect(inkLayer).toMatch(/\.celebrate--night \.pet__bubble, \.celebrate--night \.hold \{[^}]*color: var\(--ink\)[^}]*text-shadow: none/);
   });
   it('keeps the highlights the restyle overrode: reached goal, radical in the intro, emoji picker', () => {
     expect(inkLayer).toMatch(/\.goal--reached \{[^}]*--green-soft/);

@@ -287,7 +287,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Celebration */
 .celebrate { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; text-align: center; }
 .celebrate h1 { font-size: 56px; margin: 0; }
-.celebrate--night { color: #fff; }
 .celebrate--night .label__py { opacity: 0.85; }
 .stars { font-size: 72px; display: flex; gap: 10px; min-height: 86px; }
 .chest { background: none; border: none; padding: 0; }
@@ -498,8 +497,10 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .wotd__py { font-style: italic; font-weight: 800; }
 
 /* Celebration on red */
-.celebrate--night { color: var(--paper); }
-.celebrate--night h1 { text-shadow: 4px 4px 0 var(--ink); }
+/* cream text on its own headings only: a colour on the whole block leaked into Truffle's bubble and the hold button */
+.celebrate--night > h1, .celebrate--night > p, .celebrate--night .prize__costume { color: var(--paper); }
+.celebrate--night > h1 { text-shadow: 4px 4px 0 var(--ink); }
+.celebrate--night .pet__bubble, .celebrate--night .hold { color: var(--ink); text-shadow: none; }
 
 /* Hold button */
 .hold { color: var(--ink); position: relative; width: 112px; height: 112px; border-radius: 50%; border: var(--panel-border); background: var(--surface); box-shadow: var(--panel-shadow); display: grid; place-items: center; touch-action: none; }
@@ -525,8 +526,8 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .part--radical { color: var(--green-ink); text-decoration: underline 3px var(--green); text-underline-offset: 6px; }
 .swatch { display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--surface); border: 2.5px solid var(--line-strong); }
 .swatch.is-on { background: var(--green-soft); border: var(--panel-border); box-shadow: 3px 3px 0 var(--ink); }
-.celebrate--night p, .celebrate--night .label__py { text-shadow: 2px 2px 0 var(--ink); }
-.celebrate--night p { font-size: 26px; font-weight: 900; }
+.celebrate--night > p, .celebrate--night > h1 .label__py { text-shadow: 2px 2px 0 var(--ink); }
+.celebrate--night > p { font-size: 26px; font-weight: 900; }
 @media (prefers-reduced-motion: reduce) {
   .hold.is-holding .hold__ring circle { transition: stroke-dashoffset var(--hold-ms, 1200ms) linear !important; }
 }
