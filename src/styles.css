@@ -542,6 +542,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .zika.card--rare { box-shadow: 4px 4px 0 var(--ink), inset 0 0 0 3px #bfe0ff; }
 .zika.card--gold { background: linear-gradient(135deg, #fff1c9, #ffd56a 55%, #fff1c9); }
 .zika.card--back { background: repeating-linear-gradient(45deg, var(--line) 0 6px, var(--surface) 6px 12px); font-size: 34px; color: var(--muted); box-shadow: 4px 4px 0 var(--line-strong); border-color: var(--line-strong); }
+.zika.card--back.is-nudged { animation: wobble 400ms ease-in-out; }
 .zika-big { position: fixed; inset: 0; z-index: 40; background: rgba(42, 38, 48, 0.4); display: grid; place-items: center; }
 .zika--big { width: min(80vw, 360px); min-height: 420px; gap: 12px; padding: 24px; animation: pop-in var(--dur-base) var(--spring-bouncy); }
 .zika--big .zika__char { font-size: 150px; }

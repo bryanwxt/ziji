@@ -105,6 +105,35 @@ describe('CollectionScreen', () => {
     expect(screen.getByRole('button', { name: '河' })).toBeTruthy();
     expect(document.querySelectorAll('.zika:not(.card--back)')).toHaveLength(1);
   });
+  it('face-down cards are not hundreds of disabled buttons: one line says how many are left, and a tap wiggles the card', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    await putCards(app.db, [makeCard('b:河', 'recognise', new Date(2026, 9, 20), true)]);
+    renderWithApp(<CollectionScreen />, app);
+    await screen.findByRole('button', { name: '河' });
+    expect(screen.queryAllByRole('button', { name: '未收集' })).toHaveLength(0);
+    const backs = document.querySelectorAll('.zika.card--back');
+    expect(backs.length).toBeGreaterThan(10);
+    expect(backs[0]!.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByText(`还有 ${backs.length} 张没收集`)).toBeTruthy();
+    fireEvent.click(backs[0]!);
+    expect(backs[0]!.classList.contains('is-nudged')).toBe(true);
+  });
+  it('the card dialog is modal: focus goes to 关闭, Escape closes it, and focus returns to the card', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    await putCards(app.db, [makeCard('b:河', 'recognise', new Date(2026, 9, 20), true)]);
+    renderWithApp(<CollectionScreen />, app);
+    const card = await screen.findByRole('button', { name: '河' });
+    card.focus();
+    fireEvent.click(card);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    await waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('关闭'));
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(card));
+  });
   it('puts the 金卡 filter right after 全部 so it is on screen', async () => {
     const app = await makeAppData();
     renderWithApp(<CollectionScreen />, app);

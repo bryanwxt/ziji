@@ -1,5 +1,5 @@
 import { X } from 'lucide-preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { speak } from '../audio/speech';
 import { BUILTIN } from '../content';
 import { collectionCards, type CharCard } from '../fun/collection';
@@ -26,10 +26,16 @@ export function CollectionScreen() {
   const [know, setKnow] = useState<Knowledge | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [shown, setShown] = useState<CharCard | null>(null);
+  const opener = useRef<HTMLElement | null>(null); // the card that opened the dialog gets focus back
+  const closeBtn = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     void loadKnowledge(db).then(setKnow);
   }, []);
+  useEffect(() => {
+    if (shown) closeBtn.current?.focus();
+    else opener.current?.focus();
+  }, [shown]);
   const cards = useMemo(() => (know ? collectionCards(BUILTIN, know) : []), [know]);
 
   if (!know) return <div class="screen loading"><InkIcon name="paw" size={88} label="加载中" /></div>;
@@ -38,9 +44,16 @@ export function CollectionScreen() {
   const visible = cards.filter((c) => (filter === 'all' ? true : filter === 'gold' ? c.gold : c.power === filter));
   const badges = [...new Set([...(kid?.badgesSeen ?? []), ...completedBadges(families, know.knownChars)])];
   const myWords = know.words.filter((w) => w.source === 'parent' && know.knownWordIds.has(w.id));
-  const show = (c: CharCard) => {
+  const show = (c: CharCard, from: HTMLElement) => {
+    opener.current = from;
     setShown(c);
     speak(c.char);
+  };
+  const backs = visible.filter((c) => !c.caught).length;
+  const nudge = (el: HTMLElement) => {
+    el.classList.remove('is-nudged');
+    void el.offsetWidth; // restart the wiggle
+    el.classList.add('is-nudged');
   };
 
   return (
@@ -81,10 +94,11 @@ export function CollectionScreen() {
             </div>
           </div>
         )}
+        {filter !== 'animals' && backs > 0 && <p class="sr-only"><Label zh={`还有 ${backs} 张没收集`} /></p>}
         <div class="zika-grid" hidden={filter === 'animals'}>
           {visible.map((c) =>
             c.caught ? (
-              <button key={c.char} type="button" class={`zika${c.gold ? ' card--gold' : ''}${c.rarity === 'rare' ? ' card--rare' : ''}`} aria-label={c.char} onClick={() => show(c)}>
+              <button key={c.char} type="button" class={`zika${c.gold ? ' card--gold' : ''}${c.rarity === 'rare' ? ' card--rare' : ''}`} aria-label={c.char} onClick={(e) => show(c, e.currentTarget)}>
                 <span class="zika__py">{c.pinyin}</span>
                 <span class="zika__char hanzi">{c.char}</span>
                 <span class="zika__foot">
@@ -93,9 +107,10 @@ export function CollectionScreen() {
                 </span>
               </button>
             ) : (
-              <button key={c.char} type="button" class="zika card--back" aria-label="未收集" disabled>
+              // face down: not a button (hundreds of disabled buttons are noise for VoiceOver); a tap wiggles it
+              <span key={c.char} class="zika card--back" aria-hidden="true" onClick={(e) => nudge(e.currentTarget)}>
                 {c.power ? <InkIcon name={powerDef(c.power)!.mark} size={30} /> : '？'}
-              </button>
+              </span>
             ),
           )}
         </div>
@@ -118,9 +133,9 @@ export function CollectionScreen() {
         )}
       </div>
       {shown && (
-        <div class="zika-big" role="dialog" aria-label={`字卡：${shown.char}`} onClick={() => setShown(null)}>
+        <div class="zika-big" role="dialog" aria-modal="true" aria-label={`字卡：${shown.char}`} onClick={() => setShown(null)} onKeyDown={(e) => { if (e.key === 'Escape') setShown(null); }}>
           <div class={`zika zika--big${shown.gold ? ' card--gold' : ''}`} onClick={(e) => e.stopPropagation()}>
-            <button type="button" class="icon-btn zika-big__close" aria-label="关闭" onClick={() => setShown(null)}><X size={30} strokeWidth={3} /></button>
+            <button ref={closeBtn} type="button" class="icon-btn zika-big__close" aria-label="关闭" onClick={() => setShown(null)}><X size={30} strokeWidth={3} /></button>
             <span class="zika__py">{shown.pinyin}</span>
             <span class="zika__char hanzi">{shown.char}</span>
             <SpeakButton text={shown.char} />
