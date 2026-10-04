@@ -354,3 +354,49 @@ Every child screen fits one screen, with no page scrolling, on an upright iPhone
 - a long parent-written self-introduction has no overflow guard on an SE
 - with only 朗读 enabled and nothing to read, Home shows a lone chest with no 开始 (rare settings)
 - small leftovers — unused --stops, an orphaned JSDoc in scenes.ts, the rotate test checks SetupPin not a session, evening lanterns across the iPad-landscape progress bar
+
+## Plan 11 — HSK 1–9 content and meaning practice (spec §19 parts 1–3)
+
+Built-in content is every HSK 3.0 character (3,000; levels 1–6 and 七—九级) plus 9,424 HSK words for 组词. Every word has separate reading and meaning memory. The lesson defaults to 30 minutes (an install on the old 20-minute default moves once). 认一认 asks how a word is read, with his real worksheet traps as wrong choices, and which character fits its 组词 word, with same-sound choices. 531 tests; fit sweep 281 screens, 0 problems.
+
+### Rulings
+- Task 1: Ruling: HSK_WORDS holds 9,424 words (two characters or more), not the plan's "~11,000" (which counted single-character words) — the index test asserts > 9,000 — cost if wrong: none
+- Task 1: Ruling: placement's first rechecks spread from day 7 at most 30 a day (MAX_FIRST_CHECKS_PER_DAY), still days 7–28 for small placements — with up to 3,000 placed words, 7–28 meant >100 reviews a day and the 40-review backlog pause would stop new words for weeks — cost if wrong: big placements take longer to recheck
+- Task 1: Ruling: power families count HSK 1–2 characters only — HSK 1–9 families would make tier 2/3 five times slower than tuned; earned tiers are unchanged — cost if wrong: rare characters never count toward powers
+- Task 1: Ruling: 字卡 shows every caught card plus backs up to one HSK level past his highest caught level (at least HSK 1–2) — rendering 3,000 cards (2,400 backs) would be slow and discouraging — cost if wrong: the count reads e.g. "80 / 900" not "80 / 3000"
+- Task 1: Ruling: updated tests that pinned the 600-character content (index 600→3000, placement bands of 60→per HSK level incl. setup's "认识 60"→300, check-content level counts 200→300/1200 and 澡→惜 as the out-of-level example, collection and home 1/N counts) — intent unchanged — cost if wrong: none
+- Task 1: Ruling: only the HSK level-1 section is required by buildBuiltin; missing higher sections are skipped — the existing content-lib fixtures supply levels 1–2 only (the file failed to load, hidden by a passing 'Tests' count) — cost if wrong: a truncated download would build fewer levels silently (the build prints per-level counts)
+- Task 2: Ruling: added applySettingsMigration(db), which reads the raw stored settings — getSettings merges today's defaults (lessonVersion 2), so an existing 20-minute install would never have migrated; bootstrap calls it after seeding — cost if wrong: none
+- Task 2: Ruling: toRating branches on 'write' first (TS would not narrow the 'recognise' | 'meaning' member) — same ratings — cost if wrong: none
+- Task 2: Ruling: updated repo.test's default sessionMinutes 20→30 and plan.test's 20-minute time box to 7/30 — intent unchanged — cost if wrong: none
+- Task 3: Ruling: tone helpers (MARKS, syllableTone, toneless, withTone) moved to tones.ts and re-exported from distractors.ts — pinyinTraps ↔ distractors was a circular import (UNMARK used before initialisation) — cost if wrong: none
+- Task 3: Ruling: the top trap (the sounding part's reading) always appears; the second trap is random — the plan's "2 random traps" sometimes dropped qīng for 静, his most common error type — cost if wrong: less variety in the first wrong choice
+- Task 3: Ruling: radical side forms (扌氵亻讠…) are never offered as readings — sample output showed 捡/摊 → shǒu (扌) and 建 → yǐn (廴); skipping the dictionary radical instead broke 静 (its radical is 青, his real trap) — test '捡 never offers shǒu' — cost if wrong: a rare real reading-from-a-side-form trap is lost
+- Task 4: Ruling: the new-word intro card shows its first two 组词 (all of them still feed meaning questions), and on phones its speak buttons are 48px with tighter rows — HSK 1–9 gives more examples (他 → 他们, 他人), which pushed the SE intro card under 我记住了 (fit sweep overlap) — cost if wrong: a third example only appears in practice
+- Task 4: Ruling: same-sound choices come from around the word's own level first (≤ level + 1), then any level — the sweep showed 溢 (HSK 7–9) as a choice for 一半 — test 'draws the same-sound choices from around the word's own HSK level' RED→GREEN — cost if wrong: fewer same-sound options for rare sounds
+- Final-prep: Ruling: .screen uses overflow: clip (overflow: hidden as the fallback) — the full sweep found 松露's room scrolled 117px by a scroll-into-view (Playwright clicking mid-animation); a clipped screen must never be scrollable by focus or the browser either — contract test 'a screen clips with overflow: clip' RED→GREEN; the sweep now also reports any scrolled screen — cost if wrong: Safari < 16 falls back to hidden
+- Final-prep: Ruling: 组词 examples allow characters up to one level up and prefer short, then easier words — 四's only example had become the HSK 7–9 idiom 四面八方 (all its characters are HSK 1), which pushed the SE 写一写 grid under 完成 — test 'prefer short, easy words' RED→GREEN — cost if wrong: a few examples use one-level-harder characters
+- Final-prep: Ruling: 写一写's cue card is compact on phones (48px speak button, tighter rows), keeping the 田字格 full size — cost if wrong: none
+- Final-prep: Ruling: the sweep's "content cut off" message names the element and its box (it printed an empty name for Truffle's svg) — cost if wrong: none
+- Final: Ruling: same-sound choices can still form a rare real word outside the HSK list (读数 for 读__) — no offline word list beyond HSK's 9,424; the glue filter removes most cases — cost if wrong: an occasional right answer marked wrong
+- Final: Ruling: declined-to-judge items stand — placement stays one band per HSK level until plan 14; the lesson runs under 30 minutes until 选一选/字辨 arrive (plans 12–13); spec's "same kind of word" choices are plan 13's sentence bank — cost if wrong: none for this plan
+- Final: Ruling: pre-existing issues noted, not fixed here — seedBuiltinWords overwrites the parent's 写 (writeable) checkbox every launch; 了 stored as liǎo; ranks within a level are by stroke count, not frequency — each worth its own small fix — cost if wrong: they persist until fixed
+
+### Fixed in the final review
+- traps offering glyphs (⺊ ⺍) and stroke names (piě, jiōng) as pinyin — 'across every built-in character, traps are real pinyin syllables…' RED (儿 → piě) → GREEN, suite flashcards 40/40
+- real words marked wrong in meaning questions (不懂 for 不__, 别让…) and cues that gave the answer away or used another reading (妈妈, 班长 for 长 cháng) — meaningCue now needs the character once, the same reading, and no single glue character as the rest — 'meaningCue picks a fair 组词' (3 tests) RED→GREEN, suite 526/526 (reviewer Minor 1 regraded Important: same selection rule, trivial items waste his practice)
+- meaning reviews crowding out reading reviews and new words — queue: one meaning per two reading reviews, new words next, leftover meaning after — 'meaning reviews take at most one slot in three…' RED→GREEN, suite 527/527
+- sticker badges becoming near-impossible (families grew 18→159 with HSK 1–9) — families count HSK 1–2 only, like powers — 'families count HSK 1–2 characters only…' RED→GREEN, suite 528/528
+- the migration overriding a shorter lesson the parent chose (reviewer Minor 4 regraded Important: it silently changes a parent's setting) — only 20 → 30 — 'keeps a shorter lesson the parent chose' RED→GREEN, suite 529/529
+- a four-character 组词 cue (四面八方 for 八) wrapping and pushing the choices off portrait screens — the cue sizes to its length on one line — tests 'a long 组词 stays on one line' + 'the meaning cue never wraps' RED→GREEN, suite 531/531
+
+### Deferred minors
+- a meaning item whose word has no cue falls back to a reading question but records on the meaning card (FlashResult should carry the mode asked)
+- meaning answers make a placed word "practised", so a placement re-run keeps its guessed reading card
+- every launch rewrites all 3,000 built-in word records (measure on the iPad; gate on a content version)
+- deleting a parent word leaves its meaning card behind
+- the parent's weekly accuracy, trouble words and due-tomorrow mix meaning with reading
+- wordsWithChar is built at startup but unused until plan 12
+- 写一写 still shows a short English gloss (plan 13's 听写 replaces the cue); the commit message overstated "no English on child screens"
+- a 轻声 trap can be a real alternative reading for multi-character words (东西 dōng xī)
+- tidy-ups — the module-level skipped array in content-lib, a duplicated getBoundingClientRect in fit-check, two phone media blocks at the end of styles.css
