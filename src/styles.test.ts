@@ -176,4 +176,10 @@ describe('adaptive layouts (spec §18)', () => {
     expect(css).toMatch(/\.home__pet \.truffle \{ pointer-events: auto; \}/);
     expect(css).not.toMatch(/\.home__pet \.pet__bubble \{ pointer-events: auto/);
   });
+  it('no emoji-era glyph sizing around ink icons (a 130px line box under the prize, letter-spaced stars)', () => {
+    expect(css).not.toMatch(/\.prize \{[^}]*font-size/);
+    expect(css).not.toMatch(/\.loading \{[^}]*font-size/);
+    expect(css).not.toMatch(/\.fishtile__badge \{[^}]*font-size/);
+    expect(css).not.toMatch(/\.zika__stars \{[^}]*letter-spacing/);
+  });
 });

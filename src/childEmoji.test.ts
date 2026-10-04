@@ -11,13 +11,13 @@ const EMOJI = /\p{Extended_Pictographic}/u;
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {
     const p = join(dir, f);
-    return statSync(p).isDirectory() ? files(p) : /\.tsx?$/.test(f) ? [p] : [];
+    return statSync(p).isDirectory() ? files(p) : /\.(tsx?|json|css)$/.test(f) ? [p] : []; // content JSON and styles too (a CSS content: '⭐' shows on screen)
   });
 }
 
 describe('child screens use ink art, not emoji', () => {
   it('no emoji in child-facing source', () => {
-    const offenders = files(root)
+    const offenders = [...files(root), join(root, '../index.html')]
       .map((p) => relative(root, p))
       .filter((r) => !EXCLUDED.some((x) => x.test(r)))
       .flatMap((r) => readFileSync(join(root, r), 'utf8').split('\n').map((line, i) => [r, i + 1, line] as const))

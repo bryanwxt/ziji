@@ -59,7 +59,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   position: relative; z-index: 1; height: 100vh; height: 100dvh; overflow: hidden; overflow: clip; display: flex; flex-direction: column; gap: 16px;
   padding: max(16px, env(safe-area-inset-top)) var(--pad-x) var(--pad-b);
 }
-.loading { align-items: center; justify-content: center; font-size: 80px; }
+.loading { align-items: center; justify-content: center; }
 .topbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .spacer { flex: 1; }
 .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
@@ -253,7 +253,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   animation: rise-in var(--dur-slow) var(--spring) backwards, bob 3s ease-in-out infinite;
 }
 .fishtile__char { font-size: 58px; color: var(--ink); }
-.fishtile__badge { position: absolute; right: 8px; bottom: 6px; font-size: 22px; }
+.fishtile__badge { position: absolute; right: 8px; bottom: 6px; display: flex; }
 .fishtile.is-caught { background: var(--blue); border-color: var(--blue); box-shadow: 0 var(--edge) 0 var(--blue-edge); animation: none; transform: translateY(-6px); }
 .fishtile.is-caught .fishtile__char { color: #fff; }
 .fishtile.is-right { background: var(--green-soft); border-color: var(--green); box-shadow: 0 var(--edge) 0 var(--green); animation: none; }
@@ -297,7 +297,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .chest.is-open .chest__lid { transform: translate(-8px, -30px) rotate(-30deg); }
 .chest__glow { opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 .chest.is-open .chest__glow { opacity: 1; }
-.prize { font-size: 130px; animation: prize-rise var(--dur-slow) var(--spring-bouncy) backwards; }
+.prize { animation: prize-rise var(--dur-slow) var(--spring-bouncy) backwards; }
 @keyframes prize-rise { from { transform: translateY(70px) scale(0.3); opacity: 0; } }
 
 /* Home */
@@ -538,7 +538,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .zika__char { font-size: 52px; line-height: 1.05; }
 .zika__py { font-size: 15px; font-style: italic; color: var(--ink-soft); }
 .zika__foot { display: flex; gap: 6px; font-size: 14px; }
-.zika__stars { color: #d9a400; letter-spacing: 1px; }
+.zika__stars { color: #d9a400; display: inline-flex; gap: 1px; }
 .zika.card--rare { box-shadow: 4px 4px 0 var(--ink), inset 0 0 0 3px #bfe0ff; }
 .zika.card--gold { background: linear-gradient(135deg, #fff1c9, #ffd56a 55%, #fff1c9); }
 .zika.card--back { background: repeating-linear-gradient(45deg, var(--line) 0 6px, var(--surface) 6px 12px); font-size: 34px; color: var(--muted); box-shadow: 4px 4px 0 var(--line-strong); border-color: var(--line-strong); }
@@ -862,7 +862,6 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .celebrate { gap: clamp(10px, 2dvh, 22px); min-height: 0; }
 .celebrate h1 { font-size: clamp(36px, 6dvh, 56px); }
 .stars { font-size: clamp(48px, 8dvh, 72px); min-height: 0; }
-.prize { font-size: clamp(84px, 13dvh, 130px); }
 .chest svg { width: clamp(150px, 26dvh, 240px); height: auto; }
 .components { min-height: 0; justify-content: flex-start; gap: clamp(6px, 1.4dvh, 14px); }
 .components > .pet .truffle { width: var(--pet); height: auto; }
@@ -969,6 +968,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .hold__label { font-size: 16px; }
 /* the celebration's prize screens on a phone: the headline on one line, a smaller dressed-up Truffle and chest, 继续 on screen */
 .celebrate .truffle { width: min(calc(var(--pet) * 1.6), 22dvh); height: auto; }
+.prize__stars { display: inline-flex; gap: 4px; }
 .prize__stars svg { width: clamp(44px, 8dvh, 72px); height: auto; }
 @media (max-width: 599px) {
   .celebrate h1 { font-size: clamp(26px, 4.4dvh, 40px); }
