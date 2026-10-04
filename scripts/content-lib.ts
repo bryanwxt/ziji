@@ -72,10 +72,8 @@ export function buildWordDictionary(hskWords: Map<string, string[]>): [string, n
   return [...out];
 }
 
-/** Characters with no Make Me a Hanzi entry are skipped (and counted here) rather than failing the build. */
-export const skipped: string[] = [];
-
-export function buildBuiltin(input: BuildInput): BuiltinChar[] {
+/** Characters with no Make Me a Hanzi entry are skipped (and listed in `skipped`) rather than failing the build. */
+export function buildBuiltin(input: BuildInput, skipped: string[] = []): BuiltinChar[] {
   const handwriting = new Set(HANDWRITING_SECTIONS.flatMap((s) => input.hskChars.get(s) ?? []));
   const seen = new Set<string>();
   const pool: { char: string; hsk: number; index: number; strokes: number; entry: MmahEntry }[] = [];

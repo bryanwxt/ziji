@@ -91,5 +91,16 @@ describe('组词 examples a child can use', () => {
     const out = buildBuiltin({ hskChars: chars, hskWords: words, dictionary: new Map([...'四面八方周'].map((c) => [c, mmah(c)])), pinyinOf: () => 'x' });
     expect(out.find((c) => c.char === '四')!.examples.map((e) => e.text)).toEqual(['四周', '四面八方']);
   });
+  it('reports characters with no stroke entry to the caller, fresh for each build', () => {
+    const sections = (pairs: [string, string[]][]) => new Map(pairs);
+    const mmah = (c: string) => ({ character: c, pinyin: [], decomposition: '？', radical: c, matches: [[0]], definition: 'x' });
+    const chars = sections([['一级汉字表', [...'一二龘']]]);
+    const run = () => {
+      const skipped: string[] = [];
+      buildBuiltin({ hskChars: chars, hskWords: sections([['一级词汇表', ['一二']]]), dictionary: new Map([...'一二'].map((c) => [c, mmah(c)])), pinyinOf: () => 'x' }, skipped);
+      return skipped;
+    };
+    expect(run()).toEqual(['龘']);
+    expect(run()).toEqual(['龘']); // a second build doesn't pile onto the first's list
+  });
 });
-

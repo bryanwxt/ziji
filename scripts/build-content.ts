@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { pinyin } from 'pinyin-pro';
-import { buildBuiltin, buildWordDictionary, parseHskSections, skipped, type MmahEntry } from './content-lib';
+import { buildBuiltin, buildWordDictionary, parseHskSections, type MmahEntry } from './content-lib';
 
 const SOURCES = {
   charlist: 'https://raw.githubusercontent.com/elkmovie/hsk30/main/charlist.txt',
@@ -29,12 +29,13 @@ for (const line of (await source('dictionary')).split('\n')) {
   dictionary.set(e.character, e);
 }
 
+const skipped: string[] = [];
 const chars = buildBuiltin({
   hskChars: parseHskSections(await source('charlist')),
   hskWords: parseHskSections(await source('wordlist')),
   dictionary,
   pinyinOf: (text) => pinyin(text, { type: 'array' }).join(' '),
-});
+}, skipped);
 
 const body = chars.map((c) => '  ' + JSON.stringify(c)).join(',\n');
 await mkdir(new URL('../src/content/', import.meta.url), { recursive: true });

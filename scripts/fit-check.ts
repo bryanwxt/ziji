@@ -41,7 +41,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
     if (el.closest('[aria-hidden="true"], .sr-only, .world-taps, [hidden], .scene') || el.parentElement?.closest(args.scrollers)) return;
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height || getComputedStyle(el).visibility === 'hidden') return;
-    if (r.bottom > innerHeight + 1 || r.top < -1 || r.right > innerWidth + 1 || r.left < -1) { const r2 = el.getBoundingClientRect(); cut.add(`content cut off: ${(el.textContent ?? '').trim().slice(0, 16) || `<${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}">`} at ${Math.round(r2.left)},${Math.round(r2.top)}–${Math.round(r2.right)},${Math.round(r2.bottom)}`); }
+    if (r.bottom > innerHeight + 1 || r.top < -1 || r.right > innerWidth + 1 || r.left < -1) { cut.add(`content cut off: ${(el.textContent ?? '').trim().slice(0, 16) || `<${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}">`} at ${Math.round(r.left)},${Math.round(r.top)}–${Math.round(r.right)},${Math.round(r.bottom)}`); }
   };
   const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let n = tw.nextNode(); n; n = tw.nextNode()) if ((n.textContent ?? '').trim() && n.parentElement) past(n.parentElement);
