@@ -54,13 +54,9 @@ describe('Truffle powers', () => {
     expect(t3.container.querySelector('.truffle__power-back .truffle__cape')).toBeTruthy();
     expect(t3.container.querySelector('.truffle__power-front .truffle__emblem')?.textContent).toBe('火');
   });
-  it('a mark on his head turns with his head; the wind streaks stay by his body', () => {
-    const { container, unmount } = render(<Truffle power="fire" powerTier={1} lookAt={1} />);
+  it('the power mark turns with his head', () => {
+    const { container } = render(<Truffle power="fire" powerTier={1} lookAt={1} />);
     expect(container.querySelector('g[transform^="rotate"] .truffle__power-head')).toBeTruthy();
-    unmount();
-    const wind = render(<Truffle power="dash" powerTier={1} lookAt={1} />);
-    expect(wind.container.querySelector('g[transform^="rotate"] .truffle__power-head')).toBeNull();
-    expect(wind.container.querySelector('.truffle__power-front')?.innerHTML).toContain('svg');
   });
   it('draws nothing for tier 0 or no power', () => {
     const { container } = render(<Truffle power="fire" powerTier={0} />);
@@ -124,9 +120,15 @@ describe('accessories never hide earned powers', () => {
     const [ex, ey, er] = circles(powerLayer('fire', 3).front).find(([, , r]) => r >= 15)!;
     expect(Math.hypot(mx! - ex!, my! - ey!)).toBeGreaterThan(mr! + er!);
   });
+  it('the 辶 wind streaks sit clear of the wings and the jetpack (both on his back, from y 178 down)', async () => {
+    const { powerLayer } = await import('./powers');
+    const m = /<svg x="([\d.]+)" y="([\d.]+)" width="([\d.]+)"/.exec(powerLayer('dash', 1).head)!;
+    expect(Number(m[2]) + Number(m[3])).toBeLessThanOrEqual(176);
+    expect(Number(m[1])).toBeGreaterThanOrEqual(30); // inside the viewBox
+  });
   it('the power mark sits on the left, clear of held items on the right', async () => {
     const { powerLayer } = await import('./powers');
-    for (const id of ['water', 'fire', 'wood', 'sun', 'roar'] as const) {
+    for (const id of ['water', 'fire', 'wood', 'sun', 'roar', 'dash'] as const) {
       const x = Number(/<svg x="([\d.]+)"/.exec(powerLayer(id, 1).head)![1]);
       expect(x).toBeLessThan(120);
     }

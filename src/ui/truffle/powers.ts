@@ -3,10 +3,9 @@ import { iconMarkup, type IconName } from '../icons/icons';
 
 const INK = '#2a2630';
 
-/** Where a power's mark sits: most above the left ear; the heart on the cheek; dash streaks behind. */
+/** Where a power's mark sits: above the left ear; the heart on the cheek. */
 function markAt(mark: IconName): { x: number; y: number; size: number } {
   if (mark === 'heart') return { x: 226, y: 150, size: 24 }; // a drop on the cheek would read as a tear
-  if (mark === 'wind') return { x: 72, y: 214, size: 36 };
   return { x: 84, y: 64, size: 36 }; // left ear: held items (balloon, kite…) live on the right
 }
 
@@ -25,10 +24,9 @@ export function powerLayer(id: PowerId, tier: 1 | 2 | 3): { back: string; head: 
   const emblem =
     `<circle cx="160" cy="249" r="17" fill="${p.color}" stroke="${INK}" stroke-width="2.6"/>` +
     `<text class="truffle__emblem" x="160" y="250" font-family="WenKai, serif" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="#fffdf7">${p.name}</text>`;
-  const onHead = p.mark !== 'wind'; // a mark on his ear or cheek turns with his head; the dash streaks trail his body
   return {
     back: (tier >= 2 ? aura : '') + (tier === 3 ? cape : ''),
-    head: onHead ? mark : '',
-    front: (onHead ? '' : mark) + (tier === 3 ? emblem : ''),
+    head: mark, // on his ear or cheek: it turns with his head
+    front: tier === 3 ? emblem : '',
   };
 }
