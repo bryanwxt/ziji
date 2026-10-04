@@ -6,6 +6,7 @@ import { makeParentWords, parseWordList, type ParseResult } from '../content/par
 import { strokeAvailability } from '../content/strokes';
 import { localDateKey } from '../lib/date';
 import { isKnown } from '../srs/scheduler';
+import { applyDictationMistakes } from '../session/dictation';
 import { deleteWord, putWords } from '../store/repo';
 import type { Word } from '../types';
 
@@ -22,6 +23,8 @@ export function WordsPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('lists');
   const [query, setQuery] = useState('');
+  const [mistakes, setMistakes] = useState('');
+  const [mistakeMessage, setMistakeMessage] = useState<string | null>(null);
 
   const reload = async () => setKnow(await loadKnowledge(db));
   useEffect(() => {
@@ -130,6 +133,30 @@ export function WordsPanel() {
         {message && <p role="status">{message}</p>}
       </section>
 
+      <section class="panel">
+        <h2>School 听写 mistakes</h2>
+        <p>Words he wrote wrong in a school 听写 — often with a same-sound character (新家坡 for 新加坡). Type the right word, one per line. Each comes back first in 写一写.</p>
+        <div class="field">
+          <label for="tx-mistakes">Words he wrote wrong</label>
+          <textarea id="tx-mistakes" rows={3} value={mistakes} onInput={(e) => setMistakes(e.currentTarget.value)} />
+        </div>
+        <button
+          type="button"
+          class="btn"
+          disabled={!mistakes.trim()}
+          onClick={async () => {
+            const r = await applyDictationMistakes(db, mistakes, now());
+            const parts = [r.marked.length ? `${r.marked.join('、')} comes back first in 写一写.` : 'Nothing to bring back.'];
+            if (r.skipped.length) parts.push(`Skipped: ${r.skipped.join(', ')} (not 1–4 Chinese characters).`);
+            setMistakeMessage(parts.join(' '));
+            setMistakes('');
+            await reload();
+          }}
+        >
+          Bring back
+        </button>
+        {mistakeMessage && <p role="status">{mistakeMessage}</p>}
+      </section>
       <section class="panel">
         <h2>All words</h2>
         <div class="row" style={{ justifyContent: 'flex-start' }}>

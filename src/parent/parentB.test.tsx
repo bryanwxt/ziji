@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { exportBackup } from '../store/backup';
-import { allWords, getSettings, putWords, updateSettings } from '../store/repo';
+import { allCards, allWords, getSettings, putWords, updateSettings } from '../store/repo';
 import { setSpeechRate } from '../audio/speech';
 import { setSfxEnabled } from '../audio/sfx';
 import { makeWord } from '../test/fixtures';
@@ -109,5 +109,17 @@ describe('ParentArea tabs', () => {
     for (const d of '1111') fireEvent.click(screen.getByRole('button', { name: d }));
     await screen.findByText('Overview');
     expect(document.querySelectorAll('.tabs .tab svg').length).toBe(11); // + From a worksheet, Skills
+  });
+});
+
+describe('school 听写 mistakes (spec §19 part 3)', () => {
+  it('marks words he wrote wrong: they come back first in 写一写', async () => {
+    const app = await makeAppData();
+    renderWithApp(<WordsPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Words he wrote wrong'), { target: { value: '新加坡\nxyz' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Bring back' }));
+    expect(await screen.findByText(/新加坡 comes back first in 写一写/)).toBeTruthy();
+    expect(screen.getByText(/Skipped: xyz/)).toBeTruthy();
+    expect((await allCards(app.db)).some((c) => c.kind === 'write')).toBe(true);
   });
 });
