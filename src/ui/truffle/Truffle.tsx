@@ -66,8 +66,9 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
           <g class={`truffle__face truffle__face--${mood}`} dangerouslySetInnerHTML={{ __html: FACES[mood] }} />
           {wear && <g class="truffle__outfit-head" dangerouslySetInnerHTML={{ __html: wear.head }} />}
           {acc?.face && <g class="truffle__accessory truffle__accessory--face" dangerouslySetInnerHTML={{ __html: acc.face }} />}
+          {layer?.head && <g class="truffle__power-head" dangerouslySetInnerHTML={{ __html: layer.head }} />}
         </g>
-        {layer && <g class="truffle__power-front" dangerouslySetInnerHTML={{ __html: layer.front }} />}
+        {layer?.front && <g class="truffle__power-front" dangerouslySetInnerHTML={{ __html: layer.front }} />}
         {acc?.over && <g class="truffle__accessory truffle__accessory--over" dangerouslySetInnerHTML={{ __html: acc.over }} />}
       </g>
     </svg>

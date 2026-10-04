@@ -46,7 +46,7 @@ describe('Truffle powers', () => {
   it('draws a power by tier: mark, then aura, then cape with the power character', () => {
     const t1 = render(<Truffle power="fire" powerTier={1} />);
     expect(t1.container.querySelector('svg.truffle')?.getAttribute('data-power')).toBe('fire');
-    expect(t1.container.querySelector('.truffle__power-front')?.innerHTML).toContain('#ff6a3d'); // the ink flame icon
+    expect(t1.container.querySelector('.truffle__power-head')?.innerHTML).toContain('#ff6a3d'); // the ink flame icon
     expect(t1.container.querySelector('.truffle__power-back')?.innerHTML).toBe('');
     t1.unmount();
     const t3 = render(<Truffle power="fire" powerTier={3} />);
@@ -54,9 +54,17 @@ describe('Truffle powers', () => {
     expect(t3.container.querySelector('.truffle__power-back .truffle__cape')).toBeTruthy();
     expect(t3.container.querySelector('.truffle__power-front .truffle__emblem')?.textContent).toBe('火');
   });
+  it('a mark on his head turns with his head; the wind streaks stay by his body', () => {
+    const { container, unmount } = render(<Truffle power="fire" powerTier={1} lookAt={1} />);
+    expect(container.querySelector('g[transform^="rotate"] .truffle__power-head')).toBeTruthy();
+    unmount();
+    const wind = render(<Truffle power="dash" powerTier={1} lookAt={1} />);
+    expect(wind.container.querySelector('g[transform^="rotate"] .truffle__power-head')).toBeNull();
+    expect(wind.container.querySelector('.truffle__power-front')?.innerHTML).toContain('svg');
+  });
   it('draws nothing for tier 0 or no power', () => {
     const { container } = render(<Truffle power="fire" powerTier={0} />);
-    expect(container.querySelector('.truffle__power-front')).toBeNull();
+    expect(container.querySelector('.truffle__power-front, .truffle__power-head')).toBeNull();
     expect(container.querySelector('svg.truffle')?.getAttribute('data-tier')).toBe('0');
   });
 });
@@ -119,7 +127,7 @@ describe('accessories never hide earned powers', () => {
   it('the power mark sits on the left, clear of held items on the right', async () => {
     const { powerLayer } = await import('./powers');
     for (const id of ['water', 'fire', 'wood', 'sun', 'roar'] as const) {
-      const x = Number(/<svg x="([\d.]+)"/.exec(powerLayer(id, 1).front)![1]);
+      const x = Number(/<svg x="([\d.]+)"/.exec(powerLayer(id, 1).head)![1]);
       expect(x).toBeLessThan(120);
     }
   });

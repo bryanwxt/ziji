@@ -14,7 +14,7 @@ function markAt(mark: IconName): { x: number; y: number; size: number } {
  * Power art in Truffle's viewBox (30 20 260 270): tier 1 = the power's mark, tier 2 adds an aura,
  * tier 3 adds a cape behind him and an emblem with the power's character on his chest.
  */
-export function powerLayer(id: PowerId, tier: 1 | 2 | 3): { back: string; front: string } {
+export function powerLayer(id: PowerId, tier: 1 | 2 | 3): { back: string; head: string; front: string } {
   const p = powerDef(id)!;
   const m = markAt(p.mark);
   const mark = iconMarkup(p.mark, m.x - m.size / 2, m.y - m.size / 2, m.size);
@@ -25,8 +25,10 @@ export function powerLayer(id: PowerId, tier: 1 | 2 | 3): { back: string; front:
   const emblem =
     `<circle cx="160" cy="249" r="17" fill="${p.color}" stroke="${INK}" stroke-width="2.6"/>` +
     `<text class="truffle__emblem" x="160" y="250" font-family="WenKai, serif" font-size="21" text-anchor="middle" dominant-baseline="middle" fill="#fffdf7">${p.name}</text>`;
+  const onHead = p.mark !== 'wind'; // a mark on his ear or cheek turns with his head; the dash streaks trail his body
   return {
     back: (tier >= 2 ? aura : '') + (tier === 3 ? cape : ''),
-    front: mark + (tier === 3 ? emblem : ''),
+    head: onHead ? mark : '',
+    front: (onHead ? '' : mark) + (tier === 3 ? emblem : ''),
   };
 }
