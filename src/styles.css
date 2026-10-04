@@ -1086,7 +1086,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* ===== Stage (spec 2026-10-04 §3) ===== */
 .sheet__msg { min-width: 0; flex: 1; display: flex; align-items: center; gap: 12px; }
 .sheet__text { min-width: 0; }
-.sheet__detail { display: grid; gap: 2px; justify-items: start; }
+.sheet__detail { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .sheet .btn { flex: none; }
 :root { --stage-pet: clamp(64px, 10dvh, 96px); --q-hanzi: 48px; --tile-hanzi: 40px; --sentence: 22px; }
 @media (min-width: 600px) {
@@ -1106,7 +1106,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .stage__truffle .truffle { width: var(--stage-pet); height: auto; }
 .stage__truffle .pet__bubble { margin-bottom: 0; max-width: calc(100vw - var(--stage-pet) - 3 * var(--pad-x, 20px)); }
 .stage__sheet { grid-area: sheet; min-width: 0; }
-.stage__sheet .sheet { position: static; margin: 0; }
+.stage__sheet .sheet { position: static; margin: 0; width: 100%; max-width: none; align-self: stretch; }
 @media (orientation: portrait) and (min-width: 600px) {
   :root { --stage-pet: clamp(110px, 13dvh, 150px); }
 }
@@ -1116,3 +1116,16 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .stage__truffle { justify-content: center; padding-bottom: 8px; }
   .stage__truffle .pet { flex-direction: column; } /* his bubble above him */
 }
+.hanzi--q { font-family: var(--hanzi); font-size: var(--q-hanzi); line-height: 1.05; font-weight: 400; }
+.stage--flash .choices--hanzi .choice, .stage--use .choices--hanzi .choice { font-size: var(--tile-hanzi); }
+.meaning-cue.meaning-cue--sentence { font-size: var(--sentence); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.stage__card .choices { width: min(100%, 560px); }
+.stage__card .flash__prompt { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+/* Truffle's bubble beside him (phone, upright iPad): its tail points left at him */
+.stage__truffle .pet__bubble::after { left: -7px; bottom: auto; top: 50%; transform: translateY(-50%) rotate(135deg); }
+@media (orientation: landscape) and (min-height: 600px) {
+  .stage__truffle .pet__bubble { margin-bottom: 10px; }
+  .stage__truffle .pet__bubble::after { left: 50%; top: auto; bottom: -9px; transform: translateX(-50%) rotate(45deg); }
+}
+.stage__card .speak--big { width: clamp(64px, 11dvh, 136px); height: clamp(64px, 11dvh, 136px); flex: none; }
+.stage__card .speak--big svg { width: 45%; height: 45%; }

@@ -6,6 +6,8 @@ import { radicalMeaning } from '../../content/radicals';
 import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32, shuffle } from '../../lib/random';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
+import { Stage } from '../../ui/stage/Stage';
+import { Label } from '../../ui/Label';
 import { burst, flyAlong } from '../../ui/motion';
 import type { CardRecord, FlashItem, KidState, Word } from '../../types';
 import { Closeup } from '../../app/Closeup';
@@ -125,35 +127,58 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : 'read' });
   };
 
+  const sheet =
+    phase === 'intro' ? <FeedbackSheet actionLabel="我记住了！" onAction={() => setPhase('quiz')} />
+    : phase === 'quiz' ? <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
+    : result ? (
+        <FeedbackSheet
+          tone={result.correct ? 'good' : 'oops'}
+          title={result.correct ? quiz.cheer : quiz.comfort}
+          detail={result.correct ? undefined : (
+            <>
+              正确答案：<span class="hanzi">{quiz.cue ? quiz.cue.full : word.text}</span>
+              <span>{quiz.cue ? quiz.cue.pinyin : word.pinyin}</span>
+              <SpeakButton text={quiz.cue ? quiz.cue.full : word.text} />
+            </>
+          )}
+          actionLabel="继续"
+          onAction={next}
+        />
+      ) : null;
   return (
     <>
-      <div class="flash">
-        <div class="flash__pet" ref={petRef}>
-          <Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} bounce={phase === 'feedback' && !!result?.correct} />
-        </div>
-        <div class="flash__main">
-          {phase === 'intro' ? (
-            <Intro word={word} />
-          ) : (
-            <>
-              <div class="flash__prompt">
-                {quiz.cue ? (
-                  <div class="meaning-prompt">
-                    <div class={`hanzi meaning-cue${quiz.cue.kind === 'sentence' ? ' meaning-cue--sentence' : ''}`} lang="zh" style={`--len:${Array.from(quiz.cue.full).length}`}>
+      <Stage
+        activity="flash"
+        truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} bounce={phase === 'feedback' && !!result?.correct} /></div>}
+        sheet={sheet}
+      >
+        {phase === 'intro' ? <Intro word={word} /> : (
+          <>
+            <div class="flash__prompt">
+              {quiz.cue ? (
+                <div class="meaning-prompt">
+                  {quiz.cue.kind === 'sentence' ? (
+                    <div class="meaning-cue meaning-cue--sentence" lang="zh" data-q>
+                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} />
+                      <SpeakButton text={phase === 'feedback' ? quiz.cue.full : `${quiz.cue.before}，，${quiz.cue.after}`} />
+                    </div>
+                  ) : (
+                    <div class="hanzi meaning-cue" lang="zh" data-q style={`--len:${Array.from(quiz.cue.full).length}`}>
                       {quiz.cue.before}
                       <span class="meaning-cue__blank" aria-label="空格">{phase === 'feedback' ? word.text : '？'}</span>
                       {quiz.cue.after}
                     </div>
-                    {quiz.cue.kind === 'word' && <div class="pinyin">{quiz.cue.pinyin}</div>}
-                  </div>
-                ) : (
-                  <>
-                    {quiz.listen ? <SpeakButton text={word.text} big /> : <div class={`hanzi ${phase === 'feedback' && usageLine(word) ? 'hanzi--lg' : 'hanzi--xl'}`}>{word.text}</div>}
-                    {phase === 'feedback' && <UsageLine word={word} />}
-                  </>
-                )}
-              </div>
-              <div class={`choices stagger ${quiz.listen || quiz.cue ? 'choices--hanzi' : 'choices--pinyin'}`}>
+                  )}
+                  {quiz.cue.kind === 'word' && <div class="pinyin">{quiz.cue.pinyin}</div>}
+                </div>
+              ) : (
+                <>
+                  {quiz.listen ? <SpeakButton text={word.text} big /> : <div class="hanzi hanzi--q" data-q>{word.text}</div>}
+                  {phase === 'feedback' && <UsageLine word={word} />}
+                </>
+              )}
+            </div>
+            <div class={`choices stagger ${quiz.listen || quiz.cue ? 'choices--hanzi' : 'choices--pinyin'}`}>
                 {quiz.options.map((o) => (
                   <button
                     key={o}
@@ -168,31 +193,11 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                     {o}
                   </button>
                 ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+          </>
+        )}
+      </Stage>
       {showCloseup && <Closeup kid={kid} />}
-      {phase === 'intro' && <FeedbackSheet actionLabel="我记住了！" onAction={() => setPhase('quiz')} />}
-      {phase === 'quiz' && <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />}
-      {phase === 'feedback' && result && (
-        <FeedbackSheet
-          tone={result.correct ? 'good' : 'oops'}
-          title={result.correct ? quiz.cheer : quiz.comfort}
-          detail={
-            result.correct ? undefined : (
-              <>
-                正确答案：<span class="hanzi">{quiz.cue ? quiz.cue.full : word.text}</span>
-                <span>{quiz.cue ? quiz.cue.pinyin : word.pinyin}</span>
-                <SpeakButton text={quiz.cue ? quiz.cue.full : word.text} />
-              </>
-            )
-          }
-          actionLabel="继续"
-          onAction={next}
-        />
-      )}
     </>
   );
 }

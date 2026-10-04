@@ -52,7 +52,7 @@ describe('FlashcardStep', () => {
   it('falls back to read mode when no same-length look-alikes exist', () => {
     const target = { ...he, id: 'p:x', text: '河马河', pinyin: 'hé mǎ hé' };
     render(<FlashcardStep {...base} word={target} item={{ ...review, wordId: 'p:x' }} voice onDone={vi.fn()} />);
-    expect(document.querySelector('.hanzi--xl')?.textContent).toBe('河马河');
+    expect(document.querySelector('[data-q]')?.textContent).toBe('河马河');
     expect(new Set([...document.querySelectorAll('.choice')].map((b) => b.textContent)).size).toBe(4);
   });
 });
@@ -299,5 +299,30 @@ describe('what was asked (deferred minor, plan 11)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'read' }));
     cleanup();
+  });
+});
+
+describe('认一认 on the stage (spec 2026-10-04 §3)', () => {
+  it('renders inside the stage: Truffle in his spot, the question on the card, the sheet underneath', () => {
+    render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
+    const stage = document.querySelector('.stage[data-stage="flash"]')!;
+    expect(stage.querySelector('.stage__truffle .pet svg.truffle')).toBeTruthy();
+    expect(stage.querySelector('.stage__card [data-q]')!.textContent).toBe(he.text);
+    expect(stage.querySelector('.stage__card .choices')).toBeTruthy();
+    expect(stage.querySelector('.stage__sheet .sheet')).toBeTruthy();
+  });
+  it('the new-word card is on the stage too', () => {
+    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.stage .stage__card .intro')).toBeTruthy();
+  });
+  it('a sentence cue shows pinyin over its characters and has a speaker that does not give the word away', () => {
+    vi.mocked(speak).mockClear();
+    const w = { ...makeWord('保持', { id: 'p:1', pinyin: 'bǎo chí' }), sentences: [{ text: '图书馆里要保持安静。', pinyin: 'x' }] };
+    render(<FlashcardStep {...base} word={w} pool={[w, ...pool]} item={{ wordId: 'p:1', isNew: false, retry: false, mode: 'meaning' }} voice={false} onDone={vi.fn()} />);
+    const cue = document.querySelector('.meaning-cue--sentence')!;
+    expect(cue.querySelector('.label__py')).toBeTruthy();
+    vi.mocked(speak).mockClear();
+    fireEvent.click(cue.querySelector('.speak')!);
+    expect(vi.mocked(speak).mock.calls.at(-1)![0]).not.toContain('保持');
   });
 });

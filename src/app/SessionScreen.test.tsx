@@ -26,7 +26,7 @@ const introWord = () => document.querySelector('.intro .hanzi--xl')?.textContent
 
 async function learnCurrentWord() {
   fireEvent.click(await screen.findByText('我记住了！'));
-  const shown = document.querySelector('.hanzi--xl')!.textContent!;
+  const shown = document.querySelector('[data-q]')!.textContent!;
   fireEvent.click(screen.getByRole('button', { name: byText.get(shown)!.pinyin }));
   fireEvent.click(screen.getByText('继续'));
 }
@@ -61,7 +61,7 @@ describe('SessionScreen', () => {
         learned.push(document.querySelector('.intro .hanzi--xl')!.textContent!);
         fireEvent.click(screen.getByText('我记住了！'));
       }
-      const shown = document.querySelector('.flash__prompt .hanzi--xl')?.textContent;
+      const shown = document.querySelector('.flash__prompt .hanzi--q')?.textContent;
       const answer = shown ? byText.get(shown)!.pinyin : [...document.querySelectorAll('.choice')].map((b) => b.textContent!).find((t) => learned.includes(t))!;
       fireEvent.click(screen.getByRole('button', { name: answer }));
       fireEvent.click(screen.getByText('继续'));
