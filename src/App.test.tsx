@@ -16,7 +16,7 @@ const type = (pin: string) => [...pin].forEach((d) => fireEvent.click(screen.get
 describe('App', () => {
   it('walks a first launch from PIN to pet to placement to home', async () => {
     render(<App dbName={`test-${crypto.randomUUID()}`} now={() => new Date(2026, 9, 2, 9)} />);
-    await screen.findByText('For parents: choose a 4-digit PIN');
+    await screen.findByText('For parents: choose a 4-digit PIN', {}, { timeout: 5000 }); // first boot seeds 3,000 words
     type('1234');
     await screen.findByText('Enter the same PIN again');
     type('1234');
@@ -33,7 +33,7 @@ describe('App', () => {
   }, 30_000); // about 31 questions, each behind the 350 ms tap guard
   it('draws the phone-sideways overlay beside the screen, never instead of it', async () => {
     render(<App dbName={`test-${crypto.randomUUID()}`} now={() => new Date(2026, 9, 2, 9)} />);
-    await screen.findByText('For parents: choose a 4-digit PIN');
+    await screen.findByText('For parents: choose a 4-digit PIN', {}, { timeout: 5000 }); // first boot seeds 3,000 words
     const hint = document.querySelector('.rotate-hint');
     expect(hint?.textContent).toContain('竖');
     expect(hint?.getAttribute('aria-label')).toBe('请把手机竖过来');
