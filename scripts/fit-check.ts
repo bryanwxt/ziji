@@ -220,7 +220,15 @@ async function sweep(browser: Browser, size: Size) {
   // First run
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));
   await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));
-  await run('placement', AFTERNOON, { placementDone: false }, async (p) => { await check(p, size, 'placement', 0); await p.click('.btn--big'); await check(p, size, 'placement', 1); });
+  await run('placement', AFTERNOON, { placementDone: false }, async (p) => {
+    // each style is its own screen (spec §19 part 6): answer 不知道 and look again, ten times
+    for (let i = 0; i < 11; i++) {
+      await p.waitForSelector('.placement[data-ready="true"]');
+      await check(p, size, 'placement', i);
+      await p.click('.placement .btn--big');
+      await p.waitForTimeout(150);
+    }
+  });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });
   await run('room', AFTERNOON, {}, async (p) => {

@@ -71,4 +71,15 @@ describe('placement questions (spec §19 part 6)', () => {
     const used = new Set(band.slice(1).map((w) => w.id));
     expect(nextQuestion(band, 'read', pool, mulberry32(1), used).wordId).toBe(band[0]!.id);
   });
+  it('a made-up word uses a look-alike near the word\'s level (a rare character would give it away)', () => {
+    const level = new Map(pool.map((w) => [w.text, w.level ?? 7]));
+    for (const ch of ['升', '负', '静', '跟']) {
+      const w = byText.get(ch)!;
+      for (let seed = 1; seed < 20; seed++) {
+        const q = buildQuestion('real', w, pool, mulberry32(seed));
+        if (!q || q.style !== 'real' || q.real) continue;
+        for (const c of q.shown) expect(level.get(c)!).toBeLessThanOrEqual((w.level ?? 7) + 1);
+      }
+    }
+  });
 });
