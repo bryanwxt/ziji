@@ -83,6 +83,29 @@ describe('HomeScreen', () => {
 });
 
 describe('Wardrobe', () => {
+  it('room tabs: each controls its panel, and the arrow keys move between them', async () => {
+    const app = await makeAppData();
+    renderWithApp(<Wardrobe />, app);
+    const tabs = await screen.findAllByRole('tab');
+    const panel = screen.getByRole('tabpanel');
+    expect(tabs[0]!.getAttribute('aria-controls')).toBe(panel.id);
+    expect(panel.getAttribute('aria-labelledby')).toBe(tabs[0]!.id);
+    expect(tabs.map((t) => t.getAttribute('tabindex'))).toEqual(['0', '-1', '-1']);
+    fireEvent.keyDown(tabs[0]!, { key: 'ArrowRight' });
+    expect(tabs[1]!.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(tabs[1]);
+    fireEvent.keyDown(tabs[1]!, { key: 'ArrowLeft' });
+    fireEvent.keyDown(tabs[0]!, { key: 'ArrowLeft' }); // wraps round to the last
+    expect(tabs[2]!.getAttribute('aria-selected')).toBe('true');
+  });
+  it('a power row says its level, and when a new level is waiting', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, powerTiersSeen: { water: 1 } } });
+    renderWithApp(<Wardrobe />, app);
+    fireEvent.click(await screen.findByRole('tab', { name: '能力' }));
+    await waitFor(() => expect(document.querySelector('.power-row')?.getAttribute('aria-label')).toMatch(/1级/));
+    const locked = [...document.querySelectorAll('.power-row')].find((r) => (r as HTMLButtonElement).disabled)!;
+    expect(locked.getAttribute('aria-label')).toMatch(/还没解锁/);
+  });
   it('puts on an owned accessory', async () => {
     const kid = { ...DEFAULT_KID, ownedAccessories: ['moustache', 'medal'] };
     const app = await makeAppData({ kid });

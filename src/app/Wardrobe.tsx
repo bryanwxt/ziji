@@ -18,6 +18,7 @@ import { SCENES } from '../ui/worlds/scenes';
 import { GEM } from '../ui/worlds/tapArt';
 
 type RoomTab = 'outfits' | 'powers' | 'places';
+const ROOM_TABS: [RoomTab, string][] = [['outfits', '服装'], ['powers', '能力'], ['places', '地方']];
 
 const SLOT_TITLE = { face: '脸上', neck: '脖子上', held: '手里', back: '背上' } as const;
 
@@ -44,12 +45,32 @@ export function Wardrobe() {
       <div class="center room">
         <Pet kid={k} mood="content" size={180} />
         <div class="room__tabs" role="tablist" aria-label="松露的房间">
-          <button type="button" role="tab" aria-selected={tab === 'outfits'} class={`chip ${tab === 'outfits' ? 'is-on' : ''}`} onClick={() => setTab('outfits')}>服装</button>
-          <button type="button" role="tab" aria-selected={tab === 'powers'} class={`chip ${tab === 'powers' ? 'is-on' : ''}`} onClick={() => setTab('powers')}>能力</button>
-          <button type="button" role="tab" aria-selected={tab === 'places'} class={`chip ${tab === 'places' ? 'is-on' : ''}`} onClick={() => setTab('places')}>地方</button>
+          {ROOM_TABS.map(([id, zh], i) => (
+            <button
+              key={id}
+              id={`room-tab-${id}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              aria-controls="room-panel"
+              tabIndex={tab === id ? 0 : -1}
+              class={`chip ${tab === id ? 'is-on' : ''}`}
+              onClick={() => setTab(id)}
+              onKeyDown={(e) => {
+                const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+                if (!step) return;
+                e.preventDefault();
+                const [next] = ROOM_TABS[(i + step + ROOM_TABS.length) % ROOM_TABS.length]!;
+                setTab(next);
+                document.getElementById(`room-tab-${next}`)?.focus();
+              }}
+            >
+              {zh}
+            </button>
+          ))}
         </div>
         {tab === 'outfits' ? (
-          <div class="outfits scroll-panel" role="tabpanel">
+          <div class="outfits scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
             {([['生肖', ONESIES], ['衣服', OUTFITS]] as const).map(([title, list]) => (
               <section key={title}>
                 <h2><Label zh={title} /></h2>
@@ -104,7 +125,7 @@ export function Wardrobe() {
             ))}
           </div>
         ) : tab === 'places' ? (
-          <div class="places scroll-panel" role="tabpanel">
+          <div class="places scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
             <div class="gem-jar" aria-label={`${k.finds.gems} 颗宝石`}>
               <svg class="gem-jar__glass" viewBox="-60 -70 120 140" aria-hidden="true">
                 <path d="M-40 -46 h80 v8 h-6 v86 a16 16 0 0 1 -16 16 h-36 a16 16 0 0 1 -16 -16 v-86 h-6Z" fill="#e4efff" stroke="#2a2630" stroke-width="3" stroke-linejoin="round" />
@@ -135,7 +156,7 @@ export function Wardrobe() {
             })}
           </div>
         ) : (
-          <div class="powers scroll-panel" role="tabpanel">
+          <div class="powers scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
             {POWERS.map((p) => {
               const pr = progress?.find((x) => x.id === p.id);
               const tier = k.powerTiersSeen[p.id] ?? 0;
@@ -145,7 +166,7 @@ export function Wardrobe() {
                   key={p.id}
                   type="button"
                   class={`power-row ${k.activePower === p.id ? 'is-on' : ''}`}
-                  aria-label={`${p.name} ${pr?.known ?? 0}/${pr?.size ?? 0}`}
+                  aria-label={`${p.name} ${tier > 0 ? `${tier}级` : '还没解锁'} ${pr?.known ?? 0}/${pr?.size ?? 0}${ready ? ' 完成练习就解锁' : ''}`}
                   aria-pressed={k.activePower === p.id}
                   disabled={tier === 0}
                   onClick={() => void save({ ...k, activePower: p.id })}
