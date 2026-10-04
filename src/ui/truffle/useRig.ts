@@ -71,6 +71,14 @@ const FLICK_MS = 260;
 export const rigTransform = (m: Motion, shimmer = 0) =>
   `translate(${(m.lean + shimmer).toFixed(2)} ${m.y.toFixed(2)}) translate(160 276) scale(${(1 + m.squash * 0.6).toFixed(4)} ${(1 - m.squash).toFixed(4)}) translate(-160 -276)`;
 
+const SETTLE_MS = 200;
+/** A move cut short: from where he is, back to rest. */
+const settle = (from: Motion): Track => (t) => {
+  if (t >= SETTLE_MS) return null;
+  const k = 1 - (1 - t / SETTLE_MS) ** 2;
+  return { y: from.y * (1 - k), squash: from.squash * (1 - k), shake: from.shake * (1 - k), lean: from.lean * (1 - k) };
+};
+
 /**
  * The loop that brings a live Truffle to life (spec 2026-10-04 §4.1): every face value springs toward the target, and the
  * parts are painted through the DOM (no re-render). It runs only while alive, the page is visible and he is on screen.
@@ -85,6 +93,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
   const after = useRef<Expression | null>(null);
   const track = useRef<{ fn: Track; start: number; purr: boolean } | null>(null);
   const lag = useRef({ y: 0, v: 0 });
+  const lastMotion = useRef<Motion>(REST);
   // idle life, scheduled by frame time
   const idle = useRef({ nextBlink: -1, blinkAt: -1, again: false, nextFlick: -1, flickAt: -1, flickSide: 1 });
   const gaze = useRef({ x: 0, y: 0, vx: 0, vy: 0, aim: { x: 0, y: 0 }, aimAt: -Infinity });
@@ -108,15 +117,30 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
     if (!opts.alive) return;
     const svg = svgRef.current;
     if (!svg) return;
-    const cache = new Map<string, Element | null>();
+    // parts come and go (a hood hides his ears; taking it off makes new ones), so a miss or a detached part is looked up again
+    const cache = new Map<string, Element>();
     const els = (part: string) => {
-      if (!cache.has(part)) cache.set(part, svg.querySelector(`[data-part="${part}"]`));
-      return cache.get(part)!;
+      let el = cache.get(part);
+      if (!el?.isConnected) {
+        el = svg.querySelector(`[data-part="${part}"]`) ?? undefined;
+        if (el) cache.set(part, el);
+        else cache.delete(part);
+      }
+      return el ?? null;
     };
+    let wasCalm = false;
     const frame = (now: number) => {
       raf.current = 0;
       const { reduced, calm = false, lookAt = 0 } = o.current;
       const life = idleExtras(calm, reduced);
+      // a question has come up (spec §4.3): what a reaction left behind goes (its held face, what follows it), and a move
+      // still running eases to rest in 200 ms; a reaction sent during calm (写一写's nod) still plays
+      if (calm && !wasCalm) {
+        hold.current = null;
+        after.current = null;
+        if (track.current) track.current = { fn: settle(lastMotion.current), start: now, purr: false };
+      }
+      wasCalm = calm;
       if (pending.current) {
         const def = REACTIONS[pending.current.kind];
         pending.current = null;
@@ -150,6 +174,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         const sample = track.current.fn(now - track.current.start);
         if (sample) {
           m = sample;
+          lastMotion.current = sample;
           if (track.current.purr) shimmer = Math.sin(now / 1000 * 95) * 0.5;
         } else track.current = null;
       }

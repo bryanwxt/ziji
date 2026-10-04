@@ -37,6 +37,7 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
   const press = useRef<{ part: Part; t0: number; x: number; y: number; travelled: number; moves: number } | null>(null);
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const purrStop = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const purredAt = useRef(0);
 
   // the screen's reaction wins whenever it sends a new one
   useEffect(() => {
@@ -82,10 +83,14 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
     p.x = e.clientX;
     p.y = e.clientY;
     if (classifyGesture({ part: p.part, travelled: p.travelled, ms: performance.now() - p.t0 }) !== 'stroke') return;
-    if (!purrStop.current) {
-      startPurr();
+    const now = performance.now();
+    if (!purrStop.current) startPurr();
+    else clearTimeout(purrStop.current);
+    // the purr reaction holds 'content' for 900 ms: renew it while the stroking goes on, so his eyes stay closed
+    if (!purrStop.current || now - purredAt.current > 600) {
+      purredAt.current = now;
       play('purr');
-    } else clearTimeout(purrStop.current);
+    }
     purrStop.current = setTimeout(() => {
       purrStop.current = null;
       stopPurr();

@@ -82,6 +82,38 @@ describe('the animation loop (spec §4.1, review focus 1)', () => {
     expect(ears.size).toBeGreaterThan(1);
     expect(lids.size).toBeGreaterThan(1);
   });
+  it('final review I2: a new word: the lingering curious face clears when the question comes up (calm)', () => {
+    const { container, rerender } = render(<Truffle alive expression="neutral" react={{ kind: 'newWord', key: 1 }} />);
+    act(() => run(60)); // past the surprise: now 'curious' (its then)
+    expect(container.querySelector('svg')!.getAttribute('data-expression')).toBe('curious');
+    rerender(<Truffle alive calm expression="neutral" react={{ kind: 'newWord', key: 1 }} />);
+    act(() => run(120));
+    expect(container.querySelector('svg')!.getAttribute('data-expression')).toBe('neutral');
+    expect(Number(container.querySelector('[data-part="extra-curious"]')!.getAttribute('opacity'))).toBeLessThan(0.05);
+  });
+  it('final review I2: a hop still running when the next question comes up settles to rest quickly', () => {
+    const { container, rerender } = render(<Truffle alive expression="neutral" react={{ kind: 'right', key: 1 }} />);
+    act(() => run(12)); // ~190 ms: mid-hop
+    rerender(<Truffle alive calm expression="neutral" react={{ kind: 'right', key: 1 }} />);
+    act(() => run(16)); // ~250 ms later (the hop alone would still be in the air)
+    expect(container.querySelector('[data-part="rig"]')!.getAttribute('transform')).toMatch(/^translate\(0\.00 0\.00\) translate\(160 276\) scale\(1\.0000 1\.0000\)/);
+    expect(container.querySelector('svg')!.getAttribute('data-expression')).toBe('neutral');
+  });
+  it('final review I2: a nod sent during calm still plays (写一写)', () => {
+    const { container, rerender } = render(<Truffle alive calm expression="neutral" />);
+    act(() => run(5));
+    rerender(<Truffle alive calm expression="neutral" react={{ kind: 'nod', key: 1 }} />);
+    act(() => run(3));
+    expect(container.querySelector('svg')!.getAttribute('data-expression')).toBe('happy');
+  });
+  it('final review I3: ears that come back when a onesie comes off are animated again', () => {
+    const { container, rerender } = render(<Truffle alive expression="neutral" outfit="rabbit" />);
+    act(() => run(5));
+    rerender(<Truffle alive expression="grumpy" outfit={null} />);
+    act(() => run(120));
+    const ear = (container.querySelector('[data-part="ear-l"]') as SVGGElement).style.transform;
+    expect(ear).not.toMatch(/rotate\(-?0(\.0+)?deg\)/);
+  });
   it('reduced motion: the expression still changes, the body never moves', () => {
     reduced = true;
     const { container } = render(<Truffle alive expression="neutral" react={{ kind: 'right', key: 1 }} />);

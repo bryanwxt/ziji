@@ -37,3 +37,23 @@ describe('touching Truffle (spec §4.5)', () => {
     expect(container.querySelector('.pet__bubble')).toBeNull();
   });
 });
+
+describe('final review I1', () => {
+  it('stroking him for a few seconds: his eyes stay closed in content the whole time (not back to his grumpy face)', () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = render(<Pet kid={DEFAULT_KID} mood="sulk" />);
+      const head = container.querySelector('[data-part="headpos"]')!;
+      fireEvent.pointerDown(head, { clientX: 0, clientY: 0, pointerId: 1 });
+      const seen = new Set<string>();
+      for (let i = 1; i <= 150; i++) {
+        fireEvent.pointerMove(head, { clientX: (i % 2) * 40, clientY: 0, pointerId: 1 });
+        act(() => { vi.advanceTimersByTime(16); });
+        if (i > 20) seen.add(container.querySelector('svg.truffle')!.getAttribute('data-expression')!);
+      }
+      expect([...seen]).toEqual(['content']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

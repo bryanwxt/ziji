@@ -78,13 +78,20 @@ for (const size of SIZES) {
   if (!(await page.$('svg.truffle[data-alive="true"]'))) problems.push('alive: no live Truffle rendered');
   const idle = await p95();
   if (idle > 20) problems.push(`alive: slow frames while idle: p95 ${idle.toFixed(1)}ms over 120 frames`);
+  // spec §6: ≤ 8 ms of script + layout per frame on the Mac (headroom for an older iPad); the interval check above only
+  // notices work past a whole frame
+  const work = () => page.evaluate<number>(`(() => { const w = window.rafWork.splice(0).sort((a, b) => a - b); return w[Math.floor(w.length * 0.95)] ?? 0; })()`);
+  const idleWork = await work();
+  if (idleWork > 8) problems.push(`alive: too much work per frame while idle: p95 ${idleWork.toFixed(1)}ms (budget 8)`);
   await page.evaluate(() => (window as unknown as { react: (k: string) => void }).react('right'));
   const reacting = await p95();
   if (reacting > 20) problems.push(`alive: slow frames while reacting: p95 ${reacting.toFixed(1)}ms over 120 frames`);
+  const reactWork = await work();
+  if (reactWork > 8) problems.push(`alive: too much work per frame while reacting: p95 ${reactWork.toFixed(1)}ms (budget 8)`);
   await page.waitForTimeout(1500); // REACTIONS.right: a 910 ms hop, a 1200 ms hold
   const rest = await page.evaluate(() => document.querySelector('[data-part="rig"]')!.getAttribute('transform') ?? '');
   if (!/^translate\(0\.00 0\.00\) translate\(160 276\) scale\(1\.0000 1\.0000\)/.test(rest)) problems.push(`alive: not back at rest after a reaction (${rest})`);
-  if (process.env.DEBUG_CASES) console.log('alive p95 idle', idle, 'reacting', reacting, 'rest', rest);
+  if (process.env.DEBUG_CASES) console.log('alive p95 idle', idle, 'reacting', reacting, 'work idle', idleWork, 'reacting', reactWork, 'rest', rest);
   await page.goto(`file://${dir}/index.html?case=alive-calm`);
   await page.waitForTimeout(300);
   const ears = new Set<string>();

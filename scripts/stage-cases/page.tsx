@@ -20,6 +20,18 @@ const screen = (body: preact.ComponentChildren) => (
 );
 const clue = { kind: 'fit' as const, wordId: null, word: '连忙', before: '看到老师来了，他', after: '站起来。', options: ['连忙', '从来', '互相', '本来'], clue: '连忙：说已经发生的事；叫别人快一点用"赶快"' };
 const which = new URLSearchParams(location.search).get('case');
+if (which?.startsWith('alive')) {
+  // spec 2026-10-04 §6: each frame's own work (script, then the style and layout it causes) is timed, not just the frame rate
+  const raw = window.requestAnimationFrame.bind(window);
+  const work: number[] = [];
+  (window as unknown as { rafWork: number[] }).rafWork = work;
+  window.requestAnimationFrame = (cb) => raw((t) => {
+    const s = performance.now();
+    cb(t);
+    document.body.getBoundingClientRect(); // flush the style and layout this frame's writes caused
+    work.push(performance.now() - s);
+  });
+}
 /** One live Truffle on a lesson stage; the check calls window.react('right') to make him react (spec 2026-10-04 §4, §6). */
 function Alive({ calm }: { calm: boolean }) {
   const [react, setReact] = useState<Reaction | null>(null);
