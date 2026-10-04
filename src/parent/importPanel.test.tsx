@@ -4,7 +4,8 @@ import { allWords, listParentPassages } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { ImportPanel } from './ImportPanel';
 
-vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:photo');
+vi.spyOn(URL, 'createObjectURL').mockImplementation(() => `blob:photo-${Math.random()}`);
+const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
 const TEXT = ['第三十课', '> 词语', '欺', '负', '告坼', '> 词语搭配', '保持 安静', '小明在公园里玩。他看见一只小猫。小猫在睡觉。'].join('\n');
 
@@ -56,5 +57,14 @@ describe('ImportPanel', () => {
     fireEvent.change(screen.getByLabelText('Add a photo'), { target: { files: [file] } });
     expect(document.querySelector<HTMLImageElement>('.import__photo img')?.src).toContain('blob:photo');
     expect(screen.getByText(/Live Text/)).toBeTruthy();
+  });
+  it('picking another photo lets go of the last one (no big image kept in memory)', async () => {
+    const app = await makeAppData();
+    renderWithApp(<ImportPanel />, app);
+    const input = await screen.findByLabelText('Add a photo');
+    revoke.mockClear(); // earlier tests' photos were let go when they unmounted
+    fireEvent.change(input, { target: { files: [new File(['a'], 'a.png', { type: 'image/png' })] } });
+    fireEvent.change(input, { target: { files: [new File(['b'], 'b.png', { type: 'image/png' })] } });
+    await waitFor(() => expect(revoke).toHaveBeenCalledTimes(1));
   });
 });

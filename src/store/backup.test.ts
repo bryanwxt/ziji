@@ -106,3 +106,15 @@ describe('backups across the plan 14 update', () => {
     expect(await answersSince(other, 0)).toEqual([]);
   });
 });
+
+describe('imported class data in backups (deferred minor, plan 12)', () => {
+  it('sentences, pairings and tags come back from a backup', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('保持', { id: 'p:1', source: 'parent', sentences: [{ text: '要保持安静。', pinyin: '' }], pairs: ['安静'], tags: ['成语'] })]);
+    const json = await exportBackup(db, { includeMedia: false, now: 0 });
+    const fresh = await freshDb();
+    await applyBackup(fresh, readBackup(json));
+    const w = (await fresh.get('words', 'p:1'))!;
+    expect([w.sentences, w.pairs, w.tags]).toEqual([[{ text: '要保持安静。', pinyin: '' }], ['安静'], ['成语']]);
+  });
+});

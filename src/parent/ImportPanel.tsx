@@ -12,6 +12,7 @@ type Kind = 'words' | 'idioms';
 export function ImportPanel() {
   const { db, now } = useApp();
   const [photo, setPhoto] = useState<string | null>(null);
+  useEffect(() => () => { if (photo) URL.revokeObjectURL(photo); }, [photo]); // let go of the last photo (a big image on the iPad)
   const [text, setText] = useState('');
   const [draft, setDraft] = useState<ImportDraft | null>(null);
   const [off, setOff] = useState<Set<string>>(new Set()); // unticked items, by kind:text
@@ -64,6 +65,7 @@ export function ImportPanel() {
     if (s.promoted) parts.push(`moved ${s.promoted} built-in to the front of the queue`);
     if (s.pairs) parts.push(`${s.pairs} pairing${s.pairs === 1 ? '' : 's'}`);
     if (s.sentences) parts.push(`${s.sentences} sentence${s.sentences === 1 ? '' : 's'} for meaning practice`);
+    if (s.unmatched.length) parts.push(`${s.unmatched.length} sentence${s.unmatched.length === 1 ? '' : 's'} matched none of the words and ${s.unmatched.length === 1 ? 'was' : 'were'} not saved (${s.unmatched.join(' ')})`);
     if (s.passages) parts.push(`${s.passages} reading text${s.passages === 1 ? '' : 's'}`);
     if (s.duplicates.length) parts.push(`skipped ${s.duplicates.length} already on a list`);
     setMessage(`${parts.join('; ')}.`);
