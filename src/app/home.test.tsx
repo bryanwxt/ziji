@@ -28,13 +28,12 @@ describe('HomeScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '换装' }));
     expect(app.go).toHaveBeenCalledWith({ name: 'wardrobe' });
   });
-  it('the path zigzags left and right and knows how many stops it has; the cards sit above it', async () => {
+  it('the path zigzags left and right; the cards sit above it', async () => {
     const app = await makeAppData();
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
     const rows = [...document.querySelectorAll<HTMLElement>('.path__row')];
     expect(rows.map((r) => r.style.getPropertyValue('--side'))).toEqual(rows.map((_, i) => (i % 2 === 0 ? '-1' : '1')));
-    expect(document.querySelector<HTMLElement>('.path')!.style.getPropertyValue('--stops')).toBe(String(rows.length));
     expect(document.querySelector('.home__main > .home__path .path')).toBeTruthy();
     expect(document.querySelector('.home__main > .home__cards')).toBeTruthy();
   });

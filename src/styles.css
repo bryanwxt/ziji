@@ -718,6 +718,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 @media (orientation: landscape) and (min-height: 600px) {
   :root { --pet: clamp(110px, 20dvh, 170px); }
 }
+@media (orientation: landscape) and (min-height: 600px) {
+  .screen:has(.lessonbar) [data-part="lanterns"] { display: none; } /* the evening string would run across the progress bar */
+}
 
 /* phone turned sideways: too short for a lesson, so Truffle asks for upright */
 @media (orientation: landscape) and (max-height: 499px) {

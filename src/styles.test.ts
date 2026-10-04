@@ -165,4 +165,7 @@ describe('adaptive layouts (spec §18)', () => {
   it('a long self-introduction scrolls inside its card instead of pushing the buttons off an SE', () => {
     expect(css).toMatch(/\.langdu__script \{[^}]*max-height: [^;]*dvh[^}]*overflow-y: auto/);
   });
+  it("the evening lantern string never runs across a lesson's progress bar on a landscape iPad", () => {
+    expect(css).toMatch(/@media \(orientation: landscape\) and \(min-height: 600px\) \{\s*\.screen:has\(\.lessonbar\) \[data-part="lanterns"\] \{ display: none; \}/);
+  });
 });

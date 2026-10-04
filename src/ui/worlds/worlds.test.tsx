@@ -25,6 +25,7 @@ describe('world scenes', () => {
     const { container } = render(<WorldScene world="yard" time="evening" />);
     expect(container.querySelector('[data-part="moon"]')).toBeTruthy();
     expect(container.querySelectorAll('[data-part="lantern"]').length).toBe(4);
+    expect(container.querySelectorAll('[data-part="lanterns"] [data-part="lantern"]').length).toBe(4); // one group with its string, so a lesson can drop it
     expect(timeLayers('morning').over).toBe('');
   });
   it('the morning and afternoon washes cover the whole canvas (no seam)', () => {

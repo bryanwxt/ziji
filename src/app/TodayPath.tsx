@@ -19,7 +19,7 @@ export function TodayPath({ nodes, started, onStart, speakingName = '朗读' }: 
   const verb = started ? '继续' : '开始';
 
   return (
-    <ol class="path" aria-label="今天的练习" style={`--stops:${nodes.length}`}>
+    <ol class="path" aria-label="今天的练习">
       {nodes.map((n, i) => {
         const isCurrent = n.state === 'current';
         const icon = n.state === 'done' ? (n.kind === 'chest' ? <InkIcon name="party" size={44} /> : <Check size={38} strokeWidth={3.5} />) : ICON[n.kind] ? <InkIcon name={ICON[n.kind]!} size={44} /> : '字';
