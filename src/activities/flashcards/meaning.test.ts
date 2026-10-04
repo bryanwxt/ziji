@@ -6,7 +6,7 @@ import { mulberry32 } from '../../lib/random';
 
 describe('meaningCue', () => {
   it('blanks the character inside one of its 组词 words', () => {
-    const w = makeWord('惜', { examples: [{ text: '珍惜', pinyin: 'zhēn xī' }, { text: '可惜', pinyin: 'kě xī' }] });
+    const w = makeWord('惜', { pinyin: 'xī', examples: [{ text: '珍惜', pinyin: 'zhēn xī' }, { text: '可惜', pinyin: 'kě xī' }] });
     expect(meaningCue(w)).toEqual({ full: '珍惜', pinyin: 'zhēn xī', before: '珍', after: '' });
   });
   it('has no cue when no example contains the word (a two-character school word without sentences yet)', () => {
@@ -41,6 +41,22 @@ describe('sound-alike level', () => {
       expect(out).toHaveLength(3);
       expect(out.every((c) => level.get(c)! <= 2)).toBe(true);
     }
+  });
+});
+
+describe('meaningCue picks a fair 组词', () => {
+  it('never a word that repeats the character (妈妈 would give it away)', () => {
+    expect(meaningCue(makeWord('妈', { pinyin: 'mā', examples: [{ text: '妈妈', pinyin: 'mā ma' }] }))).toBeNull();
+    expect(meaningCue(makeWord('妈', { pinyin: 'mā', examples: [{ text: '妈妈', pinyin: 'mā ma' }, { text: '姑妈', pinyin: 'gū mā' }] }))?.full).toBe('姑妈');
+  });
+  it('one where the character has the reading he is learning (长 cháng: 长短, not 班长 zhǎng)', () => {
+    const chang = makeWord('长', { pinyin: 'cháng', examples: [{ text: '班长', pinyin: 'bān zhǎng' }, { text: '长短', pinyin: 'cháng duǎn' }] });
+    expect(meaningCue(chang)?.full).toBe('长短');
+  });
+  it('not one whose other part is a glue character that makes words with anything (不__, __们, __子)', () => {
+    const da = makeWord('大', { pinyin: 'dà', examples: [{ text: '不大', pinyin: 'bù dà' }, { text: '大家', pinyin: 'dà jiā' }] });
+    expect(meaningCue(da)?.full).toBe('大家');
+    expect(meaningCue(makeWord('人', { pinyin: 'rén', examples: [{ text: '别人', pinyin: 'bié rén' }] }))).toBeNull();
   });
 });
 

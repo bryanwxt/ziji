@@ -103,7 +103,7 @@ describe('写一写 after placement', () => {
 
 describe('meaning practice', () => {
   const later = new Date(2026, 9, 20);
-  const withCue = (i: number) => makeWord(`字${i}`, { id: `b:${i}`, rank: i, examples: [{ text: `字${i}好`, pinyin: 'x' }] });
+  const withCue = (i: number) => makeWord(`字${i}`, { id: `b:${i}`, rank: i, pinyin: 'zì líng', examples: [{ text: `字${i}书`, pinyin: 'zì líng shū' }] });
   it('adds due meaning reviews, and starts meaning practice for words he has begun, never for words without a cue', () => {
     const ws = [withCue(0), withCue(1), makeWord('保持', { id: 'p:1', rank: null, examples: [] }), withCue(3)];
     const cards = [

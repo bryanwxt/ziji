@@ -85,7 +85,7 @@ describe('meaning practice in the lesson', () => {
     await updateSettings(app.db, { newPerDay: 0, activities: flashOnly });
     await putCards(app.db, [makeCard('b:惜', 'recognise', new Date(2026, 9, 20), true)]);
     renderWithApp(<SessionScreen free={false} />, app);
-    expect((await screen.findAllByText('可')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('珍')).length).toBeGreaterThan(0); // 可惜 is skipped: 可 is a glue character
     fireEvent.click(screen.getByRole('button', { name: '惜' }));
     fireEvent.click(screen.getByText('继续'));
     await waitFor(async () => expect((await allCards(app.db)).map((c) => c.id)).toContain('b:惜:meaning'));

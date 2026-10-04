@@ -1,6 +1,6 @@
 import { HSK_WORDS } from '../../content';
 import { shuffle, type Rng } from '../../lib/random';
-import { toneless } from './tones';
+import { syllableTone, toneless } from './tones';
 import type { Word } from '../../types';
 
 export interface MeaningCue {
@@ -10,12 +10,31 @@ export interface MeaningCue {
   after: string;
 }
 
-/** 组词 as the meaning cue: the first longer example containing the word, with the word blanked. Never English (spec §19). */
+/** Characters that make a word with almost anything (不懂, 别让, 车子): a cue like 不__ has many right answers. */
+const GLUE = new Set([...'不没很太别也都再了们子儿上下的地得着过就还又第可好打老小大头里个一有是这那']);
+
+/** The example reads the word the way he's learning it (长 cháng in 长短, not zhǎng in 班长); a 轻声 syllable counts. */
+function sameReading(exPinyin: string, at: number, word: Word): boolean {
+  const ex = exPinyin.split(' ').slice(at, at + Array.from(word.text).length);
+  const own = word.pinyin.split(' ');
+  return ex.length === own.length && ex.every((s, i) => s === own[i] || s === syllableTone(own[i]!).base);
+}
+
+/** 组词 as the meaning cue: a longer example with the word blanked. Never English (spec §19). The example must
+ *  use the word once, in the reading he's learning, and its other part must not be a glue character. */
 export function meaningCue(word: Word): MeaningCue | null {
-  const ex = (word.examples ?? []).find((e) => e.text.length > word.text.length && e.text.includes(word.text));
-  if (!ex) return null;
-  const at = ex.text.indexOf(word.text);
-  return { full: ex.text, pinyin: ex.pinyin, before: ex.text.slice(0, at), after: ex.text.slice(at + word.text.length) };
+  for (const ex of word.examples ?? []) {
+    if (ex.text.length <= word.text.length) continue;
+    const at = ex.text.indexOf(word.text);
+    if (at < 0 || ex.text.indexOf(word.text, at + 1) >= 0) continue; // once only: 妈妈 would give it away
+    if (!sameReading(ex.pinyin, Array.from(ex.text.slice(0, at)).length, word)) continue;
+    const before = ex.text.slice(0, at);
+    const after = ex.text.slice(at + word.text.length);
+    const rest = before + after;
+    if (Array.from(rest).length === 1 && GLUE.has(rest)) continue;
+    return { full: ex.text, pinyin: ex.pinyin, before, after };
+  }
+  return null;
 }
 
 /** Same-sound choices (same syllable first, then same initial), minus any that would make a real word with the cue. */
