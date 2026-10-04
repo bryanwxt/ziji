@@ -132,12 +132,21 @@ const THUMB_VIEW: Record<string, string> = {
   sunglasses: '58 90 204 56', starglasses: '56 82 208 74', heartglasses: '56 88 208 64', moustache: '104 140 112 42',
   scarf: '90 180 140 82', bowtie: '126 180 68 40', medal: '136 184 48 46', headphones: '80 178 160 46',
   brush: '176 164 88 116', lantern: '184 186 94 84', kite: '226 42 64 112', balloon: '222 60 68 80',
-  wand: '186 156 96 104', backpack: '72 168 176 110', wings: '32 178 256 88', jetpack: '54 190 212 100',
+  wand: '186 156 96 104', backpack: '72 168 176 110', wings: '78 172 164 96', jetpack: '96 186 128 108', // each half drawn closer in (see accessoryThumb)
 };
+
+const THUMB_BACK = '<ellipse class="thumb__back" cx="160" cy="236" rx="30" ry="40" fill="#a9a7ad" stroke="#2a2630" stroke-width="3"/>';
+const PAIRED = 46; // wings and the jetpack sit either side of him: the thumbnail draws each half this much closer in
 
 /** An accessory drawn on its own (no paw), with a viewBox cropped to it. */
 export function accessoryThumb(id: string): { viewBox: string; markup: string } | null {
   const l = accessoryLayer(id);
   if (!l) return null;
-  return { viewBox: THUMB_VIEW[id]!, markup: (l.back + l.under + l.face + l.over).replace(PAW, '') };
+  const art = (l.back + l.under + l.face + l.over).replace(PAW, '');
+  if (id !== 'wings' && id !== 'jetpack') return { viewBox: THUMB_VIEW[id]!, markup: art };
+  // a pair on either side of his body: each half moves in, on a small grey back, so the tile isn't two specks
+  const half = (side: 'l' | 'r') =>
+    `<clipPath id="thumb-${id}-${side}"><rect x="${side === 'l' ? 0 : 160}" y="0" width="160" height="320"/></clipPath>` +
+    `<g transform="translate(${side === 'l' ? PAIRED : -PAIRED} 0)"><g clip-path="url(#thumb-${id}-${side})">${art}</g></g>`;
+  return { viewBox: THUMB_VIEW[id]!, markup: THUMB_BACK + half('l') + half('r') };
 }

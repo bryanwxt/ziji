@@ -133,6 +133,14 @@ describe('accessories never hide earned powers', () => {
       expect(x).toBeLessThan(120);
     }
   });
+  it('wings and the jetpack thumbnails draw the pair close in on a small back, big enough to read (not two specks)', async () => {
+    const { accessoryThumb } = await import('./accessories');
+    for (const id of ['wings', 'jetpack']) {
+      expect(accessoryThumb(id)!.markup.startsWith('<ellipse class="thumb__back"')).toBe(true);
+      expect(Number(accessoryThumb(id)!.viewBox.split(' ')[2])).toBeLessThanOrEqual(170); // was 212–256 wide
+    }
+    expect(accessoryThumb('backpack')!.markup).not.toContain('thumb__back');
+  });
   it('room thumbnails are cropped tightly to each accessory, without the paw', async () => {
     const { accessoryThumb } = await import('./accessories');
     for (const id of ['lantern', 'kite', 'balloon', 'wand', 'brush']) {
