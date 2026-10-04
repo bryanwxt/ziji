@@ -32,3 +32,12 @@ describe('powers', () => {
     expect(powerOf(BUILTIN.find((c) => c.char === '大')!)).toBeNull();
   });
 });
+
+describe('power families with HSK 1–9 content', () => {
+  it('count only HSK 1–2 characters, so tiers keep the pace they were tuned for', () => {
+    const fam = powerFamilies(BUILTIN);
+    const level = new Map(BUILTIN.map((c) => [c.char, c.level]));
+    expect(Object.values(fam).flat().every((ch) => level.get(ch)! <= 2)).toBe(true);
+    expect(fam.water.length).toBeGreaterThan(3);
+  });
+});

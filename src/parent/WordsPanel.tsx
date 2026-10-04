@@ -9,7 +9,7 @@ import { isKnown } from '../srs/scheduler';
 import { deleteWord, putWords } from '../store/repo';
 import type { Word } from '../types';
 
-type Filter = 'lists' | 'level1' | 'level2' | 'level3' | 'paused';
+type Filter = 'lists' | `level${1 | 2 | 3 | 4 | 5 | 6 | 7}` | 'paused';
 const MAX_ROWS = 200;
 
 export function WordsPanel() {
@@ -137,9 +137,7 @@ export function WordsPanel() {
             <label for="wl-filter">Show</label>
             <select id="wl-filter" value={filter} onChange={(e) => setFilter(e.currentTarget.value as Filter)}>
               <option value="lists">From your lists</option>
-              <option value="level1">Built-in level 1</option>
-              <option value="level2">Built-in level 2</option>
-              <option value="level3">Built-in level 3</option>
+              {[1, 2, 3, 4, 5, 6, 7].map((l) => <option key={l} value={`level${l}`}>{`HSK ${l === 7 ? '7–9' : l}`}</option>)}
               <option value="paused">Paused</option>
             </select>
           </div>
@@ -159,7 +157,7 @@ export function WordsPanel() {
                     ? <input aria-label={`Pinyin for ${w.text}`} value={w.pinyin} onChange={(e) => void update(w, { pinyin: e.currentTarget.value })} />
                     : w.pinyin}
                 </td>
-                <td>{w.listName ?? `Level ${w.level}`}</td>
+                <td>{w.listName ?? `HSK ${w.level === 7 ? '7–9' : w.level}`}</td>
                 <td>{status(w)}</td>
                 <td><input type="checkbox" aria-label={`Write ${w.text}`} checked={w.writeable} onChange={(e) => void update(w, { writeable: e.currentTarget.checked })} /></td>
                 <td><input type="checkbox" aria-label={`Pause ${w.text}`} checked={w.paused} onChange={(e) => void update(w, { paused: e.currentTarget.checked })} /></td>

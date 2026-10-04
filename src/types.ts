@@ -4,7 +4,7 @@ import type { Card as FsrsCard, Grade } from 'ts-fsrs';
 
 export type { FsrsCard, Grade };
 
-export type Level = 1 | 2 | 3;
+export type Level = 1 | 2 | 3 | 4 | 5 | 6 | 7; // HSK 3.0 level; 7 = 七—九级
 
 export interface Example {
   text: string;

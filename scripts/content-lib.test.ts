@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildBuiltin, cleanHskWord, extractComponents, firstSenses, parseHskSections, type MmahEntry } from './content-lib';
+import { buildBuiltin, buildWordDictionary, cleanHskWord, extractComponents, firstSenses, parseHskSections, type MmahEntry } from './content-lib';
 
 const charlist = '# header\n\n一级汉字表\n1\t大\n2\t河\n3\t人\n\n二级汉字表\n1\t可\n2\t人\n\n初等手写字表\n1\t大\n2\t人\n';
 const wordlist = '# header\n\n一级词汇表\n1 大人\n2 爸爸｜爸\n\n二级词汇表\n1 大河（名）\n\n三级词汇表\n1 可人\n';
@@ -65,5 +65,20 @@ describe('buildBuiltin', () => {
     expect(chars.find((c) => c.char === '河')).toMatchObject({
       radical: '氵', components: ['氵', '可'], strokes: 8, meaning: 'def of 河, more', level: 1,
     });
+  });
+});
+
+describe('HSK 1–9', () => {
+  const sections = (pairs: [string, string[]][]) => new Map(pairs);
+  const mmah = (c: string) => ({ character: c, pinyin: [], decomposition: '？', radical: c, matches: [[0]], definition: 'x' });
+  it('keeps every character section and takes the HSK level as the level', () => {
+    const chars = sections([['一级汉字表', ['一']], ['二级汉字表', ['二']], ['三级汉字表', ['三']], ['四级汉字表', ['四']], ['五级汉字表', ['五']], ['六级汉字表', ['六']], ['七一九级汉字表', ['七']], ['初等手写字表', ['一']], ['高等手写字表', ['七']]]);
+    const out = buildBuiltin({ hskChars: chars, hskWords: sections([['一级词汇表', ['一二']]]), dictionary: new Map([...'一二三四五六七'].map((c) => [c, mmah(c)])), pinyinOf: () => 'x' });
+    expect(out.map((c) => [c.char, c.level])).toEqual([['一', 1], ['二', 2], ['三', 3], ['四', 4], ['五', 5], ['六', 6], ['七', 7]]);
+    expect(out.filter((c) => c.writeable).map((c) => c.char)).toEqual(['一', '七']); // any 手写字表
+  });
+  it('builds the word dictionary from every word section, cleaned, two characters or more', () => {
+    const words = sections([['一级词汇表', ['爸爸｜爸', '白（形）']], ['七一九级词汇表', ['珍惜']]]);
+    expect(buildWordDictionary(words)).toEqual([['爸爸', 1], ['珍惜', 7]]);
   });
 });

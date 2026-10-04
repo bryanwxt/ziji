@@ -22,9 +22,13 @@ export function starsFor(stability: number): 1 | 2 | 3 {
   return 3;
 }
 
-/** One card per built-in character, in learning order. Caught never goes back (earned rule); stars may. */
+/** One card per built-in character in the HSK levels he's working in (every caught card, plus backs up to one level
+ *  past his highest; at least HSK 1–2), in learning order. Caught never goes back (earned rule); stars may. */
 export function collectionCards(builtin: BuiltinChar[], know: Knowledge): CharCard[] {
-  return [...builtin]
+  const highest = Math.max(1, ...builtin.filter((c) => know.knownChars.has(c.char)).map((c) => c.level));
+  const upTo = Math.max(2, highest + 1);
+  return builtin
+    .filter((c) => c.level <= upTo || know.knownChars.has(c.char))
     .sort((a, b) => a.rank - b.rank)
     .map((c) => {
       const id = builtinWordId(c.char);

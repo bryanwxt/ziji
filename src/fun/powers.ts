@@ -33,8 +33,9 @@ export function powerOf(c: BuiltinChar): PowerId | null {
   return p ? p.id : null;
 }
 
+/** Families count HSK 1–2 characters only: the tiers were tuned for those 600, and HSK 1–9 would make them five times slower. */
 export function powerFamilies(builtin: BuiltinChar[]): Record<PowerId, string[]> {
-  const sorted = [...builtin].sort((a, b) => a.rank - b.rank);
+  const sorted = builtin.filter((c) => c.level <= 2).sort((a, b) => a.rank - b.rank);
   return Object.fromEntries(POWERS.map((p) => [p.id, sorted.filter((c) => powerOf(c) === p.id).map((c) => c.char)])) as Record<PowerId, string[]>;
 }
 

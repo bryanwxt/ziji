@@ -100,7 +100,8 @@ describe('CollectionScreen', () => {
     await putWords(app.db, builtinWords(0));
     await putCards(app.db, [makeCard('b:河', 'recognise', new Date(2026, 9, 20), true)]);
     renderWithApp(<CollectionScreen />, app);
-    expect(await screen.findByText(`1 / ${BUILTIN.length}`)).toBeTruthy();
+    const he = BUILTIN.find((c) => c.char === '河')!.level;
+    expect(await screen.findByText(`1 / ${BUILTIN.filter((c) => c.level <= Math.max(2, he + 1)).length}`)).toBeTruthy(); // the levels he's working in
     fireEvent.click(screen.getByRole('button', { name: /水/ }));
     expect(screen.getByRole('button', { name: '河' })).toBeTruthy();
     expect(document.querySelectorAll('.zika:not(.card--back)')).toHaveLength(1);

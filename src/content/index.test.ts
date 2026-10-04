@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { BUILTIN, builtinWords, getCharInfo, hanChars, wordComponents } from './index';
+import { BUILTIN, builtinWords, getCharInfo, hanChars, HSK_WORDS, wordComponents, wordsWithChar } from './index';
+import { gzipSync } from 'node:zlib';
+import builtinJson from './builtin.json';
+import hskJson from './hskwords.json';
 import { radicalMeaning } from './radicals';
 
 describe('content module', () => {
   it('maps every built-in character to an active built-in word', () => {
     const words = builtinWords(123);
-    expect(words).toHaveLength(600);
+    expect(words).toHaveLength(3000);
     expect(words[0]).toMatchObject({ id: `b:${BUILTIN[0]!.char}`, source: 'builtin', paused: false, createdAt: 123, rank: 0 });
   });
   it('knows the components of 河', () => {
@@ -20,4 +23,16 @@ describe('content module', () => {
   it('explains common radicals for children', () => {
     expect(radicalMeaning('氵')).toEqual({ zh: '水', en: 'water', icon: 'drop' });
   });
+});
+
+describe('HSK 1–9 content', () => {
+it('ships HSK 1–9: ~3,000 characters and ~11,000 words, small enough for an offline app', () => {
+  expect(BUILTIN.length).toBeGreaterThan(2900);
+  expect(new Set(BUILTIN.map((c) => c.level))).toEqual(new Set([1, 2, 3, 4, 5, 6, 7]));
+  expect(HSK_WORDS.size).toBeGreaterThan(9000); // two characters or more
+  expect(HSK_WORDS.get('珍惜')).toBeDefined();
+  expect(wordsWithChar('惜')).toContain('珍惜');
+  const gz = gzipSync(JSON.stringify(builtinJson)).length + gzipSync(JSON.stringify(hskJson)).length;
+  expect(gz).toBeLessThan(1_500_000);
+});
 });

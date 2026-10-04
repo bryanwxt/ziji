@@ -16,10 +16,10 @@ export interface BuildInput {
   pinyinOf: (text: string) => string;
 }
 
-export const CHAR_SECTIONS = ['一级汉字表', '二级汉字表'] as const;
-export const WORD_SECTIONS = ['一级词汇表', '二级词汇表', '三级词汇表'] as const;
-export const HANDWRITING_SECTION = '初等手写字表';
-export const LEVEL_SIZE = 200;
+export const CHAR_SECTIONS = ['一级汉字表', '二级汉字表', '三级汉字表', '四级汉字表', '五级汉字表', '六级汉字表', '七一九级汉字表'] as const;
+export const WORD_SECTIONS = ['一级词汇表', '二级词汇表', '三级词汇表', '四级词汇表', '五级词汇表', '六级词汇表', '七一九级词汇表'] as const;
+export const HANDWRITING_SECTIONS = ['初等手写字表', '中等手写字表', '高等手写字表'] as const;
+export const MAX_EXAMPLES = 3;
 
 const IDC = /[⿰-⿿]/u; // ideographic description characters (⿰, ⿱, …)
 
@@ -60,8 +60,23 @@ export function firstSenses(definition: string | undefined, n = 2): string {
   return definition.split(/[;,]/).map((s) => s.trim()).filter(Boolean).slice(0, n).join(', ');
 }
 
+/** word → HSK level (1–7), cleaned, two characters or more; the first (lowest) level wins. */
+export function buildWordDictionary(hskWords: Map<string, string[]>): [string, number][] {
+  const out = new Map<string, number>();
+  WORD_SECTIONS.forEach((section, s) => {
+    for (const raw of hskWords.get(section) ?? []) {
+      const w = cleanHskWord(raw);
+      if (w.length >= 2 && !out.has(w)) out.set(w, s + 1);
+    }
+  });
+  return [...out];
+}
+
+/** Characters with no Make Me a Hanzi entry are skipped (and counted here) rather than failing the build. */
+export const skipped: string[] = [];
+
 export function buildBuiltin(input: BuildInput): BuiltinChar[] {
-  const handwriting = new Set(input.hskChars.get(HANDWRITING_SECTION) ?? []);
+  const handwriting = new Set(HANDWRITING_SECTIONS.flatMap((s) => input.hskChars.get(s) ?? []));
   const seen = new Set<string>();
   const pool: { char: string; hsk: number; index: number; strokes: number; entry: MmahEntry }[] = [];
 
@@ -71,25 +86,26 @@ export function buildBuiltin(input: BuildInput): BuiltinChar[] {
     chars.forEach((char, index) => {
       if (seen.has(char)) return;
       const entry = input.dictionary.get(char);
-      if (!entry) throw new Error(`No Make Me a Hanzi entry for ${char}`);
+      if (!entry) {
+        skipped.push(char);
+        return;
+      }
       seen.add(char);
       pool.push({ char, hsk: s + 1, index, strokes: entry.matches.length, entry });
     });
   });
   pool.sort((a, b) => a.hsk - b.hsk || a.strokes - b.strokes || a.index - b.index);
 
-  const levelOf = new Map<string, Level>();
-  pool.forEach((p, rank) => levelOf.set(p.char, Math.min(3, Math.floor(rank / LEVEL_SIZE) + 1) as Level));
-
-  const words = WORD_SECTIONS.flatMap((s) => input.hskWords.get(s) ?? [])
-    .map(cleanHskWord)
-    .filter((w) => w.length >= 2 && w.length <= 3);
+  const levelOf = new Map<string, Level>(pool.map((p) => [p.char, p.hsk as Level]));
+  const words = buildWordDictionary(input.hskWords)
+    .map(([w]) => w)
+    .filter((w) => w.length <= 4);
 
   return pool.map((p, rank) => {
     const level = levelOf.get(p.char)!;
     const examples: Example[] = [];
     for (const w of words) {
-      if (examples.length >= 2) break;
+      if (examples.length >= MAX_EXAMPLES) break;
       if (!w.includes(p.char) || examples.some((e) => e.text === w)) continue;
       if (![...w].every((c) => (levelOf.get(c) ?? 99) <= level)) continue;
       examples.push({ text: w, pinyin: input.pinyinOf(w) });

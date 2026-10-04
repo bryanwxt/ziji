@@ -1,17 +1,17 @@
 import { seededKnownCard } from '../srs/scheduler';
 import type { CardRecord, Word } from '../types';
 
-export const BAND_SIZE = 60;
 export const PER_BAND = 8;
 export const PASS_AT = 6; // so the 3rd miss in a band ends the check
 
 const builtinByRank = (words: Word[]) =>
   words.filter((w) => w.source === 'builtin' && w.rank !== null).sort((a, b) => a.rank! - b.rank!);
 
-/** Built-in characters in rank order, in bands of increasing difficulty. */
+/** One band per HSK level (built-in characters, rank order). Plan 14 replaces this with the adaptive check. */
 export function placementBands(words: Word[]): Word[][] {
   const ranked = builtinByRank(words);
-  return Array.from({ length: Math.ceil(ranked.length / BAND_SIZE) }, (_, i) => ranked.slice(i * BAND_SIZE, (i + 1) * BAND_SIZE));
+  const levels = [...new Set(ranked.map((w) => w.level))].sort((a, b) => (a ?? 0) - (b ?? 0));
+  return levels.map((l) => ranked.filter((w) => w.level === l));
 }
 
 export function bandSamples(band: Word[], n = PER_BAND): Word[] {
@@ -48,16 +48,18 @@ export function placementKnownIds(s: PlacementState, bands: Word[][]): string[] 
 }
 
 export const FIRST_CHECK_DAYS = [7, 28] as const;
+export const MAX_FIRST_CHECKS_PER_DAY = 30;
 
 /**
- * Known cards for the placed words. First rechecks are spread evenly over days 7–28 — the hardest
+ * Known cards for the placed words. First rechecks are spread evenly from day 7 (over days 7–28, longer for a big placement, at most 30 a day) — the hardest
  * (rarest) words first — so a big placement never lands on one day and pauses new words.
  */
 export function seedPlacementCards(words: Word[], knownIds: string[], now: Date): CardRecord[] {
   const ids = new Set(knownIds);
   const placed = words.filter((w) => ids.has(w.id));
   const hardestFirst = [...placed].sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));
-  const [first, last] = FIRST_CHECK_DAYS;
+  const [first, minLast] = FIRST_CHECK_DAYS;
+  const last = Math.max(minLast, first + Math.ceil(placed.length / MAX_FIRST_CHECKS_PER_DAY) - 1); // a big placement spreads further, never over 30 a day
   const span = last - first + 1;
   const dayOf = new Map(hardestFirst.map((w, i) => [w.id, first + Math.floor((i * span) / placed.length)]));
   return placed.map((w) => ({ id: `${w.id}:recognise`, wordId: w.id, kind: 'recognise' as const, fsrs: seededKnownCard(now, dayOf.get(w.id)!) }));

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { pinyin } from 'pinyin-pro';
-import { buildBuiltin, parseHskSections, type MmahEntry } from './content-lib';
+import { buildBuiltin, buildWordDictionary, parseHskSections, skipped, type MmahEntry } from './content-lib';
 
 const SOURCES = {
   charlist: 'https://raw.githubusercontent.com/elkmovie/hsk30/main/charlist.txt',
@@ -39,5 +39,8 @@ const chars = buildBuiltin({
 const body = chars.map((c) => '  ' + JSON.stringify(c)).join(',\n');
 await mkdir(new URL('../src/content/', import.meta.url), { recursive: true });
 await writeFile(outFile, `{\n "version": 1,\n "chars": [\n${body}\n ]\n}\n`);
-const perLevel = [1, 2, 3].map((l) => chars.filter((c) => c.level === l).length).join('/');
-console.log(`Wrote ${chars.length} characters (levels ${perLevel}), ${chars.filter((c) => c.writeable).length} writeable`);
+const hskWords = buildWordDictionary(parseHskSections(await source('wordlist')));
+const wordsBody = hskWords.map((w) => JSON.stringify(w)).join(',');
+await writeFile(new URL('../src/content/hskwords.json', import.meta.url), `{"version":1,"words":[${wordsBody}]}\n`);
+const perLevel = [1, 2, 3, 4, 5, 6, 7].map((l) => chars.filter((c) => c.level === l).length).join('/');
+console.log(`Wrote ${chars.length} characters (levels 1–7: ${perLevel}), ${chars.filter((c) => c.writeable).length} writeable, ${skipped.length} skipped (${skipped.join('')}); ${hskWords.length} HSK words`);

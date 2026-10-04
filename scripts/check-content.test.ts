@@ -13,7 +13,7 @@ describe('built-in content', () => {
     expect(checkContent(BUILTIN, PASSAGES, hasStrokeFile)).toEqual([]);
   });
   it('flags a passage that uses a character outside levels 1–2', () => {
-    const problems = checkContent(BUILTIN, [{ id: 'x', title: 't', text: '我'.repeat(29) + '澡' }], hasStrokeFile);
-    expect(problems).toContain('x: uses 澡 outside levels 1–2');
+    const problems = checkContent(BUILTIN, [{ id: 'x', title: 't', text: '我'.repeat(29) + '惜' }], hasStrokeFile);
+    expect(problems).toContain('x: uses 惜 outside levels 1–2'); // 惜 is HSK 5
   });
 });

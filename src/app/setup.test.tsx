@@ -62,7 +62,7 @@ describe('first launch', () => {
     fireEvent.click(screen.getByText('不知道'));
     expect(await screen.findByText('第 2 组')).toBeTruthy();
     for (let i = 0; i < 3; i++) fireEvent.click(await screen.findByText('不知道'));
-    expect(await screen.findByText('你已经认识 60 个字了！')).toBeTruthy();
+    expect(await screen.findByText('你已经认识 300 个字了！')).toBeTruthy();
     expect((await getSettings(app.db)).placementDone).toBe(true);
     fireEvent.click(screen.getByText('开始！'));
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'home' }));

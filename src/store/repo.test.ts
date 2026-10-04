@@ -143,3 +143,18 @@ describe('plan 7 data', () => {
     expect(normalizeKid({ finds: { animals: ['rat', 'unicorn', 'rat', 'ox'], gems: -2, eggTapped: 'yes', lastGemDate: '2026-10-06' } } as never)?.finds).toEqual({ ...empty, animals: ['rat', 'ox'], lastGemDate: '2026-10-06' });
   });
 });
+
+describe('built-in content updates', () => {
+it('re-seeding new built-in content keeps the parent\'s and child\'s state on existing words and their cards', async () => {
+  const db = await freshDb();
+  const now = new Date(2026, 9, 4);
+  await seedBuiltinWords(db, [makeWord('他', { id: 'b:他', level: 1, rank: 5 })]);
+  const old = (await allWords(db))[0]!;
+  await putWords(db, [{ ...old, paused: true, listName: '听写 3', listedAt: 7, writeSkippedAt: 9 }]);
+  await putCards(db, [makeCard('b:他', 'recognise', now)]);
+  await seedBuiltinWords(db, [makeWord('他', { id: 'b:他', level: 1, rank: 40 })]);
+  const w = (await allWords(db))[0]!;
+  expect([w.rank, w.paused, w.listName, w.listedAt, w.writeSkippedAt]).toEqual([40, true, '听写 3', 7, 9]);
+  expect((await allCards(db)).map((c) => c.id)).toEqual(['b:他:recognise']);
+});
+});

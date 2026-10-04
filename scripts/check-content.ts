@@ -13,9 +13,10 @@ export function checkContent(chars: BuiltinChar[], passages: Passage[], hasStrok
     if (!c.radical) problems.push(`${c.char}: no radical`);
     if (!hasStrokeFile(c.char)) problems.push(`${c.char}: no stroke data`);
   }
-  for (const level of [1, 2, 3] as const) {
+  for (const level of [1, 2, 3, 4, 5, 6, 7] as const) {
     const n = chars.filter((c) => c.level === level).length;
-    if (n !== 200) problems.push(`level ${level} has ${n} characters, expected 200`);
+    const expected = level === 7 ? 1200 : 300; // HSK 3.0: 300 per level for 1–6, 1,200 for 七—九级
+    if (n !== expected) problems.push(`level ${level} has ${n} characters, expected ${expected}`);
   }
 
   const easy = new Set(chars.filter((c) => c.level <= 2).map((c) => c.char));
