@@ -531,3 +531,22 @@ Tests 699; fit sweep 426 screens + placement/writing re-run 66, 0 problems.
 - the Skills panel's Meaning row also counts the day's first 选一选/用一用 answer (recordUse logs a meaning review)
 - a baseline field saves on every keystroke
 - orphaned ActivityKind comment in types.ts; levelName/hsk() duplicate the band→HSK lookup
+
+## Plan 15 — school 听写 mistakes (spec §19 part 3); Tatoeba skipped
+
+Branch feature/tingxie. The Words tab's "School 听写 mistakes" box takes the right words he got wrong in class (often a same-sound slip, 新家坡 for 新加坡): each becomes writeable and comes first in the next 写一写 — tracing first if he has never written it — with its sentence cue. New words are added as school words and named, so a misspelling is noticed. The rest of 听写 (the word said with its sentence, no character shown, hints after 2 misses, 字辨 misses bringing writing forward) arrived with plans 13–14. Tatoeba sentences were skipped by the parent. Tests 708.
+
+### Rulings
+- Task 1: Ruling: a marked word's write card is due at the earliest possible time (epoch), not 'now' — an overdue write card would otherwise go ahead of it; FSRS schedules from the last review, so this only orders the queue — test 'comes first in the next lesson's 写一写' RED→GREEN — cost if wrong: none
+
+### Fixed in the final review
+- I1 a marked built-in lost its 写 choice at the next launch — it joins the '听写 mistakes' list (makeParentWords promoted) — dictation 'a built-in character stays writeable after the next app launch…' RED→GREEN, suite 708/708
+- I2 a never-written word went straight to recall — due write cards with no reps count as new (trace → hint → recall) — dictation 'a word he has never written starts with tracing…' RED→GREEN, suite 708/708
+- I3 the box invited typing what he wrote — label 'The right words, one per line'; new words are named with a spelling check — parentB '…is new to the app' RED→GREEN, suite 708/708
+
+### Deferred minors
+- no stroke-data check for marked words (a word with no strokes is skipped each lesson)
+- marked words are written in card order, not the order typed
+- a quick double tap on Bring back can add a new word twice (same pattern as Add list)
+- '…comes back' when several words are marked
+- a new school word's 认一认 intro waits behind older unstarted lists (writing still comes first)
