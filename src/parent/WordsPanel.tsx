@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
 import { hanChars } from '../content';
@@ -25,6 +25,7 @@ export function WordsPanel() {
   const [query, setQuery] = useState('');
   const [mistakes, setMistakes] = useState('');
   const [mistakeMessage, setMistakeMessage] = useState<string | null>(null);
+  const busy = useRef(false);
 
   const reload = async () => setKnow(await loadKnowledge(db));
   useEffect(() => {
@@ -32,7 +33,15 @@ export function WordsPanel() {
   }, []);
 
   const add = async () => {
-    if (!preview) return;
+    if (!preview || busy.current) return; // a double tap would add the list twice
+    busy.current = true;
+    try {
+      await addList(preview);
+    } finally {
+      busy.current = false;
+    }
+  };
+  const addList = async (preview: ParseResult) => {
     const current = await loadKnowledge(db); // fresh, so duplicates are judged against what is stored now
     const { added, promoted, duplicates } = makeParentWords(preview.words, {
       listName: listName.trim() || `List ${localDateKey(now())}`,
@@ -145,8 +154,11 @@ export function WordsPanel() {
           class="btn"
           disabled={!mistakes.trim()}
           onClick={async () => {
-            const r = await applyDictationMistakes(db, mistakes, now());
-            const parts = [r.marked.length ? `${r.marked.join('、')} comes back first in 写一写.` : 'Nothing to bring back.'];
+            if (busy.current) return; // a double tap would add a new word twice
+            busy.current = true;
+            const r = await applyDictationMistakes(db, mistakes, now()).finally(() => (busy.current = false));
+            const parts = [r.marked.length ? `${r.marked.join('、')} ${r.marked.length > 1 ? 'come' : 'comes'} back first in 写一写.` : 'Nothing to bring back.'];
+            if (r.noStrokes.length) parts.push(`${r.noStrokes.join('、')}: no stroke data, so it can't be written in the app.`);
             if (r.added.length) parts.push(`${r.added.join('、')} is new to the app — check the spelling (type the right word, not what he wrote).`);
             if (r.skipped.length) parts.push(`Skipped: ${r.skipped.join(', ')} (not 1–4 Chinese characters).`);
             setMistakeMessage(parts.join(' '));

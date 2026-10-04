@@ -123,4 +123,26 @@ describe('school 听写 mistakes (spec §19 part 3)', () => {
     expect(screen.getByText(/Skipped: xyz/)).toBeTruthy();
     expect((await allCards(app.db)).some((c) => c.kind === 'write')).toBe(true);
   });
+  it('several words come back; a double tap brings them back once', async () => {
+    const app = await makeAppData();
+    renderWithApp(<WordsPanel />, app);
+    fireEvent.input(await screen.findByLabelText('The right words, one per line'), { target: { value: '新加坡\n市区' } });
+    const btn = screen.getByRole('button', { name: 'Bring back' });
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+    expect(await screen.findByText(/新加坡、市区 come back first in 写一写/)).toBeTruthy();
+    await waitFor(async () => expect((await allWords(app.db)).filter((w) => w.text === '新加坡')).toHaveLength(1));
+  });
+  it('a double tap on Add adds a list once', async () => {
+    const app = await makeAppData();
+    renderWithApp(<WordsPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Words'), { target: { value: '新加坡' } });
+    fireEvent.click(screen.getByText('Preview'));
+    const add = await screen.findByRole('button', { name: /Add 1 new|Add 1 words/ });
+    fireEvent.click(add);
+    fireEvent.click(add);
+    await waitFor(async () => expect((await allWords(app.db)).filter((w) => w.text === '新加坡')).toHaveLength(1));
+    await new Promise((r) => setTimeout(r, 50));
+    expect((await allWords(app.db)).filter((w) => w.text === '新加坡')).toHaveLength(1);
+  });
 });

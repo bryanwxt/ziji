@@ -1,10 +1,12 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../content';
 import { allCards, allWords, getSettings, putCards, putWords, seedBuiltinWords } from '../store/repo';
 import { freshDb, makeCard } from '../test/fixtures';
 import { buildSessionPlan } from './plan';
 import { applyDictationMistakes } from './dictation';
+
+vi.mock('../content/strokes', () => ({ strokeAvailability: vi.fn(async () => 'yes') })); // no network in tests
 
 const now = new Date(2026, 9, 5, 18);
 
@@ -16,7 +18,7 @@ describe('school 听写 mistakes (spec §19 part 3)', () => {
     const jia = ws.find((w) => w.text === '加')!;
     await putCards(db, [makeCard(jia.id, 'recognise', new Date(2026, 9, 20), true), makeCard(jia.id, 'write', new Date(2026, 9, 25), true)]);
     const r = await applyDictationMistakes(db, '加', now);
-    expect(r).toEqual({ marked: ['加'], added: [], skipped: [] });
+    expect(r).toEqual({ marked: ['加'], added: [], skipped: [], noStrokes: [] });
     const cards = new Map((await allCards(db)).map((c) => [c.id, c]));
     expect(cards.get(`${jia.id}:write`)!.fsrs.due.getTime()).toBeLessThanOrEqual(now.getTime());
     expect(cards.get(`${jia.id}:recognise`)!.fsrs.due).toEqual(new Date(2026, 9, 20)); // keeps the reading card as it was
@@ -75,5 +77,27 @@ describe('school 听写 mistakes (spec §19 part 3)', () => {
     await applyDictationMistakes(db, '新加坡', now);
     const plan = buildSessionPlan({ cards: await allCards(db), words: await allWords(db), settings: await getSettings(db), now: new Date(2026, 9, 6, 9) });
     expect(plan.writeCandidates[0]).toMatchObject({ isNew: true });
+  });
+  it('a word with no stroke data is reported, not made a writing word (it would be skipped every lesson)', async () => {
+    const db = await freshDb();
+    const r = await applyDictationMistakes(db, '市区\n坼裂', now, async (ch) => (ch === '坼' ? 'no' : 'yes'));
+    expect(r.noStrokes).toEqual(['坼裂']);
+    expect(r.marked).toEqual(['市区']);
+    expect((await allCards(db)).filter((c) => c.kind === 'write')).toHaveLength(1);
+  });
+  it('marked words are written in the order typed', async () => {
+    const db = await freshDb();
+    await applyDictationMistakes(db, '新加坡\n市区\n安静', now);
+    const plan = buildSessionPlan({ cards: await allCards(db), words: await allWords(db), settings: { ...(await getSettings(db)), sessionMinutes: 30 }, now: new Date(2026, 9, 6, 9) });
+    const byId = new Map((await allWords(db)).map((w) => [w.id, w.text]));
+    expect(plan.writeCandidates.slice(0, 3).map((c) => byId.get(c.wordId))).toEqual(['新加坡', '市区', '安静']);
+  });
+  it('a new school word is also first for 认一认, ahead of older unstarted lists', async () => {
+    const db = await freshDb();
+    await putWords(db, [{ ...builtinWords(0)[0]!, id: 'p:old', text: '旧词', source: 'parent', rank: null, level: null, listName: 'Week 1', listedAt: 1 }]);
+    await applyDictationMistakes(db, '新加坡', now);
+    const plan = buildSessionPlan({ cards: await allCards(db), words: await allWords(db), settings: await getSettings(db), now: new Date(2026, 9, 6, 9) });
+    const byId = new Map((await allWords(db)).map((w) => [w.id, w.text]));
+    expect(byId.get(plan.newWordIds[0]!)).toBe('新加坡');
   });
 });
