@@ -106,6 +106,30 @@ describe('LangduStep', () => {
     expect(onDone).toHaveBeenCalledWith({ intro: null, read: expect.objectContaining({ durationSec: 5 }) });
   });
 
+  it('listen back is an app play button, not the grey browser player: plays, pauses, resets at the end, stops on leave', async () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+    const pause = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+    const { unmount } = render(<LangduStep passage={passage} oral={oral} warmups={0} knownChars={new Set()} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByText('下一句'));
+    fireEvent.click(screen.getByText('开始朗读'));
+    await recordOnce();
+    expect(document.querySelector('audio[controls]')).toBeNull();
+    const audio = document.querySelector('audio')!;
+    expect(audio.getAttribute('src')).toMatch(/^blob:/);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '听录音' })); });
+    expect(play).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: '暂停' }));
+    expect(pause).toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '听录音' })); });
+    act(() => { audio.dispatchEvent(new Event('ended')); });
+    expect(screen.getByRole('button', { name: '听录音' })).toBeTruthy(); // back to play when it finishes
+    pause.mockClear();
+    unmount();
+    expect(pause).toHaveBeenCalled();
+    play.mockRestore();
+    pause.mockRestore();
+  });
+
   it('missing self-introduction details: just 老师好！ and 谢谢老师！', () => {
     render(<LangduStep passage={passage} oral={{ ...oral, school: '' }} warmups={0} knownChars={new Set()} kid={DEFAULT_KID} withWarmup onDone={vi.fn()} />);
     expect(screen.getByText('老师好！')).toBeTruthy();

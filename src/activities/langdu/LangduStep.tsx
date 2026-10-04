@@ -1,4 +1,4 @@
-import { Volume2 } from 'lucide-preact';
+import { Pause, Play, Volume2 } from 'lucide-preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { FinishedRecording } from '../../audio/recorder';
 import { playSfx } from '../../audio/sfx';
@@ -111,11 +111,40 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
     <>
       <div class="langdu">
         <h2 class="langdu__title"><Label zh="听听你自己" /></h2>
-        <audio controls src={playbackUrl ?? undefined} />
+        <PlayBack url={playbackUrl} />
         <button type="button" class="btn" onClick={() => { read.reset(); setPart('read'); }}><Label zh="重录" /></button>
         {withWarmup && <p class="langdu__line langdu__thanks"><Label zh={lines.thanks} /></p>}
       </div>
       <BottomBar actionLabel="完成" onAction={finish} />
+    </>
+  );
+}
+
+/** Listen back to his reading: one big play/pause button (the browser's own grey player showed "Error" on iPad). */
+function PlayBack({ url }: { url: string | null }) {
+  const audio = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    const a = audio.current;
+    return () => a?.pause(); // leaving the screen stops it
+  }, []);
+  const toggle = () => {
+    const a = audio.current;
+    if (!a) return;
+    if (playing) {
+      a.pause();
+      setPlaying(false);
+      return;
+    }
+    setPlaying(true);
+    void Promise.resolve(a.play()).catch(() => setPlaying(false)); // a refused play leaves the button on play
+  };
+  return (
+    <>
+      <audio ref={audio} src={url ?? undefined} preload="auto" onEnded={() => setPlaying(false)} onPause={() => setPlaying(false)} />
+      <button type="button" class="speak speak--big" aria-label={playing ? '暂停' : '听录音'} disabled={!url} onClick={toggle}>
+        {playing ? <Pause size={60} strokeWidth={2.5} /> : <Play size={60} strokeWidth={2.5} />}
+      </button>
     </>
   );
 }
