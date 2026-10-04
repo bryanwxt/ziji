@@ -1,6 +1,6 @@
 # 字己 ZiJi — the storybook stage and a living Truffle (design)
 
-Date: 2026-10-04. Status: draft for the parent's review.
+Date: 2026-10-04. Status: approved by the parent, 2026-10-04.
 Builds on: `docs/superpowers/specs/2026-10-02-ziji-truffle-design.md` (§5 look, §15 journey worlds, §18 adaptive layouts, §20 lessons).
 Mockups, approved in the brainstorm (visual companion, 2026-10-04):
 - `docs/superpowers/mockups/2026-10-04-stage-worlds-paper.html`: the world art direction ("depth, light and story details", right-hand card).
@@ -293,8 +293,9 @@ Expressions and the bubble still change, with short cross-fades. There are no ho
 
 **On the iPad:** the parent and their son try phase A and phase B before the next phase starts.
 
-## 10. Open questions for the parent
+## 10. Decisions from the parent's review (2026-10-04)
 
-1. **The world props table (§2):** keep, swap or add any? (Can wait until phase C.)
-2. **Recorded meows:** would you like to record the real Truffle's meows and purr on the iPad, in the parent area, kept only on the device like the 朗读 recordings, so the app uses his real voice? Otherwise we use a licensed sound pack later.
-3. **Evening:** should Truffle actually fall asleep on Home late at night, with a tap waking him up?
+The spec was approved.
+1. **World props:** the proposed props are fine (§2 table).
+2. **Recorded meows:** none. Synthesised effects stay, plus a purr loop (§4.7).
+3. **Evening:** Truffle does not fall asleep on Home. Evening only adds light and a sleepier idle mood (§4.2).
