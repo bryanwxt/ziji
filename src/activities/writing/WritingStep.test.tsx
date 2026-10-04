@@ -33,6 +33,16 @@ describe('WritingStep', () => {
     expect(onDone).toHaveBeenCalledWith({ totalMisses: 3, hinted: false, elapsedMs: expect.any(Number) });
   });
 
+  it('a new word written from memory with no misses gets the 咦！ close-up (face only), when one is due', () => {
+    quizzes.length = 0;
+    const { unmount } = render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew pass="recall" closeupReady onDone={vi.fn()} />);
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 0 }));
+    expect(document.querySelector('.closeup .closeup__face svg.truffle')).toBeTruthy();
+    unmount();
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew pass="recall" onDone={vi.fn()} />);
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 0 }));
+    expect(document.querySelector('.closeup')).toBeNull(); // not due: no close-up
+  });
   it('skips the word when its stroke data cannot load', () => {
     const onDone = vi.fn();
     render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={onDone} />);

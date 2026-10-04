@@ -8,6 +8,7 @@ import type { KidState, Word } from '../../types';
 import { BottomBar } from '../../ui/BottomBar';
 import { burst } from '../../ui/motion';
 import { isHardWrite } from '../../fun/mood';
+import { Closeup } from '../../app/Closeup';
 import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { Label, spokenBlanks } from '../../ui/Label';
@@ -29,11 +30,13 @@ interface Props {
   isNew: boolean;
   pass: WritePass;
   onDone: (result: WriteResult | null) => void;
+  /** a 咦！ close-up is due (one every few hard wins, never with reduced motion) */
+  closeupReady?: boolean;
 }
 
 const PASS_BUBBLE: Record<WritePass, string> = { trace: '描一描！', hint: '看提示写！', recall: '写一写！' };
 
-export function WritingStep({ word, kid, resting, isNew, pass, onDone }: Props) {
+export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupReady = false }: Props) {
   const chars = useMemo(() => hanChars(word.text), [word.id]);
   const cue = useMemo(() => writingCue(word), [word.id]);
   const [index, setIndex] = useState(0);
@@ -92,6 +95,7 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone }: Props) 
   }, [word.id, index, pass]);
 
   const last = index === chars.length - 1;
+  const showCloseup = closeupReady && pass === 'recall' && last && charMisses !== null && isHardWrite(isNew, misses);
   const next = () => {
     if (!last) setIndex(index + 1);
     else onDone({ totalMisses: misses, hinted: hinted.current, elapsedMs: Math.round(performance.now() - startedAt.current) });
@@ -132,6 +136,7 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone }: Props) 
       ) : (
         <BottomBar tone="good" title={charMisses === 0 ? '完美！' : '写得好！'} actionLabel={last ? '完成' : '下一个字'} onAction={next} />
       )}
+      {showCloseup && <Closeup kid={kid} />}
     </>
   );
 }

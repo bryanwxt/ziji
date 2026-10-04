@@ -22,7 +22,7 @@ import { burst } from '../ui/motion';
 import { WritingStep, type WriteResult } from '../activities/writing/WritingStep';
 import { playSfx } from '../audio/sfx';
 import { PASSAGES } from '../content';
-import { CLOSEUP_EVERY, closeupAllowed, restingMood } from '../fun/mood';
+import { CLOSEUP_EVERY, closeupAllowed, isHardWrite, restingMood } from '../fun/mood';
 import { comboMilestone } from '../fun/pet';
 import { reducedMotion } from '../ui/motion';
 import { localDateKey } from '../lib/date';
@@ -209,6 +209,8 @@ export function SessionScreen({ free }: { free: boolean }) {
       // only the recall pass rates the word (spec §20 part 3); a redo at the end is extra practice
       if (r && !rec.free && task.pass === 'recall' && !task.redo) await recordWriting(db, task.wordId, r.totalMisses, now());
       if (!r && task.isNew) await markWriteSkipped(db, task.wordId, now());
+      // a new word written from memory with no misses showed the close-up if one was due: start the cooldown again
+      if (r && task.pass === 'recall' && isHardWrite(task.isNew, r.totalMisses) && closeupAllowed(cardsSinceCloseup.current, reducedMotion())) cardsSinceCloseup.current = 0;
       await commit(afterWriteWord(rec, r !== null, r?.elapsedMs ?? 0, { hinted: r?.hinted, misses: r?.totalMisses }));
     })();
 
@@ -318,6 +320,7 @@ export function SessionScreen({ free }: { free: boolean }) {
           resting={resting}
           isNew={!!writeCandidate?.isNew}
           pass={writeCandidate!.pass}
+          closeupReady={closeupAllowed(cardsSinceCloseup.current, reducedMotion())}
           onDone={(r) => void onWriteDone(r)}
         />
       )}

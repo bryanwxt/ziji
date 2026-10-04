@@ -511,7 +511,8 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 @keyframes truffle-bounce { 0% { transform: scale(1, 1); } 30% { transform: scale(1.08, 0.92); } 100% { transform: scale(1, 1); } }
 .closeup { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; pointer-events: none; animation: closeup var(--dur-slow) var(--ease-out); }
 .closeup__sun { position: absolute; inset: 0; width: 100%; height: 100%; }
-.closeup .truffle { position: relative; }
+.closeup__face { position: relative; width: min(84vw, 420px); aspect-ratio: 260 / 206; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 98%); mask-image: linear-gradient(to bottom, #000 72%, transparent 98%); } /* his head, the body fading out below the chin */
+.closeup__face .truffle { display: block; width: 100%; height: auto; }
 @keyframes closeup { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .truffle--bounce, .closeup { animation: none; } }
 
