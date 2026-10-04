@@ -25,7 +25,9 @@ describe('HomeScreen', () => {
     await screen.findByText('今天的练习');
     expect(document.querySelector('.home > .home__pet .pet')).toBeTruthy();
     expect(document.querySelector('.path .pet')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '换装' }));
+    fireEvent.click(document.querySelector('.home__pet [data-part="headpos"]')!); // a tap on him plays (spec §4.5), it does not leave Home
+    expect(app.go).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '松露' })); // his room is one tap away on the tab bar
     expect(app.go).toHaveBeenCalledWith({ name: 'wardrobe' });
   });
   it('the path zigzags left and right; the cards sit above it', async () => {

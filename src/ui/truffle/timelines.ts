@@ -30,14 +30,26 @@ function track(keys: Key[]): Track {
     return prev;
   };
 }
+/** Two tracks at once, the second starting `delay` ms after the first. */
+function both(a: Track, b: Track, delay: number): Track {
+  return (t) => {
+    const x = a(t);
+    const y = t < delay ? REST : b(t - delay);
+    if (!x && !y) return null;
+    const p = x ?? REST;
+    const q = y ?? REST;
+    return { y: p.y + q.y, squash: p.squash + q.squash, shake: p.shake + q.shake, lean: p.lean + q.lean };
+  };
+}
 export const TRACKS = {
   hop: track([[130, { squash: 0.09 }], [250, { squash: -0.07, y: -30 }], [360, { squash: 0, y: -46 }], [570, { y: 0 }, easeIn], [650, { squash: 0.08 }], [910, { squash: 0 }, back]]),
   bigHop: track([[150, { squash: 0.12 }], [280, { squash: -0.1, y: -44 }], [420, { squash: 0, y: -70 }], [660, { y: 0 }, easeIn], [740, { squash: 0.1 }], [1040, { squash: 0 }, back]]),
-  flinch: track([[90, { squash: 0.06, y: 3 }], [390, { squash: 0, y: 0 }, back]]),
   shake: track([[110, { shake: -6 }], [250, { shake: 6 }], [390, { shake: -3 }], [550, { shake: 0 }]]),
   pounce: track([[450, { lean: 6 }], [710, { squash: 0.1, lean: 8 }], [830, { squash: -0.08, y: -30, lean: 12 }], [1030, { squash: 0, y: 0, lean: 4 }, easeIn], [1100, { squash: 0.06 }], [1400, { squash: 0, lean: 0 }, back]]),
   nod: track([[120, { y: 2, shake: 0 }], [260, { y: 0 }, back]]),
   wiggle: track([[150, { lean: -4 }], [300, { lean: 4 }], [450, { lean: -3 }], [600, { lean: 3 }], [760, { lean: 0 }]]),
+  /** a tap on his head: he ducks, then shakes it off 140 ms later (one reaction, so nothing replaces the duck) */
+  flinch: both(track([[90, { squash: 0.06, y: 3 }], [390, { squash: 0, y: 0 }, back]]), track([[110, { shake: -6 }], [250, { shake: 6 }], [390, { shake: -3 }], [550, { shake: 0 }]]), 140),
   purr: track([[2200, {}]]), // the body shimmer comes from the loop's purr flag; the track only holds the time
 } satisfies Record<string, Track>;
 

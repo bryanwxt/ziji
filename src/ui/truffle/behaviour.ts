@@ -32,3 +32,13 @@ export function cardCentre(): { x: number; y: number } | null {
   if (!r || !r.width || !r.height) return null;
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 }
+
+/**
+ * What a touch on him was (spec §4.5): a drag across his head or body is a stroke; a quick touch that hardly moved is a
+ * tap on the part touched (head or tail); anything else (a long press that went nowhere) is nothing.
+ */
+export function classifyGesture(g: { part: 'head' | 'body' | 'tail'; travelled: number; ms: number }): 'stroke' | 'tapHead' | 'tapTail' | null {
+  if (g.travelled >= 50 && g.part !== 'tail') return 'stroke';
+  if (g.ms < 350 && g.travelled < 12) return g.part === 'head' ? 'tapHead' : g.part === 'tail' ? 'tapTail' : null;
+  return null;
+}

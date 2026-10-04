@@ -506,6 +506,12 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 /* Truffle */
 .truffle { display: block; overflow: visible; }
 .truffle--bounce { animation: truffle-bounce var(--dur-slow) var(--spring-bouncy); }
+.truffle--touchable { touch-action: none; -webkit-user-select: none; user-select: none; } /* a stroke strokes him, it does not scroll the page */
+.truffle--touchable [data-part="headpos"], .truffle--touchable [data-part="body"], .truffle--touchable [data-part="tail"] { pointer-events: all; cursor: pointer; }
+.pet__heart { position: absolute; top: 30%; width: 22px; animation: heart-up 1.4s ease-out forwards; pointer-events: none; z-index: 2; }
+.pet__heart svg { display: block; width: 100%; height: auto; }
+@keyframes heart-up { from { transform: translateY(0) scale(.6); opacity: 0 } 20% { opacity: 1 } to { transform: translateY(-90px) scale(1.1); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .pet__heart { display: none; } }
 @keyframes truffle-bounce { 0% { transform: scale(1, 1); } 30% { transform: scale(1.08, 0.92); } 100% { transform: scale(1, 1); } }
 .closeup { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; pointer-events: none; animation: closeup var(--dur-slow) var(--ease-out); }
 .closeup__sun { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -766,7 +772,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__pet { position: absolute; z-index: 2; bottom: calc(var(--nav-h) + 4px); left: 50%; transform: translateX(-50%); pointer-events: none; }
 .home__pet .truffle { width: var(--pet-home); height: auto; }
 .home__pet .pet__bubble { font-size: 17px; }
-.home__pet .pet-button { pointer-events: none; } /* his box is as wide as his bubble; only Truffle catches taps (the bubble often sits over a world target) */
+.home__pet .home__pet-touch { pointer-events: none; } /* his box is as wide as his bubble; only Truffle catches taps (the bubble often sits over a world target) */
 .home__pet .truffle { pointer-events: auto; }
 
 @media (max-width: 599px) {

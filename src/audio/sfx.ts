@@ -45,3 +45,41 @@ export function playSfx(name: Sfx): void {
     osc.stop(t + offset + duration);
   }
 }
+
+let purr: { osc: OscillatorNode; lfo: OscillatorNode; gain: GainNode } | null = null;
+
+/** A synthesised purr while he is stroked: a low sawtooth through a low-pass, its loudness wobbling like breath. */
+export function startPurr(): void {
+  if (purr) return;
+  const ac = audio();
+  if (!ac) return;
+  const osc = ac.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.value = 27;
+  const filter = ac.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 170;
+  const gain = ac.createGain();
+  gain.gain.value = 0;
+  gain.gain.setTargetAtTime(0.16, ac.currentTime, 0.08);
+  const lfo = ac.createOscillator();
+  lfo.frequency.value = 0.9;
+  const depth = ac.createGain();
+  depth.gain.value = 0.07;
+  lfo.connect(depth).connect(gain.gain);
+  osc.connect(filter).connect(gain).connect(ac.destination);
+  osc.start();
+  lfo.start();
+  purr = { osc, lfo, gain };
+}
+
+export function stopPurr(): void {
+  if (!purr || !ctx) return;
+  const { osc, lfo, gain } = purr;
+  purr = null;
+  const t = ctx.currentTime;
+  gain.gain.cancelScheduledValues(t);
+  gain.gain.setTargetAtTime(0, t, 0.08);
+  osc.stop(t + 0.5);
+  lfo.stop(t + 0.5);
+}

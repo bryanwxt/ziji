@@ -217,9 +217,10 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         </div>
       </main>
       <div class="home__pet">
-        <button type="button" class="pet-button" aria-label="换装" onClick={() => go({ name: 'wardrobe' })}>
+        {/* a tap here plays with him (spec 2026-10-04 §4.5); his room is the 松露 tab */}
+        <div class="home__pet-touch">
           <Pet kid={k} mood={sleepy ? 'sleepy' : doneToday ? 'pleased' : 'sulk'} size={150} bubble={said ?? (sleepy ? null : worldLine(world, today))} />
-        </button>
+        </div>
       </div>
       {arrival && (
         <div class="arrival" role="dialog" aria-label="新地方">

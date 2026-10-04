@@ -14,7 +14,22 @@ if (typeof document !== 'undefined') {
   // jsdom lacks on* pointer handlers, so Preact would listen for "PointerDown" instead of the
   // real lowercase event; browsers (incl. iPad Safari) have them.
   for (const name of ['onpointerdown', 'onpointerup', 'onpointercancel', 'onpointerleave', 'onpointermove']) {
-    if (!(name in HTMLElement.prototype)) Object.defineProperty(HTMLElement.prototype, name, { value: null, writable: true, configurable: true });
+    for (const proto of [HTMLElement.prototype, SVGElement.prototype]) {
+      if (!(name in proto)) Object.defineProperty(proto, name, { value: null, writable: true, configurable: true });
+    }
+  }
+  // jsdom has no PointerEvent either, so fired pointer events would lose clientX/clientY (strokes on Truffle measure them).
+  if (typeof PointerEvent === 'undefined') {
+    class TestPointerEvent extends MouseEvent {
+      pointerId: number;
+      pointerType: string;
+      constructor(type: string, init: PointerEventInit = {}) {
+        super(type, init);
+        this.pointerId = init.pointerId ?? 0;
+        this.pointerType = init.pointerType ?? 'touch';
+      }
+    }
+    Object.defineProperty(globalThis, 'PointerEvent', { value: TestPointerEvent, configurable: true, writable: true });
   }
   const { cleanup } = await import('@testing-library/preact');
   afterEach(() => cleanup());

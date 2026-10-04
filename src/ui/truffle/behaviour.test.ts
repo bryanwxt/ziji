@@ -1,6 +1,6 @@
 // src/ui/truffle/behaviour.test.ts
 import { describe, expect, it } from 'vitest';
-import { gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
+import { classifyGesture, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
 
 describe('idle life and the question-calm rule (spec §4.2, §4.3, §4.8)', () => {
   it('blinks every 2–5 s, sometimes twice; flicks an ear every 3–7.5 s', () => {
@@ -23,5 +23,14 @@ describe('idle life and the question-calm rule (spec §4.2, §4.3, §4.8)', () =
     const me = { left: 100, top: 100, width: 100, height: 100, right: 200, bottom: 200, x: 100, y: 100, toJSON() {} } as DOMRect;
     expect(gazeToward(me, { x: 1000, y: 150 })).toEqual({ x: 1, y: expect.any(Number) });
     expect(gazeToward(me, null)).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe('touch (spec §4.5)', () => {
+  it('a drag across him is a stroke; a quick touch is a tap on the part touched', () => {
+    expect(classifyGesture({ part: 'head', travelled: 80, ms: 600 })).toBe('stroke');
+    expect(classifyGesture({ part: 'head', travelled: 4, ms: 120 })).toBe('tapHead');
+    expect(classifyGesture({ part: 'tail', travelled: 3, ms: 150 })).toBe('tapTail');
+    expect(classifyGesture({ part: 'body', travelled: 20, ms: 900 })).toBeNull(); // a press that went nowhere
   });
 });
