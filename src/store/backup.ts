@@ -5,7 +5,9 @@ import { DB_NAME, DB_VERSION, LIST_STORES, type AppDb, type ListStore } from './
 export const BACKUP_FORMAT = 'hanzi-buddy-backup';
 export const BACKUP_FORMAT_VERSION = 1;
 const MEDIA_STORES: ListStore[] = ['recordings', 'prompts'];
+export const RAW_FORMAT = 'hanzi-buddy-raw-dump';
 const NOT_A_BACKUP = 'This file is not a 字己 ZiJi backup.';
+const NEWER = 'This backup was made by a newer version of 字己 ZiJi. Update the app, then try again.';
 
 export interface BackupFile {
   format: typeof BACKUP_FORMAT;
@@ -90,11 +92,12 @@ export function readBackup(text: string): BackupPreview {
   } catch {
     throw new BackupError(NOT_A_BACKUP);
   }
+  if ((file as { format?: unknown } | null)?.format === RAW_FORMAT) file = fromRawDump(file as RawDump); // the emergency copy
   if (!file || typeof file !== 'object' || file.format !== BACKUP_FORMAT || !file.stores || typeof file.stores !== 'object') {
     throw new BackupError(NOT_A_BACKUP);
   }
   if (file.formatVersion > BACKUP_FORMAT_VERSION) {
-    throw new BackupError('This backup was made by a newer version of 字己 ZiJi. Update the app, then try again.');
+    throw new BackupError(NEWER);
   }
   for (const [name, rows] of Object.entries(file.stores)) {
     if (!(LIST_STORES as readonly string[]).includes(name) || !Array.isArray(rows)) throw new BackupError(NOT_A_BACKUP);
@@ -105,6 +108,39 @@ export function readBackup(text: string): BackupPreview {
     exportedAt: file.exportedAt,
     counts: { words: count('words'), cards: count('cards'), sessions: count('sessions'), recordings: count('recordings') },
     hasMedia: 'recordings' in file.stores,
+  };
+}
+
+interface RawDump {
+  dbVersion?: unknown;
+  exportedAt?: unknown;
+  stores?: unknown;
+}
+
+/** The emergency copy (every store as key/value rows) reshaped as a normal backup, so it is checked and restored the same way. */
+function fromRawDump(raw: RawDump): BackupFile {
+  if (!raw.stores || typeof raw.stores !== 'object') throw new BackupError(NOT_A_BACKUP);
+  if (typeof raw.dbVersion === 'number' && raw.dbVersion > DB_VERSION) throw new BackupError(NEWER);
+  const stores: Record<string, unknown[]> = {};
+  let settings: unknown = null;
+  let kid: unknown = null;
+  for (const [name, rows] of Object.entries(raw.stores)) {
+    const ok = Array.isArray(rows) && rows.every((r) => r && typeof r === 'object' && 'key' in r && 'value' in r);
+    if (!ok) throw new BackupError(NOT_A_BACKUP);
+    const entries = rows as { key: unknown; value: unknown }[];
+    const main = () => entries.find((r) => r.key === 'main')?.value ?? null;
+    if (name === 'settings') settings = main();
+    else if (name === 'kid') kid = main();
+    else stores[name] = entries.map((r) => r.value); // unknown store names are refused by readBackup, as for any backup
+  }
+  return {
+    format: BACKUP_FORMAT,
+    formatVersion: BACKUP_FORMAT_VERSION,
+    exportedAt: typeof raw.exportedAt === 'number' ? raw.exportedAt : 0,
+    dbVersion: typeof raw.dbVersion === 'number' ? raw.dbVersion : DB_VERSION,
+    stores,
+    settings,
+    kid,
   };
 }
 
@@ -134,7 +170,7 @@ export async function exportRawBackup(name: string = DB_NAME): Promise<string> {
     const [keys, values] = await Promise.all([db.getAllKeys(store), db.getAll(store)]);
     stores[store] = await encodeValue(values.map((value, i) => ({ key: keys[i], value })));
   }
-  const dump = JSON.stringify({ format: 'hanzi-buddy-raw-dump', dbVersion: db.version, exportedAt: Date.now(), stores });
+  const dump = JSON.stringify({ format: RAW_FORMAT, dbVersion: db.version, exportedAt: Date.now(), stores });
   db.close();
   return dump;
 }

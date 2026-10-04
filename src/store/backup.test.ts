@@ -64,6 +64,30 @@ describe('backup', () => {
   });
 });
 
+describe('restoring the emergency copy (raw dump)', () => {
+  it('an emergency copy restores through the normal path: words, cards, recordings, kid and settings come back', async () => {
+    const db = await seeded();
+    const name = db.name;
+    db.close();
+    const preview = readBackup(await exportRawBackup(name));
+    expect(preview.counts).toEqual({ words: 1, cards: 1, sessions: 1, recordings: 1 });
+    const target = await freshDb();
+    await applyBackup(target, preview);
+    expect((await allCards(target))[0]!.fsrs.due).toBeInstanceOf(Date);
+    expect((await target.getAll('words')).map((w) => w.text)).toEqual(['大']);
+    expect(await (await listRecordings(target))[0]!.blob.text()).toBe('hello');
+    expect((await getSettings(target)).newPerDay).toBe(8);
+    expect((await getKid(target))?.petName).toBe('豆豆');
+  });
+  it('validates a raw dump like a backup: unknown stores, bad rows and newer databases are refused', () => {
+    const raw = (stores: unknown, dbVersion = 3) => JSON.stringify({ format: 'hanzi-buddy-raw-dump', dbVersion, exportedAt: 1, stores });
+    expect(() => readBackup(raw({ secrets: [] }))).toThrow(BackupError);
+    expect(() => readBackup(raw({ words: 'x' }))).toThrow(BackupError);
+    expect(() => readBackup(raw({ words: [{ nokey: 1 }] }))).toThrow(BackupError);
+    expect(() => readBackup(raw({ words: [] }, 99))).toThrow(/newer version/);
+  });
+});
+
 describe('old backups and new kid fields', () => {
   it('restores a dragon-era kid and reads it with the new defaults', async () => {
     const src = await freshDb();

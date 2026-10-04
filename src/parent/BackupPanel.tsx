@@ -64,7 +64,7 @@ export function BackupPanel() {
       <section class="panel">
         <h2>Restore</h2>
         <div class="field">
-          <label for="bk-file">Choose a backup file</label>
+          <label for="bk-file">Choose a backup file (or an emergency copy)</label>
           <input id="bk-file" type="file" accept="application/json,.json" onChange={(e) => void pick(e.currentTarget.files?.[0])} />
         </div>
         {error && <p class="warning" role="alert">{error}</p>}
