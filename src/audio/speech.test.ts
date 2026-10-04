@@ -26,6 +26,16 @@ describe('speak', () => {
     speak('河');
     expect(spoken[0]).toMatchObject({ text: '河', lang: 'zh-CN', rate: 0.7 });
   });
+  it('a queued line waits for the one before it instead of cutting it off (review: the new character was never heard)', () => {
+    const cancel = vi.fn();
+    const spoken: string[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel, speak: (u: SpeechSynthesisUtterance) => spoken.push(u.text), getVoices: () => [] });
+    vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; voice = null; constructor(t: string) { this.text = t; } });
+    speak('他');
+    speak('其他', { queue: true });
+    expect(spoken).toEqual(['他', '其他']);
+    expect(cancel).toHaveBeenCalledTimes(1); // only the first call clears what was playing before
+  });
   it('does nothing where speech is unavailable', () => {
     vi.stubGlobal('speechSynthesis', undefined);
     expect(() => speak('河')).not.toThrow();

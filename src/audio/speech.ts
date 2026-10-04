@@ -31,9 +31,10 @@ export async function loadChineseVoice(timeoutMs = 1500): Promise<SpeechSynthesi
   return voice;
 }
 
-export function speak(text: string): void {
+/** Say Chinese text. It cuts off whatever is playing, unless `queue` (then it waits its turn: the character, then its usage line). */
+export function speak(text: string, { queue = false }: { queue?: boolean } = {}): void {
   if (!available()) return;
-  speechSynthesis.cancel();
+  if (!queue) speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'zh-CN';
   u.rate = rate;

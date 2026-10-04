@@ -124,6 +124,13 @@ describe('new-word card in English too (parent, 2026-10-04)', () => {
     render(<FlashcardStep {...base} word={ta} item={{ wordId: ta.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     expect(document.querySelectorAll('.intro .example')).toHaveLength(1);
   });
+  it('says the new character, then its usage line queued after it (not cutting it off)', () => {
+    vi.mocked(speak).mockClear();
+    const ta = pool.find((w) => w.text === '他')!;
+    render(<FlashcardStep {...base} word={ta} item={{ wordId: ta.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(vi.mocked(speak).mock.calls[0]).toEqual(['他']);
+    expect(vi.mocked(speak).mock.calls[1]![1]).toEqual({ queue: true });
+  });
   it('English stays on the new-word card: the quiz that follows has none', () => {
     render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
     expect(document.querySelector('[lang="en"]')).toBeNull();

@@ -68,7 +68,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     if (phase === 'intro') {
       speak(word.text);
       const line = usageLine(word);
-      if (line) speak(line.full); // queued after the character (spec §20 part 1)
+      if (line) speak(line.full, { queue: true }); // after the character, not over it (spec §20 part 1)
     }
     if (phase === 'quiz') {
       quizAt.current = performance.now();
