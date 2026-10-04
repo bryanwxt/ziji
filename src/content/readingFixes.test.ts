@@ -37,7 +37,7 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     const { CONTENT_VERSION, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES } = await import('.');
     const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES])).digest('hex').slice(0, 16);
     // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
-    const PINNED: Record<string, string> = { '1.3': 'e8d2030805d5210e' };
+    const PINNED: Record<string, string> = { '1.4': 'e8d2030805d5210e' }; // 1.4 changed how examples are chosen (code), not the data
     expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
   });
   it('了 means what it does when read le, not "clear, to finish"', async () => {
@@ -52,5 +52,37 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     const phrases = new Set(BUILTIN.flatMap((c) => c.examples.map((e) => e.text)));
     const covered = [...phrases].filter((p) => p in g.entries).length;
     expect(covered / phrases.size).toBeGreaterThan(0.99);
+  });
+});
+
+describe('one reading per card (parent, 2026-10-05: 调 was taught as tiáo next to 调查 diàochá)', () => {
+  it('a character keeps only the 组词 that say it the way his card does', async () => {
+    const { builtinWords } = await import('.');
+    const byText = new Map(builtinWords(0).map((w) => [w.text, w]));
+    expect(byText.get('调')!.examples!.map((e) => e.text)).toEqual(['空调']); // not 调查, 强调 (diào)
+    expect(byText.get('觉')!.examples!.map((e) => e.text)).not.toContain('睡觉'); // jiào, on a jué card
+    expect(byText.get('长')!.examples!.map((e) => e.text)).not.toContain('班长'); // zhǎng, on a cháng card
+  });
+  it('a 轻声 syllable of the same sound still counts (包子 zi on a zǐ card)', async () => {
+    const { builtinWords } = await import('.');
+    expect(builtinWords(0).find((w) => w.text === '子')!.examples!.map((e) => e.text)).toContain('包子');
+  });
+  it('no built-in 组词 says its character another way', async () => {
+    const { builtinWords } = await import('.');
+    const strip = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const bad: string[] = [];
+    for (const w of builtinWords(0)) {
+      for (const e of w.examples ?? []) {
+        const chars = [...e.text];
+        const syl = e.pinyin.trim().split(/\s+/);
+        if (syl.length !== chars.length) continue;
+        chars.forEach((ch, i) => {
+          if (ch !== w.text) return;
+          const s = syl[i]!;
+          if (s !== w.pinyin && !(strip(s) === strip(w.pinyin) && strip(s) === s)) bad.push(`${w.text} ${w.pinyin}: ${e.text} ${e.pinyin}`);
+        });
+      }
+    }
+    expect(bad).toEqual([]);
   });
 });

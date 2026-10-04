@@ -6,7 +6,7 @@ import type { BuiltinChar, CharInfo, Passage, Word } from '../types';
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.3`;
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.4`; // .4: 组词 at the card's reading only
 export const PASSAGES: Passage[] = passages as Passage[];
 
 const infoByChar = new Map<string, CharInfo>(
@@ -46,7 +46,7 @@ export function builtinWords(now: number): Word[] {
     writeable: c.writeable,
     paused: false,
     createdAt: now,
-    examples: c.examples.map((e) => (EXAMPLE_FIXES[e.text] ? { ...e, pinyin: EXAMPLE_FIXES[e.text]! } : e)),
+    examples: c.examples.map((e) => (EXAMPLE_FIXES[e.text] ? { ...e, pinyin: EXAMPLE_FIXES[e.text]! } : e)).filter((e) => saysItAs(e, c.char, builtinReading(c))),
   }));
 }
 
@@ -58,6 +58,19 @@ export const builtinReading = (c: BuiltinChar): string => READING_FIXES[c.char] 
 /** Meanings that go with a fixed reading: 了 read le is the particle, not liǎo "clear, to finish". */
 export const MEANING_FIXES: Record<string, string> = { 了: '(marks a finished action or a change)' };
 export const EXAMPLE_FIXES: Record<string, string> = { 包子: 'bāo zi' };
+
+const toneless = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+/**
+ * Does this 组词 say the character the way his card teaches it? One reading per card (parent, 2026-10-05: a 调 tiáo card
+ * showed 调查 diàochá); the other reading is its own word. A 轻声 syllable of the same sound counts (东西 xi, 杯子 zi).
+ * Examples whose pinyin doesn't line up one syllable per character are kept: they can't be checked.
+ */
+function saysItAs(e: { text: string; pinyin: string }, char: string, reading: string): boolean {
+  const chars = Array.from(e.text);
+  const syl = e.pinyin.trim().split(/\s+/);
+  if (syl.length !== chars.length) return true;
+  return chars.every((ch, i) => ch !== char || syl[i] === reading || (toneless(syl[i]!) === syl[i] && syl[i] === toneless(reading)));
+}
 
 /** Radical and components of every character in the text, de-duplicated, in order. */
 export function wordComponents(text: string): string[] {
