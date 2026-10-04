@@ -8,6 +8,7 @@ import { introLines, pinyinMode } from '../../langdu/intro';
 import { displayText, splitPhrases } from '../../langdu/phrases';
 import type { KidState, OralInfo } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
+import { Stage } from '../../ui/stage/Stage';
 import { Label } from '../../ui/Label';
 import { Pet } from '../../ui/Pet';
 import { MicButton, useRecorder } from '../shared/recording';
@@ -61,11 +62,13 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
     onDone({ intro: intro.result, read: read.result });
   };
 
+  // Truffle stays with him through every part (spec 2026-10-04 §3)
+  const pet = <Pet kid={kid} mood="neutral" size={180} bubble={part === 'warmup' ? '你好！' : part === 'echo' ? '跟我说！' : part === 'read' ? '大声读！' : '真棒！'} />;
+
   if (part === 'warmup') {
     return (
-      <>
+      <Stage activity="langdu" truffle={pet} sheet={<FeedbackSheet actionLabel="继续" disabled={intro.state === 'ready' || intro.state === 'recording'} onAction={() => setPart('echo')} />}>
         <div class="langdu">
-          <Pet kid={kid} mood="neutral" size={130} bubble="你好！" />
           <div class="langdu__script">
             <p class="langdu__line"><Label zh={lines.hello} pinyinFor={pinyinFor} /></p>
             {lines.body && <p class="langdu__line"><Label zh={lines.body} pinyinFor={pinyinFor} /></p>}
@@ -73,15 +76,14 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
           <MicButton rec={intro} withLevel={false} />
           {intro.state === 'done' && <p class="langdu__ok"><Label zh="很好！" /></p>}
         </div>
-        <FeedbackSheet actionLabel="继续" disabled={intro.state === 'ready' || intro.state === 'recording'} onAction={() => setPart('echo')} />
-      </>
+      </Stage>
     );
   }
 
   if (part === 'echo') {
     const last = phrase >= phrases.length - 1;
     return (
-      <>
+      <Stage activity="langdu" truffle={pet} sheet={<FeedbackSheet actionLabel={last ? '开始朗读' : '下一句'} onAction={() => (last ? setPart('read') : setPhrase(phrase + 1))} />}>
         <div class="langdu">
           <p class="langdu__step"><Label zh="听一听，说一说" /> <small>{phrase + 1} / {phrases.length}</small></p>
           <p class="langdu__phrase"><Label zh={phrases[phrase] ?? ''} /></p>
@@ -89,34 +91,31 @@ export function LangduStep({ passage, oral, warmups, knownChars, kid, withWarmup
             <Volume2 size={24} strokeWidth={2.5} /> <Label zh="再听" />
           </button>
         </div>
-        <FeedbackSheet actionLabel={last ? '开始朗读' : '下一句'} onAction={() => (last ? setPart('read') : setPhrase(phrase + 1))} />
-      </>
+      </Stage>
     );
   }
 
   if (part === 'read') {
     return (
-      <>
+      <Stage activity="langdu" truffle={pet} sheet={<FeedbackSheet actionLabel="完成" disabled={read.state !== 'blocked'} onAction={finish} />}>
         <div class="langdu">
           <h2 class="langdu__title"><Label zh={passage.title} /></h2>
           <p class="passage langdu__passage"><Label zh={displayText(passage.text)} /></p>
           <MicButton rec={read} withLevel />
         </div>
-        <FeedbackSheet actionLabel="完成" disabled={read.state !== 'blocked'} onAction={finish} />
-      </>
+      </Stage>
     );
   }
 
   return (
-    <>
+    <Stage activity="langdu" truffle={pet} sheet={<FeedbackSheet actionLabel="完成" onAction={finish} />}>
       <div class="langdu">
         <h2 class="langdu__title"><Label zh="听听你自己" /></h2>
         <PlayBack url={playbackUrl} />
         <button type="button" class="btn" onClick={() => { read.reset(); setPart('read'); }}><Label zh="重录" /></button>
         {withWarmup && <p class="langdu__line langdu__thanks"><Label zh={lines.thanks} /></p>}
       </div>
-      <FeedbackSheet actionLabel="完成" onAction={finish} />
-    </>
+    </Stage>
   );
 }
 

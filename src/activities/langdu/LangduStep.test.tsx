@@ -159,3 +159,25 @@ describe('LangduStep', () => {
     expect(cancel).toHaveBeenCalled();
   });
 });
+
+describe('朗读 on the stage (spec 2026-10-04 §3)', () => {
+  const onStage = () => {
+    expect(document.querySelector('.stage[data-stage="langdu"] .stage__truffle .pet')).toBeTruthy(); // Truffle stays with him through every part
+    expect(document.querySelector('.stage__card .langdu')).toBeTruthy();
+    expect(document.querySelector('.stage__sheet .sheet')).toBeTruthy();
+  };
+  it('warm-up, echo, read and listen back all happen on the stage', async () => {
+    render(<LangduStep passage={passage} oral={oral} warmups={0} knownChars={new Set()} kid={DEFAULT_KID} withWarmup onDone={vi.fn()} />);
+    onStage(); // warm-up
+    await recordOnce();
+    fireEvent.click(screen.getByText('继续'));
+    onStage(); // echo
+    fireEvent.click(screen.getByText('下一句'));
+    fireEvent.click(screen.getByText('开始朗读'));
+    onStage(); // read
+    fireEvent.click(screen.getByText('开始录音'));
+    fireEvent.click(await screen.findByText('停止'));
+    await screen.findByText('谢谢老师！');
+    onStage(); // listen back
+  });
+});
