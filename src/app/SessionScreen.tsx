@@ -33,7 +33,7 @@ import {
   addActiveTime, afterFlashAnswer, afterWriteWord, createFreePlayRecord, currentFlashItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem,
 } from '../session/runner';
-import { getKid, keepRecording, getSettings, listParentPassages, listRecordings, practisedWords, saveKid, saveSession } from '../store/repo';
+import { addAnswer, getKid, keepRecording, getSettings, listParentPassages, listRecordings, practisedWords, saveKid, saveSession } from '../store/repo';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -209,7 +209,10 @@ export function SessionScreen({ free }: { free: boolean }) {
   /** A word used in context (选一选): rate its meaning once a day, and count the recall for 用一用 (spec §20 part 7). */
   const onUseAnswer = async (item: UseItem, correct: boolean) => {
     if (!item.wordId) return; // a bank word, not one of his own: practice only
-    if (!rec.free) know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, correct, now()));
+    if (!rec.free) {
+      know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, correct, now()));
+      await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct }); // every answer, for the Skills panel
+    }
     if (correct) setCorrect((n) => n + 1);
     const cur = latest.current ?? rec; // he may have tapped 继续 (even ended the step) while this answer was saving
     // each answer commits, which restarts the step clock, so the time so far is added here
@@ -218,6 +221,7 @@ export function SessionScreen({ free }: { free: boolean }) {
 
   /** 字辨: a miss brings the word's write card forward (its reading card if it has none), and counts for 用一用 (spec §20 part 8). */
   const onZibianAnswer = async (item: ZibianItem, correct: boolean) => {
+    if (!rec.free) await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'zibian', correct });
     if (!correct && !rec.free) await bringForward(db, item.wordId, know.cardsById.has(`${item.wordId}:write`) ? 'write' : 'recognise', now());
     if (correct) setCorrect((n) => n + 1);
     const cur = latest.current ?? rec;

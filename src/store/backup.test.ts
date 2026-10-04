@@ -4,7 +4,7 @@ import { createSessionRecord } from '../session/runner';
 import { freshDb, makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_KID } from '../types';
 import { applyBackup, BACKUP_FORMAT, BackupError, exportBackup, exportRawBackup, readBackup } from './backup';
-import { addRecording, allCards, getKid, getSettings, listParentPassages, listRecordings, putCards, putWords, saveKid, saveParentPassage, saveSession, updateSettings } from './repo';
+import { addAnswer, addRecording, allCards, answersSince, getKid, getSettings, listParentPassages, listRecordings, putCards, putWords, saveKid, saveParentPassage, saveSession, updateSettings } from './repo';
 
 async function seeded() {
   const db = await freshDb();
@@ -88,5 +88,21 @@ describe('backup of 朗读 texts', () => {
     const old = await freshDb();
     await applyBackup(old, readBackup(JSON.stringify(file)));
     expect(await listParentPassages(old)).toEqual([]);
+  });
+});
+
+describe('backups across the plan 14 update', () => {
+  it('a backup with answers brings them back; an old backup made before plan 14 (no answers store) restores', async () => {
+    const db = await freshDb();
+    await addAnswer(db, { at: 5, wordId: 'b:大', skill: 'zibian', correct: true });
+    const json = await exportBackup(db, { includeMedia: false, now: 0 });
+    const fresh = await freshDb();
+    await applyBackup(fresh, readBackup(json));
+    expect(await answersSince(fresh, 0)).toHaveLength(1);
+    const old = JSON.parse(json);
+    delete old.stores.answers; // shaped like a backup from DB version 2
+    const other = await freshDb();
+    await applyBackup(other, readBackup(JSON.stringify(old)));
+    expect(await answersSince(other, 0)).toEqual([]);
   });
 });

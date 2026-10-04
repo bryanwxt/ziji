@@ -1,7 +1,7 @@
 import { WORLDS, worldById } from '../fun/worlds';
 import { normalizeFinds } from '../fun/finds';
 import { migrateAccessory } from '../fun/accessories';
-import { DEFAULT_KID, DEFAULT_READING, DEFAULT_SETTINGS, type CardRecord, type ParentPassage, type ReadingState, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
+import { DEFAULT_KID, DEFAULT_READING, DEFAULT_SETTINGS, type AnswerLog, type CardRecord, type ParentPassage, type ReadingState, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
 import type { AppDb } from './db';
 
 const MAIN = 'main';
@@ -106,6 +106,13 @@ export async function practisedWords(db: AppDb): Promise<Map<string, number>> {
   for (const l of await db.getAll('reviewLogs')) out.set(l.wordId, Math.max(out.get(l.wordId) ?? 0, l.at));
   return out;
 }
+
+export async function addAnswer(db: AppDb, a: AnswerLog): Promise<void> {
+  const { id: _id, ...rest } = a;
+  await db.add('answers', rest as AnswerLog);
+}
+
+export const answersSince = (db: AppDb, sinceMs: number) => db.getAllFromIndex('answers', 'byAt', IDBKeyRange.lowerBound(sinceMs));
 
 export const logsSince = (db: AppDb, sinceMs: number) =>
   db.getAllFromIndex('reviewLogs', 'byAt', IDBKeyRange.lowerBound(sinceMs));
