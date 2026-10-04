@@ -56,7 +56,8 @@ export function WorldTaps({ world, kid, today, onKid, onSay }: Props) {
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const [run, setRun] = useState(0);
   const still = reducedMotion();
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const laugh = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => { clearTimeout(timer.current); clearTimeout(laugh.current); }, []);
 
   const play = (e: Effect) => {
     busy.current = true;
@@ -76,7 +77,9 @@ export function WorldTaps({ world, kid, today, onKid, onSay }: Props) {
     switch (world) {
       case 'yard':
         play({ kind: 'spray' });
-        onSay('哇！');
+        onSay('哇！'); // a flinch at the cold water, then a laugh
+        clearTimeout(laugh.current);
+        laugh.current = setTimeout(() => onSay('哈哈哈！'), 700);
         return;
       case 'grass': {
         const r = findAnimal(f, today);
@@ -124,7 +127,7 @@ export function WorldTaps({ world, kid, today, onKid, onSay }: Props) {
         if (r.star) {
           onKid({ ...kid, finds: r.finds, bonusStars: kid.bonusStars + 1 });
           onSay('找到星星了！');
-        }
+        } else onSay('挖呀挖！');
         play({ kind: 'dig', star: r.star });
       }
     }
@@ -147,7 +150,7 @@ export function WorldTaps({ world, kid, today, onKid, onSay }: Props) {
   if (effect?.kind === 'wobble') fx = `<g class="tap-egg" transform="translate(90 428)">${EGG}${still ? '' : '<animateTransform attributeName="transform" type="rotate" additive="sum" values="0;-14;12;-8;6;0" dur="800ms"/>'}</g>`;
   if (effect?.kind === 'bubbles') {
     fx = [0, 1, 2, 3].map((i) => `<circle cx="${50 + i * 12}" cy="340" r="${3 + (i % 2)}" fill="none" stroke="${INK}" stroke-width="1.6">${still ? fade(1600) : `<animate attributeName="cy" values="340;296" dur="${900 + i * 200}ms" fill="freeze"/>${fade(1600)}`}</circle>`).join('');
-    fx += `<g transform="translate(-30 410)"><path d="M0 0 c10 -10 30 -10 40 0 c-10 10 -30 10 -40 0Z M0 0 l-10 -6 v12Z" fill="#9fcf90" stroke="${INK}" stroke-width="2"/>${still ? fade(1600) : `<animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;420 -10" dur="1600ms" fill="freeze"/>`}</g>`;
+    fx += `<g transform="translate(${still ? 60 : -30} 410)"><path d="M0 0 c10 -10 30 -10 40 0 c-10 10 -30 10 -40 0Z M0 0 l-10 -6 v12Z" fill="#9fcf90" stroke="${INK}" stroke-width="2"/>${still ? fade(1600) : `<animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;420 -10" dur="1600ms" fill="freeze"/>`}</g>`;
   }
   if (effect?.kind === 'launch') {
     // 三，二，一 first (about 1.5 s), then lift-off; the sky patch stops above the launch pad
