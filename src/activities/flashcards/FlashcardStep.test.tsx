@@ -4,11 +4,13 @@ import { builtinWords } from '../../content';
 import { createEmptyCard, State } from 'ts-fsrs';
 import { DEFAULT_KID } from '../../types';
 import { FlashcardStep } from './FlashcardStep';
+import { makeWord } from '../../test/fixtures';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 vi.mock('../../ui/motion', () => ({ burst: vi.fn(), flyAlong: vi.fn(async () => {}), reducedMotion: () => false }));
 import { burst, flyAlong } from '../../ui/motion';
+import { speak } from '../../audio/speech';
 
 const pool = builtinWords(0);
 const he = pool.find((w) => w.text === '河')!;
@@ -157,3 +159,25 @@ describe('close-up keeps what Truffle is wearing', () => {
     expect(document.querySelector('.closeup svg.truffle')?.getAttribute('data-power')).toBe('water');
   });
 });
+
+describe('认一认 meaning questions (spec §19)', () => {
+  const xi = { ...makeWord('惜', { id: 'b:惜', pinyin: 'xī', meaning: 'to cherish' }), examples: [{ text: '珍惜', pinyin: 'zhēn xī' }] };
+  it('a meaning item asks which character fits the 组词 word, reads the word aloud, and shows no English', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} word={xi} item={{ wordId: 'b:惜', isNew: false, retry: false, mode: 'meaning' }} voice onDone={onDone} />);
+    expect(document.querySelector('.meaning-cue')?.textContent).toContain('珍');
+    expect(document.querySelector('.meaning-cue__blank')).toBeTruthy();
+    expect(speak).toHaveBeenCalledWith('珍惜');
+    expect(document.body.textContent).not.toContain('cherish');
+    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    fireEvent.click(screen.getByRole('button', { name: '惜' }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
+  });
+  it("a new word's intro shows its 组词, never an English meaning", () => {
+    render(<FlashcardStep {...base} word={xi} item={{ wordId: 'b:惜', isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.body.textContent).toContain('珍惜');
+    expect(document.body.textContent).not.toContain('cherish');
+  });
+});
+

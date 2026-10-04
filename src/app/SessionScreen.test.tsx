@@ -1,7 +1,8 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../content';
-import { allCards, getSession, getWord, putWords, saveKid, updateSettings } from '../store/repo';
+import { allCards, getSession, getWord, putCards, putWords, saveKid, updateSettings } from '../store/repo';
+import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS } from '../types';
 import { SessionScreen } from './SessionScreen';
@@ -76,3 +77,18 @@ describe('SessionScreen', () => {
     expect(introWord()).not.toBe(paused);
   });
 });
+
+describe('meaning practice in the lesson', () => {
+  it('a begun word with a 组词 cue gets a meaning question, and the answer reviews its meaning card', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, words);
+    await updateSettings(app.db, { newPerDay: 0, activities: flashOnly });
+    await putCards(app.db, [makeCard('b:惜', 'recognise', new Date(2026, 9, 20), true)]);
+    renderWithApp(<SessionScreen free={false} />, app);
+    expect((await screen.findAllByText('可')).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: '惜' }));
+    fireEvent.click(screen.getByText('继续'));
+    await waitFor(async () => expect((await allCards(app.db)).map((c) => c.id)).toContain('b:惜:meaning'));
+  });
+});
+

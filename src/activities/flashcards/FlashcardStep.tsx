@@ -14,6 +14,7 @@ import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
+import { meaningCue, pickSoundAlikes, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 
 export interface FlashResult {
@@ -39,13 +40,18 @@ interface Props {
 type Phase = 'intro' | 'quiz' | 'feedback';
 
 export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone }: Props) {
-  const quiz = useMemo(() => {
+  const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
+    // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
+    const cue = item.mode === 'meaning' ? meaningCue(word) : null;
+    if (cue) {
+      return { listen: false, cue, answer: word.text, options: shuffle([word.text, ...pickSoundAlikes(word, cue, pool, rng)], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
+    }
     const lookAlikes = pickCharacterDistractors(word, pool, rng);
     const listen = voice && lookAlikes.length >= 3 && (card?.fsrs.reps ?? 0) % 2 === 0;
     const answer = listen ? word.text : word.pinyin;
     const wrong = listen ? lookAlikes.map((w) => w.text) : pickPinyinDistractors(word, pool, rng);
-    return { listen, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
+    return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
   }, [word.id]);
   const [phase, setPhase] = useState<Phase>(item.isNew && !item.retry ? 'intro' : 'quiz');
   const [choice, setChoice] = useState<string | null>(null);
@@ -59,7 +65,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     if (phase === 'intro') speak(word.text);
     if (phase === 'quiz') {
       quizAt.current = performance.now();
-      if (quiz.listen) speak(word.text);
+      if (quiz.cue) speak(quiz.cue.full);
+      else if (quiz.listen) speak(word.text);
     }
   }, [phase]);
 
@@ -82,7 +89,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     } else {
       playSfx('wrong');
     }
-    if (!quiz.listen || !correct) speak(word.text);
+    if (quiz.cue) speak(quiz.cue.full);
+    else if (!quiz.listen || !correct) speak(word.text);
   };
 
   const optionState = (o: string) => {
@@ -94,7 +102,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const reaction = phase === 'feedback' && result ? reactionMood({ correct: result.correct, hard: result.hard, combo: result.correct ? combo + 1 : 0 }) : null;
   const mood: TruffleMood = phase === 'intro' ? 'neutral' : (reaction ?? resting);
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害', content: '呼噜～' };
-  const bubble = phase === 'intro' ? '新字来了！' : phase === 'quiz' ? (quiz.listen ? '我想吃这个字！' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
+  const bubble = phase === 'intro' ? '新字来了！' : phase === 'quiz' ? (quiz.cue ? '哪个字对？' : quiz.listen ? '我想吃这个字！' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
     if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current) });
@@ -112,9 +120,22 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           ) : (
             <>
               <div class="flash__prompt">
-                {quiz.listen ? <SpeakButton text={word.text} big /> : <div class="hanzi hanzi--xl">{word.text}</div>}
+                {quiz.cue ? (
+                  <div class="meaning-prompt">
+                    <div class="hanzi meaning-cue" lang="zh">
+                      {quiz.cue.before}
+                      <span class="meaning-cue__blank" aria-label="空格">{phase === 'feedback' ? word.text : '？'}</span>
+                      {quiz.cue.after}
+                    </div>
+                    <div class="pinyin">{quiz.cue.pinyin}</div>
+                  </div>
+                ) : quiz.listen ? (
+                  <SpeakButton text={word.text} big />
+                ) : (
+                  <div class="hanzi hanzi--xl">{word.text}</div>
+                )}
               </div>
-              <div class={`choices stagger ${quiz.listen ? 'choices--hanzi' : 'choices--pinyin'}`}>
+              <div class={`choices stagger ${quiz.listen || quiz.cue ? 'choices--hanzi' : 'choices--pinyin'}`}>
                 {quiz.options.map((o) => (
                   <button
                     key={o}
@@ -144,9 +165,9 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           detail={
             result.correct ? undefined : (
               <>
-                正确答案：<span class="hanzi">{word.text}</span>
-                <span>{word.pinyin}</span>
-                <SpeakButton text={word.text} />
+                正确答案：<span class="hanzi">{quiz.cue ? quiz.cue.full : word.text}</span>
+                <span>{quiz.cue ? quiz.cue.pinyin : word.pinyin}</span>
+                <SpeakButton text={quiz.cue ? quiz.cue.full : word.text} />
               </>
             )
           }
@@ -165,7 +186,6 @@ function Intro({ word }: { word: Word }) {
         <div class="pinyin">{word.pinyin}</div>
         <div class="hanzi hanzi--xl">{word.text}</div>
         <SpeakButton text={word.text} />
-        {word.meaning && <div class="meaning">{word.meaning}</div>}
         {hanChars(word.text).map((ch) => {
           const info = getCharInfo(ch);
           const parts = info?.components ?? [];
@@ -185,7 +205,7 @@ function Intro({ word }: { word: Word }) {
             </div>
           );
         })}
-        {word.examples?.map((e) => (
+        {word.examples?.slice(0, 2).map((e) => ( // two 组词 fit every screen; all of them feed the meaning questions
           <div class="example" key={e.text}>
             <span class="pinyin">{e.pinyin}</span>
             <span class="hanzi">{e.text}</span>
