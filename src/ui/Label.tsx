@@ -10,6 +10,8 @@ interface Cell {
 }
 
 const BLANK = '＿';
+/** The text as a screen reader should say it: a blank is 空格, not "full-width low line". */
+export const spokenBlanks = (zh: string) => zh.replaceAll(BLANK, '空格');
 
 /** Chinese text with each syllable shown small directly above its own character, for a P2 reader. */
 export function Label({ zh, py: given, pinyinFor }: {
@@ -46,7 +48,7 @@ export function Label({ zh, py: given, pinyinFor }: {
   return (
     <span class="label" data-py={py}>
       {/* one cell already reads as the whole text; several get a single readable copy so 你好 isn't read 你…好 */}
-      {cells.length > 1 && <span class="sr-only">{zh}</span>}
+      {cells.length > 1 && <span class="sr-only">{spokenBlanks(zh)}</span>}
       <span class="label__cells" aria-hidden={cells.length > 1 ? 'true' : undefined}>
         {cells.map((c, i) => (
           <span key={i} class={c.blank ? 'label__cell label__cell--blank' : c.zh ? 'label__cell label__cell--zh' : 'label__cell'}>

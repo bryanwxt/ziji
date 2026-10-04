@@ -10,7 +10,7 @@ import { burst } from '../../ui/motion';
 import { isHardWrite } from '../../fun/mood';
 import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
-import { Label } from '../../ui/Label';
+import { Label, spokenBlanks } from '../../ui/Label';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { writingCue } from './cue';
 import { writingBoxSize } from './size';
@@ -111,7 +111,12 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone }: Props) 
               <span class="pinyin">{word.pinyin}</span>
               <SpeakButton text={cue.speech} />
             </div>
-            {cue.sentence && <div class="write__sentence hanzi" lang="zh">{cue.sentence}</div>}
+            {cue.sentence && (
+              <>
+                <p class="sr-only" lang="zh">{spokenBlanks(cue.sentence)}</p>
+                <div class="write__sentence hanzi" lang="zh" aria-hidden="true">{cue.sentence}</div>
+              </>
+            )}
             {cue.blanked && <div class="write__blank"><Label zh={cue.blanked} py={cue.blankedPy ?? undefined} /></div>}
           </div>
         </div>

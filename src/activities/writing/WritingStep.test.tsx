@@ -56,13 +56,19 @@ describe('WritingStep cue: more than the pinyin (parent, 2026-10-04)', () => {
     render(<WritingStep word={w} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
     expect(document.querySelector('.write__sentence')?.textContent).toBe('教室里要＿＿安静。');
   });
+  it('a screen reader hears the gap as 空格, not an underscore', () => {
+    const w = makeWord('保持', { id: 'p:1', pinyin: 'bǎo chí', source: 'parent', level: null, sentences: [{ text: '教室里要保持安静。', pinyin: '' }] });
+    render(<WritingStep word={w} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
+    expect(document.querySelector('.write__sentence')!.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByText('教室里要空格空格安静。').classList.contains('sr-only')).toBe(true);
+  });
   it('no sentence: the blanked 组词 and which 儿 is meant, as before', () => {
     const er = makeWord('儿', { pinyin: 'ér', meaning: 'son, child', examples: [{ text: '儿子', pinyin: 'ér zi' }] });
     vi.mocked(speak).mockClear();
     render(<WritingStep word={er} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
     expect(document.querySelector('.write__sentence')).toBeNull();
     expect(document.querySelector('.write__blank .label')?.getAttribute('data-py')).toBe('zi');
-    expect(screen.getByText('＿子')).toBeTruthy();
+    expect(screen.getByText('空格子')).toBeTruthy(); // the screen-reader copy says the gap
     expect(speak).toHaveBeenLastCalledWith('儿，儿子的儿');
     fireEvent.click(screen.getByLabelText('听'));
     expect(speak).toHaveBeenLastCalledWith('儿，儿子的儿');

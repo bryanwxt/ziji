@@ -60,6 +60,13 @@ describe('widgets', () => {
   });
 });
 
+describe('Label blanks', () => {
+  it('a screen reader hears a blank as 空格', () => {
+    const { container } = render(<Label zh="＿半" />);
+    expect(container.querySelector('.sr-only')?.textContent).toBe('空格半');
+  });
+});
+
 describe('Label digits', () => {
   it('keeps numbers together in the pinyin line', () => {
     const { container } = render(<Label zh="我认识 45 个字" />);
