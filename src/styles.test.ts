@@ -49,6 +49,15 @@ describe('collection contrast', () => {
   });
 });
 
+describe('字辨 feedback fits its bar on a tablet', () => {
+  it('the explanation is compact one-line rows, and 继续 never sticks out past the bar', () => {
+    expect(css).toMatch(/\.zibian__why \{[^}]*flex-direction: column/);
+    expect(css).toMatch(/\.bottombar__detail \.zibian__radical \{[^}]*white-space: nowrap/);
+    // on every size, not only the phone: the text column may shrink, the button may not
+    expect(css).toMatch(/\n\.bottombar__msg, \.bottombar__msg > div \{ min-width: 0; \}\n\.bottombar:not\(\.bottombar--neutral\) \.btn \{ flex: none; \}/);
+  });
+});
+
 describe('no dragon left in what people see', () => {
   it('manifest, theme colour and settings copy', () => {
     const vite = readFileSync(new URL('../vite.config.ts', import.meta.url), 'utf8');

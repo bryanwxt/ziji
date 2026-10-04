@@ -27,6 +27,7 @@ describe('ComponentsStep — 字辨 in the pond (spec §20 part 8)', () => {
     const bar = document.querySelector('.bottombar')!.textContent!;
     expect(bar).toMatch(/根.*木/); // 根's radical meaning
     expect(bar).toMatch(/跟.*足/); // the one he chose
+    expect(document.querySelectorAll('.bottombar .zibian__why > .zibian__radical')).toHaveLength(2); // one row each
   });
   it('a catch, then 继续 ends the round', () => {
     const onDone = vi.fn();

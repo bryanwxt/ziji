@@ -84,11 +84,11 @@ export function ComponentsStep({ items, kid, resting, onAnswer, onDone, onProgre
           tone={correct ? 'good' : 'oops'}
           title={correct ? '钓到了！' : '是这个！'}
           detail={
-            <>
+            <span class="zibian__why">
               <Radical ch={item.answer} />
               {/* the one he chose, when its radical tells them apart */}
               {!correct && getCharInfo(picked!)?.radical !== getCharInfo(item.answer)?.radical && <Radical ch={picked!} />}
-            </>
+            </span>
           }
           actionLabel="继续"
           onAction={next}
