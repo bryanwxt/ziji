@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../content';
-import { MAX_QUESTIONS, placementLevels, rankBands, startWalk, walkStep, WARMUP, type Style, type WalkState } from './walk';
+import { mulberry32 } from '../lib/random';
+import { visitStyles } from './questions';
+import { LOW_START, MAX_QUESTIONS, placementLevels, rankBands, startWalk, walkStep, WARMUP, type Style, type WalkState } from './walk';
 
 const ans = (correct: boolean, style: Style = 'read') => ({ style, wordId: 'x', correct });
 const run = (s: WalkState, pattern: boolean[], n = 30) => pattern.reduce((st, c) => (st.done ? st : walkStep(st, ans(c), n)), s);
@@ -68,5 +70,47 @@ describe('placementLevels: reading and understanding', () => {
   });
   it('nothing held at the first band visited: everything below it', () => {
     expect(placementLevels([at(3, 'read', false), at(3, 'real', false), at(3, 'fill', false), at(3, 'fit', false)])).toEqual({ reading: 2, understanding: 2 });
+  });
+});
+
+describe('children who guess (review of plan 14)', () => {
+  const CHANCE: Record<Style, number> = { read: 0.25, listen: 0.25, fill: 0.25, fit: 0.25, real: 0.5 };
+  /** Walks a simulated child: right with probability `p(band, style)`. */
+  const simulate = (seed: number, p: (band: number, style: Style, warm: boolean) => number) => {
+    const rng = mulberry32(seed);
+    let s = startWalk(30);
+    let queue: Style[] = [];
+    let prev: Style | null = null;
+    while (!s.done) {
+      const warm = s.warmup < WARMUP;
+      let style: Style = 'read';
+      if (!warm) { if (!queue.length) queue = visitStyles(prev, false, rng); style = queue.shift()!; }
+      prev = style;
+      s = walkStep(s, { style, wordId: 'x', correct: rng() < p(s.band, style, warm) }, 30);
+    }
+    return s;
+  };
+  it('a child who knows nothing but taps answers at random is rarely placed, and almost never high', () => {
+    const runs = Array.from({ length: 1000 }, (_, i) => placementLevels(simulate(i + 1, (_b, style) => CHANCE[style]).answers).reading);
+    expect(runs.filter((r) => r >= 0).length / runs.length).toBeLessThan(0.25); // was 0.65 before 真的假的 counted half and a shaky warm-up started low
+    expect(runs.filter((r) => r >= 5).length / runs.length).toBeLessThan(0.03); // was 0.19
+  });
+  it('an honest child who guesses above their level is still placed right most of the time', () => {
+    for (const [T, need] of [[4, 0.85], [8, 0.75]] as const) {
+      const runs = Array.from({ length: 500 }, (_, i) => placementLevels(simulate(i + 7, (band, style, warm) => (warm || band <= T ? 0.9 : CHANCE[style])).answers).reading);
+      expect(runs.filter((r) => r === T).length / runs.length).toBeGreaterThan(need);
+    }
+  });
+  it('a shaky warm-up (at most 1 of 3 right) starts the walk at band 3', () => {
+    expect(run(startWalk(30), [false, true, false]).band).toBe(LOW_START);
+    expect(run(startWalk(30), [true, true, false]).band).toBe(6);
+  });
+  it('真的假的 counts half: three right with one of them 真的假的 is not enough to go up', () => {
+    let s = warm();
+    s = walkStep(s, ans(true, 'read'), 30);
+    s = walkStep(s, ans(true, 'real'), 30);
+    s = walkStep(s, ans(true, 'fill'), 30);
+    s = walkStep(s, ans(false, 'fit'), 30);
+    expect(s.band).toBe(6); // 2.5 of 3.5 — a second visit, not a step up
   });
 });

@@ -83,8 +83,15 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGua
     setWalk(next);
     if (next.done) {
       const levels = placementLevels(next.answers);
-      await applyPlacement(db, { ...placementIds(bands, next.answers), ...levels }, now());
-      setResult({ known: (await loadKnowledge(db)).known, ...levels });
+      const ids = placementIds(bands, next.answers);
+      let known = ids.readingIds.length;
+      try {
+        await applyPlacement(db, { ...ids, ...levels }, now());
+        known = (await loadKnowledge(db)).known;
+      } catch (e) {
+        console.error('placement: could not save the result', e); // he still gets his close; the check runs again next launch
+      }
+      setResult({ known, ...levels });
     }
   };
 

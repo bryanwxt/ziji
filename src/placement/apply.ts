@@ -1,4 +1,5 @@
 import { meaningCue } from '../activities/flashcards/meaning';
+import { NEW_MEANING_PER_DAY } from '../session/plan';
 import { newCard } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
 import { allCards, allWords, deleteCards, practisedWords, putCards, updateSettings } from '../store/repo';
@@ -13,7 +14,8 @@ export interface PlacementOutcome { readingIds: string[]; understandingIds: stri
 export function placementIds(bands: Word[][], answers: WalkAnswer[]): { readingIds: string[]; understandingIds: string[]; missed: string[] } {
   const { reading, understanding } = placementLevels(answers);
   const upTo = (n: number) => bands.slice(0, n + 1).flat().map((w) => w.id);
-  const rightAbove = (n: number, fit: boolean) => answers.filter((a) => a.correct && a.band > n && (a.style === 'fit') === fit).map((a) => a.wordId);
+  // a right answer above the level counts as known; a 真的假的 can be a lucky guess, so it doesn't
+  const rightAbove = (n: number, fit: boolean) => answers.filter((a) => a.correct && a.band > n && a.style !== 'real' && (a.style === 'fit') === fit).map((a) => a.wordId);
   const readingIds = [...new Set([...upTo(reading), ...rightAbove(reading, false)])];
   const read = new Set(readingIds);
   const understandingIds = [...new Set([...upTo(understanding), ...rightAbove(understanding, true)])].filter((id) => read.has(id));
@@ -41,7 +43,13 @@ export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date):
   const seeds = [
     ...seedPlacementCards(words, r.readingIds, now, 'recognise'),
     ...seedPlacementCards(words, [...understood], now, 'meaning'),
-    ...[...meaningNow].map((wordId): CardRecord => ({ id: `${wordId}:meaning`, wordId, kind: 'meaning', fsrs: { ...newCard(now), due: now } })),
+    // spread out, easiest first, a day's worth at a time: hundreds due at once would push his class words out for weeks
+    ...[...meaningNow]
+      .sort((a, b) => (byId.get(a)?.rank ?? Infinity) - (byId.get(b)?.rank ?? Infinity))
+      .map((wordId, i): CardRecord => {
+        const due = new Date(now.getTime() + Math.floor(i / NEW_MEANING_PER_DAY) * 86_400_000);
+        return { id: `${wordId}:meaning`, wordId, kind: 'meaning', fsrs: { ...newCard(now), due } };
+      }),
   ].filter((c) => !kept.has(c.id));
   await putCards(db, seeds);
   await updateSettings(db, { placementDone: true, placementResult: { at: now.getTime(), reading: r.reading, understanding: r.understanding, missed: r.missed } });

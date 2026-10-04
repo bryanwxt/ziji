@@ -45,5 +45,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    testTimeout: 20_000, // the placement and first-launch walks answer 30–40 questions; a loaded machine (or CI) can pass 5 s
   },
 });

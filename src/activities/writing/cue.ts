@@ -23,8 +23,10 @@ export function pickExample(word: Word): { example: Example; once: boolean } | n
 export function writingCue(word: Word): WritingCue {
   const meaning = kidMeaning(word);
   // More than the pinyin (parent, 2026-10-04): a sentence that uses the word, with a gap for it, said in full after the word.
-  const cue = meaningCue(word, 1);
-  if (cue && cue.kind === 'sentence') {
+  // A sentence that shows one of the word's characters outside the gap would give away what he is writing: try the other, else 组词.
+  const chars = Array.from(word.text);
+  const cue = [meaningCue(word, 1), meaningCue(word, 0)].find((c) => c?.kind === 'sentence' && !chars.some((ch) => (c.before + c.after).includes(ch)));
+  if (cue) {
     return { meaning, blanked: null, blankedPy: null, speech: `${word.text}，${cue.full}`, sentence: cue.before + '＿'.repeat(Array.from(word.text).length) + cue.after };
   }
   const picked = pickExample(word);

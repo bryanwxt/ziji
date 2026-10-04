@@ -41,7 +41,8 @@ export function buildQuestion(style: Style, word: Word, pool: Word[], rng: Rng):
       const k = chars[0] === word.text ? 1 : 0; // the other character becomes a look-alike
       // a look-alike near the word's level: a rare character would give the made-up word away
       const near = lookAlikeChars(chars[k]!).filter((c) => (LEVEL.get(c) ?? 9) <= (word.level ?? 7) + 1);
-      const fake = shuffle(near, rng).map((c) => chars.map((x, i) => (i === k ? c : x)).join('')).find((t) => !HSK_WORDS.has(t));
+      const his = new Set(pool.map((w) => w.text)); // his school words are real words to him, HSK or not
+      const fake = shuffle(near, rng).map((c) => chars.map((x, i) => (i === k ? c : x)).join('')).find((t) => !HSK_WORDS.has(t) && !his.has(t));
       const showReal = !fake || rng() < 0.5;
       return { style, wordId: word.id, shown: showReal ? real : fake, real: showReal };
     }

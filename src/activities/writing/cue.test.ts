@@ -65,3 +65,14 @@ describe('pickExample', () => {
     expect(pickExample(makeWord('八', { examples: [] }))).toBeNull();
   });
 });
+
+describe('the sentence cue never shows what he is writing (review of plan 14)', () => {
+  it('a sentence with one of the word\'s characters outside the gap is skipped for the other one (考试: not 我这次＿＿考得很好)', () => {
+    const cue = writingCue(makeWord('考试', { id: 'p:k', pinyin: 'kǎo shì', source: 'parent', level: null }));
+    expect(cue.sentence).toBe('明天有＿＿。');
+  });
+  it('when every sentence shows it, the cue falls back to 组词 or nothing', () => {
+    const w = makeWord('欺负', { id: 'p:q', pinyin: 'qī fu', source: 'parent', level: null, sentences: [{ text: '大家不要欺负他，欺人不好。', pinyin: '' }] });
+    expect(writingCue(w).sentence).toBeNull();
+  });
+});

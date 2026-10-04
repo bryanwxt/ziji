@@ -82,4 +82,12 @@ describe('placement questions (spec §19 part 6)', () => {
       }
     }
   });
+  it("a made-up word is never one of his own words (a school word outside HSK is real to him)", () => {
+    // every two-character string with 负 is one of his words here, so no fake is possible: it must show a real word
+    const his = pool.flatMap((w) => [`负${w.text}`, `${w.text}负`]).map((text, i) => ({ ...pool[0]!, id: `p:${i}`, text, source: 'parent' as const, rank: null, level: null }));
+    for (let seed = 1; seed < 15; seed++) {
+      const q = buildQuestion('real', byText.get('负')!, [...pool, ...his], mulberry32(seed))!;
+      expect(q.style === 'real' && q.real).toBe(true);
+    }
+  });
 });

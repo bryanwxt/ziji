@@ -80,4 +80,26 @@ describe('placementIds', () => {
     ];
     expect(placementIds(bands, answers)).toEqual({ readingIds: ['b:1', 'b:2', 'b:3'], understandingIds: ['b:1'], missed: ['b:2', 'b:3', 'b:3x'] });
   });
+  it('a lucky 是假的 above the level is not counted as a word he reads', () => {
+    const bands = [[makeWord('一', { id: 'b:1' })], [makeWord('二', { id: 'b:2' })]];
+    const answers = [{ band: 0, style: 'read' as const, wordId: 'b:1', correct: true }, { band: 0, style: 'read' as const, wordId: 'b:1', correct: true }, { band: 1, style: 'real' as const, wordId: 'b:2', correct: true }, { band: 1, style: 'read' as const, wordId: 'b:2x', correct: false }];
+    expect(placementIds(bands, answers).readingIds).toEqual(['b:1']);
+  });
+  it('meaning checks for words he only reads are spread out, easiest first, 12 a day — never all due at once', async () => {
+    const db = await freshDb();
+    const ws = builtinWords(0).slice(0, 30);
+    await putWords(db, ws);
+    const now = new Date(2026, 9, 5, 9);
+    await applyPlacement(db, { readingIds: ws.map((w) => w.id), understandingIds: [], missed: [], reading: 0, understanding: -1 }, now);
+    const meaning = (await allCards(db)).filter((c) => c.kind === 'meaning');
+    const day = (c: { fsrs: { due: Date } }) => Math.round((c.fsrs.due.getTime() - now.getTime()) / 86_400_000);
+    const perDay = new Map<number, number>();
+    for (const c of meaning) perDay.set(day(c), (perDay.get(day(c)) ?? 0) + 1);
+    expect(Math.max(...perDay.values())).toBeLessThanOrEqual(12);
+    expect(perDay.get(0)).toBe(12);
+    const rankOf = new Map(ws.map((w) => [w.id, w.rank!]));
+    const firstDay = meaning.filter((c) => day(c) === 0).map((c) => rankOf.get(c.wordId)!);
+    const later = meaning.filter((c) => day(c) > 0).map((c) => rankOf.get(c.wordId)!);
+    expect(Math.max(...firstDay)).toBeLessThan(Math.min(...later)); // easiest first
+  });
 });

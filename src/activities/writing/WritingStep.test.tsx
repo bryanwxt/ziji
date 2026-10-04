@@ -73,3 +73,44 @@ describe('WritingStep cue: more than the pinyin (parent, 2026-10-04)', () => {
     expect(document.querySelector('.write__blank')).toBeNull();
   });
 });
+
+describe('WritingStep Truffle', () => {
+  const mood = () => document.querySelector('svg.truffle')!.getAttribute('data-mood');
+  it('stays kind after a messy character and only goes wide-eyed when a new word is finished cleanly', () => {
+    quizzes.length = 0;
+    render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén' })} kid={DEFAULT_KID} resting="sulk" isNew pass="recall" onDone={vi.fn()} />);
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 0 }));
+    expect(mood()).not.toBe('wow');
+    fireEvent.click(screen.getByText('下一个字'));
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 0 }));
+    expect(mood()).toBe('wow');
+  });
+  it('never side-eyes a hard character', () => {
+    quizzes.length = 0;
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 6 }));
+    expect(mood()).toBe('neutral');
+  });
+
+  it('the trace pass shows the outline; the hint pass flashes the first stroke and hints after 1 miss; recall hints after 2', () => {
+    const create = vi.mocked(HanziWriter.create);
+    for (const [pass, outline, hintAfter] of [['trace', true, 1], ['hint', false, 1], ['recall', false, 2]] as const) {
+      create.mockClear();
+      const { unmount } = render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew pass={pass} onDone={vi.fn()} />);
+      expect(create.mock.calls[0]![2]).toMatchObject({ showOutline: outline, showHintAfterMisses: hintAfter });
+      unmount();
+    }
+  });
+  it('reports a hint when a stroke was missed twice in the recall pass', () => {
+    quizzes.length = 0;
+    const onDone = vi.fn();
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={onDone} />);
+    act(() => { quizzes.at(-1)!.onMistake!({ mistakesOnStroke: 2 }); quizzes.at(-1)!.onComplete({ totalMistakes: 2 }); });
+    fireEvent.click(screen.getByText('完成'));
+    expect(onDone).toHaveBeenCalledWith({ totalMisses: 2, hinted: true, elapsedMs: expect.any(Number) });
+  });
+  it('the pet says which pass it is', () => {
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew pass="trace" onDone={vi.fn()} />);
+    expect(screen.getByText('描一描！')).toBeTruthy();
+  });
+});
