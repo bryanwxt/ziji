@@ -48,7 +48,7 @@
 - **Accessories:** the existing 16 emoji `ACCESSORIES`, unchanged.
 - **Wearing:** one outfit slot (a onesie or an outfit) and one accessory slot. A onesie hides the accessory. The power layer always shows.
 - **Chest:** once per day (unchanged rule).
-  - The first chest ever (`ownedCostumes` empty and no `lastChestDate`) gives the onesie for `settings.zodiac ?? 'dragon'`.
+  - The first chest that finds no costume he owns (`ownedCostumes` holds no known costume — a dragon-era install may have opened chests before) gives the onesie for `settings.zodiac ?? 'dragon'`. (Corrected 2026-10-04: an earlier draft also required no `lastChestDate`, which contradicted this plan's Review Focus; the code follows the spec.)
   - After that, a seeded pick (seed = date) from all unowned outfits, onesies and accessories.
   - When everything is owned: +3 bonus stars.
 - **Old installs:** `ownedAccessories` and `wearing` are kept as they are. `outfit: null` and `ownedCostumes: []` are the defaults. Unknown ids are ignored.
