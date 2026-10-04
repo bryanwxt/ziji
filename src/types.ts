@@ -74,7 +74,6 @@ export interface ReviewLog {
   source?: 'use'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use)
 }
 
-/** The parent can switch each of these on or off; 用一用 (wrapup) closes the lesson whenever 认一认 or 选一选 runs (spec §20). */
 /** Skills the parent's Skills panel follows (spec §19 part 7). */
 export type Skill = 'reading' | 'meaning' | 'use' | 'zibian' | 'writing';
 
@@ -95,6 +94,7 @@ export interface PlacementResult {
   missed: string[];
 }
 
+/** The parent can switch each of these on or off; 用一用 (wrapup) closes the lesson whenever 认一认 or 选一选 runs (spec §20). */
 export type ActivityKind = 'flashcards' | 'choose' | 'writing' | 'components' | 'speaking';
 export type StepKind = ActivityKind | 'wrapup';
 

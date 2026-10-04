@@ -31,6 +31,11 @@ export interface WalkState {
   done: boolean;
 }
 
+/** A band's HSK level (that of its last character): 1–6, or 7 for 七—九级. */
+export function bandLevel(bands: Word[][], band: number): number {
+  return bands[Math.max(0, Math.min(band, bands.length - 1))]?.at(-1)?.level ?? 1;
+}
+
 /** The built-in characters in rank order, in bands of 100. */
 export function rankBands(words: Word[]): Word[][] {
   const ranked = words.filter((w) => w.source === 'builtin' && w.rank !== null).sort((a, b) => a.rank! - b.rank!);

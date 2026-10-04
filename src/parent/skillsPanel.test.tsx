@@ -18,7 +18,11 @@ describe('SkillsPanel (spec §19 part 7)', () => {
     expect((await screen.findAllByText('Look-alike characters (字辨)')).length).toBe(2); // its row, and its missed words
     expect(screen.getByText(/Reading: HSK 3 · Understanding: HSK 2/)).toBeTruthy();
     expect(screen.getByText('0% (1)')).toBeTruthy();
-    fireEvent.input(screen.getByLabelText('Class baseline for Look-alike characters (字辨) (% right)'), { target: { value: '53' } });
+    const box = screen.getByLabelText('Class baseline for Look-alike characters (字辨) (% right)');
+    fireEvent.input(box, { target: { value: '5' } }); // still typing: nothing saved yet
+    await new Promise((r) => setTimeout(r, 30));
+    expect((await getSettings(app.db)).baselines?.zibian).toBeUndefined();
+    fireEvent.change(box, { target: { value: '53' } }); // done typing
     await waitFor(async () => expect((await getSettings(app.db)).baselines?.zibian).toBe(53));
     fireEvent.click(screen.getByRole('button', { name: 'Practise 根 more (Look-alike characters (字辨))' }));
     await waitFor(async () => expect((await allCards(app.db))[0]!.fsrs.due.getTime()).toBeLessThanOrEqual(app.now().getTime()));

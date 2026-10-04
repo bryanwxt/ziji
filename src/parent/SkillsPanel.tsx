@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { addDays } from '../lib/date';
-import { rankBands } from '../placement/walk';
+import { bandLevel, rankBands } from '../placement/walk';
 import { bringForward } from '../session/record';
 import { SKILL_CARD, SKILLS, skillAccuracy, topMissed } from '../stats/skills';
 import { allCards, allWords, answersSince, getSettings, listRecordings, logsSince, updateSettings } from '../store/repo';
@@ -38,11 +38,7 @@ export function SkillsPanel() {
   const acc = skillAccuracy(d.logs, d.answers);
   const byId = new Map(d.words.map((w) => [w.id, w]));
   const bands = rankBands(d.words);
-  const hsk = (band: number) => {
-    if (band < 0) return 'none yet';
-    const level = bands[Math.min(band, bands.length - 1)]?.at(-1)?.level ?? 1;
-    return level >= 7 ? 'HSK 7–9' : `HSK ${level}`;
-  };
+  const hsk = (band: number) => (band < 0 ? 'none yet' : bandLevel(bands, band) >= 7 ? 'HSK 7–9' : `HSK ${bandLevel(bands, band)}`);
   const p = d.settings.placementResult;
   const pct = (s: Skill) => (acc[s].total ? Math.round((acc[s].right * 100) / acc[s].total) : null);
 
@@ -85,8 +81,8 @@ export function SkillsPanel() {
                 <td>{LABEL[s]}</td>
                 <td>{now === null ? '—' : `${now}% (${acc[s].total})`}</td>
                 <td>
-                  <input type="number" min={0} max={100} aria-label={`Class baseline for ${LABEL[s]} (% right)`} value={base ?? ''}
-                    onInput={(e) => void setBaseline(s, e.currentTarget.value)} />
+                  <input type="number" min={0} max={100} aria-label={`Class baseline for ${LABEL[s]} (% right)`} defaultValue={base === undefined ? '' : String(base)}
+                    onChange={(e) => void setBaseline(s, e.currentTarget.value)} /> {/* saved when he's done typing, not per keystroke */}
                 </td>
                 <td>{now === null || base === undefined ? '—' : `${now - base >= 0 ? '+' : ''}${now - base}`}</td>
               </tr>

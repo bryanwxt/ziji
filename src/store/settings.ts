@@ -16,7 +16,7 @@ export function migrateSettings(s: Settings): Partial<Settings> | null {
   return patch;
 }
 
-/** Runs the one-off moves against what's actually stored (getSettings fills in today's defaults, which already say lessonVersion 2). */
+/** Runs the one-off moves against what's actually stored (getSettings fills in today's defaults, which already say the current lessonVersion). */
 export async function applySettingsMigration(db: AppDb): Promise<void> {
   const raw = await db.get('settings', 'main');
   if (!raw) return; // a fresh install starts on today's defaults

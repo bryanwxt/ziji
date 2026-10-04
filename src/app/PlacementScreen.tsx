@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { speak } from '../audio/speech';
 import { applyPlacement, placementIds } from '../placement/apply';
 import { nextQuestion, visitStyles, type PlacementQuestion } from '../placement/questions';
-import { placementLevels, rankBands, startWalk, walkStep, WARMUP, type Style, type WalkState } from '../placement/walk';
+import { bandLevel, placementLevels, rankBands, startWalk, walkStep, WARMUP, type Style, type WalkState } from '../placement/walk';
 import { mulberry32 } from '../lib/random';
 import { allWords } from '../store/repo';
 import { DEFAULT_KID, type Word } from '../types';
@@ -19,9 +19,7 @@ const LEVEL = ['一级', '二级', '三级', '四级', '五级', '六级', '七�
 
 /** A band's HSK level in Chinese (the level of its last character), or 还没开始 for none. */
 function levelName(bands: Word[][], band: number): string {
-  if (band < 0) return '还没开始';
-  const level = bands[Math.min(band, bands.length - 1)]?.at(-1)?.level ?? 1;
-  return LEVEL[level - 1] ?? '七—九级';
+  return band < 0 ? '还没开始' : (LEVEL[bandLevel(bands, band) - 1] ?? '七—九级');
 }
 
 /**
