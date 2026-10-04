@@ -1501,5 +1501,6 @@ This builds the §19 sentence bank and 选一选, and adds one question style.
    - 钓鱼 becomes 字辨 (part 8).
 2. **Plan 14 — placement and Skills:** §19 parts 6–7, unchanged.
 3. **Plan 15 — dictation and extra sentences:**
-   - 听写;
+   - 听写 (built: the school 听写 mistakes box; the rest arrived with plans 13–14);
+   - Tatoeba sentences: **skipped** by the parent on 2026-10-04 — the written bank and his class sentences are enough;
    - optional Tatoeba sentences (§19 parts 3–4).

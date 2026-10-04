@@ -65,7 +65,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     newWordMeaningIds: newWords.filter((w) => meaningCue(w) !== null).map((w) => w.id),
     flashTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * FLASH_SHARE),
     writeCandidates: [
-      ...dueOf(write).map((c) => ({ wordId: c.wordId, isNew: false })),
+      ...dueOf(write).map((c) => ({ wordId: c.wordId, isNew: c.fsrs.reps === 0 })), // never written yet (a school 听写 mistake): trace and hint first
       ...active
         .filter((w) => w.writeable && knownIds.has(w.id) && !hasWrite.has(w.id))
         .sort(
