@@ -29,6 +29,7 @@
 - Revision happens inside the exercises.
 - Each word is met at least three ways in its first lesson.
 - He writes 8–10 characters a lesson, from memory, near his level.
+- New words per day settle at the number he actually keeps.
 - Every wrong answer explains itself.
 
 ## 2. The lesson (30 minutes)
@@ -47,7 +48,7 @@
 
 ### 2.1 认新字
 
-For each new word (`newPerDay`, default 4):
+For each of today's new words (how many: §2.2):
 
 1. **The 认字 card,** as today:
    - the character, pinyin, meaning and English;
@@ -56,6 +57,22 @@ For each new word (`newPerDay`, default 4):
 2. **A recall question straight after the card:** hear the word, then find it among four characters. A miss shows the card again briefly, and the word is marked to come back early in 练一练.
 
 **One reading per card.** This shipped 2026-10-05 as `fix: each character's 组词 use the reading its card teaches`. A card and everything built from it use only 词语 where the character has the card's reading; a 轻声 of the same sound counts. The other reading is its own word.
+
+### 2.2 How many new words: found from how much he keeps
+
+The parent chose this on 2026-10-05. There's no fixed best number: it is each child's acquisition rate (Burns et al.). Too many new words also crowds revision out of the round.
+
+- **Start at 4 a day.**
+- **Daily check.** Each day the app looks at how the last 5 days' new words did the first time they came back as revision. That comes back on a later day, not the same lesson.
+- **Up one** (to at most 8) when two things hold:
+  - he recalled at least 85% of them;
+  - revision isn't piling up: today's due revision fits the round's time box.
+- **Down one** (to at least 3) when either:
+  - recall fell below 70%;
+  - revision is piling up: the round's time box ran out before the due items two days running.
+- **Otherwise unchanged.** Fewer than 8 measured words also means no change.
+- **The ceiling.** The parent's "new words per day" setting becomes the ceiling. Today's backlog pause (new words stop when revision piles up past `BACKLOG_PAUSE`) stays as the hard stop.
+- **Skills panel.** It shows today's number and the reason: "5 a day: kept 9 of 10 recent new words".
 
 ## 3. 练一练: one word, many contexts
 
@@ -161,7 +178,7 @@ This keeps the spaced-repetition model that the Skills panel and placement rely 
 - English anywhere else on child screens.
 
 ## 9. Phasing
-1. **A. Round engine.** The ladder, the round builder, the rung memory and the FSRS grading, plus 认新字 and the new step order and path. It reuses today's question types for rungs 1–3: read, hear and find, the 组词 gap, sentence gap-fill and 用对了吗.
+1. **A. Round engine.** The ladder, the round builder, the rung memory and the FSRS grading, plus 认新字, adaptive pacing (§2.2) and the new step order and path. It reuses today's question types for rungs 1–3: read, hear and find, the 组词 gap, sentence gap-fill and 用对了吗.
 2. **B. New question types:**
    - 组词 pairing and 搭配 pairing, with the 搭配 bank;
    - 组句 tiles, with the 组句 bank;
@@ -179,6 +196,7 @@ Each phase is its own plan, reviewed and shipped on its own. The paper worlds (s
   - FSRS grading per rung;
   - writing selection (at or below level, no back-to-back repeats);
   - 成语 level window;
+  - adaptive pacing: up at ≥ 85% with no backlog, down below 70% or on backlog, within 3–8 and the parent's ceiling, unchanged on too little data;
   - 组句 accepted orders;
   - settings migration.
 - **Component:** each question type on the stage, the feedback sheet's English after a wrong answer, and the 认新字 card with a 成语.
