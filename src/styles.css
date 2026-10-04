@@ -540,7 +540,8 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .zika__py { font-size: 15px; font-style: italic; color: var(--ink-soft); }
 .zika__foot { display: flex; gap: 6px; font-size: 14px; }
 .zika__stars { color: #d9a400; display: inline-flex; gap: 1px; }
-.zika.card--rare { box-shadow: 4px 4px 0 var(--ink), inset 0 0 0 3px #bfe0ff; }
+.zika.card--rare { box-shadow: 4px 4px 0 var(--ink), inset 0 0 0 4px #7db8f0; }
+.zika.card--rare::after { content: ''; position: absolute; top: 7px; right: 7px; width: 10px; height: 10px; background: #4a90d9; border: 2px solid var(--ink); transform: rotate(45deg); } /* a little blue diamond */
 .zika.card--gold { background: linear-gradient(135deg, #fff1c9, #ffd56a 55%, #fff1c9); }
 .zika.card--back { background: repeating-linear-gradient(45deg, var(--line) 0 6px, var(--surface) 6px 12px); font-size: 34px; color: var(--muted); box-shadow: 4px 4px 0 var(--line-strong); border-color: var(--line-strong); }
 .zika.card--back.is-nudged { animation: wobble 400ms ease-in-out; }

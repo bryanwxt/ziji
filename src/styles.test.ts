@@ -182,4 +182,8 @@ describe('adaptive layouts (spec §18)', () => {
     expect(css).not.toMatch(/\.fishtile__badge \{[^}]*font-size/);
     expect(css).not.toMatch(/\.zika__stars \{[^}]*letter-spacing/);
   });
+  it('a rare 字卡 has a frame you can see (a 4px blue ring and a corner mark), not a pale hairline', () => {
+    expect(css).toMatch(/\.zika\.card--rare \{[^}]*inset 0 0 0 4px #7db8f0/);
+    expect(css).toMatch(/\.zika\.card--rare::after \{/);
+  });
 });
