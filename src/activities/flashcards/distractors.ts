@@ -36,12 +36,15 @@ export function pickCharacterDistractors(target: Word, pool: Word[], rng: Rng, n
 }
 
 /** Readings 一 and 不 take before other tones (一个 yí, 一天 yì, 不是 bú) — dictionaries list only yī and bù. */
-const TONE_CHANGE: Record<string, string[]> = { 一: ['yí', 'yì'], 不: ['bú'] };
+const TONE_CHANGE: Record<string, string[]> = { 一: ['yí', 'yì'], 不: ['bú'], 七: ['qí'], 八: ['bá'] }; // 七/八 take 2nd tone before a 4th in many children's speech
 
 export function pickPinyinDistractors(target: Word, pool: Word[], rng: Rng, n = 3): string[] {
   // A polyphonic character's other readings are right too — never offer them as wrong.
   const readings = Array.from(target.text).length === 1 ? [...pinyin(target.text, { multiple: true, type: 'array' }), ...(TONE_CHANGE[target.text] ?? [])] : [];
-  const used = new Set([target.pinyin, ...readings]);
+  const syllables = target.pinyin.split(' ');
+  // the toneless form is his word said in 轻声 (爸爸 bà ba): never offered as wrong
+  const toneless = syllables.map((s) => syllableTone(s).base).join(' ');
+  const used = new Set([target.pinyin, toneless, ...readings]);
   const out: string[] = [];
   const add = (p: string) => {
     if (out.length < n && p && !used.has(p)) {
@@ -50,7 +53,6 @@ export function pickPinyinDistractors(target: Word, pool: Word[], rng: Rng, n = 
     }
   };
 
-  const syllables = target.pinyin.split(' ');
   const toneVariants: string[] = [];
   syllables.forEach((s, i) => {
     const { base, tone } = syllableTone(s);

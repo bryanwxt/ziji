@@ -36,6 +36,9 @@ function swaps(syl: string): string[] {
   return out;
 }
 
+/** 轻声 words whose full-tone reading is another real word (东西 dōng xī, east and west): that reading is never a trap. */
+const FULL_TONE_IS_A_WORD = new Set(['东西', '大意', '地道', '地方', '兄弟', '买卖', '人家', '对头', '精神', '自然', '实在', '大夫', '照应', '下水', '多少']);
+
 /** His worksheet traps, in priority order: the phonetic part's reading, initial swaps, final swaps, 轻声 given full tone. */
 export function trapReadings(word: Word): string[] {
   const syllables = word.pinyin.split(' ');
@@ -52,7 +55,7 @@ export function trapReadings(word: Word): string[] {
   }
   syllables.forEach((s, i) => {
     for (const alt of swaps(s)) out.push(syllables.map((x, j) => (j === i ? alt : x)).join(' '));
-    if (syllableTone(s).tone === 5 && chars[i]) {
+    if (syllableTone(s).tone === 5 && chars[i] && !FULL_TONE_IS_A_WORD.has(word.text)) {
       const full = pinyin(chars[i]!);
       if (full && full !== s) out.push(syllables.map((x, j) => (j === i ? full : x)).join(' '));
     }

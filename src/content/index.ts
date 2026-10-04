@@ -35,7 +35,7 @@ export function builtinWords(now: number): Word[] {
   return BUILTIN.map((c) => ({
     id: builtinWordId(c.char),
     text: c.char,
-    pinyin: c.pinyin,
+    pinyin: READING_FIXES[c.char] ?? c.pinyin,
     meaning: c.meaning,
     level: c.level,
     rank: c.rank,
@@ -43,9 +43,14 @@ export function builtinWords(now: number): Word[] {
     writeable: c.writeable,
     paused: false,
     createdAt: now,
-    examples: c.examples,
+    examples: c.examples.map((e) => (EXAMPLE_FIXES[e.text] ? { ...e, pinyin: EXAMPLE_FIXES[e.text]! } : e)),
   }));
 }
+
+/** The reading a P2 child meets, where the dictionary's citation reading isn't it (了 is le every day, liǎo only in 了解). */
+const READING_FIXES: Record<string, string> = { 了: 'le' };
+/** 组词 readings the source data gets wrong (包子's 子 is 轻声). */
+const EXAMPLE_FIXES: Record<string, string> = { 包子: 'bāo zi' };
 
 /** Radical and components of every character in the text, de-duplicated, in order. */
 export function wordComponents(text: string): string[] {
