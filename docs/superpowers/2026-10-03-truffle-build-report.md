@@ -550,3 +550,46 @@ Branch feature/tingxie. The Words tab's "School 听写 mistakes" box takes the r
 - a quick double tap on Bring back can add a new word twice (same pattern as Add list)
 - '…comes back' when several words are marked
 - a new school word's 认一认 intro waits behind older unstarted lists (writing still comes first)
+
+## Deferred minors round (2026-10-04) + placement steadiness
+
+The parent asked to "fix the deferred minors", then reported placement questions changing size and the odd 真的假的 style. Branch fix/deferred-minors → fix/placement-steady, Native execution, one opus review at the end. Suite 789/789, fit sweep 581/581 (then 246/246 after the fix pass).
+
+### Fixed (by plan)
+- Placement (parent report): one fixed prompt box and 2×2 grid for every style, steadiness check in the sweep; 真的假的 removed; 回家 on a re-run; kind close for 0 known.
+- Content: 了 le, 包子 bāo zi, tone-sandhi and toneless distractors, 轻声 full-tone trap skipped for 东西-type words; CONTENT_VERSION gates the built-in rewrite, pinned by a content hash test.
+- Session/parent: meaning-vs-read rating, recordUse timing (with 9 s reading allowance), Skills counts, stars 5/lesson (past lessons keep their 6th), new-word pause, placement re-run per card kind, deleteWord, Overview reading-only, 听写 box details, importer and 朗读 details, misread unmark restores a word's place.
+- Plan 7: still sea fish on-screen; yard flinch then laugh; 挖呀挖.
+- Plan 10: PIN/Forgot PIN/error screens scroll sideways; long self-intro scrolls; 今天休息一下 instead of a lone chest; lanterns off landscape lesson bars; 5-point world-tap probe and done-Home in every world (found labels/Truffle's bubble over targets → pass-through).
+- Plan 11 tidy, plan 5 空格 for screen readers.
+- Plans 1–4: ~1 s reactions, 喵！, chest tap hint, HoldButton (blur, second finger, --hold-ms, no HOLD English), writing close-up + face-only close-up, 字卡 modal dialog and quiet face-down cards, room tabs aria, power labels, power mark turns with the head, 辶 mark on the ear, costume previews, onesie tips in the box, typed ChestResult, own pinyin for costume/accessory names, emoji contract on JSON/CSS/HTML, paired wings/jetpack thumbnails, visible rare frame, dead CSS.
+
+### Rulings
+- Ruling: Home's Truffle bubble no longer opens the wardrobe (only Truffle does) — it sat over the grass target on phones — cost if wrong: a bubble tap plays the world instead of opening the room
+- Ruling: tap probe flags a target when its centre or ≥2 of 4 inner points are covered — cost if wrong: a covered target edge stays untappable
+- Ruling: no square glasses on the pixel outfit (clash with face accessories, hide moods) — cost if wrong: a less complete pixel look
+- Ruling: 哼，来吧 stays on first meeting only — cost if wrong: none
+- Ruling: 得 keeps dé — cost if wrong: de marked wrong on 得 alone
+- Ruling: rotate test keeps SetupPin; phone media blocks stay per feature; no session-level close-up cooldown test; 👑/backup-default gaps left (covered indirectly) — cost if wrong: none
+- Final: Ruling: stars — sessions before 2026-10-05 count 用一用 (WRAPUP_NO_STAR_FROM) so totals and stars goals never fall — cost if wrong: a few extra stars from old lessons
+- Final: Ruling: use-answer slowness allows 9 s of reading (USE_READING_MS) on top of the 6 s flashcard threshold — cost if wrong: slow guesses rated Good
+
+### Final review fixes (opus)
+- I1 stars went down for every past lesson — 'lessons from before the change keep the star…' RED→GREEN
+- I2 unmarking a misread demoted class-list/听写 words — 'unmarking gives a class-list word its place back…' RED→GREEN
+- I3 CONTENT_VERSION relied on a manual bump — content hash test RED→GREEN (proved: an unbumped fix-table change fails)
+- I4 right 选一选 answers rated Hard after reading time — 'a right answer at 8 s is still Good' RED→GREEN
+- I5 HOLD English on the chest — 'says 按住 only' RED→GREEN; suite 789/789
+
+### Deferred minors
+- meaning card with no cue stays due and takes a cap slot (plan.ts meaningReviewIds)
+- Skills baseline input may not save on iPad Safari when leaving via a tab (onChange on blur only)
+- a tap on the current path stop's name plays the world target instead of starting the step
+- unmark → re-mark of misreads adds another extra passage day
+- keyboard focus falls to body after a short chest press (key={nudge} remount)
+- 字卡 dialog doesn't trap Tab
+- 听写 words share one listedAt (ties by rank, not typed order)
+- misplaced comments in types.ts (baselines/contentVersion) and repo.ts (practisedWords doc)
+- 包子 test passes even if the example disappears
+- fit sweep doesn't cover the re-run placement (回家 button vs bubble on a phone)
+- (declined to judge) VoiceOver activation of the Home pet button; ~20 grain-filtered Truffles in Wardrobe on an old iPad; close-up on a 写一写 redo pass
