@@ -62,7 +62,7 @@ export async function seedBuiltinWords(db: AppDb, words: Word[], refresh = true)
   const refreshed = words.flatMap((w) => {
     const old = existing.get(w.id);
     if (!old) return [];
-    const kept = { paused: old.paused, listName: old.listName, listedAt: old.listedAt, createdAt: old.createdAt, writeSkippedAt: old.writeSkippedAt };
+    const kept = { paused: old.paused, listName: old.listName, listedAt: old.listedAt, createdAt: old.createdAt, writeSkippedAt: old.writeSkippedAt, misreadMark: old.misreadMark, misreadPrev: old.misreadPrev };
     const imported = { pairs: old.pairs, sentences: old.sentences, tags: old.tags }; // from a worksheet import; on-device only
     const writeable = w.writeable || (old.listName !== undefined && old.writeable); // a parent list's 写 choice stays
     return [{ ...w, ...kept, ...imported, writeable }];

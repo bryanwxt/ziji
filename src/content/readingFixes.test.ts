@@ -31,4 +31,13 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     expect(trapReadings(makeWord('东西', { pinyin: 'dōng xi', source: 'parent', level: null }))).not.toContain('dōng xī');
     expect(trapReadings(makeWord('桌子', { pinyin: 'zhuō zi', source: 'parent', level: null }))).toContain('zhuō zǐ'); // an ordinary 轻声 word still gets its trap
   });
+  it('built-in content and its fixes change only with a new CONTENT_VERSION (review I3)', async () => {
+    const { createHash } = await import('node:crypto');
+    const { default: data } = await import('./builtin.json');
+    const { CONTENT_VERSION, READING_FIXES, EXAMPLE_FIXES } = await import('.');
+    const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES])).digest('hex').slice(0, 16);
+    // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
+    const PINNED: Record<string, string> = { '1.2': 'a281a7f30a016ed0' };
+    expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
+  });
 });

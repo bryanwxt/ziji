@@ -69,7 +69,6 @@ export function HoldButton({ label, onComplete, disabled = false, holdMs = HOLD_
       </svg>
       <span class="hold__label">
         <Label zh="按住" />
-        <b>HOLD</b>
       </span>
     </button>
   );

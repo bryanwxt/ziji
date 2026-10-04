@@ -122,4 +122,9 @@ describe('response time in words-in-use answers (deferred minor, plan 13)', () =
     expect(logs[0]!.responseMs).toBe(25_000);
     expect(logs[0]!.source).toBe('use');
   });
+  it('reading the sentence takes time: a right answer at 8 s is still Good, not Hard (review I4)', async () => {
+    const db = await freshDb();
+    await recordUse(db, 'b:很', true, new Date(2026, 9, 5, 10), 8_000);
+    expect((await logsSince(db, 0))[0]!.rating).toBe(Rating.Good);
+  });
 });

@@ -4,7 +4,8 @@ import passages from './passages.json';
 import type { BuiltinChar, CharInfo, Passage, Word } from '../types';
 
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
-/** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words. */
+/** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
+ *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
 export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.2`;
 export const PASSAGES: Passage[] = passages as Passage[];
 
@@ -50,9 +51,9 @@ export function builtinWords(now: number): Word[] {
 }
 
 /** The reading a P2 child meets, where the dictionary's citation reading isn't it (了 is le every day, liǎo only in 了解). */
-const READING_FIXES: Record<string, string> = { 了: 'le' };
+export const READING_FIXES: Record<string, string> = { 了: 'le' };
 /** 组词 readings the source data gets wrong (包子's 子 is 轻声). */
-const EXAMPLE_FIXES: Record<string, string> = { 包子: 'bāo zi' };
+export const EXAMPLE_FIXES: Record<string, string> = { 包子: 'bāo zi' };
 
 /** Radical and components of every character in the text, de-duplicated, in order. */
 export function wordComponents(text: string): string[] {

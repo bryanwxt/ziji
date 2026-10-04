@@ -24,11 +24,12 @@ export async function recordRecognition(
 }
 
 export async function recordMeaning(
-  db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date, source?: 'use',
+  db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number; ratedMs?: number }, now: Date, source?: 'use',
 ): Promise<CardRecord> {
-  const rating = toRating({ kind: 'meaning', ...outcome });
+  const { correct, responseMs, ratedMs = responseMs } = outcome; // ratedMs: the time that counts toward "slow" (reading time taken off)
+  const rating = toRating({ kind: 'meaning', correct, responseMs: ratedMs });
   const card = await reviewCard(db, wordId, 'meaning', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, ...outcome, ...(source ? { source } : {}) });
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, correct, responseMs, ...(source ? { source } : {}) });
   return card;
 }
 
@@ -47,10 +48,14 @@ export async function bringForward(db: AppDb, wordId: string, kind: CardKind, du
   if (c && c.fsrs.due.getTime() > due.getTime()) await putCards(db, [{ ...c, fsrs: { ...c.fsrs, due } }]);
 }
 
+/** Reading time allowed before a 选一选/用一用 answer counts as slow (on top of the flashcard's 6 s). */
+export const USE_READING_MS = 9000;
+
 /** A word used in context (选一选, 用对了吗, 用一用): the day's first answer rates its meaning card; a later miss brings it forward. */
 export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date, responseMs = 0): Promise<CardRecord> {
   const existing = await getCard(db, `${wordId}:meaning`);
-  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs }, now, 'use'); // logged as from 选一选/用一用, so Skills counts it once
+  // he reads a sentence (or two) first: that time doesn't make a right answer Hard
+  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs, ratedMs: Math.max(0, responseMs - USE_READING_MS) }, now, 'use'); // logged as from 选一选/用一用, so Skills counts it once
   if (!correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
   return (await getCard(db, `${wordId}:meaning`))!;
 }

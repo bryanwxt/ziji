@@ -43,6 +43,8 @@ export interface Word {
   source: 'builtin' | 'parent';
   listName?: string;
   listedAt?: number; // set for parent words and built-in words pulled forward by a parent list
+  misreadMark?: number; // the listedAt a 朗读 misread mark gave it, and what it had before, so unmarking puts it back
+  misreadPrev?: number | null;
   writeable: boolean;
   paused: boolean;
   createdAt: number;

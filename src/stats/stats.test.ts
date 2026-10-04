@@ -106,7 +106,13 @@ describe('weekDays', () => {
 describe('stars (deferred minor, plan 13)', () => {
   it('用一用 closes the lesson but is not a star of its own: one star per activity', async () => {
     const { totalStars } = await import('./stats');
-    const s = { completedSteps: ['flashcards', 'choose', 'components', 'writing', 'speaking', 'wrapup'] } as unknown as import('../types').SessionRecord;
+    const s = { date: '2026-10-05', completedSteps: ['flashcards', 'choose', 'components', 'writing', 'speaking', 'wrapup'] } as unknown as import('../types').SessionRecord;
     expect(totalStars([s], 0)).toBe(5);
+  });
+  it('lessons from before the change keep the star their 用一用 earned, so his total never goes down', async () => {
+    const { totalStars } = await import('./stats');
+    const steps = ['flashcards', 'choose', 'components', 'writing', 'speaking', 'wrapup'];
+    const old = { date: '2026-10-04', completedSteps: steps } as unknown as import('../types').SessionRecord;
+    expect(totalStars([old], 0)).toBe(6);
   });
 });

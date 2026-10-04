@@ -24,18 +24,25 @@ export async function applyMisreads(db: AppDb, recording: Recording, chars: stri
     const word = await getWord(db, id);
     // ahead of every school list (lists use their add time); the newest marks come first
     if (word) {
-      await putWords(db, [{ ...word, listedAt: -now.getTime() }]);
+      const mark = -now.getTime();
+      const stillMarked = word.misreadMark !== undefined && word.listedAt === word.misreadMark;
+      const prev = stillMarked ? (word.misreadPrev ?? null) : (word.listedAt ?? null); // remember its place (a class list, a 听写 mark…)
+      await putWords(db, [{ ...word, listedAt: mark, misreadMark: mark, misreadPrev: prev }]);
       updated++;
     } else notInApp.push(ch);
   }
-  // unmarked since the last save: the priority it was given goes (a misread mark is the only negative listedAt)
+  // unmarked since the last save: it goes back to where it was, unless something else (a 听写 mistake) has moved it since
   for (const ch of before) {
     if (chars.includes(ch)) continue;
     const word = await getWord(db, `b:${ch}`);
-    if (word && (word.listedAt ?? 0) < 0) {
-      const { listedAt: _drop, ...rest } = word;
-      await putWords(db, [rest]);
+    if (!word) continue;
+    const { misreadMark, misreadPrev, listedAt, ...rest } = word;
+    if (misreadMark === undefined) {
+      if ((listedAt ?? 0) < 0 && !word.listName) await putWords(db, [rest]); // a mark saved before marks remembered their place
+      continue;
     }
+    const back = listedAt === misreadMark ? misreadPrev : listedAt;
+    await putWords(db, [back == null ? rest : { ...rest, listedAt: back }]);
   }
   // the passage's extra day comes with the first marks only: saving again doesn't add another
   if (chars.length && before.size === 0 && recording.prompt.kind === 'passage') {

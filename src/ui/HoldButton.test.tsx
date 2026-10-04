@@ -100,4 +100,10 @@ describe('HoldButton', () => {
     act(() => { vi.advanceTimersByTime(5000); });
     expect(done).not.toHaveBeenCalled();
   });
+  it('says 按住 only: no English on a child screen (review I5)', () => {
+    render(<HoldButton label="按住打开" onComplete={vi.fn()} />);
+    const copy = btn().cloneNode(true) as HTMLElement;
+    copy.querySelectorAll('.label__py').forEach((n) => n.remove()); // pinyin is fine
+    expect(copy.textContent).not.toMatch(/[A-Za-z]/);
+  });
 });

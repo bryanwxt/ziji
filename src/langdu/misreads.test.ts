@@ -75,4 +75,16 @@ describe('saving misreads again (deferred minors, plan 8)', () => {
     await applyMisreads(db, { ...rec, misread: ['天'] }, [], now);
     expect((await getWord(db, 'b:天'))!.listedAt).toBeUndefined();
   });
+  it('unmarking gives a class-list word its place back, and leaves a later 听写 priority alone (review I2)', async () => {
+    const db = await freshDb();
+    await putWords(db, builtinWords(0).map((w) => (w.text === '天' ? { ...w, listedAt: 500, listName: '第三课' } : w)));
+    const rec = { id: 'r1', createdAt: 0, prompt: { kind: 'passage' as const, passageId: 'pp:1' }, blob: new Blob(), mime: 'audio/mp4', durationSec: 12 };
+    await addRecording(db, rec);
+    const t1 = new Date(2026, 9, 5, 17), t2 = new Date(2026, 9, 6, 17), t3 = new Date(2026, 9, 7, 17);
+    await applyMisreads(db, rec, ['天', '地'], t1);
+    await putWords(db, [{ ...(await getWord(db, 'b:地'))!, listedAt: -t2.getTime() }]); // then the parent enters 地 as a 听写 mistake
+    await applyMisreads(db, { ...rec, misread: ['天', '地'] }, [], t3);
+    expect((await getWord(db, 'b:天'))!.listedAt).toBe(500); // back to its class-list place
+    expect((await getWord(db, 'b:地'))!.listedAt).toBe(-t2.getTime()); // the 听写 priority stays
+  });
 });
