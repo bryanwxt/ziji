@@ -27,7 +27,7 @@ describe('world tap details (deferred minors, plan 7)', () => {
     render(<WorldTaps world="yard" kid={kid()} today="2026-10-06" onKid={vi.fn()} onSay={onSay} />);
     tap('洒水器');
     expect(onSay).toHaveBeenLastCalledWith('哇！');
-    act(() => vi.advanceTimersByTime(800));
+    act(() => { vi.advanceTimersByTime(800); });
     expect(onSay).toHaveBeenLastCalledWith('哈哈哈！');
   });
   it('the pirate X: Truffle digs too', () => {
