@@ -1,5 +1,7 @@
 import type { JSX } from 'preact';
-import { useId } from 'preact/hooks';
+import { useId, useRef } from 'preact/hooks';
+import { reducedMotion } from '../motion';
+import { useRig } from './useRig';
 import { POWERS, type PowerId } from '../../fun/powers';
 import { accessoryLayer } from './accessories';
 import { costumeLayer } from './costumes';
@@ -88,7 +90,12 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
   const id = `truffle-${useId()}`;
   const a11y = label === null ? { 'aria-hidden': 'true' as const } : { role: 'img' as const, 'aria-label': label };
   const expr = expression ?? MOOD_EXPRESSION[mood];
-  const f = PRESETS[expr];
+  const svgRef = useRef<SVGSVGElement>(null);
+  // a live Truffle is drawn once in his first pose; from then on the loop springs every part (a re-render must not snap him)
+  const first = useRef(expr);
+  const drawnExpr = alive ? first.current : expr;
+  const f = PRESETS[drawnExpr];
+  useRig(svgRef, { alive, target: PRESETS[expr], expr, reduced: reducedMotion() });
   const tilt = clamp(f.tilt + clamp(lookAt, -1, 1) * 4, -8, 8);
   const acc = accessoryLayer(accessory);
   const wear = costumeLayer(outfit);
@@ -98,6 +105,7 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
   const part = (p: 'head' | 'body' | 'tail') => (onPart ? { onPointerDown: (e: JSX.TargetedPointerEvent<SVGGElement>) => onPart(p, e as unknown as PointerEvent) } : {});
   return (
     <svg
+      ref={svgRef}
       class={`truffle${bounce ? ' truffle--bounce' : ''}${onPart ? ' truffle--touchable' : ''}`}
       viewBox="30 20 260 270"
       width={size}
@@ -130,7 +138,7 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
               {ears && <g data-part="ear-in-r" style={`transform-origin:220px 78px;transform:rotate(${f.earR}deg)`} dangerouslySetInnerHTML={{ __html: EAR_IN_R }} />}
             </g>
             <g class={`truffle__face truffle__face--${mood}`}>
-              <FaceRig f={f} expr={expr} id={id} />
+              <FaceRig f={f} expr={drawnExpr} id={id} />
             </g>
             {wear && <g class="truffle__outfit-head" dangerouslySetInnerHTML={{ __html: wear.head }} />}
             {acc?.face && <g class="truffle__accessory truffle__accessory--face" dangerouslySetInnerHTML={{ __html: acc.face }} />}
