@@ -8,6 +8,9 @@ describe('migrateSettings', () => {
   it('moves an install on the old 20-minute default to 30 minutes, once', () => {
     expect(migrateSettings({ ...DEFAULT_SETTINGS, sessionMinutes: 20, lessonVersion: undefined })).toEqual({ sessionMinutes: 30, lessonVersion: 2 });
   });
+  it('keeps a shorter lesson the parent chose (only the old 20-minute default moves)', () => {
+    expect(migrateSettings({ ...DEFAULT_SETTINGS, sessionMinutes: 15, lessonVersion: undefined })).toEqual({ sessionMinutes: 15, lessonVersion: 2 });
+  });
   it('keeps a longer lesson the parent chose, and never runs again', () => {
     expect(migrateSettings({ ...DEFAULT_SETTINGS, sessionMinutes: 40, lessonVersion: undefined })).toEqual({ sessionMinutes: 40, lessonVersion: 2 });
     expect(migrateSettings({ ...DEFAULT_SETTINGS, sessionMinutes: 15, lessonVersion: 2 })).toBeNull();
