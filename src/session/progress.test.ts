@@ -27,3 +27,11 @@ describe('sessionProgress', () => {
     expect(sessionProgress(createSessionRecord({ ...plan, steps: [] }, 'd', 0))).toBe(1);
   });
 });
+
+describe('steps that keep their own count (deferred minor, plan 13)', () => {
+  it('选一选, 字辨 and 用一用 move the bar by how far through their items he is', () => {
+    const rec = createSessionRecord({ steps: ['choose', 'components'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 }, 'd', 0);
+    expect(sessionProgress(rec)).toBe(0);
+    expect(sessionProgress(rec, 0.5)).toBe(0.25);
+  });
+});

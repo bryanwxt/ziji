@@ -10,10 +10,11 @@ interface Props {
   resting: TruffleMood;
   onAnswer: (item: UseItem, correct: boolean, responseMs: number) => void;
   onDone: () => void;
+  onProgress?: (fraction: number) => void; // how far through the items he is, for the lesson's progress bar
 }
 
 /** 选一选 (spec §20 part 4): which word fits, and 用对了吗, in turn. */
-export function ChooseStep({ items, kid, resting, onAnswer, onDone }: Props) {
+export function ChooseStep({ items, kid, resting, onAnswer, onDone, onProgress }: Props) {
   const [index, setIndex] = useState(0);
   const item = items[index]!;
   return (
@@ -23,7 +24,11 @@ export function ChooseStep({ items, kid, resting, onAnswer, onDone }: Props) {
       kid={kid}
       resting={resting}
       onAnswer={(c, ms) => onAnswer(item, c, ms)}
-      onNext={() => (index + 1 >= items.length ? onDone() : setIndex(index + 1))}
+      onNext={() => {
+        onProgress?.((index + 1) / items.length);
+        if (index + 1 >= items.length) onDone();
+        else setIndex(index + 1);
+      }}
     />
   );
 }

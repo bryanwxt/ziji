@@ -13,12 +13,13 @@ interface Props {
   onGiveUp: (item: UseItem) => void; // missed 3 times: closed kindly, its meaning comes back tomorrow
   onDone: () => void;
   makeRetry?: (item: UseItem) => UseItem | null; // the word asked another way, so a retry isn't the answer he was just shown
+  onProgress?: (fraction: number) => void;
 }
 
 const keyOf = (i: UseItem) => i.wordId ?? i.word;
 
 /** 用一用 (spec §20 part 7): every target word used right once more before the chest. A miss comes back after the others, up to 3 tries. */
-export function WrapupStep({ items, kid, resting, onAnswer, onGiveUp, onDone, makeRetry }: Props) {
+export function WrapupStep({ items, kid, resting, onAnswer, onGiveUp, onDone, makeRetry, onProgress }: Props) {
   const [queue, setQueue] = useState(items);
   const [index, setIndex] = useState(0);
   const [closing, setClosing] = useState(false);
@@ -41,6 +42,7 @@ export function WrapupStep({ items, kid, resting, onAnswer, onGiveUp, onDone, ma
       setQueue(q);
     }
     setClosing(false);
+    onProgress?.((index + 1) / q.length);
     if (index + 1 >= q.length) onDone();
     else setIndex(index + 1);
   };

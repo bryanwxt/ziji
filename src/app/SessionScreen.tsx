@@ -62,12 +62,14 @@ export function SessionScreen({ free }: { free: boolean }) {
   const [state, setState] = useState<Loaded | null>(null);
   const [combo, setCombo] = useState(0);
   const [correct, setCorrect] = useState(0); // this sitting only: Truffle warms up from sulk
+  const [stepFraction, setStepFraction] = useState(0); // how far through 选一选/字辨/用一用 he is
   const cardsSinceCloseup = useRef(CLOSEUP_EVERY);
   const [banner, setBanner] = useState<number | null>(null); // a combo milestone being celebrated
   const stepStartedAt = useRef(performance.now());
   const busy = useRef(false);
   // The newest record, so an answer saved after a quick 继续 builds on what came after it, never on a stale copy.
   const latest = useRef<SessionRecord | null>(null);
+  const latestStep = useRef(-1);
 
   useEffect(() => {
     void (async () => {
@@ -118,6 +120,10 @@ export function SessionScreen({ free }: { free: boolean }) {
       }
     }
     stepStartedAt.current = performance.now();
+    if (next.stepIndex !== latestStep.current) {
+      latestStep.current = next.stepIndex;
+      setStepFraction(0);
+    }
     setState((s) => (s ? { ...s, rec: next } : s));
   };
 
@@ -284,7 +290,7 @@ export function SessionScreen({ free }: { free: boolean }) {
         <button type="button" class="icon-btn" aria-label="回家" onClick={() => go({ name: 'home' })}>
           <X size={34} strokeWidth={3} />
         </button>
-        <ProgressBar steps={rec.plan.steps} stepIndex={rec.stepIndex} fraction={sessionProgress(rec)} />
+        <ProgressBar steps={rec.plan.steps} stepIndex={rec.stepIndex} fraction={sessionProgress(rec, stepFraction)} />
         {combo >= 3 && <span class="combo"><Flame size={20} strokeWidth={2.75} /> {combo}</span>}
       </header>
       {banner !== null && <div class="combo-banner">连对 {banner} 个！<InkIcon name="flame" size={30} /></div>}
@@ -316,7 +322,7 @@ export function SessionScreen({ free }: { free: boolean }) {
         />
       )}
       {step === 'choose' && state.choose && state.choose.length > 0 && (
-        <ChooseStep key="choose" items={state.choose} kid={kid} resting={resting} onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)} onDone={() => void finishTimedStep('choose')} />
+        <ChooseStep key="choose" items={state.choose} kid={kid} resting={resting} onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)} onDone={() => void finishTimedStep('choose')} onProgress={setStepFraction} />
       )}
       {step === 'wrapup' && state.wrapup && state.wrapup.length > 0 && (
         <WrapupStep
@@ -327,6 +333,7 @@ export function SessionScreen({ free }: { free: boolean }) {
           onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)}
           onGiveUp={onGiveUp}
           onDone={() => void finishTimedStep('wrapup')}
+          onProgress={setStepFraction}
           makeRetry={(item) => {
             // the other way of asking: a fit sentence after 用对了吗, and the other sentence after a fit
             const w = item.wordId ? know.wordsById.get(item.wordId) : undefined;
@@ -337,7 +344,7 @@ export function SessionScreen({ free }: { free: boolean }) {
         />
       )}
       {step === 'components' && state.round && (
-        <ComponentsStep key="components" items={state.round} kid={kid} resting={resting} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} />
+        <ComponentsStep key="components" items={state.round} kid={kid} resting={resting} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
         <LangduStep

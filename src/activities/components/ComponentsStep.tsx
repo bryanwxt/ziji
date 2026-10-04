@@ -17,6 +17,7 @@ interface Props {
   resting: TruffleMood;
   onAnswer: (item: ZibianItem, correct: boolean) => void;
   onDone: () => void;
+  onProgress?: (fraction: number) => void;
 }
 
 /** A character's radical and what it means (根：木 树木), the clue to telling look-alikes apart. */
@@ -32,7 +33,7 @@ function Radical({ ch }: { ch: string }) {
 }
 
 /** 钓鱼 as 字辨 (spec §20 part 8): fish out the right character for the gap in a word. */
-export function ComponentsStep({ items, kid, resting, onAnswer, onDone }: Props) {
+export function ComponentsStep({ items, kid, resting, onAnswer, onDone, onProgress }: Props) {
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const item = items[index]!;
@@ -54,6 +55,7 @@ export function ComponentsStep({ items, kid, resting, onAnswer, onDone }: Props)
   };
   const next = () => {
     setPicked(null);
+    onProgress?.((index + 1) / items.length);
     if (index + 1 >= items.length) onDone();
     else setIndex(index + 1);
   };

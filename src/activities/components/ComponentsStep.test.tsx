@@ -44,3 +44,13 @@ describe('ComponentsStep — 字辨 in the pond (spec §20 part 8)', () => {
     expect(document.querySelectorAll('.bottombar .zibian__radical')).toHaveLength(1);
   });
 });
+
+describe('progress (deferred minor, plan 13)', () => {
+  it('reports how far through the round he is', () => {
+    const onProgress = vi.fn();
+    render(<ComponentsStep items={[item, { ...item, wordId: 'p:2' }]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} onProgress={onProgress} />);
+    fireEvent.click(screen.getByRole('button', { name: '根' }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onProgress).toHaveBeenLastCalledWith(0.5);
+  });
+});

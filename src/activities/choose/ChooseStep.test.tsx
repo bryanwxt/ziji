@@ -37,3 +37,13 @@ describe('ChooseStep', () => {
     expect(onDone).toHaveBeenCalled();
   });
 });
+
+describe('progress (deferred minor, plan 13)', () => {
+  it('reports how far through the items he is', () => {
+    const onProgress = vi.fn();
+    render(<ChooseStep items={[fit, usage]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} onProgress={onProgress} />);
+    fireEvent.click(screen.getByRole('button', { name: '很' }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onProgress).toHaveBeenLastCalledWith(0.5);
+  });
+});
