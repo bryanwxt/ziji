@@ -1033,3 +1033,17 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .zibian__word { font-size: clamp(48px, 8dvh, 80px); gap: 4px; padding: 4px 20px; background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); }
 .zibian__blank { color: var(--muted); border-bottom: 4px dashed var(--ink); padding: 0 0.05em; }
 .zibian__radical { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-size: 20px; }
+
+/* the placement check (spec §19 part 6) */
+.real-word { font-size: clamp(56px, 9dvh, 96px); background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); padding: 0.04em 0.24em 0.08em; }
+.placement__levels { font-size: 20px; color: var(--ink-soft); margin: 0; }
+
+/* parent Skills panel (spec §19 part 7) */
+.skills__table input { width: 5em; }
+.skills__missed ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
+
+/* 写一写's cue: the word's sentence with a gap (parent, 2026-10-04) */
+.write__sentence { font-size: clamp(20px, 2.8dvh, 28px); line-height: 1.4; max-width: min(100%, 520px); white-space: normal; }
+@media (max-width: 599px) {
+  .write__sentence { font-size: 18px; line-height: 1.35; }
+}

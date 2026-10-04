@@ -74,6 +74,26 @@ export interface ReviewLog {
 }
 
 /** The parent can switch each of these on or off; 用一用 (wrapup) closes the lesson whenever 认一认 or 选一选 runs (spec §20). */
+/** Skills the parent's Skills panel follows (spec §19 part 7). */
+export type Skill = 'reading' | 'meaning' | 'use' | 'zibian' | 'writing';
+
+/** One 选一选/用一用 or 字辨 answer, every one of them (review logs keep only the first rating a day). */
+export interface AnswerLog {
+  id?: number;
+  at: number;
+  wordId: string;
+  skill: 'use' | 'zibian';
+  correct: boolean;
+}
+
+/** The last placement check's two levels (band indexes, -1 = none) and the words he missed. */
+export interface PlacementResult {
+  at: number;
+  reading: number;
+  understanding: number;
+  missed: string[];
+}
+
 export type ActivityKind = 'flashcards' | 'choose' | 'writing' | 'components' | 'speaking';
 export type StepKind = ActivityKind | 'wrapup';
 
@@ -191,6 +211,8 @@ export interface Settings {
   oral: OralInfo;
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
+  placementResult?: PlacementResult;
+  baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
 }
 
 export const DEFAULT_SETTINGS: Settings = {

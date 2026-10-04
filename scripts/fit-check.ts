@@ -220,7 +220,15 @@ async function sweep(browser: Browser, size: Size) {
   // First run
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));
   await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));
-  await run('placement', AFTERNOON, { placementDone: false }, async (p) => { await check(p, size, 'placement', 0); await p.click('.btn--big'); await check(p, size, 'placement', 1); });
+  await run('placement', AFTERNOON, { placementDone: false }, async (p) => {
+    // each style is its own screen (spec §19 part 6): answer 不知道 and look again, ten times
+    for (let i = 0; i < 11; i++) {
+      await p.waitForSelector('.placement[data-ready="true"]');
+      await check(p, size, 'placement', i);
+      await p.click('.placement .btn--big');
+      await p.waitForTimeout(150);
+    }
+  });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });
   await run('room', AFTERNOON, {}, async (p) => {
@@ -235,6 +243,7 @@ async function sweep(browser: Browser, size: Size) {
   await run('flashcards', AFTERNOON, { activities: only('flashcards') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'flashcards'); });
   await run('flashcards-evening', EVENING, { activities: only('flashcards') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'flashcards-evening'); });
   await run('writing', AFTERNOON, { activities: only('writing') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing', { firstOnly: true }); });
+  await run('writing-sentence', AFTERNOON, { activities: only('writing'), writeSentence: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing-sentence'); });
   await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then 用一用 and the chest
   await run('choose', AFTERNOON, { activities: only('choose') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'choose'); });
   await run('wrapup', AFTERNOON, { activities: { ...only('flashcards'), choose: true } }, async (p) => { await startLesson(p); await walkLesson(p, size, 'wrapup'); }); // its walk misses some, so 用一用 has words

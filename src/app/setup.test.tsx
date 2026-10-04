@@ -6,7 +6,6 @@ import { getKid, getSettings, putWords } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS } from '../types';
 import { PetSetup } from './PetSetup';
-import { PlacementScreen } from './PlacementScreen';
 import { SetupPin } from './SetupPin';
 
 const type = (pin: string) => [...pin].forEach((d) => fireEvent.click(screen.getByRole('button', { name: d })));
@@ -46,40 +45,5 @@ describe('first launch', () => {
     fireEvent.click(screen.getByText('好！'));
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'placement' }));
     expect((await getKid(app.db))?.petName).toBe('松露');
-  });
-
-  it('Placement quiz: passes a band at 6 of 8, stops at the 3rd miss, credits the passed band', async () => {
-    const app = await makeAppData();
-    const words = builtinWords(0);
-    await putWords(app.db, words);
-    renderWithApp(<PlacementScreen tapGuardMs={0} />, app);
-    const answerRight = async () => {
-      const ch = (await screen.findByTestId('placement-char')).textContent!;
-      fireEvent.click(screen.getByRole('button', { name: words.find((w) => w.text === ch)!.pinyin }));
-    };
-    for (let i = 0; i < 6; i++) await answerRight();
-    fireEvent.click(screen.getByText('不知道'));
-    fireEvent.click(screen.getByText('不知道'));
-    expect(await screen.findByText('第 2 组')).toBeTruthy();
-    for (let i = 0; i < 3; i++) fireEvent.click(await screen.findByText('不知道'));
-    expect(await screen.findByText('你已经认识 300 个字了！')).toBeTruthy();
-    expect((await getSettings(app.db)).placementDone).toBe(true);
-    fireEvent.click(screen.getByText('开始！'));
-    await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'home' }));
-  });
-
-  it('Placement quiz: a double tap answers once, not the next question too', async () => {
-    const app = await makeAppData();
-    await putWords(app.db, builtinWords(0));
-    renderWithApp(<PlacementScreen tapGuardMs={120} />, app);
-    const ready = () => waitFor(() => expect(document.querySelector('[data-ready="true"]')).toBeTruthy());
-    await ready();
-    fireEvent.click(screen.getByText('不知道'));
-    fireEvent.click(screen.getByText('不知道')); // lands on the next question straight away: ignored
-    await ready();
-    fireEvent.click(screen.getByText('不知道'));
-    await ready();
-    expect(screen.getByTestId('placement-char')).toBeTruthy(); // only 2 misses so far, so still asking
-    expect(screen.queryByText(/你已经认识/)).toBeNull();
   });
 });

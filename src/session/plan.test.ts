@@ -62,7 +62,7 @@ describe('buildSessionPlan', () => {
 
   it('sizes the writing step and the flashcard time box from session minutes', () => {
     const p20 = buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 20 }), now });
-    expect([p20.writeCount, p20.flashTimeBoxMs]).toEqual([3, Math.round((20 * 60_000 * 7) / 30)]);
+    expect([p20.writeCount, p20.flashTimeBoxMs]).toEqual([3, Math.round((20 * 60_000 * 9) / 30)]);
     expect(buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 25 }), now }).writeCount).toBe(4); // spec §20 part 3: 4 words at 30 minutes, 3 under 25
   });
 
@@ -117,8 +117,8 @@ describe('meaning practice', () => {
     expect(plan.meaningReviewIds).toEqual(['b:0']);
     expect(plan.newMeaningIds).toEqual(['b:1']);
   });
-  it('the 认一认 time box is 7 of 30 minutes', () => {
-    expect(buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 30 }), now }).flashTimeBoxMs).toBe(7 * 60_000);
+  it('the 认一认 time box is 9 of 30 minutes (more meaning checks, 2026-10-04)', () => {
+    expect(buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 30 }), now }).flashTimeBoxMs).toBe(9 * 60_000);
   });
 });
 
@@ -141,5 +141,14 @@ describe('用一用 closes the lesson (spec §20 part 7)', () => {
   });
   it('free play has no wrap-up', () => {
     expect(createFreePlayRecord([], 'd', 0).plan.steps).toEqual(['flashcards']);
+  });
+});
+
+describe('meaning checks for words he already knows (parent: more volume, 2026-10-04)', () => {
+  it('starts meaning practice for up to 12 begun words a day', () => {
+    const ws = Array.from({ length: 20 }, (_, i) => makeWord(String.fromCodePoint(0x4e00 + i), { id: `b:${i}`, rank: i, examples: [{ text: `${String.fromCodePoint(0x4e00 + i)}书`, pinyin: 'x shū' }] }));
+    const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
+    const plan = buildSessionPlan({ cards, words: ws, settings: settings(), now });
+    expect(plan.newMeaningIds).toHaveLength(12);
   });
 });

@@ -4,6 +4,7 @@ import { Rating } from 'ts-fsrs';
 import { freshDb, makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, DEFAULT_KID } from '../types';
 import {
+  addAnswer, answersSince,
   addRecording, addReviewLog, allCards, allWords, deleteWord, getKid, getSettings, listRecordings,
   deleteParentPassage, listParentPassages, logsSince, normalizeKid, putCards, putWords, saveKid, saveParentPassage, seedBuiltinWords, updateSettings,
 } from './repo';
@@ -164,4 +165,13 @@ it('re-seeding new built-in content keeps the parent\'s and child\'s state on ex
   expect([w.rank, w.paused, w.listName, w.listedAt, w.writeSkippedAt]).toEqual([40, true, '听写 3', 7, 9]);
   expect((await allCards(db)).map((c) => c.id)).toEqual(['b:他:recognise']);
 });
+});
+
+describe('answer log (spec §19 part 7)', () => {
+  it('keeps every 选一选 and 字辨 answer, by time', async () => {
+    const db = await freshDb();
+    await addAnswer(db, { at: 10, wordId: 'b:很', skill: 'use', correct: true });
+    await addAnswer(db, { at: 20, wordId: 'b:根', skill: 'zibian', correct: false });
+    expect((await answersSince(db, 15)).map((a) => [a.wordId, a.skill, a.correct])).toEqual([['b:根', 'zibian', false]]);
+  });
 });

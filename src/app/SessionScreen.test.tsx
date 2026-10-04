@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../content';
-import { allCards, getSession, getWord, putCards, putWords, saveKid, updateSettings } from '../store/repo';
+import { allCards, answersSince, getSession, getWord, putCards, putWords, saveKid, updateSettings } from '../store/repo';
 import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS } from '../types';
@@ -130,5 +130,6 @@ describe('选一选 in the lesson (spec §20 part 4)', () => {
     }
     await waitFor(() => expect(screen.queryByText('太棒了！'), document.body.innerHTML.replace(/<svg.*?<\/svg>/g, '').replace(/<small.*?<\/small>/g, '').slice(0, 1800)).toBeTruthy());
     expect((await allCards(app.db)).some((c) => c.kind === 'meaning')).toBe(true);
+    expect((await answersSince(app.db, 0)).filter((a) => a.skill === 'use').length).toBeGreaterThan(0); // every answer is logged for the Skills panel
   });
 });

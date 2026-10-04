@@ -1,12 +1,14 @@
 import type { Example, Word } from '../../types';
 import { syllableTone } from '../flashcards/distractors';
 import { KID_MEANING } from './meanings';
+import { meaningCue } from '../flashcards/meaning';
 
 export interface WritingCue {
   meaning: string | null; // first sense only: "son, child" → "son"
   blanked: string | null; // an example word with the target hidden: 儿子 → ＿子
   blankedPy: string | null; // its remaining syllables as said in that word: zi, not zǐ
   speech: string; // 儿，儿子的儿 — how a teacher names the character in 听写
+  sentence: string | null; // the word in use with a gap for each character: 这个书包＿大。 (his class sentence, else the bank's)
 }
 
 /** What tells a child which character to write when several share the same sound. */
@@ -20,16 +22,24 @@ export function pickExample(word: Word): { example: Example; once: boolean } | n
 
 export function writingCue(word: Word): WritingCue {
   const meaning = kidMeaning(word);
+  // More than the pinyin (parent, 2026-10-04): a sentence that uses the word, with a gap for it, said in full after the word.
+  // A sentence that shows one of the word's characters outside the gap would give away what he is writing: try the other, else 组词.
+  const chars = Array.from(word.text);
+  const cue = [meaningCue(word, 1), meaningCue(word, 0)].find((c) => c?.kind === 'sentence' && !chars.some((ch) => (c.before + c.after).includes(ch)));
+  if (cue) {
+    return { meaning, blanked: null, blankedPy: null, speech: `${word.text}，${cue.full}`, sentence: cue.before + '＿'.repeat(Array.from(word.text).length) + cue.after };
+  }
   const picked = pickExample(word);
-  if (!picked) return { meaning, blanked: null, blankedPy: null, speech: word.text };
+  if (!picked) return { meaning, blanked: null, blankedPy: null, speech: word.text, sentence: null };
   const { example, once } = picked;
   const speech = `${word.text}，${example.text}的${word.text}`;
-  if (!once) return { meaning, blanked: null, blankedPy: null, speech }; // 爸爸 → two empty boxes would tell him nothing
+  if (!once) return { meaning, blanked: null, blankedPy: null, speech, sentence: null }; // 爸爸 → two empty boxes would tell him nothing
   return {
     meaning,
     blanked: example.text.split(word.text).join('＿'.repeat(word.text.length)),
     blankedPy: blankedSyllables(example.text, example.pinyin, word.text),
     speech,
+    sentence: null,
   };
 }
 

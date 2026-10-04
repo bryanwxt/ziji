@@ -20,4 +20,8 @@ describe('writingBoxSize', () => {
   it('never goes below 220px', () => {
     expect(writingBoxSize(320, 480)).toBe(220);
   });
+  it('a sentence cue takes two more lines: a short phone gives the box less height, a tall one has room', () => {
+    expect(writingBoxSize(375, 667, true)).toBeLessThanOrEqual(writingBoxSize(375, 667) - 40);
+    expect(writingBoxSize(390, 844, true)).toBe(writingBoxSize(390, 844));
+  });
 });

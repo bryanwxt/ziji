@@ -486,3 +486,48 @@ Numbers: 266 bank words (HSK 1–4), 657 tests, fit sweep 521+ screens at six si
 ### For the parent to check on the iPad
 - The 30-minute pacing with the new steps (选一选 and 用一用 are counted, not timed).
 - Whether 6 stars a lesson (was 4) is the pace you want for the reward goals.
+
+## Plan 14 — placement and Skills (spec §19 parts 6–7), with two parent requests
+
+Branch feature/placement (on feature/meaning-volume).
+
+- **Placement check, redesigned.** 3 warm-up questions, then an adaptive walk over 30 bands of 100 characters with five question styles (读一读, 听一听, 真的假的, 补一补, 选一选); two results — reading and understanding. Read-and-understood words get known reading and meaning cards; read-only words get meaning checks spread 12 a day. No right/wrong during the check; the close shows 读：X级 · 懂：Y级. A guessing child is rarely placed (15% of simulated runs, 1% at band 6+); an honest one is placed exactly 81–91% of the time up to band 9.
+- **Skills panel** (parent tab): 14-day accuracy for reading, meaning, words in use, 字辨 and writing, plus 朗读 reads; class baselines typed in by the parent; the last placement and its misses; most-missed words with Practise more.
+- **Answer log** (DB version 3): every 选一选/用一用 and 字辨 answer.
+- **Parent requests:** 12 meaning checks a day and 认一认 9 of 30 minutes; 写一写's cue is the word's sentence with a gap (spoken in full), never a sentence that shows the word, and no English.
+
+Tests 699; fit sweep 426 screens + placement/writing re-run 66, 0 problems.
+
+### Rulings
+- Pre-flight: Task 4 changes applyPlacement's signature; Task 4 adapts PlacementScreen's call until Task 5 rewrites it; fit-profile.ts also calls applyPlacement — Ruling: update fit-profile in Task 4 too — cost if wrong: none.
+- Ruling: class baselines are typed in by the parent (settings.baselines, on the iPad) rather than coded from the worksheet analysis — keeps the child's results out of the public code — cost if wrong: the parent types 4 numbers once.
+- Ruling: START_BAND = index 6 (band 7 of 30, the spec's "band 7"); with 300 characters per HSK level that is the first HSK 3 band — cost if wrong: one or two extra visits for a weaker reader.
+- Task 1: Ruling: backup.ts already keeps stores absent from a backup, so no change was needed there; the test pins it — cost if wrong: none
+- Task 2: Ruling: with the spec's 40-question cap and one-band steps, a strong reader climbs at most 10 bands (band 7 → 16, about HSK 5–6); the plan's "reads everything → band 29" test was impossible and now pins the cap — plenty for a P2 child — cost if wrong: a very strong reader is placed around HSK 5–6, and later bands come in as new words
+- Task 2: Ruling: understanding looks only at bands he reads (a lucky 选一选 in a band he can't read raised it) — test 'reading = the highest band…' — cost if wrong: none
+- Task 3: Ruling: 补一补/真的假的 partner words also come from the character's own HSK 组词 when no HSK word is near its level (跟 has none under HSK 5); the 补一补 test uses 银 (银行) — cost if wrong: none
+- Task 4: Ruling: only words with a meaning cue get placement meaning cards (a cue-less meaning item falls back to a reading question but would record on the meaning card) — test 'a word with no meaning cue gets no meaning card' — cost if wrong: such words start meaning practice only once they gain a cue
+- Task 4: Ruling: the fit profile places its 80 words + school list as read, the first 40 as understood (the rest get meaning due now), so the sweep sees both kinds — cost if wrong: none
+- Task 5: Ruling: the screen shows nothing to tap until the first question is ready (an early 不知道 was silently ignored) — cost if wrong: none
+- Task 5: Ruling: missed words go to the parent's Skills panel (placementResult.missed), not the child's result screen — showing his misses would break "no right/wrong during the check" (§14) — cost if wrong: the parent looks in Skills instead
+- Task 5: Ruling: 真的假的 builds its made-up word from look-alikes at most a level above the word (the sweep showed 卤升 — a rare character gives a fake away) — test 'a made-up word uses a look-alike near the word's level' RED→GREEN — cost if wrong: fewer fakes for rare characters (it shows the real word then)
+- Task 5: Ruling: the old pinyin-only band code and its tests are removed; the first-launch App test walks the new check (~31 taps for a child who knows nothing) with a 30 s timeout — cost if wrong: none
+- Task 6: Ruling: the panel lists the words missed in the last placement (the result screen keeps them from the child) — cost if wrong: none
+- Task 6: Ruling: App.test's first-boot wait raised to 5 s — under full-suite load the first boot (3,000 words, DB upgrade) passed 1 s and the sideways-overlay test flaked — cost if wrong: none
+- Ruling: the 'meaning' field stays in WritingCue (unrendered) for the curated KID_MEANING tests — cost if wrong: a little dead data
+- Final: Ruling: re-graded Minor 1 to Important (a failed save froze the child on a question) — caught; he reaches the close and the check runs again next launch — placementSave.test RED→GREEN — cost if wrong: none
+- Final: Ruling: re-graded Minor 3 to Important (a fake could be his own school word: a right answer marked wrong) — fakes exclude his words — questions 'a made-up word is never one of his own words' RED→GREEN — cost if wrong: none
+- Final: Ruling: re-graded Minor 4 to Important (a 写一写 sentence showing the word's characters outside the gap gives the answer away) — the other sentence, else 组词 — cue tests '…skipped for the other one (考试…)', '…falls back to 组词…' RED→GREEN — cost if wrong: none
+- Final: Ruling: re-graded Minor 8 to Important (the deploy runs npm test; timeouts under load would block a deploy) — testTimeout 20 s — cost if wrong: none
+- Final: Ruling: declined-to-judge — placement's 选一选 uses fitItem (class sentence → bank → 组词) rather than a dedicated placement bank, so understanding above HSK 4 is mostly 组词 — the plan's choice; a placement bank can come later — cost if wrong: understanding above HSK 4 is measured on word parts
+
+### Fixed in the final review
+- I1 a guessing child placed high — a simulated random guesser (1000 runs) was placed 65% of the time, 19% at band 6+ (RED, measured before the change); 真的假的 counts half weight and a warm-up with ≤1 right starts at band 3 → 15% / 1%; honest children unchanged (T4 exact 0.91, T8 0.81) — walk tests 'a child who knows nothing but taps answers at random…', 'an honest child…', 'a shaky warm-up…', '真的假的 counts half…' + apply 'a lucky 是假的…' RED→GREEN, suite 699/699
+- I2 five WritingStep tests deleted by mistake in d93b13d — restored from af8b208, all pass
+- I3 hundreds of due-now meaning cards crowding out class words — spread 12 a day easiest first — apply 'meaning checks for words he only reads are spread out…' RED→GREEN, suite 699/699
+
+### Deferred minors
+- a re-run keeps a supported unpractised meaning card in its old state (understood → read-only keeps its known card)
+- the Skills panel's Meaning row also counts the day's first 选一选/用一用 answer (recordUse logs a meaning review)
+- a baseline field saves on every keystroke
+- orphaned ActivityKind comment in types.ts; levelName/hsk() duplicate the band→HSK lookup

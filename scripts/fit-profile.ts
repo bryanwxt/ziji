@@ -21,6 +21,7 @@ export interface FitProfileOptions {
   pin?: boolean; // false: stop at the PIN set-up
   kid?: boolean; // false: stop at PetSetup
   placementDone?: boolean; // false: stop at the placement quiz
+  writeSentence?: boolean; // 写一写 opens on 保持, whose cue is a long class sentence
 }
 
 const LONG_PASSAGE =
@@ -39,12 +40,17 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
     [['保持', 'bǎo chí'], ['树根', 'shù gēn'], ['跟着', 'gēn zhe'], ['请问', 'qǐng wèn'], ['清楚', 'qīng chu'], ['银行', 'yín háng']].map(([text, pinyin]) => ({ text: text!, pinyin: pinyin! })),
     { listName: '第三十课', writeable: false, existing: words, now: t - 86_400_000, newId: () => `fit-${n++}` },
   ).added; // a school list: 保持 has a class sentence; the rest give 字辨 its look-alike words
-  await putWords(db, school.map((w) => (w.text === '保持' ? { ...w, sentences: [{ text: '图书馆里要保持安静，大家都在看书。', pinyin: '' }] } : w)));
+  await putWords(db, school.map((w) => (w.text === '保持' ? { ...w, writeable: !!o.writeSentence, sentences: [{ text: '图书馆里要保持安静，大家都在看书。', pinyin: '' }] } : w)));
   await putCards(db, school.flatMap((w) => [
     { id: `${w.id}:recognise`, wordId: w.id, kind: 'recognise' as const, fsrs: seededKnownCard(o.now) },
     { id: `${w.id}:meaning`, wordId: w.id, kind: 'meaning' as const, fsrs: { ...seededKnownCard(o.now), due: new Date(t - 3_600_000) } },
   ]));
-  await applyPlacement(db, [...words.slice(0, 80), ...school].map((w) => w.id), o.now);
+  if (o.writeSentence) {
+    const baochi = school.find((w) => w.text === '保持')!;
+    await putCards(db, [{ id: `${baochi.id}:write`, wordId: baochi.id, kind: 'write', fsrs: { ...seededKnownCard(o.now), due: new Date(t - 86_400_000) } }]); // due: written first
+  }
+  const placed = [...words.slice(0, 80), ...school].map((w) => w.id);
+  await applyPlacement(db, { readingIds: placed, understandingIds: placed.slice(0, 40), missed: [], reading: 0, understanding: 0 }, o.now);
   await updateSettings(db, {
     pinHash: o.pin === false ? null : 'fit-check',
     placementDone: o.placementDone ?? true,

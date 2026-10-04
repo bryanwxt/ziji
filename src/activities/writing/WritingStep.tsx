@@ -53,7 +53,7 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone }: Props) 
     el.innerHTML = '';
     setCharMisses(null);
     let cancelled = false;
-    const size = writingBoxSize(window.innerWidth, window.innerHeight);
+    const size = writingBoxSize(window.innerWidth, window.innerHeight, !!cue.sentence);
     const writer = HanziWriter.create(el, chars[index]!, {
       width: size,
       height: size,
@@ -111,8 +111,8 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone }: Props) 
               <span class="pinyin">{word.pinyin}</span>
               <SpeakButton text={cue.speech} />
             </div>
+            {cue.sentence && <div class="write__sentence hanzi" lang="zh">{cue.sentence}</div>}
             {cue.blanked && <div class="write__blank"><Label zh={cue.blanked} py={cue.blankedPy ?? undefined} /></div>}
-            {cue.meaning && <div class="write__meaning" lang="en">{cue.meaning}</div>}
           </div>
         </div>
         <div class="dots">
