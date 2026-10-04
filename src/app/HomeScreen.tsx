@@ -11,7 +11,7 @@ import { STEP_ORDER } from '../session/plan';
 import { streak, totalStars, weekDays } from '../stats/stats';
 import { pickExample } from '../activities/writing/cue';
 import { WeekStrip } from './WeekStrip';
-import { allSessions, listParentPassages, listRewards, saveKid } from '../store/repo';
+import { allSessions, getKid, listParentPassages, listRewards, saveKid } from '../store/repo';
 import { pickPassage, readingPool } from '../langdu/cycle';
 import { nextSpeaking } from '../kantu/flow';
 import { PASSAGES } from '../content';
@@ -74,15 +74,20 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   // Journey: record newly reached worlds (never removes any), save before the arrival card shows so it shows once.
   useEffect(() => {
     if (!data) return;
-    const u = updateWorlds(kid ?? DEFAULT_KID, data.know.known);
-    if (!u.changed) return;
     void (async () => {
+      // build on what's stored now (a just-saved costume or star must not be overwritten); no kid yet: nothing to record
+      const stored = (await getKid(db)) ?? kid;
+      if (!stored) return;
+      const u = updateWorlds(stored, data.know.known);
+      if (!u.changed) return;
       await saveKid(db, u.kid);
       setJourneyKid(u.kid);
       setArrival(u.arrived);
       await refresh();
     })();
   }, [data]);
+  // the context's kid catches up after refresh(): from then on it is the one to show
+  useEffect(() => setJourneyKid(null), [kid]);
 
   const stars = data ? totalStars(data.sessions, k.bonusStars) : 0;
   const goal = data ? nextGoal(data.goals) : null;

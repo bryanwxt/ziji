@@ -257,6 +257,15 @@ describe('HomeScreen journey', () => {
     await screen.findByText('今天的练习');
     expect(screen.queryByRole('dialog', { name: '新地方' })).toBeNull();
   });
+  it('the journey save builds on the stored kid, not a stale copy (deferred minor, plan 6)', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, bonusStars: 0 } }); // the context's copy is older
+    await saveKid(app.db, { ...DEFAULT_KID, bonusStars: 7, ownedCostumes: ['tiger'] }); // what's stored now
+    await seedKnown(app, 61);
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByRole('dialog', { name: '新地方' });
+    const kid = (await getKid(app.db))!;
+    expect([kid.bonusStars, kid.ownedCostumes, kid.worldsSeen]).toEqual([7, ['tiger'], ['yard', 'grass', 'race']]);
+  });
   it('a lapse keeps the reached world', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass', 'race'] } });
     await seedKnown(app, 40);
