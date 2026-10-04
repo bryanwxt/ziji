@@ -14,7 +14,7 @@ export function ErrorScreen({ message, dbName }: { message: string; dbName: stri
     }
   };
   return (
-    <div class="screen parent">
+    <div class="screen screen--scroll parent">
       <div class="center">
         <InkIcon name="sleepyCat" size={110} />
         <h1>Something went wrong opening the app</h1>

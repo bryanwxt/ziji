@@ -7,6 +7,7 @@ import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS, type SessionPlan } from '../types';
 import { Dashboard } from './Dashboard';
+import { ErrorScreen } from '../app/ErrorScreen';
 import { PinGate } from './PinGate';
 import { RewardsPanel } from './RewardsPanel';
 
@@ -36,6 +37,23 @@ describe('PinGate', () => {
     type('1357');
     expect(await screen.findByText('secret')).toBeTruthy();
     expect((await getSettings(app.db)).pinHash).toBe(await hashPin('1357'));
+  });
+
+  it('scrolls instead of clipping on a short screen (a phone turned sideways has no upright overlay here)', async () => {
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, pinHash: await hashPin('2468') } });
+    renderWithApp(<PinGate><p>secret</p></PinGate>, app);
+    expect(document.querySelector('.screen')!.classList.contains('screen--scroll')).toBe(true);
+    fireEvent.click(screen.getByText('Forgot PIN?'));
+    expect(document.querySelector('.screen')!.classList.contains('screen--scroll')).toBe(true);
+    const [, a, b] = document.body.textContent!.match(/(\d+) × (\d+)/)!;
+    fireEvent.input(screen.getByLabelText('Answer'), { target: { value: String(Number(a) * Number(b)) } });
+    fireEvent.click(screen.getByText('Check'));
+    await screen.findByText('For parents: choose a 4-digit PIN');
+    expect(document.querySelector('.screen')!.classList.contains('screen--scroll')).toBe(true);
+  });
+  it('the error screen scrolls too', () => {
+    renderWithApp(<ErrorScreen message="boom" dbName="x" />, { } as never);
+    expect(document.querySelector('.screen')!.classList.contains('screen--scroll')).toBe(true);
   });
 });
 

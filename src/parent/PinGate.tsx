@@ -21,7 +21,7 @@ export function PinGate({ children }: { children: ComponentChildren }) {
   };
 
   return (
-    <div class="screen parent">
+    <div class="screen screen--scroll parent">
       <header class="topbar">
         <button type="button" class="btn btn--ghost" onClick={() => go({ name: 'home' })}><ChevronLeft size={22} strokeWidth={3} /> Back</button>
       </header>
@@ -43,7 +43,7 @@ function ForgotPin({ onReset, onCancel }: { onReset: () => void; onCancel: () =>
 
   if (ok) return <SetupPin onDone={onReset} />;
   return (
-    <div class="screen parent">
+    <div class="screen screen--scroll parent">
       <div class="center">
         <h1>Reset PIN</h1>
         <p>To check you're a grown-up: what is {q.a} × {q.b}?</p>

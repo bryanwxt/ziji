@@ -27,7 +27,7 @@ export function SetupPin({ onDone }: { onDone?: () => void }) {
   };
 
   return (
-    <div class="screen parent">
+    <div class="screen screen--scroll parent">
       <div class="center">
         <h1>{first === null ? 'For parents: choose a 4-digit PIN' : 'Enter the same PIN again'}</h1>
         <p>The PIN keeps the parent area (progress, word lists, recordings) separate from your child's practice.</p>
