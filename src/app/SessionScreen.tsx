@@ -21,7 +21,7 @@ import { reducedMotion } from '../ui/motion';
 import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
 import { buildFreePlayQueue } from '../session/plan';
-import { markWriteSkipped, recordRecognition, recordWriting, startOrResumeSession } from '../session/record';
+import { markWriteSkipped, recordMeaning, recordRecognition, recordWriting, startOrResumeSession } from '../session/record';
 import {
   addActiveTime, afterFlashAnswer, afterWriteWord, createFreePlayRecord, currentFlashItem, currentStep,
   currentWriteCandidate, finishStep, skipFlashItem,
@@ -135,7 +135,8 @@ export function SessionScreen({ free }: { free: boolean }) {
     once(async () => {
       const item = flashItem!;
       if (!item.retry && !rec.free) {
-        const card = await recordRecognition(db, item.wordId, { correct: r.correct, responseMs: r.responseMs }, now());
+        const outcome = { correct: r.correct, responseMs: r.responseMs };
+        const card = item.mode === 'meaning' ? await recordMeaning(db, item.wordId, outcome, now()) : await recordRecognition(db, item.wordId, outcome, now());
         know.cardsById.set(card.id, card);
       }
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());

@@ -5,7 +5,7 @@ import { addReviewLog, allCards, allWords, getSession, logsSince, putCards, putW
 import { seededKnownCard } from '../srs/scheduler';
 import { DEFAULT_SETTINGS } from '../types';
 import { freshDb, makeWord } from '../test/fixtures';
-import { markWriteSkipped, recordRecognition, recordWriting, startOrResumeSession } from './record';
+import { markWriteSkipped, recordMeaning, recordRecognition, recordWriting, startOrResumeSession } from './record';
 
 const now = new Date(2026, 9, 2, 9);
 
@@ -80,4 +80,16 @@ describe("today's plan knows what he has practised", () => {
     const rec = await startOrResumeSession(db, now);
     expect(rec.plan.writeCandidates.map((c) => c.wordId)).toEqual(['b:1', 'b:5']);
   });
+});
+
+describe('meaning memory', () => {
+it('a meaning answer reviews the meaning card, not the reading one', async () => {
+  const db = await freshDb();
+  await putWords(db, [makeWord('他', { id: 'b:他' })]);
+  await recordRecognition(db, 'b:他', { correct: true, responseMs: 900 }, now);
+  await recordMeaning(db, 'b:他', { correct: false, responseMs: 900 }, now);
+  const cards = await allCards(db);
+  expect(cards.map((c) => c.kind).sort()).toEqual(['meaning', 'recognise']);
+  expect((await logsSince(db, 0)).map((l) => l.kind)).toEqual(['recognise', 'meaning']);
+});
 });

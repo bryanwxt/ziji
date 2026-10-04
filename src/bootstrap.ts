@@ -4,6 +4,7 @@ import { loadChineseVoice, setSpeechRate } from './audio/speech';
 import { builtinWords } from './content';
 import { openAppDb, type AppDb } from './store/db';
 import { getKid, getSettings, seedBuiltinWords } from './store/repo';
+import { applySettingsMigration } from './store/settings';
 import type { KidState, Settings } from './types';
 
 export interface Booted {
@@ -16,6 +17,7 @@ export interface Booted {
 export async function bootstrap(dbName: string): Promise<Booted> {
   const db = await openAppDb(dbName);
   await seedBuiltinWords(db, builtinWords(Date.now()));
+  await applySettingsMigration(db);
   const [settings, kid, voice] = await Promise.all([getSettings(db), getKid(db), loadChineseVoice()]);
   setSpeechRate(settings.speechRate);
   setSfxEnabled(settings.soundEffects);

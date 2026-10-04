@@ -1,5 +1,6 @@
 import { endOfLocalDay } from '../lib/date';
 import { shuffle, type Rng } from '../lib/random';
+import { meaningCue } from '../activities/flashcards/meaning';
 import { isKnown } from '../srs/scheduler';
 import type { CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
 
@@ -24,6 +25,10 @@ export interface PlanInput {
   practised?: ReadonlyMap<string, number>; // words answered in lessons → when last; placement guesses aren't here
 }
 
+export const FLASH_SHARE = 7 / 30; // 认一认's share of the lesson (spec §19: 7 of 30 minutes)
+export const NEW_MEANING_PER_DAY = 6;
+export const MEANING_REVIEW_CAP = 30;
+
 export function buildSessionPlan({ cards, words, settings, now, practised = new Map() }: PlanInput): SessionPlan {
   const active = words.filter((w) => !w.paused);
   const activeIds = new Set(active.map((w) => w.id));
@@ -43,11 +48,16 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const hasWrite = new Set(write.map((c) => c.wordId));
   const knownIds = new Set(recognise.filter((c) => isKnown(c.fsrs)).map((c) => c.wordId));
 
+  // Meaning practice: due meaning cards, and begun words that have a 组词 cue but no meaning card yet.
+  const meaning = ofKind('meaning');
+  const hasMeaning = new Set(meaning.map((c) => c.wordId));
+  const meaningOrder = (a: Word, b: Word) => (practised.get(b.id) ?? -1) - (practised.get(a.id) ?? -1) || newWordOrder(a, b);
+
   return {
     steps: STEP_ORDER.filter((s) => settings.activities[s]),
     reviewWordIds: dueRecognise.slice(0, REVIEW_CAP).map((c) => c.wordId),
     newWordIds: active.filter((w) => !started.has(w.id)).sort(newWordOrder).slice(0, newLimit).map((w) => w.id),
-    flashTimeBoxMs: settings.sessionMinutes * 60_000 * 0.4,
+    flashTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * FLASH_SHARE),
     writeCandidates: [
       ...dueOf(write).map((c) => ({ wordId: c.wordId, isNew: false })),
       ...active
@@ -63,6 +73,12 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
         .map((w) => ({ wordId: w.id, isNew: true })),
     ],
     writeCount: settings.sessionMinutes < 25 ? 3 : 5,
+    meaningReviewIds: dueOf(meaning).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
+    newMeaningIds: active
+      .filter((w) => started.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)
+      .sort(meaningOrder)
+      .slice(0, NEW_MEANING_PER_DAY)
+      .map((w) => w.id),
   };
 }
 

@@ -94,3 +94,11 @@ describe('idle time does not count as practice', () => {
     expect(afterWriteWord(writing, true, 60 * 60_000).activeMs).toBe(MAX_WORD_MS);
   });
 });
+
+describe('meaning items in the queue', () => {
+it('interleaves reading and meaning reviews, then new words, then new meaning items', () => {
+  const p = plan({ steps: ['flashcards'], reviewWordIds: ['a', 'b'], meaningReviewIds: ['c'], newWordIds: ['n'], newMeaningIds: ['m'] });
+  const q = createSessionRecord(p, '2026-10-04', 0).flashQueue.map((i) => `${i.wordId}:${i.mode ?? 'read'}${i.isNew ? '+new' : ''}`);
+  expect(q).toEqual(['a:read', 'c:meaning', 'b:read', 'n:read+new', 'm:meaning']);
+});
+});

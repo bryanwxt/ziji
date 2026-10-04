@@ -48,7 +48,7 @@ export interface Word {
   writeSkippedAt?: number; // last time its strokes failed to load in 听写; such words go to the back of the queue
 }
 
-export type CardKind = 'recognise' | 'write';
+export type CardKind = 'recognise' | 'write' | 'meaning'; // meaning: what the word means and how it's used (spec §19)
 
 export interface CardRecord {
   id: string; // `${wordId}:${kind}`
@@ -78,12 +78,15 @@ export interface SessionPlan {
   flashTimeBoxMs: number;
   writeCandidates: { wordId: string; isNew: boolean }[];
   writeCount: number;
+  meaningReviewIds?: string[]; // due meaning cards (optional: sessions saved before plan 11 have none)
+  newMeaningIds?: string[]; // begun words starting meaning practice
 }
 
 export interface FlashItem {
   wordId: string;
   isNew: boolean;
   retry: boolean; // re-shown after a wrong answer (or free play): no scheduler review
+  mode?: 'read' | 'meaning'; // absent = read
 }
 
 export interface SessionRecord {
@@ -175,12 +178,13 @@ export interface Settings {
   placementDone: boolean;
   zodiac: ZodiacId | null; // the child's 生肖, the first chest's gift
   oral: OralInfo;
+  lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   pinHash: null,
-  sessionMinutes: 20,
+  sessionMinutes: 30,
   newPerDay: 5,
   activities: { flashcards: true, writing: true, components: true, speaking: true },
   speechRate: 0.8,
@@ -192,6 +196,7 @@ export const DEFAULT_SETTINGS: Settings = {
   zodiac: null,
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
+  lessonVersion: 2,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';

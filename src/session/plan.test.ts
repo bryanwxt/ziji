@@ -61,7 +61,7 @@ describe('buildSessionPlan', () => {
 
   it('sizes the writing step and the flashcard time box from session minutes', () => {
     const p20 = buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 20 }), now });
-    expect([p20.writeCount, p20.flashTimeBoxMs]).toEqual([3, 8 * 60_000]);
+    expect([p20.writeCount, p20.flashTimeBoxMs]).toEqual([3, Math.round((20 * 60_000 * 7) / 30)]);
     expect(buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 25 }), now }).writeCount).toBe(5);
   });
 
@@ -98,5 +98,24 @@ describe('写一写 after placement', () => {
     const ws = words(10);
     const practised = new Map([['b:1', now.getTime() - 86_400_000], ['b:2', now.getTime() - 3_600_000]]);
     expect(buildSessionPlan({ cards: known(ws), words: ws, settings: settings(), now, practised }).writeCandidates.map((c) => c.wordId)).toEqual(['b:2', 'b:1']);
+  });
+});
+
+describe('meaning practice', () => {
+  const later = new Date(2026, 9, 20);
+  const withCue = (i: number) => makeWord(`字${i}`, { id: `b:${i}`, rank: i, examples: [{ text: `字${i}好`, pinyin: 'x' }] });
+  it('adds due meaning reviews, and starts meaning practice for words he has begun, never for words without a cue', () => {
+    const ws = [withCue(0), withCue(1), makeWord('保持', { id: 'p:1', rank: null, examples: [] }), withCue(3)];
+    const cards = [
+      makeCard('b:0', 'recognise', later), makeCard('b:0', 'meaning', hoursAgo(2)), // due meaning review
+      makeCard('b:1', 'recognise', later), // begun, no meaning card yet → new meaning
+      makeCard('p:1', 'recognise', later), // begun, but no cue → nothing
+    ];
+    const plan = buildSessionPlan({ cards, words: ws, settings: settings(), now });
+    expect(plan.meaningReviewIds).toEqual(['b:0']);
+    expect(plan.newMeaningIds).toEqual(['b:1']);
+  });
+  it('the 认一认 time box is 7 of 30 minutes', () => {
+    expect(buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 30 }), now }).flashTimeBoxMs).toBe(7 * 60_000);
   });
 });

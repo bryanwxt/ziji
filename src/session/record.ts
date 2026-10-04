@@ -23,6 +23,15 @@ export async function recordRecognition(
   return card;
 }
 
+export async function recordMeaning(
+  db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date,
+): Promise<CardRecord> {
+  const rating = toRating({ kind: 'meaning', ...outcome });
+  const card = await reviewCard(db, wordId, 'meaning', rating, now);
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, ...outcome });
+  return card;
+}
+
 export async function recordWriting(db: AppDb, wordId: string, totalMisses: number, now: Date): Promise<CardRecord> {
   const rating = toRating({ kind: 'write', totalMisses });
   const card = await reviewCard(db, wordId, 'write', rating, now);

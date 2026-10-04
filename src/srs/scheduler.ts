@@ -5,16 +5,16 @@ const scheduler = fsrs(generatorParameters({ enable_fuzz: false }));
 export const SLOW_ANSWER_MS = 6000;
 
 export type Outcome =
-  | { kind: 'recognise'; correct: boolean; responseMs: number }
+  | { kind: 'recognise' | 'meaning'; correct: boolean; responseMs: number }
   | { kind: 'write'; totalMisses: number };
 
 export function toRating(o: Outcome): Grade {
-  if (o.kind === 'recognise') {
-    if (!o.correct) return Rating.Again;
-    return o.responseMs > SLOW_ANSWER_MS ? Rating.Hard : Rating.Good;
+  if (o.kind === 'write') {
+    if (o.totalMisses === 0) return Rating.Good;
+    return o.totalMisses <= 3 ? Rating.Hard : Rating.Again;
   }
-  if (o.totalMisses === 0) return Rating.Good;
-  return o.totalMisses <= 3 ? Rating.Hard : Rating.Again;
+  if (!o.correct) return Rating.Again; // reading or meaning
+  return o.responseMs > SLOW_ANSWER_MS ? Rating.Hard : Rating.Good;
 }
 
 export function newCard(now: Date): Card {

@@ -9,9 +9,18 @@ export const MAX_WORD_MS = 3 * 60_000;
 export const MAX_STEP_MS = 10 * 60_000;
 
 export function createSessionRecord(plan: SessionPlan, date: string, now: number, free = false): SessionRecord {
+  // Reading and meaning reviews take turns, then new words, then words starting meaning practice.
+  const read = plan.reviewWordIds.map((wordId): FlashItem => ({ wordId, isNew: false, retry: false }));
+  const mean = (plan.meaningReviewIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: false, mode: 'meaning' }));
+  const reviews: FlashItem[] = [];
+  for (let i = 0; i < Math.max(read.length, mean.length); i++) {
+    if (read[i]) reviews.push(read[i]!);
+    if (mean[i]) reviews.push(mean[i]!);
+  }
   const flashQueue: FlashItem[] = [
-    ...plan.reviewWordIds.map((wordId) => ({ wordId, isNew: false, retry: false })),
+    ...reviews,
     ...plan.newWordIds.map((wordId) => ({ wordId, isNew: true, retry: false })),
+    ...(plan.newMeaningIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: false, mode: 'meaning' })),
   ];
   return {
     date, startedAt: now, activeMs: 0, free, plan, stepIndex: 0,
