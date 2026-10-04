@@ -39,4 +39,11 @@ describe('App', () => {
     expect(hint?.getAttribute('aria-label')).toBe('请把手机竖过来');
     expect(document.querySelector('.screen')).toBeTruthy(); // the routed screen stays mounted under it, so a lesson keeps its state
   });
+  it('after boot, a promise nobody caught shows sleepy Truffle instead of a dead screen', async () => {
+    render(<App dbName={`test-${crypto.randomUUID()}`} now={() => new Date(2026, 9, 2, 9)} />);
+    await screen.findByText('For parents: choose a 4-digit PIN', {}, { timeout: 5000 });
+    window.dispatchEvent(Object.assign(new Event('unhandledrejection'), { reason: new Error('IDB write failed') }));
+    expect(await screen.findByText('松露睡着了')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '重新开始' })).toBeTruthy();
+  });
 });

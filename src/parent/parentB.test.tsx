@@ -19,6 +19,7 @@ import { saveTextFile } from '../lib/files';
 import { ParentArea } from './ParentArea';
 import { hashPin } from '../lib/hash';
 import { DEFAULT_SETTINGS } from '../types';
+import { clearErrorLog, logError } from '../app/errorLog';
 
 describe('WordsPanel', () => {
   it('previews a pasted list, adds it, and pulls matching built-in words forward', async () => {
@@ -65,6 +66,25 @@ describe('BackupPanel', () => {
     expect(await screen.findByText('Backup saved.')).toBeTruthy();
     expect(saveTextFile).toHaveBeenCalledWith('ziji-backup-2026-10-02.json', expect.stringContaining('hanzi-buddy-backup'));
     expect((await getSettings(app.db)).lastBackupAt).not.toBeNull();
+  });
+});
+
+describe('BackupPanel error log', () => {
+  it('shows the recent errors and saves them to a file', async () => {
+    clearErrorLog();
+    logError(new Error('IDB write failed'), new Date(2026, 9, 2, 9, 30).getTime());
+    const app = await makeAppData();
+    renderWithApp(<BackupPanel />, app);
+    expect(screen.getByText('Error log')).toBeTruthy();
+    expect(screen.getByText(/Error: IDB write failed/)).toBeTruthy();
+    fireEvent.click(screen.getByText('Save error log'));
+    await waitFor(() => expect(saveTextFile).toHaveBeenCalledWith('ziji-error-log.json', expect.stringContaining('IDB write failed')));
+    clearErrorLog();
+  });
+  it('says so when there are none', async () => {
+    clearErrorLog();
+    renderWithApp(<BackupPanel />, await makeAppData());
+    expect(screen.getByText('No errors recorded.')).toBeTruthy();
   });
 });
 

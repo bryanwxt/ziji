@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
+import { readErrorLog } from '../app/errorLog';
 import { localDateKey } from '../lib/date';
 import { saveTextFile } from '../lib/files';
 import { applyBackup, BackupError, exportBackup, readBackup, type BackupPreview } from '../store/backup';
@@ -13,6 +14,8 @@ export function BackupPanel() {
   const [status, setStatus] = useState<string | null>(null);
   const [preview, setPreview] = useState<BackupPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorLog] = useState(readErrorLog);
+  const [logStatus, setLogStatus] = useState<string | null>(null);
 
   const doExport = async () => {
     try {
@@ -23,6 +26,14 @@ export function BackupPanel() {
       setStatus('Backup saved.');
     } catch (e) {
       setStatus(e instanceof DOMException && e.name === 'AbortError' ? 'Backup cancelled.' : `Backup failed: ${String(e)}`);
+    }
+  };
+  const saveLog = async () => {
+    try {
+      await saveTextFile('ziji-error-log.json', JSON.stringify(errorLog, null, 2));
+      setLogStatus('Error log saved.');
+    } catch (e) {
+      setLogStatus(e instanceof DOMException && e.name === 'AbortError' ? 'Cancelled.' : `Could not save: ${String(e)}`);
     }
   };
   const pick = async (file: File | undefined) => {
@@ -78,6 +89,26 @@ export function BackupPanel() {
             <button type="button" class="btn btn--primary" onClick={() => void restore()}>Replace with this backup</button>
           </div>
         )}
+      </section>
+      <section class="panel">
+        <h2>Error log</h2>
+        <p>Up to 20 recent problems the app hit after starting (each time it showed your child a restart screen). Kept on this device only; save the file to send it on.</p>
+        {errorLog.length === 0 ? (
+          <p>No errors recorded.</p>
+        ) : (
+          <>
+            <ul class="error-log">
+              {errorLog.map((e, i) => (
+                <li key={i}>
+                  {new Date(e.at).toLocaleString()} — {e.message}
+                  {e.stack && <small> ({e.stack})</small>}
+                </li>
+              ))}
+            </ul>
+            <button type="button" class="btn" onClick={() => void saveLog()}>Save error log</button>
+          </>
+        )}
+        {logStatus && <p role="status">{logStatus}</p>}
       </section>
     </>
   );

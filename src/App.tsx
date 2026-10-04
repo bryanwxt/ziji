@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import { AppContext, type AppData, type Route } from './app/AppContext';
+import { CrashGuard } from './app/CrashGuard';
 import { ErrorScreen } from './app/ErrorScreen';
 import { HomeScreen } from './app/HomeScreen';
 import { PetSetup } from './app/PetSetup';
@@ -53,7 +54,9 @@ export function App({ dbName = DB_NAME, now = () => new Date() }: { dbName?: str
   const app: AppData = { ...booted, now, go: (r) => withViewTransition(() => setRoute(r)), refresh };
   return (
     <AppContext.Provider value={app}>
-      <Screen route={route} />
+      <CrashGuard>
+        <Screen route={route} />
+      </CrashGuard>
       {route.name !== 'parent' && <RotateHint kid={booted.kid} />}
     </AppContext.Provider>
   );
