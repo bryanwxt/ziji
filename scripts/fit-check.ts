@@ -22,6 +22,10 @@ const SIZES = [
 type Size = (typeof SIZES)[number];
 interface Result { size: string; flow: string; step: number; sig: string; problems: string[] }
 const results: Result[] = [];
+/** One lesson-stage screen's boxes and type sizes (spec 2026-10-04 §3), compared across screens once every size has run. */
+interface StageEntry { size: string; flow: string; step: number; group: string; card: number[] | null; truffle: number[] | null; sheet: number[] | null; isQuestion: boolean }
+const stageEntries: StageEntry[] = [];
+const framed = new Set<string>(); // size|flow pairs whose frame time was measured
 const ONLY = process.env.FIT_ONLY ? new RegExp(process.env.FIT_ONLY) : null; // e.g. FIT_ONLY=home npm run fit
 
 /* ---------- in-page probes (plain JS: they run inside WebKit) ---------- */
@@ -181,9 +185,65 @@ async function check(page: Page, size: Size, flow: string, step: number) {
   await page.waitForTimeout(500);
   const sig = await page.evaluate(signature);
   const problems = await page.evaluate(probe, { main: MAIN, scrollers: SCROLLERS });
+  problems.push(...(await stageChecks(page, size, flow, step)));
   mkdirSync(`${OUT}/${size.name}`, { recursive: true });
   await page.screenshot({ path: `${OUT}/${size.name}/${flow}-${String(step).padStart(2, '0')}.png` });
   results.push({ size: size.name, flow, step, sig, problems });
+}
+
+/** The stage on this screen: record its boxes, check its type sizes, and time its frames once per flow (spec 2026-10-04 §3, §6). */
+async function stageChecks(page: Page, size: Size, flow: string, step: number): Promise<string[]> {
+  const st = await page.evaluate(() => {
+    const stage = document.querySelector('.stage');
+    if (!stage) return null;
+    const box = (sel: string) => { const el = document.querySelector(sel); if (!el) return null; const r = el.getBoundingClientRect(); return [r.left, r.top, r.width, r.height].map(Math.round); };
+    const fontPx = (sel: string) => { const el = document.querySelector(sel); return el ? parseFloat(getComputedStyle(el).fontSize) : null; };
+    return {
+      group: `${stage.getAttribute('data-stage')}|${document.querySelector('.lessonbar') ? 'lesson' : 'own'}`,
+      card: box('.stage__card'), truffle: box('.stage__truffle .truffle'), sheet: box('.stage__sheet'),
+      q: fontPx('[data-q]'), tile: fontPx('.stage__card .choices--hanzi .choice'), sentence: fontPx('.stage__card .meaning-cue--sentence, .stage__card .usage-opt'),
+      isQuestion: !document.querySelector('.sheet--good, .sheet--oops'),
+    };
+  });
+  if (!st) return [];
+  stageEntries.push({ size: size.name, flow, step, group: st.group, card: st.card, truffle: st.truffle, sheet: st.sheet, isQuestion: st.isQuestion });
+  const out: string[] = [];
+  const tablet = size.width >= 600;
+  if (st.q !== null && st.q < (tablet ? 64 : 48)) out.push(`too small: question ${st.q}px (needs ≥ ${tablet ? 64 : 48})`);
+  if (tablet && st.tile !== null && (st.tile < 40 || st.tile > 48)) out.push(`tile size: answer tiles ${st.tile}px (needs 40–48)`);
+  if (tablet && st.sentence !== null && st.sentence < 28) out.push(`too small: sentence ${st.sentence}px (needs ≥ 28)`);
+  const key = `${size.name}|${flow}`;
+  if (!framed.has(key)) {
+    framed.add(key);
+    // WebKit can't throttle the CPU: a p95 frame interval ≤ 20ms on this machine stands in for spec §6's budget (the parent checks the iPad)
+    const p95 = await page.evaluate(() => new Promise<number>((done) => {
+      const t: number[] = []; let last = performance.now(); let n = 0;
+      const tick = (now: number) => { t.push(now - last); last = now; if (++n < 90) requestAnimationFrame(tick); else { t.sort((a, b) => a - b); done(t[Math.floor(t.length * 0.95)]!); } };
+      requestAnimationFrame(tick);
+    }));
+    if (p95 > 20) out.push(`slow frames: p95 ${p95.toFixed(1)}ms over 90 frames`);
+  }
+  return out;
+}
+
+/** One box per activity, and Truffle and the sheet in one place across a lesson's activities (spec 2026-10-04 §3). */
+function stageInvariants() {
+  const same = (a: number[] | null, b: number[] | null, idx = [0, 1, 2, 3]) => !!a && !!b && idx.every((i) => Math.abs(a[i]! - b[i]!) <= 2);
+  const sizes = [...new Set(stageEntries.map((e) => e.size))];
+  for (const size of sizes) {
+    const qs = stageEntries.filter((e) => e.size === size && e.isQuestion);
+    const flag = (e: StageEntry, msg: string) => results.push({ size, flow: e.flow, step: e.step, sig: 'stage', problems: [`stage moved: ${msg}`] });
+    for (const group of new Set(qs.map((e) => e.group))) {
+      const g = qs.filter((e) => e.group === group);
+      const odd = g.find((e) => !same(e.card, g[0]!.card));
+      if (odd) flag(odd, `${group} card ${g[0]!.card} vs ${odd.card} (${g[0]!.flow}-${g[0]!.step})`);
+    }
+    const lesson = qs.filter((e) => e.group.endsWith('|lesson'));
+    const t = lesson.find((e) => !same(e.truffle, lesson[0]!.truffle));
+    if (t) flag(t, `Truffle ${lesson[0]!.truffle} vs ${t.truffle} (${lesson[0]!.flow}-${lesson[0]!.step})`);
+    const sh = lesson.find((e) => !same(e.sheet, lesson[0]!.sheet, [0, 2]));
+    if (sh) flag(sh, `sheet ${lesson[0]!.sheet} vs ${sh.sheet} (${lesson[0]!.flow}-${lesson[0]!.step})`);
+  }
 }
 
 async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnly?: boolean } = {}) {
@@ -275,6 +335,7 @@ async function main() {
     let browser: Browser;
     try { browser = await webkit.launch(); } catch (e) { console.error(`WebKit is missing: run  npx playwright-core install webkit  (ask first: it downloads ~100 MB)\n${e}`); process.exitCode = 2; return; }
     await Promise.all(SIZES.map((size) => sweep(browser, size))); // sizes in parallel, each in its own contexts
+    stageInvariants();
     // A phone turned sideways: the overlay covers the screen
     const side = { name: 'iphone-sideways', width: 667, height: 375 };
     const page = await open(browser, side, AFTERNOON, {});
