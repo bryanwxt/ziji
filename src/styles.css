@@ -1041,3 +1041,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* parent Skills panel (spec §19 part 7) */
 .skills__table input { width: 5em; }
 .skills__missed ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
+
+/* 写一写's cue: the word's sentence with a gap (parent, 2026-10-04) */
+.write__sentence { font-size: clamp(20px, 2.8dvh, 28px); line-height: 1.4; max-width: min(100%, 520px); white-space: normal; }
+@media (max-width: 599px) {
+  .write__sentence { font-size: 18px; line-height: 1.35; }
+}

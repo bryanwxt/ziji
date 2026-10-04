@@ -243,6 +243,7 @@ async function sweep(browser: Browser, size: Size) {
   await run('flashcards', AFTERNOON, { activities: only('flashcards') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'flashcards'); });
   await run('flashcards-evening', EVENING, { activities: only('flashcards') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'flashcards-evening'); });
   await run('writing', AFTERNOON, { activities: only('writing') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing', { firstOnly: true }); });
+  await run('writing-sentence', AFTERNOON, { activities: only('writing'), writeSentence: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing-sentence'); });
   await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then 用一用 and the chest
   await run('choose', AFTERNOON, { activities: only('choose') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'choose'); });
   await run('wrapup', AFTERNOON, { activities: { ...only('flashcards'), choose: true } }, async (p) => { await startLesson(p); await walkLesson(p, size, 'wrapup'); }); // its walk misses some, so 用一用 has words

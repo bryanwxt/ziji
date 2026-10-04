@@ -5,14 +5,14 @@ import { pickExample, writingCue } from './cue';
 describe('writingCue', () => {
   it('gives the first meaning, a blanked word that uses it, and says which character', () => {
     const er = makeWord('儿', { pinyin: 'ér', meaning: 'son, child', examples: [{ text: '儿子', pinyin: 'ér zi' }, { text: '好玩儿', pinyin: 'hǎo wán ér' }] });
-    expect(writingCue(er)).toEqual({ meaning: 'son', blanked: '＿子', blankedPy: 'zi', speech: '儿，儿子的儿' });
+    expect(writingCue(er)).toEqual({ meaning: 'son', blanked: '＿子', blankedPy: 'zi', speech: '儿，儿子的儿', sentence: null });
   });
   it('without an example word there is no blank, and it just says the character', () => {
     const ba = makeWord('八', { meaning: 'eight; 8', examples: [] });
-    expect(writingCue(ba)).toEqual({ meaning: 'eight', blanked: null, blankedPy: null, speech: '八' });
+    expect(writingCue(ba)).toEqual({ meaning: 'eight', blanked: null, blankedPy: null, speech: '八', sentence: null });
   });
   it('a parent word with no meaning says the word itself', () => {
-    expect(writingCue(makeWord('大人', { source: 'parent' }))).toEqual({ meaning: null, blanked: null, blankedPy: null, speech: '大人' });
+    expect(writingCue(makeWord('大人', { source: 'parent' }))).toEqual({ meaning: null, blanked: null, blankedPy: null, speech: '大人', sentence: null });
   });
   it('ignores an example that is just the character itself', () => {
     expect(writingCue(makeWord('大', { meaning: 'big', examples: [{ text: '大', pinyin: 'dà' }] })).blanked).toBeNull();
@@ -47,8 +47,8 @@ describe('writingCue example word', () => {
     expect(writingCue(ba)).toMatchObject({ blanked: null, speech: '爸，爸爸的爸' });
   });
   it('skips a word that uses a different reading from the one being written', () => {
-    const chang = makeWord('长', { pinyin: 'cháng', meaning: 'long', examples: [{ text: '班长', pinyin: 'bān zhǎng' }, { text: '长短', pinyin: 'cháng duǎn' }] });
-    expect(writingCue(chang)).toMatchObject({ blanked: '＿短', speech: '长，长短的长' });
+    const xing = makeWord('行', { pinyin: 'xíng', meaning: 'walk', examples: [{ text: '银行', pinyin: 'yín háng' }, { text: '行人', pinyin: 'xíng rén' }] }); // 长 now has a bank sentence
+    expect(writingCue(xing)).toMatchObject({ blanked: '＿人', speech: '行，行人的行' });
     const wei = makeWord('为', { pinyin: 'wèi', examples: [{ text: '成为', pinyin: 'chéng wéi' }] });
     expect(writingCue(wei)).toMatchObject({ blanked: null, speech: '为' });
   });
