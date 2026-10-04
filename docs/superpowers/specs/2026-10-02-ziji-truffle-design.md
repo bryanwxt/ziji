@@ -1136,7 +1136,7 @@ Three findings drive this section:
   - **reading** (`recognise`): how it's read;
   - **meaning** (new kind `meaning`): what it means and how it's used.
 - They are scheduled separately with FSRS, as now. A miss on one doesn't reset the other.
-- Placement can set them differently (part 7).
+- Placement can set them differently (part 6).
 - **Meaning cue, in order of preference:**
   1. A sentence from his imported class material containing the word.
   2. A sentence-bank sentence (part 4).
@@ -1214,8 +1214,9 @@ The default `sessionMinutes` becomes 30, and the parent can still change it. Eac
   - the sentence's characters are no more than one HSK level above the target's level;
   - no item repeats a sentence.
 - **Tatoeba (optional extra):**
-  - The parent area can fetch a filtered set of Mandarin sentences (CC BY 2.0 FR) that contain his words and use only characters at or below his level.
-  - Each sentence is shown for approval before use. Approved ones become 选一选 items with automatic wrong choices.
+  - The content build prepares a filtered pool of Mandarin sentences (CC BY 2.0 FR) and ships it with the app; the iPad never downloads the full Tatoeba set.
+  - The filter keeps sentences that are short (no more than 20 characters), use only HSK 1–9 characters, and contain at least one HSK word.
+  - The parent area offers the ones that contain his words and use only characters at or below his level. Each is shown for approval before use; approved ones become 选一选 items with automatic wrong choices.
   - Credited in the credits screen.
 
 ### 5. Worksheet importer (parent area → "Add from a worksheet")
