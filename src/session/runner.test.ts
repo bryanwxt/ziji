@@ -99,6 +99,11 @@ describe('meaning items in the queue', () => {
 it('interleaves reading and meaning reviews, then new words, then new meaning items', () => {
   const p = plan({ steps: ['flashcards'], reviewWordIds: ['a', 'b'], meaningReviewIds: ['c'], newWordIds: ['n'], newMeaningIds: ['m'] });
   const q = createSessionRecord(p, '2026-10-04', 0).flashQueue.map((i) => `${i.wordId}:${i.mode ?? 'read'}${i.isNew ? '+new' : ''}`);
-  expect(q).toEqual(['a:read', 'c:meaning', 'b:read', 'n:read+new', 'm:meaning']);
+  expect(q).toEqual(['a:read', 'b:read', 'c:meaning', 'n:read+new', 'm:meaning']);
+});
+it('meaning reviews take at most one slot in three, and never push new words behind them', () => {
+  const p = plan({ steps: ['flashcards'], reviewWordIds: ['a', 'b', 'c', 'd'], meaningReviewIds: ['m1', 'm2', 'm3', 'm4', 'm5'], newWordIds: ['n'], newMeaningIds: ['x'] });
+  const q = createSessionRecord(p, '2026-10-04', 0).flashQueue.map((i) => i.wordId);
+  expect(q).toEqual(['a', 'b', 'm1', 'c', 'd', 'm2', 'n', 'm3', 'm4', 'm5', 'x']);
 });
 });

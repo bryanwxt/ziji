@@ -9,17 +9,20 @@ export const MAX_WORD_MS = 3 * 60_000;
 export const MAX_STEP_MS = 10 * 60_000;
 
 export function createSessionRecord(plan: SessionPlan, date: string, now: number, free = false): SessionRecord {
-  // Reading and meaning reviews take turns, then new words, then words starting meaning practice.
+  // Reading reviews lead, with one meaning review after every two (meaning takes at most a third of the head);
+  // new words come next, so a meaning backlog can never push them out of the time box; then the rest.
   const read = plan.reviewWordIds.map((wordId): FlashItem => ({ wordId, isNew: false, retry: false }));
   const mean = (plan.meaningReviewIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: false, mode: 'meaning' }));
-  const reviews: FlashItem[] = [];
-  for (let i = 0; i < Math.max(read.length, mean.length); i++) {
-    if (read[i]) reviews.push(read[i]!);
-    if (mean[i]) reviews.push(mean[i]!);
-  }
+  const head: FlashItem[] = [];
+  let m = 0;
+  read.forEach((item, i) => {
+    head.push(item);
+    if (i % 2 === 1 && m < mean.length) head.push(mean[m++]!);
+  });
   const flashQueue: FlashItem[] = [
-    ...reviews,
+    ...head,
     ...plan.newWordIds.map((wordId) => ({ wordId, isNew: true, retry: false })),
+    ...mean.slice(m),
     ...(plan.newMeaningIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: false, mode: 'meaning' })),
   ];
   return {
