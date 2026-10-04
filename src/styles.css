@@ -262,9 +262,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @keyframes bob { 50% { transform: translateY(-4px); } }
 .whichpart__char { font-size: 140px; border: none; background: none; line-height: 1; padding: 0; }
 .bubbles { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
-.bubble-opt { width: 140px; height: 140px; border-radius: 50%; font-family: var(--hanzi); font-size: 66px; }
-.bubble-opt.is-right { background: var(--green-soft); border-color: var(--green); box-shadow: 0 var(--edge) 0 var(--green); }
-.bubble-opt.is-oops { background: var(--orange-soft); border-color: var(--orange); box-shadow: 0 var(--edge) 0 var(--orange); }
 
 /* Speaking */
 .speak-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; }
@@ -341,17 +338,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   color: var(--green-ink); font-weight: 900; font-size: 20px; white-space: nowrap; animation: node-bounce 1.8s ease-in-out infinite;
 }
 
-/* Sticker book & wardrobe */
-.book { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
-.family { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px; min-height: 150px; }
-.family__icon { font-size: 40px; }
-.family__name { font-size: 30px; font-family: var(--hanzi); }
-.sticker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 16px; }
-.sticker {
-  aspect-ratio: 1; border-radius: 22px; border: 3px solid #fff; background: var(--gold); box-shadow: 0 0 0 2px var(--gold-edge), 0 6px 0 var(--gold-edge);
-  font-family: var(--hanzi); font-size: 54px; transform: rotate(var(--tilt, 0deg)); display: flex; align-items: center; justify-content: center; color: var(--ink);
-}
-.sticker--unknown { background: var(--surface); color: var(--muted); border: 3px dashed var(--line-strong); box-shadow: none; }
+/* Celebration badges */
 .badges { display: flex; gap: 12px; flex-wrap: wrap; }
 .badge { background: var(--gold); border-radius: 999px; padding: 6px 16px; font-weight: 900; box-shadow: 0 4px 0 var(--gold-edge); color: var(--ink); }
 .wardrobe { display: grid; grid-template-columns: repeat(auto-fill, 96px); justify-content: center; gap: 16px; width: 100%; max-width: 720px; }
@@ -460,7 +447,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .scene--night .scene__swash { opacity: 0.18; }
 
 /* Panels & pressables */
-.card, .goal, .passage, .helper, .sticker, .family, .wardrobe button, .pinpad button, .setup__form {
+.card, .goal, .passage, .helper, .wardrobe button, .pinpad button, .setup__form {
   background: var(--surface); border: var(--panel-border); box-shadow: var(--panel-shadow);
 }
 .card, .goal { border-radius: 16px; }
@@ -479,11 +466,8 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .label-tag { display: inline-block; font-family: var(--font); font-weight: 900; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; background: var(--green); color: var(--ink); border: 2px solid var(--ink); border-radius: 5px; padding: 1px 7px; }
 
 /* Answers */
-.choice, .fishtile, .bubble-opt { background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 16px; box-shadow: var(--panel-shadow); }
-.bubble-opt { border-radius: 50%; }
-.choice.is-right, .fishtile.is-right, .bubble-opt.is-right, .fishtile.is-on { background: var(--green-soft); }
-.choice.is-oops, .fishtile.is-oops, .bubble-opt.is-oops { background: var(--orange-soft); }
-.choice.is-dim { opacity: 0.45; }
+.choice, .fishtile, .choice.is-right, .fishtile.is-right, .fishtile.is-on { background: var(--green-soft); }
+.choice.is-oops, .fishtile.is-oops, .choice.is-dim { opacity: 0.45; }
 
 /* Bars */
 .bottombar, .tabbar { background: var(--paper); border-top: 3px solid var(--ink); }
@@ -871,7 +855,6 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .fishtile { min-height: clamp(var(--tap-main), 11dvh, 110px); }
 .fishtile__char { font-size: clamp(40px, 6dvh, 58px); }
 .whichpart__char { font-size: var(--hanzi-xl); }
-.bubble-opt { width: clamp(96px, 14dvh, 140px); height: clamp(96px, 14dvh, 140px); font-size: clamp(44px, 6.5dvh, 66px); }
 @media (max-width: 599px) { .pond { grid-template-columns: repeat(3, minmax(0, 1fr)); } .pond-q { font-size: 22px; } .pond-q__part { font-size: 40px; } }
 
 /* Celebration and the chest */

@@ -10,10 +10,10 @@ const SWASHES: Record<SceneKind, [string, string]> = {
 };
 
 /** Paper background with two soft brush swashes (a red block for celebrations). */
-export function Scene({ kind, band = false }: { kind: SceneKind; band?: boolean }) {
+export function Scene({ kind }: { kind: SceneKind }) {
   const [a, b] = SWASHES[kind];
   return (
-    <div class={`scene scene--${kind}${band ? ' scene--band' : ''}`} aria-hidden="true">
+    <div class={`scene scene--${kind}`} aria-hidden="true">
       <svg class="scene__swash scene__swash--a" viewBox="0 0 400 120" preserveAspectRatio="none">
         <path d="M10 80 C110 30 230 50 390 20" stroke={a} stroke-width="54" fill="none" stroke-linecap="round" />
       </svg>
