@@ -204,12 +204,16 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         </div>
         <div class="home__path">
           <h2 class="home__title"><Label zh="今天的练习" /></h2>
-          <TodayPath
-            speakingName={speakingKind === 'story' ? '看图说话' : '朗读'}
-            nodes={nodes}
-            started={!!todaySession}
-            onStart={() => play(false)}
-          />
+          {steps.length || todaySession ? (
+            <TodayPath
+              speakingName={speakingKind === 'story' ? '看图说话' : '朗读'}
+              nodes={nodes}
+              started={!!todaySession}
+              onStart={() => play(false)}
+            />
+          ) : (
+            <p class="home__rest"><Label zh="今天休息一下！" /></p> // only 朗读 is switched on and there's nothing he can read yet: no lone chest
+          )}
         </div>
       </main>
       <div class="home__pet">
