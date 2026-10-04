@@ -4,6 +4,8 @@ import passages from './passages.json';
 import type { BuiltinChar, CharInfo, Passage, Word } from '../types';
 
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
+/** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words. */
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.2`;
 export const PASSAGES: Passage[] = passages as Passage[];
 
 const infoByChar = new Map<string, CharInfo>(

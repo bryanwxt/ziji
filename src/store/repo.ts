@@ -47,8 +47,15 @@ export async function saveKid(db: AppDb, kid: KidState): Promise<void> {
   await db.put('kid', kid, MAIN);
 }
 
-export async function seedBuiltinWords(db: AppDb, words: Word[]): Promise<number> {
+/** Adds missing built-in words; with refresh, also brings existing ones up to the current content (keeping his and the parent's state). */
+export async function seedBuiltinWords(db: AppDb, words: Word[], refresh = true): Promise<number> {
   const tx = db.transaction('words', 'readwrite');
+  if (!refresh) {
+    const have = new Set(await tx.store.getAllKeys());
+    const missing = words.filter((w) => !have.has(w.id));
+    await Promise.all([...missing.map((w) => tx.store.put(w)), tx.done]);
+    return missing.length;
+  }
   const existing = new Map((await tx.store.getAll()).map((w) => [w.id, w]));
   const missing = words.filter((w) => !existing.has(w.id));
   // Existing installs pick up content fixes; the parent's and child's state on each word is kept.

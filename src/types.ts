@@ -213,7 +213,8 @@ export interface Settings {
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
   placementResult?: PlacementResult;
-  baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
+  baselines?: Partial<Record<Skill, number>>;
+  contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION) // % right on his class worksheets, typed in by the parent (stays on the iPad)
 }
 
 export const DEFAULT_SETTINGS: Settings = {
