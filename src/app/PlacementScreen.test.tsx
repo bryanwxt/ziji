@@ -63,4 +63,22 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     await ready();
     expect(document.querySelector('[data-asked]')?.getAttribute('data-asked')).toBe('1');
   });
+  it('a child who knows no characters yet gets a kind start, not "0" (deferred minor, plan 5)', async () => {
+    const app = await setup();
+    renderWithApp(<PlacementScreen tapGuardMs={0} />, app);
+    for (let i = 0; i < 60 && !screen.queryByText('开始！'); i++) {
+      fireEvent.click(await screen.findByText('不知道'));
+      await new Promise((r) => setTimeout(r, 0)); // let the next question arrive
+    }
+    expect(await screen.findByText('开始！')).toBeTruthy();
+    expect(document.querySelector('h1')!.textContent).toContain('我们从第一个字开始！');
+    expect(screen.queryByText(/认识 0 个字/)).toBeNull();
+  });
+  it('a re-run started from Settings can go back home (deferred minor, plan 5)', async () => {
+    const app = await setup();
+    app.settings = { ...app.settings, placementDone: true };
+    renderWithApp(<PlacementScreen tapGuardMs={0} />, app);
+    fireEvent.click(await screen.findByRole('button', { name: '回家' }));
+    expect(app.go).toHaveBeenCalledWith({ name: 'home' });
+  });
 });

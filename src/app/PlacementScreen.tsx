@@ -1,3 +1,4 @@
+import { X } from 'lucide-preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { speak } from '../audio/speech';
 import { applyPlacement, placementIds } from '../placement/apply';
@@ -28,7 +29,8 @@ function levelName(bands: Word[][], band: number): string {
  * tapGuardMs: taps are ignored this long after each question appears, so a double tap can't answer the next one.
  */
 export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGuardMs?: number; voice?: boolean } = {}) {
-  const { db, now, go, refresh, kid, voice: appVoice } = useApp();
+  const { db, now, go, refresh, kid, voice: appVoice, settings } = useApp();
+  const rerun = settings.placementDone; // started again from Settings: he can go back home
   const voice = voiceProp ?? appVoice;
   const [words, setWords] = useState<Word[] | null>(null);
   const [walk, setWalk] = useState<WalkState | null>(null);
@@ -102,7 +104,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGua
         <Scene kind="home" />
         <div class="center">
           <Pet kid={k} mood="pleased" size={160} />
-          <h1><Label zh={`你已经认识 ${result.known} 个字了！`} /></h1>
+          <h1><Label zh={result.known > 0 ? `你已经认识 ${result.known} 个字了！` : '我们从第一个字开始！'} /></h1>
           <p class="placement__levels"><Label zh={`读：${levelName(bands, result.reading)} · 懂：${levelName(bands, result.understanding)}`} /></p>
           <p><Label zh="我们每天学一点点。" /></p>
           <button type="button" class="btn btn--primary btn--big" onClick={async () => { await refresh(); go({ name: 'home' }); }}>
@@ -122,6 +124,11 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGua
   return (
     <div class="screen placement" data-ready={ready ? 'true' : 'false'} data-asked={asked}>
       <Scene kind="home" />
+      {rerun && (
+        <button type="button" class="icon-btn placement__home" aria-label="回家" onClick={() => go({ name: 'home' })}>
+          <X size={34} strokeWidth={3} />
+        </button>
+      )}
       <div class="center">
         <Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={100} />
         {q?.style === 'read' && (
