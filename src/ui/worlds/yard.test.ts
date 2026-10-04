@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { YARD_PAPER } from './yard';
-import { SCENES } from './scenes';
+import { SCENES, timeLayers } from './scenes';
 
 const anchor = (prop: string) => {
   const m = new RegExp(`data-prop="${prop}" transform="translate\\(([\\d.]+) ([\\d.]+)\\)"`).exec(YARD_PAPER);
@@ -31,5 +31,12 @@ describe('the paper 后院 (spec 2026-10-04 §2)', () => {
     const ids = [...YARD_PAPER.matchAll(/id="([^"]+)"/g)].map((m) => m[1]!);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ids) expect(id.startsWith('yp-')).toBe(true);
+  });
+  it('evening shows in the yard: the evening sky is painted over its own opaque sky, not hidden under it (review I3)', () => {
+    const { wash, over } = timeLayers('evening', 'yard');
+    const drawn = wash + SCENES.yard + over;
+    expect(drawn.lastIndexOf('#dcd9ef')).toBeGreaterThan(drawn.indexOf('url(#yp-sky)')); // the lavender evening sky comes after the yard's day sky
+    expect(over).toContain('data-part="moon"');
+    expect(over).toMatch(/data-part="dusk"/); // a dusk tint over the whole yard
   });
 });

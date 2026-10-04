@@ -1114,3 +1114,19 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .stage--placement .placement__prompt { border: none; box-shadow: none; background: none; } /* the card is the paper; the box keeps its fixed size */
 .stage .intro__card { border: none; box-shadow: none; background: none; } /* the card is the paper */
 .stage__truffle > :not(.pet) { display: flex; align-items: flex-end; } /* a wrapper (认一认's fly-to target) adds no line box: Truffle stands in the same spot in every activity */
+/* the card keeps its size when feedback appears: on a tablet the neutral sheet takes the feedback sheet's padding (review I2; phones already match) */
+@media (min-width: 600px) { .stage__sheet .sheet--neutral { padding: 12px 14px; } }
+/* a question's prompt keeps its height: it never slides under the answer tiles (review I1) */
+.stage__card .flash__prompt { flex: none; min-height: auto; }
+@media (max-width: 599px) {
+  /* a long answer and clue stay inside a short sheet that scrolls, so the card above isn't squeezed (review I1) */
+  .stage__sheet .sheet__detail { max-height: 14dvh; overflow-y: auto; font-size: 16px; }
+  .stage__card .choices--words .choice { font-size: clamp(24px, 4.4dvh, 34px); }
+  .stage__sheet .sheet__detail .hanzi { font-size: 20px; }
+}
+/* if a card ever overflows, the top (the question) stays in view and only the bottom is cut */
+.stage__card { justify-content: safe center; }
+/* the new-word card fits the stage card on a small phone: no padding of its own (the stage card has it), and it scrolls if it ever must */
+.stage .intro { min-height: 0; max-height: 100%; display: flex; flex-direction: column; }
+.stage .intro__card { padding: 0; min-height: 0; }
+.stage .intro__card > * { flex-shrink: 0; } /* rows keep their height; the card scrolls instead of squashing them */

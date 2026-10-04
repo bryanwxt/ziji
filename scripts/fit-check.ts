@@ -206,8 +206,26 @@ async function stageChecks(page: Page, size: Size, flow: string, step: number): 
     };
   });
   if (!st) return [];
+  // the card clips its overflow, so the viewport probe can't see what it cuts off: anything poking out of it is clipped (review I4)
+  const clipped = await page.evaluate(() => {
+    const card = document.querySelector('.stage__card');
+    if (!card) return [] as string[];
+    const c = card.getBoundingClientRect();
+    const scrolls = (el: Element) => { for (let p = el.parentElement; p && p !== card; p = p.parentElement) { const o = getComputedStyle(p).overflowY; if (o === 'auto' || o === 'scroll') return true; } return false; };
+    const out: string[] = [];
+    for (const el of card.querySelectorAll('*')) {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || el.closest('.sr-only, [aria-hidden="true"]:not(.truffle), .is-eaten') || getComputedStyle(el).visibility === 'hidden' || scrolls(el)) continue;
+      if (el instanceof SVGElement && el.ownerSVGElement) continue; // inside a drawing (hanzi-writer's strokes): the svg's own box is what counts
+      if (r.top < c.top - 2 || r.bottom > c.bottom + 2 || r.left < c.left - 2 || r.right > c.right + 2) {
+        out.push(`clipped by the card: ${(el.textContent ?? '').trim().slice(0, 14) || `<${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}">`} at ${Math.round(r.top)}–${Math.round(r.bottom)} (card ${Math.round(c.top)}–${Math.round(c.bottom)})`);
+        if (out.length >= 3) break;
+      }
+    }
+    return out;
+  });
   stageEntries.push({ size: size.name, flow, step, group: st.group, card: st.card, truffle: st.truffle, sheet: st.sheet, isQuestion: st.isQuestion });
-  const out: string[] = [];
+  const out: string[] = [...clipped];
   const tablet = size.width >= 600;
   if (st.q !== null && st.q < (tablet ? 64 : 48)) out.push(`too small: question ${st.q}px (needs ≥ ${tablet ? 64 : 48})`);
   if (tablet && st.tile !== null && (st.tile < 40 || st.tile > 48)) out.push(`tile size: answer tiles ${st.tile}px (needs 40–48)`);
@@ -282,6 +300,7 @@ async function sweep(browser: Browser, size: Size) {
   // Home: not started, and done-for-today with every optional card; world taps in every world
   await run('home', AFTERNOON, {}, (p) => check(p, size, 'home', 0));
   await run('home-done', AFTERNOON, { doneToday: true }, (p) => check(p, size, 'home-done', 0));
+  await run('home-yard-evening', EVENING, { world: 'yard' }, (p) => check(p, size, 'home-yard-evening', 0)); // the paper yard's evening (review I3)
   for (const w of WORLDS) {
     await run(`home-${w.id}`, AFTERNOON, { world: w.id }, (p) => check(p, size, `home-${w.id}`, 0));
     await run(`home-done-${w.id}`, AFTERNOON, { world: w.id, doneToday: true }, (p) => check(p, size, `home-done-${w.id}`, 0)); // the done card and 再玩一会儿 sit differently

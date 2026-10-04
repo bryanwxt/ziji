@@ -22,6 +22,7 @@ export const SCENES: Record<WorldId, string> = {
 const STARS = '<path data-part="star" d="M60 120 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3Z" fill="#efc472" stroke="#2a2630" stroke-width="1.2"/><path data-part="star" d="M150 170 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3Z" fill="#efc472" stroke="#2a2630" stroke-width="1.2"/><path data-part="star" d="M210 100 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3Z" fill="#efc472" stroke="#2a2630" stroke-width="1.2"/><path data-part="star" d="M110 70 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3Z" fill="#efc472" stroke="#2a2630" stroke-width="1.2"/>';
 const MOON = '<g data-part="moon"><circle cx="300" cy="80" r="28" fill="#f6ecd2" stroke="#2a2630" stroke-width="2.4"/><circle cx="290" cy="72" r="5" fill="#f1e1b0"/><circle cx="310" cy="90" r="4" fill="#f1e1b0"/></g>';
 const LANTERNS = '<g data-part="lanterns"><path d="M0 210 Q90 234 180 216 T360 220" fill="none" stroke="#2a2630" stroke-width="1.6"/><g data-part="lantern" stroke="#2a2630" stroke-width="2"><ellipse cx="40" cy="226" rx="9" ry="11" fill="#e2705d"/><path d="M34 215 h12 M34 237 h12"/></g><g data-part="lantern" stroke="#2a2630" stroke-width="2"><ellipse cx="120" cy="232" rx="9" ry="11" fill="#e2705d"/><path d="M114 221 h12 M114 243 h12"/></g><g data-part="lantern" stroke="#2a2630" stroke-width="2"><ellipse cx="200" cy="224" rx="9" ry="11" fill="#e2705d"/><path d="M194 213 h12 M194 235 h12"/></g><g data-part="lantern" stroke="#2a2630" stroke-width="2"><ellipse cx="280" cy="224" rx="9" ry="11" fill="#e2705d"/><path d="M274 213 h12 M274 235 h12"/></g></g>';
+const YARD_DUSK = '<rect data-part="dusk" width="360" height="480" fill="#3d3a6b" opacity=".16"/>';
 // evening sky: indigo with a soft wavy lower edge, then a paler band so it never reads as a stripe
 const EVENING_WASH = '<path d="M0 0 H360 V206 C280 230 170 196 90 218 C50 228 20 222 0 214Z" fill="#dcd9ef"/><path d="M0 214 C20 222 50 228 90 218 C170 196 280 230 360 206 V236 C280 256 170 224 90 246 C50 254 20 250 0 244Z" fill="#e4e1f5" opacity=".7"/>';
 
@@ -33,5 +34,7 @@ export function timeLayers(t: TimeOfDay, world?: WorldId): { wash: string; over:
   if (t === 'morning') return { wash: '<rect width="360" height="480" fill="#e9eff2" opacity=".6"/>', over: '' };
   if (t === 'afternoon') return { wash: '<rect width="360" height="480" fill="#f6ecd2" opacity=".55"/>', over: '' };
   if (world === 'space') return { wash: '', over: STARS };
+  // the paper yard paints its own opaque sky: its evening sky and a dusk tint go over it, not under (spec 2026-10-04 §2)
+  if (world === 'yard') return { wash: '', over: EVENING_WASH + YARD_DUSK + MOON + STARS + LANTERNS };
   return { wash: EVENING_WASH, over: MOON + STARS + LANTERNS };
 }
