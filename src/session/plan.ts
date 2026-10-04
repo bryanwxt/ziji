@@ -2,13 +2,13 @@ import { endOfLocalDay } from '../lib/date';
 import { shuffle, type Rng } from '../lib/random';
 import { meaningCue } from '../activities/flashcards/meaning';
 import { isKnown } from '../srs/scheduler';
-import type { CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
+import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
 
 export const REVIEW_CAP = 60;
 export const BACKLOG_PAUSE = 40;
 export const MAX_NEW_WRITE = 2;
 export const FREE_PLAY_SIZE = 20;
-export const STEP_ORDER: StepKind[] = ['flashcards', 'writing', 'components', 'speaking'];
+export const STEP_ORDER: ActivityKind[] = ['flashcards', 'choose', 'components', 'writing', 'speaking']; // spec §20 part 5
 
 const LAST = Number.MAX_SAFE_INTEGER;
 
@@ -53,10 +53,16 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const hasMeaning = new Set(meaning.map((c) => c.wordId));
   const meaningOrder = (a: Word, b: Word) => (practised.get(b.id) ?? -1) - (practised.get(a.id) ?? -1) || newWordOrder(a, b);
 
+  const newWords = active.filter((w) => !started.has(w.id)).sort(newWordOrder).slice(0, newLimit);
+  // 用一用 closes every lesson that uses words: after 认一认 or 选一选 (spec §20 part 7)
+  const steps: StepKind[] = STEP_ORDER.filter((s) => settings.activities[s]);
+  if (settings.activities.flashcards || settings.activities.choose) steps.push('wrapup');
+
   return {
-    steps: STEP_ORDER.filter((s) => settings.activities[s]),
+    steps,
     reviewWordIds: dueRecognise.slice(0, REVIEW_CAP).map((c) => c.wordId),
-    newWordIds: active.filter((w) => !started.has(w.id)).sort(newWordOrder).slice(0, newLimit).map((w) => w.id),
+    newWordIds: newWords.map((w) => w.id),
+    newWordMeaningIds: newWords.filter((w) => meaningCue(w) !== null).map((w) => w.id),
     flashTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * FLASH_SHARE),
     writeCandidates: [
       ...dueOf(write).map((c) => ({ wordId: c.wordId, isNew: false })),
@@ -72,7 +78,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
         .slice(0, MAX_NEW_WRITE)
         .map((w) => ({ wordId: w.id, isNew: true })),
     ],
-    writeCount: settings.sessionMinutes < 25 ? 3 : 5,
+    writeCount: settings.sessionMinutes < 25 ? 3 : 4, // spec §20 part 3: fewer words, each new one written three ways
     meaningReviewIds: dueOf(meaning).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
     newMeaningIds: active
       .filter((w) => started.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)

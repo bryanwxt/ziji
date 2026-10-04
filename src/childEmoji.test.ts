@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const root = new URL('.', import.meta.url).pathname;
 // The parent area keeps its emoji (including the parent's own reward-goal picks); the legacy map holds old emoji on purpose.
-const EXCLUDED = [/^parent\//, /\.test\.tsx?$/, /^fun\/accessories\.ts$/, /^test\//];
+const EXCLUDED = [/^parent\//, /^importer\//, /\.test\.tsx?$/, /^fun\/accessories\.ts$/, /^test\//]; // importer: parent-only worksheet parsing (matches ©, ➤ in Live Text)
 const EMOJI = /\p{Extended_Pictographic}/u;
 
 function files(dir: string): string[] {

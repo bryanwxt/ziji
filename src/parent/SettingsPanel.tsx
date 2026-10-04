@@ -7,12 +7,13 @@ import { ONESIES, type ZodiacId } from '../fun/costumes';
 import { introLines } from '../langdu/intro';
 import { AsrTest } from './AsrTest';
 import { updateSettings } from '../store/repo';
-import type { OralInfo, Settings, StepKind } from '../types';
+import type { ActivityKind, OralInfo, Settings } from '../types';
 
-const ACTIVITY_LABELS: Record<StepKind, string> = {
+const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   flashcards: 'Flashcards',
+  choose: 'Words in use (选一选)',
   writing: '听写 writing',
-  components: 'Components game (fishing)',
+  components: 'Look-alike characters (钓鱼 字辨)',
   speaking: '朗读 reading aloud',
 };
 
@@ -64,7 +65,7 @@ export function SettingsPanel() {
       </div>
       <fieldset class="field">
         <legend>Activities</legend>
-        {(Object.keys(ACTIVITY_LABELS) as StepKind[]).map((k) => (
+        {(Object.keys(ACTIVITY_LABELS) as ActivityKind[]).map((k) => (
           <label key={k}>
             <input type="checkbox" checked={s.activities[k]} onChange={(e) => void save({ activities: { ...s.activities, [k]: e.currentTarget.checked } })} />{' '}
             {ACTIVITY_LABELS[k]}

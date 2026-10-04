@@ -5,7 +5,7 @@ import { addReviewLog, allCards, allWords, getSession, logsSince, putCards, putW
 import { seededKnownCard } from '../srs/scheduler';
 import { DEFAULT_SETTINGS } from '../types';
 import { freshDb, makeWord } from '../test/fixtures';
-import { markWriteSkipped, recordMeaning, recordRecognition, recordWriting, startOrResumeSession } from './record';
+import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession } from './record';
 
 const now = new Date(2026, 9, 2, 9);
 
@@ -92,4 +92,24 @@ it('a meaning answer reviews the meaning card, not the reading one', async () =>
   expect(cards.map((c) => c.kind).sort()).toEqual(['meaning', 'recognise']);
   expect((await logsSince(db, 0)).map((l) => l.kind)).toEqual(['recognise', 'meaning']);
 });
+});
+
+describe('words used in context (spec §20 part 4, §19 part 3)', () => {
+  it('recordUse rates the meaning card once a day; a later miss the same day brings it forward instead', async () => {
+    const db = await freshDb();
+    const at = new Date(2026, 9, 5, 10);
+    const first = await recordUse(db, 'b:很', true, at);
+    const later = await recordUse(db, 'b:很', false, new Date(2026, 9, 5, 10, 5));
+    expect(later.fsrs.reps).toBe(first.fsrs.reps); // no second rating today
+    expect(later.fsrs.due.getTime()).toBeLessThanOrEqual(new Date(2026, 9, 6).getTime());
+    expect((await logsSince(db, 0)).filter((l) => l.kind === 'meaning')).toHaveLength(1);
+  });
+  it('bringForward never pushes a card later', async () => {
+    const db = await freshDb();
+    await putCards(db, [{ id: 'b:很:write', wordId: 'b:很', kind: 'write', fsrs: { ...seededKnownCard(now), due: new Date(2026, 9, 3) } }]);
+    await bringForward(db, 'b:很', 'write', new Date(2026, 9, 9));
+    expect((await allCards(db))[0]!.fsrs.due).toEqual(new Date(2026, 9, 3));
+    await bringForward(db, 'b:很', 'write', new Date(2026, 9, 2, 12));
+    expect((await allCards(db))[0]!.fsrs.due).toEqual(new Date(2026, 9, 2, 12));
+  });
 });

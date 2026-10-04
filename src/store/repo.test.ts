@@ -76,6 +76,13 @@ describe('seedBuiltinWords content updates', () => {
     const w = (await allWords(db))[0]!;
     expect([w.pinyin, w.meaning, w.paused, w.listedAt, w.listName, w.createdAt]).toEqual(['xìng', 'mood, interest', true, 5, 'Week 1', 1]);
   });
+  it('keeps what a worksheet import attached (pairs, sentences, tags) and a parent list\'s 写 choice', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('很', { listName: 'Week 1', listedAt: 5, writeable: true, pairs: ['安静'], sentences: [{ text: '教室里很安静。', pinyin: '' }], tags: ['x'] })]);
+    await seedBuiltinWords(db, [makeWord('很', { writeable: false })]);
+    const w = (await allWords(db))[0]!;
+    expect([w.pairs, w.sentences, w.tags, w.writeable]).toEqual([['安静'], [{ text: '教室里很安静。', pinyin: '' }], ['x'], true]);
+  });
 });
 
 describe('normalizeKid', () => {

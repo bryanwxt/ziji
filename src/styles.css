@@ -760,7 +760,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__cards .langdu-btn { flex-direction: column; min-height: 64px; padding: 6px 14px; gap: 2px; font-size: 18px; }
 .home__path { flex: 1; min-height: 0; width: min(100%, var(--band)); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; }
 .home__title { margin: 0; font-size: 20px; }
-.path { flex: none; width: 100%; padding: 38px 0 0; gap: 34px 0; flex-direction: row; flex-wrap: wrap; justify-content: space-evenly; align-items: flex-start; --node: clamp(var(--tap-main), 7vw, 80px); }
+.path { flex: none; width: 100%; padding: 38px 0 0; gap: 34px 0; flex-direction: row; flex-wrap: nowrap; justify-content: space-evenly; align-items: flex-start; --node: clamp(var(--tap-main), 7vw, 80px); } /* one row: 6 stops since 选一选 (spec §20) */
 .path::before { display: none; }
 .path__row { transform: translateY(calc(var(--side, 0) * -8px)); }
 .path__node { width: var(--node); height: var(--node); }
@@ -797,6 +797,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 @media (orientation: landscape) and (min-height: 600px) {
   :root { --pet-home: clamp(100px, 14dvh, 150px); }
   .home__title { display: none; } /* no room under the cards; the 开始 bubble names the next step */
+  .home__path .path { padding-bottom: 18px; } /* six stops reach the road: sit above the world's taps on it (the race car) */
 }
 
 /* Lessons: the whole world behind every step; 继续 and feedback float as a card with ground around it */
@@ -1002,3 +1003,33 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .write__prompt { font-size: 24px; gap: 10px; }
   .write__blank { font-size: 24px; }
 }
+
+/* Parent area: the worksheet importer (spec §19 part 5) */
+.import__photo img { max-width: 100%; max-height: 60vh; border-radius: 12px; border: 1px solid var(--line); -webkit-user-select: text; user-select: text; }
+.import__items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.import__items li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.import__items li.is-unknown .hanzi { color: var(--orange-ink); }
+.import__flag { color: var(--orange-ink); font-size: 14px; }
+/* a class sentence as the meaning cue: it wraps and reads like a sentence */
+.meaning-cue.meaning-cue--sentence { white-space: normal; font-size: clamp(24px, 3.6dvh, 34px); line-height: 1.5; padding: 10px 16px; max-width: min(100%, 640px); text-align: left; }
+
+/* the word in use after a 认一认 answer and on the new-word card (spec §20 part 1) */
+.usage { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: min(100%, 640px); }
+.usage__text { font-size: clamp(22px, 3.2dvh, 32px); line-height: 1.4; }
+.usage__word { background: var(--gold-soft); color: inherit; border-radius: 6px; padding: 0 4px; }
+.hanzi--lg { font-family: var(--hanzi); font-size: clamp(56px, 10dvh, 110px); line-height: 1.05; }
+.flash__prompt .hanzi--lg { background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); padding: 0.04em 0.18em 0.08em; }
+.flash__prompt { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+/* 选一选 and 用对了吗 (spec §20 part 4) */
+.choices--words .choice { font-size: clamp(28px, 4.4dvh, 44px); }
+.usage-opts { display: grid; gap: 12px; width: min(100%, 640px); }
+.usage-opt.choice { font-size: clamp(22px, 3.2dvh, 32px); font-weight: 400; text-align: left; padding: 12px 18px; min-height: var(--tap-main); line-height: 1.4; }
+.pair { font-weight: 700; }
+.clue { color: var(--ink-soft); }
+
+/* 钓鱼 as 字辨: the word with its gap, and four fish (spec §20 part 8) */
+.pond--four { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 420px; }
+.zibian__word { font-size: clamp(48px, 8dvh, 80px); gap: 4px; padding: 4px 20px; background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); }
+.zibian__blank { color: var(--muted); border-bottom: 4px dashed var(--ink); padding: 0 0.05em; }
+.zibian__radical { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-size: 20px; }

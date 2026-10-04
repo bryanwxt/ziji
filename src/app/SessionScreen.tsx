@@ -1,8 +1,15 @@
 import { Flame, X } from 'lucide-preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ComponentsStep } from '../activities/components/ComponentsStep';
-import { buildComponentRound, type ComponentQuestion } from '../activities/components/game';
+import { buildZibianRound, zibianCount, type ZibianItem } from '../activities/components/zibian';
+import { ChooseStep } from '../activities/choose/ChooseStep';
+import { WrapupStep } from '../activities/choose/WrapupStep';
+import { planWrapup, wrapupTargets } from '../session/wrapup';
+import { endOfLocalDay } from '../lib/date';
 import { FlashcardStep, type FlashResult } from '../activities/flashcards/FlashcardStep';
+import { chooseCount, planChoose } from '../practice/choose';
+import { fitItem, usageItem, type UseItem } from '../practice/useItems';
+import { noteRecall } from '../session/recall';
 import { LangduStep, type LangduResult } from '../activities/langdu/LangduStep';
 import { StoryStep, type StoryResult } from '../activities/kantu/StoryStep';
 import { afterStory, nextSpeaking, sceneFor } from '../kantu/flow';
@@ -21,12 +28,12 @@ import { reducedMotion } from '../ui/motion';
 import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
 import { buildFreePlayQueue } from '../session/plan';
-import { markWriteSkipped, recordMeaning, recordRecognition, recordWriting, startOrResumeSession } from '../session/record';
+import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession } from '../session/record';
 import {
   addActiveTime, afterFlashAnswer, afterWriteWord, createFreePlayRecord, currentFlashItem, currentStep,
-  currentWriteCandidate, finishStep, skipFlashItem,
+  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem,
 } from '../session/runner';
-import { getKid, keepRecording, getSettings, listParentPassages, listRecordings, saveKid, saveSession } from '../store/repo';
+import { getKid, keepRecording, getSettings, listParentPassages, listRecordings, practisedWords, saveKid, saveSession } from '../store/repo';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -43,7 +50,10 @@ interface Loaded {
   rec: SessionRecord;
   know: Knowledge;
   kid: KidState;
-  round: ComponentQuestion[] | null;
+  round: ZibianItem[] | null; // 钓鱼 as 字辨 (spec §20 part 8)
+  minutes: number;
+  choose: UseItem[] | null; // built when 选一选 starts, so it knows what he missed earlier in the lesson
+  wrapup: UseItem[] | null; // built when 用一用 starts, from today's recalls
   speaking: { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo } | { kind: 'story'; scene: Scene } | null;
 }
 
@@ -56,20 +66,26 @@ export function SessionScreen({ free }: { free: boolean }) {
   const [banner, setBanner] = useState<number | null>(null); // a combo milestone being celebrated
   const stepStartedAt = useRef(performance.now());
   const busy = useRef(false);
+  // The newest record, so an answer saved after a quick 继续 builds on what came after it, never on a stale copy.
+  const latest = useRef<SessionRecord | null>(null);
 
   useEffect(() => {
     void (async () => {
       const rng = mulberry32(Date.now() >>> 0);
-      const [know, kid, parentPassages, settings] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db)]);
+      const [know, kid, parentPassages, settings, practised] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db)]);
       const today = now();
       const rec = free
         ? createFreePlayRecord(buildFreePlayQueue(know.cards, know.words, rng), localDateKey(today), today.getTime())
         : await startOrResumeSession(db, today);
+      latest.current = rec;
       setState({
         rec,
         know,
         kid: kid ?? DEFAULT_KID,
-        round: buildComponentRound([...know.knownChars], rng),
+        round: buildZibianRound({ words: know.words, knownChars: know.knownChars, practised, rng, count: zibianCount(settings.sessionMinutes) }),
+        minutes: settings.sessionMinutes,
+        choose: null,
+        wrapup: null,
         speaking: (() => {
           const k = kid ?? DEFAULT_KID;
           const passage = pickPassage(k.reading, readingPool(parentPassages, PASSAGES, know.knownChars), localDateKey(today));
@@ -86,12 +102,14 @@ export function SessionScreen({ free }: { free: boolean }) {
   const step = rec ? currentStep(rec) : null;
   const flashItem = rec ? currentFlashItem(rec) : null;
   const flashWord = flashItem ? state!.know.wordsById.get(flashItem.wordId) : undefined;
-  const writeCandidate = rec ? currentWriteCandidate(rec) : null;
+  const writeCandidate = rec ? currentWriteTask(rec) : null;
   const writeWord = writeCandidate ? state!.know.wordsById.get(writeCandidate.wordId) : undefined;
 
   const commit = async (next: SessionRecord) => {
+    const was = latest.current;
+    latest.current = next;
     if (!next.free) await saveSession(db, next);
-    if (!next.free && next.completed && !rec?.completed) {
+    if (!next.free && next.completed && !was?.completed) {
       // a finished daily lesson hatches a dino egg he tapped in 恐龙谷
       const fresh = await getKid(db);
       if (fresh) {
@@ -106,13 +124,34 @@ export function SessionScreen({ free }: { free: boolean }) {
   // Anything that cannot run is skipped silently: an empty step, or a word paused/deleted since planning.
   useEffect(() => {
     if (!state || !rec) return;
-    if (step === 'flashcards' && !flashItem) void commit(finishStep(rec));
-    else if (step === 'flashcards' && (!flashWord || flashWord.paused)) void commit(skipFlashItem(rec));
-    else if (step === 'writing' && !writeCandidate) void commit(finishStep(rec));
-    else if (step === 'writing' && (!writeWord || writeWord.paused)) void commit(afterWriteWord(rec, false, 0));
-    else if (step === 'components' && !state.round) void commit(finishStep(rec));
-    else if (step === 'speaking' && !state.speaking) void commit(finishStep(rec));
-  }, [rec]);
+    // build on the newest record: an answer saved late (after a quick 继续) must not be overwritten by a skip
+    const cur = latest.current && latest.current.stepIndex === rec.stepIndex ? latest.current : rec;
+    if (step === 'flashcards' && !flashItem) void commit(finishStep(cur));
+    else if (step === 'flashcards' && (!flashWord || flashWord.paused)) void commit(skipFlashItem(cur));
+    else if (step === 'writing' && !writeCandidate) void commit(finishStep(cur));
+    else if (step === 'writing' && (!writeWord || writeWord.paused)) void commit(afterWriteWord(cur, false, 0));
+    else if (step === 'components' && !state.round) void commit(finishStep(cur));
+    else if (step === 'choose' && state.choose === null) {
+      const missed = Object.entries(rec.recalls ?? {}).filter(([, r]) => r.missed).map(([id]) => id);
+      const choose = planChoose({
+        words: state.know.words, cards: [...state.know.cardsById.values()], newWordIds: introducedNewWords(rec), meaningDueIds: rec.plan.meaningReviewIds ?? [], // new words only once 认一认 has taught them
+        missedIds: missed, knownChars: state.know.knownChars, rng: mulberry32(Date.now() >>> 0), count: chooseCount(state.minutes),
+      });
+      setState((s) => (s ? { ...s, choose } : s));
+    } else if (step === 'choose' && !state.choose?.length) void commit(finishStep(cur));
+    else if (step === 'wrapup' && state.wrapup === null) {
+      const rng = mulberry32(Date.now() >>> 0);
+      const { items, dropped } = planWrapup(wrapupTargets(rec), rec.recalls ?? {}, (id, n) => {
+        const w = state.know.wordsById.get(id);
+        if (!w || w.paused) return null;
+        return n % 2 === 0 ? (usageItem(w.text, w.id) ?? fitItem(w, state.know.words, rng, 1)) : fitItem(w, state.know.words, rng, 0);
+      });
+      // words that missed their turn (more than 12 items) come back tomorrow
+      if (!rec.free) for (const id of dropped) void bringForward(db, id, 'meaning', endOfLocalDay(now()));
+      setState((s) => (s ? { ...s, wrapup: items } : s));
+    } else if (step === 'wrapup' && !state.wrapup?.length) void commit(finishStep(cur));
+    else if (step === 'speaking' && !state.speaking) void commit(finishStep(cur));
+  }, [rec, state?.choose, state?.wrapup]);
 
   if (!state || !rec) return <div class="screen loading"><InkIcon name="paw" size={88} label="加载中" /></div>;
   if (rec.completed) return <Celebration rec={rec} />;
@@ -129,7 +168,13 @@ export function SessionScreen({ free }: { free: boolean }) {
     }
   };
 
-  const finishTimedStep = once(() => commit(finishStep(addActiveTime(rec, Math.round(performance.now() - stepStartedAt.current)))));
+  /** Ends a timed step once: a second call (a double tap on the last 继续) finds it already over and does nothing. */
+  const finishTimedStep = (expected: StepKind) =>
+    once(async () => {
+      const cur = latest.current ?? rec;
+      if (currentStep(cur) !== expected) return;
+      await commit(finishStepIf(addActiveTime(cur, Math.round(performance.now() - stepStartedAt.current)), expected));
+    })();
 
   const onFlashDone = (r: FlashResult) =>
     once(async () => {
@@ -149,15 +194,40 @@ export function SessionScreen({ free }: { free: boolean }) {
         setBanner(nextCombo);
         setTimeout(() => setBanner(null), 1600);
       }
-      await commit(afterFlashAnswer(rec, r.correct, r.elapsedMs));
+      await commit(afterFlashAnswer(rec, r.correct, r.elapsedMs, r.inContext));
     })();
 
   const onWriteDone = (r: WriteResult | null) =>
     once(async () => {
-      if (r && !rec.free) await recordWriting(db, writeCandidate!.wordId, r.totalMisses, now());
-      if (!r && writeCandidate!.isNew) await markWriteSkipped(db, writeCandidate!.wordId, now());
-      await commit(afterWriteWord(rec, r !== null, r?.elapsedMs ?? 0));
+      const task = writeCandidate!;
+      // only the recall pass rates the word (spec §20 part 3); a redo at the end is extra practice
+      if (r && !rec.free && task.pass === 'recall' && !task.redo) await recordWriting(db, task.wordId, r.totalMisses, now());
+      if (!r && task.isNew) await markWriteSkipped(db, task.wordId, now());
+      await commit(afterWriteWord(rec, r !== null, r?.elapsedMs ?? 0, { hinted: r?.hinted, misses: r?.totalMisses }));
     })();
+
+  /** A word used in context (选一选): rate its meaning once a day, and count the recall for 用一用 (spec §20 part 7). */
+  const onUseAnswer = async (item: UseItem, correct: boolean) => {
+    if (!item.wordId) return; // a bank word, not one of his own: practice only
+    if (!rec.free) know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, correct, now()));
+    if (correct) setCorrect((n) => n + 1);
+    const cur = latest.current ?? rec; // he may have tapped 继续 (even ended the step) while this answer was saving
+    // each answer commits, which restarts the step clock, so the time so far is added here
+    await commit(addActiveTime({ ...cur, recalls: noteRecall(cur.recalls, item.wordId, correct, true) }, Math.round(performance.now() - stepStartedAt.current)));
+  };
+
+  /** 字辨: a miss brings the word's write card forward (its reading card if it has none), and counts for 用一用 (spec §20 part 8). */
+  const onZibianAnswer = async (item: ZibianItem, correct: boolean) => {
+    if (!correct && !rec.free) await bringForward(db, item.wordId, know.cardsById.has(`${item.wordId}:write`) ? 'write' : 'recognise', now());
+    if (correct) setCorrect((n) => n + 1);
+    const cur = latest.current ?? rec;
+    await commit(addActiveTime({ ...cur, recalls: noteRecall(cur.recalls, item.wordId, correct, false) }, Math.round(performance.now() - stepStartedAt.current)));
+  };
+
+  /** 用一用: a word still wrong after 3 tries closes kindly; its meaning comes back tomorrow (spec §20 part 7). */
+  const onGiveUp = (item: UseItem) => {
+    if (item.wordId && !rec.free) void bringForward(db, item.wordId, 'meaning', endOfLocalDay(now()));
+  };
 
   /** Save each part, the whole telling and the answers (grouped by time for the parent), count the story, and pass the turn to 朗读. */
   const onStoryDone = (r: StoryResult) =>
@@ -231,10 +301,39 @@ export function SessionScreen({ free }: { free: boolean }) {
         />
       )}
       {step === 'writing' && writeWord && !writeWord.paused && (
-        <WritingStep key={rec.writeIndex} word={writeWord} kid={kid} resting={resting} isNew={!!writeCandidate?.isNew} onDone={(r) => void onWriteDone(r)} />
+        <WritingStep
+          key={`${rec.writeIndex}-${rec.writePass ?? 0}-${rec.writeRedoIndex ?? 0}`}
+          word={writeWord}
+          kid={kid}
+          resting={resting}
+          isNew={!!writeCandidate?.isNew}
+          pass={writeCandidate!.pass}
+          onDone={(r) => void onWriteDone(r)}
+        />
+      )}
+      {step === 'choose' && state.choose && state.choose.length > 0 && (
+        <ChooseStep key="choose" items={state.choose} kid={kid} resting={resting} onAnswer={(item, c) => void onUseAnswer(item, c)} onDone={() => void finishTimedStep('choose')} />
+      )}
+      {step === 'wrapup' && state.wrapup && state.wrapup.length > 0 && (
+        <WrapupStep
+          key="wrapup"
+          items={state.wrapup}
+          kid={kid}
+          resting={resting}
+          onAnswer={(item, c) => void onUseAnswer(item, c)}
+          onGiveUp={onGiveUp}
+          onDone={() => void finishTimedStep('wrapup')}
+          makeRetry={(item) => {
+            // the other way of asking: a fit sentence after 用对了吗, and the other sentence after a fit
+            const w = item.wordId ? know.wordsById.get(item.wordId) : undefined;
+            if (!w) return null;
+            const rng = mulberry32(Date.now() >>> 0);
+            return item.kind === 'usage' ? fitItem(w, know.words, rng, 0) : (usageItem(w.text, w.id) ?? fitItem(w, know.words, rng, 1));
+          }}
+        />
       )}
       {step === 'components' && state.round && (
-        <ComponentsStep questions={state.round} kid={kid} resting={resting} onDone={() => void finishTimedStep()} />
+        <ComponentsStep key="components" items={state.round} kid={kid} resting={resting} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
         <LangduStep

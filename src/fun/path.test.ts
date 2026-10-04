@@ -24,4 +24,8 @@ describe('pathNodes', () => {
   it('only shows switched-on steps', () => {
     expect(states(pathNodes(['flashcards', 'speaking'], [], false, false))).toEqual(['flashcards:current', 'speaking:upcoming', 'chest:upcoming']);
   });
+  it('with only 用一用 left (he left during it), the chest is the stop to tap: it resumes the lesson', () => {
+    const steps = ['flashcards', 'choose', 'wrapup'] as const;
+    expect(states(pathNodes([...steps], ['flashcards', 'choose'], false, false))).toEqual(['flashcards:done', 'choose:done', 'chest:current']);
+  });
 });

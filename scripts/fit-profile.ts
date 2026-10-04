@@ -1,18 +1,20 @@
 /** A seeded 字己 profile for the fit sweep (spec §18), built with the app's own repo functions and exported as a backup. */
 import 'fake-indexeddb/auto';
 import { builtinWords } from '../src/content';
+import { makeParentWords } from '../src/content/parseWordList';
 import { WORLDS, type WorldId } from '../src/fun/worlds';
 import { localDateKey } from '../src/lib/date';
 import { applyPlacement } from '../src/placement/apply';
+import { seededKnownCard } from '../src/srs/scheduler';
 import { createSessionRecord } from '../src/session/runner';
 import { exportBackup } from '../src/store/backup';
 import { openAppDb } from '../src/store/db';
-import { saveKid, saveParentPassage, saveReward, saveSession, seedBuiltinWords, updateSettings } from '../src/store/repo';
-import { DEFAULT_KID, DEFAULT_SETTINGS, type SessionPlan, type StepKind } from '../src/types';
+import { putCards, putWords, saveKid, saveParentPassage, saveReward, saveSession, seedBuiltinWords, updateSettings } from '../src/store/repo';
+import { DEFAULT_KID, DEFAULT_SETTINGS, type ActivityKind, type SessionPlan } from '../src/types';
 
 export interface FitProfileOptions {
   now: Date;
-  activities?: Partial<Record<StepKind, boolean>>;
+  activities?: Partial<Record<ActivityKind, boolean>>;
   speakingLast?: 'langdu' | 'story' | null;
   doneToday?: boolean;
   world?: WorldId;
@@ -31,7 +33,18 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
   const t = o.now.getTime();
   const words = builtinWords(t);
   await seedBuiltinWords(db, words);
-  await applyPlacement(db, words.slice(0, 80).map((w) => w.id), o.now);
+  // A school word with an imported class sentence and a meaning card due now, so the sweep sees the wrapping sentence cue (spec §19 part 2).
+  let n = 0;
+  const school = makeParentWords(
+    [['保持', 'bǎo chí'], ['树根', 'shù gēn'], ['跟着', 'gēn zhe'], ['请问', 'qǐng wèn'], ['清楚', 'qīng chu'], ['银行', 'yín háng']].map(([text, pinyin]) => ({ text: text!, pinyin: pinyin! })),
+    { listName: '第三十课', writeable: false, existing: words, now: t - 86_400_000, newId: () => `fit-${n++}` },
+  ).added; // a school list: 保持 has a class sentence; the rest give 字辨 its look-alike words
+  await putWords(db, school.map((w) => (w.text === '保持' ? { ...w, sentences: [{ text: '图书馆里要保持安静，大家都在看书。', pinyin: '' }] } : w)));
+  await putCards(db, school.flatMap((w) => [
+    { id: `${w.id}:recognise`, wordId: w.id, kind: 'recognise' as const, fsrs: seededKnownCard(o.now) },
+    { id: `${w.id}:meaning`, wordId: w.id, kind: 'meaning' as const, fsrs: { ...seededKnownCard(o.now), due: new Date(t - 3_600_000) } },
+  ]));
+  await applyPlacement(db, [...words.slice(0, 80), ...school].map((w) => w.id), o.now);
   await updateSettings(db, {
     pinHash: o.pin === false ? null : 'fit-check',
     placementDone: o.placementDone ?? true,
@@ -43,7 +56,7 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
   const today = localDateKey(o.now);
   const yesterday = localDateKey(new Date(t - 86_400_000));
   await saveSession(db, { ...createSessionRecord(emptyPlan, yesterday, t - 86_400_000), completed: true, completedSteps: ['flashcards', 'writing'] });
-  if (o.doneToday) await saveSession(db, { ...createSessionRecord({ ...emptyPlan, steps: ['flashcards', 'writing', 'components', 'speaking'] }, today, t - 3_600_000), completed: true, completedSteps: ['flashcards', 'writing', 'components', 'speaking'] });
+  if (o.doneToday) await saveSession(db, { ...createSessionRecord({ ...emptyPlan, steps: ['flashcards', 'choose', 'components', 'writing', 'speaking'] }, today, t - 3_600_000), completed: true, completedSteps: ['flashcards', 'choose', 'components', 'writing', 'speaking'] });
   if (o.kid !== false) {
     const world = o.world ?? 'race';
     await saveKid(db, {

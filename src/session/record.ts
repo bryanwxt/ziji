@@ -1,4 +1,4 @@
-import { localDateKey } from '../lib/date';
+import { endOfLocalDay, localDateKey } from '../lib/date';
 import { newCard, review, toRating } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
 import { addReviewLog, allCards, allWords, getCard, getSession, getSettings, getWord, putCards, putWords, saveSession, practisedWords } from '../store/repo';
@@ -37,6 +37,22 @@ export async function recordWriting(db: AppDb, wordId: string, totalMisses: numb
   const card = await reviewCard(db, wordId, 'write', rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind: 'write', at: now.getTime(), rating, correct: totalMisses <= 3, misses: totalMisses });
   return card;
+}
+
+const ratedToday = (c: CardRecord | undefined, now: Date) => !!c?.fsrs.last_review && localDateKey(c.fsrs.last_review) === localDateKey(now);
+
+/** Brings a card forward so the next lesson includes it; never pushes it later. */
+export async function bringForward(db: AppDb, wordId: string, kind: CardKind, due: Date): Promise<void> {
+  const c = await getCard(db, `${wordId}:${kind}`);
+  if (c && c.fsrs.due.getTime() > due.getTime()) await putCards(db, [{ ...c, fsrs: { ...c.fsrs, due } }]);
+}
+
+/** A word used in context (选一选, 用对了吗, 用一用): the day's first answer rates its meaning card; a later miss brings it forward. */
+export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date): Promise<CardRecord> {
+  const existing = await getCard(db, `${wordId}:meaning`);
+  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs: 0 }, now);
+  if (!correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
+  return (await getCard(db, `${wordId}:meaning`))!;
 }
 
 export async function markWriteSkipped(db: AppDb, wordId: string, now: Date): Promise<void> {

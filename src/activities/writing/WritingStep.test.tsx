@@ -3,9 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { makeWord } from '../../test/fixtures';
 import { DEFAULT_KID } from '../../types';
 import { speak } from '../../audio/speech';
+import HanziWriter from 'hanzi-writer';
 import { WritingStep } from './WritingStep';
 
-type QuizOpts = { onComplete: (s: { totalMistakes: number }) => void };
+type QuizOpts = { onComplete: (s: { totalMistakes: number }) => void; onMistake?: (d: { mistakesOnStroke: number }) => void };
 const quizzes: QuizOpts[] = [];
 let loadError: (() => void) | undefined;
 
@@ -13,7 +14,7 @@ vi.mock('hanzi-writer', () => ({
   default: {
     create: vi.fn((_el: unknown, _ch: string, opts: { onLoadCharDataError?: () => void }) => {
       loadError = opts.onLoadCharDataError;
-      return { quiz: (o: QuizOpts) => { quizzes.push(o); return Promise.resolve(); }, cancelQuiz: vi.fn() };
+      return { quiz: (o: QuizOpts) => { quizzes.push(o); return Promise.resolve(); }, cancelQuiz: vi.fn(), highlightStroke: vi.fn() };
     }),
   },
 }));
@@ -24,17 +25,17 @@ describe('WritingStep', () => {
   it('writes each character in turn and reports the total misses', () => {
     quizzes.length = 0;
     const onDone = vi.fn();
-    render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén' })} kid={DEFAULT_KID} resting="sulk" isNew={false} onDone={onDone} />);
+    render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén' })} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={onDone} />);
     act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 1 }));
     fireEvent.click(screen.getByText('下一个字'));
     act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 2 }));
     fireEvent.click(screen.getByText('完成'));
-    expect(onDone).toHaveBeenCalledWith({ totalMisses: 3, elapsedMs: expect.any(Number) });
+    expect(onDone).toHaveBeenCalledWith({ totalMisses: 3, hinted: false, elapsedMs: expect.any(Number) });
   });
 
   it('skips the word when its stroke data cannot load', () => {
     const onDone = vi.fn();
-    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} onDone={onDone} />);
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={onDone} />);
     act(() => loadError!());
     expect(onDone).toHaveBeenCalledWith(null);
   });
@@ -44,7 +45,7 @@ describe('WritingStep cue', () => {
   it('shows the meaning and a blanked word, and says which 儿 is meant', () => {
     const er = makeWord('儿', { pinyin: 'ér', meaning: 'son, child', examples: [{ text: '儿子', pinyin: 'ér zi' }] });
     vi.mocked(speak).mockClear();
-    render(<WritingStep word={er} kid={DEFAULT_KID} resting="sulk" isNew={false} onDone={vi.fn()} />);
+    render(<WritingStep word={er} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
     expect(document.querySelector('.write__meaning')?.textContent).toBe('son');
     expect(document.querySelector('.write__blank .label')?.getAttribute('data-py')).toBe('zi');
     expect(screen.getByText('＿子')).toBeTruthy();
@@ -53,7 +54,7 @@ describe('WritingStep cue', () => {
     expect(speak).toHaveBeenLastCalledWith('儿，儿子的儿');
   });
   it('a word with no cue shows neither line', () => {
-    render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén', source: 'parent' })} kid={DEFAULT_KID} resting="sulk" isNew={false} onDone={vi.fn()} />);
+    render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén', source: 'parent' })} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
     expect(document.querySelector('.write__meaning')).toBeNull();
     expect(document.querySelector('.write__blank')).toBeNull();
   });
@@ -63,7 +64,7 @@ describe('WritingStep Truffle', () => {
   const mood = () => document.querySelector('svg.truffle')!.getAttribute('data-mood');
   it('stays kind after a messy character and only goes wide-eyed when a new word is finished cleanly', () => {
     quizzes.length = 0;
-    render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén' })} kid={DEFAULT_KID} resting="sulk" isNew onDone={vi.fn()} />);
+    render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén' })} kid={DEFAULT_KID} resting="sulk" isNew pass="recall" onDone={vi.fn()} />);
     act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 0 }));
     expect(mood()).not.toBe('wow');
     fireEvent.click(screen.getByText('下一个字'));
@@ -72,8 +73,30 @@ describe('WritingStep Truffle', () => {
   });
   it('never side-eyes a hard character', () => {
     quizzes.length = 0;
-    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} onDone={vi.fn()} />);
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
     act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 6 }));
     expect(mood()).toBe('neutral');
+  });
+
+  it('the trace pass shows the outline; the hint pass flashes the first stroke and hints after 1 miss; recall hints after 2', () => {
+    const create = vi.mocked(HanziWriter.create);
+    for (const [pass, outline, hintAfter] of [['trace', true, 1], ['hint', false, 1], ['recall', false, 2]] as const) {
+      create.mockClear();
+      const { unmount } = render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew pass={pass} onDone={vi.fn()} />);
+      expect(create.mock.calls[0]![2]).toMatchObject({ showOutline: outline, showHintAfterMisses: hintAfter });
+      unmount();
+    }
+  });
+  it('reports a hint when a stroke was missed twice in the recall pass', () => {
+    quizzes.length = 0;
+    const onDone = vi.fn();
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={onDone} />);
+    act(() => { quizzes.at(-1)!.onMistake!({ mistakesOnStroke: 2 }); quizzes.at(-1)!.onComplete({ totalMistakes: 2 }); });
+    fireEvent.click(screen.getByText('完成'));
+    expect(onDone).toHaveBeenCalledWith({ totalMisses: 2, hinted: true, elapsedMs: expect.any(Number) });
+  });
+  it('the pet says which pass it is', () => {
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew pass="trace" onDone={vi.fn()} />);
+    expect(screen.getByText('描一描！')).toBeTruthy();
   });
 });

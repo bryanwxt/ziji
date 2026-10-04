@@ -1,6 +1,7 @@
 import { DEFAULT_FINDS, type Finds } from './fun/finds';
 import type { ZodiacId } from './fun/costumes';
 import type { Card as FsrsCard, Grade } from 'ts-fsrs';
+import type { Recall } from './session/recall';
 
 export type { FsrsCard, Grade };
 
@@ -46,6 +47,9 @@ export interface Word {
   createdAt: number;
   examples?: Example[];
   writeSkippedAt?: number; // last time its strokes failed to load in 听写; such words go to the back of the queue
+  sentences?: Example[]; // imported class sentences that use this word (on-device only)
+  pairs?: string[]; // words it pairs with in class (保持 → 安静)
+  tags?: string[]; // e.g. '成语'
 }
 
 export type CardKind = 'recognise' | 'write' | 'meaning'; // meaning: what the word means and how it's used (spec §19)
@@ -69,7 +73,9 @@ export interface ReviewLog {
   misses?: number;
 }
 
-export type StepKind = 'flashcards' | 'writing' | 'components' | 'speaking';
+/** The parent can switch each of these on or off; 用一用 (wrapup) closes the lesson whenever 认一认 or 选一选 runs (spec §20). */
+export type ActivityKind = 'flashcards' | 'choose' | 'writing' | 'components' | 'speaking';
+export type StepKind = ActivityKind | 'wrapup';
 
 export interface SessionPlan {
   steps: StepKind[];
@@ -80,6 +86,7 @@ export interface SessionPlan {
   writeCount: number;
   meaningReviewIds?: string[]; // due meaning cards (optional: sessions saved before plan 11 have none)
   newMeaningIds?: string[]; // begun words starting meaning practice
+  newWordMeaningIds?: string[]; // today's new words that have a cue: their meaning question comes in the same lesson (spec §20 part 2)
 }
 
 export interface FlashItem {
@@ -103,6 +110,10 @@ export interface SessionRecord {
   writeDone: number;
   completedSteps: StepKind[];
   completed: boolean;
+  recalls?: Record<string, Recall>; // today's recalls per word, across steps (spec §20 part 7); absent on lessons saved before plan 13
+  writePass?: number; // the pass within the current 写一写 word (spec §20 part 3)
+  writeRedo?: string[]; // words to write once more at the end of 写一写
+  writeRedoIndex?: number;
 }
 
 export type RecordingPrompt =
@@ -169,7 +180,7 @@ export interface Settings {
   pinHash: string | null;
   sessionMinutes: number;
   newPerDay: number;
-  activities: Record<StepKind, boolean>;
+  activities: Record<ActivityKind, boolean>;
   speechRate: number;
   soundEffects: boolean;
   targetRecognise: number;
@@ -185,8 +196,8 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   pinHash: null,
   sessionMinutes: 30,
-  newPerDay: 5,
-  activities: { flashcards: true, writing: true, components: true, speaking: true },
+  newPerDay: 4,
+  activities: { flashcards: true, choose: true, writing: true, components: true, speaking: true },
   speechRate: 0.8,
   soundEffects: true,
   targetRecognise: 500,
@@ -196,7 +207,7 @@ export const DEFAULT_SETTINGS: Settings = {
   zodiac: null,
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
-  lessonVersion: 2,
+  lessonVersion: 3,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';

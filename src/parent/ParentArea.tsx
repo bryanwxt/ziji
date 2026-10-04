@@ -1,9 +1,10 @@
-import { BookOpen, ChevronLeft, FileText, Gift, Image, Info, LayoutDashboard, Mic, Save, Settings } from 'lucide-preact';
+import { BookOpen, ChevronLeft, FileText, Gift, Image, Info, LayoutDashboard, Mic, Save, ScanText, Settings } from 'lucide-preact';
 import { useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { BackupPanel } from './BackupPanel';
 import { Credits } from './Credits';
 import { Dashboard } from './Dashboard';
+import { ImportPanel } from './ImportPanel';
 import { PassagesPanel } from './PassagesPanel';
 import { PicturesPanel } from './PicturesPanel';
 import { PinGate } from './PinGate';
@@ -12,11 +13,12 @@ import { RewardsPanel } from './RewardsPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { WordsPanel } from './WordsPanel';
 
-export type ParentTab = 'dashboard' | 'words' | 'passages' | 'recordings' | 'pictures' | 'rewards' | 'settings' | 'backup' | 'credits';
+export type ParentTab = 'dashboard' | 'words' | 'import' | 'passages' | 'recordings' | 'pictures' | 'rewards' | 'settings' | 'backup' | 'credits';
 
 const TABS: [ParentTab, string, typeof Info][] = [
   ['dashboard', 'Overview', LayoutDashboard],
   ['words', 'Words', BookOpen],
+  ['import', 'From a worksheet', ScanText],
   ['passages', 'Reading texts', FileText],
   ['recordings', 'Recordings', Mic],
   ['pictures', 'Pictures', Image],
@@ -45,6 +47,7 @@ export function ParentArea() {
         <main class="parent__body">
           {tab === 'dashboard' && <Dashboard onNavigate={setTab} />}
           {tab === 'words' && <WordsPanel />}
+          {tab === 'import' && <ImportPanel />}
           {tab === 'passages' && <PassagesPanel />}
           {tab === 'recordings' && <RecordingsPanel />}
           {tab === 'pictures' && <PicturesPanel />}

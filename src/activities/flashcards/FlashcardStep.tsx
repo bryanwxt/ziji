@@ -14,7 +14,7 @@ import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
-import { meaningCue, pickSoundAlikes, type MeaningCue } from './meaning';
+import { meaningCue, pickSoundAlikes, usageLine, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 
 export interface FlashResult {
@@ -22,6 +22,7 @@ export interface FlashResult {
   hard: boolean;
   responseMs: number;
   elapsedMs: number;
+  inContext: boolean; // a meaning question on a sentence (spec §20 part 7)
 }
 
 interface Props {
@@ -45,7 +46,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
     const cue = item.mode === 'meaning' ? meaningCue(word) : null;
     if (cue) {
-      return { listen: false, cue, answer: word.text, options: shuffle([word.text, ...pickSoundAlikes(word, cue, pool, rng)], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
+      return { listen: false, cue, answer: word.text, options: shuffle([word.text, ...(cue.wrong ?? pickSoundAlikes(word, cue, pool, rng))], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
     }
     const lookAlikes = pickCharacterDistractors(word, pool, rng);
     const listen = voice && lookAlikes.length >= 3 && (card?.fsrs.reps ?? 0) % 2 === 0;
@@ -62,10 +63,15 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const optionRefs = useRef(new Map<string, HTMLButtonElement>());
 
   useEffect(() => {
-    if (phase === 'intro') speak(word.text);
+    if (phase === 'intro') {
+      speak(word.text);
+      const line = usageLine(word);
+      if (line) speak(line.full); // queued after the character (spec §20 part 1)
+    }
     if (phase === 'quiz') {
       quizAt.current = performance.now();
-      if (quiz.cue) speak(quiz.cue.full);
+      // A class sentence is read around its blank: saying the word would give the answer away (its choices don't share its sound).
+      if (quiz.cue) speak(quiz.cue.kind === 'sentence' ? `${quiz.cue.before}，，${quiz.cue.after}` : quiz.cue.full);
       else if (quiz.listen) speak(word.text);
     }
   }, [phase]);
@@ -105,7 +111,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const bubble = phase === 'intro' ? '新字来了！' : phase === 'quiz' ? (quiz.cue ? '哪个字对？' : quiz.listen ? '我想吃这个字！' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
-    if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current) });
+    if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence' });
   };
 
   return (
@@ -122,17 +128,18 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
               <div class="flash__prompt">
                 {quiz.cue ? (
                   <div class="meaning-prompt">
-                    <div class="hanzi meaning-cue" lang="zh" style={`--len:${Array.from(quiz.cue.full).length}`}>
+                    <div class={`hanzi meaning-cue${quiz.cue.kind === 'sentence' ? ' meaning-cue--sentence' : ''}`} lang="zh" style={`--len:${Array.from(quiz.cue.full).length}`}>
                       {quiz.cue.before}
                       <span class="meaning-cue__blank" aria-label="空格">{phase === 'feedback' ? word.text : '？'}</span>
                       {quiz.cue.after}
                     </div>
-                    <div class="pinyin">{quiz.cue.pinyin}</div>
+                    {quiz.cue.kind === 'word' && <div class="pinyin">{quiz.cue.pinyin}</div>}
                   </div>
-                ) : quiz.listen ? (
-                  <SpeakButton text={word.text} big />
                 ) : (
-                  <div class="hanzi hanzi--xl">{word.text}</div>
+                  <>
+                    {quiz.listen ? <SpeakButton text={word.text} big /> : <div class={`hanzi ${phase === 'feedback' && usageLine(word) ? 'hanzi--lg' : 'hanzi--xl'}`}>{word.text}</div>}
+                    {phase === 'feedback' && <UsageLine word={word} />}
+                  </>
                 )}
               </div>
               <div class={`choices stagger ${quiz.listen || quiz.cue ? 'choices--hanzi' : 'choices--pinyin'}`}>
@@ -179,13 +186,28 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   );
 }
 
+/** The word in use, highlighted, with a speak button (spec §20 part 1). Read aloud only when tapped, so reviews keep their pace. */
+function UsageLine({ word }: { word: Word }) {
+  const line = usageLine(word);
+  if (!line) return null;
+  return (
+    <div class="usage" lang="zh">
+      <span class="hanzi usage__text">{line.before}<mark class="usage__word">{word.text}</mark>{line.after}</span>
+      {line.pinyin && <span class="pinyin">{line.pinyin}</span>}
+      <SpeakButton text={line.full} />
+    </div>
+  );
+}
+
 function Intro({ word }: { word: Word }) {
+  const line = usageLine(word);
   return (
     <div class="intro">
       <div class="intro__card">
         <div class="pinyin">{word.pinyin}</div>
         <div class="hanzi hanzi--xl">{word.text}</div>
         <SpeakButton text={word.text} />
+        <UsageLine word={word} />
         {hanChars(word.text).map((ch) => {
           const info = getCharInfo(ch);
           const parts = info?.components ?? [];
@@ -205,7 +227,7 @@ function Intro({ word }: { word: Word }) {
             </div>
           );
         })}
-        {word.examples?.slice(0, 2).map((e) => ( // two 组词 fit every screen; all of them feed the meaning questions
+        {word.examples?.slice(0, line && Array.from(line.full).length > 3 ? 1 : 2).map((e) => ( // two 组词 fit every screen (one beside a sentence); all of them feed the meaning questions
           <div class="example" key={e.text}>
             <span class="pinyin">{e.pinyin}</span>
             <span class="hanzi">{e.text}</span>

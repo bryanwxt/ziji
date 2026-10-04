@@ -1,50 +1,46 @@
-import { fireEvent, render, screen } from '@testing-library/preact';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { speak } from '../../audio/speech';
 import { DEFAULT_KID } from '../../types';
 import { ComponentsStep } from './ComponentsStep';
-import type { ComponentQuestion } from './game';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 vi.mock('../../ui/motion', () => ({ burst: vi.fn(), reducedMotion: () => false }));
-import { burst } from '../../ui/motion';
+afterEach(cleanup);
 
-const questions: ComponentQuestion[] = [
-  { kind: 'tapAll', component: '氵', answers: ['河', '汉'], grid: ['河', '汉', '大', '人', '口', '一', '二', '三'] },
-  { kind: 'whichPart', char: '妈', component: '女', options: ['马', '女'] },
-];
+const item = { wordId: 'p:1', word: '树根', index: 1, answer: '根', options: ['跟', '根', '很', '银'] };
 
-describe('ComponentsStep', () => {
-  it('runs a fishing question, then a which-part question, then finishes', () => {
+describe('ComponentsStep — 字辨 in the pond (spec §20 part 8)', () => {
+  it('shows the word with its missing character, and four fish to catch', () => {
+    render(<ComponentsStep items={[item]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
+    expect(screen.getByText('树')).toBeTruthy();
+    expect(document.querySelectorAll('.fishtile')).toHaveLength(4);
+    expect(screen.getByText('钓鱼啦！')).toBeTruthy();
+  });
+  it('a miss: Truffle reads the word, and the radical meanings of the right one and the chosen one show', () => {
+    const onAnswer = vi.fn();
+    render(<ComponentsStep items={[item]} kid={DEFAULT_KID} resting="sulk" onAnswer={onAnswer} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '跟' }));
+    expect(onAnswer).toHaveBeenCalledWith(item, false);
+    expect(speak).toHaveBeenLastCalledWith('树根');
+    const bar = document.querySelector('.bottombar')!.textContent!;
+    expect(bar).toMatch(/根.*木/); // 根's radical meaning
+    expect(bar).toMatch(/跟.*足/); // the one he chose
+  });
+  it('a catch, then 继续 ends the round', () => {
     const onDone = vi.fn();
-    render(<ComponentsStep questions={questions} kid={DEFAULT_KID} resting="sulk" onDone={onDone} />);
-    fireEvent.click(screen.getByRole('button', { name: '河' }));
-    fireEvent.click(screen.getByRole('button', { name: '汉' }));
-    fireEvent.click(screen.getByText('检查'));
-    expect(screen.getByText('全对了！')).toBeTruthy();
-    fireEvent.click(screen.getByText('继续'));
-    fireEvent.click(screen.getByRole('button', { name: '女' }));
+    const onAnswer = vi.fn();
+    render(<ComponentsStep items={[item]} kid={DEFAULT_KID} resting="sulk" onAnswer={onAnswer} onDone={onDone} />);
+    fireEvent.click(screen.getByRole('button', { name: '根' }));
+    expect(onAnswer).toHaveBeenCalledWith(item, true);
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalled();
   });
-
-  it('shows the fish that were missed', () => {
-    render(<ComponentsStep questions={questions} kid={DEFAULT_KID} resting="sulk" onDone={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: '河' }));
-    fireEvent.click(screen.getByText('检查'));
-    expect(screen.getByText('看看绿色的！')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '汉' }).className).toContain('is-missed');
-  });
-});
-
-describe('fishing effects', () => {
-  it('splashes when a fish is caught and when the catch is all right', () => {
-    vi.mocked(burst).mockClear();
-    render(<ComponentsStep questions={questions} kid={DEFAULT_KID} resting="sulk" onDone={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: '河' }));
-    expect(burst).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: '汉' }));
-    fireEvent.click(screen.getByText('检查'));
-    expect(burst).toHaveBeenCalledTimes(4);
+  it('a chosen character with the same radical as the answer adds nothing: only the answer\'s radical shows', () => {
+    const same = { wordId: 'p:3', word: '银行', index: 0, answer: '银', options: ['银', '铁', '根', '很'] };
+    render(<ComponentsStep items={[same]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '铁' }));
+    expect(document.querySelectorAll('.bottombar .zibian__radical')).toHaveLength(1);
   });
 });

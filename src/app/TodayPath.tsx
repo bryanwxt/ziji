@@ -4,8 +4,8 @@ import { Label } from '../ui/Label';
 import { InkIcon } from '../ui/icons/InkIcon';
 import type { IconName } from '../ui/icons/icons';
 
-const ICON: Record<PathKind, IconName | null> = { flashcards: null, writing: 'pen', components: 'fish', speaking: 'mic', chest: 'gift' };
-const NAME: Record<PathKind, string> = { flashcards: '认一认', writing: '写一写', components: '钓鱼', speaking: '朗读', chest: '宝箱' };
+const ICON: Record<PathKind, IconName | null> = { flashcards: null, choose: 'speech', writing: 'pen', components: 'fish', speaking: 'mic', wrapup: 'star', chest: 'gift' };
+const NAME: Record<PathKind, string> = { flashcards: '认一认', choose: '选一选', writing: '写一写', components: '钓鱼', speaking: '朗读', wrapup: '用一用', chest: '宝箱' };
 
 interface Props {
   nodes: PathNode[];

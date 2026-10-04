@@ -1227,7 +1227,7 @@ The default `sessionMinutes` becomes 30, and the parent can still change it. Eac
    - There is no in-app OCR. An on-device Tesseract test on his scans produced unusable output for word tables and about 4% wrong characters in passages, while Apple's engine read the passage near-perfectly.
 2. **Tidy:**
    - Join characters split across table cells back into words, using the HSK word dictionary plus his existing words (欺 + 负 → 欺负).
-   - Drop headings, page codes (P2-L30-高华-PG16), instructions, copyright lines and numbering.
+   - Drop headings, page codes (such as P1-L07-AB-PG03), instructions, copyright lines and numbering.
    - Flag anything that isn't a known word, with a suggestion where one is found. Suggestions come from same-pinyin or one-character-off dictionary words (告坼 → 告诉).
 3. **Sort:**
    - **words** (1–4 characters, including 量词 phrases like 一阵阵);
@@ -1316,3 +1316,190 @@ Four plans, each shippable on its own:
    - 听写;
    - optional Tatoeba sentences.
 4. **Plan 14 — placement and Skills:** the adaptive five-style check with two levels, and the Skills panel.
+
+## 20. Deeper practice: meanings in every review, more repetition, words in use (added 2026-10-04 at the parent's request)
+
+### Why
+
+After plan 11 shipped, the parent found the lesson "too simple":
+- **Reviews never show meaning.** A review shows the bare character and asks only for its pinyin. Meaning comes up only in the separate meaning questions.
+- **Too little repetition.** In the lesson today:
+  - a new word is met once (intro, then one reading question);
+  - a miss comes back once (4 items later);
+  - each 写一写 word is written once, from memory.
+- **No sense of when and where a word is used.**
+
+The placement check also still looks the same, because the redesign (§19 part 6) hasn't been built yet. It is moved up to the plan straight after this one.
+
+The §19 rules still hold: nothing from his class material goes into the repo, no English, no emoji on child screens, and every screen fits without scrolling (§18).
+
+### 1. Meaning in every 认一认 review
+
+- **The usage line** is the word in use, with the word highlighted, its pinyin and a speak button.
+  - Its source is the meaning cue's order of preference (§19 part 2): an imported class sentence, then a sentence-bank sentence, then a parent example, then a 组词 word.
+  - A word with none of these shows no line.
+- **When it shows:** after every reading answer, right or wrong, the feedback phase shows the usage line under the character.
+  - It sits in the card area, not the bottom bar, so the bar keeps its current height.
+  - On a miss, the bar still shows the right reading, as now.
+- **Speaking it:** Truffle reads the character as now. The usage line is read only when he taps its speak button, so reviews don't slow down.
+- **New-word intro:** the usage line comes first, under the character, and is read aloud after the character.
+  - When the line is a sentence, one 组词 word shows under it, so the card still fits a phone.
+  - Otherwise the two 组词 words show, as now.
+
+### 2. More reading repetition
+
+**Each new word** is met 3 times in the lesson:
+1. the intro card, then its reading question (as now);
+2. a second reading question, about 5 items later;
+3. a meaning question near the end of 认一认, if it has a cue.
+
+The third meeting starts its meaning card, so it no longer waits for the next day's new-meaning pick.
+
+**A missed item** (reading or meaning) comes back twice: about 3 items later, then about 6 after that. If either return is still missed, it is rated a miss as now. Only the first answer sets the FSRS rating, as now.
+
+**New words per lesson:** the default goes from 5 to 4, so the extra repetition fits. The parent can still change it.
+
+### 3. More writing repetition
+
+**A new 写一写 word** gets 3 passes, one character at a time:
+1. **描一描:** trace over the faint outline;
+2. **看提示:** write with a hint. The first stroke shows, and hints come after 1 miss;
+3. **默写:** from memory, with no outline. Hints come after 2 misses, as now. This is the pass that sets the rating.
+
+**A review word** gets the 默写 pass only.
+
+**A word that needed a hint, or had more than 3 misses,** comes back at the end of 写一写 for one more 默写.
+
+**Per lesson:** at 30 minutes, 4 words: up to 2 new ones (as now), with reviews filling the rest. Under 25 minutes, 3 words. This replaces today's 5 and 3.
+
+**The next day:** a new write card's first review is due the day after, so new words come back.
+
+### 4. When and where to use a word
+
+This builds the §19 sentence bank and 选一选, and adds one question style.
+
+- **用对了吗？ (new question type).**
+  - Two sentences use the same word. One uses it correctly; the other puts it in the wrong frame (我们要保持安静 / 我保持了一个苹果).
+  - He picks the right one. After he answers, Truffle reads the right sentence, and the pairing shows if one is known.
+  - Only sentence-bank items have a wrong-use sentence. It is hand-written, never generated.
+  - The content test checks that each item uses the word exactly once in each sentence, and that both sentences pass the §19 level rule.
+- **Where it runs:** 用对了吗 and 选一选 items share the 选一选 step and alternate, about 8 items in all at 30 minutes.
+- **认一认's "which fits?" meaning question** prefers bank sentences over 组词, after his imported class sentences (§19 part 2).
+- **The sentence bank** (§19 part 4) is the main thing to write: about 250 words, each with 2 fill-the-gap sentences and 1 wrong-use sentence. The words cover:
+  - the P2 Higher Chinese words from the packs he works on;
+  - HSK 1–2 words that have a picture cue.
+
+### 5. The 30-minute lesson, revised
+
+| # | Step | ~min | Change from §19 |
+|---|---|---|---|
+| 1 | 认一认 | 7 | The extra repetition fits in the same time |
+| 2 | 选一选 | 5 | Shared with 用对了吗 |
+| 3 | 钓鱼 (字辨) | 3 | The radical grid is replaced by 字辨 (part 8) |
+| 4 | 写一写 | 7 | Three passes for new words |
+| 5 | 朗读 | 5 | |
+| 6 | **用一用** | 3 | New wrap-up (part 7), before the chest |
+
+### 6. Checking
+
+- **Unit tests:**
+  - the queue order: the second reading and the meaning question for new words, and two returns after a miss;
+  - write passes per word, and the end-of-step redo;
+  - the usage line's source order;
+  - the 用对了吗 content test;
+  - the new-per-day migration (stored 5 → 4, only when unchanged, like `lessonVersion`);
+  - the 用一用 target list, the count of correct recalls in context, the retry cap, and that a capped word is due the next day.
+- **Fit sweep:** at all six sizes:
+  - the usage line in feedback and on the intro, both with a long class sentence;
+  - the three write passes;
+  - 用对了吗;
+  - 用一用.
+
+### 7. 用一用 wrap-up: every target word used correctly before the chest
+
+**Why:** the parent asked that each word be used correctly several times at the end of every lesson.
+
+**The research the rule rests on:**
+- Recalling a word beats seeing it again.
+- About 3 correct recalls in a session is the best trade-off. Beyond that, gains in the same session are small; spaced returns on later days matter more (Rawson & Dunlosky, successive relearning).
+- Spread-out recalls beat recalls bunched together.
+- Durable word learning takes about 8–12 meaningful encounters in all (Webb; Uchihara et al.).
+
+**The rule:**
+- **Target words:** today's new words, and any word missed in today's lesson.
+- **The lesson's goal:** each target word is recalled correctly **3 times**, with **at least 2 of those in context**.
+  - In context means 选一选, 用对了吗, or a meaning question with a sentence.
+  - The recalls are spread through the lesson; the 认一认 repeats from part 2 count.
+- **The wrap-up comes last,** just before the chest. Every target word is used correctly once more, in context.
+  - This is always the 3rd recall, even if he already has 3.
+  - A target word short of 2 recalls in context gets one more wrap-up item.
+
+**The items:**
+- They mix 选一选 and 用对了吗. 用对了吗 is used only where a bank item exists.
+- Sources come in the same order as everywhere else: his class sentences first, then the bank.
+- A target word with no sentence anywhere gets the "which fits?" meaning question on its 组词 instead.
+- No word appears in two items in a row.
+
+**Misses:**
+- A missed item returns after the other target words, until it is right, at most 3 tries for that word.
+- A word still wrong after 3 tries ends the round kindly ("明天再来！"), and its meaning card is due the next day.
+- A miss is rated as now: only the first answer sets the FSRS rating.
+
+**Size:** usually 6–10 items, about 3 minutes.
+- If there are more than 12 items, the round stops at 12.
+- Words that didn't get their item are due the next day.
+
+**Across days:** FSRS already spaces later returns, so the roughly 10 encounters build up over about 2 weeks without extra rules.
+
+**For the child:**
+- Truffle opens it with "用一用！"
+- The chest follows as now.
+- §13/§18 apply: no emoji, one screen.
+
+**Parent toggle:** none. It is part of the lesson whenever 认一认 or 选一选 is on.
+
+### 8. 钓鱼 becomes 字辨 (look-alike characters)
+
+**Why:**
+- On the worksheets he missed 47% of the 字辨 items, and every miss kept the shared part but took the wrong radical (跟→根, 抢→苍).
+- Today's 钓鱼 is a general radical game: tap every character with 氵, or pick a character's part. It doesn't train that choice, so its minutes move to the version that does.
+- 朗读 stays as it is (§16). It targets his oral-exam ratings directly.
+
+**The step:**
+- It keeps the 钓鱼 name, the pond scene and the 钓鱼 toggle. `StepKind` stays `components`.
+- The fishing round is the 字辨 items from §19 part 3, in place of the radical grid.
+- **Each item:**
+  - a word with one character missing (树_ → 根/跟/很/银);
+  - the missing character is a word from his class lists or a recent word;
+  - the 4 choices share its phonetic or shape part.
+- **Choosing:** he fishes out the right character. Truffle reads the whole word.
+- **After the answer:** the radical and its meaning show (足 = 脚的动作, 木 = 树木). A miss also shows the word he chose, with its own radical meaning, when it is a real word.
+- **How many:** about 6 items at 30 minutes, and 4 under 25.
+- **Misses:** a miss brings the word's `write` card forward, or its `recognise` card if it has no write card (§19 part 3).
+
+**Content:**
+- The radical-meaning table and the component index are built as §19 part 3 describes.
+- A word whose characters have no look-alike set with 3 or more members is skipped.
+- If fewer than 4 items can be built, the step is skipped for the day, as 钓鱼 is skipped today when he knows too few characters.
+
+**Removed:** the tap-all grid and the "which part" questions (`game.ts`'s round builder). The radical-meaning icons stay; 字辨 uses them.
+
+### Out of scope
+
+- Generated wrong-use sentences.
+- English.
+- Timed drills.
+- A separate pairing exercise. Pairings still only show after an answer.
+
+### Build order (replaces §19's plans 13–14)
+
+1. **Plan 13 — deeper practice:**
+   - §20 parts 1–3: meaning in reviews, reading and writing repetition;
+   - the sentence bank, 选一选 and 用对了吗 (§20 part 4, §19 part 4);
+   - the revised lesson timings;
+   - the 用一用 wrap-up (part 7);
+   - 钓鱼 becomes 字辨 (part 8).
+2. **Plan 14 — placement and Skills:** §19 parts 6–7, unchanged.
+3. **Plan 15 — dictation and extra sentences:**
+   - 听写;
+   - optional Tatoeba sentences (§19 parts 3–4).

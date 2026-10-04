@@ -14,9 +14,11 @@ import { Label } from '../../ui/Label';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { writingCue } from './cue';
 import { writingBoxSize } from './size';
+import type { WritePass } from '../../session/runner';
 
 export interface WriteResult {
   totalMisses: number;
+  hinted: boolean; // a stroke was missed twice in the recall pass, so its hint showed
   elapsedMs: number;
 }
 
@@ -25,10 +27,13 @@ interface Props {
   kid: KidState;
   resting: TruffleMood;
   isNew: boolean;
+  pass: WritePass;
   onDone: (result: WriteResult | null) => void;
 }
 
-export function WritingStep({ word, kid, resting, isNew, onDone }: Props) {
+const PASS_BUBBLE: Record<WritePass, string> = { trace: '描一描！', hint: '看提示写！', recall: '写一写！' };
+
+export function WritingStep({ word, kid, resting, isNew, pass, onDone }: Props) {
   const chars = useMemo(() => hanChars(word.text), [word.id]);
   const cue = useMemo(() => writingCue(word), [word.id]);
   const [index, setIndex] = useState(0);
@@ -36,6 +41,7 @@ export function WritingStep({ word, kid, resting, isNew, onDone }: Props) {
   const [charMisses, setCharMisses] = useState<number | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const startedAt = useRef(performance.now());
+  const hinted = useRef(false);
 
   useEffect(() => {
     speak(cue.speech);
@@ -53,8 +59,8 @@ export function WritingStep({ word, kid, resting, isNew, onDone }: Props) {
       height: size,
       padding: 16,
       showCharacter: false,
-      showOutline: false,
-      showHintAfterMisses: 2,
+      showOutline: pass === 'trace',
+      showHintAfterMisses: pass === 'recall' ? 2 : 1,
       highlightOnComplete: true,
       drawingWidth: 24,
       strokeColor: '#2d3436',
@@ -65,7 +71,11 @@ export function WritingStep({ word, kid, resting, isNew, onDone }: Props) {
         if (!cancelled) onDone(null);
       },
     });
+    if (pass === 'hint') writer.highlightStroke(0); // the first stroke shows the way
     void writer.quiz({
+      onMistake: (d) => {
+        if (pass === 'recall' && d.mistakesOnStroke >= 2) hinted.current = true;
+      },
       onComplete: (summary) => {
         if (cancelled) return;
         playSfx('star');
@@ -79,12 +89,12 @@ export function WritingStep({ word, kid, resting, isNew, onDone }: Props) {
       cancelled = true;
       writer.cancelQuiz();
     };
-  }, [word.id, index]);
+  }, [word.id, index, pass]);
 
   const last = index === chars.length - 1;
   const next = () => {
     if (!last) setIndex(index + 1);
-    else onDone({ totalMisses: misses, elapsedMs: Math.round(performance.now() - startedAt.current) });
+    else onDone({ totalMisses: misses, hinted: hinted.current, elapsedMs: Math.round(performance.now() - startedAt.current) });
   };
   return (
     <>
@@ -94,7 +104,7 @@ export function WritingStep({ word, kid, resting, isNew, onDone }: Props) {
             kid={kid}
             size={130}
             mood={charMisses === null ? resting : charMisses > 3 ? 'neutral' : last && isHardWrite(isNew, misses) ? 'wow' : 'pleased'}
-            bubble={charMisses === null ? '写一写！' : null}
+            bubble={charMisses === null ? PASS_BUBBLE[pass] : null}
           />
           <div class="write__cue">
             <div class="write__prompt">

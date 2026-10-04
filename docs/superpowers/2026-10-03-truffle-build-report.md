@@ -400,3 +400,89 @@ Built-in content is every HSK 3.0 character (3,000; levels 1–6 and 七—九�
 - 写一写 still shows a short English gloss (plan 13's 听写 replaces the cue); the commit message overstated "no English on child screens"
 - a 轻声 trap can be a real alternative reading for multi-character words (东西 dōng xī)
 - tidy-ups — the module-level skipped array in content-lib, a duplicated getBoundingClientRect in fit-check, two phone media blocks at the end of styles.css
+
+## Plan 12 — worksheet importer (spec §19 part 5)
+
+Branch feature/importer. The parent adds a photo (Live Text) or pastes text; the app tidies it into words, 成语, pairings, sentences and reading texts, previews it, and saves everything on the iPad. A class sentence becomes a word's first meaning cue. Suite 570 tests; fit sweep 281 screens, 0 problems.
+
+### Rulings
+- Task 1: Ruling: test fixtures pass DICT as parseWorksheet's third argument (the plan's own note) and their isWord treats 坼 as an unknown character (a realistic misread) — cost if wrong: none
+- Task 1: Ruling: lines above a page's first section heading are its own title (class and page names) and are dropped; plain pasted text with no headings keeps everything — they came through as 4-character "成语" — cost if wrong: content placed above the first heading is lost (the parent can paste it again on its own)
+- Task 1: Ruling: checked against real Live Text output from three of the parent's scans (locally, nothing committed) and fixed what it showed, each with a test: a 成语 heading claims only 4-character words; phrases of known characters (一句, 两遍) aren't flagged; numbered and parent instructions (①…, 家长, 学堂, 完成, 巩固, 示范) are dropped; consecutive prose lines stay one passage; a short "街：" line is a word; an unknown 4-character phrase (一排排的) stays a word; the publisher's logo line is dropped — cost if wrong: an instruction-like real sentence is dropped (the parent can type it)
+- Task 1: Ruling: src/importer/ is excluded from the child no-emoji check like parent/ — it is parent-only parsing whose patterns must match ©, ➤ and ▶ in Live Text — cost if wrong: an emoji slipping into importer code wouldn't be caught (it never renders on a child screen)
+- Task 3: Ruling: parentB's tab-count test 9→10 (the new 'From a worksheet' tab) — cost if wrong: none
+- Task 4: Ruling: the sweep showed a two-character school word's meaning question with only 1 choice (his pool is single characters) — pickSoundAlikes adds HSK words of the same length near the word's HSK level (test 'choices for a school word' RED→GREEN) — cost if wrong: choices could feel random for words outside HSK. Fit profile uses a parent word 保持 with a due meaning card instead of a placed character, since single characters never get sentences.
+- Final: Ruling: re-graded Minor 1/2/3/8/9 to Important by effect (words lost silently; valid answers marked wrong; HSK 7–9 choices; sentences overflowing a phone; fixtures lifted from class packs breach the no-Berries rule) — fixed with tests: 'trailing colon', 'shares a character', 'outside HSK…HSK 3', 'class 成语…first', 'longer than 30 characters'; fixtures paraphrased — cost if wrong: a little extra code.
+- Final: Ruling: preview cannot edit text or move items between groups (spec §19.5.4) — Use/Join/Split/untick cover OCR fixes; a word with no fix can be added in Word lists — cost if wrong: parent retypes a word.
+- Final: Ruling: declined-to-judge deleteWord orphaning :meaning card — pre-existing from plan 11, already in deferred minors — cost if wrong: orphan rows only.
+
+### Fixed in the final review
+- I1 words dropped as headings/instructions — 'a word that looks like a heading or an instruction…' RED→GREEN, suite 570/570
+- I2 passages corrupted — 'a passage line mentioning 小朋友…' + 'a short wrapped line…continues' RED→GREEN, suite 570/570
+- I3 real-character misreads unflagged — 'a misread that is still a real character (自已, 认织)…' + alike.test RED→GREEN, suite 570/570
+- I4 生字 joined / no split — 'a 生字 column…never joined' + 'a joined word remembers its parts' + importPanel 'splits a word…' RED→GREEN, suite 570/570
+- I5 spoken sentence cue gives answer away — FlashcardStep 'a sentence cue reads as a sentence…' (updated) RED→GREEN, suite 570/570
+- I6 launch drops imported pairs/sentences/tags, list 写 — repo 'keeps what a worksheet import attached…' RED→GREEN, suite 570/570
+
+### Deferred minors
+- photo object URLs never revoked (ImportPanel) — memory held until reload on iPad.
+- 成语 tag only on newly added words, not existing ones re-imported as idioms.
+- sentences attach by substring (人民 gets a 人民币 sentence); unmatched sentences dropped without a message.
+- ledger test counts per task not re-measured.
+- no backup round-trip test for sentences/pairs/tags.
+
+## Plan 13 — deeper practice (spec §20)
+
+Branch feature/deeper-practice. What changed for him:
+
+- **The word in use everywhere.** Every 认一认 answer and every new-word card shows the word in a sentence (his class sentence, else one of 266 sentences written for the app, else 组词), highlighted, with its pinyin and a read-aloud button.
+- **More repetition.** A new word is met 3 times in a lesson (intro + reading, a second reading, its meaning); a miss comes back twice. 4 new words a lesson (was 5).
+- **Writing three ways.** New words: trace → with a hint → from memory (only the last is rated). A word that needed a hint is written once more at the end. 4 words at 30 minutes.
+- **选一选.** Which word fits the sentence, alternating with 用对了吗 (which of two sentences uses the word right). About 8 items.
+- **用一用.** Before the chest, every new or missed word is used right in a sentence, so each gets 3 correct recalls (2 in context). Three misses close a word kindly (明天再来！) and bring it back tomorrow.
+- **钓鱼 is 字辨.** Fish out the missing character of a word; wrong choices copy his worksheet error (same phonetic part, other radical: 银 → 根 很 跟), and the radical's meaning shows after.
+
+Numbers: 266 bank words (HSK 1–4), 657 tests, fit sweep 521+ screens at six sizes, 0 problems.
+
+### Rulings
+- Ruling: bank words are chosen from the HSK 3.0 lists (MIT), not from his class packs — the spec's "P2 Higher Chinese words from the packs" conflicts with the rule that nothing from the packs enters the repo; the chosen HSK 1–4 words overlap his class vocabulary — cost if wrong: some class words lack bank items (his imported class sentences cover them).
+- Task 1: Ruling: the plan's sample items used 苹果 (苹 is HSK 3, over an HSK 1 word's level+1) — examples use 书包; 每 (HSK 3) became 天天 — cost if wrong: none
+- Task 4: Ruling: older cue tests moved to words with no bank item (保持→欺负, 长→行, 大→国), since bank sentences now come before 组词 — intent unchanged — cost if wrong: none
+- Task 5: Ruling: the usage line also shows after a listening question (Truffle says the word, he picks it), not only after the pinyin question — spec says after every reading answer — cost if wrong: none. The highlight uses --gold-soft (no --accent-soft token). Fit: flashcards flows 106 screens, 0 problems.
+- Task 6: Ruling: a new word's second reading is placed 5 cards after its own intro (index found each time), not at i+1+5 of the original list — the plan's formula put the last word's repeat before its own intro once earlier repeats shifted it — test 'the second reading sits about 5 items after its intro…' — cost if wrong: none
+- Task 6: Ruling: updated older tests for the new queue (a repeat after each new word; two retries after a miss; newPerDay default 4; migration now to v3) and rewrote the SessionScreen full-lesson test to answer whatever comes until the celebration — intent unchanged — cost if wrong: none
+- Task 7: Ruling: the fit sweep cannot draw strokes, so it checks only the first 写一写 screen (now the trace pass with its outline) — the hint and recall passes share that layout minus the outline — cost if wrong: a pass-specific layout slip would go unseen (none exists: same markup)
+- Task 7: Ruling: the 'goes wide-eyed when a new word is finished cleanly' test now runs on the recall pass — only the recall pass is the real write — cost if wrong: none
+- Task 8: Ruling: 选一选's items are built when the step starts (not at session load), so words missed in 认一认 earlier that sitting come first — cost if wrong: none
+- Task 8: Ruling: found and fixed a race — tapping 继续 on the last 选一选 item before its answer saved let the late save write the old record back, restarting the step; SessionScreen now keeps the newest record in a ref and builds every commit on it (finishTimedStep too), and the chest hatch compares against it — SessionScreen test '选一选 in the lesson…' RED (looped) → GREEN — cost if wrong: none
+- Task 8: Ruling: the Home path stays on one row on tablets too (6 stops: flex-wrap nowrap), and lifts 18px in iPad landscape so its 认一认 label no longer covers the race world's car tap — fit home flows 51 screens, 0 problems — cost if wrong: none
+- Task 8: Ruling: the parent toggle for 钓鱼 keeps its old label until Task 10 rebuilds it — cost if wrong: none
+- Task 9: Ruling: 用一用's onAnswer reports (item, correct, responseMs) like 选一选 rather than the plan's (item, correct, tries) — tries are the step's own business; the session only records the answer — cost if wrong: none
+- Task 9: Ruling: the sweep's wrap-up screen showed 其＿ for 他 with 它 as a "wrong" choice — 其它 is a real word, so a right answer would be marked wrong; pickSoundAlikes never offers 他/她/它, 的/地/得 or 那/哪 against each other — test '他, 她 and 它 are never choices for each other' RED→GREEN — cost if wrong: fewer same-sound choices for those characters
+- Task 10: Ruling: wrong choices come in priority groups — same phonetic part (his worksheet error: keeps the shared part, wrong radical) before same radical, known characters before near-level ones — the plan shuffled all look-alikes together, and the sweep showed 银 getting 铁/钟 (same radical) instead of 根/很/跟 — test 'his own mistake comes first…' RED→GREEN — cost if wrong: fewer same-radical traps
+- Task 10: Ruling: after a miss, the chosen character's radical shows only when it differs from the answer's (钅 金 twice says nothing) — test 'a chosen character with the same radical…' RED→GREEN — cost if wrong: none
+- Task 10: Ruling: game.ts and game.test.ts deleted (only SessionScreen used them); the old pond CSS for the radical grid stays for now (harmless) — cost if wrong: a little dead CSS
+- Task 10: Ruling: the fit profile's school list gains 树根, 跟着, 请问, 清楚, 银行 (generic words, not from his packs) so the sweep sees a 字辨 round; all school words get a due meaning card — cost if wrong: none
+- Task 10: Ruling: a 'newest first' test expectation was wrong (跟 practised at 9 is newer than 根 listed at 5); fixed the test, not the code — cost if wrong: none
+- Task 11: Fit: full sweep 521 screens, 0 with problems. The 'lesson' walk covers 认一认 → 选一选 → 字辨 → the first 写一写 screen (the sweep can't draw strokes); 朗读, 用一用 and the chest are covered by their own flows. Ruling: the build report section is written after the final review so it includes the fixes — cost if wrong: none
+- Final: Ruling: re-graded Minor 6 to Important (a second 继续 could skip a whole step; a late answer could drop a missed word from 用一用) — fixed: finishStepIf + finishTimedStep(expected), skip effect builds on the newest record — runner.test 'finishStepIf ends the step only while it is still current…' RED→GREEN, suite 655/655 — cost if wrong: none
+- Final: Ruling: re-graded Minor 7 to Important (the intro's usage line showed the exact sentence the meaning question later blanks — a giveaway; spec asks for pinyin) — usage line takes the other bank/class sentence and the word's pinyin — meaning.test 'never the sentence 认一认's meaning question will blank…' + 'with two class sentences…' RED→GREEN, suite 657/657 — cost if wrong: a word with one class sentence still shows that sentence
+- Final: Ruling: declined-to-judge — 字辨's real-word check uses the HSK list only, not his class words (a class word could make a choice "right") — rare; same limit as meaning choices — cost if wrong: an occasional right answer marked wrong
+- Final: Ruling: declined-to-judge — a parent who chose exactly 5 new words is moved to 4 (spec's "only when unchanged") — cost if wrong: the parent sets 5 again
+
+### Fixed in the final review
+- C1 lesson unresumable with only 用一用 left (no current path stop) — path.test 'with only 用一用 left…' RED→GREEN, suite 627/627
+- I2 选一选/用一用 targeted new words 认一认 never introduced — wrapup.test 'a new word 认一认 never reached…' RED→GREEN (introducedNewWords), suite 629/629
+- I3 bank wrong choices that are right + weak misuse sentences (12 reported + 9 more from my own pass) — sentenceBank.test 'wrong choices that would be right' (21 cases) + 'wrong-use sentences are clearly wrong' RED→GREEN, suite 655/655
+- I4 用一用 asked a closed word again / re-asked the same question / A,B,B — wrapup.test 'no word twice in a row…' + WrapupStep tests 'a closed word is not asked again…', 'a retry asks the word another way…' RED→GREEN, suite 655/655
+
+### Deferred minors
+- stars per lesson rise from 4 to 6 (choose and wrapup count as finished steps), so the parent's star goals fill ~50% faster — a deliberate choice for the parent
+- recordUse rates with responseMs 0 (a slow right answer in 选一选/用一用 is Good, never Hard)
+- 选一选's bank fallback checks the sentences are readable but not the wrong choices
+- stale comment in store/settings.ts ('lessonVersion 2')
+- the progress bar doesn't move within 选一选/字辨/用一用 (sessionProgress has no fraction for them)
+
+### For the parent to check on the iPad
+- The 30-minute pacing with the new steps (选一选 and 用一用 are counted, not timed).
+- Whether 6 stars a lesson (was 4) is the pace you want for the reward goals.

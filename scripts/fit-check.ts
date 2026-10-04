@@ -5,6 +5,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { webkit, type Browser, type Page } from 'playwright-core';
 import { WORLDS } from '../src/fun/worlds';
 import { buildFitProfile, type FitProfileOptions } from './fit-profile';
+import type { ActivityKind } from '../src/types';
 
 const PORT = 4174;
 const BASE = `http://127.0.0.1:${PORT}/`;
@@ -97,7 +98,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
 
 function signature(): string {
   const s = document.querySelector('.screen');
-  const marks = ['.home', '.flash', '.intro', '.write', '.components', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.arrival', '.zika-big', '.rotate-hint'];
+  const marks = ['.home', '.flash', '.usage-opts', '.intro', '.write', '.components', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.arrival', '.zika-big', '.rotate-hint'];
   const on = marks.filter((m) => s?.matches(m) || s?.querySelector(m) || document.querySelector(`${m}:not(.rotate-hint)`));
   const tone = document.querySelector('.bottombar')?.className ?? '';
   const words = (s?.querySelector('.kantu__q, .langdu__step, .pet__bubble, h1, h2')?.textContent ?? '').slice(0, 14);
@@ -230,10 +231,13 @@ async function sweep(browser: Browser, size: Size) {
   });
   await run('pin-gate', AFTERNOON, {}, async (p) => { await tabTo(p, '家长'); await check(p, size, 'pin-gate', 0); });
   // Lessons, one activity at a time
-  const only = (k: 'flashcards' | 'writing' | 'components' | 'speaking') => ({ flashcards: k === 'flashcards', writing: k === 'writing', components: k === 'components', speaking: k === 'speaking' });
+  const only = (k: ActivityKind): Record<ActivityKind, boolean> => ({ flashcards: k === 'flashcards', choose: k === 'choose', writing: k === 'writing', components: k === 'components', speaking: k === 'speaking' });
   await run('flashcards', AFTERNOON, { activities: only('flashcards') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'flashcards'); });
   await run('flashcards-evening', EVENING, { activities: only('flashcards') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'flashcards-evening'); });
   await run('writing', AFTERNOON, { activities: only('writing') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing', { firstOnly: true }); });
+  await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then 用一用 and the chest
+  await run('choose', AFTERNOON, { activities: only('choose') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'choose'); });
+  await run('wrapup', AFTERNOON, { activities: { ...only('flashcards'), choose: true } }, async (p) => { await startLesson(p); await walkLesson(p, size, 'wrapup'); }); // its walk misses some, so 用一用 has words
   await run('components', AFTERNOON, { activities: only('components') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'components'); });
   await run('langdu', AFTERNOON, { activities: only('speaking'), speakingLast: 'story' }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu'); });
   await run('langdu-extra', AFTERNOON, { doneToday: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });

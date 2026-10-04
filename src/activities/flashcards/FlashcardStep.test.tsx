@@ -29,7 +29,7 @@ describe('FlashcardStep', () => {
     render(<FlashcardStep {...base} item={review} voice={false} onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
     fireEvent.click(screen.getByText('继续'));
-    expect(onDone).toHaveBeenCalledWith({ correct: true, hard: false, responseMs: expect.any(Number), elapsedMs: expect.any(Number) });
+    expect(onDone).toHaveBeenCalledWith({ correct: true, hard: false, responseMs: expect.any(Number), elapsedMs: expect.any(Number), inContext: false });
   });
 
   it('a wrong answer reveals the right one', () => {
@@ -183,5 +183,49 @@ describe('认一认 meaning questions (spec §19)', () => {
     const ba = { ...makeWord('八', { id: 'b:八', pinyin: 'bā' }), examples: [{ text: '四面八方', pinyin: 'sì miàn bā fāng' }] };
     render(<FlashcardStep {...base} word={ba} item={{ wordId: 'b:八', isNew: false, retry: false, mode: 'meaning' }} voice onDone={vi.fn()} />);
     expect(document.querySelector<HTMLElement>('.meaning-cue')!.style.getPropertyValue('--len')).toBe('4');
+  });
+it('a sentence cue reads as a sentence (wrapping, smaller type) with the word blanked', () => {
+  const w = { ...makeWord('保持', { id: 'p:1', pinyin: 'bǎo chí' }), sentences: [{ text: '图书馆里要保持安静。', pinyin: 'x' }] };
+  render(<FlashcardStep {...base} word={w} pool={[w, ...pool]} item={{ wordId: 'p:1', isNew: false, retry: false, mode: 'meaning' }} voice onDone={vi.fn()} />);
+  expect(document.querySelector('.meaning-cue--sentence')?.textContent).toContain('图书馆里要');
+  expect(speak).not.toHaveBeenCalledWith('图书馆里要保持安静。'); // saying the word before he answers would give it away
+  expect(speak).toHaveBeenCalledWith('图书馆里要，，安静。');
+  const right = [...document.querySelectorAll<HTMLButtonElement>('.choices button')].find((b) => b.textContent?.includes('保持'))!;
+  right.click();
+  expect(speak).toHaveBeenLastCalledWith('图书馆里要保持安静。'); // the whole sentence once he has answered
+});
+});
+
+describe('the usage line (spec §20 part 1)', () => {
+  const hen = { ...pool.find((w) => w.text === '很')!, examples: [] };
+  it('shows after a reading answer, right or wrong, under the character, and speaks only on tap', () => {
+    vi.mocked(speak).mockClear();
+    render(<FlashcardStep {...base} word={hen} item={{ wordId: hen.id, isNew: false, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.usage')).toBeNull(); // not before he answers
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.choices button')!);
+    expect(document.querySelector('.flash__prompt .usage')?.textContent).toContain('这个书包很大。');
+    expect(document.querySelector('.usage__word')?.textContent).toBe('很');
+    expect(speak).not.toHaveBeenCalledWith('这个书包很大。');
+    cleanup();
+  });
+  it('leads the new-word intro and is read after the character', () => {
+    vi.mocked(speak).mockClear();
+    render(<FlashcardStep {...base} word={hen} item={{ wordId: hen.id, isNew: true, retry: false }} voice onDone={vi.fn()} />);
+    expect(document.querySelector('.intro .usage')?.textContent).toContain('这个书包很大。');
+    expect(vi.mocked(speak).mock.calls.map((c) => c[0])).toEqual(['很', '这个书包很大。']);
+    cleanup();
+  });
+  it('with a sentence, the intro keeps one 组词 word so it fits a phone', () => {
+    const w = { ...hen, examples: [{ text: '很多', pinyin: 'hěn duō' }, { text: '很好', pinyin: 'hěn hǎo' }] };
+    render(<FlashcardStep {...base} word={w} item={{ wordId: hen.id, isNew: true, retry: false }} voice onDone={vi.fn()} />);
+    expect(document.querySelectorAll('.intro .example')).toHaveLength(1);
+    cleanup();
+  });
+  it('no usage line for a word with nothing to show', () => {
+    const w = makeWord('欺负', { id: 'p:9', pinyin: 'qī fu', level: null, source: 'parent' });
+    render(<FlashcardStep {...base} word={w} pool={[w, ...pool]} item={{ wordId: 'p:9', isNew: false, retry: false }} voice={false} onDone={vi.fn()} />);
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.choices button')!);
+    expect(document.querySelector('.usage')).toBeNull();
+    cleanup();
   });
 });
