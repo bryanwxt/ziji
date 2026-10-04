@@ -1,6 +1,6 @@
 import { pickCharacterDistractors, pickPinyinDistractors } from '../activities/flashcards/distractors';
-import { fillChoices, lookAlikeChars } from '../activities/components/zibian';
-import { BUILTIN, HSK_WORDS, wordsWithChar } from '../content';
+import { fillChoices } from '../activities/components/zibian';
+import { HSK_WORDS, wordsWithChar } from '../content';
 import { shuffle, type Rng } from '../lib/random';
 import { fitItem, type UseItem } from '../practice/useItems';
 import type { Word } from '../types';
@@ -10,11 +10,9 @@ import { READING_STYLES, type Style } from './walk';
 export type PlacementQuestion =
   | { style: 'read'; wordId: string; text: string; answer: string; options: string[] } // 读一读: the character → its pinyin
   | { style: 'listen'; wordId: string; text: string; options: string[] } // 听一听: Truffle says it → pick it
-  | { style: 'real'; wordId: string; shown: string; real: boolean } // 真的假的: a real word or a made-up look-alike
   | { style: 'fill'; wordId: string; word: string; index: number; answer: string; options: string[] } // 补一补
   | { style: 'fit'; wordId: string; item: Extract<UseItem, { kind: 'fit' }> }; // 选一选
 
-const LEVEL = new Map(BUILTIN.map((c) => [c.char, c.level]));
 
 /** A two-character HSK word with the character, at most a level above it, easiest first; else one of its own 组词 that is an HSK word. */
 function partnerWord(w: Word): string | undefined {
@@ -34,18 +32,6 @@ export function buildQuestion(style: Style, word: Word, pool: Word[], rng: Rng):
       const wrong = pickCharacterDistractors(word, pool, rng);
       return wrong.length >= 3 ? { style, wordId: word.id, text: word.text, options: shuffle([word.text, ...wrong.slice(0, 3).map((w) => w.text)], rng) } : null;
     }
-    case 'real': {
-      const real = partnerWord(word);
-      if (!real) return null;
-      const chars = Array.from(real);
-      const k = chars[0] === word.text ? 1 : 0; // the other character becomes a look-alike
-      // a look-alike near the word's level: a rare character would give the made-up word away
-      const near = lookAlikeChars(chars[k]!).filter((c) => (LEVEL.get(c) ?? 9) <= (word.level ?? 7) + 1);
-      const his = new Set(pool.map((w) => w.text)); // his school words are real words to him, HSK or not
-      const fake = shuffle(near, rng).map((c) => chars.map((x, i) => (i === k ? c : x)).join('')).find((t) => !HSK_WORDS.has(t) && !his.has(t));
-      const showReal = !fake || rng() < 0.5;
-      return { style, wordId: word.id, shown: showReal ? real : fake, real: showReal };
-    }
     case 'fill': {
       const w2 = partnerWord(word);
       if (!w2) return null;
@@ -64,12 +50,13 @@ export function buildQuestion(style: Style, word: Word, pool: Word[], rng: Rng):
 /** A visit's 4 styles: three reading styles and one 选一选, never the same style twice in a row; 听一听 only with a voice. */
 export function visitStyles(prev: Style | null, canListen: boolean, rng: Rng): Style[] {
   const reading = READING_STYLES.filter((s) => canListen || s !== 'listen');
-  for (let tries = 0; tries < 50; tries++) {
-    const v = shuffle([...shuffle(reading, rng).slice(0, 3), 'fit' as Style], rng);
+  for (let tries = 0; tries < 100; tries++) {
+    const fitAt = Math.floor(rng() * 4);
+    const v = Array.from({ length: 4 }, (_, i): Style => (i === fitAt ? 'fit' : reading[Math.floor(rng() * reading.length)]!));
     const all = prev ? [prev, ...v] : v;
     if (all.every((s, i) => i === 0 || s !== all[i - 1])) return v;
   }
-  return prev === 'fit' ? ['read', 'fit', 'real', 'fill'] : ['fit', 'read', 'real', 'fill'];
+  return prev === 'read' ? ['fill', 'read', 'fit', 'read'] : ['read', 'fill', 'fit', 'read'];
 }
 
 /** A question of `style` from the band, its words in a random order, skipping words asked already; 读一读 is the fallback. */

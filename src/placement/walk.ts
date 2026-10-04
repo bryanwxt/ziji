@@ -8,17 +8,12 @@ export const MAX_QUESTIONS = 40;
 export const WARMUP = 3; // easy reading questions first, so a nervous start doesn't skew the result
 export const LOW_START = 2; // band 3: where the walk starts when the warm-up went badly (at most 1 of 3 right)
 
-export type Style = 'read' | 'listen' | 'real' | 'fill' | 'fit'; // 读一读 听一听 真的假的 补一补 选一选
-export const READING_STYLES: Style[] = ['read', 'listen', 'real', 'fill'];
+export type Style = 'read' | 'listen' | 'fill' | 'fit'; // 读一读 听一听 补一补 选一选 (真的假的 was dropped: a 50/50 guess, and odd to the parent)
+export const READING_STYLES: Style[] = ['read', 'listen', 'fill'];
 
 export interface WalkAnswer { band: number; style: Style; wordId: string; correct: boolean }
 
-/** 真的假的 is a two-way guess, so it counts half: a child who guesses instead of tapping 不知道 isn't placed high by luck. */
-export const weightOf = (style: Style) => (style === 'real' ? 0.5 : 1);
-const share = (xs: WalkAnswer[]) => {
-  const total = xs.reduce((n, a) => n + weightOf(a.style), 0);
-  return total ? xs.reduce((n, a) => n + (a.correct ? weightOf(a.style) : 0), 0) / total : 0;
-};
+const share = (xs: WalkAnswer[]) => (xs.length ? xs.filter((a) => a.correct).length / xs.length : 0);
 export interface WalkState {
   band: number;
   warmup: number; // warm-up questions answered (not scored)
@@ -61,9 +56,9 @@ export function walkStep(s: WalkState, a: Omit<WalkAnswer, 'band'>, bandCount: n
   const visit = [...s.visit, answer];
   const answers = [...s.answers, answer];
   if (visit.length < PER_VISIT) return { ...s, visit, answers, done: answers.length >= MAX_QUESTIONS };
-  const right = share(visit) * PER_VISIT; // 0–4, 真的假的 at half weight
+  const right = share(visit) * PER_VISIT; // 0–4 right
   const seen = (s.visits[s.band] ?? 0) + 1;
-  const move: -1 | 0 | 1 = right >= 3 ? 1 : right <= 1.5 ? -1 : seen >= 2 ? -1 : 0;
+  const move: -1 | 0 | 1 = right >= 3 ? 1 : right <= 1 ? -1 : seen >= 2 ? -1 : 0;
   const turns = s.turns + (move !== 0 && s.direction !== 0 && move !== s.direction ? 1 : 0);
   const band = s.band + move;
   const done = turns >= 2 || answers.length >= MAX_QUESTIONS || band < 0 || band >= bandCount;

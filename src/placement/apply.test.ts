@@ -74,17 +74,13 @@ describe('placementIds', () => {
   it('everything up to each level, plus right answers above it', () => {
     const bands = [[makeWord('一', { id: 'b:1' })], [makeWord('二', { id: 'b:2' })], [makeWord('三', { id: 'b:3' })]];
     const answers = [
-      { band: 1, style: 'read' as const, wordId: 'b:2', correct: true }, { band: 1, style: 'real' as const, wordId: 'b:2', correct: true },
+      { band: 1, style: 'read' as const, wordId: 'b:2', correct: true }, { band: 1, style: 'listen' as const, wordId: 'b:2', correct: true },
       { band: 1, style: 'fill' as const, wordId: 'b:2', correct: true }, { band: 1, style: 'fit' as const, wordId: 'b:2', correct: false },
-      { band: 2, style: 'read' as const, wordId: 'b:3', correct: true }, { band: 2, style: 'real' as const, wordId: 'b:3', correct: false }, { band: 2, style: 'fill' as const, wordId: 'b:3x', correct: false },
+      { band: 2, style: 'read' as const, wordId: 'b:3', correct: true }, { band: 2, style: 'listen' as const, wordId: 'b:3', correct: false }, { band: 2, style: 'fill' as const, wordId: 'b:3x', correct: false },
     ];
     expect(placementIds(bands, answers)).toEqual({ readingIds: ['b:1', 'b:2', 'b:3'], understandingIds: ['b:1'], missed: ['b:2', 'b:3', 'b:3x'] });
   });
-  it('a lucky 是假的 above the level is not counted as a word he reads', () => {
-    const bands = [[makeWord('一', { id: 'b:1' })], [makeWord('二', { id: 'b:2' })]];
-    const answers = [{ band: 0, style: 'read' as const, wordId: 'b:1', correct: true }, { band: 0, style: 'read' as const, wordId: 'b:1', correct: true }, { band: 1, style: 'real' as const, wordId: 'b:2', correct: true }, { band: 1, style: 'read' as const, wordId: 'b:2x', correct: false }];
-    expect(placementIds(bands, answers).readingIds).toEqual(['b:1']);
-  });
+
   it('meaning checks for words he only reads are spread out, easiest first, 12 a day — never all due at once', async () => {
     const db = await freshDb();
     const ws = builtinWords(0).slice(0, 30);

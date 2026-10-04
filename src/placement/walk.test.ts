@@ -59,22 +59,22 @@ describe('placementLevels: reading and understanding', () => {
   const at = (band: number, style: Style, correct: boolean) => ({ band, style, wordId: `${band}${style}`, correct });
   it('reading = the highest band whose reading questions hold; understanding = the same for 选一选, never above reading', () => {
     const answers = [
-      at(6, 'read', true), at(6, 'real', true), at(6, 'fill', true), at(6, 'fit', true),
+      at(6, 'read', true), at(6, 'listen', true), at(6, 'fill', true), at(6, 'fit', true),
       at(7, 'read', true), at(7, 'listen', true), at(7, 'fill', false), at(7, 'fit', false),
-      at(8, 'read', false), at(8, 'real', false), at(8, 'fill', false), at(8, 'fit', true),
+      at(8, 'read', false), at(8, 'listen', false), at(8, 'fill', false), at(8, 'fit', true),
     ];
     expect(placementLevels(answers)).toEqual({ reading: 7, understanding: 6 });
   });
   it('bands below the first one visited count as held', () => {
-    expect(placementLevels([at(6, 'read', true), at(6, 'read', true), at(6, 'real', true), at(6, 'fit', true)])).toEqual({ reading: 6, understanding: 6 });
+    expect(placementLevels([at(6, 'read', true), at(6, 'read', true), at(6, 'fill', true), at(6, 'fit', true)])).toEqual({ reading: 6, understanding: 6 });
   });
   it('nothing held at the first band visited: everything below it', () => {
-    expect(placementLevels([at(3, 'read', false), at(3, 'real', false), at(3, 'fill', false), at(3, 'fit', false)])).toEqual({ reading: 2, understanding: 2 });
+    expect(placementLevels([at(3, 'read', false), at(3, 'listen', false), at(3, 'fill', false), at(3, 'fit', false)])).toEqual({ reading: 2, understanding: 2 });
   });
 });
 
 describe('children who guess (review of plan 14)', () => {
-  const CHANCE: Record<Style, number> = { read: 0.25, listen: 0.25, fill: 0.25, fit: 0.25, real: 0.5 };
+  const CHANCE: Record<Style, number> = { read: 0.25, listen: 0.25, fill: 0.25, fit: 0.25 };
   /** Walks a simulated child: right with probability `p(band, style)`. */
   const simulate = (seed: number, p: (band: number, style: Style, warm: boolean) => number) => {
     const rng = mulberry32(seed);
@@ -92,7 +92,7 @@ describe('children who guess (review of plan 14)', () => {
   };
   it('a child who knows nothing but taps answers at random is rarely placed, and almost never high', () => {
     const runs = Array.from({ length: 1000 }, (_, i) => placementLevels(simulate(i + 1, (_b, style) => CHANCE[style]).answers).reading);
-    expect(runs.filter((r) => r >= 0).length / runs.length).toBeLessThan(0.25); // was 0.65 before 真的假的 counted half and a shaky warm-up started low
+    expect(runs.filter((r) => r >= 0).length / runs.length).toBeLessThan(0.25); // was 0.65 with 真的假的 (a 50/50 guess) and no low start
     expect(runs.filter((r) => r >= 5).length / runs.length).toBeLessThan(0.03); // was 0.19
   });
   it('an honest child who guesses above their level is still placed right most of the time', () => {
@@ -105,12 +105,5 @@ describe('children who guess (review of plan 14)', () => {
     expect(run(startWalk(30), [false, true, false]).band).toBe(LOW_START);
     expect(run(startWalk(30), [true, true, false]).band).toBe(6);
   });
-  it('真的假的 counts half: three right with one of them 真的假的 is not enough to go up', () => {
-    let s = warm();
-    s = walkStep(s, ans(true, 'read'), 30);
-    s = walkStep(s, ans(true, 'real'), 30);
-    s = walkStep(s, ans(true, 'fill'), 30);
-    s = walkStep(s, ans(false, 'fit'), 30);
-    expect(s.band).toBe(6); // 2.5 of 3.5 — a second visit, not a step up
-  });
+
 });

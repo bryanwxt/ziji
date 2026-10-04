@@ -15,7 +15,7 @@ import { SpeakButton } from '../ui/SpeakButton';
 import { useApp } from './AppContext';
 import { loadKnowledge } from './knowledge';
 
-const BUBBLE: Record<Style, string> = { read: '这个字怎么读？', listen: '听一听，是哪个字？', real: '这是真的词吗？', fill: '少了哪个字？', fit: '哪个词对？' };
+const BUBBLE: Record<Style, string> = { read: '这个字怎么读？', listen: '听一听，是哪个字？', fill: '少了哪个字？', fit: '哪个词对？' };
 const LEVEL = ['一级', '二级', '三级', '四级', '五级', '六级', '七—九级'];
 
 /** A band's HSK level in Chinese (the level of its last character), or 还没开始 for none. */
@@ -131,42 +131,28 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp }: { tapGua
       )}
       <div class="center">
         <Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={100} />
-        {q?.style === 'read' && (
+        {q && (
           <>
-            <div class="hanzi hanzi--xl" data-testid="placement-char">{q.text}</div>
-            <div class="choices choices--pinyin">{q.options.map((o) => option(o, o === q.answer))}</div>
-          </>
-        )}
-        {q?.style === 'listen' && (
-          <>
-            <SpeakButton text={q.text} big />
-            <div class="choices choices--hanzi">{q.options.map((o) => option(o, o === q.text, true))}</div>
-          </>
-        )}
-        {q?.style === 'real' && (
-          <>
-            <div class="hanzi real-word" lang="zh">{q.shown}</div>
-            <div class="choices">
-              <button type="button" class="choice press" data-answer={q.real ? 'true' : undefined} onClick={() => void answer(q.real)}><Label zh="是真的" /></button>
-              <button type="button" class="choice press" data-answer={q.real ? undefined : 'true'} onClick={() => void answer(!q.real)}><Label zh="是假的" /></button>
+            {/* one box and one 2×2 grid for every style, so the screen never jumps between questions */}
+            <div class="placement__prompt" lang="zh">
+              {q.style === 'read' && <div class="hanzi placement__char" data-testid="placement-char">{q.text}</div>}
+              {q.style === 'listen' && <SpeakButton text={q.text} big />}
+              {q.style === 'fill' && (
+                <div class="hanzi placement__word">
+                  {Array.from(q.word).map((c, i) => (i === q.index ? <span key={i} class="zibian__blank">？</span> : <span key={i}>{c}</span>))}
+                </div>
+              )}
+              {q.style === 'fit' && (
+                <div class={`hanzi ${Array.from(q.item.before + q.item.after).length <= 3 ? 'placement__word' : 'placement__sentence'}`}>
+                  {q.item.before}<span class="meaning-cue__blank" aria-label="空格">？</span>{q.item.after}
+                </div>
+              )}
             </div>
-          </>
-        )}
-        {q?.style === 'fill' && (
-          <>
-            <div class="pond-q zibian__word hanzi" lang="zh">
-              {Array.from(q.word).map((c, i) => (i === q.index ? <span key={i} class="zibian__blank">？</span> : <span key={i}>{c}</span>))}
-            </div>
-            <div class="choices choices--hanzi">{q.options.map((o) => option(o, o === q.answer, true))}</div>
-          </>
-        )}
-        {q?.style === 'fit' && (
-          <>
-            <div class="hanzi meaning-cue meaning-cue--sentence" lang="zh">
-              {q.item.before}<span class="meaning-cue__blank" aria-label="空格">？</span>{q.item.after}
-            </div>
-            <div class={`choices choices--hanzi${q.item.options.some((o) => Array.from(o).length > 1) ? ' choices--words' : ''}`}>
-              {q.item.options.map((o) => option(o, o === q.item.word, true))}
+            <div class={`choices placement__choices ${q.style === 'read' ? 'placement__choices--pinyin' : 'placement__choices--hanzi'}`}>
+              {q.style === 'read' && q.options.map((o) => option(o, o === q.answer))}
+              {q.style === 'listen' && q.options.map((o) => option(o, o === q.text, true))}
+              {q.style === 'fill' && q.options.map((o) => option(o, o === q.answer, true))}
+              {q.style === 'fit' && q.item.options.map((o) => option(o, o === q.item.word, true))}
             </div>
           </>
         )}

@@ -222,12 +222,18 @@ async function sweep(browser: Browser, size: Size) {
   await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));
   await run('placement', AFTERNOON, { placementDone: false }, async (p) => {
     // each style is its own screen (spec §19 part 6): answer 不知道 and look again, ten times
+    // and every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
+    const boxes: string[] = [];
     for (let i = 0; i < 11; i++) {
       await p.waitForSelector('.placement[data-ready="true"]');
       await check(p, size, 'placement', i);
+      boxes.push(await p.evaluate(() => ['.placement__prompt', '.placement__choices', '.placement .btn--big']
+        .map((sel) => { const r = document.querySelector(sel)!.getBoundingClientRect(); return [r.top, r.height, r.width].map(Math.round).join(','); }).join(' | ')));
       await p.click('.placement .btn--big');
       await p.waitForTimeout(150);
     }
+    const moved = boxes.findIndex((b) => b !== boxes[0]);
+    if (moved > 0) results.push({ size: size.name, flow: 'placement', step: moved, sig: 'steady', problems: [`question size changed between questions: ${boxes[0]} → ${boxes[moved]}`] });
   });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });

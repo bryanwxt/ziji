@@ -14,8 +14,7 @@ export interface PlacementOutcome { readingIds: string[]; understandingIds: stri
 export function placementIds(bands: Word[][], answers: WalkAnswer[]): { readingIds: string[]; understandingIds: string[]; missed: string[] } {
   const { reading, understanding } = placementLevels(answers);
   const upTo = (n: number) => bands.slice(0, n + 1).flat().map((w) => w.id);
-  // a right answer above the level counts as known; a 真的假的 can be a lucky guess, so it doesn't
-  const rightAbove = (n: number, fit: boolean) => answers.filter((a) => a.correct && a.band > n && a.style !== 'real' && (a.style === 'fit') === fit).map((a) => a.wordId);
+  const rightAbove = (n: number, fit: boolean) => answers.filter((a) => a.correct && a.band > n && (a.style === 'fit') === fit).map((a) => a.wordId);
   const readingIds = [...new Set([...upTo(reading), ...rightAbove(reading, false)])];
   const read = new Set(readingIds);
   const understandingIds = [...new Set([...upTo(understanding), ...rightAbove(understanding, true)])].filter((id) => read.has(id));

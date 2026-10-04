@@ -20,17 +20,7 @@ describe('placement questions (spec §19 part 6)', () => {
     expect(q.options).toContain('他');
     expect(new Set(q.options).size).toBe(4);
   });
-  it('真的假的: a real HSK word with the character, or a made-up look-alike that is no word', () => {
-    let fakes = 0;
-    for (let seed = 1; seed < 30; seed++) {
-      const q = buildQuestion('real', byText.get('负')!, pool, mulberry32(seed))!;
-      if (q.style !== 'real') throw new Error(q.style);
-      expect(q.shown).toContain('负');
-      expect(HSK_WORDS.has(q.shown)).toBe(q.real);
-      if (!q.real) fakes++;
-    }
-    expect(fakes).toBeGreaterThan(0);
-  });
+
   it('补一补: a word with the character missing and 4 look-alikes, none making another word', () => {
     const q = buildQuestion('fill', byText.get('银')!, pool, mulberry32(2))!;
     if (q.style !== 'fill') throw new Error(q.style);
@@ -60,7 +50,7 @@ describe('placement questions (spec §19 part 6)', () => {
   it('every band can ask every style (falling back when a rare character has no word for it)', () => {
     const bands = rankBands(pool);
     for (const band of [bands[0]!, bands[10]!, bands[29]!]) {
-      for (const style of ['read', 'listen', 'real', 'fill', 'fit'] as const) {
+      for (const style of ['read', 'listen', 'fill', 'fit'] as const) {
         const q = nextQuestion(band, style, pool, mulberry32(3), new Set());
         expect(band.some((w) => w.id === q.wordId)).toBe(true);
       }
@@ -71,23 +61,15 @@ describe('placement questions (spec §19 part 6)', () => {
     const used = new Set(band.slice(1).map((w) => w.id));
     expect(nextQuestion(band, 'read', pool, mulberry32(1), used).wordId).toBe(band[0]!.id);
   });
-  it('a made-up word uses a look-alike near the word\'s level (a rare character would give it away)', () => {
-    const level = new Map(pool.map((w) => [w.text, w.level ?? 7]));
-    for (const ch of ['升', '负', '静', '跟']) {
-      const w = byText.get(ch)!;
-      for (let seed = 1; seed < 20; seed++) {
-        const q = buildQuestion('real', w, pool, mulberry32(seed));
-        if (!q || q.style !== 'real' || q.real) continue;
-        for (const c of q.shown) expect(level.get(c)!).toBeLessThanOrEqual((w.level ?? 7) + 1);
-      }
-    }
-  });
-  it("a made-up word is never one of his own words (a school word outside HSK is real to him)", () => {
-    // every two-character string with 负 is one of his words here, so no fake is possible: it must show a real word
-    const his = pool.flatMap((w) => [`负${w.text}`, `${w.text}负`]).map((text, i) => ({ ...pool[0]!, id: `p:${i}`, text, source: 'parent' as const, rank: null, level: null }));
-    for (let seed = 1; seed < 15; seed++) {
-      const q = buildQuestion('real', byText.get('负')!, [...pool, ...his], mulberry32(seed))!;
-      expect(q.style === 'real' && q.real).toBe(true);
+
+
+  it('without a voice a visit still mixes styles: 读一读 and 补一补 alternate around one 选一选', () => {
+    for (let seed = 1; seed < 30; seed++) {
+      const v = visitStyles('fill', false, mulberry32(seed));
+      expect(v).toHaveLength(4);
+      expect(v.filter((s) => s === 'fit')).toHaveLength(1);
+      const all: Style[] = ['fill', ...v];
+      for (let i = 1; i < all.length; i++) expect(all[i]).not.toBe(all[i - 1]);
     }
   });
 });

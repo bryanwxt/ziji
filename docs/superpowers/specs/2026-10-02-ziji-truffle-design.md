@@ -1252,13 +1252,13 @@ The default `sessionMinutes` becomes 30, and the parent can still change it. Eac
 - It stops when the boundary has been crossed twice, or after 40 questions.
 - About 10 minutes. A short reading check, 3 easy questions, opens it so a nervous start doesn't skew the result.
 
-**Five question styles, mixed, never the same style twice in a row:**
+**Question styles, mixed, never the same style twice in a row** (four since 2026-10-04; every question uses the same box and grid, so the screen never jumps):
 
 | Style | Item | Checks |
 |---|---|---|
 | 读一读 | a word → its pinyin, with trap distractors | reading |
 | 听一听 | Truffle says a word → pick it from 4 look-alike words | sound to word |
-| 真的假的？ | a real word or a made-up look-alike (欺负 / 欺服) | word knowledge |
+| ~~真的假的？~~ | dropped on 2026-10-04: the parent found it odd, and it is a 50/50 guess | — |
 | 补一补 | a word with one character missing → pick from 4 look-alikes | 字辨 |
 | 选一选 | a short sentence → the word that fits (placement bank) | understanding |
 
