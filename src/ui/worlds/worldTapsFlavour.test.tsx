@@ -10,7 +10,7 @@ import { reducedMotion } from '../motion';
 
 const kid = (over: Partial<KidState> = {}): KidState => ({ ...DEFAULT_KID, finds: { ...DEFAULT_FINDS }, ...over });
 const tap = (label: string) => fireEvent.click(document.querySelector(`.world-taps [aria-label="${label}"]`)!);
-beforeEach(() => vi.useFakeTimers());
+beforeEach(() => { vi.useFakeTimers(); });
 
 describe('world tap details (deferred minors, plan 7)', () => {
   it('with reduced motion the sea fish fades in where it can be seen, not off the left edge', () => {
