@@ -67,3 +67,25 @@ describe('pinyin options are never a real reading', () => {
     }
   });
 });
+
+describe('his pinyin traps', () => {
+it('uses his traps first and at most one tone-only change', () => {
+  const pool = builtinWords(0);
+  const target = pool.find((x) => x.text === '静')!;
+  for (let seed = 1; seed < 20; seed++) {
+    const out = pickPinyinDistractors(target, pool, mulberry32(seed));
+    expect(out).toHaveLength(3);
+    expect(out.filter((p) => toneless(p) === toneless(target.pinyin)).length).toBeLessThanOrEqual(1);
+    expect(out).toContain('qīng');
+  }
+});
+it('never offers another correct reading of a polyphonic character as wrong', () => {
+  const pool = builtinWords(0);
+  const jue = pool.find((x) => x.text === '觉')!;
+  for (let seed = 1; seed < 20; seed++) {
+    const out = pickPinyinDistractors(jue, pool, mulberry32(seed));
+    expect(out).not.toContain('jiào');
+    expect(out).not.toContain('jué');
+  }
+});
+});

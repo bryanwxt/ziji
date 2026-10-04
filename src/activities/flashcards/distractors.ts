@@ -1,52 +1,11 @@
 import { pinyin } from 'pinyin-pro';
 import { wordComponents } from '../../content';
+import { trapReadings } from './pinyinTraps';
 import { shuffle, type Rng } from '../../lib/random';
 import type { Word } from '../../types';
 
-const MARKS: Record<string, string[]> = {
-  a: ['ā', 'á', 'ǎ', 'à'],
-  e: ['ē', 'é', 'ě', 'è'],
-  i: ['ī', 'í', 'ǐ', 'ì'],
-  o: ['ō', 'ó', 'ǒ', 'ò'],
-  u: ['ū', 'ú', 'ǔ', 'ù'],
-  ü: ['ǖ', 'ǘ', 'ǚ', 'ǜ'],
-};
-const UNMARK = new Map<string, [string, number]>(
-  Object.entries(MARKS).flatMap(([vowel, marked]) => marked.map((m, i): [string, [string, number]] => [m, [vowel, i + 1]])),
-);
-
-export function syllableTone(s: string): { base: string; tone: number } {
-  let base = '';
-  let tone = 5;
-  for (const ch of s) {
-    const hit = UNMARK.get(ch);
-    if (hit) {
-      base += hit[0];
-      tone = hit[1];
-    } else {
-      base += ch;
-    }
-  }
-  return { base, tone };
-}
-
-export function toneless(pinyin: string): string {
-  return pinyin.trim().toLowerCase().split(/\s+/).map((s) => syllableTone(s).base).join(' ');
-}
-
-/** Standard placement: a, else e, else the o of "ou", else the last of i/o/u/ü. */
-export function withTone(base: string, tone: number): string {
-  if (tone < 1 || tone > 4) return base;
-  const idx = base.includes('a')
-    ? base.indexOf('a')
-    : base.includes('e')
-      ? base.indexOf('e')
-      : base.includes('ou')
-        ? base.indexOf('o')
-        : Math.max(...['i', 'o', 'u', 'ü'].map((v) => base.lastIndexOf(v)));
-  if (idx < 0) return base;
-  return base.slice(0, idx) + MARKS[base[idx]!]![tone - 1] + base.slice(idx + 1);
-}
+export { syllableTone, toneless, withTone } from './tones';
+import { syllableTone, toneless, withTone } from './tones';
 
 const lengthOf = (w: Word) => Array.from(w.text).length;
 
@@ -103,14 +62,20 @@ export function pickPinyinDistractors(target: Word, pool: Word[], rng: Rng, n = 
     }
   });
   const variants = shuffle(toneVariants, rng);
+  // His top trap (the phonetic part's reading when there is one) always appears; the rest take turns.
+  const [topTrap, ...otherTraps] = trapReadings(target);
+  const traps = topTrap ? [topTrap, ...shuffle(otherTraps, rng)] : [];
 
-  // Tier 1: up to two tone changes (so options are not all the same syllable).
-  variants.slice(0, 2).forEach(add);
+  // Tier 0: his real traps (the phonetic part's reading, j/q/x vs z/c/s, close finals, 轻声), up to two.
+  traps.slice(0, 2).forEach(add);
+  // Tier 1: one tone change (tone is rarely what he gets wrong).
+  variants.slice(0, 1).forEach(add);
   // Tier 2: pinyin of look-alike words; tier 3: any word of the same length.
   const sameLength = pool.filter((w) => w.pinyin.split(' ').length === syllables.length && w.text !== target.text);
   shuffle(sameLength.filter((w) => sharesComponent(target, w)), rng).forEach((w) => add(w.pinyin));
   shuffle(sameLength, rng).forEach((w) => add(w.pinyin));
-  // Tiny pools: fill with the remaining tone variants.
+  // Tiny pools: the remaining traps, then the remaining tone variants.
+  traps.forEach(add);
   variants.forEach(add);
   return out;
 }
