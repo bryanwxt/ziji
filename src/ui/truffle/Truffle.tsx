@@ -95,7 +95,7 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
   const first = useRef(expr);
   const drawnExpr = alive ? first.current : expr;
   const f = PRESETS[drawnExpr];
-  useRig(svgRef, { alive, expr, reduced: reducedMotion(), react });
+  useRig(svgRef, { alive, expr, reduced: reducedMotion(), react, calm, lookAt });
   const tilt = clamp(f.tilt + clamp(lookAt, -1, 1) * 4, -8, 8);
   const acc = accessoryLayer(accessory);
   const wear = costumeLayer(outfit);

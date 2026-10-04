@@ -1,6 +1,7 @@
 import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
+import { cardCentre, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
 import { REACTIONS, REST, TRACKS, type Motion, type Reaction, type Track } from './timelines';
 
 type Key = keyof Face;
@@ -57,7 +58,14 @@ export interface RigOptions {
   expr: Expression;
   reduced: boolean;
   react?: Reaction | null;
+  /** a question is up: no ear flicks, tail swish or following the finger; he looks at the card (spec §4.8) */
+  calm?: boolean;
+  /** −1 (left) … 1 (right): an extra head tilt the screen asks for */
+  lookAt?: number;
 }
+
+const BLINK_MS = 170;
+const FLICK_MS = 260;
 
 /** Whole-body motion as a transform about his feet (160, 276): lean, jump, squash (crouch/land) or stretch. */
 export const rigTransform = (m: Motion, shimmer = 0) =>
@@ -72,10 +80,15 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
   o.current = opts;
   const cur = useRef<Face>({ ...PRESETS[opts.expr] });
   // a reaction: an expression held for a while (then perhaps another), and a body track
+  const pending = useRef<Reaction | null>(null); // a new reaction starts on the next frame, in frame time
   const hold = useRef<{ expr: Expression; until: number; then?: Expression } | null>(null);
   const after = useRef<Expression | null>(null);
   const track = useRef<{ fn: Track; start: number; purr: boolean } | null>(null);
   const lag = useRef({ y: 0, v: 0 });
+  // idle life, scheduled by frame time
+  const idle = useRef({ nextBlink: -1, blinkAt: -1, again: false, nextFlick: -1, flickAt: -1, flickSide: 1 });
+  const gaze = useRef({ x: 0, y: 0, vx: 0, vy: 0, aim: { x: 0, y: 0 }, aimAt: -Infinity });
+  const pointer = useRef<{ x: number; y: number } | null>(null);
   const vel = useRef<Record<string, number>>({});
   const extras = useRef<Record<string, number>>(Object.fromEntries(EXTRA_KEYS.map((e) => [e, e === opts.expr ? 1 : 0])));
   const extraVel = useRef<Record<string, number>>({});
@@ -85,13 +98,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
 
   // a new reaction replaces a running one (review focus 2)
   useEffect(() => {
-    const r = opts.react;
-    if (!r) return;
-    const def = REACTIONS[r.kind];
-    const now = performance.now();
-    hold.current = { expr: def.expr, until: now + def.holdMs, then: def.then };
-    after.current = null;
-    track.current = def.track && !o.current.reduced ? { fn: TRACKS[def.track], start: now, purr: def.track === 'purr' } : null;
+    if (opts.react) pending.current = opts.react;
   }, [opts.react?.key]);
 
   useEffect(() => {
@@ -105,7 +112,15 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
     };
     const frame = (now: number) => {
       raf.current = 0;
-      const { reduced } = o.current;
+      const { reduced, calm = false, lookAt = 0 } = o.current;
+      const life = idleExtras(calm, reduced);
+      if (pending.current) {
+        const def = REACTIONS[pending.current.kind];
+        pending.current = null;
+        hold.current = { expr: def.expr, until: now + def.holdMs, then: def.then };
+        after.current = null;
+        track.current = def.track && !reduced ? { fn: TRACKS[def.track], start: now, purr: def.track === 'purr' } : null;
+      }
       // which expression shows now: a held reaction, what follows it, or his own
       if (hold.current && now >= hold.current.until) {
         after.current = hold.current.then ?? null;
@@ -137,7 +152,58 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       }
       lag.current.v = (lag.current.v + (-m.y * 0.18 - lag.current.y) * 0.2) * 0.7;
       lag.current.y += lag.current.v;
-      const pose: Pose = { ...REST_POSE, tilt: m.shake, headY: lag.current.y, rig: rigTransform(m, shimmer) };
+      // blinks (sometimes two) and ear flicks
+      const s = idle.current;
+      if (s.nextBlink < 0) s.nextBlink = now + nextBlinkMs(Math.random);
+      if (s.nextFlick < 0) s.nextFlick = now + nextEarFlickMs(Math.random);
+      if (life.blink && s.blinkAt < 0 && now >= s.nextBlink) {
+        s.blinkAt = now;
+        s.again = !s.again && isDoubleBlink(Math.random);
+      }
+      let blink = 0;
+      if (s.blinkAt >= 0) {
+        const k = (now - s.blinkAt) / BLINK_MS;
+        if (k >= 1) {
+          s.blinkAt = -1;
+          s.nextBlink = now + (s.again ? 90 : nextBlinkMs(Math.random));
+        } else blink = 1 - Math.abs(2 * k - 1);
+      }
+      let flickL = 0;
+      let flickR = 0;
+      if (now >= s.nextFlick) {
+        if (life.earFlicks && s.flickAt < 0) {
+          s.flickAt = now;
+          s.flickSide = Math.random() < 0.5 ? -1 : 1;
+        }
+        s.nextFlick = now + nextEarFlickMs(Math.random);
+      }
+      if (s.flickAt >= 0) {
+        const k = (now - s.flickAt) / FLICK_MS;
+        if (k >= 1 || !life.earFlicks) s.flickAt = -1;
+        else if (s.flickSide < 0) flickL = Math.sin(Math.PI * k) * 16;
+        else flickR = Math.sin(Math.PI * k) * 16;
+      }
+      // breathing, anchored at his feet; the head rides a little behind
+      const t = now / 1000;
+      const br = life.breathe ? Math.sin(t * 2.1) : 0;
+      const body = life.breathe ? `translate(0 ${(-br * 0.24).toFixed(3)}) translate(160 276) scale(1 ${(1 + br * 0.004).toFixed(4)}) translate(-160 -276)` : '';
+      const purring = !!track.current?.purr;
+      const tail = purring && !reduced ? `rotate(${(Math.sin(t * 1.1) * 3).toFixed(2)}deg)` : life.tailSwish ? `rotate(${(Math.sin(t * 2.3) * 8).toFixed(2)}deg)` : '';
+      // where he looks: the finger when free, the card while calm, otherwise ahead
+      const g = gaze.current;
+      if (life.followPointer) g.aim = pointer.current ? gazeToward(svg.getBoundingClientRect(), pointer.current) : { x: 0, y: 0 };
+      else if (calm) {
+        if (now - g.aimAt >= 500) {
+          g.aim = gazeToward(svg.getBoundingClientRect(), cardCentre());
+          g.aimAt = now;
+        }
+      } else g.aim = { x: 0, y: 0 };
+      [g.x, g.vx] = springStep(g.x, g.vx, g.aim.x, stiff, damp);
+      [g.y, g.vy] = springStep(g.y, g.vy, g.aim.y, stiff, damp);
+      const pose: Pose = {
+        gx: g.x, gy: g.y, tilt: m.shake + Math.max(-1, Math.min(1, lookAt)) * 4, headY: lag.current.y - br * 0.7,
+        rig: rigTransform(m, shimmer), body, tail, blink, earL: flickL, earR: flickR,
+      };
       paint(els, cur.current, pose, extras.current);
       start();
     };
@@ -154,6 +220,8 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       else stop();
     };
     document.addEventListener('visibilitychange', onVisibility);
+    const onPointer = (e: PointerEvent) => { pointer.current = { x: e.clientX, y: e.clientY }; };
+    document.addEventListener('pointermove', onPointer, { passive: true });
     let io: IntersectionObserver | null = null;
     if (typeof IntersectionObserver === 'function') {
       io = new IntersectionObserver(([entry]) => {
@@ -168,6 +236,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
     return () => {
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
+      document.removeEventListener('pointermove', onPointer);
       io?.disconnect();
     };
   }, [opts.alive]);

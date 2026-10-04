@@ -7,13 +7,15 @@ let reduced = false;
 vi.mock('../motion', () => ({ reducedMotion: () => reduced }));
 
 let frames: FrameRequestCallback[] = [];
+let clock = 0; // frame time keeps counting across run() calls, so idle timing can be sampled frame by frame
 beforeEach(() => {
   frames = [];
+  clock = performance.now();
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { frames.push(cb); return frames.length; });
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
 });
 afterEach(() => vi.unstubAllGlobals());
-const run = (n: number) => { for (let i = 0; i < n; i++) { const f = frames; frames = []; f.forEach((cb) => cb(performance.now() + i * 16)); } };
+const run = (n: number) => { for (let i = 0; i < n; i++) { const f = frames; frames = []; clock += 16; f.forEach((cb) => cb(clock)); } };
 
 describe('the animation loop (spec §4.1, review focus 1)', () => {
   it('a static Truffle never starts a loop', () => {
@@ -59,6 +61,26 @@ describe('the animation loop (spec §4.1, review focus 1)', () => {
     const m = /translate\((-?[\d.]+) (-?[\d.]+)\)/.exec(container.querySelector('[data-part="rig"]')!.getAttribute('transform') ?? '');
     expect(container.querySelector('svg')!.getAttribute('data-expression')).toBe('happy');
     expect(Math.abs(Number(m?.[2] ?? 0))).toBeGreaterThan(2); // he hops
+  });
+  it('calm: no ear flicks while a question is up', () => {
+    const { container } = render(<Truffle alive calm expression="neutral" />);
+    const ear = () => (container.querySelector('[data-part="ear-l"]') as SVGGElement).style.transform;
+    act(() => run(1));
+    const before = ear();
+    act(() => run(60 * 9)); // nine seconds of frames
+    expect(ear()).toBe(before);
+  });
+  it('free: he flicks an ear and blinks within a few seconds', () => {
+    const { container } = render(<Truffle alive expression="neutral" />);
+    const ears = new Set<string>();
+    const lids = new Set<string>();
+    for (let i = 0; i < 60 * 9; i++) {
+      act(() => run(1));
+      ears.add((container.querySelector('[data-part="ear-l"]') as SVGGElement).style.transform + (container.querySelector('[data-part="ear-r"]') as SVGGElement).style.transform);
+      lids.add(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('d') ?? '');
+    }
+    expect(ears.size).toBeGreaterThan(1);
+    expect(lids.size).toBeGreaterThan(1);
   });
   it('reduced motion: the expression still changes, the body never moves', () => {
     reduced = true;
