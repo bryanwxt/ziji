@@ -32,6 +32,7 @@ npm run dev        # http://localhost:5173 (also on your LAN for testing on the 
 npm test
 npm run build
 npm run content    # regenerate src/content/builtin.json from HSK 3.0 + Make Me a Hanzi
+npx tsx scripts/build-glossary.ts <cedict_ts.u8>   # regenerate src/content/glossary.json (English on the 认字 card) from CC-CEDICT; CC BY-SA 4.0
 ```
 
 ## Put it on the iPad

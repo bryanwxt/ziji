@@ -7,4 +7,8 @@ describe('Credits', () => {
     render(<Credits />);
     expect(screen.getByText(/Lucide icons — ISC License/)).toBeTruthy();
   });
+  it('credits CC-CEDICT for the English on the 认字 card (CC BY-SA 4.0 requires attribution)', () => {
+    render(<Credits />);
+    expect(screen.getByText(/CC-CEDICT .*CC BY-SA 4\.0/)).toBeTruthy();
+  });
 });

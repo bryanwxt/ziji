@@ -6,7 +6,7 @@ import type { BuiltinChar, CharInfo, Passage, Word } from '../types';
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.2`;
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.3`;
 export const PASSAGES: Passage[] = passages as Passage[];
 
 const infoByChar = new Map<string, CharInfo>(
@@ -39,7 +39,7 @@ export function builtinWords(now: number): Word[] {
     id: builtinWordId(c.char),
     text: c.char,
     pinyin: READING_FIXES[c.char] ?? c.pinyin,
-    meaning: c.meaning,
+    meaning: MEANING_FIXES[c.char] ?? c.meaning,
     level: c.level,
     rank: c.rank,
     source: 'builtin' as const,
@@ -53,6 +53,8 @@ export function builtinWords(now: number): Word[] {
 /** The reading a P2 child meets, where the dictionary's citation reading isn't it (了 is le every day, liǎo only in 了解). */
 export const READING_FIXES: Record<string, string> = { 了: 'le' };
 /** 组词 readings the source data gets wrong (包子's 子 is 轻声). */
+/** Meanings that go with a fixed reading: 了 read le is the particle, not liǎo "clear, to finish". */
+export const MEANING_FIXES: Record<string, string> = { 了: '(marks a finished action or a change)' };
 export const EXAMPLE_FIXES: Record<string, string> = { 包子: 'bāo zi' };
 
 /** Radical and components of every character in the text, de-duplicated, in order. */

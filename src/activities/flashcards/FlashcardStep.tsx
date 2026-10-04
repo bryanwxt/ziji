@@ -14,6 +14,7 @@ import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
+import { cardMeaning, glossFor } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 
@@ -216,8 +217,12 @@ function Intro({ word }: { word: Word }) {
       <div class="intro__card">
         <div class="pinyin">{word.pinyin}</div>
         <div class="hanzi hanzi--xl">{word.text}</div>
-        <SpeakButton text={word.text} />
+        <div class="intro__say">
+          <SpeakButton text={word.text} />
+          {cardMeaning(word) && <p class="intro__en" lang="en">{cardMeaning(word)}</p>}
+        </div>
         <UsageLine word={word} />
+        {line && glossFor(line.full) && <p class="intro__en intro__en--phrase" lang="en">{glossFor(line.full)}</p>}
         {hanChars(word.text).map((ch) => {
           const info = getCharInfo(ch);
           const parts = info?.components ?? [];
@@ -237,11 +242,12 @@ function Intro({ word }: { word: Word }) {
             </div>
           );
         })}
-        {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, line && Array.from(line.full).length > 3 ? 1 : 2).map((e) => ( // two 组词 fit every screen (one beside a sentence), never the one the usage line already shows; all of them feed the meaning questions
+        {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, line ? 1 : 2).map((e) => ( // with their English, one 组词 besides the usage line fits every screen (never the one it already shows); all of them feed the meaning questions
           <div class="example" key={e.text}>
             <span class="pinyin">{e.pinyin}</span>
             <span class="hanzi">{e.text}</span>
             <SpeakButton text={e.text} />
+            {glossFor(e.text) && <span class="example__en" lang="en">{glossFor(e.text)}</span>}
           </div>
         ))}
       </div>

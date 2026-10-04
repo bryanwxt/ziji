@@ -222,7 +222,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .parts { font-size: 28px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-family: var(--hanzi); }
 .part--radical { color: var(--blue); }
-.example { font-size: 26px; display: flex; align-items: center; gap: 10px; }
+.example { font-size: 26px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+/* English on the 认字 card (parent, 2026-10-04): small, quiet, one line each */
+.intro__en, .example__en { margin: 0; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.25; color: var(--ink-soft); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.example__en { flex-basis: 100%; text-align: center; margin-top: -4px; }
+.intro__say { display: flex; align-items: center; justify-content: center; gap: 10px; max-width: 100%; }
 @media (orientation: portrait) { .flash { grid-template-columns: 1fr; } }
 
 /* Writing */

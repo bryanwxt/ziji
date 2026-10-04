@@ -104,6 +104,32 @@ describe('new-word card (parent report: it repeated the example phrases)', () =>
   });
 });
 
+describe('new-word card in English too (parent, 2026-10-04)', () => {
+  it("shows the character's English meaning and each phrase's", () => {
+    const er = pool.find((w) => w.text === '儿')!;
+    render(<FlashcardStep {...base} word={er} item={{ wordId: er.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const en = [...document.querySelectorAll('.intro [lang="en"]')].map((e) => e.textContent);
+    expect(en[0]).toMatch(/child|son/);
+    const phrases = [...document.querySelectorAll('.intro .usage__text, .intro .example .hanzi')].map((e) => e.textContent!.replace(/\s/g, ''));
+    expect(phrases.length).toBeGreaterThan(0);
+    expect(en.length).toBe(1 + phrases.length); // one English line per phrase as well
+  });
+  it('the character\'s English is its everyday sense at its own reading (他 is "he", not "other, another")', () => {
+    const ta = pool.find((w) => w.text === '他')!;
+    render(<FlashcardStep {...base} word={ta} item={{ wordId: ta.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.intro__en')!.textContent).toMatch(/^he\b/);
+  });
+  it('one 组词 besides the usage line, so the card fits above 我记住了 on every screen', () => {
+    const ta = pool.find((w) => w.text === '他')!;
+    render(<FlashcardStep {...base} word={ta} item={{ wordId: ta.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelectorAll('.intro .example')).toHaveLength(1);
+  });
+  it('English stays on the new-word card: the quiz that follows has none', () => {
+    render(<FlashcardStep {...base} item={review} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('[lang="en"]')).toBeNull();
+  });
+});
+
 describe('Truffle reactions', () => {
   const mood = () => document.querySelector('svg.truffle')!.getAttribute('data-mood');
   const relearn = () => ({ id: `${he.id}:recognise`, wordId: he.id, kind: 'recognise' as const, fsrs: { ...createEmptyCard(new Date()), state: State.Relearning } });
@@ -201,10 +227,10 @@ describe('认一认 meaning questions (spec §19)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
   });
-  it("a new word's intro shows its 组词, never an English meaning", () => {
+  it("a new word's intro shows its 组词, with English beside them (the parent asked for it on 2026-10-04)", () => {
     render(<FlashcardStep {...base} word={xi} item={{ wordId: 'b:惜', isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     expect(document.body.textContent).toContain('珍惜');
-    expect(document.body.textContent).not.toContain('cherish');
+    expect(document.querySelector('.intro [lang="en"]')).toBeTruthy();
   });
   it('a long 组词 (四面八方) stays on one line: the cue knows its length', () => {
     const ba = { ...makeWord('八', { id: 'b:八', pinyin: 'bā' }), examples: [{ text: '四面八方', pinyin: 'sì miàn bā fāng' }] };

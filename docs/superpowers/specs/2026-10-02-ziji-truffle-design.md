@@ -1504,3 +1504,7 @@ This builds the §19 sentence bank and 选一选, and adds one question style.
    - 听写 (built: the school 听写 mistakes box; the rest arrived with plans 13–14);
    - Tatoeba sentences: **skipped** by the parent on 2026-10-04 — the written bank and his class sentences are enough;
    - optional Tatoeba sentences (§19 parts 3–4).
+
+### English on the 认字 card (parent, 2026-10-04)
+
+The parent reversed the "no English on child screens" rule for one place only: the new-word (认字) card shows the character's English meaning beside its speak button and a short English gloss under each phrase (the usage line's 组词 and one more). The glosses come from CC-CEDICT (CC BY-SA 4.0, credited in the parent area), shortened to whole senses of at most 40 characters, at the word's own reading. Quizzes, feedback and every other child screen stay Chinese-only. The card never repeats the phrase its usage line already shows.

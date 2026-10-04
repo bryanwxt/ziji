@@ -34,10 +34,23 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
   it('built-in content and its fixes change only with a new CONTENT_VERSION (review I3)', async () => {
     const { createHash } = await import('node:crypto');
     const { default: data } = await import('./builtin.json');
-    const { CONTENT_VERSION, READING_FIXES, EXAMPLE_FIXES } = await import('.');
-    const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES])).digest('hex').slice(0, 16);
+    const { CONTENT_VERSION, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES } = await import('.');
+    const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES])).digest('hex').slice(0, 16);
     // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
-    const PINNED: Record<string, string> = { '1.2': 'a281a7f30a016ed0' };
+    const PINNED: Record<string, string> = { '1.3': 'e8d2030805d5210e' };
     expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
+  });
+  it('了 means what it does when read le, not "clear, to finish"', async () => {
+    const { builtinWords } = await import('.');
+    expect(builtinWords(0).find((w) => w.text === '了')!.meaning).toMatch(/finished|change/);
+  });
+  it('the phrase glossary (CC-CEDICT, CC BY-SA) says where it is from and covers nearly every 组词', async () => {
+    const { default: g } = await import('./glossary.json');
+    const { BUILTIN } = await import('.');
+    expect(g.source).toMatch(/CC-CEDICT/);
+    expect(g.license).toMatch(/CC BY-SA 4\.0/);
+    const phrases = new Set(BUILTIN.flatMap((c) => c.examples.map((e) => e.text)));
+    const covered = [...phrases].filter((p) => p in g.entries).length;
+    expect(covered / phrases.size).toBeGreaterThan(0.99);
   });
 });
