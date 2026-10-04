@@ -14,7 +14,7 @@ vi.mock('hanzi-writer', () => ({
   default: {
     create: vi.fn((_el: unknown, _ch: string, opts: { onLoadCharDataError?: () => void }) => {
       loadError = opts.onLoadCharDataError;
-      return { quiz: (o: QuizOpts) => { quizzes.push(o); return Promise.resolve(); }, cancelQuiz: vi.fn(), highlightStroke: vi.fn() };
+      return { quiz: (o: QuizOpts) => { quizzes.push(o); return Promise.resolve(); }, cancelQuiz: vi.fn(), highlightStroke: vi.fn(), updateDimensions: vi.fn() };
     }),
   },
 }));
@@ -128,5 +128,24 @@ describe('WritingStep Truffle', () => {
   it('the pet says which pass it is', () => {
     render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew pass="trace" onDone={vi.fn()} />);
     expect(screen.getByText('描一描！')).toBeTruthy();
+  });
+});
+
+describe('写一写 on the stage (spec 2026-10-04 §3)', () => {
+  it('Truffle in his spot, cue and box on the card', () => {
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
+    const stage = document.querySelector('.stage[data-stage="write"]')!;
+    expect(stage.querySelector('.stage__truffle .pet')).toBeTruthy();
+    expect(stage.querySelector('.stage__card .write__cue')).toBeTruthy();
+    expect(stage.querySelector('.stage__card .tianzige')).toBeTruthy();
+  });
+  it('re-measures the box when the screen resizes, keeping the strokes he has drawn (an iPad rotated mid-character; review focus 2)', () => {
+    quizzes.length = 0;
+    render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
+    const creates = vi.mocked(HanziWriter.create).mock.calls.length;
+    const writer = vi.mocked(HanziWriter.create).mock.results.at(-1)!.value as { updateDimensions: ReturnType<typeof vi.fn> };
+    act(() => { window.dispatchEvent(new Event('resize')); });
+    expect(writer.updateDimensions).toHaveBeenCalledWith({ width: expect.any(Number), height: expect.any(Number) });
+    expect(vi.mocked(HanziWriter.create).mock.calls.length).toBe(creates); // resized in place: the quiz and his strokes stay
   });
 });

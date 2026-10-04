@@ -6,6 +6,7 @@ import { hanChars } from '../../content';
 import { loadStrokeData } from '../../content/strokes';
 import type { KidState, Word } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
+import { Stage } from '../../ui/stage/Stage';
 import { burst } from '../../ui/motion';
 import { isHardWrite } from '../../fun/mood';
 import { Closeup } from '../../app/Closeup';
@@ -14,7 +15,7 @@ import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { Label, spokenBlanks } from '../../ui/Label';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { writingCue } from './cue';
-import { writingBoxSize } from './size';
+import { writingBoxFor } from './size';
 import type { WritePass } from '../../session/runner';
 
 export interface WriteResult {
@@ -45,6 +46,23 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
   const host = useRef<HTMLDivElement>(null);
   const startedAt = useRef(performance.now());
   const hinted = useRef(false);
+  const writer = useRef<ReturnType<typeof HanziWriter.create> | null>(null);
+  /** The 田字格 size for the stage card it sits in, below the cue and dots (spec 2026-10-04 §3): measured from where the box starts. */
+  const boxSize = (el: HTMLElement) => {
+    const card = el.closest('.stage__card') as HTMLElement | null;
+    return writingBoxFor({ width: card?.clientWidth ?? window.innerWidth, height: card?.clientHeight ?? window.innerHeight }, el.offsetTop);
+  };
+  // a rotated iPad: the box re-fits in place, keeping the strokes he has drawn
+  useEffect(() => {
+    const onResize = () => {
+      const el = host.current;
+      if (!el || !writer.current) return;
+      const size = boxSize(el);
+      writer.current.updateDimensions({ width: size, height: size });
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     speak(cue.speech);
@@ -56,8 +74,8 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
     el.innerHTML = '';
     setCharMisses(null);
     let cancelled = false;
-    const size = writingBoxSize(window.innerWidth, window.innerHeight, !!cue.sentence);
-    const writer = HanziWriter.create(el, chars[index]!, {
+    const size = boxSize(el);
+    const hw = HanziWriter.create(el, chars[index]!, {
       width: size,
       height: size,
       padding: 16,
@@ -74,8 +92,9 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
         if (!cancelled) onDone(null);
       },
     });
-    if (pass === 'hint') writer.highlightStroke(0); // the first stroke shows the way
-    void writer.quiz({
+    writer.current = hw;
+    if (pass === 'hint') hw.highlightStroke(0); // the first stroke shows the way
+    void hw.quiz({
       onMistake: (d) => {
         if (pass === 'recall' && d.mistakesOnStroke >= 2) hinted.current = true;
       },
@@ -90,7 +109,8 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
     });
     return () => {
       cancelled = true;
-      writer.cancelQuiz();
+      hw.cancelQuiz();
+      writer.current = null;
     };
   }, [word.id, index, pass]);
 
@@ -102,27 +122,34 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
   };
   return (
     <>
-      <div class="write">
-        <div class="row write__head">
+      <Stage
+        activity="write"
+        truffle={
           <Pet
             kid={kid}
-            size={130}
+            size={180}
             mood={charMisses === null ? resting : charMisses > 3 ? 'neutral' : last && isHardWrite(isNew, misses) ? 'wow' : 'pleased'}
             bubble={charMisses === null ? PASS_BUBBLE[pass] : null}
           />
-          <div class="write__cue">
-            <div class="write__prompt">
-              <span class="pinyin">{word.pinyin}</span>
-              <SpeakButton text={cue.speech} />
-            </div>
-            {cue.sentence && (
-              <>
-                <p class="sr-only" lang="zh">{spokenBlanks(cue.sentence)}</p>
-                <div class="write__sentence hanzi" lang="zh" aria-hidden="true">{cue.sentence}</div>
-              </>
-            )}
-            {cue.blanked && <div class="write__blank"><Label zh={cue.blanked} py={cue.blankedPy ?? undefined} /></div>}
+        }
+        sheet={charMisses === null ? (
+          <FeedbackSheet actionLabel={last ? '完成' : '下一个字'} disabled onAction={() => {}} />
+        ) : (
+          <FeedbackSheet tone="good" title={charMisses === 0 ? '完美！' : '写得好！'} actionLabel={last ? '完成' : '下一个字'} onAction={next} />
+        )}
+      >
+        <div class="write__cue">
+          <div class="write__prompt">
+            <span class="pinyin">{word.pinyin}</span>
+            <SpeakButton text={cue.speech} />
           </div>
+          {cue.sentence && (
+            <>
+              <p class="sr-only" lang="zh">{spokenBlanks(cue.sentence)}</p>
+              <div class="write__sentence hanzi" lang="zh" aria-hidden="true">{cue.sentence}</div>
+            </>
+          )}
+          {cue.blanked && <div class="write__blank"><Label zh={cue.blanked} py={cue.blankedPy ?? undefined} /></div>}
         </div>
         <div class="dots">
           {chars.map((c, i) => (
@@ -130,12 +157,7 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
           ))}
         </div>
         <div ref={host} class="tianzige" />
-      </div>
-      {charMisses === null ? (
-        <FeedbackSheet actionLabel={last ? '完成' : '下一个字'} disabled onAction={() => {}} />
-      ) : (
-        <FeedbackSheet tone="good" title={charMisses === 0 ? '完美！' : '写得好！'} actionLabel={last ? '完成' : '下一个字'} onAction={next} />
-      )}
+      </Stage>
       {showCloseup && <Closeup kid={kid} />}
     </>
   );

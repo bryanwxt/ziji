@@ -226,8 +226,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .intro__say { display: flex; align-items: center; justify-content: center; gap: 10px; max-width: 100%; }
 
 /* Writing */
-.write { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.write__head { gap: 24px; }
 .write__prompt { display: flex; align-items: center; gap: 16px; font-size: 36px; }
 .write__cue { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .write__blank { font-size: 30px; font-weight: 700; }
@@ -834,17 +832,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 }
 
 /* 写一写 */
-.write { min-height: 0; gap: 10px; }
-.write__head .truffle { width: calc(var(--pet) * 0.8); height: auto; }
 @media (max-width: 599px) {
-  .write__head { gap: 10px; flex-wrap: nowrap; }
   .write__prompt { font-size: 28px; }
-}
-@media (orientation: landscape) and (min-height: 600px) {
-  .write { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; align-items: center; column-gap: 32px; }
-  .write__head { grid-row: 1 / span 2; flex-direction: column; }
-  .write .dots { grid-column: 2; }
-  .write .tianzige { grid-column: 2; }
 }
 
 /* 钓鱼 */
@@ -1123,3 +1112,6 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 .stage--zibian .pond-q { font-size: var(--q-hanzi); border: none; box-shadow: none; background: none; padding: 0; } /* the card is the paper */
 .stage--zibian .fishtile__char { font-size: var(--tile-hanzi); }
+
+.stage--write .stage__card { justify-content: flex-start; }
+.stage--write .write__cue { background: none; border: none; box-shadow: none; padding: 0; } /* the card is the paper */

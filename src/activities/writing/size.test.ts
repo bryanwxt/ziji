@@ -1,27 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { writingBoxSize } from './size';
+import { writingBoxFor } from './size';
 
-describe('writingBoxSize', () => {
-  it('fills an iPhone SE without pushing the page: room for the bar, the cue and 继续', () => {
-    const s = writingBoxSize(375, 667);
-    expect(s).toBeLessThanOrEqual(375 - 48);
-    expect(s).toBeLessThanOrEqual(667 - 360);
-    expect(s).toBeGreaterThanOrEqual(240); // still big enough for a child's finger strokes
-  });
-  it('is the old 320px on an upright iPad', () => {
-    expect(writingBoxSize(768, 1024)).toBe(320);
-  });
-  it('in iPad landscape the box sits in the right column and fits the height', () => {
-    const s = writingBoxSize(1024, 768);
-    expect(s).toBeLessThanOrEqual(768 - 240);
-    expect(s).toBeLessThanOrEqual(1024 / 2);
-    expect(s).toBeGreaterThanOrEqual(320);
-  });
-  it('never goes below 220px', () => {
-    expect(writingBoxSize(320, 480)).toBe(220);
-  });
-  it('a sentence cue takes two more lines: a short phone gives the box less height, a tall one has room', () => {
-    expect(writingBoxSize(375, 667, true)).toBeLessThanOrEqual(writingBoxSize(375, 667) - 40);
-    expect(writingBoxSize(390, 844, true)).toBe(writingBoxSize(390, 844));
-  });
+describe('writingBoxFor (the box fits the stage card)', () => {
+  it('fills a roomy card up to 400px', () => expect(writingBoxFor({ width: 620, height: 640 }, 150)).toBe(400));
+  it('is limited by the card height left under the cue', () => expect(writingBoxFor({ width: 620, height: 420 }, 150)).toBe(238));
+  it('is limited by the card width on a phone', () => expect(writingBoxFor({ width: 343, height: 520 }, 130)).toBe(311));
+  it('never smaller than 200', () => expect(writingBoxFor({ width: 200, height: 200 }, 150)).toBe(200));
 });
