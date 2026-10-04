@@ -108,6 +108,6 @@ describe('ParentArea tabs', () => {
     renderWithApp(<ParentArea />, app);
     for (const d of '1111') fireEvent.click(screen.getByRole('button', { name: d }));
     await screen.findByText('Overview');
-    expect(document.querySelectorAll('.tabs .tab svg').length).toBe(10); // + From a worksheet
+    expect(document.querySelectorAll('.tabs .tab svg').length).toBe(11); // + From a worksheet, Skills
   });
 });
