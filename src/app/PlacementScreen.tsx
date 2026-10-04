@@ -13,6 +13,8 @@ import { Pet } from '../ui/Pet';
 import { Scene } from '../ui/Scene';
 import { SpeakButton } from '../ui/SpeakButton';
 import { useApp } from './AppContext';
+import { FeedbackSheet } from '../ui/stage/FeedbackSheet';
+import { Stage } from '../ui/stage/Stage';
 import { loadKnowledge } from './knowledge';
 
 const BUBBLE: Record<Style, string> = { read: '这个字怎么读？', listen: '听一听，是哪个字？', fill: '少了哪个字？', fit: '哪个词对？' };
@@ -132,16 +134,19 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
           <X size={34} strokeWidth={3} />
         </button>
       )}
-      <div class="center">
-        <Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={100} />
+      <Stage
+        activity="placement"
+        truffle={<Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={180} />}
+        sheet={<FeedbackSheet actionLabel="不知道" actionIcon={<InkIcon name="think" size={30} />} onAction={() => void answer(false)} />}
+      >
         {q && (
           <>
             {/* one box and one 2×2 grid for every style, so the screen never jumps between questions */}
             <div class="placement__prompt" lang="zh">
-              {q.style === 'read' && <div class="hanzi placement__char" data-testid="placement-char">{q.text}</div>}
+              {q.style === 'read' && <div class="hanzi placement__char" data-testid="placement-char" data-q>{q.text}</div>}
               {q.style === 'listen' && <SpeakButton text={q.text} big />}
               {q.style === 'fill' && (
-                <div class="hanzi placement__word">
+                <div class="hanzi placement__word" data-q>
                   {Array.from(q.word).map((c, i) => (i === q.index ? <span key={i} class="zibian__blank">？</span> : <span key={i}>{c}</span>))}
                 </div>
               )}
@@ -159,10 +164,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
             </div>
           </>
         )}
-        <button type="button" class="btn btn--big" onClick={() => void answer(false)}>
-          <Label zh="不知道" /> <InkIcon name="think" size={30} />
-        </button>
-      </div>
+      </Stage>
     </div>
   );
 }

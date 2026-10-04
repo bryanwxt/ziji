@@ -104,3 +104,15 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     expect(app.go).toHaveBeenCalledWith({ name: 'home' });
   });
 });
+
+describe('placement on the stage (spec 2026-10-04 §3)', () => {
+  it('Truffle in his spot, the question on the card, 不知道 in the sheet', async () => {
+    const app = await setup();
+    renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
+    await waitFor(() => expect(document.querySelector('[data-question="0"]')).toBeTruthy(), LONG);
+    const stage = document.querySelector('.stage[data-stage="placement"]')!;
+    expect(stage.querySelector('.stage__truffle .pet')).toBeTruthy();
+    expect(stage.querySelector('.stage__card .placement__prompt')).toBeTruthy();
+    expect(stage.querySelector('.stage__sheet .sheet button')!.textContent).toContain('不知道');
+  });
+});
