@@ -1,0 +1,63 @@
+// @vitest-environment node
+import { describe, expect, it } from 'vitest';
+import { builtinWords } from '../content';
+import { allCards, allWords, getSettings, putCards, putWords } from '../store/repo';
+import { freshDb, makeCard } from '../test/fixtures';
+import { buildSessionPlan } from './plan';
+import { applyDictationMistakes } from './dictation';
+
+const now = new Date(2026, 9, 5, 18);
+
+describe('school 听写 mistakes (spec §19 part 3)', () => {
+  it('a built-in character keeps its id and reading card; its write card comes due now', async () => {
+    const db = await freshDb();
+    const ws = builtinWords(0);
+    await putWords(db, ws);
+    const jia = ws.find((w) => w.text === '加')!;
+    await putCards(db, [makeCard(jia.id, 'recognise', new Date(2026, 9, 20), true), makeCard(jia.id, 'write', new Date(2026, 9, 25), true)]);
+    const r = await applyDictationMistakes(db, '加', now);
+    expect(r).toEqual({ marked: ['加'], added: [], skipped: [] });
+    const cards = new Map((await allCards(db)).map((c) => [c.id, c]));
+    expect(cards.get(`${jia.id}:write`)!.fsrs.due.getTime()).toBeLessThanOrEqual(now.getTime());
+    expect(cards.get(`${jia.id}:recognise`)!.fsrs.due).toEqual(new Date(2026, 9, 20)); // keeps the reading card as it was
+  });
+  it('a word the app does not have is added as a writeable school word with a write card due now', async () => {
+    const db = await freshDb();
+    const r = await applyDictationMistakes(db, '新加坡\n', now);
+    expect(r.added).toEqual(['新加坡']);
+    const w = (await allWords(db)).find((x) => x.text === '新加坡')!;
+    expect([w.source, w.writeable, w.listName]).toEqual(['parent', true, '听写 mistakes']);
+    expect((await allCards(db)).find((c) => c.id === `${w.id}:write`)!.fsrs.due.getTime()).toBeLessThanOrEqual(now.getTime());
+  });
+  it('skips lines that are not 1–4 Chinese characters, and reports them', async () => {
+    const db = await freshDb();
+    const r = await applyDictationMistakes(db, 'xin jia po\n\n市区\nmum says 加油', now);
+    expect(r.marked).toEqual(['市区']);
+    expect(r.skipped).toEqual(['xin jia po', 'mum says 加油']);
+  });
+  it('a word marked twice stays one word with one write card', async () => {
+    const db = await freshDb();
+    await applyDictationMistakes(db, '市区', now);
+    await applyDictationMistakes(db, '市区\n市区', new Date(now.getTime() + 1000));
+    expect((await allWords(db)).filter((w) => w.text === '市区')).toHaveLength(1);
+    expect((await allCards(db)).filter((c) => c.kind === 'write')).toHaveLength(1);
+  });
+  it('a paused word is unpaused and made writeable', async () => {
+    const db = await freshDb();
+    const ws = builtinWords(0);
+    await putWords(db, ws.map((w) => (w.text === '区' ? { ...w, paused: true, writeable: false } : w)));
+    await applyDictationMistakes(db, '区', now);
+    const w = (await allWords(db)).find((x) => x.text === '区')!;
+    expect([w.paused, w.writeable]).toEqual([false, true]);
+  });
+  it("comes first in the next lesson's 写一写", async () => {
+    const db = await freshDb();
+    const ws = builtinWords(0);
+    await putWords(db, ws);
+    const other = ws[3]!;
+    await putCards(db, [makeCard(other.id, 'recognise', new Date(2026, 9, 20), true), makeCard(other.id, 'write', new Date(2026, 9, 4), true)]);
+    await applyDictationMistakes(db, '市区', now);
+    const plan = buildSessionPlan({ cards: await allCards(db), words: await allWords(db), settings: await getSettings(db), now: new Date(2026, 9, 6, 9) });
+    expect((await allWords(db)).find((w) => w.id === plan.writeCandidates[0]!.wordId)!.text).toBe('市区');
+  });
+});
