@@ -3,7 +3,9 @@ import type { KidState } from '../types';
 import { accessoryById } from './accessories';
 import { ACCESSORIES, CHEST_BONUS_STARS } from './pet';
 
-export type ZodiacId = 'rat' | 'ox' | 'tiger' | 'rabbit' | 'dragon' | 'snake' | 'horse' | 'goat' | 'monkey' | 'rooster' | 'dog' | 'pig';
+import type { ZodiacId } from '../types';
+
+export type { ZodiacId };
 export type OutfitId = 'astronaut' | 'chef' | 'wizard' | 'explorer' | 'pirate' | 'hero' | 'pixel' | 'raincoat';
 
 export interface Costume {
@@ -41,7 +43,7 @@ export function visibleAccessory(kid: KidState): string | null {
   return accessoryById(kid.wearing) ? kid.wearing : null;
 }
 
-export type ChestResult = { kind: 'costume'; id: string } | { kind: 'accessory'; item: string } | { kind: 'stars'; amount: number };
+export type ChestResult = { kind: 'costume'; id: ZodiacId | OutfitId } | { kind: 'accessory'; item: string } | { kind: 'stars'; amount: number };
 
 /** Call only after today's daily (not free-play) session is complete. */
 export function canOpenChest(kid: KidState, today: string): boolean {
@@ -55,7 +57,7 @@ export function openChest(kid: KidState, today: string, zodiac: ZodiacId | null)
     return { kid: { ...kid, ownedCostumes: [id], lastChestDate: today }, result: { kind: 'costume', id } };
   }
   const pool = [
-    ...COSTUMES.filter((c) => !kid.ownedCostumes.includes(c.id)).map((c) => ({ kind: 'costume' as const, id: c.id as string })),
+    ...COSTUMES.filter((c) => !kid.ownedCostumes.includes(c.id)).map((c) => ({ kind: 'costume' as const, id: c.id })),
     ...ACCESSORIES.filter((a) => !kid.ownedAccessories.includes(a)).map((item) => ({ kind: 'accessory' as const, item })),
   ];
   if (!pool.length) {

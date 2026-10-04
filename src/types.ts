@@ -1,7 +1,8 @@
 import { DEFAULT_FINDS, type Finds } from './fun/finds';
-import type { ZodiacId } from './fun/costumes';
 import type { Card as FsrsCard, Grade } from 'ts-fsrs';
 import type { Recall } from './session/recall';
+
+export type ZodiacId = 'rat' | 'ox' | 'tiger' | 'rabbit' | 'dragon' | 'snake' | 'horse' | 'goat' | 'monkey' | 'rooster' | 'dog' | 'pig';
 
 export type { FsrsCard, Grade };
 

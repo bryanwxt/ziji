@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, localDateKey } from '../lib/date';
 import { DEFAULT_KID } from '../types';
-import { canOpenChest, costumeById, COSTUMES, ONESIES, openChest, OUTFITS, visibleAccessory } from './costumes';
+import { canOpenChest, costumeById, COSTUMES, ONESIES, openChest, OUTFITS, visibleAccessory, type ChestResult } from './costumes';
 import { ACCESSORIES } from './pet';
 
 describe('costumes', () => {
@@ -65,5 +65,13 @@ describe('chest after migrating a dragon-era profile', () => {
       kid = next;
     }
     expect(openChest(kid, '2027-06-01', 'dog').result).toEqual({ kind: 'stars', amount: 3 });
+  });
+});
+
+describe('chest result types', () => {
+  it('a costume from the chest is a real costume id (checked by tsc in the build)', () => {
+    // @ts-expect-error not a costume
+    const bad: ChestResult = { kind: 'costume', id: 'banana' };
+    expect(bad.kind).toBe('costume');
   });
 });
