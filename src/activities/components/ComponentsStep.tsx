@@ -5,6 +5,7 @@ import { getCharInfo } from '../../content';
 import { radicalMeaning } from '../../content/radicals';
 import type { KidState } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
+import { Stage } from '../../ui/stage/Stage';
 import { InkIcon } from '../../ui/icons/InkIcon';
 import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
@@ -62,22 +63,10 @@ export function ComponentsStep({ items, kid, resting, onAnswer, onDone, onProgre
   const state = (o: string) => (!done ? '' : o === item.answer ? 'is-right' : o === picked ? 'is-oops' : '');
 
   return (
-    <>
-      <div class="center components">
-        <Pet kid={kid} size={110} mood={!done ? resting : correct ? 'pleased' : 'side'} bubble={!done ? '钓鱼啦！' : null} />
-        <div class="pond-q zibian__word hanzi" lang="zh">
-          {chars.map((c, k) => (k === item.index ? <span key={k} class="zibian__blank">{done ? item.answer : '？'}</span> : <span key={k}>{c}</span>))}
-        </div>
-        <div class="pond pond--four">
-          {item.options.map((o, i) => (
-            <button key={o} type="button" class={`fishtile press ${state(o)}`} style={{ animationDelay: `${i * 40}ms` }} aria-label={o} disabled={done} onClick={(e) => pick(o, e.currentTarget)}>
-              <span class="fishtile__char hanzi">{o}</span>
-              <span class="fishtile__badge"><InkIcon name="fish" size={22} /></span>
-            </button>
-          ))}
-        </div>
-      </div>
-      {!done ? (
+    <Stage
+      activity="zibian"
+      truffle={<Pet kid={kid} size={180} mood={!done ? resting : correct ? 'pleased' : 'side'} bubble={!done ? '钓鱼啦！' : null} />}
+      sheet={!done ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (
         <FeedbackSheet
@@ -94,6 +83,18 @@ export function ComponentsStep({ items, kid, resting, onAnswer, onDone, onProgre
           onAction={next}
         />
       )}
-    </>
+    >
+      <div class="pond-q zibian__word hanzi" lang="zh" data-q>
+        {chars.map((c, k) => (k === item.index ? <span key={k} class="zibian__blank">{done ? item.answer : '？'}</span> : <span key={k}>{c}</span>))}
+      </div>
+      <div class="pond pond--four">
+        {item.options.map((o, i) => (
+          <button key={o} type="button" class={`fishtile press ${state(o)}`} style={{ animationDelay: `${i * 40}ms` }} aria-label={o} disabled={done} onClick={(e) => pick(o, e.currentTarget)}>
+            <span class="fishtile__char hanzi">{o}</span>
+            <span class="fishtile__badge"><InkIcon name="fish" size={22} /></span>
+          </button>
+        ))}
+      </div>
+    </Stage>
   );
 }

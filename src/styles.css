@@ -243,7 +243,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .dot.is-done { background: var(--green); animation: cp-pop var(--dur-slow) var(--spring-bouncy); }
 
 /* Components: fishing */
-.components { gap: 14px; }
 .pond-q { font-size: 28px; font-weight: 900; display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .pond-q__part { font-size: 54px; color: var(--blue); }
 .pond-q__meaning { background: var(--blue-soft); color: var(--blue-ink); border-radius: 999px; padding: 4px 14px; font-size: 22px; }
@@ -860,12 +859,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .celebrate h1 { font-size: clamp(36px, 6dvh, 56px); }
 .stars { font-size: clamp(48px, 8dvh, 72px); min-height: 0; }
 .chest svg { width: clamp(150px, 26dvh, 240px); height: auto; }
-.components { min-height: 0; justify-content: flex-start; gap: clamp(6px, 1.4dvh, 14px); }
-.components > .pet .truffle { width: var(--pet); height: auto; }
 @media (max-width: 599px) {
-  .components > .pet { flex-direction: row-reverse; align-items: center; gap: 8px; align-self: flex-start; }
-  .components > .pet .pet__bubble { margin-bottom: 0; font-size: 17px; }
-  .components > .pet .pet__bubble::after { left: -7px; bottom: auto; top: 50%; transform: translateY(-50%) rotate(135deg); }
   .whichpart__char { font-size: clamp(80px, 13dvh, 120px); }
 }
 .write__cue { background: var(--surface); border: var(--panel-border); border-radius: 16px; box-shadow: 3px 3px 0 var(--ink); padding: 8px 14px; } /* paper behind the cue: it sits on the scene */
@@ -1126,3 +1120,6 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .meaning-cue.meaning-cue--short { font-size: min(var(--q-hanzi), calc(52vw / var(--len, 2))); flex-wrap: nowrap; }
 .meaning-cue--short .label__cells { flex-wrap: nowrap; }
 .stage__card .meaning-cue { border: none; box-shadow: none; background: none; padding: 0; max-width: 100%; } /* the card is the paper: no box inside it */
+
+.stage--zibian .pond-q { font-size: var(--q-hanzi); border: none; box-shadow: none; background: none; padding: 0; } /* the card is the paper */
+.stage--zibian .fishtile__char { font-size: var(--tile-hanzi); }

@@ -55,3 +55,13 @@ describe('progress (deferred minor, plan 13)', () => {
     expect(onProgress).toHaveBeenLastCalledWith(0.5);
   });
 });
+
+describe('字辨 on the stage (spec 2026-10-04 §3)', () => {
+  it('Truffle in his spot, the word with its gap on the card, the fish tiles below it', () => {
+    render(<ComponentsStep items={[item]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
+    const stage = document.querySelector('.stage[data-stage="zibian"]')!;
+    expect(stage.querySelector('.stage__truffle .pet')).toBeTruthy();
+    expect(stage.querySelector('.stage__card .pond-q[data-q]')).toBeTruthy();
+    expect(stage.querySelector('.stage__card .pond')).toBeTruthy();
+  });
+});
