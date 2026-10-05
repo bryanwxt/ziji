@@ -558,3 +558,18 @@ describe("Truffle's memory (spec 2026-10-04 §4.6, phase E)", () => {
   });
 });
 
+
+describe('字卡 filters (parent, 2026-10-05: changing the filter seemed to do nothing)', () => {
+  it('a filter goes back to the top of the list, so its cards show instead of the badges he had scrolled down to', async () => {
+    const app = await makeAppData();
+    renderWithApp(<CollectionScreen />, app);
+    await screen.findByText('全部');
+    const panel = document.querySelector<HTMLElement>('.scroll-panel')!;
+    panel.scrollTop = 900;
+    fireEvent.click(screen.getByText('金卡'));
+    expect(panel.scrollTop).toBe(0);
+    panel.scrollTop = 900;
+    fireEvent.click(screen.getByText('全部'));
+    expect(panel.scrollTop).toBe(0);
+  });
+});

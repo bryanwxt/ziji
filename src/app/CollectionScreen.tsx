@@ -25,6 +25,12 @@ export function CollectionScreen() {
   const families = useMemo(() => stickerFamilies(BUILTIN), []);
   const [know, setKnow] = useState<Knowledge | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
+  const panel = useRef<HTMLDivElement>(null);
+  // a filter starts at the top: scrolled down to the badges, a new filter's cards were out of sight (parent, 2026-10-05)
+  const pick = (f: Filter) => {
+    setFilter(f);
+    if (panel.current) panel.current.scrollTop = 0;
+  };
   const [shown, setShown] = useState<CharCard | null>(null);
   const opener = useRef<HTMLElement | null>(null); // the card that opened the dialog gets focus back
   const closeBtn = useRef<HTMLButtonElement>(null);
@@ -65,16 +71,16 @@ export function CollectionScreen() {
         <span class="chip">{caught} / {cards.length}</span>
       </header>
       <div class="filters" role="group" aria-label="筛选">
-        <button type="button" class={`chip ${filter === 'all' ? 'is-on' : ''}`} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>全部</button>
-        <button type="button" class={`chip ${filter === 'gold' ? 'is-on' : ''}`} aria-pressed={filter === 'gold'} onClick={() => setFilter('gold')}><InkIcon name="sparkle" size={20} /> 金卡</button>
-        <button type="button" class={`chip ${filter === 'animals' ? 'is-on' : ''}`} aria-pressed={filter === 'animals'} aria-label="找到的动物" onClick={() => setFilter('animals')}><InkIcon name="paw" size={20} /> 动物</button>
+        <button type="button" class={`chip ${filter === 'all' ? 'is-on' : ''}`} aria-pressed={filter === 'all'} onClick={() => pick('all')}>全部</button>
+        <button type="button" class={`chip ${filter === 'gold' ? 'is-on' : ''}`} aria-pressed={filter === 'gold'} onClick={() => pick('gold')}><InkIcon name="sparkle" size={20} /> 金卡</button>
+        <button type="button" class={`chip ${filter === 'animals' ? 'is-on' : ''}`} aria-pressed={filter === 'animals'} aria-label="找到的动物" onClick={() => pick('animals')}><InkIcon name="paw" size={20} /> 动物</button>
         {POWERS.map((p) => (
-          <button key={p.id} type="button" class={`chip ${filter === p.id ? 'is-on' : ''}`} aria-pressed={filter === p.id} aria-label={p.name} onClick={() => setFilter(p.id)}>
+          <button key={p.id} type="button" class={`chip ${filter === p.id ? 'is-on' : ''}`} aria-pressed={filter === p.id} aria-label={p.name} onClick={() => pick(p.id)}>
             <InkIcon name={p.mark} size={20} /> <span class="hanzi">{p.name}</span>
           </button>
         ))}
       </div>
-      <div class="scroll-panel">
+      <div class="scroll-panel" ref={panel}>
         {filter === 'animals' && (
           <div class="animals" aria-label="找到的动物">
             <p class="animals__note"><Label zh="在草丛里找一找！" /></p>
