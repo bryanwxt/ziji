@@ -92,6 +92,12 @@ describe('StoryStep', () => {
     expect(screen.getByText(vase.questions[0]!.q)).toBeTruthy();
     expect(screen.getByRole('img', { name: '打翻花瓶' })).toBeTruthy();
   });
+  it('while 松露问你 asks, Truffle keeps still (sweep: spec §4.3 calm)', () => {
+    vi.mocked(recordingSupported).mockReturnValue(false);
+    const { container } = render(<StoryStep scene={vase} told={0} kid={DEFAULT_KID} onDone={vi.fn()} />);
+    for (let i = 0; i < STORY_PARTS.length + 1; i++) fireEvent.click(screen.getByText('继续'));
+    expect(container.querySelector('.kantu__ask .truffle')!.getAttribute('data-calm')).toBe('true');
+  });
   it('a refused microphone is remembered for the rest of the story: no tapping 开始录音 on every screen', async () => {
     vi.mocked(startRecording).mockRejectedValue(new Error('denied'));
     render(<StoryStep scene={vase} told={0} kid={DEFAULT_KID} onDone={vi.fn()} />);
