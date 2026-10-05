@@ -108,7 +108,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
   const lag = useRef({ y: 0, v: 0 });
   const lastMotion = useRef<Motion>(REST);
   // idle life, scheduled by frame time
-  const idle = useRef({ nextBlink: -1, blinkAt: -1, again: false, nextFlick: -1, flickAt: -1, flickSide: 1 });
+  const idle = useRef({ nextBlink: -1, blinkAt: -1, again: false, nextFlick: -1, flickAt: -1, flickSide: 1, nextKnead: -1 });
   const gaze = useRef({ x: 0, y: 0, vx: 0, vy: 0, aim: { x: 0, y: 0 }, aimAt: -Infinity });
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const vel = useRef<Record<string, number>>({});
@@ -194,6 +194,13 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
           lastMotion.current = sample;
           if (track.current.purr) shimmer = Math.sin(now / 1000 * 95) * 0.5;
         } else track.current = null;
+      }
+      // his idle life follows his mood (spec §4.6): content, he kneads now and then (never during a question)
+      const happy = expr === 'content' || expr === 'happy' || expr === 'joy';
+      if (idle.current.nextKnead < 0) idle.current.nextKnead = now + 12000 + Math.random() * 8000;
+      if (now >= idle.current.nextKnead) {
+        idle.current.nextKnead = now + 12000 + Math.random() * 8000;
+        if (happy && !calm && !reduced && !paws.current && !track.current && !hold.current) paws.current = { fn: PAW_TRACKS.knead, start: now };
       }
       let pw: PawPose = PAW_REST;
       if (paws.current) {

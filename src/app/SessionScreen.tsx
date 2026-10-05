@@ -30,6 +30,7 @@ import { mulberry32 } from '../lib/random';
 import { PracticeQuestion, type PracticeResult } from '../activities/practice/PracticeQuestion';
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel } from '../content/chengyu';
+import { requestGreeting } from '../ui/truffle/greeting';
 
 /** His level for the 成语 window (spec 2026-10-05 §4): the level of the next built-in word he hasn't started. */
 const levels = new WeakMap<Knowledge, number>();
@@ -91,6 +92,8 @@ export function SessionScreen({ free }: { free: boolean }) {
       const rec = free
         ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng, undefined, levelOf(know)), localDateKey(today), today.getTime())
         : await startOrResumeSession(db, today);
+      // a lesson just begun: the first Truffle he sees waves and says hello (spec 2026-10-04 §4.6); never on coming back to it
+      if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex) requestGreeting('你好！我们开始吧！');
       latest.current = rec;
       setState({
         rec,

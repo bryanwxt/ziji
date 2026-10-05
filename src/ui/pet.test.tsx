@@ -3,6 +3,7 @@ import { act, fireEvent, render } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_KID } from '../types';
 import { Pet } from './Pet';
+import { requestGreeting } from './truffle/greeting';
 
 vi.mock('../audio/sfx', () => ({ playSfx: vi.fn(), startPurr: vi.fn(), stopPurr: vi.fn() }));
 import { startPurr } from '../audio/sfx';
@@ -57,3 +58,17 @@ describe('final review I1', () => {
     }
   });
 });
+
+describe('greetings (spec 2026-10-04 §4.6)', () => {
+  it('the next live Truffle waves and says the greeting once; the one after does not', () => {
+    requestGreeting('你好！我们开始吧！');
+    const first = render(<Pet kid={DEFAULT_KID} />);
+    expect(first.container.querySelector('.pet__bubble')?.textContent).toContain('你好！我们开始吧！');
+    expect(first.container.querySelector('svg.truffle')?.getAttribute('data-react')).toBe('hello');
+    first.unmount();
+    const second = render(<Pet kid={DEFAULT_KID} bubble="新字来了！" />);
+    expect(second.container.querySelector('.pet__bubble')?.textContent).not.toContain('你好');
+    expect(second.container.querySelector('svg.truffle')?.getAttribute('data-react')).toBeNull();
+  });
+});
+

@@ -75,7 +75,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const shownAt = useRef(performance.now());
   // what he reacts to (spec 2026-10-04 §4.4): a new word when it is shown, then each answer
   const reactN = useRef(0);
-  const [react, setReact] = useState<Reaction | null>(() => (item.isNew && !item.retry ? { kind: 'newWord', key: ++reactN.current } : null));
+  // a new word surprises him; a word he missed coming back makes him cover his eyes and peek (spec 2026-10-04 §4.6)
+  const [react, setReact] = useState<Reaction | null>(() => (item.isNew && !item.retry ? { kind: 'newWord', key: ++reactN.current } : item.retry ? { kind: 'peek', key: ++reactN.current } : null));
   const quizAt = useRef(performance.now());
   const petRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef(new Map<string, HTMLButtonElement>());

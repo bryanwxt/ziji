@@ -5,6 +5,7 @@ import type { KidState } from '../types';
 import { Label } from './Label';
 import { classifyGesture } from './truffle/behaviour';
 import type { Reaction } from './truffle/timelines';
+import { takeGreeting } from './truffle/greeting';
 import { Truffle, type TruffleMood } from './truffle/Truffle';
 
 export type PetMood = TruffleMood;
@@ -55,6 +56,14 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
     later(ms, () => setSaid((s) => (s === text ? null : s)));
   };
   const play = (kind: Reaction['kind']) => setCurrent({ kind, key: 1e6 + ++n.current });
+  // the lesson asked for a greeting: the first live Truffle waves and says it (spec 2026-10-04 §4.6)
+  useEffect(() => {
+    if (!alive) return;
+    const line = takeGreeting();
+    if (!line) return;
+    play('hello');
+    say(line, 2400);
+  }, []);
   useEffect(
     () => () => {
       timers.current.forEach(clearTimeout);

@@ -523,3 +523,40 @@ describe("today's stops on the world's path (phase D)", () => {
   });
 });
 
+describe("Truffle's memory (spec 2026-10-04 §4.6, phase E)", () => {
+  const bubble = () => document.querySelector('.home .pet__bubble .sr-only')?.textContent ?? '';
+  const react = () => document.querySelector('.home svg.truffle')?.getAttribute('data-react');
+  it('after days away he sulks a little, once that day', async () => {
+    const app = await makeAppData();
+    await saveKid(app.db, app.kid!);
+    await saveSession(app.db, done('2026-09-28', ['flashcards']));
+    const first = renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    await waitFor(() => expect(bubble()).toBe('你去哪儿了？'));
+    await waitFor(() => expect(react()).toBe('huff'));
+    await waitFor(async () => expect((await getKid(app.db))?.greetedOn).toBe('2026-10-02'));
+    first.unmount();
+    renderWithApp(<HomeScreen />, { ...app, kid: (await getKid(app.db))! });
+    await screen.findByText('今天的练习');
+    await new Promise((r) => setTimeout(r, 200));
+    expect(bubble()).not.toBe('你去哪儿了？');
+  });
+  it('on a streak day he is extra bouncy', async () => {
+    const app = await makeAppData();
+    await saveKid(app.db, app.kid!);
+    await saveSession(app.db, done('2026-10-01', ['flashcards']));
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    await waitFor(() => expect(bubble()).toBe('又见面了！'));
+    await waitFor(() => expect(react()).toBe('bouncy'));
+  });
+  it('a new child gets neither', async () => {
+    const app = await makeAppData();
+    await saveKid(app.db, app.kid!);
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    await new Promise((r) => setTimeout(r, 200));
+    expect(['huff', 'bouncy']).not.toContain(react());
+  });
+});
+

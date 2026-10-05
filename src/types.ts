@@ -280,6 +280,7 @@ export interface KidState {
   speakingLast: 'langdu' | 'story' | null; // which activity the speaking step ran last (they alternate)
   story: { next: number; told: number }; // 看图说话: next scene, stories told (drives starter fading)
   finds: Finds; // tap fun in the journey worlds
+  greetedOn?: string; // the day Truffle last greeted him on Home with how he feels about it (spec 2026-10-04 §4.6)
 }
 
 export const DEFAULT_KID: KidState = {

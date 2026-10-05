@@ -22,6 +22,7 @@ import { Pet } from '../ui/Pet';
 import { WorldScene } from '../ui/worlds/WorldScene';
 import { WorldProps } from '../ui/worlds/WorldProps';
 import { trailSvg } from '../ui/worlds/trail';
+import { dayMood } from '../ui/truffle/greeting';
 import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
 import { SCENE_VIEWBOX, SCENES } from '../ui/worlds/scenes';
 import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId } from '../fun/worlds';
@@ -83,10 +84,24 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       const stored = (await getKid(db)) ?? kid;
       if (!stored) return;
       const u = updateWorlds(stored, data.know.known);
-      if (!u.changed) return;
-      await saveKid(db, u.kid);
-      setJourneyKid(u.kid);
-      setArrival(u.arrived);
+      let next = u.kid;
+      // once a day he shows how he feels about it (spec 2026-10-04 §4.6): a little sulk after days away, extra bouncy on a streak
+      const day = localDateKey(now());
+      const greet = next.greetedOn !== day;
+      if (greet) {
+        next = { ...next, greetedOn: day };
+        const mood = dayMood(data.sessions.filter((s) => s.completed && !s.free).map((s) => s.date), day);
+        if (mood !== 'plain') {
+          setPropPlay((p) => ({ react: { kind: mood === 'missed' ? 'huff' : 'bouncy', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
+          setSaid(mood === 'missed' ? '你去哪儿了？' : '又见面了！');
+          clearTimeout(saidTimer.current);
+          saidTimer.current = setTimeout(() => setSaid(null), 2600);
+        }
+      }
+      if (!u.changed && !greet) return;
+      await saveKid(db, next);
+      setJourneyKid(next);
+      if (u.changed) setArrival(u.arrived);
       await refresh();
     })();
   }, [data]);

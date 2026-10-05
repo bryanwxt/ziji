@@ -97,6 +97,20 @@ describe('SessionScreen', () => {
     expect(introWord()).toBe(second);
   });
 
+  it('Truffle greets him at the start of a lesson, not when he comes back to it (spec 2026-10-04 §4.6)', async () => {
+    const app = await setup();
+    const first = renderWithApp(<SessionScreen free={false} />, app);
+    await screen.findByText('我记住了！');
+    await waitFor(() => expect(document.querySelector('.pet__bubble')?.textContent).toContain('你好！我们开始吧！')); // after paint, like any effect
+    await learnCurrentWord();
+    await screen.findByText('我记住了！'); // the next word: the first one is saved
+    first.unmount();
+    renderWithApp(<SessionScreen free={false} />, app);
+    await screen.findByText('我记住了！');
+    await new Promise((r) => setTimeout(r, 300)); // give a greeting the time it would take to show
+    expect(document.querySelector('.pet__bubble')?.textContent ?? '').not.toContain('你好');
+  });
+
   it('skips a word that was paused after the plan was made', async () => {
     const app = await setup();
     const first = renderWithApp(<SessionScreen free={false} />, app);

@@ -184,3 +184,20 @@ describe('talking (spec 2026-10-04 §4.6)', () => {
   });
 });
 
+describe('his idle life follows his mood (spec 2026-10-04 §4.6)', () => {
+  const kneads = (c: Element, frames: number) => { let seen = false; for (let i = 0; i < frames; i++) { act(() => run(1)); if ((c.querySelector('[data-part="paw-l"]')!.getAttribute('transform') ?? '') !== '' || (c.querySelector('[data-part="paw-r"]')!.getAttribute('transform') ?? '') !== '') { seen = true; break; } } return seen; };
+  it('content, he kneads now and then', () => {
+    reduced = false;
+    const { container } = render(<Truffle alive expression="content" />);
+    expect(kneads(container, 1400)).toBe(true); // within about 22 s
+  });
+  it('grumpy, he does not; nor while a question is up, nor with reduced motion', () => {
+    reduced = false;
+    expect(kneads(render(<Truffle alive expression="grumpy" />).container, 1400)).toBe(false);
+    expect(kneads(render(<Truffle alive expression="content" calm />).container, 1400)).toBe(false);
+    reduced = true;
+    expect(kneads(render(<Truffle alive expression="content" />).container, 1400)).toBe(false);
+    reduced = false;
+  });
+});
+
