@@ -40,6 +40,26 @@ interface Props {
 
 const PASS_BUBBLE: Record<WritePass, string> = { trace: '描一描！', hint: '看提示写！', recall: '写一写！' };
 
+/**
+ * Syllables for a 组词 with gaps: the gaps carry the sound he is writing, the other characters theirs as said in that word.
+ * `at`: the character of a longer word he is writing now. Undefined (the Label reads it) when they don't line up.
+ */
+export function gapPinyin(blanked: string, others: string | null, pinyin: string, at: number): string | undefined {
+  const rest = others?.trim().split(/\s+/) ?? [];
+  const own = pinyin.trim().split(/\s+/);
+  const gaps = (blanked.match(/＿/g) ?? []).length;
+  const gapSyl = gaps === own.length ? own : gaps === 1 && own[at] ? [own[at]!] : null;
+  if (!gapSyl) return others ?? undefined;
+  const out: string[] = [];
+  let g = 0;
+  let r = 0;
+  for (const ch of Array.from(blanked)) {
+    if (ch === '＿') out.push(gapSyl[g++]!);
+    else if (/\p{Script=Han}/u.test(ch)) out.push(rest[r++] ?? '');
+  }
+  return out.every(Boolean) ? out.join(' ') : others ?? undefined;
+}
+
 export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupReady = false, at }: Props) {
   const chars = useMemo(() => (at === undefined ? hanChars(word.text) : hanChars(word.text).slice(at, at + 1)), [word.id, at]);
   const cue = useMemo(() => writingCue(word, at), [word.id, at]);
@@ -153,17 +173,19 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
         )}
       >
         <div class="write__cue">
-          <div class="write__prompt">
-            <span class="pinyin">{word.pinyin}</span>
-            <SpeakButton text={cue.speech} />
-          </div>
+          {/* centred like every line on a card, the speak button hanging to the right; with a 组词 its gap carries the sound he
+              writes, so the pinyin isn't said twice (parent, 2026-10-05) */}
+          {cue.blanked ? (
+            <div class="word-row__line write__blank"><Label zh={cue.blanked} py={gapPinyin(cue.blanked, cue.blankedPy, word.pinyin, index)} /><SpeakButton text={cue.speech} small /></div>
+          ) : (
+            <div class="word-row__line write__prompt"><span class="pinyin">{word.pinyin}</span><SpeakButton text={cue.speech} small /></div>
+          )}
           {cue.sentence && (
             <>
               <p class="sr-only" lang="zh">{spokenBlanks(cue.sentence)}</p>
               <div class="write__sentence hanzi" lang="zh" aria-hidden="true">{cue.sentence}</div>
             </>
           )}
-          {cue.blanked && <div class="write__blank"><Label zh={cue.blanked} py={cue.blankedPy ?? undefined} /></div>}
         </div>
         <div class="dots">
           {chars.map((c, i) => (

@@ -88,3 +88,17 @@ describe('one character of a longer word (spec 2026-10-05 §5)', () => {
   });
 });
 
+
+describe('the gap carries the sound he writes (parent, 2026-10-05: the pinyin sat apart from the 组词)', async () => {
+  const { gapPinyin } = await import('./WritingStep');
+  it('the gap gets the character\'s syllable, the others theirs as said in the word', () => {
+    expect(gapPinyin('＿实', 'shí', 'chéng', 0)).toBe('chéng shí');
+    expect(gapPinyin('＿子', 'zi', 'ér', 0)).toBe('ér zi');
+  });
+  it('one character of a longer word: that character\'s syllable', () => {
+    expect(gapPinyin('朋＿', 'péng', 'péng you', 1)).toBe('péng you');
+  });
+  it('falls back to the others alone when they don\'t line up', () => {
+    expect(gapPinyin('＿实', 'shí', 'chéng shí', 5)).toBe('shí'); // no syllable at that place
+  });
+});
