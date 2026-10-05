@@ -800,3 +800,40 @@ Spec docs/superpowers/specs/2026-10-05-ziji-lesson-flow-design.md (§2.1, §3.2 
 - SessionScreen recomputes the card's 成语 each render; levelOf sits between imports
 - some entries are 四字词语 rather than strict 成语 (一不小心, 说干就干, 难得一见, 随处可见…); 地 is dropped after adverb-like 成语
 - a hear-and-find distractor can be an HSK 7–9 character with no English (他 vs 俱)
+
+## Lesson redesign phase D (2026-10-05): 写一写
+
+Spec docs/superpowers/specs/2026-10-05-ziji-lesson-flow-design.md (§5); plan docs/superpowers/plans/2026-10-05-ziji-lesson-d.md; branch lesson-d; Native, opus final review. Suite 1109/1109; WebKit sweep 0 problems.
+
+- **How many:** 写一写 writes characters, not words: 9 in a 30-minute lesson (6 at 20, 8 at 25, 10 from 40). It never goes over 10 and never writes half a word.
+- **Which, in order:**
+  1. writing due today;
+  2. today's new words and recent lesson words;
+  3. characters he reads, at his level and going down.
+  - Nothing above his level, and nothing he can't read.
+- **From memory:** a never-written character is traced once, early, and comes back from memory at least two items later.
+- **Mixed:**
+  - the same character never twice in a row;
+  - a two-character word is split, with others between its characters;
+  - each character once a lesson (妈妈 is one).
+- **Rating:** a word's write card is rated once, after all its characters, with their misses from memory.
+- **Old lessons:** lessons saved before this finish the old way.
+
+### Rulings
+- Plan: write cards stay per word, not per character — cost: a word with one hard character is rated as one word
+- Task 1: the character count is a ceiling: a word that would pass it waits and a shorter one is taken — cost: a lesson may write one fewer
+- Task 2: tests pinning "at most 2 new writing words" were updated to §5 — cost: none
+- Task 3: a lone redo of the character just written is dropped rather than shown twice in a row — cost: it isn't redone that lesson (FSRS still brings it back)
+- Final: tests that used words sharing one character (字0, 字1…) now use different characters — cost: none
+- Final (declined to judge): 9 characters with traces is about 7–8 minutes; time it on the iPad (写一写 has no time box)
+
+### Final review fixes
+- I1 the order often put a character twice in a row, or a word's characters together, when it needn't — reworked, checked over 1,600 random lessons — RED→GREEN
+- I2 a doubled word (妈妈, 一心一意) showed the answer beside the gap; a character two words share came twice — each character once a lesson, and the cue blanks every copy — RED→GREEN
+
+### Deferred minors
+- "recent lesson words" need only a reading card, not a known one
+- writing one character shows the word's pinyin (péng you for 友), not the character's
+- a hinted redo can follow itself when the last remaining item fails to load
+- the progress bar stalls on skipped items, then jumps
+- a due word whose strokes fail isn't marked skipped; a due word longer than the target is never written
