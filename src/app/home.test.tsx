@@ -511,3 +511,15 @@ describe('the reward goal on Home (spec 2026-10-04 §3, phase D)', () => {
   });
 });
 
+describe("today's stops on the world's path (phase D)", () => {
+  it('a path in the world’s colours runs under the stops, decorative only', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass'] } });
+    await saveKid(app.db, app.kid!);
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    const trail = document.querySelector('.home__path .trail')!;
+    expect(trail.getAttribute('data-world')).toBe('grass');
+    expect(trail.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+

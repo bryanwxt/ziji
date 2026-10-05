@@ -21,6 +21,7 @@ import { Label } from '../ui/Label';
 import { Pet } from '../ui/Pet';
 import { WorldScene } from '../ui/worlds/WorldScene';
 import { WorldProps } from '../ui/worlds/WorldProps';
+import { trailSvg } from '../ui/worlds/trail';
 import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
 import { SCENE_VIEWBOX, SCENES } from '../ui/worlds/scenes';
 import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId } from '../fun/worlds';
@@ -214,6 +215,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         </div>
         <div class="home__path">
           <h2 class="home__title"><Label zh="今天的练习" /></h2>
+          {/* today's stops sit on a path in the world's colours (spec 2026-10-04 §3, phase D) */}
+          {(steps.length > 0 || !!todaySession) && <svg class="trail" data-world={world} aria-hidden="true" viewBox="0 0 100 24" preserveAspectRatio="none" dangerouslySetInnerHTML={{ __html: trailSvg(world) }} />}
           {steps.length || todaySession ? (
             <TodayPath
               speakingName={speakingKind === 'story' ? '看图说话' : '朗读'}
