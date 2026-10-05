@@ -907,3 +907,36 @@ Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md (§3 Home and Celebr
 - the opened-chest stars-prize layout isn't in the sweep's screenshots
 - Home's paper-card colour is hard-coded (#fffaf0, the same as --surface)
 - the chest-watching Truffle is 130px, not about 200 as planned
+
+## Stage phase E (2026-10-05): paws and personality
+
+Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md (§4.6); plan docs/superpowers/plans/2026-10-05-ziji-stage-e.md; branch stage-e; Native, opus final review. Suite 1263/1263; WebKit sweep 526 screens, 0 problems; stage cases ok (each paw move inside his box, waving and covering his eyes within 8 ms of work per frame).
+
+- **Paws:** Truffle's front paws are parts of their own. He waves hello, raises a paw at a right answer, claps at a hard one and at the end of a lesson, kneads when content (and now and then when happy), covers his eyes and peeks when a word he missed comes back, and swats when he pounces. A held item (brush, lantern, kite, balloon, wand) moves with his paw.
+- **Talking:** his mouth moves while the iPad speaks, and stops when it does (even if the iPad never says it stopped).
+- **Greeting:** he greets him at the start of a lesson — 你好！我们开始吧！ on the first new word's card — never over a question, and never on coming back to a lesson.
+- **Memory:** once a day on Home he sulks a little after days away (你去哪儿了？) or is extra bouncy on a streak day (又见面了！). A new child gets neither.
+- **Reduced motion:** nothing moves (no paws, no mouth, no kneading). The greeting and the day's mood show as his bubble line.
+
+### Rulings
+- His paws are drawn in front of his head, so covering his eyes works; at rest they sit at his feet as before — cost: none
+- A "hard question" is a word coming back after a miss (the 认字, listen and 组词 questions) — cost: no peek on a first try or on retried sentences and 组句
+- "Swat a tile" rides on his pounce — cost: none
+- The greeting is a one-shot request the next live Truffle takes. It's asked only when the lesson opens on a new word's card, and dropped after 4 s — cost: none
+- Home's day greeting shares the journey save (one read, one write of his state) — cost: none
+- The speaking signal lives in its own module, so screens that stand in for speech in tests still give Truffle a working one — cost: none
+- The paws turn about their own point; the faces sheet caught a doubled origin that flung a turned paw off — cost: none
+- Final: the greeting landing over a question or on a later screen, and a mouth left flapping, were re-graded Important and fixed — cost: none
+- Final (declined to judge): the peek is a reaction during the question (as 写一写's nod already is). The parent may want to confirm it for the peek — cost: some motion while he reads a hard character
+
+### Final review fixes
+- I1 a held item drew its own paw, so a raised paw left a third one behind — the item now moves with his paw — RED→GREEN
+- I2 in free play he covered his eyes at almost every question (every item there is marked a retry) — he peeks only at a word he actually missed — RED→GREEN
+- the greeting over a question, or late on another screen — RED→GREEN
+- the mouth flapping on after speech quietly stopped — RED→GREEN
+
+### Deferred minors
+- Home's daily save of his state widens an existing race with a find saved by a prop tap at the same moment
+- a paw move replaced by another snaps to rest for one frame
+- a few small allocations every frame in the paw and talking code (within the 8 ms budget)
+- a day started but not finished counts as missed for the sulk; a dead branch in dayMood
