@@ -93,12 +93,13 @@ describe('final review: the mouth never keeps going after speech has quietly sto
   afterEach(() => vi.unstubAllGlobals());
   it('a check finds the iPad silent (no end event came) and turns talking off', () => {
     const spoken: { onstart?: () => void }[] = [];
-    const synth = { cancel: vi.fn(), speak: (u: never) => spoken.push(u), getVoices: () => [], speaking: true, pending: false };
+    const synth = { cancel: vi.fn(), speak: (u: never) => spoken.push(u), getVoices: () => [], speaking: false, pending: false };
     vi.stubGlobal('speechSynthesis', synth);
     vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; volume = 1; voice = null; constructor(t: string) { this.text = t; } });
     const seen: boolean[] = [];
     const off = onSpeaking((on) => seen.push(on));
     speak('你好');
+    synth.speaking = true;
     spoken[0]!.onstart!();
     settleIfSilent();
     expect(seen).toEqual([true]); // still speaking
@@ -133,5 +134,48 @@ describe('a lone 多音字 is said with the reading the card teaches (parent, 20
     speak('长', { reading: 'zhǎng' });
     speak('长', { reading: 'cháng' });
     expect(spoken.map((u) => u.text)).toEqual(['掌', '常']);
+  });
+});
+
+describe('a sound button tapped again while the iPad is still talking (parent, 2026-10-05: sometimes silent, sometimes cut short)', () => {
+  afterEach(() => { stopSpeaking(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+  const stage = (speaking: boolean) => {
+    const synth = { speaking, pending: false, cancel: vi.fn(), speak: vi.fn(), getVoices: () => [] };
+    vi.stubGlobal('speechSynthesis', synth);
+    vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; voice = null; constructor(t: string) { this.text = t; } });
+    return synth;
+  };
+  const said = (synth: { speak: ReturnType<typeof vi.fn> }) => synth.speak.mock.calls.map(([u]) => (u as SpeechSynthesisUtterance).text);
+
+  it('stops what is playing, then says it again a moment later (Safari drops or clips a voice started straight after cancel)', () => {
+    vi.useFakeTimers();
+    const synth = stage(true);
+    speak('猫');
+    expect(synth.cancel).toHaveBeenCalledTimes(1);
+    expect(said(synth)).toEqual([]);
+    vi.advanceTimersByTime(200);
+    expect(said(synth)).toEqual(['猫']);
+  });
+  it('quick taps say it once, and a queued line still comes after it', () => {
+    vi.useFakeTimers();
+    const synth = stage(true);
+    speak('猫');
+    speak('猫');
+    speak('小猫', { queue: true });
+    vi.advanceTimersByTime(200);
+    expect(said(synth)).toEqual(['猫', '小猫']);
+  });
+  it('says it at once when nothing is playing', () => {
+    const synth = stage(false);
+    speak('猫');
+    expect(said(synth)).toEqual(['猫']);
+  });
+  it('stopSpeaking also drops a voice waiting for its moment', () => {
+    vi.useFakeTimers();
+    const synth = stage(true);
+    speak('猫');
+    stopSpeaking();
+    vi.advanceTimersByTime(200);
+    expect(said(synth)).toEqual([]);
   });
 });

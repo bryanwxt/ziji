@@ -3,7 +3,8 @@ import { setSpeaking } from './speaking';
 
 let voice: SpeechSynthesisVoice | null = null;
 let rate = 0.8;
-let current: SpeechSynthesisUtterance | null = null; // kept, so the browser never drops it (and its end event) early
+// Every utterance is kept until it ends, so the browser never drops one (and its end event) early, even with a line queued behind it.
+const live = new Set<SpeechSynthesisUtterance>();
 
 const available = () => typeof speechSynthesis !== 'undefined' && !!speechSynthesis;
 
@@ -62,15 +63,44 @@ export function spokenAs(text: string, reading?: string): string {
 export function speak(text: string, { queue = false, reading }: { queue?: boolean; reading?: string } = {}): void {
   if (!available()) return;
   text = spokenAs(text, reading);
+  if (waiting) {
+    // A tap is waiting for Safari to finish cancelling: a queued line joins it, a new tap replaces it.
+    waiting.texts = queue ? [...waiting.texts, text] : [text];
+    return;
+  }
   if (!queue) {
+    const busy = speechSynthesis.speaking || speechSynthesis.pending;
     speechSynthesis.cancel();
     setSpeaking(false); // a cancelled utterance may never say it ended
+    if (busy) {
+      // Safari drops or clips a voice started straight after cancelling one that was playing (parent, 2026-10-05: a sound
+      // button tapped again was sometimes silent, sometimes cut short), so it is said a moment later.
+      const w: Waiting = { texts: [text], timer: setTimeout(() => {
+        waiting = null;
+        for (const t of w.texts) say(t);
+      }, AFTER_CANCEL_MS) };
+      waiting = w;
+      return;
+    }
   }
+  say(text);
+}
+
+/** How long Safari is given to finish cancelling before the next voice starts. */
+const AFTER_CANCEL_MS = 120;
+type Waiting = { texts: string[]; timer: ReturnType<typeof setTimeout> };
+let waiting: Waiting | null = null;
+
+function say(text: string): void {
   const u = new SpeechSynthesisUtterance(text);
+  const done = () => {
+    live.delete(u);
+    setSpeaking(false);
+  };
   u.onstart = () => setSpeaking(true);
-  u.onend = () => setSpeaking(false);
-  u.onerror = () => setSpeaking(false);
-  current = u;
+  u.onend = done;
+  u.onerror = done;
+  live.add(u);
   u.lang = 'zh-CN';
   u.rate = isShortWord(text) ? Math.round(rate * SHORT_WORD_PACE * 100) / 100 : rate;
   if (voice) u.voice = voice;
@@ -79,7 +109,10 @@ export function speak(text: string, { queue = false, reading }: { queue?: boolea
 
 /** Silence any speech in progress (before recording him, and when leaving a screen). */
 export function stopSpeaking(): void {
+  if (waiting) clearTimeout(waiting.timer);
+  waiting = null;
   if (available()) speechSynthesis.cancel();
+  live.clear();
   setSpeaking(false);
 }
 
