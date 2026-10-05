@@ -36,4 +36,13 @@ describe('a 练一练 question (spec 2026-10-05 §3.2)', () => {
     render(<PracticeQuestion {...base} word={he} item={{ wordId: he.id, rung: 3, ask: 'usage', grades: 'use', retry: false }} onDone={onDone} />);
     expect(onDone).toHaveBeenCalledWith(null);
   });
+  it('组句: the tiles on the stage; the answer comes back as a use answer', () => {
+    const hen = pool.find((w) => w.text === '很')!;
+    const onDone = vi.fn();
+    render(<PracticeQuestion {...base} word={hen} item={{ wordId: hen.id, rung: 4, ask: 'build', grades: 'use', retry: false }} onDone={onDone} />);
+    expect(document.querySelectorAll('.build__bank .choice').length).toBeGreaterThanOrEqual(4);
+    while (document.querySelector('.build__bank .choice')) fireEvent.click(document.querySelector<HTMLButtonElement>('.build__bank .choice')!);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'use', inContext: true }));
+  });
 });

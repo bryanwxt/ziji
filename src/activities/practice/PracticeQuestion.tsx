@@ -6,6 +6,8 @@ import type { CardRecord, KidState, Word } from '../../types';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { UseQuestion } from '../choose/UseQuestion';
 import { FlashcardStep } from '../flashcards/FlashcardStep';
+import { zujuFor } from '../../content/zuju';
+import { BuildSentence } from './BuildSentence';
 
 export interface PracticeResult {
   correct: boolean;
@@ -36,12 +38,25 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     () => (item.ask === 'fit' ? fitItem(word, pool, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0), 0) : item.ask === 'usage' ? usageItem(word.text, word.id) : null),
     [item, word.id],
   );
+  const zuju = useMemo(() => (item.ask === 'build' ? zujuFor(word)[0] ?? null : null), [item, word.id]);
   const answer = useRef<{ correct: boolean; ms: number } | null>(null);
   const shownAt = useRef(performance.now());
   useEffect(() => {
-    if (sentence && !use) onDone(null);
+    if ((sentence && !use) || (item.ask === 'build' && !zuju)) onDone(null);
   }, []);
 
+  if (item.ask === 'build') {
+    if (!zuju) return null;
+    return (
+      <BuildSentence
+        item={zuju}
+        word={word}
+        kid={kid}
+        resting={resting}
+        onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: true, asked: 'use' })}
+      />
+    );
+  }
   if (!sentence) {
     return (
       <FlashcardStep
