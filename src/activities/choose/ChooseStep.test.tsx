@@ -93,3 +93,13 @@ describe('Truffle in 选一选 (spec 2026-10-04 §4.3–4.4)', () => {
     expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('curious');
   });
 });
+
+describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
+  it('a wrong word in a sentence: the right word and the picked word, in English', () => {
+    render(<ChooseStep items={[fit]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '在' }));
+    const en = document.querySelector('.sheet [lang="en"]')!.textContent!;
+    expect(en).toContain('很');
+    expect(en).toContain('在');
+  });
+});

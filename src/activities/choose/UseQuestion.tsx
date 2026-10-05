@@ -11,6 +11,7 @@ import { Label } from '../../ui/Label';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
+import { MeaningNote } from '../../ui/stage/MeaningNote';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 
 interface Props {
@@ -71,6 +72,7 @@ export function UseQuestion({ item, kid, resting, bubble, closing, onAnswer, onN
               <>
                 {!correct && <span class="hanzi">{fullSentence(item)}</span>}
                 {item.pair && <span class="pair hanzi">{`${item.word} + ${item.pair}`}</span>}
+                {!correct && <MeaningNote right={item.word} picked={item.kind === 'fit' ? choice : null} />}
                 {!correct && item.kind === 'fit' && item.clue && <span class="clue hanzi">{item.clue}</span>}
               </>
             )

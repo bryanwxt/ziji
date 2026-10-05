@@ -388,3 +388,28 @@ describe('认新字: a missed word is shown again (spec 2026-10-05 §2.1)', () =
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
+  it('after a wrong hear-and-find answer: both characters, in English', () => {
+    const w = pool.find((x) => x.text === '他')!;
+    render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: false, retry: false }} ask="listen" voice onDone={vi.fn()} />);
+    const wrong = [...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== '他')!;
+    fireEvent.click(wrong);
+    const en = document.querySelector('.sheet [lang="en"]')!.textContent!;
+    expect(en).toContain('他');
+    expect(en).toContain(wrong.textContent!);
+  });
+  it('a right answer shows no English', () => {
+    render(<FlashcardStep {...base} item={review} ask="read" voice={false} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
+    expect(document.querySelector('[lang="en"]')).toBeNull();
+  });
+  it('a wrong pinyin answer explains the character, never the pinyin', () => {
+    render(<FlashcardStep {...base} item={review} ask="read" voice={false} onDone={vi.fn()} />);
+    const wrong = [...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!;
+    fireEvent.click(wrong);
+    const en = document.querySelector('.sheet [lang="en"]')?.textContent ?? '';
+    expect(en).toContain('河');
+    expect(en).not.toContain(wrong.textContent!);
+  });
+});

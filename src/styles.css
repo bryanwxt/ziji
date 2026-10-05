@@ -223,6 +223,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* English on the 认字 card (parent, 2026-10-04): small, quiet, one line each */
 .intro__en, .example__en { margin: 0; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.25; color: var(--ink-soft); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .example__en { flex-basis: 100%; text-align: center; margin-top: -4px; }
+.sheet__en { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.3; color: var(--ink-soft); }
+.sheet__en-right { font-weight: 700; color: var(--ink); }
 .intro__say { display: flex; align-items: center; justify-content: center; gap: 10px; max-width: 100%; }
 
 /* Writing */

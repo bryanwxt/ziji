@@ -16,6 +16,7 @@ import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import type { Reaction } from '../../ui/truffle/timelines';
 import { SpeakButton } from '../../ui/SpeakButton';
+import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
@@ -149,6 +150,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
               正确答案：<span class="hanzi">{quiz.cue ? quiz.cue.full : word.text}</span>
               <span>{quiz.cue ? quiz.cue.pinyin : word.pinyin}</span>
               <SpeakButton text={quiz.cue ? quiz.cue.full : word.text} />
+              <MeaningNote right={quiz.cue ? quiz.cue.full : word.text} picked={quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
             </>
           )}
           actionLabel="继续"
