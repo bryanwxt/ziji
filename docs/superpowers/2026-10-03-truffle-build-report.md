@@ -837,3 +837,36 @@ Spec docs/superpowers/specs/2026-10-05-ziji-lesson-flow-design.md (§5); plan do
 - a hinted redo can follow itself when the last remaining item fails to load
 - the progress bar stalls on skipped items, then jumps
 - a due word whose strokes fail isn't marked skipped; a due word longer than the target is never written
+
+## Stage phase C (2026-10-05): the paper worlds, prop moments, evening
+
+Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md (§2, §4.5, §6); plan docs/superpowers/plans/2026-10-05-ziji-stage-c.md (Tasks 1–6 from the paused draft, 7–10 written now); branch stage-c; Native, opus final review. Suite 1217+; stage cases ok (worlds sheet, every moment ≤ 8 ms of work per frame); WebKit sweep 0 problems (Home in every world at 6 sizes, every prop's tap box uncovered).
+
+- **The other seven worlds in storybook paper:** 草丛, 赛车山, 方块世界, 恐龙谷, 海底, 月球基地 and 海盗岛.
+  - One palette, no ink outlines and no live filters.
+  - Each world has Truffle's own props: a box and a butterfly; a kart and a cone; a gem block, a scratching post and a statue; a nest and a leaf; a sub and a fish; a rocket and a yarn ball; an X, a chest and a parrot.
+- **Evening:** every world swaps its sky for a dusk sky with a moon and stars, and adds its own lights (lanterns, fireflies, lamps, torches, lava glow, jellyfish, windows, a ship's lamp).
+- **Prop moments replace the single world tap.**
+  - Tapping a prop makes it move in its own place while Truffle reacts and looks toward it (munch, pounce, watch, flinch, proud).
+  - The daily finds live on the props, with the same rules as before.
+  - Some moments start by themselves when he has left Home alone for a while. Those never give finds and never talk out loud, and a tap takes over from them.
+- **Screenshots for the parent:** fit-shots/stage-cases/worlds.png (every world by day and evening) and moments-*.png.
+
+### Rulings
+- The draft's "never deploy without the parent's go-ahead" and "each world reviewed in screenshots before it ships" are superseded by the 2026-10-05 standing instruction. The screenshots come with this report — cost: a world the parent dislikes ships and is changed after.
+- Task 8: WorldTaps was deleted with the Home swap (Task 9) so Home compiled in between — cost: none.
+- Task 9: the old ink spray art is removed — cost: none.
+- Task 10: four prop spots are covered by Home on some screens, so they only play by themselves. They are the yard birdhouse (under the cards on a landscape iPad), and the blocks statue, space yarn and pirate parrot (under the path on an iPhone SE). The statue now starts by itself — cost: those four can't be tapped.
+- Task 10: a moment that starts by itself never speaks aloud — cost: none.
+- Final (declined to judge): with Truffle dozing after 20 s and moments starting by themselves after 30 s or more, most self-started moments land on a sleeping Truffle — cost: few awake moments on an idle Home.
+
+### Final review fixes
+- I1 self-started moments ignored the child and ate his taps — a tap now takes over, and none starts within the interval after his last touch — RED→GREEN
+
+### Deferred minors
+- a gem-block crack can float into the next world if the world switches while Home stays open (first-load arrival)
+- reduced motion is read once when Home mounts its moments
+- the parrot's spoken 你好 can't happen any more (make it his bubble line)
+- the bowl's munch sound plays when the moment starts by itself
+- no test pins the hidden-page skip for self-started moments
+- the blocks world's evening torch may read as a Minecraft torch — parent to judge from the screenshots
