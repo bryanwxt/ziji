@@ -68,3 +68,18 @@ describe('搭配 pairing (spec 2026-10-05 §3.2 rung 2)', () => {
     expect(dapeiBoard(byText.get('很')!, mulberry32(1))).toBeNull();
   });
 });
+
+describe('the board never gives the answer away (WebKit review, 2026-10-05)', () => {
+  it('no pair sits on the same row', () => {
+    for (const w of words.slice(0, 200)) {
+      for (let seed = 1; seed <= 4; seed++) {
+        for (const b of [zuciBoard(w, mulberry32(seed)), dapeiBoard(w, mulberry32(seed))]) {
+          if (!b) continue;
+          b.left.forEach((l, i) => expect(b.pairs.some(([a, r]) => a === l && r === b.right[i]), `${l}${b.right[i]}`).toBe(false));
+        }
+      }
+    }
+    const chuan = dapeiBoard(byText.get('穿')!, mulberry32(3))!;
+    chuan.left.forEach((l, i) => expect(chuan.pairs.some(([a, r]) => a === l && r === chuan.right[i])).toBe(false));
+  });
+});

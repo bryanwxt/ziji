@@ -20,7 +20,12 @@ function board(target: [string, string], extras: [string, string][], fits: (l: s
     pairs.push(p);
   }
   if (pairs.length < 3) return null;
-  return { left: shuffle(pairs.map(([l]) => l), rng), right: shuffle(pairs.map(([, r]) => r), rng), pairs, target };
+  const left = shuffle(pairs.map(([l]) => l), rng);
+  const partner = (l: string) => pairs.find(([a]) => a === l)![1];
+  // the right column never lines a half up with its partner (that would give the answer away): a rotation of the partners
+  const turn = 1 + Math.floor(rng() * (pairs.length - 1));
+  const right = left.map((_, i) => partner(left[(i + turn) % left.length]!));
+  return { left, right, pairs, target };
 }
 
 /** 组词 pairing: the word's own two-character 组词 (at its reading) and two more HSK 词语 near its level. */

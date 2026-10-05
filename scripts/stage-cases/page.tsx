@@ -9,6 +9,13 @@ import { FeedbackSheet } from '../../src/ui/stage/FeedbackSheet';
 import { Stage } from '../../src/ui/stage/Stage';
 import { Pet } from '../../src/ui/Pet';
 import { Truffle } from '../../src/ui/truffle/Truffle';
+import { PairGame } from '../../src/activities/practice/PairGame';
+import { BuildSentence } from '../../src/activities/practice/BuildSentence';
+import { ComponentsStep } from '../../src/activities/components/ComponentsStep';
+import { fishItem } from '../../src/activities/components/zibian';
+import { dapeiBoard, zuciBoard } from '../../src/practice/pairs';
+import { builtinWords } from '../../src/content';
+import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
 import type { Reaction } from '../../src/ui/truffle/timelines';
 
@@ -59,6 +66,18 @@ if (which === 'faces') {
   );
 } else if (which === 'alive' || which === 'alive-calm') render(<Alive calm={which === 'alive-calm'} />, app);
 else if (which === 'clue') render(screen(<UseQuestion item={clue} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onNext={() => {}} />), app);
+else if (which === 'pair' || which === 'match' || which === 'build' || which === 'fish') {
+  // 练一练's new questions (spec 2026-10-05 §3.2, §3.4): pairing, 组句 and 钓鱼 for a look-alike he confused
+  const words = builtinWords(0);
+  const w = (t: string) => words.find((x) => x.text === t)!;
+  const rng = mulberry32(3);
+  const body =
+    which === 'pair' ? <PairGame board={zuciBoard(w('火'), rng)!} kind="pair" kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
+    : which === 'match' ? <PairGame board={dapeiBoard(w('穿'), rng)!} kind="match" kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
+    : which === 'build' ? <BuildSentence item={{ full: '我和哥哥都喜欢打球。', tiles: ['我', '和', '哥哥', '都', '喜欢', '打球。'], orders: [['我', '和', '哥哥', '都', '喜欢', '打球。']] }} word={w('和')} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
+    : <ComponentsStep items={[fishItem(w('根'), ['跟'], new Set(), rng)!]} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onDone={() => {}} />;
+  render(screen(body), app);
+}
 else render(screen(
   <Stage activity="write" truffle={<Pet kid={DEFAULT_KID} size={180} />} sheet={which === 'good' ? <FeedbackSheet tone="good" title="写得好！" actionLabel="完成" onAction={() => {}} /> : <FeedbackSheet actionLabel="完成" disabled onAction={() => {}} />}>
     <div style="width:200px;height:200px" />

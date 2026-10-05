@@ -10,6 +10,18 @@ mkdirSync(dir, { recursive: true });
 await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.png': 'file' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"/"' }, logLevel: 'error' });
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
+/** Anything in the lesson card cut off by the card's own box (the same probe as the clue case). */
+const cardClipped = (page: import('playwright-core').Page, name: string) => page.evaluate((n) => {
+  const card = document.querySelector('.stage__card')?.getBoundingClientRect();
+  if (!card) return [`${n}: no lesson card`];
+  for (const el of document.querySelectorAll('.stage__card *')) {
+    if ((el instanceof SVGElement && el.ownerSVGElement) || el.closest('.sr-only, [aria-hidden="true"]')) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width && r.height && (r.top < card.top - 2 || r.bottom > card.bottom + 2 || r.left < card.left - 2 || r.right > card.right + 2)) return [`${n}: clipped by the card: ${(el.textContent ?? '').trim().slice(0, 12)}`];
+  }
+  return [];
+}, name);
+
 const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
 const problems: string[] = [];
 const browser = await webkit.launch();
@@ -42,6 +54,19 @@ for (const size of SIZES) {
   const neutral = await cardH("neutral"), good = await cardH("good");
   if (process.env.DEBUG_CASES) console.log(size.name, "card neutral", neutral, "good", good);
   if (Math.abs(neutral - good) > 2) problems.push(`${size.name} sheet: the card shrinks ${Math.round(neutral - good)}px when feedback appears`);
+  // 练一练's new questions: pairing, 组句 (also with every tile placed, its longest) and 钓鱼
+  mkdirSync('fit-shots/stage-cases', { recursive: true });
+  for (const c of ['pair', 'match', 'build', 'fish']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+  }
+  await page.goto(`file://${dir}/index.html?case=build`);
+  for (let i = 0; i < 6 && (await page.$('.build__bank .choice')); i++) await page.click('.build__bank .choice');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `fit-shots/stage-cases/build-done-${size.name}.png` });
+  problems.push(...(await cardClipped(page, `${size.name} build done`)));
   await page.close();
 }
 // every expression × looks: nothing of him pokes out of his box (a seam, an ear, a mark), and a sheet to read by eye

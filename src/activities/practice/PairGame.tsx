@@ -80,7 +80,7 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
         />
       )}
     >
-      <div class="pairs" data-q>
+      <div class="pairs">
         <div class="pairs__col">
           {board.left.map((l) => (
             <button key={l} type="button" class={cls(l)} disabled={done || joined.has(l) || (picked !== null)} onClick={() => setPicked(l)}>{l}</button>
