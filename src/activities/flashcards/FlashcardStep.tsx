@@ -156,10 +156,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           title={result.correct ? quiz.cheer : quiz.comfort}
           detail={result.correct ? undefined : (
             <>
-              正确答案：<span class="hanzi">{quiz.cue ? quiz.cue.full : word.text}</span>
-              <span>{quiz.cue ? quiz.cue.pinyin : word.pinyin}</span>
-              <SpeakButton text={quiz.cue ? quiz.cue.full : word.text} />
-              <MeaningNote right={quiz.cue ? quiz.cue.full : word.text} picked={quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
+              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : word.pinyin} picked={quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
             </>
           )}
           actionLabel="继续"

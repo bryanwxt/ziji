@@ -221,8 +221,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .part--radical { color: var(--blue); }
 /* English on the 认字 card (parent, 2026-10-04): small, quiet, one line each */
 .intro__en { margin: 0; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.25; color: var(--ink-soft); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sheet__en { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.3; color: var(--ink-soft); }
+.sheet__en { margin: 2px 0 0; display: flex; flex-direction: column; gap: 2px; flex-basis: 100%; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.3; color: var(--ink-soft); }
+.sheet__en-line { margin: 0; display: flex; align-items: flex-end; gap: 8px; }
+.sheet__en-zh { font-family: var(--hanzi); font-size: 22px; flex: none; }
+.sheet__en-zh .label__py { font-size: 12px; }
 .sheet__en-right { font-weight: 700; color: var(--ink); }
+.sheet__en-line { flex-wrap: wrap; row-gap: 0; }
+.sheet__en-label { font-family: var(--font); font-size: 16px; font-weight: 800; color: inherit; align-self: center; }
+.sheet__en-line .speak--sm { align-self: center; }
+.sheet__detail { flex-wrap: wrap; }
 /* the characters sit on the card's centre line; the speak button hangs just to their right (parent, 2026-10-05: rows looked off-centre) */
 .intro__head { position: relative; display: flex; justify-content: center; max-width: 100%; }
 .intro__head { padding-inline: 80px; box-sizing: border-box; } /* room for the hanging button on both sides keeps the centre */
@@ -849,6 +856,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .sheet__msg { min-width: 0; }
   .sheet__detail { gap: 6px; flex-wrap: wrap; }
   .sheet__detail .speak { width: 48px; height: 48px; }
+  .sheet__detail .speak--sm { width: 44px; height: 44px; }
+  /* a miss with its answer on a phone: Truffle's bubble already comforts him, so the sheet's own title gives its room to the
+     answer, and a slimmer 继续 leaves the English one line each (parent, 2026-10-05: the sheet was cut off on an iPhone) */
+  .stage__sheet .sheet--oops .sheet__title:has(+ .sheet__detail) { display: none; }
+  .stage__sheet .sheet--oops:has(.sheet__detail) .btn { min-width: 0; padding: 10px 12px; }
+  .sheet__en { font-size: 15px; }
 }
 @media (orientation: landscape) and (min-height: 600px) {
   .sheet { align-self: flex-end; max-width: 62%; }
@@ -1140,8 +1153,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* a question's prompt keeps its height: it never slides under the answer tiles (review I1) */
 .stage__card .flash__prompt { flex: none; min-height: auto; }
 @media (max-width: 599px) {
-  /* a long answer and clue stay inside a short sheet that scrolls, so the card above isn't squeezed (review I1) */
-  .stage__sheet .sheet__detail { max-height: 14dvh; overflow-y: auto; font-size: 16px; }
+  /* the answer and both English lines show whole (parent, 2026-10-05: the last line was cut off, and a child doesn't think to
+     scroll); the card above gives up its spare space. Only something longer still scrolls (review I1). */
+  .stage__sheet .sheet__detail { max-height: 30dvh; overflow-y: auto; font-size: 16px; }
   .stage__card .choices--words .choice { font-size: clamp(24px, 4.4dvh, 34px); }
   .stage__sheet .sheet__detail .hanzi { font-size: 20px; }
 }
@@ -1165,7 +1179,10 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .pairs__col--left { order: -1; }
 .pair__tile { font-size: var(--tile-hanzi, 40px); }
 .pair__tile.is-picked { outline: 4px solid var(--blue, #4aa3ff); }
-.pair__tile.is-matched { background: var(--green-soft, #c9f0d0); }
+.pair__tile.is-matched { background: color-mix(in srgb, var(--pc) 18%, var(--surface)); border-color: var(--pc); box-shadow: 0 var(--edge) 0 var(--pc); color: var(--pc); opacity: 1; animation: pop-in var(--dur-fast, 0.2s) var(--spring, ease-out); }
+.pair__tile.is-matched::after { content: '✓'; position: absolute; top: 4px; right: 10px; font-size: 20px; font-weight: 900; color: var(--pc); }
+/* tiles not yet joined are paper, so a joined pair's colour stands out */
+.pair__tile:not(.is-matched):not(.is-shown) { background: var(--surface); }
 .pair__tile.is-shown { background: var(--orange-soft, #ffe2c2); }
 
 /* 搭配 (spec 2026-10-05 §3.2 rung 2) */

@@ -34,13 +34,16 @@ async function tellStory() {
   }
 }
 
+/** Finishing saves every recording first: on a slow CI machine that takes over the default 1 s (it failed twice on 2026-10-05). */
+const SAVED = { timeout: 5000 };
+
 describe('speaking step alternation', () => {
   it('a fresh profile gets the vase story; finishing it counts the story and saves every recording', async () => {
     const app = await setup({});
     renderWithApp(<SessionScreen free={false} />, app);
     expect(await screen.findByText('图上画的是什么？')).toBeTruthy();
     await tellStory();
-    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    expect(await screen.findByText('太棒了！', {}, SAVED)).toBeTruthy();
     const kid = (await getKid(app.db))!;
     expect(kid.story).toEqual({ next: 1, told: 1 });
     expect(kid.speakingLast).toBe('story');
@@ -58,7 +61,7 @@ describe('speaking step alternation', () => {
     renderWithApp(<SessionScreen free={false} />, app);
     await screen.findByText('图上画的是什么？');
     await tellStory();
-    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    expect(await screen.findByText('太棒了！', {}, SAVED)).toBeTruthy();
     expect((await getKid(app.db))!.story.told).toBe(1);
   });
 
@@ -82,7 +85,7 @@ describe('the dino egg hatches after a finished lesson', () => {
     renderWithApp(<SessionScreen free={false} />, app);
     await screen.findByText('图上画的是什么？');
     await tellStory();
-    await screen.findByText('太棒了！');
+    await screen.findByText('太棒了！', {}, SAVED);
     await waitFor(async () => expect((await getKid(app.db))!.finds.dinoHatched).toBe(true));
   });
   it('free play does not hatch it', async () => {
@@ -109,6 +112,6 @@ describe('看图说话 is parked by default', () => {
     await updateSettings(app.db, { activities: speakingOnly });
     await saveKid(app.db, { ...DEFAULT_KID });
     renderWithApp(<SessionScreen free={false} />, app);
-    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    expect(await screen.findByText('太棒了！', {}, SAVED)).toBeTruthy();
   });
 });

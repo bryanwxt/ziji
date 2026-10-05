@@ -402,7 +402,7 @@ describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
     // a wrong choice with a gloss (the distractors are random; a rare one like 俱 has none, and then only 他 is explained)
     const wrong = [...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== '他' && glossFor(b.textContent!))!;
     fireEvent.click(wrong);
-    const en = document.querySelector('.sheet [lang="en"]')!.textContent!;
+    const en = document.querySelector('.sheet .sheet__en')!.getAttribute('data-text')!;
     expect(en).toContain('他');
     expect(en).toContain(wrong.textContent!);
   });
@@ -415,7 +415,7 @@ describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
     render(<FlashcardStep {...base} item={review} ask="read" voice={false} onDone={vi.fn()} />);
     const wrong = [...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!;
     fireEvent.click(wrong);
-    const en = document.querySelector('.sheet [lang="en"]')?.textContent ?? '';
+    const en = document.querySelector('.sheet .sheet__en')?.getAttribute('data-text') ?? '';
     expect(en).toContain('河');
     expect(en).not.toContain(wrong.textContent!);
   });

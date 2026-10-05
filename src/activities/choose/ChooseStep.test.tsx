@@ -98,7 +98,7 @@ describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
   it('a wrong word in a sentence: the right word and the picked word, in English', () => {
     render(<ChooseStep items={[fit]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onDone={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '在' }));
-    const en = document.querySelector('.sheet [lang="en"]')!.textContent!;
+    const en = document.querySelector('.sheet .sheet__en')!.getAttribute('data-text')!;
     expect(en).toContain('很');
     expect(en).toContain('在');
   });

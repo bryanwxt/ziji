@@ -26,6 +26,9 @@ const SHOW_AFTER = 3; // misses on one tile before its match is shown (review fo
  * pair lets go; three misses on a tile show its match. Only the word's own pair is graded: its first try, timed from its pick.
  * Tiles are told apart by column and place, not by text, so a doubled word (妈妈) works.
  */
+/** A colour per matched pair: green, blue, gold, purple (palette inks dark enough for a ✓ on paper). */
+const PAIR_COLOURS = ['#2a9d5c', '#2f7fd8', '#c98a12', '#8a5cd6'];
+
 export function PairGame({ board, kind, kid, resting, onDone }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ board.target[0].codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [board]);
   const [picked, setPicked] = useState<number | null>(null); // a left index
@@ -72,6 +75,9 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
 
   const done = result !== null;
   const cls = (key: string, isPicked: boolean) => `choice press pair__tile${joined.has(key) ? (shown.has(key) ? ' is-shown' : ' is-matched') : ''}${isPicked ? ' is-picked' : ''}`;
+  // the two tiles of a pair share a colour, in the order he joined them, so he sees which go together (parent, 2026-10-05)
+  const order = [...joined];
+  const pairStyle = (key: string) => (joined.has(key) && !shown.has(key) ? `--pc:${PAIR_COLOURS[(order.indexOf(key) >> 1) % PAIR_COLOURS.length]}` : undefined);
   return (
     <Stage
       activity="use"
@@ -97,12 +103,12 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
         {/* the right halves come first in the page (CSS shows them on the right): the first open tile is always one that moves the game on */}
         <div class="pairs__col pairs__col--right">
           {board.right.map((r, i) => (
-            <button key={`R${i}`} type="button" class={cls(`R${i}`, false)} disabled={done || joined.has(`R${i}`) || picked === null} onClick={() => tapRight(i)}>{r}</button>
+            <button key={`R${i}`} type="button" class={cls(`R${i}`, false)} style={pairStyle(`R${i}`)} disabled={done || joined.has(`R${i}`) || picked === null} onClick={() => tapRight(i)}>{r}</button>
           ))}
         </div>
         <div class="pairs__col pairs__col--left">
           {board.left.map((l, i) => (
-            <button key={`L${i}`} type="button" class={cls(`L${i}`, picked === i)} disabled={done || joined.has(`L${i}`) || (picked !== null && picked !== i)} onClick={() => pick(i)}>{l}</button>
+            <button key={`L${i}`} type="button" class={cls(`L${i}`, picked === i)} style={pairStyle(`L${i}`)} disabled={done || joined.has(`L${i}`) || (picked !== null && picked !== i)} onClick={() => pick(i)}>{l}</button>
           ))}
         </div>
       </div>
