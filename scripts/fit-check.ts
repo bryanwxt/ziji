@@ -42,7 +42,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
   for (const sc of document.querySelectorAll('.screen')) if (sc.scrollTop > 0 || sc.scrollLeft > 0) out.push(`screen scrolled by ${sc.scrollTop}px (a clipped screen moved: its top is hidden)`);
   if ((document.scrollingElement?.scrollTop ?? 0) > 0) out.push(`page scrolled by ${document.scrollingElement!.scrollTop}px`);
   const past = (el: Element) => {
-    if (el.closest('[aria-hidden="true"], .sr-only, .world-taps, [hidden], .scene') || el.parentElement?.closest(args.scrollers)) return;
+    if (el.closest('[aria-hidden="true"], .sr-only, .world-props, [hidden], .scene') || el.parentElement?.closest(args.scrollers)) return;
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height || getComputedStyle(el).visibility === 'hidden') return;
     if (r.bottom > innerHeight + 1 || r.top < -1 || r.right > innerWidth + 1 || r.left < -1) { cut.add(`content cut off: ${(el.textContent ?? '').trim().slice(0, 16) || `<${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}">`} at ${Math.round(r.left)},${Math.round(r.top)}–${Math.round(r.right)},${Math.round(r.bottom)}`); }
@@ -55,7 +55,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
   const mainMin = innerWidth < 600 ? 52 : 64;
   for (const el of document.querySelectorAll('button, [role="button"], [role="tab"], a[href], input, select, textarea')) {
     const r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0 || el.closest('[aria-hidden="true"], .sr-only, .world-taps, .is-eaten') || getComputedStyle(el).visibility === 'hidden') continue;
+    if (r.width === 0 || r.height === 0 || el.closest('[aria-hidden="true"], .sr-only, .world-props, .is-eaten') || getComputedStyle(el).visibility === 'hidden') continue;
     if (!el.parentElement?.closest(args.scrollers) && (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1)) out.push(`off screen: ${name(el)}`);
     if (Math.min(r.width, r.height) < 43.5) out.push(`under 44px: ${name(el)} ${Math.round(r.width)}×${Math.round(r.height)}`);
     if (el.matches(args.main) && Math.min(r.width, r.height) < mainMin - 0.5) out.push(`main action under ${mainMin}px: ${name(el)} ${Math.round(r.width)}×${Math.round(r.height)}`);
@@ -65,7 +65,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
     if (!/\p{Script=Han}/u.test(n.textContent ?? '')) continue;
     const el = n.parentElement!;
-    if (el.closest('[aria-hidden="true"], .sr-only, .world-taps, [hidden]')) continue;
+    if (el.closest('[aria-hidden="true"], .sr-only, .world-props, [hidden]')) continue;
     const r = el.getBoundingClientRect();
     if (!r.width || getComputedStyle(el).visibility === 'hidden') continue;
     const fs = parseFloat(getComputedStyle(el).fontSize);
@@ -74,7 +74,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
   out.push(...small);
   // solid things must not sit on each other (the eye catches this; scroll and size checks don't)
   const solid = [...document.querySelectorAll('button, h1, h2, .card, .goal, .pet__bubble, svg.truffle, .path__name, .week, .stat, .home__who, .passage, .tianzige, .intro__card, .hanzi--xl, .langdu__phrase, .kantu__pic')]
-    .filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !el.closest('[aria-hidden="true"]:not(.truffle):not(.pet), .arrival, .zika-big, .closeup, .rotate-hint, .world-taps, .particles, .is-eaten') && getComputedStyle(el).visibility !== 'hidden'; });
+    .filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !el.closest('[aria-hidden="true"]:not(.truffle):not(.pet), .arrival, .zika-big, .closeup, .rotate-hint, .world-props, .particles, .is-eaten') && getComputedStyle(el).visibility !== 'hidden'; });
   const seenPair = new Set<string>();
   // what's actually visible: clipped to the scroll panel an element sits in (cards scrolled out of a panel are hidden, not overlapping)
   const shown = (el: Element) => {
@@ -92,13 +92,13 @@ function probe(args: { main: string; scrollers: string }): string[] {
     const w = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left), h = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
     if (w > 6 && h > 6) { const key = `${name(A)} × ${name(B)}`; if (!seenPair.has(key)) { seenPair.add(key); out.push(`overlap: ${key}`); } }
   }
-  for (const t of document.querySelectorAll('.world-taps .tap > *')) {
+  for (const t of document.querySelectorAll('.world-props .tap')) {
     // the centre and four points around it: a target is lost when its centre is covered, or half of it (2 of the 4 points)
     const r = t.getBoundingClientRect();
     const covered = [[0.5, 0.5], [0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]].map(([fx, fy]) => {
       const x = r.left + r.width * fx!, y = r.top + r.height * fy!;
       const top = document.elementFromPoint(x, y);
-      return top?.closest('.world-taps .tap') ? null : `${Math.round(x)},${Math.round(y)} covered by ${top ? (typeof top.className === 'string' ? top.className : top.tagName) || top.tagName : 'nothing (off screen)'}`;
+      return top?.closest('.world-props .tap') ? null : `${Math.round(x)},${Math.round(y)} covered by ${top ? (typeof top.className === 'string' ? top.className : top.tagName) || top.tagName : 'nothing (off screen)'}`;
     });
     const hits = covered.filter((c): c is string => !!c);
     if (covered[0] || hits.length >= 2) out.push(`world tap at ${hits.join('; ')}`);

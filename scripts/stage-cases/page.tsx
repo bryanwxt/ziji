@@ -15,6 +15,12 @@ import { ComponentsStep } from '../../src/activities/components/ComponentsStep';
 import { fishItem } from '../../src/activities/components/zibian';
 import { dapeiQuestion, zuciBoard } from '../../src/practice/pairs';
 import { MatchQuestion } from '../../src/activities/practice/MatchQuestion';
+import { WorldScene } from '../../src/ui/worlds/WorldScene';
+import { WorldProps } from '../../src/ui/worlds/WorldProps';
+import { sceneFor } from '../../src/ui/worlds/scenes';
+import { WORLDS, type WorldId } from '../../src/fun/worlds';
+import { DEFAULT_FINDS } from '../../src/fun/finds';
+import type { ReactionKind } from '../../src/ui/truffle/timelines';
 import { IdiomQuestion } from '../../src/activities/practice/IdiomQuestion';
 import { FlashcardStep } from '../../src/activities/flashcards/FlashcardStep';
 import { builtinIdiom, chengyuOf } from '../../src/content/chengyu';
@@ -32,7 +38,7 @@ const screen = (body: preact.ComponentChildren) => (
 );
 const clue = { kind: 'fit' as const, wordId: null, word: '连忙', before: '看到老师来了，他', after: '站起来。', options: ['连忙', '从来', '互相', '本来'], clue: '连忙：说已经发生的事；叫别人快一点用"赶快"' };
 const which = new URLSearchParams(location.search).get('case');
-if (which?.startsWith('alive')) {
+if (which?.startsWith('alive') || which === 'moments') {
   // spec 2026-10-04 §6: each frame's own work (script, then the style and layout it causes) is timed, not just the frame rate
   const raw = window.requestAnimationFrame.bind(window);
   const work: number[] = [];
@@ -82,6 +88,27 @@ else if (which === 'pair' || which === 'match' || which === 'build' || which ===
     : which === 'build' ? <BuildSentence item={{ full: '我和哥哥都喜欢打球。', tiles: ['我', '和', '哥哥', '都', '喜欢', '打球。'], orders: [['我', '和', '哥哥', '都', '喜欢', '打球。']] }} word={w('和')} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
     : <ComponentsStep items={[fishItem(w('根'), ['跟'], new Set(), rng)!]} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onDone={() => {}} />;
   render(screen(body), app);
+}
+else if (which === 'worlds') {
+  // every world by day and by evening, for the parent to look over (spec 2026-10-04 §2)
+  const cell = (w: WorldId, t: 'afternoon' | 'evening') => `<figure style="margin:0"><svg viewBox="0 0 360 480" width="180" height="240">${sceneFor(w, t)}</svg><figcaption>${w} · ${t}</figcaption></figure>`;
+  app.innerHTML = `<div style="display:grid;grid-template-columns:repeat(8,180px);gap:6px;padding:8px;font:11px sans-serif;background:#fff">${WORLDS.map((w) => cell(w.id, 'afternoon')).join('')}${WORLDS.map((w) => cell(w.id, 'evening')).join('')}</div>`;
+}
+else if (which === 'moments') {
+  // Home's world with its props and a live Truffle: each moment is tapped and its frames timed (spec 2026-10-04 §6)
+  const world = (new URLSearchParams(location.search).get('world') ?? 'yard') as WorldId;
+  const kid = { ...DEFAULT_KID, finds: { ...DEFAULT_FINDS } };
+  function Moments() {
+    const [react, setReact] = useState<{ kind: ReactionKind; key: number } | null>(null);
+    return (
+      <div class="screen home">
+        <WorldScene world={world} time="afternoon" />
+        <WorldProps world={world} kid={kid} today="2026-10-06" onKid={() => {}} onSay={() => {}} onReact={(kind) => setReact((r) => ({ kind, key: (r?.key ?? 0) + 1 }))} autoEvery={1e9} />
+        <div style="position:fixed;left:50%;bottom:120px;transform:translateX(-50%)"><Pet kid={kid} size={150} alive react={react} /></div>
+      </div>
+    );
+  }
+  render(<Moments />, app);
 }
 else if (which === 'intro-school-idiom') {
   // a school 成语's own 认新字 card (final review I3): four characters where the card expects one

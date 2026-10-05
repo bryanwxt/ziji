@@ -17,18 +17,21 @@ export type Fx =
   | { kind: 'launch' } | { kind: 'drift' }
   | { kind: 'dig'; star: boolean } | { kind: 'open' } | { kind: 'flap' };
 
-/** A prop the child can tap; `auto` moments also start by themselves on Home now and then (never ones that hold a find). */
-export interface PropMoment { prop: string; label: string; auto: boolean }
+/**
+ * A prop and its moment. `auto` moments also start by themselves on Home now and then (never ones that hold a find); `tap` is
+ * false for a prop whose spot Home's cards or path cover on some screens (the WebKit sweep): it only plays by itself.
+ */
+export interface PropMoment { prop: string; label: string; auto: boolean; tap: boolean }
 
 export const MOMENTS: Record<WorldId, PropMoment[]> = {
-  yard: [{ prop: 'sprinkler', label: '洒水器', auto: false }, { prop: 'bowl', label: '小碗', auto: true }, { prop: 'ball', label: '红球', auto: true }, { prop: 'birdhouse', label: '鸟屋', auto: true }],
-  grass: [{ prop: 'box', label: '纸箱', auto: false }, { prop: 'butterfly', label: '蝴蝶', auto: true }],
-  race: [{ prop: 'kart', label: '赛车', auto: false }, { prop: 'cone', label: '路障', auto: true }],
-  blocks: [{ prop: 'gem-block', label: '宝石', auto: false }, { prop: 'post', label: '猫抓板', auto: true }, { prop: 'statue', label: '猫雕像', auto: false }],
-  dino: [{ prop: 'nest', label: '恐龙蛋', auto: false }, { prop: 'leaf', label: '大叶子', auto: true }],
-  sea: [{ prop: 'sub', label: '潜水艇', auto: false }, { prop: 'fish', label: '小鱼', auto: true }],
-  space: [{ prop: 'rocket', label: '火箭', auto: false }, { prop: 'yarn', label: '毛线球', auto: true }],
-  pirate: [{ prop: 'x', label: '宝藏', auto: false }, { prop: 'chest', label: '藏宝箱', auto: false }, { prop: 'parrot', label: '鹦鹉', auto: true }],
+  yard: [{ prop: 'sprinkler', label: '洒水器', auto: false, tap: true }, { prop: 'bowl', label: '小碗', auto: true, tap: true }, { prop: 'ball', label: '红球', auto: true, tap: true }, { prop: 'birdhouse', label: '鸟屋', auto: true, tap: false }],
+  grass: [{ prop: 'box', label: '纸箱', auto: false, tap: true }, { prop: 'butterfly', label: '蝴蝶', auto: true, tap: true }],
+  race: [{ prop: 'kart', label: '赛车', auto: false, tap: true }, { prop: 'cone', label: '路障', auto: true, tap: true }],
+  blocks: [{ prop: 'gem-block', label: '宝石', auto: false, tap: true }, { prop: 'post', label: '猫抓板', auto: true, tap: true }, { prop: 'statue', label: '猫雕像', auto: true, tap: false }],
+  dino: [{ prop: 'nest', label: '恐龙蛋', auto: false, tap: true }, { prop: 'leaf', label: '大叶子', auto: true, tap: true }],
+  sea: [{ prop: 'sub', label: '潜水艇', auto: false, tap: true }, { prop: 'fish', label: '小鱼', auto: true, tap: true }],
+  space: [{ prop: 'rocket', label: '火箭', auto: false, tap: true }, { prop: 'yarn', label: '毛线球', auto: true, tap: false }],
+  pirate: [{ prop: 'x', label: '宝藏', auto: false, tap: true }, { prop: 'chest', label: '藏宝箱', auto: false, tap: true }, { prop: 'parrot', label: '鹦鹉', auto: true, tap: false }],
 };
 
 /** What happens: what is drawn, how Truffle reacts, what he says (and a line after), what is spoken, a sound, a saved find. */

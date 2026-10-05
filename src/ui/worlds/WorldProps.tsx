@@ -46,7 +46,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
   const later = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms));
   useEffect(() => () => { timers.current.forEach(clearTimeout); show(); }, []);
 
-  const play = (prop: string, o: Outcome) => {
+  const play = (prop: string, o: Outcome, auto = false) => {
     const still = reducedMotion();
     const { svg, hide } = momentFx(world, o.fx, still);
     show(); // another moment's prop comes back first
@@ -65,7 +65,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     });
     if (o.say) latest.current.onSay(o.say);
     if (o.later) { const line = o.later.say; later(o.later.ms, () => latest.current.onSay(line)); }
-    if (o.speak) speak(o.speak);
+    if (o.speak && !auto) speak(o.speak); // a moment that starts by itself never talks out loud
     if (o.sfx) playSfx(o.sfx);
     latest.current.onReact(o.react, art.props[prop]!.x < 180 ? -1 : 1);
   };
@@ -91,7 +91,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
           const m = autos[Math.floor(Math.random() * autos.length)]!;
           const { kid: k, today: day } = latest.current;
           const { kid: _found, ...o } = runMoment(world, m.prop, k, day, 0);
-          play(m.prop, o);
+          play(m.prop, o, true);
         }
         next();
       }, autoEvery + Math.random() * autoEvery * 0.5);
@@ -107,7 +107,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     <>
       <svg class="world-props" data-world={world} viewBox={SCENE_VIEWBOX} preserveAspectRatio="xMidYMax slice">
         {baby && <g aria-hidden="true" dangerouslySetInnerHTML={{ __html: baby }} />}
-        {MOMENTS[world].map((m) => {
+        {MOMENTS[world].filter((m) => m.tap).map((m) => {
           const s = art.props[m.prop]!;
           return (
             <rect

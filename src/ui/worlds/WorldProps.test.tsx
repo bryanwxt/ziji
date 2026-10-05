@@ -24,7 +24,7 @@ describe('WorldProps (spec 2026-10-04 §4.5)', () => {
   it("every world's props are buttons, labelled in Chinese", () => {
     for (const w of WORLDS) {
       const { unmount } = render(<WorldProps world={w.id} {...props()} />);
-      for (const m of MOMENTS[w.id]) expect(document.querySelector(`.world-props[data-world="${w.id}"] [role="button"][aria-label="${m.label}"]`), `${w.id}:${m.label}`).toBeTruthy();
+      for (const m of MOMENTS[w.id]) expect(!!document.querySelector(`.world-props[data-world="${w.id}"] [role="button"][aria-label="${m.label}"]`), `${w.id}:${m.label}`).toBe(m.tap);
       unmount();
     }
   });
@@ -94,13 +94,18 @@ describe('WorldProps (spec 2026-10-04 §4.5)', () => {
     tap('宝藏');
     expect(onKid).toHaveBeenCalledTimes(1);
   });
-  it('the rocket counts down in Chinese; the parrot says hello', () => {
+  it('the rocket counts down in Chinese', () => {
     render(<WorldProps world="space" {...props()} />);
     tap('火箭');
     expect(speak).toHaveBeenLastCalledWith('三，二，一！');
-    render(<WorldProps world="pirate" {...props()} />);
-    fireEvent.click(document.querySelector('.world-props[data-world="pirate"] [aria-label="鹦鹉"]')!);
-    expect(speak).toHaveBeenLastCalledWith('你好！');
+  });
+  it('a moment that starts by itself never speaks out loud (the parrot only shows its hello)', () => {
+    vi.mocked(speak).mockClear();
+    const onReact = vi.fn();
+    render(<WorldProps world="pirate" {...props({ onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1600); });
+    expect(onReact).toHaveBeenCalledWith('watch', -1);
+    expect(speak).not.toHaveBeenCalled();
   });
   it('the sprinkler: Truffle flinches toward it, says 哇！, then laughs', () => {
     const onSay = vi.fn();

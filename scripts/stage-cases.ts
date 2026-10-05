@@ -107,6 +107,32 @@ for (const size of SIZES) {
   })));
   await page.close();
 }
+// the worlds for the parent to look over, and every prop moment timed (spec 2026-10-04 §2, §6)
+{
+  const page = await browser.newPage({ viewport: { width: 1480, height: 540 } });
+  await page.goto(`file://${dir}/index.html?case=worlds`);
+  await page.waitForTimeout(300);
+  mkdirSync('fit-shots/stage-cases', { recursive: true });
+  await page.screenshot({ path: 'fit-shots/stage-cases/worlds.png' });
+  await page.close();
+  const m = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+  for (const world of ['yard', 'grass', 'race', 'blocks', 'dino', 'sea', 'space', 'pirate']) {
+    await m.goto(`file://${dir}/index.html?case=moments&world=${world}`);
+    await m.waitForTimeout(400);
+    const labels = await m.$$eval('.world-props .tap', (ts) => ts.map((t) => t.getAttribute('aria-label')!));
+    if (!labels.length) problems.push(`moments ${world}: no props to tap`);
+    for (const label of labels) {
+      await m.evaluate(() => { (window as unknown as { rafWork: number[] }).rafWork.splice(0); });
+      await m.$eval(`.world-props .tap[aria-label="${label}"]`, (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+      await m.waitForTimeout(1500);
+      const worst = await m.evaluate<number>(`(() => { const w = window.rafWork.splice(0).sort((a, b) => a - b); return w[Math.floor(w.length * 0.95)] ?? 0; })()`);
+      if (worst > 8) problems.push(`moments ${world} ${label}: too much work per frame: p95 ${worst.toFixed(1)}ms (budget 8)`);
+      await m.waitForTimeout(3200); // let it finish (the rocket is the longest, 4.3 s)
+    }
+    await m.screenshot({ path: `fit-shots/stage-cases/moments-${world}.png` });
+  }
+  await m.close();
+}
 // a live Truffle: smooth while idle and while reacting, back at rest after, and still while a question is up
 {
   const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });

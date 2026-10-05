@@ -79,3 +79,18 @@ describe('prop moments (spec 2026-10-04 §4.5)', () => {
     expect(runMoment('yard', 'birdhouse', kid(), DAY, 1).react).toBe('watch');
   });
 });
+
+describe('props Home covers on some screens (WebKit sweep)', () => {
+  it('play by themselves rather than wait for a tap that would land on a card or the path', () => {
+    const hands = (w: Parameters<typeof runMoment>[0]) => MOMENTS[w].filter((m) => !m.tap).map((m) => m.prop);
+    expect(hands('yard')).toEqual(['birdhouse']);
+    expect(hands('blocks')).toEqual(['statue']);
+    expect(hands('space')).toEqual(['yarn']);
+    expect(hands('pirate')).toEqual(['parrot']);
+    for (const w of WORLDS) {
+      for (const m of MOMENTS[w.id].filter((x) => !x.tap)) expect(m.auto, `${w.id}:${m.prop}`).toBe(true);
+      expect(MOMENTS[w.id].some((m) => m.tap), w.id).toBe(true);
+    }
+  });
+});
+
