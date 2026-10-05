@@ -5,11 +5,15 @@ import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type Settings } from '../types';
 import { buildSessionPlan } from './plan';
 import { PACE_START } from './pace';
+/** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
+const DISTINCT = Array.from('一二三四五六七八九十人大小山水火木日月田上下中天地子女手口目耳心土石云雨花草米竹虫鱼羊牛马鸟');
 
 const now = new Date(2026, 9, 2, 8, 0);
 const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000);
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULT_SETTINGS, ...over });
 const words = (n: number) => Array.from({ length: n }, (_, i) => makeWord(`字${i}`, { id: `b:${i}`, rank: i }));
+/** Writing tests need a different character per word (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
+const chars = (n: number) => Array.from({ length: n }, (_, i) => makeWord(DISTINCT[i]!, { id: `b:${i}`, rank: i }));
 
 describe('buildSessionPlan', () => {
   it('puts the most overdue reviews first and caps them at 60', () => {
@@ -48,7 +52,7 @@ describe('buildSessionPlan', () => {
   });
 
   it('写一写 (spec 2026-10-05 §5): due writing first, then characters he reads, at his level going down', () => {
-    const ws = words(6).map((w, i) => ({ ...w, writeable: i !== 4 }));
+    const ws = chars(6).map((w, i) => ({ ...w, writeable: i !== 4 }));
     const future = new Date(2026, 9, 20);
     const cards = [
       makeCard('b:0', 'write', hoursAgo(2)),
@@ -64,10 +68,10 @@ describe('buildSessionPlan', () => {
   });
 
   it("sizes 写一写 (9 characters at 30 minutes, 6 at 20) and 练一练's time box from session minutes", () => {
-    const ws = words(12);
+    const ws = chars(12);
     const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
-    const chars = (min: number) => new Set(buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: min }), now }).writeItems!.map((i) => `${i.wordId}#${i.at}`)).size;
-    expect([chars(30), chars(20)]).toEqual([9, 6]);
+    const count = (min: number) => new Set(buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: min }), now }).writeItems!.map((i) => `${i.wordId}#${i.at}`)).size;
+    expect([count(30), count(20)]).toEqual([9, 6]);
     const p20 = buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: 20 }), now });
     expect(p20.writeCount).toBe(p20.writeItems!.length); // each never-written character is traced, then written from memory
     expect(p20.writeCount).toBe(12);
@@ -99,11 +103,11 @@ describe('new writing words', () => {
 describe('写一写 after placement', () => {
   const known = (ws: ReturnType<typeof words>) => ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
   it('with no lesson words yet, starts near his level (the hardest character he recognises), not at the first characters', () => {
-    const ws = words(10);
+    const ws = chars(10);
     expect(buildSessionPlan({ cards: known(ws), words: ws, settings: settings(), now }).writeCandidates.map((c) => c.wordId).slice(0, 2)).toEqual(['b:9', 'b:8']);
   });
   it('practises words from his lessons first, newest first, before placed characters', () => {
-    const ws = words(10);
+    const ws = chars(10);
     const practised = new Map([['b:1', now.getTime() - 86_400_000], ['b:2', now.getTime() - 3_600_000]]);
     expect(buildSessionPlan({ cards: known(ws), words: ws, settings: settings(), now, practised }).writeCandidates.map((c) => c.wordId).slice(0, 2)).toEqual(['b:2', 'b:1']);
   });

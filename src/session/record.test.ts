@@ -7,6 +7,8 @@ import { seededKnownCard } from '../srs/scheduler';
 import { DEFAULT_SETTINGS } from '../types';
 import { freshDb, makeWord } from '../test/fixtures';
 import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession } from './record';
+/** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
+const DISTINCT = Array.from('一二三四五六七八九十人大小山水火木日月田上下中天地子女手口目耳心土石云雨花草米竹虫鱼羊牛马鸟');
 
 const now = new Date(2026, 9, 2, 9);
 
@@ -74,7 +76,7 @@ describe('markWriteSkipped', () => {
 describe("today's plan knows what he has practised", () => {
   it('写一写 starts with a word from his lessons, not the hardest placed character', async () => {
     const db = await freshDb();
-    const ws = Array.from({ length: 6 }, (_, i) => makeWord(`字${i}`, { id: `b:${i}`, rank: i, writeable: true }));
+    const ws = Array.from({ length: 6 }, (_, i) => makeWord(DISTINCT[i]!, { id: `b:${i}`, rank: i, writeable: true }));
     await putWords(db, ws);
     await putCards(db, ws.map((w) => ({ id: `${w.id}:recognise`, wordId: w.id, kind: 'recognise' as const, fsrs: seededKnownCard(now, 20) })));
     await addReviewLog(db, { cardId: 'b:1:recognise', wordId: 'b:1', kind: 'recognise', at: now.getTime() - 3_600_000, rating: Rating.Good, correct: true });

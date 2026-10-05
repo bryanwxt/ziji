@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { makeCard, makeWord } from '../test/fixtures';
-import { orderWriteItems, pickWriteUnits, writeCharTarget, type WriteUnit } from './writing';
+import { orderWriteItems, pickWriteUnits, writeCharTarget, type WriteItem, type WriteUnit } from './writing';
+import { mulberry32 } from '../lib/random';
+import { writingCue } from '../activities/writing/cue';
 
 const now = new Date(2026, 9, 6, 10);
 const day = 86_400_000;
@@ -69,6 +71,51 @@ describe('the order (spec §5: mixed, traced once, from memory)', () => {
   it('with little to write it still keeps a character apart from itself when anything can come between', () => {
     const items = orderWriteItems([unit('a', '一', true), unit('b', '二', false)]);
     expect(items.map(key)).toEqual(['a#0', 'b#0', 'a#0']);
+  });
+});
+
+describe('final review I1: the order keeps characters apart whenever anything can come between', () => {
+  const POOL = Array.from('一二三四五六七八九十人大小山水火木日月田');
+  const charOf = (units: WriteUnit[], i: WriteItem) => units.find((u) => u.wordId === i.wordId)!.chars[i.at]!;
+  it.each([6, 8, 9, 10])('random lessons of %i characters: never the same character twice in a row; a word split where it can be', (target) => {
+    for (let seed = 1; seed <= 400; seed++) {
+      const rng = mulberry32(seed);
+      const units: WriteUnit[] = [];
+      let used = 0, k = 0;
+      while (used < target) {
+        const len = rng() < 0.25 && used + 2 <= target ? 2 : 1;
+        units.push({ wordId: `w${k}`, chars: POOL.slice(used, used + len), isNew: rng() < 0.7 });
+        used += len; k++;
+      }
+      const items = orderWriteItems(units);
+      const chars = items.map((i) => charOf(units, i));
+      for (let i = 1; i < items.length; i++) expect(chars[i], `seed ${seed}: ${chars.join('')}`).not.toBe(chars[i - 1]);
+      for (const u of units.filter((x) => x.isNew)) u.chars.forEach((_, at) => { // from memory: at least two others after the trace
+        const t = items.findIndex((i) => i.wordId === u.wordId && i.at === at && i.pass === 'trace');
+        const r = items.findIndex((i) => i.wordId === u.wordId && i.at === at && i.pass === 'recall');
+        expect(r - t, `seed ${seed}`).toBeGreaterThanOrEqual(3);
+      });
+      for (const u of units) {
+        const mine = items.filter((i) => i.wordId === u.wordId).length;
+        if (mine * 2 > items.length) continue; // a word with most of the items can't be kept apart everywhere
+        for (let i = 1; i < items.length; i++) expect(items[i]!.wordId === u.wordId && items[i - 1]!.wordId === u.wordId, `seed ${seed}: ${items.map((x) => x.wordId).join(' ')}`).toBe(false);
+      }
+    }
+  });
+});
+
+describe('final review I2: a character comes once a lesson, and a repeated one is never shown beside its gap', () => {
+  const now = new Date(2026, 9, 6, 10);
+  it('a doubled word (妈妈) is one character to write; a character two words share is written once', () => {
+    const words = [makeWord('妈妈', { id: 'p:1', source: 'parent', level: null, rank: null }), makeWord('新', { id: 'b:新' }), makeWord('新加坡', { id: 'p:2', source: 'parent', level: null, rank: null })];
+    const cards = words.map((w, i) => makeCard(w.id, 'write', new Date(now.getTime() - (3 - i) * 3600_000)));
+    const units = pickWriteUnits({ cards, words, newWordIds: [], practised: new Map(), level: 2, cutoff: now.getTime() + 86_400_000, target: 9 });
+    expect(units.map((u) => u.chars.join(''))).toEqual(['妈', '新', '加坡']);
+    expect(units[2]!.wordId).toBe('p:2');
+  });
+  it('the cue blanks every copy of the character', () => {
+    const w = makeWord('一心一意', { id: 'p:3', source: 'parent', pinyin: 'yì xīn yí yì', sentences: [{ text: '我们要一心一意学习，不要东张西望。', pinyin: '' }] });
+    expect(writingCue(w, 0).sentence).toContain('＿心＿意');
   });
 });
 

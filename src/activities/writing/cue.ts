@@ -1,4 +1,5 @@
 import type { Example, Word } from '../../types';
+import { hanChars } from '../../content';
 import { syllableTone } from '../flashcards/distractors';
 import { KID_MEANING } from './meanings';
 import { meaningCue } from '../flashcards/meaning';
@@ -26,7 +27,8 @@ export function writingCue(word: Word, at?: number): WritingCue {
   const chars = Array.from(word.text);
   if (at === undefined || chars.length < 2) return cue;
   const gap = '＿'.repeat(chars.length);
-  const part = chars.map((c, i) => (i === at ? '＿' : c)).join('');
+  const target = hanChars(word.text)[at]; // `at` counts Chinese characters (T恤's 恤 is 0)
+  const part = chars.map((c) => (c === target ? '＿' : c)).join(''); // every copy: 妈妈 would show the answer beside the gap
   return { ...cue, sentence: cue.sentence?.replace(gap, part) ?? null, blanked: cue.blanked?.split(gap).join(part) ?? null };
 }
 
