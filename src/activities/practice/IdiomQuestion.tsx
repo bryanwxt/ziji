@@ -47,7 +47,7 @@ export function IdiomQuestion({ gap, kid, resting, onDone }: Props) {
             <>
               <span class="hanzi">{text}</span>
               <SpeakButton text={text} />
-              <MeaningNote right={text} />
+              <MeaningNote right={text} rightMeaning={gap.idiom.meaning} />
             </>
           )}
           actionLabel="继续"

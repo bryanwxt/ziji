@@ -1175,3 +1175,6 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* a short screen gives the 成语 its room from the big character */
 @media (max-height: 760px) { .intro__card--idiom .hanzi--xl { font-size: min(var(--hanzi-xl), 84px); } }
 @media (max-height: 700px) { .intro__card--idiom .hanzi--xl { font-size: min(var(--hanzi-xl), 68px); } }
+
+/* a word longer than one character on the 认新字 card (a school 成语): one line, sized to fit (final review I3) */
+.intro .hanzi--xl.hanzi--long { white-space: nowrap; font-size: min(var(--hanzi-xl), calc(68vw / var(--len)), calc(420px / var(--len))); }

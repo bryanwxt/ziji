@@ -17,7 +17,7 @@ import { dapeiQuestion, zuciBoard } from '../../src/practice/pairs';
 import { MatchQuestion } from '../../src/activities/practice/MatchQuestion';
 import { IdiomQuestion } from '../../src/activities/practice/IdiomQuestion';
 import { FlashcardStep } from '../../src/activities/flashcards/FlashcardStep';
-import { chengyuOf } from '../../src/content/chengyu';
+import { builtinIdiom, chengyuOf } from '../../src/content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../../src/practice/idioms';
 import { builtinWords } from '../../src/content';
 import { mulberry32 } from '../../src/lib/random';
@@ -83,10 +83,16 @@ else if (which === 'pair' || which === 'match' || which === 'build' || which ===
     : <ComponentsStep items={[fishItem(w('根'), ['跟'], new Set(), rng)!]} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onDone={() => {}} />;
   render(screen(body), app);
 }
+else if (which === 'intro-school-idiom') {
+  // a school 成语's own 认新字 card (final review I3): four characters where the card expects one
+  const words = builtinWords(0);
+  const w = { ...words[0]!, id: 'p:1', text: '五颜六色', pinyin: 'wǔ yán liù sè', source: 'parent' as const, level: null, rank: null, tags: ['成语'], meaning: 'all kinds of bright colours', examples: [], sentences: [{ text: '公园里的花五颜六色。', pinyin: '' }] };
+  render(screen(<FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={[...words, w]} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
+}
 else if (which === 'idiom' || which === 'idiom-fit' || which === 'idiom-build' || which === 'intro-idiom') {
   // 成语 (spec 2026-10-05 §2.1, §3.2 rung 5): the list's longest sentence on each question, its longest meaning on the card
   const words = builtinWords(0);
-  const idiom = { ...chengyuOf('美中不足')!, school: false };
+  const idiom = builtinIdiom('美中不足')!;
   const rng = mulberry32(3);
   const yan = words.find((x) => x.text === '足')!;
   const cheng = words.find((x) => x.text === '成')!;
@@ -94,7 +100,7 @@ else if (which === 'idiom' || which === 'idiom-fit' || which === 'idiom-build' |
     which === 'idiom' ? <IdiomQuestion gap={idiomGap(idiom, '足', rng)!} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
     : which === 'idiom-fit' ? <UseQuestion item={idiomFitItem(idiom, null, rng)!} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onNext={() => {}} />
     : which === 'idiom-build' ? <BuildSentence item={idiomZuju(idiom, rng)!} word={{ ...yan, text: idiom.text }} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
-    : <FlashcardStep item={{ wordId: cheng.id, isNew: true, retry: false }} ask="listen" word={cheng} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={{ ...chengyuOf('胸有成竹')!, school: false }} onDone={() => {}} />;
+    : <FlashcardStep item={{ wordId: cheng.id, isNew: true, retry: false }} ask="listen" word={cheng} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={builtinIdiom('胸有成竹')!} onDone={() => {}} />;
   render(screen(body), app);
 }
 else render(screen(

@@ -8,8 +8,8 @@ const englishFor = (text: string): string | undefined => chengyuOf(text)?.meanin
  * After a wrong answer (spec 2026-10-05 §3.6): what the right answer means in English, then what he picked when that is a
  * real word ("根 root · 跟 to follow"). The question itself stays Chinese; this shows only on the sheet after a miss.
  */
-export function MeaningNote({ right, picked = null }: { right: string; picked?: string | null }) {
-  const mine = englishFor(right);
+export function MeaningNote({ right, picked = null, rightMeaning }: { right: string; picked?: string | null; rightMeaning?: string }) {
+  const mine = chengyuOf(right)?.meaning ?? rightMeaning ?? glossFor(right); // the 成语 list, then a school word's own meaning, then the glossary
   const theirs = picked && picked !== right ? englishFor(picked) : undefined;
   if (!mine && !theirs) return null;
   return (

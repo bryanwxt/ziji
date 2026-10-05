@@ -45,7 +45,7 @@ describe('the built-in 成语 list (spec 2026-10-05 §4)', () => {
 });
 
 describe('idiomsFor (spec §4 level window)', () => {
-  const xin = makeWord('心', { id: 'b:心', level: 1 });
+  const xin = makeWord('心', { id: 'b:心', level: 1, pinyin: 'xīn' });
   it('offers his level, then one up, never higher', () => {
     const out = idiomsFor(xin, 1, []);
     expect(out.length).toBeGreaterThan(0);
@@ -66,7 +66,7 @@ describe('idiomsFor (spec §4 level window)', () => {
     expect(idiomsFor(makeWord('一', { id: 'b:一', level: 1 }), 2, []).map((i) => i.text)).not.toContain('一心一意');
   });
   it('puts his school 成语 first', () => {
-    const school = makeWord('心花怒放', { id: 'p:1', source: 'parent', tags: ['成语'], meaning: 'wild with joy' });
+    const school = makeWord('心花怒放', { id: 'p:1', source: 'parent', tags: ['成语'], meaning: 'wild with joy', pinyin: 'xīn huā nù fàng' });
     expect(idiomsFor(xin, 1, [school])[0]).toMatchObject({ text: '心花怒放', school: true, meaning: 'wild with joy' });
   });
   it('never offers a word its own 成语 back', () => {

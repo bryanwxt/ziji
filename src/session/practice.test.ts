@@ -98,7 +98,7 @@ describe('钓鱼 in the round (spec 2026-10-05 §3.4)', () => {
 });
 
 describe('成语 (spec 2026-10-05 §3.2 rung 5, §4)', () => {
-  const xin = makeWord('心', { id: 'b:心', level: 1 });
+  const xin = makeWord('心', { id: 'b:心', level: 1, pinyin: 'xīn' });
   const school = makeWord('五颜六色', { id: 'p:9', source: 'parent', tags: ['成语'] });
   it('rung 5 needs a 成语 in his window that uses the word', () => {
     for (const a of ['idiom', 'idiomFit', 'idiomBuild'] as const) expect(askable(xin, [], true, 1)(a), a).toBe(true);

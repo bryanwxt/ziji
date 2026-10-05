@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { HSK_WORDS } from '../content';
-import { CHENGYU, chengyuOf, type Idiom } from '../content/chengyu';
+import { builtinIdiom, CHENGYU, chengyuOf, type Idiom } from '../content/chengyu';
 import { mulberry32 } from '../lib/random';
 import { idiomFitItem, idiomGap, idiomZuju } from './idioms';
 
-const asIdiom = (t: string): Idiom => ({ ...chengyuOf(t)!, sentences: [...chengyuOf(t)!.sentences], school: false });
+const asIdiom = (t: string): Idiom => builtinIdiom(t)!;
 const colours = asIdiom('五颜六色');
 
 describe('idiomGap (complete the 成语)', () => {
@@ -45,12 +45,12 @@ describe('idiomFitItem (which 成语 fits)', () => {
     if (item.kind === 'fit') expect(colours.sentences).toContain(item.before + '五颜六色' + item.after);
   });
   it('takes his own 成语 as the wrong choices first', () => {
-    const mine = ['一心一意', '自由自在', '一路平安'].map(asIdiom);
+    const mine = ['一心一意', '千方百计', '不知不觉'].map(asIdiom); // used the other way from 五颜六色, so none fits its sentence
     const item = idiomFitItem(colours, mine, mulberry32(4))!;
-    expect([...item.options].sort()).toEqual(['一心一意', '一路平安', '五颜六色', '自由自在'].sort());
+    expect([...item.options].sort()).toEqual(['一心一意', '千方百计', '不知不觉', '五颜六色'].sort());
   });
   it('is null with no sentence', () => {
-    expect(idiomFitItem({ text: '心花怒放', sentences: [], school: true }, null, mulberry32(1))).toBeNull();
+    expect(idiomFitItem({ text: '心花怒放', pinyin: 'xīn huā nù fàng', sentences: [], school: true }, null, mulberry32(1))).toBeNull();
   });
 });
 
@@ -63,6 +63,6 @@ describe('idiomZuju (build a sentence)', () => {
     }
   });
   it('is null when no sentence cuts into 4–6 tiles', () => {
-    expect(idiomZuju({ text: '心花怒放', sentences: ['心花怒放。'], school: true }, mulberry32(1))).toBeNull();
+    expect(idiomZuju({ text: '心花怒放', pinyin: 'xīn huā nù fàng', sentences: ['心花怒放。'], school: true }, mulberry32(1))).toBeNull();
   });
 });

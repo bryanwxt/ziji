@@ -1,6 +1,6 @@
 // 成语 questions, rung 5 (spec 2026-10-05 §3.2): complete the 成语, pick it for a sentence, build a sentence with it.
 import { BUILTIN, HSK_WORDS } from '../content';
-import { CHENGYU, chengyuLevel, chengyuOf, idiomsFor, type Idiom } from '../content/chengyu';
+import { CHENGYU, chengyuLevel, chengyuOf, idiomsFor, idiomWrongs, nearMisses, type Idiom } from '../content/chengyu';
 import { zujuOf, type ZujuItem } from '../content/zuju';
 import { shuffle, type Rng } from '../lib/random';
 import type { Word } from '../types';
@@ -26,7 +26,8 @@ export function idiomGap(idiom: Idiom, blank: string | null, rng: Rng): IdiomGap
   const at = chars.indexOf(answer);
   const cap = Math.max(2, (LEVEL.get(answer) ?? 7) + 1);
   const makes = (o: string) => { const t = [...chars]; t[at] = o; const s = t.join(''); return HSK_WORDS.has(s) || !!chengyuOf(s); };
-  const wrong = shuffle(IDIOM_CHARS().filter((o) => !chars.includes(o) && (LEVEL.get(o) ?? 99) <= cap && !makes(o)), rng).slice(0, 3);
+  const near = nearMisses(idiom.text);
+  const wrong = shuffle(IDIOM_CHARS().filter((o) => !chars.includes(o) && !near.includes(o) && (LEVEL.get(o) ?? 99) <= cap && !makes(o)), rng).slice(0, 3);
   if (wrong.length < 3) return null;
   return { idiom, at, answer, options: shuffle([answer, ...wrong], rng) };
 }
@@ -37,12 +38,9 @@ export function idiomFitItem(idiom: Idiom, others: Idiom[] | null, rng: Rng): Ex
   if (!full) return null;
   const at = full.indexOf(idiom.text);
   if (at < 0) return null;
-  const level = chengyuLevel(idiom.text);
-  const own = [...new Set((others ?? []).map((i) => i.text))].filter((t) => t !== idiom.text);
-  const near = CHENGYU.filter((x) => x.text !== idiom.text && !own.includes(x.text) && Math.abs(chengyuLevel(x.text) - level) <= 1).map((x) => x.text);
-  const wrong = [...shuffle(own, rng), ...shuffle(near, rng)].slice(0, 3);
+  const wrong = idiomWrongs(idiom.text, rng, (others ?? []).map((i) => i.text));
   if (wrong.length < 3) return null;
-  return { kind: 'fit', wordId: null, word: idiom.text, before: full.slice(0, at), after: full.slice(at + idiom.text.length), options: shuffle([idiom.text, ...wrong], rng) };
+  return { kind: 'fit', wordId: null, word: idiom.text, meaning: idiom.meaning, before: full.slice(0, at), after: full.slice(at + idiom.text.length), options: shuffle([idiom.text, ...wrong], rng) };
 }
 
 /** A 组句 from one of its sentences, the 成语 whole in one tile. */

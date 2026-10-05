@@ -21,7 +21,6 @@ import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
-import { pinyin } from 'pinyin-pro';
 import type { Idiom } from '../../content/chengyu';
 
 export interface FlashResult {
@@ -238,14 +237,15 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
     <div class="intro">
       <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`}>
         <div class="pinyin">{word.pinyin}</div>
-        <div class="hanzi hanzi--xl">{word.text}</div>
+        {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
+        <div class={`hanzi hanzi--xl${Array.from(word.text).length > 1 ? ' hanzi--long' : ''}`} style={Array.from(word.text).length > 1 ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
         <div class="intro__say">
           <SpeakButton text={word.text} />
           {cardMeaning(word) && <p class="intro__en" lang="en">{cardMeaning(word)}</p>}
         </div>
         <UsageLine word={word} />
         {line && glossFor(line.full) && <p class="intro__en intro__en--phrase" lang="en">{glossFor(line.full)}</p>}
-        {hanChars(word.text).map((ch) => {
+        {hanChars(word.text).length <= 2 && hanChars(word.text).map((ch) => { // a 成语's four characters' parts would crowd the card
           const info = getCharInfo(ch);
           const parts = info?.components ?? [];
           if (!info || parts.length < 2) return null;
@@ -268,7 +268,7 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
           <div class="intro__idiom">
             <div class="example example--idiom">
               <span class="idiom-ruby">
-                <span class="pinyin">{pinyin(idiom.text)}</span>
+                <span class="pinyin">{idiom.pinyin}</span>
                 <span class="hanzi">{idiom.text}</span>
               </span>
               <SpeakButton text={idiom.text} />

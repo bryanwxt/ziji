@@ -1,6 +1,9 @@
 // 成语 (spec 2026-10-05 §4): about 150 common 成语 from the app's HSK list, each with an English meaning and short sentences
 // written for this app. A 成语's level is its hardest character's (HSK files nearly all 成语 under 7–9).
+import { pinyin } from 'pinyin-pro';
 import { BUILTIN } from '.';
+import { syllableTone } from '../activities/flashcards/tones';
+import { shuffle, type Rng } from '../lib/random';
 import type { Word } from '../types';
 
 export interface Chengyu { text: string; meaning: string; sentences: string[] }
@@ -21,7 +24,7 @@ export const CHENGYU: readonly Chengyu[] = [
   c('时好时坏', 'sometimes good, sometimes bad', '这几天天气时好时坏。'),
   c('难得一见', 'rarely seen', '这是难得一见的大雪。'),
   // level 2
-  c('一路平安', 'have a safe trip', '爷爷，祝你一路平安！'),
+  c('一路平安', 'have a safe trip', '爷爷，祝您一路平安！'),
   c('一路顺风', 'have a good journey', '我们祝他一路顺风。'),
   c('五颜六色', 'all kinds of bright colours', '公园里的花五颜六色。'),
   c('意想不到', 'unexpected', '今天发生了意想不到的事。'),
@@ -48,13 +51,13 @@ export const CHENGYU: readonly Chengyu[] = [
   c('思前想后', 'think it over and over', '他思前想后，还是去了。'),
   c('随处可见', 'seen everywhere', '公园里的小鸟随处可见。'),
   c('随时随地', 'anytime, anywhere', '我们可以随时随地看书。'),
-  c('天长地久', 'lasting forever', '我们是天长地久的朋友。'),
-  c('头头是道', 'clear and well put', '哥哥讲故事讲得头头是道。'),
+  c('天长地久', 'lasting forever', '我希望我们的友情天长地久。'),
+  c('头头是道', 'clear and well put', '哥哥讲道理讲得头头是道。'),
   c('息息相关', 'closely linked', '天气和我们的生活息息相关。'),
   c('心想事成', 'may your wishes come true', '祝你新年心想事成！'),
   c('一不小心', 'by accident, in a careless moment', '他一不小心打破了杯子。'),
   c('一目了然', 'clear at a glance', '这张地图看起来一目了然。'),
-  c('一成不变', 'never changing', '每天的天气不是一成不变的。'),
+  c('一成不变', 'never changing', '世界上没有一成不变的东西。'),
   c('一举一动', 'every move', '小猫的一举一动都很可爱。'),
   c('一年到头', 'all year round', '这里一年到头都很热。'),
   c('一心一意', 'with one\'s whole heart', '他一心一意学画画。'),
@@ -90,7 +93,7 @@ export const CHENGYU: readonly Chengyu[] = [
   c('轻而易举', 'very easily', '他轻而易举就赢了比赛。'),
   c('水落石出', 'the truth comes out', '这件事终于水落石出了。'),
   c('讨价还价', 'bargain over the price', '妈妈在市场讨价还价。'),
-  c('突如其来', 'sudden, out of nowhere', '一场突如其来的大雨来了。'),
+  c('突如其来', 'sudden, out of nowhere', '突如其来的风吹走了他的帽子。'),
   c('土生土长', 'born and raised here', '他是土生土长的北京人。'),
   c('喜出望外', 'happier than expected', '收到礼物，他喜出望外。'),
   c('显而易见', 'plain to see, obvious', '这个答案是显而易见的。'),
@@ -114,7 +117,7 @@ export const CHENGYU: readonly Chengyu[] = [
   c('独一无二', 'one of a kind', '每个人都是独一无二的。'),
   c('耳目一新', 'fresh and new', '新教室让人耳目一新。'),
   c('家家户户', 'every family', '过年时家家户户都很开心。'),
-  c('见义勇为', 'bravely do what is right', '我们要学习他见义勇为。'),
+  c('见义勇为', 'bravely do what is right', '我们要学习见义勇为的精神。'),
   c('交头接耳', 'whisper to each other', '上课时不要交头接耳。'),
   c('惊天动地', 'earth-shaking', '外面传来惊天动地的声音。'),
   c('精打细算', 'plan spending carefully', '妈妈买东西总是精打细算。'),
@@ -123,7 +126,7 @@ export const CHENGYU: readonly Chengyu[] = [
   c('前所未有', 'never before', '这是前所未有的大雪。'),
   c('迫不及待', "can't wait", '他迫不及待打开了礼物。'),
   c('情不自禁', "can't help it", '听到笑话，他情不自禁笑了。'),
-  c('脱口而出', 'say without thinking', '他把答案脱口而出。'),
+  c('脱口而出', 'say without thinking', '老师一问，他就脱口而出。'),
   c('万无一失', 'perfectly safe, sure to work', '我们这样做万无一失。'),
   c('微不足道', 'too small to matter', '这是一件微不足道的小事。'),
   c('无家可归', 'with no home to go to', '我们帮助无家可归的小猫。'),
@@ -164,7 +167,7 @@ export const CHENGYU: readonly Chengyu[] = [
   c('争分夺秒', 'race against the clock', '他争分夺秒做作业。'),
   c('左顾右盼', 'look left and right', '他在门口左顾右盼。'),
   c('三番五次', 'again and again', '妈妈三番五次叫他起床。'),
-  c('理直气壮', 'bold because one is right', '他理直气壮说出了答案。'),
+  c('理直气壮', 'bold because one is right', '他回答问题时理直气壮。'),
   c('恰到好处', 'just right', '这道菜的味道恰到好处。'),
 ];
 
@@ -173,8 +176,59 @@ const BY_TEXT = new Map(CHENGYU.map((x) => [x.text, x]));
 export const chengyuLevel = (text: string): number => Math.max(...Array.from(text).map((ch) => LEVEL.get(ch) ?? 7));
 export const chengyuOf = (text: string): Chengyu | undefined => BY_TEXT.get(text);
 
+/** Where the pinyin library reads a 成语 wrong (final review I2). */
+const PINYIN_FIXES: Record<string, string> = {
+  说干就干: 'shuō gàn jiù gàn', 一言一行: 'yì yán yì xíng', 粗心大意: 'cū xīn dà yì', 一动不动: 'yí dòng bù dòng',
+};
+export const chengyuPinyin = (text: string): string => PINYIN_FIXES[text] ?? pinyin(text);
+
+/**
+ * Characters that also make a real phrase in a 成语's gap (千门万户 for 千家万户; final review I5): never offered as wrong
+ * in completing it. From CC-CEDICT's four-character entries, plus everyday variants it doesn't list.
+ */
+const NEAR_MISSES: Record<string, string> = {
+  不相上下: '分', 天长地久: '日', 一举一动: '言', 一言不发: '语合', 一言一行: '动', 各式各样: '色', 力所能及: '不', 兴高采烈: '彩',
+  争先恐后: '前', 出人意料: '外', 耳目一新: '面', 前所未有: '见闻', 情不自禁: '喜', 万无一失: '百', 无精打采: '没彩', 无微不至: '所',
+  一无所知: '动长有闻', 勇往直前: '一', 引人注目: '意', 齐心协力: '同合', 胸有成竹: '算', 惊慌失措: '色', 七嘴八舌: '张', 无忧无虑: '思',
+  异口同声: '众', 千家万户: '门', 全心全意: '力', 一路平安: '生', 成千上万: '百', 一年到头: '天', 一天到晚: '头',
+};
+export const nearMisses = (text: string): string => NEAR_MISSES[text] ?? '';
+
+/** 成语 used before a verb, like an adverb (他一心一意写字); the rest describe something (花五颜六色). */
+const ADVERBIAL = new Set([
+  '不知不觉', '从早到晚', '一天到晚', '说干就干', '不由自主', '千方百计', '全心全意', '日复一日', '思前想后', '一不小心', '一心一意', '一年到头',
+  '随时随地', '自然而然', '不约而同', '成群结队', '断断续续', '接二连三', '目不转睛', '轻而易举', '想方设法', '兴高采烈', '争先恐后', '自始至终',
+  '诚心诚意', '聚精会神', '迫不及待', '情不自禁', '不假思索', '齐心协力', '依依不舍', '一鼓作气', '毫不犹豫', '东奔西走', '异口同声', '争分夺秒', '三番五次',
+]);
+/** Near-synonyms: either could fill the other's sentence, so they're never offered against each other (final review I7). */
+const SAME = [
+  '一天到晚 从早到晚 一年到头 日复一日', '一心一意 全心全意 诚心诚意 聚精会神 目不转睛', '东张西望 左顾右盼 交头接耳', '千方百计 想方设法',
+  '形形色色 各式各样 五花八门 五颜六色 丰富多彩 应有尽有 千变万化', '一言不发 一动不动', '不约而同 异口同声 不由自主 情不自禁',
+  '意想不到 出人意料 不可思议 突如其来 大吃一惊 喜出望外', '前所未有 难得一见', '自由自在 无忧无虑', '一路平安 一路顺风 心想事成',
+  '远近闻名 举世闻名 众所周知 引人注目', '一模一样 大同小异 不相上下', '独一无二 与众不同', '显而易见 一目了然', '理所当然 合情合理',
+  '半信半疑 犹豫不决', '依依不舍 念念不忘', '家家户户 千家万户', '兴高采烈 喜出望外', '胸有成竹 理直气壮', '无精打采 力不从心',
+  '胡思乱想 思前想后', '乱七八糟 一干二净', '不知不觉 自然而然',
+].map((g) => new Set(g.split(' ')));
+const sameAs = (a: string, b: string) => SAME.some((g) => g.has(a) && g.has(b));
+
+/**
+ * Wrong choices for "which 成语 fits" (final review I7): his own 成语 first, then built-in ones used the other way (an adverb-like
+ * 成语 against a describing one, so only one fits the sentence), near its level; never a near-synonym.
+ */
+export function idiomWrongs(text: string, rng: Rng, own: string[] = []): string[] {
+  const known = BY_TEXT.has(text);
+  const adverb = ADVERBIAL.has(text);
+  const fits = (t: string) => t !== text && !sameAs(text, t) && (!known || !BY_TEXT.has(t) || ADVERBIAL.has(t) !== adverb);
+  const level = chengyuLevel(text);
+  const mine = [...new Set(own)].filter(fits);
+  const others = CHENGYU.map((x) => x.text).filter((t) => fits(t) && !mine.includes(t));
+  const near = others.filter((t) => Math.abs(chengyuLevel(t) - level) <= 1);
+  const rest = others.filter((t) => !near.includes(t) && chengyuLevel(t) <= level + 1);
+  return [...shuffle(mine, rng), ...shuffle(near, rng), ...shuffle(rest, rng)].slice(0, 3);
+}
+
 /** A 成语 to use with a word: built-in, or one of his school 成语 (on the iPad only). */
-export interface Idiom { text: string; meaning?: string; sentences: string[]; school: boolean }
+export interface Idiom { text: string; pinyin: string; meaning?: string; sentences: string[]; school: boolean }
 
 const once = (text: string, part: string) => { const at = text.indexOf(part); return at >= 0 && text.indexOf(part, at + 1) < 0; };
 
@@ -186,21 +240,42 @@ export function idiomOf(w: Word): Idiom | null {
   if (!isIdiomWord(w)) return null;
   const built = chengyuOf(w.text);
   const own = (w.sentences ?? []).map((s) => s.text).filter((s) => once(s, w.text));
-  return { text: w.text, meaning: w.meaning ?? built?.meaning, sentences: [...own, ...(built?.sentences ?? [])], school: true };
+  return { text: w.text, pinyin: built ? chengyuPinyin(w.text) : w.pinyin, meaning: w.meaning ?? built?.meaning, sentences: [...own, ...(built?.sentences ?? [])], school: true };
 }
 
 /**
  * The 成语 that use a word once (spec §4): his school 成语 first (any level), then built-in ones at his level, one level up,
  * then easier ones, the nearest first; never above one level up. Once only: a second copy would give a completion away.
  */
+/** A built-in 成语 as an Idiom. */
+export function builtinIdiom(text: string): Idiom | undefined {
+  const x = chengyuOf(text);
+  return x && { text: x.text, pinyin: chengyuPinyin(x.text), meaning: x.meaning, sentences: [...x.sentences], school: false };
+}
+
+/** Tone changes that don't make another reading (一 yí/yì, 不 bú, 七 qí, 八 bá). */
+const SANDHI = new Set([...'一不七八']);
+/** The 成语 reads the word the way its card does (final review I1: spec §2.1, one reading per card); a 轻声 counts. */
+function readsAs(idiom: Idiom, word: Word): boolean {
+  const at = Array.from(idiom.text.slice(0, idiom.text.indexOf(word.text))).length;
+  const chars = Array.from(word.text);
+  const own = word.pinyin.split(' ');
+  const got = idiom.pinyin.split(' ').slice(at, at + chars.length);
+  return got.length === own.length && got.every((s, i) => {
+    const a = syllableTone(s), b = syllableTone(own[i]!);
+    return s === own[i] || (a.base === b.base && (a.tone === 5 || b.tone === 5 || SANDHI.has(chars[i]!)));
+  });
+}
+
 export function idiomsFor(word: Word, level: number, pool: Word[]): Idiom[] {
-  const school = pool.filter((w) => !w.paused && w.text !== word.text && isIdiomWord(w) && once(w.text, word.text)).map((w) => idiomOf(w)!);
+  const school = pool.filter((w) => !w.paused && w.text !== word.text && isIdiomWord(w) && once(w.text, word.text)).map((w) => idiomOf(w)!).filter((i) => readsAs(i, word));
   const taken = new Set(school.map((i) => i.text));
   const rank = (l: number) => (l === level ? 0 : l === level + 1 ? 1 : 2 + (level - l));
   const built = CHENGYU.filter((x) => x.text !== word.text && !taken.has(x.text) && once(x.text, word.text) && chengyuLevel(x.text) <= level + 1)
     .map((x) => ({ x, r: rank(chengyuLevel(x.text)) }))
     .sort((a, b) => a.r - b.r)
-    .map(({ x }): Idiom => ({ text: x.text, meaning: x.meaning, sentences: [...x.sentences], school: false }));
+    .map(({ x }) => builtinIdiom(x.text)!)
+    .filter((i) => readsAs(i, word));
   return [...school, ...built];
 }
 

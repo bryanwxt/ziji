@@ -418,9 +418,9 @@ describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
 
 describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () => {
   it('shows the 成语 with its pinyin, English and a sentence, in place of the extra 组词', async () => {
-    const { chengyuOf } = await import('../../content/chengyu');
+    const { builtinIdiom, chengyuOf } = await import('../../content/chengyu');
     const yan = pool.find((w) => w.text === '颜')!;
-    const idiom = { ...chengyuOf('五颜六色')!, school: false };
+    const idiom = builtinIdiom('五颜六色')!;
     render(<FlashcardStep {...base} word={yan} idiom={idiom} item={{ wordId: yan.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     const box = document.querySelector('.intro__idiom')!;
     expect(box.querySelector('.hanzi')!.textContent).toBe('五颜六色');

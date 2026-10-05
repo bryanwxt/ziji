@@ -72,7 +72,7 @@ export function UseQuestion({ item, kid, resting, bubble, closing, onAnswer, onN
               <>
                 {!correct && <span class="hanzi">{fullSentence(item)}</span>}
                 {item.pair && <span class="pair hanzi">{`${item.word} + ${item.pair}`}</span>}
-                {!correct && <MeaningNote right={item.word} picked={item.kind === 'fit' ? choice : null} />}
+                {!correct && <MeaningNote right={item.word} picked={item.kind === 'fit' ? choice : null} rightMeaning={item.kind === 'fit' ? item.meaning : undefined} />}
                 {!correct && item.kind === 'fit' && item.clue && <span class="clue hanzi">{item.clue}</span>}
               </>
             )

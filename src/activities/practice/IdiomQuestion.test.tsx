@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
-import { chengyuOf } from '../../content/chengyu';
+import { builtinIdiom, chengyuOf } from '../../content/chengyu';
 import { mulberry32 } from '../../lib/random';
 import { idiomGap } from '../../practice/idioms';
 import { DEFAULT_KID } from '../../types';
@@ -10,7 +10,7 @@ vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }))
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 import { speak } from '../../audio/speech';
 
-const gap = idiomGap({ ...chengyuOf('五颜六色')!, school: false }, '颜', mulberry32(1))!;
+const gap = idiomGap(builtinIdiom('五颜六色')!, '颜', mulberry32(1))!;
 const props = { gap, kid: DEFAULT_KID, resting: 'sulk' as const };
 
 describe('complete the 成语 (spec 2026-10-05 §3.2 rung 5)', () => {

@@ -8,7 +8,7 @@ import type { Word } from '../types';
  * right (用对了吗). wordId is null for a bank word he doesn't have as a word of his own (practice only, never recorded).
  */
 export type UseItem =
-  | { kind: 'fit'; wordId: string | null; word: string; before: string; after: string; options: string[]; pair?: string; clue?: string }
+  | { kind: 'fit'; wordId: string | null; word: string; before: string; after: string; options: string[]; pair?: string; clue?: string; meaning?: string } // meaning: a school word's own English for the sheet
   | { kind: 'usage'; wordId: string | null; word: string; right: string; wrong: string; pair?: string };
 
 export const fullSentence = (item: UseItem) => (item.kind === 'fit' ? item.before + item.word + item.after : item.right);
@@ -21,7 +21,7 @@ export function fitItem(word: Word, pool: Word[], rng: Rng, variant = 0): UseIte
   if (wrong.length < 3) return null;
   return {
     kind: 'fit', wordId: word.id || null, word: word.text, before: cue.before, after: cue.after,
-    options: shuffle([word.text, ...wrong.slice(0, 3)], rng), pair: cue.pair ?? word.pairs?.[0], clue: cue.clue,
+    options: shuffle([word.text, ...wrong.slice(0, 3)], rng), pair: cue.pair ?? word.pairs?.[0], clue: cue.clue, ...(word.meaning && word.source === 'parent' ? { meaning: word.meaning } : {}),
   };
 }
 

@@ -1,6 +1,7 @@
 import { pinyin } from 'pinyin-pro';
 import { HSK_WORDS } from '../../content';
-import { CHENGYU, chengyuLevel, chengyuOf, isIdiomWord } from '../../content/chengyu';
+import { chengyuOf, idiomWrongs, isIdiomWord } from '../../content/chengyu';
+import { mulberry32 } from '../../lib/random';
 import { BLANK, bankFor, fillGap } from '../../content/sentenceBank';
 import { shuffle, type Rng } from '../../lib/random';
 import { syllableTone, toneless } from './tones';
@@ -68,10 +69,8 @@ export function meaningCue(word: Word, variant = 0): MeaningCue | null {
   if (idiom) {
     const full = idiom.sentences[variant % idiom.sentences.length]!;
     const at = full.indexOf(word.text);
-    const level = chengyuLevel(word.text);
-    const near = CHENGYU.filter((c) => c.text !== word.text && Math.abs(chengyuLevel(c.text) - level) <= 1).map((c) => c.text);
-    const from = word.text.codePointAt(0)! % Math.max(1, near.length - 2);
-    return { kind: 'sentence', source: 'bank', full, pinyin: '', before: full.slice(0, at), after: full.slice(at + word.text.length), wrong: near.slice(from, from + 3), pair: word.pairs?.[0] };
+    const wrong = idiomWrongs(word.text, mulberry32(word.text.codePointAt(0)! + variant));
+    return { kind: 'sentence', source: 'bank', full, pinyin: '', before: full.slice(0, at), after: full.slice(at + word.text.length), wrong, pair: word.pairs?.[0] };
   }
   const bank = bankFor(word.text);
   if (bank) {

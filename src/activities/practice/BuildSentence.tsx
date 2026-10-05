@@ -58,7 +58,7 @@ export function BuildSentence({ item, word, kid, resting, onDone }: Props) {
             <>
               <span class="hanzi">{item.full}</span>
               <SpeakButton text={item.full} />
-              <MeaningNote right={word.text} />
+              <MeaningNote right={word.text} rightMeaning={word.source === 'parent' ? word.meaning : undefined} />
             </>
           )}
           actionLabel="继续"
