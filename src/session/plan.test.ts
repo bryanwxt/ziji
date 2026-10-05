@@ -1,9 +1,9 @@
+import { builtinWords } from '../content';
 import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../lib/random';
 import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type Settings } from '../types';
-import { buildFreePlayQueue, buildSessionPlan } from './plan';
-import { createFreePlayRecord } from './runner';
+import { buildSessionPlan } from './plan';
 import { PACE_START } from './pace';
 
 const now = new Date(2026, 9, 2, 8, 0);
@@ -62,24 +62,15 @@ describe('buildSessionPlan', () => {
     ]);
   });
 
-  it('sizes the writing step and the flashcard time box from session minutes', () => {
+  it("sizes the writing step and 练一练's time box from session minutes", () => {
     const p20 = buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 20 }), now });
-    expect([p20.writeCount, p20.flashTimeBoxMs]).toEqual([3, Math.round((20 * 60_000 * 9) / 30)]);
+    expect([p20.writeCount, p20.practiceTimeBoxMs]).toEqual([3, Math.round((20 * 60_000 * 12) / 30)]);
     expect(buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 25 }), now }).writeCount).toBe(4); // spec §20 part 3: 4 words at 30 minutes, 3 under 25
   });
 
   it('only includes switched-on activities, in the fixed order', () => {
-    const s = settings({ activities: { flashcards: true, choose: false, writing: false, components: true, speaking: false } });
-    expect(buildSessionPlan({ cards: [], words: [], settings: s, now }).steps).toEqual(['flashcards', 'components', 'wrapup']);
-    expect(buildSessionPlan({ cards: [], words: [], settings: settings(), now }).steps).toEqual(['flashcards', 'choose', 'components', 'writing', 'speaking', 'wrapup']); // spec §20 part 5
-  });
-});
-
-describe('buildFreePlayQueue', () => {
-  it('uses started, active words only, as retries (no scheduler reviews)', () => {
-    const ws = [makeWord('a', { id: 'b:a' }), makeWord('b', { id: 'b:b', paused: true }), makeWord('c', { id: 'b:c' })];
-    const cards = [makeCard('b:a', 'recognise', now), makeCard('b:b', 'recognise', now)];
-    expect(buildFreePlayQueue(cards, ws, mulberry32(1))).toEqual([{ wordId: 'b:a', isNew: false, retry: true }]);
+    const s = settings({ activities: { newwords: false, practice: true, writing: false, speaking: true } });
+    expect(buildSessionPlan({ cards: [], words: [], settings: s, now }).steps).toEqual(['practice', 'speaking']);
   });
 });
 
@@ -119,33 +110,12 @@ describe('meaning practice', () => {
     expect(plan.meaningReviewIds).toEqual(['b:0']);
     expect(plan.newMeaningIds).toEqual(['b:1']);
   });
-  it('the 认一认 time box is 9 of 30 minutes (more meaning checks, 2026-10-04)', () => {
-    expect(buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 30 }), now }).flashTimeBoxMs).toBe(9 * 60_000);
-  });
 });
 
 describe('new words meet their meaning in the same lesson (spec §20 part 2)', () => {
-  it('new words that have a cue get their meaning question in the same lesson (newWordMeaningIds)', () => {
-    const plan = buildSessionPlan({ cards: [], words: [makeWord('很', { rank: 1 }), makeWord('欺负', { id: 'p:1', source: 'parent', level: null, rank: null, listedAt: 1 })], settings: settings({ newPerDay: 4 }), now: new Date('2026-10-05T09:00') });
-    expect(plan.newWordIds).toEqual(['p:1', 'b:很']);
-    expect(plan.newWordMeaningIds).toEqual(['b:很']); // 欺负 has no sentence, bank item or 组词
-  });
   it('new words per day: 8 at most by default; a lesson starts at 4 (spec 2026-10-05 §2.2)', () => {
     expect(DEFAULT_SETTINGS.newPerDay).toBe(8);
     expect(PACE_START).toBe(4);
-  });
-});
-
-describe('用一用 closes the lesson (spec §20 part 7)', () => {
-  it('when 认一认 or 选一选 is on', () => {
-    expect(buildSessionPlan({ cards: [], words: [], settings: settings(), now }).steps.at(-1)).toBe('wrapup');
-    const off = settings({ activities: { ...DEFAULT_SETTINGS.activities, flashcards: false, choose: false } });
-    expect(buildSessionPlan({ cards: [], words: [], settings: off, now }).steps).not.toContain('wrapup');
-    const nothing = settings({ activities: { flashcards: false, choose: false, writing: false, components: false, speaking: false } });
-    expect(buildSessionPlan({ cards: [], words: [], settings: nothing, now }).steps).toEqual([]);
-  });
-  it('free play has no wrap-up', () => {
-    expect(createFreePlayRecord([], 'd', 0).plan.steps).toEqual(['flashcards']);
   });
 });
 
@@ -165,5 +135,18 @@ describe('the new-word pause (deferred minor, plan 5)', () => {
     expect(buildSessionPlan({ cards: dueSoon(60), words: ws, settings: settings(), now }).newWordIds.length).toBeGreaterThan(0); // unpractised: placement rechecks
     const practised = new Map(ws.slice(0, 60).map((w) => [w.id, 1]));
     expect(buildSessionPlan({ cards: dueSoon(60), words: ws, settings: settings(), now, practised }).newWordIds).toEqual([]);
+  });
+});
+
+describe('the lesson (spec 2026-10-05 §2)', () => {
+  it('认新字 → 练一练 → 写一写 → 朗读, with no separate 用一用', () => {
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing', 'speaking']);
+  });
+  it('练一练 has about 12 of 30 minutes', () => {
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).practiceTimeBoxMs).toBe(12 * 60_000);
+  });
+  it('with 新字 switched off there are no new words', () => {
+    const settings = { ...DEFAULT_SETTINGS, activities: { ...DEFAULT_SETTINGS.activities, newwords: false } };
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings, now: new Date(2026, 9, 6) }).newWordIds).toEqual([]);
   });
 });

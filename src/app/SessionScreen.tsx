@@ -27,13 +27,14 @@ import { comboMilestone } from '../fun/pet';
 import { reducedMotion } from '../ui/motion';
 import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
-import { buildFreePlayQueue } from '../session/plan';
-import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession } from '../session/record';
+import { PracticeQuestion, type PracticeResult } from '../activities/practice/PracticeQuestion';
+import { planFreePlay, planPractice } from '../session/practice';
+import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession, USE_READING_MS } from '../session/record';
 import {
-  addActiveTime, afterFlashAnswer, afterWriteWord, createFreePlayRecord, currentFlashItem, currentStep,
-  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem,
+  addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
+  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice,
 } from '../session/runner';
-import { addAnswer, getKid, keepRecording, getSettings, listParentPassages, listRecordings, practisedWords, saveKid, saveSession } from '../store/repo';
+import { addAnswer, getKid, getRungs, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -70,6 +71,7 @@ export function SessionScreen({ free }: { free: boolean }) {
   // The newest record, so an answer saved after a quick 继续 builds on what came after it, never on a stale copy.
   const latest = useRef<SessionRecord | null>(null);
   const latestStep = useRef(-1);
+  const planning = useRef(false); // 练一练's round is being built (it reads his rungs)
 
   useEffect(() => {
     void (async () => {
@@ -77,7 +79,7 @@ export function SessionScreen({ free }: { free: boolean }) {
       const [know, kid, parentPassages, settings, practised] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db)]);
       const today = now();
       const rec = free
-        ? createFreePlayRecord(buildFreePlayQueue(know.cards, know.words, rng), localDateKey(today), today.getTime())
+        ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng), localDateKey(today), today.getTime())
         : await startOrResumeSession(db, today);
       latest.current = rec;
       setState({
@@ -106,6 +108,8 @@ export function SessionScreen({ free }: { free: boolean }) {
   const flashWord = flashItem ? state!.know.wordsById.get(flashItem.wordId) : undefined;
   const writeCandidate = rec ? currentWriteTask(rec) : null;
   const writeWord = writeCandidate ? state!.know.wordsById.get(writeCandidate.wordId) : undefined;
+  const practiceItem = rec ? currentPracticeItem(rec) : null;
+  const practiceWord = practiceItem ? state!.know.wordsById.get(practiceItem.wordId) : undefined;
 
   const commit = async (next: SessionRecord) => {
     const was = latest.current;
@@ -132,8 +136,8 @@ export function SessionScreen({ free }: { free: boolean }) {
     if (!state || !rec) return;
     // build on the newest record: an answer saved late (after a quick 继续) must not be overwritten by a skip
     const cur = latest.current && latest.current.stepIndex === rec.stepIndex ? latest.current : rec;
-    if (step === 'flashcards' && !flashItem) void commit(finishStep(cur));
-    else if (step === 'flashcards' && (!flashWord || flashWord.paused)) void commit(skipFlashItem(cur));
+    if ((step === 'flashcards' || step === 'newwords') && !flashItem) void commit(finishStep(cur));
+    else if ((step === 'flashcards' || step === 'newwords') && (!flashWord || flashWord.paused)) void commit(skipFlashItem(cur));
     else if (step === 'writing' && !writeCandidate) void commit(finishStep(cur));
     else if (step === 'writing' && (!writeWord || writeWord.paused)) void commit(afterWriteWord(cur, false, 0));
     else if (step === 'components' && !state.round) void commit(finishStep(cur));
@@ -156,6 +160,16 @@ export function SessionScreen({ free }: { free: boolean }) {
       if (!rec.free) for (const id of dropped) void bringForward(db, id, 'meaning', endOfLocalDay(now()));
       setState((s) => (s ? { ...s, wrapup: items } : s));
     } else if (step === 'wrapup' && !state.wrapup?.length) void commit(finishStep(cur));
+    else if (step === 'practice' && !rec.practiceQueue) {
+      if (!planning.current) {
+        planning.current = true;
+        void (async () => {
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, state.know.words, voice, mulberry32(Date.now() >>> 0));
+          planning.current = false;
+          await commit(startPractice(latest.current ?? cur, queue));
+        })();
+      }
+    } else if (step === 'practice' && practiceItem && (!practiceWord || practiceWord.paused)) void commit(skipPracticeItem(cur));
     else if (step === 'speaking' && !state.speaking) void commit(finishStep(cur));
   }, [rec, state?.choose, state?.wrapup]);
 
@@ -201,6 +215,36 @@ export function SessionScreen({ free }: { free: boolean }) {
         setTimeout(() => setBanner(null), 1600);
       }
       await commit(afterFlashAnswer(rec, r.correct, r.elapsedMs, r.inContext));
+    })();
+
+  /** A 练一练 answer (spec 2026-10-05 §3.5): grade the card the item grades (never a retry or free play), note his rung, move on. */
+  const onPracticeDone = (r: PracticeResult | null) =>
+    once(async () => {
+      const item = practiceItem!;
+      if (!r) {
+        await commit(skipPracticeItem(latest.current ?? rec));
+        return;
+      }
+      if (!rec.free && !item.retry) {
+        // a sentence takes reading time first: that doesn't make a right answer slow (as in 选一选)
+        const outcome = { correct: r.correct, responseMs: r.asked === 'use' ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs };
+        if (item.grades === 'recognise') know.cardsById.set(`${item.wordId}:recognise`, await recordRecognition(db, item.wordId, outcome, now()));
+        else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
+        else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs));
+        if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
+        await noteRung(db, item.wordId, item.rung, r.correct, now());
+      }
+      const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
+      cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
+      if (r.correct) setCorrect((n) => n + 1);
+      const nextCombo = r.correct ? combo + 1 : 0;
+      setCombo(nextCombo);
+      if (comboMilestone(nextCombo)) {
+        playSfx('combo');
+        setBanner(nextCombo);
+        setTimeout(() => setBanner(null), 1600);
+      }
+      await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext));
     })();
 
   const onWriteDone = (r: WriteResult | null) =>
@@ -297,10 +341,12 @@ export function SessionScreen({ free }: { free: boolean }) {
       </header>
       {banner !== null && <div class="combo-banner">连对 {banner} 个！<InkIcon name="flame" size={30} /></div>}
 
-      {step === 'flashcards' && flashItem && flashWord && !flashWord.paused && (
+      {(step === 'flashcards' || step === 'newwords') && flashItem && flashWord && !flashWord.paused && (
         <FlashcardStep
           key={rec.flashIndex}
           item={flashItem}
+          ask={step === 'newwords' ? 'listen' : undefined}
+          reintroOnMiss={step === 'newwords'}
           word={flashWord}
           pool={know.words}
           card={know.cardsById.get(`${flashWord.id}:recognise`)}
@@ -310,6 +356,21 @@ export function SessionScreen({ free }: { free: boolean }) {
           combo={combo}
           closeupReady={closeupAllowed(cardsSinceCloseup.current, reducedMotion())}
           onDone={(r) => void onFlashDone(r)}
+        />
+      )}
+      {step === 'practice' && practiceItem && practiceWord && !practiceWord.paused && (
+        <PracticeQuestion
+          key={`p${rec.practiceIndex}`}
+          item={practiceItem}
+          word={practiceWord}
+          pool={know.words}
+          card={know.cardsById.get(`${practiceWord.id}:recognise`)}
+          voice={voice}
+          kid={kid}
+          resting={resting}
+          combo={combo}
+          closeupReady={closeupAllowed(cardsSinceCloseup.current, reducedMotion())}
+          onDone={(r) => void onPracticeDone(r)}
         />
       )}
       {step === 'writing' && writeWord && !writeWord.paused && (

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionPlan, SessionRecord, StepKind } from '../types';
 import {
-  addActiveTime, afterFlashAnswer, afterWriteWord, createFreePlayRecord, MAX_CARD_MS, MAX_STEP_MS, MAX_WORD_MS, createSessionRecord, currentFlashItem,
+  addActiveTime, afterFlashAnswer, afterWriteWord, MAX_CARD_MS, MAX_STEP_MS, MAX_WORD_MS, createSessionRecord, currentFlashItem,
   currentStep, currentWriteTask, finishStep, finishStepIf, skipFlashItem,
 } from './runner';
 
@@ -65,12 +65,6 @@ describe('session runner', () => {
     expect(createSessionRecord(plan({ steps: [] }), 'd', 0).completed).toBe(true);
   });
 
-  it('creates free play with only flashcards and no time box', () => {
-    const rec = createFreePlayRecord([{ wordId: 'a', isNew: false, retry: true }], 'd', 0);
-    expect(rec.free).toBe(true);
-    expect(rec.plan.steps).toEqual(['flashcards']);
-    expect(currentFlashItem(rec)?.wordId).toBe('a');
-  });
 });
 
 describe('idle time does not count as practice', () => {

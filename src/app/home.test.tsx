@@ -46,7 +46,7 @@ describe('HomeScreen', () => {
     expect(await screen.findByLabelText('连续 1 天')).toBeTruthy();
     expect(screen.getByLabelText('2 颗星')).toBeTruthy();
     expect([...document.querySelectorAll('.home__week .seal > span')].map((s) => s.textContent)).toEqual(['字', '己']);
-    fireEvent.click(screen.getByRole('button', { name: '开始：认一认' }));
+    fireEvent.click(screen.getByRole('button', { name: '开始：认新字' }));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false });
   });
 

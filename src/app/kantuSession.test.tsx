@@ -14,7 +14,7 @@ vi.mock('../audio/recorder', () => ({
   startRecording: vi.fn(async () => ({ stop: async () => ({ blob: new Blob(['x']), mime: 'audio/mp4', durationSec: 4 }), cancel: vi.fn() })),
 }));
 
-const speakingOnly = { ...DEFAULT_SETTINGS.activities, flashcards: false, writing: false, components: false, speaking: true };
+const speakingOnly = { newwords: false, practice: false, writing: false, speaking: true };
 
 async function setup(kid: Partial<typeof DEFAULT_KID>, withPassage = true) {
   const app = await makeAppData({ now: () => new Date(2026, 9, 6, 17) });

@@ -16,7 +16,7 @@ vi.mock('../audio/recorder', () => ({
   }),
 }));
 
-const speakingOnly = { ...DEFAULT_SETTINGS.activities, flashcards: false, writing: false, components: false, speaking: true };
+const speakingOnly = { newwords: false, practice: false, writing: false, speaking: true };
 
 async function setup() {
   const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });

@@ -334,16 +334,14 @@ async function sweep(browser: Browser, size: Size) {
   });
   await run('pin-gate', AFTERNOON, {}, async (p) => { await tabTo(p, '家长'); await check(p, size, 'pin-gate', 0); });
   // Lessons, one activity at a time
-  const only = (k: ActivityKind): Record<ActivityKind, boolean> => ({ flashcards: k === 'flashcards', choose: k === 'choose', writing: k === 'writing', components: k === 'components', speaking: k === 'speaking' });
-  await run('flashcards', AFTERNOON, { activities: only('flashcards') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'flashcards'); });
-  await run('flashcards-evening', EVENING, { activities: only('flashcards') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'flashcards-evening'); });
+  const only = (...ks: ActivityKind[]): Record<ActivityKind, boolean> => ({ newwords: ks.includes('newwords'), practice: ks.includes('practice'), writing: ks.includes('writing'), speaking: ks.includes('speaking') });
+  await run('newwords', AFTERNOON, { activities: only('newwords') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'newwords'); });
+  await run('practice', AFTERNOON, { activities: only('newwords', 'practice') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'practice'); });
+  await run('practice-evening', EVENING, { activities: only('newwords', 'practice') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'practice-evening'); });
   await run('writing', AFTERNOON, { activities: only('writing') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing', { firstOnly: true }); });
   await run('writing-sentence', AFTERNOON, { activities: only('writing'), writeSentence: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing-sentence'); });
-  await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then 用一用 and the chest
-  await run('choose', AFTERNOON, { activities: only('choose') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'choose'); });
-  await run('wrapup', AFTERNOON, { activities: { ...only('flashcards'), choose: true } }, async (p) => { await startLesson(p); await walkLesson(p, size, 'wrapup'); }); // its walk misses some, so 用一用 has words
-  await run('components', AFTERNOON, { activities: only('components') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'components'); });
   await run('langdu', AFTERNOON, { activities: only('speaking'), speakingLast: 'story' }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu'); });
+  await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then 用一用 and the chest
   await run('langdu-extra', AFTERNOON, { doneToday: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
 }
 

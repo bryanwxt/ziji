@@ -10,10 +10,9 @@ import { updateSettings } from '../store/repo';
 import type { ActivityKind, OralInfo, Settings } from '../types';
 
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
-  flashcards: 'Flashcards',
-  choose: 'Words in use (选一选)',
+  newwords: '认新字: new words, first',
+  practice: '练一练: practice and revision (reading, 词语, sentences)',
   writing: '听写 writing',
-  components: 'Look-alike characters (钓鱼 字辨)',
   speaking: '朗读 reading aloud',
 };
 

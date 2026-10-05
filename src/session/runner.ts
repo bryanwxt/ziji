@@ -20,14 +20,6 @@ export function createSessionRecord(plan: SessionPlan, date: string, now: number
   };
 }
 
-export function createFreePlayRecord(queue: FlashItem[], date: string, now: number): SessionRecord {
-  const plan: SessionPlan = {
-    steps: ['flashcards'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: Number.POSITIVE_INFINITY,
-    writeCandidates: [], writeCount: 0,
-  };
-  return { ...createSessionRecord(plan, date, now, true), flashQueue: queue };
-}
-
 /** Today's new words 认一认 actually introduced: its time box can end before it reaches them, and 认一认 may be off. */
 export function introducedNewWords(rec: SessionRecord): string[] {
   const met = new Set(rec.flashQueue.slice(0, rec.flashIndex).filter((i) => i.isNew).map((i) => i.wordId));

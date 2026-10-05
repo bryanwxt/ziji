@@ -8,8 +8,7 @@ import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settin
 export const REVIEW_CAP = 60;
 export const BACKLOG_PAUSE = 40;
 export const MAX_NEW_WRITE = 2;
-export const FREE_PLAY_SIZE = 20;
-export const STEP_ORDER: ActivityKind[] = ['flashcards', 'choose', 'components', 'writing', 'speaking']; // spec §20 part 5
+export const STEP_ORDER: ActivityKind[] = ['newwords', 'practice', 'writing', 'speaking']; // spec 2026-10-05 §2
 
 const LAST = Number.MAX_SAFE_INTEGER;
 
@@ -27,7 +26,7 @@ export interface PlanInput {
   newPerDay?: number; // today's pace (spec 2026-10-05 §2.2); without one, the pace's start under the ceiling
 }
 
-export const FLASH_SHARE = 9 / 30; // 认一认's share of the lesson: 9 of 30 minutes (spec §20 part 5; 7 until the parent asked for more volume)
+export const PRACTICE_SHARE = 12 / 30; // 练一练's share of the lesson (spec 2026-10-05 §2)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
 
@@ -47,7 +46,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   // a real backlog pauses new words; first rechecks of placement guesses (never practised) don't
   const backlog = dueRecognise.filter((c) => practised.has(c.wordId)).length;
   const perDay = newPerDay ?? Math.min(settings.newPerDay, PACE_START);
-  const newLimit = backlog > BACKLOG_PAUSE ? 0 : perDay;
+  const newLimit = backlog > BACKLOG_PAUSE || !settings.activities.newwords ? 0 : perDay;
 
   const write = ofKind('write');
   const hasWrite = new Set(write.map((c) => c.wordId));
@@ -59,16 +58,14 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const meaningOrder = (a: Word, b: Word) => (practised.get(b.id) ?? -1) - (practised.get(a.id) ?? -1) || newWordOrder(a, b);
 
   const newWords = active.filter((w) => !started.has(w.id)).sort(newWordOrder).slice(0, newLimit);
-  // 用一用 closes every lesson that uses words: after 认一认 or 选一选 (spec §20 part 7)
-  const steps: StepKind[] = STEP_ORDER.filter((s) => settings.activities[s]);
-  if (settings.activities.flashcards || settings.activities.choose) steps.push('wrapup');
+  const steps: StepKind[] = STEP_ORDER.filter((s) => settings.activities[s]); // spec 2026-10-05 §2: no separate 用一用
 
   return {
     steps,
     reviewWordIds: dueRecognise.slice(0, REVIEW_CAP).map((c) => c.wordId),
     newWordIds: newWords.map((w) => w.id),
-    newWordMeaningIds: newWords.filter((w) => meaningCue(w) !== null).map((w) => w.id),
-    flashTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * FLASH_SHARE),
+    flashTimeBoxMs: 0, // only lessons saved before 2026-10-05 time-boxed 认一认
+    practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE),
     writeCandidates: [
       ...dueOf(write).map((c) => ({ wordId: c.wordId, isNew: c.fsrs.reps === 0 })), // never written yet (a school 听写 mistake): trace and hint first
       ...active
@@ -91,10 +88,4 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
       .slice(0, NEW_MEANING_PER_DAY)
       .map((w) => w.id),
   };
-}
-
-export function buildFreePlayQueue(cards: CardRecord[], words: Word[], rng: Rng, n = FREE_PLAY_SIZE): FlashItem[] {
-  const active = new Set(words.filter((w) => !w.paused).map((w) => w.id));
-  const ids = cards.filter((c) => c.kind === 'recognise' && active.has(c.wordId)).map((c) => c.wordId);
-  return shuffle(ids, rng).slice(0, n).map((wordId) => ({ wordId, isNew: false, retry: true }));
 }

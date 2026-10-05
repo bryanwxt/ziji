@@ -105,9 +105,11 @@ export interface PlacementResult {
   missed: string[];
 }
 
-/** The parent can switch each of these on or off; 用一用 (wrapup) closes the lesson whenever 认一认 or 选一选 runs (spec §20). */
-export type ActivityKind = 'flashcards' | 'choose' | 'writing' | 'components' | 'speaking';
-export type StepKind = ActivityKind | 'wrapup' | 'newwords' | 'practice';
+/** The parent can switch each of these on or off (spec 2026-10-05 §7). */
+export type ActivityKind = 'newwords' | 'practice' | 'writing' | 'speaking';
+/** Steps of lessons saved before the 2026-10-05 redesign; such a lesson finishes in its own flow. */
+export type LegacyStep = 'flashcards' | 'choose' | 'components' | 'wrapup';
+export type StepKind = ActivityKind | LegacyStep;
 
 export interface SessionPlan {
   steps: StepKind[];
@@ -238,7 +240,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pinHash: null,
   sessionMinutes: 30,
   newPerDay: 8, // the ceiling the app paces under (spec 2026-10-05 §2.2)
-  activities: { flashcards: true, choose: true, writing: true, components: true, speaking: true },
+  activities: { newwords: true, practice: true, writing: true, speaking: true },
   speechRate: 0.8,
   soundEffects: true,
   targetRecognise: 500,
@@ -248,7 +250,7 @@ export const DEFAULT_SETTINGS: Settings = {
   zodiac: null,
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
-  lessonVersion: 3,
+  lessonVersion: 4,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';
