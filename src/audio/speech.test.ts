@@ -23,8 +23,21 @@ describe('speak', () => {
       constructor(t: string) { this.text = t; }
     });
     setSpeechRate(0.7);
+    speak('我爱妈妈。');
+    expect(spoken[0]).toMatchObject({ text: '我爱妈妈。', lang: 'zh-CN', rate: 0.7 });
+  });
+  it('a word of one or two characters is said a quarter slower, so it is easy to catch (parent, 2026-10-05: placement)', () => {
+    const spoken: SpeechSynthesisUtterance[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: SpeechSynthesisUtterance) => spoken.push(u), getVoices: () => [] });
+    vi.stubGlobal('SpeechSynthesisUtterance', class {
+      text: string; lang = ''; rate = 1; volume = 1; voice: SpeechSynthesisVoice | null = null;
+      constructor(t: string) { this.text = t; }
+    });
+    setSpeechRate(0.8);
     speak('河');
-    expect(spoken[0]).toMatchObject({ text: '河', lang: 'zh-CN', rate: 0.7 });
+    speak('河水！');
+    speak('河水很清');
+    expect(spoken.map((u) => u.rate)).toEqual([0.6, 0.6, 0.8]);
   });
   it('a queued line waits for the one before it instead of cutting it off (review: the new character was never heard)', () => {
     const cancel = vi.fn();

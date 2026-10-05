@@ -31,13 +31,20 @@ export async function loadChineseVoice(timeoutMs = 1500): Promise<SpeechSynthesi
   return voice;
 }
 
+/** One or two characters on their own go by in a blink: they are said a quarter slower (parent, 2026-10-05: placement's listening questions). */
+export const SHORT_WORD_PACE = 0.75;
+const isShortWord = (text: string) => {
+  const han = Array.from(text).filter((ch) => /\p{Script=Han}/u.test(ch)).length;
+  return han > 0 && han <= 2;
+};
+
 /** Say Chinese text. It cuts off whatever is playing, unless `queue` (then it waits its turn: the character, then its usage line). */
 export function speak(text: string, { queue = false }: { queue?: boolean } = {}): void {
   if (!available()) return;
   if (!queue) speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'zh-CN';
-  u.rate = rate;
+  u.rate = isShortWord(text) ? Math.round(rate * SHORT_WORD_PACE * 100) / 100 : rate;
   if (voice) u.voice = voice;
   speechSynthesis.speak(u);
 }
