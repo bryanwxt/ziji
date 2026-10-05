@@ -57,7 +57,10 @@ function probe(args: { main: string; scrollers: string }): string[] {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0 || el.closest('[aria-hidden="true"], .sr-only, .world-props, .is-eaten') || getComputedStyle(el).visibility === 'hidden') continue;
     if (!el.parentElement?.closest(args.scrollers) && (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1)) out.push(`off screen: ${name(el)}`);
-    if (Math.min(r.width, r.height) < 43.5) out.push(`under 44px: ${name(el)} ${Math.round(r.width)}×${Math.round(r.height)}`);
+    // its laid-out size: a transform mid-animation (a card scaling in) shrinks the box on screen, not the button
+    const h = el as HTMLElement;
+    const w = h.offsetWidth || r.width, ht = h.offsetHeight || r.height;
+    if (Math.min(w, ht) < 43.5) out.push(`under 44px: ${name(el)} ${Math.round(w)}×${Math.round(ht)}`);
     if (el.matches(args.main) && Math.min(r.width, r.height) < mainMin - 0.5) out.push(`main action under ${mainMin}px: ${name(el)} ${Math.round(r.width)}×${Math.round(r.height)}`);
   }
   const small = new Set<string>();
@@ -358,9 +361,9 @@ async function sweep(browser: Browser, size: Size) {
   await run('practice-evening', EVENING, { activities: only('newwords', 'practice') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'practice-evening'); });
   await run('writing', AFTERNOON, { activities: only('writing') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing', { firstOnly: true }); });
   await run('writing-sentence', AFTERNOON, { activities: only('writing'), writeSentence: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing-sentence'); });
-  await run('langdu', AFTERNOON, { activities: only('speaking'), speakingLast: 'story' }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu'); });
+  await run('langdu', AFTERNOON, { activities: only('speaking'), speakingLast: 'story', langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu'); });
   await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then the chest
-  await run('langdu-extra', AFTERNOON, { doneToday: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
+  await run('langdu-extra', AFTERNOON, { doneToday: true, langdu: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
 }
 
 async function main() {

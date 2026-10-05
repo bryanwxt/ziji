@@ -12,3 +12,9 @@ export function comboMilestone(combo: number): boolean {
 export function pickLine(lines: readonly string[], rng: Rng): string {
   return lines[Math.floor(rng() * lines.length)]!;
 }
+
+/** What Truffle says at a run of right answers (parent, 2026-10-05): the count, then praise that grows with it. */
+export function comboPraise(n: number): string {
+  const praise = n >= 10 ? '你太厉害了！' : n >= 5 ? '真了不起！' : '真棒！';
+  return `连对${n}个，${praise}`;
+}

@@ -15,6 +15,17 @@ export function takeGreeting(): string | null {
   return p && Date.now() - p.at <= GREETING_MS ? p.line : null;
 }
 
+/** Praise the Truffle on screen gives right now (parent, 2026-10-05: a run of right answers is his to cheer, not a banner's). */
+const cheerers = new Set<(line: string) => void>();
+export function cheer(line: string): void {
+  cheerers.forEach((fn) => fn(line));
+}
+/** A live Truffle listens for praise; returns a function to stop. */
+export function onCheer(fn: (line: string) => void): () => void {
+  cheerers.add(fn);
+  return () => cheerers.delete(fn);
+}
+
 /**
  * How he feels about today (spec 2026-10-04 §4.6), from the days he finished a lesson: 'streak' when yesterday was one of them,
  * 'missed' when the last one was before yesterday, otherwise 'plain' (a new child, or only today so far).

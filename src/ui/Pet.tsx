@@ -5,7 +5,7 @@ import type { KidState } from '../types';
 import { Label } from './Label';
 import { classifyGesture } from './truffle/behaviour';
 import type { Reaction } from './truffle/timelines';
-import { takeGreeting } from './truffle/greeting';
+import { onCheer, takeGreeting } from './truffle/greeting';
 import { Truffle, type TruffleMood } from './truffle/Truffle';
 
 export type PetMood = TruffleMood;
@@ -64,6 +64,14 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
     play('hello');
     say(line, 2400);
   }, []);
+  // a run of right answers: he bounces and praises him in his own bubble
+  useEffect(() => {
+    if (!alive) return;
+    return onCheer((line) => {
+      play('bouncy');
+      say(line, 1800);
+    });
+  }, [alive]);
   useEffect(
     () => () => {
       timers.current.forEach(clearTimeout);

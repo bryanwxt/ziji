@@ -23,14 +23,14 @@ import { WritingStep, type WriteResult } from '../activities/writing/WritingStep
 import { playSfx } from '../audio/sfx';
 import { PASSAGES } from '../content';
 import { CLOSEUP_EVERY, closeupAllowed, isHardWrite, restingMood } from '../fun/mood';
-import { comboMilestone } from '../fun/pet';
+import { comboMilestone, comboPraise } from '../fun/pet';
 import { reducedMotion } from '../ui/motion';
 import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
 import { PracticeQuestion, type PracticeResult } from '../activities/practice/PracticeQuestion';
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel } from '../content/chengyu';
-import { requestGreeting } from '../ui/truffle/greeting';
+import { cheer, requestGreeting } from '../ui/truffle/greeting';
 
 /** His level for the 成语 window (spec 2026-10-05 §4): the level of the next built-in word he hasn't started. */
 const levels = new WeakMap<Knowledge, number>();
@@ -77,7 +77,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const [correct, setCorrect] = useState(0); // this sitting only: Truffle warms up from sulk
   const [stepFraction, setStepFraction] = useState(0); // how far through 选一选/字辨/用一用 he is
   const cardsSinceCloseup = useRef(CLOSEUP_EVERY);
-  const [banner, setBanner] = useState<number | null>(null); // a combo milestone being celebrated
   const stepStartedAt = useRef(performance.now());
   const busy = useRef(false);
   // The newest record, so an answer saved after a quick 继续 builds on what came after it, never on a stale copy.
@@ -241,8 +240,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       setCombo(nextCombo);
       if (comboMilestone(nextCombo)) {
         playSfx('combo');
-        setBanner(nextCombo);
-        setTimeout(() => setBanner(null), 1600);
+        cheer(comboPraise(nextCombo)); // Truffle praises him (parent, 2026-10-05: not a reddish banner)
       }
       await commit(afterFlashAnswer(rec, r.correct, r.elapsedMs, r.inContext));
     })();
@@ -277,8 +275,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       setCombo(nextCombo);
       if (comboMilestone(nextCombo)) {
         playSfx('combo');
-        setBanner(nextCombo);
-        setTimeout(() => setBanner(null), 1600);
+        cheer(comboPraise(nextCombo)); // Truffle praises him (parent, 2026-10-05: not a reddish banner)
       }
       await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext));
     })();
@@ -377,7 +374,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <ProgressBar steps={rec.plan.steps} stepIndex={rec.stepIndex} fraction={sessionProgress(rec, stepFraction)} />
         {combo >= 3 && <span class="combo"><Flame size={20} strokeWidth={2.75} /> {combo}</span>}
       </header>
-      {banner !== null && <div class="combo-banner">连对 {banner} 个！<InkIcon name="flame" size={30} /></div>}
 
       {(step === 'flashcards' || step === 'newwords') && flashItem && flashWord && !flashWord.paused && (
         <FlashcardStep

@@ -16,6 +16,7 @@ export interface FitProfileOptions {
   now: Date;
   activities?: Partial<Record<ActivityKind, boolean>>;
   speakingLast?: 'langdu' | 'story' | null;
+  langdu?: boolean; // 朗读 is parked (parent, 2026-10-05): its own flows switch it on
   doneToday?: boolean;
   world?: WorldId;
   pin?: boolean; // false: stop at the PIN set-up
@@ -55,6 +56,7 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
     pinHash: o.pin === false ? null : 'fit-check',
     placementDone: o.placementDone ?? true,
     activities: { ...DEFAULT_SETTINGS.activities, ...o.activities },
+    langdu: o.langdu ?? false,
     oral: { ...DEFAULT_SETTINGS.oral, name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '我叫小明。我今年八岁。我在光明小学读二年级。我的爸爸是医生，妈妈是老师。我有一个妹妹，她今年五岁。我喜欢画画、踢足球和看书。我最喜欢的动物是猫，因为猫很可爱。' }, // a long parent-written intro: the card must scroll, not push the buttons off an SE
   });
   await saveParentPassage(db, { id: 'pp:fit', title: '我的家', text: LONG_PASSAGE, createdAt: t - 86_400_000 });
