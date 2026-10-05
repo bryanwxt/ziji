@@ -210,3 +210,48 @@ describe('the iPad\'s downloaded voices (parent, 2026-10-05: a new Enhanced voic
     expect(pickVoice([a, b])).toBe(a);
   });
 });
+
+describe('a voice Safari silently dropped is said again (parent, 2026-10-05: the speak button needed a second press)', () => {
+  afterEach(() => { stopSpeaking(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+  const stage = () => {
+    const synth = { speaking: false, pending: false, cancel: vi.fn(), speak: vi.fn(), getVoices: () => [] };
+    vi.stubGlobal('speechSynthesis', synth);
+    vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; voice = null; onstart?: () => void; constructor(t: string) { this.text = t; } });
+    return synth;
+  };
+  it('one that never starts is said once more', () => {
+    vi.useFakeTimers();
+    const synth = stage();
+    speak('猫');
+    vi.advanceTimersByTime(1000);
+    expect(synth.speak.mock.calls.map(([u]) => u.text)).toEqual(['猫', '猫']);
+    vi.advanceTimersByTime(3000);
+    expect(synth.speak).toHaveBeenCalledTimes(2); // only once more
+  });
+  it('one that starts is left alone', () => {
+    vi.useFakeTimers();
+    const synth = stage();
+    speak('猫');
+    (synth.speak.mock.calls[0]![0] as { onstart: () => void }).onstart();
+    vi.advanceTimersByTime(1000);
+    expect(synth.speak).toHaveBeenCalledTimes(1);
+  });
+  it('one waiting behind another that is playing is left alone', () => {
+    vi.useFakeTimers();
+    const synth = stage();
+    speak('猫');
+    (synth.speak.mock.calls[0]![0] as { onstart: () => void }).onstart();
+    synth.speaking = true;
+    speak('小猫', { queue: true });
+    vi.advanceTimersByTime(1000);
+    expect(synth.speak).toHaveBeenCalledTimes(2);
+  });
+  it('one the app stopped itself is not said again', () => {
+    vi.useFakeTimers();
+    const synth = stage();
+    speak('猫');
+    stopSpeaking();
+    vi.advanceTimersByTime(1000);
+    expect(synth.speak).toHaveBeenCalledTimes(1);
+  });
+});

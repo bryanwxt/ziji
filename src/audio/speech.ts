@@ -99,6 +99,7 @@ export function speak(text: string, { queue = false, reading }: { queue?: boolea
   }
   if (!queue) {
     const busy = speechSynthesis.speaking || speechSynthesis.pending;
+    epoch++;
     speechSynthesis.cancel();
     setSpeaking(false); // a cancelled utterance may never say it ended
     if (busy) {
@@ -120,13 +121,22 @@ const AFTER_CANCEL_MS = 120;
 type Waiting = { texts: string[]; timer: ReturnType<typeof setTimeout> };
 let waiting: Waiting | null = null;
 
-function say(text: string): void {
+/** Bumped whenever the app itself cancels speech (a new tap, leaving a screen): a voice it cut off isn't said again. */
+let epoch = 0;
+/** How long a voice has to start before it counts as dropped. */
+const START_CHECK_MS = 500;
+
+function say(text: string, retry = true): void {
   const u = new SpeechSynthesisUtterance(text);
+  let started = false;
   const done = () => {
     live.delete(u);
     setSpeaking(false);
   };
-  u.onstart = () => setSpeaking(true);
+  u.onstart = () => {
+    started = true;
+    setSpeaking(true);
+  };
   u.onend = done;
   u.onerror = done;
   live.add(u);
@@ -134,10 +144,20 @@ function say(text: string): void {
   u.rate = isShortWord(text) ? Math.round(rate * SHORT_WORD_PACE * 100) / 100 : rate;
   if (voice) u.voice = voice;
   speechSynthesis.speak(u);
+  // Safari can drop a voice without a word (a late cancel from the tap before it): one that hasn't started, with nothing else
+  // playing and no cancel of ours since, is said once more (parent, 2026-10-05: the speak button needed a second press)
+  if (!retry) return;
+  const mine = epoch;
+  setTimeout(() => {
+    if (started || mine !== epoch || !available() || speechSynthesis.speaking) return;
+    live.delete(u);
+    say(text, false);
+  }, START_CHECK_MS);
 }
 
 /** Silence any speech in progress (before recording him, and when leaving a screen). */
 export function stopSpeaking(): void {
+  epoch++;
   if (waiting) clearTimeout(waiting.timer);
   waiting = null;
   if (available()) speechSynthesis.cancel();
