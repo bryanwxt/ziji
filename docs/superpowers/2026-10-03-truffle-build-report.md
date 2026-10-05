@@ -940,3 +940,38 @@ Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md (§4.6); plan docs/s
 - a paw move replaced by another snaps to rest for one frame
 - a few small allocations every frame in the paw and talking code (within the 8 ms budget)
 - a day started but not finished counts as missed for the sulk; a dead branch in dayMood
+
+## Sweep of deferred minors (2026-10-06)
+
+Plan docs/superpowers/plans/2026-10-05-ziji-sweep.md; branch sweep-2 (rebased onto main d7f9830, the parallel 多音字 fix); Native, opus final review. Suite 1316 + 26 script tests. WebKit: the new chest-stars and placement-rerun flows 0 problems.
+
+- **Lessons:** retries never beside the same word; no empty 认新字 stop; 再看一看 on the re-shown card (no double-tap skip); a restored backup's settings migrate at once; pace kept on a day without new words; 组句 tiles a child would say (不知道, 家里, 面条, 同学们, 小猫), more measure words, his own class word never cut; 搭配 bank ~160 pairs; 钓鱼 never for a doubled word, no retry, newest mix-ups first, today's mix-ups fished today; the sheet gives the answer's pinyin, 了 as le, English under a sentence clue; planning ~370 → ~14 ms; pairing from either side; 组句 marked on 好了！; a missed 成语 comes back as itself; 'pick the 成语' in his window; 写一写 order, skips, long due words, a character's own reading.
+- **Truffle:** eases from one reaction into the next (no snap); his eyes let go of a still finger; paint skips unchanged values; 对了！/真棒！/好厉害！ and 嗯？ when the screen has no line; hearts on a streak; he leans toward a new word; a ground shadow that shrinks as he jumps; sound wakes on the first touch (and again after the background); a question clears touch lines, timers and the purr; still while 松露问你 asks; no sulk the day after a started lesson.
+- **Home and worlds:** Home's daily save and prop finds change his state in one transaction each (updateKid; a find adds only what it changed); a world switch clears the last world's moment; self-started moments check reduced motion each time and make no sound; the parrot's hello is Truffle's line; the current stop's name starts the step; cards use --surface; the chest-watching Truffle grows toward 200 px; the chest hint keeps focus; Tab stays in the 字卡 dialog.
+- **Parent:** an older goal picks its icon, titles editable (Cancel; errors in the row), none asked of a given goal; a class baseline saves after a pause or on leaving; misread re-marks and double taps give one extra day.
+- **Placement:** 不知道 is the quiet button; in portrait the re-run's card starts below its ✕; the sweep walks the re-run (a test PIN) and the chest's stars prize.
+
+### Rulings
+- Card lift at feedback (detail rows) stays: the card makes room for the sheet rather than being covered — cost if wrong: a small jump on two screens
+- Bubble max-width stays inert (nowrap): every bubble line is short — cost if wrong: a long future line overflows
+- Dead CSS overridden by the stage stays — cost if wrong: unused bytes
+- 地 after an adverbial 成语 stays dropped (一心一意学习 reads naturally) — cost if wrong: none
+- The tail tap's "looks at it" is the pounce wind-up leaning toward his tail — cost if wrong: a small missing glance
+- The blocks world's evening torch: the parent judges it from fit-shots/stage-cases/worlds.png
+- Final: a recording marked and unmarked before the extraDayGiven flag can give one more extra day if marked again (old data can't tell it from "saved empty") — cost if wrong: one extra 朗读 day, once
+- Final (declined to judge): a review-only day (no new words) has one fewer stop and so one fewer star — the parent may want to know
+- Final (declined to judge): the lesson greeting is cleared when the first question comes up (spec §4.3)
+
+### Final review fixes
+- I1 a character whose strokes failed once stayed behind every due write card for good — record.test 'once he writes it, the stamp goes' RED→GREEN
+- M1 a question during a carry doubled it — useRig 'never doubles what is being carried' RED→GREEN
+- M2 pairing help counted on the left tile — pairGame 'stuck on a right tile…' RED→GREEN
+- M3 a double tap on misread Save gave two extra days — misreadsPanel test RED→GREEN (extra day via updateKid)
+- M4 a find wrote absolute finds/stars — finds 'applyFind' RED→GREEN
+- M5 goal-row errors far from the row; no Cancel — parentA test RED→GREEN
+- M6 the sound wake never re-armed after the background — sfx test RED→GREEN
+- M7 a repeated answer line was cleared early — pet test RED→GREEN
+
+### Waiting on the parallel parent-requested fixes (another session owns those files)
+- 认新字's re-shown-card guard uses Date.now; the WebKit sweep freezes the clock and stalls there (change to performance.now)
+- yard spray origin y 396 vs nozzle 370; kit lift() strips fills only (fill="none" strokes)
