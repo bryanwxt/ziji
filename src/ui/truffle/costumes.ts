@@ -165,10 +165,11 @@ const OUTFIT: Record<string, (c: Costume) => Outfit> = {
     hidesEars: true,
   }),
   rook: (c) => ({
-    // he stands in a chess rook: its tower is his body, its battlements are his hat
-    body: `<path d="M114 194 C112 214 116 236 112 254 L208 254 C204 236 208 214 206 194 Z" fill="${c.color}" ${S}/>` +
-      `<path d="M120 214 h80 M118 234 h84 M140 194 v20 M180 194 v20 M160 214 v20 M128 234 v20 M192 234 v20" stroke="#c4b48f" stroke-width="2.4"/>` +
-      `<rect x="100" y="250" width="120" height="20" rx="8" fill="${c.color}" ${S}/><rect x="108" y="186" width="104" height="14" rx="6" fill="${c.color}" ${S}/>`,
+    // he stands in a chess rook: its tower covers his whole body (rim over his shoulders, flared base), its battlements are his hat
+    body: `<path d="M98 190 C92 214 96 236 92 254 L228 254 C224 236 228 214 222 190 Z" fill="${c.color}" ${S}/>` +
+      `<path d="M96 212 h128 M94 234 h132 M126 190 v22 M160 190 v22 M194 190 v22 M110 212 v22 M144 212 v22 M178 212 v22 M212 212 v22 M126 234 v20 M160 234 v20 M194 234 v20" stroke="#c4b48f" stroke-width="2.4"/>` +
+      `<rect x="84" y="174" width="152" height="20" rx="8" fill="${c.color}" ${S}/><path d="M92 182 h136" stroke="#c4b48f" stroke-width="2.4"/>` +
+      `<path d="M90 254 L230 254 L240 270 C200 280 120 280 80 270 Z" fill="${c.color}" ${S}/><path d="M86 264 h148" stroke="#c4b48f" stroke-width="2.4"/>`,
     head: `<path d="M104 70 L104 34 L124 34 L124 46 L140 46 L140 34 L180 34 L180 46 L196 46 L196 34 L216 34 L216 70 Z" fill="${c.color}" ${S}/><path d="M104 60 h112" stroke="#c4b48f" stroke-width="2.4"/>`,
   }),
   football: (c) => ({
