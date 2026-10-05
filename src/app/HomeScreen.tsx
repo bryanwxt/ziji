@@ -22,6 +22,7 @@ import { Pet } from '../ui/Pet';
 import { WorldScene } from '../ui/worlds/WorldScene';
 import { WorldProps } from '../ui/worlds/WorldProps';
 import { dayMood } from '../ui/truffle/greeting';
+import { applyFind } from '../fun/finds';
 import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
 import { SCENE_VIEWBOX, SCENES } from '../ui/worlds/scenes';
 import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId, resetWorlds } from '../fun/worlds';
@@ -171,7 +172,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         today={today}
         onKid={(next) => {
           setJourneyKid(next);
-          void updateKid(db, (cur) => ({ ...cur, finds: next.finds, bonusStars: next.bonusStars })).then(refresh); // only what a find changes
+          const before = k;
+          void updateKid(db, (cur) => applyFind(cur, before, next)).then(refresh); // only what the find changed, onto what is stored
         }}
         onSay={(line) => {
           setSaid(line);

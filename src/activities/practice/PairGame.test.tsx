@@ -54,6 +54,14 @@ describe('pairing (spec 2026-10-05 §3.2 rung 2)', () => {
 });
 
 describe('final review C1/I4: pairing', () => {
+  it('final review: stuck on a right tile, three misses from it show that tile\'s own match', () => {
+    render(<PairGame {...props} onDone={vi.fn()} />);
+    join('牙', '穿');
+    join('牙', '踢');
+    join('牙', '穿');
+    expect(tile('牙').classList.contains('is-shown')).toBe(true);
+    expect(tile('刷').classList.contains('is-shown')).toBe(true);
+  });
   it('a board with a doubled half (妈 + 妈) still finishes', () => {
     const doubled: PairBoard = { left: ['妈', '黑', '国'], right: ['外', '妈', '色'], pairs: [['妈', '妈'], ['黑', '色'], ['国', '外']], target: ['妈', '妈'] };
     const onDone = vi.fn();

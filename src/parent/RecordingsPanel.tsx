@@ -1,5 +1,5 @@
 import { Fragment } from 'preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { PASSAGES } from '../content';
 import { applyMisreads } from '../langdu/misreads';
@@ -61,9 +61,16 @@ function MisreadMarker({ recording, text, onSaved }: { recording: Recording; tex
     setMarked(next);
     setSaved(null);
   };
+  const saving = useRef(false); // a double tap saves once (final review: two saves gave two extra days)
   const save = async () => {
-    setSaved(await applyMisreads(db, recording, [...marked], now()));
-    await onSaved();
+    if (saving.current) return;
+    saving.current = true;
+    try {
+      setSaved(await applyMisreads(db, recording, [...marked], now()));
+      await onSaved();
+    } finally {
+      saving.current = false;
+    }
   };
   return (
     <div class="misreads">

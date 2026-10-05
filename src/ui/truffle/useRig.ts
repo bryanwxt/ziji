@@ -174,20 +174,23 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       if (calm && !wasCalm) {
         hold.current = null;
         after.current = null;
-        if (track.current) track.current = { fn: settle(lastMotion.current), start: now, purr: false };
-        if (paws.current) paws.current = { fn: settlePaws(lastPaws.current), start: now };
+        // from where he is drawn now (a carry included), so nothing is counted twice (final review)
+        if (track.current || carry.current) track.current = { fn: settle(lastMotion.current), start: now, purr: false };
+        if (paws.current || carry.current) paws.current = { fn: settlePaws(lastPaws.current), start: now };
+        carry.current = null;
       }
       wasCalm = calm;
       if (pending.current) {
         const def = REACTIONS[pending.current.kind];
         pending.current = null;
         // (paws a new reaction doesn't move already ease down by settlePaws below: carrying them too would double them)
-        carry.current = { m: track.current ? lastMotion.current : REST, p: def.paws ? lastPaws.current : PAW_REST, at: now };
+        const pawsUp = !!paws.current || !!carry.current; // paws off their rest, by a move or a carry
+        carry.current = { m: lastMotion.current, p: def.paws ? lastPaws.current : PAW_REST, at: now };
         hold.current = { expr: def.expr, until: now + def.holdMs, then: def.then };
         after.current = null;
         track.current = def.track && !reduced ? { fn: TRACKS[def.track], start: now, purr: def.track === 'purr' } : null;
         // its paw move, if it has one; otherwise a running one goes back to his feet (never stuck raised)
-        paws.current = def.paws && !reduced ? { fn: PAW_TRACKS[def.paws], start: now } : paws.current ? { fn: settlePaws(lastPaws.current), start: now } : null;
+        paws.current = def.paws && !reduced ? { fn: PAW_TRACKS[def.paws], start: now } : pawsUp ? { fn: settlePaws(lastPaws.current), start: now } : null;
       }
       // which expression shows now: a held reaction, what follows it, or his own
       if (hold.current && now >= hold.current.until) {
@@ -215,7 +218,6 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         const sample = track.current.fn(now - track.current.start);
         if (sample) {
           m = sample;
-          lastMotion.current = sample;
           if (track.current.purr) shimmer = Math.sin(now / 1000 * 95) * 0.5;
         } else track.current = null;
       }
@@ -243,7 +245,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
           pw = { lx: pw.lx + c.p.lx * w, ly: pw.ly + c.p.ly * w, lr: pw.lr + c.p.lr * w, rx: pw.rx + c.p.rx * w, ry: pw.ry + c.p.ry * w, rr: pw.rr + c.p.rr * w };
         }
       }
-      if (track.current) lastMotion.current = m;
+      lastMotion.current = m; // where he is drawn: a new reaction or a question starts from here
       lastPaws.current = pw;
       lag.current.v = (lag.current.v + (-m.y * 0.18 - lag.current.y) * 0.2) * 0.7;
       lag.current.y += lag.current.v;

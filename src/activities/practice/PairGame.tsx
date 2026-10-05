@@ -35,10 +35,11 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
   const [picked, setPicked] = useState<number | null>(null); // a left index
   const [joined, setJoined] = useState<Set<string>>(new Set()); // 'L0', 'R2'… joined, right or shown
   const [shown, setShown] = useState<Set<string>>(new Set());
-  const [missed, setMissed] = useState<Record<number, number>>({});
+  const [missed, setMissed] = useState<Record<string, number>>({}); // per tile he started from: 'L0', 'R2'…
   const [result, setResult] = useState<{ correct: boolean; responseMs: number } | null>(null);
   const target = useRef<{ pickedAt: number; tries: number; ms: number }>({ pickedAt: 0, tries: 0, ms: 0 });
   const isTarget = (l: number) => board.left[l] === board.target[0];
+  const leftOf = (r: number) => board.left.findIndex((x, j) => board.pairs.find(([a]) => a === x)![1] === board.right[r] && !joined.has(`L${j}`));
   const partnerOf = (l: number) => board.right.findIndex((r, i) => r === board.pairs.find(([a]) => a === board.left[l])![1] && !joined.has(`R${i}`));
 
   useEffect(() => {
@@ -65,11 +66,14 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
       setJoined(new Set([...joined, `L${l}`, `R${r}`]));
       speak(board.left[l]! + board.right[r]!);
     } else {
-      const n = (missed[l] ?? 0) + 1;
-      setMissed({ ...missed, [l]: n });
+      // the miss counts on the tile he started from, and help shows that tile's own match (final review)
+      const from = `${picked.side}${picked.i}`;
+      const n = (missed[from] ?? 0) + 1;
+      setMissed({ ...missed, [from]: n });
       if (n >= SHOW_AFTER) {
-        setShown(new Set([...shown, `L${l}`, `R${partner}`]));
-        setJoined(new Set([...joined, `L${l}`, `R${partner}`]));
+        const pair = picked.side === 'L' ? [`L${l}`, `R${partner}`] : [`L${leftOf(r)}`, `R${r}`];
+        setShown(new Set([...shown, ...pair]));
+        setJoined(new Set([...joined, ...pair]));
       }
     }
     setPicked(null);

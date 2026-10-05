@@ -101,6 +101,18 @@ describe('his answer lines (sweep: spec §4.4 对了！ / 嗯？)', () => {
     expect(container.querySelector('.pet__bubble')!.textContent).toContain('明天再来');
     vi.useRealTimers();
   });
+  it('final review: the same line twice in a row stays its full time', () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0); // 对了！ both times
+    const { container, rerender } = render(<Pet kid={DEFAULT_KID} />);
+    rerender(<Pet kid={DEFAULT_KID} react={{ kind: 'right', key: 1 }} />);
+    act(() => { vi.advanceTimersByTime(800); });
+    rerender(<Pet kid={DEFAULT_KID} react={{ kind: 'right', key: 2 }} />);
+    act(() => { vi.advanceTimersByTime(600); }); // the first line's timer is due now
+    expect(container.querySelector('.pet__bubble')).not.toBeNull();
+    vi.mocked(Math.random).mockRestore();
+    vi.useRealTimers();
+  });
   it('three in a row: hearts float up', () => {
     const { container, rerender } = render(<Pet kid={DEFAULT_KID} />);
     rerender(<Pet kid={DEFAULT_KID} react={{ kind: 'streak', key: 1 }} />);

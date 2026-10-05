@@ -25,7 +25,7 @@ function audio(): AudioContext | null {
   const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return null;
   ctx ??= new AC();
-  if (ctx.state === 'suspended') void ctx.resume();
+  if (ctx.state === 'suspended' || (ctx.state as string) === 'interrupted') void ctx.resume(); // iPad Safari interrupts it in the background
   return ctx;
 }
 
@@ -36,11 +36,17 @@ function audio(): AudioContext | null {
 export function armAudioWake(): void {
   if (typeof document === 'undefined') return;
   const events = ['touchend', 'pointerup', 'keydown'] as const;
+  let armed = false;
+  const asleep = () => !ctx || ctx.state === 'suspended' || (ctx.state as string) === 'interrupted';
   const wake = () => {
-    if (audio()?.state === 'suspended') return; // still waking (resume is async): the next touch tries again
-    if (ctx) events.forEach((e) => document.removeEventListener(e, wake, true));
+    if (asleep()) audio(); // (resume is async: still asleep, the next touch tries again)
+    if (!asleep()) disarm();
   };
-  events.forEach((e) => document.addEventListener(e, wake, true));
+  const arm = () => { if (!armed) { armed = true; events.forEach((e) => document.addEventListener(e, wake, true)); } };
+  const disarm = () => { armed = false; events.forEach((e) => document.removeEventListener(e, wake, true)); };
+  arm();
+  // back from the background the sound may be asleep again: the next touch wakes it (final review)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) arm(); });
 }
 
 export function playSfx(name: Sfx): void {

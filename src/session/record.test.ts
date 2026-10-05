@@ -71,6 +71,13 @@ describe('markWriteSkipped', () => {
     await markWriteSkipped(db, 'b:龘', now);
     expect((await allWords(db))[0]?.writeSkippedAt).toBe(now.getTime());
   });
+  it('final review I1: once he writes it, the stamp goes, so it is never kept at the back for good', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('鸟')]);
+    await markWriteSkipped(db, 'b:鸟', now);
+    await recordWriting(db, 'b:鸟', 0, now);
+    expect((await allWords(db))[0]?.writeSkippedAt).toBeUndefined();
+  });
 });
 
 describe("today's plan knows what he has practised", () => {

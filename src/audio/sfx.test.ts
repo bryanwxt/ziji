@@ -30,6 +30,11 @@ describe('waking the sound on his first touch (sweep: the first stroke purred si
     expect(made[0]!.resume).toHaveBeenCalled();
     document.dispatchEvent(new Event('pointerup'));
     expect(made[0]!.resume).toHaveBeenCalledTimes(1); // woken once: the listeners are gone
+    // final review: back from the background, iPad Safari may have interrupted it — the next touch wakes it again
+    made[0]!.state = 'interrupted';
+    document.dispatchEvent(new Event('visibilitychange'));
+    document.dispatchEvent(new Event('touchend'));
+    expect(made[0]!.resume).toHaveBeenCalledTimes(2);
     vi.unstubAllGlobals();
   });
 });

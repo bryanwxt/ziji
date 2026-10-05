@@ -278,3 +278,23 @@ describe('his ground shadow (sweep: spec §4.1 "the ground shadow scales with he
     expect(shadow.closest('[data-part="rig"]')).toBeNull();
   });
 });
+
+describe('final review: a question arriving while one reaction eases into the next', () => {
+  const rigY = (c: Element) => Number((c.querySelector('[data-part="rig"]')!.getAttribute('transform') ?? '').match(/translate\([^ ]+ ([^)]+)\)/)?.[1] ?? 0);
+  const pawY = (c: Element) => Number((c.querySelector('[data-part="paw-r"]')!.getAttribute('transform') ?? '').match(/translate\([^ ]+ ([^)]+)\)/)?.[1] ?? 0);
+  it('never doubles what is being carried', () => {
+    reduced = false;
+    const { container, rerender } = render(<Truffle alive expression="neutral" react={{ kind: 'hello', key: 1 }} />);
+    act(() => run(22)); // up in his hop, paw waving
+    rerender(<Truffle alive expression="neutral" react={{ kind: 'nod', key: 2 }} />);
+    act(() => run(1));
+    const y = rigY(container);
+    const p = pawY(container);
+    rerender(<Truffle alive calm expression="neutral" react={{ kind: 'nod', key: 2 }} />);
+    act(() => run(1));
+    expect(rigY(container)).toBeGreaterThanOrEqual(y * 1.1); // y is negative (up): never pops higher
+    expect(pawY(container)).toBeGreaterThanOrEqual(p * 1.1);
+    act(() => run(30));
+    expect(Math.abs(rigY(container))).toBeLessThan(0.5);
+  });
+});

@@ -57,3 +57,27 @@ export function normalizeFinds(v: unknown): Finds {
     lastDigDate: date(x.lastDigDate),
   };
 }
+
+/**
+ * What a find changed (before → after), added onto what is stored now: another save made meanwhile (a gem, a star, the day's
+ * greeting) is kept, not written over (final review).
+ */
+export function applyFind<K extends { finds: Finds; bonusStars: number }>(stored: K, before: { finds: Finds; bonusStars: number }, after: { finds: Finds; bonusStars: number }): K {
+  const s = stored.finds;
+  const b = before.finds;
+  const a = after.finds;
+  const later = (x: string | null, y: string | null) => (x === null ? y : y === null ? x : x > y ? x : y);
+  return {
+    ...stored,
+    finds: {
+      animals: [...s.animals, ...a.animals.filter((x) => !b.animals.includes(x) && !s.animals.includes(x))],
+      gems: s.gems + Math.max(0, a.gems - b.gems),
+      eggTapped: s.eggTapped || a.eggTapped,
+      dinoHatched: s.dinoHatched || a.dinoHatched,
+      lastAnimalDate: later(s.lastAnimalDate, a.lastAnimalDate),
+      lastGemDate: later(s.lastGemDate, a.lastGemDate),
+      lastDigDate: later(s.lastDigDate, a.lastDigDate),
+    },
+    bonusStars: stored.bonusStars + Math.max(0, after.bonusStars - before.bonusStars),
+  };
+}

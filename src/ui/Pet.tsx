@@ -44,13 +44,15 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
 
   // the screen's reaction wins whenever it sends a new one; an answer gets its short line, three in a row hearts (spec §4.4)
   const [cheer, setCheer] = useState<string | null>(null);
+  const cheerN = useRef(0);
   useEffect(() => {
     if (!react) return;
     setCurrent(react);
     const line = CHEERS[react.kind]?.[Math.floor(Math.random() * CHEERS[react.kind]!.length)];
     if (line) {
       setCheer(line);
-      later(1200, () => setCheer((c) => (c === line ? null : c)));
+      const at = ++cheerN.current; // only this line's own timer takes it away (the same line twice keeps its full time)
+      later(1200, () => { if (cheerN.current === at) setCheer(null); });
     }
     if (react.kind === 'streak') for (let i = 0; i < 3; i++) heart(20 + i * 30);
   }, [react?.key]);
@@ -61,9 +63,11 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
     }, ms);
     timers.current.add(id);
   };
+  const saidN = useRef(0);
   const say = (text: string, ms: number) => {
     setSaid(text);
-    later(ms, () => setSaid((s) => (s === text ? null : s)));
+    const at = ++saidN.current;
+    later(ms, () => { if (saidN.current === at) setSaid(null); });
   };
   const play = (kind: Reaction['kind']) => setCurrent({ kind, key: 1e6 + ++n.current });
   const heart = (x: number) => {

@@ -24,6 +24,7 @@ export function RewardsPanel() {
   const [icon, setIcon] = useState<IconName>('gift');
   const [fix, setFix] = useState<Record<string, { zh: string; icon: IconName }>>({}); // Chinese titles being added or changed
   const [zhError, setZhError] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null); // the goal row whose title isn't Chinese (shown in that row)
   const [metric, setMetric] = useState<RewardGoal['metric']>('stars');
   const [target, setTarget] = useState('100');
 
@@ -54,8 +55,8 @@ export function RewardsPanel() {
   const saveZh = async (g: RewardGoal) => {
     const e = editing(g);
     const t = (e?.zh ?? '').trim();
-    if (!e || !isChineseTitle(t)) { setZhError(NOT_CHINESE); return; }
-    setZhError(null);
+    if (!e || !isChineseTitle(t)) { setRowError(g.id); return; }
+    setRowError(null);
     await saveReward(db, { ...g, zh: t, icon: e.icon });
     const { [g.id]: _done, ...rest } = fix;
     setFix(rest);
@@ -132,6 +133,14 @@ export function RewardsPanel() {
                               {GOAL_ICONS.map((n) => <option key={n} value={n}>{n}</option>)}
                             </select>
                             <button type="button" class="small-btn" aria-label={`Save Chinese title for ${g.title}`} onClick={() => void saveZh(g)}>Save</button>
+                            {g.zh && (
+                              <button type="button" class="small-btn" aria-label={`Cancel editing ${g.title}`} onClick={() => {
+                                const { [g.id]: _drop, ...rest } = fix;
+                                setFix(rest);
+                                if (rowError === g.id) setRowError(null);
+                              }}>Cancel</button>
+                            )}
+                            {rowError === g.id && <p role="alert" style={{ margin: 0 }}>{NOT_CHINESE}</p>}
                           </div>
                         );
                       })()}

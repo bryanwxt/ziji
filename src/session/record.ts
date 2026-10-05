@@ -38,6 +38,12 @@ export async function recordWriting(db: AppDb, wordId: string, totalMisses: numb
   const rating = toRating({ kind: 'write', totalMisses });
   const card = await reviewCard(db, wordId, 'write', rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind: 'write', at: now.getTime(), rating, correct: totalMisses <= 3, misses: totalMisses });
+  // written now: a day its strokes failed to load no longer keeps it at the back of the queue (final review I1)
+  const word = await getWord(db, wordId);
+  if (word?.writeSkippedAt !== undefined) {
+    const { writeSkippedAt: _gone, ...rest } = word;
+    await putWords(db, [rest]);
+  }
   return card;
 }
 

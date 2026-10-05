@@ -1,5 +1,5 @@
 import { addExtraDay } from './cycle';
-import { getCard, getKid, getWord, putCards, putWords, saveKid, updateRecording } from '../store/repo';
+import { getCard, getWord, putCards, putWords, updateKid, updateRecording } from '../store/repo';
 import type { AppDb } from '../store/db';
 import type { Recording } from '../types';
 
@@ -48,8 +48,8 @@ export async function applyMisreads(db: AppDb, recording: Recording, chars: stri
     await putWords(db, [back == null ? rest : { ...rest, listedAt: back }]);
   }
   if (giveDay && recording.prompt.kind === 'passage') {
-    const kid = await getKid(db);
-    if (kid) await saveKid(db, { ...kid, reading: addExtraDay(kid.reading, recording.prompt.passageId) });
+    const passageId = recording.prompt.passageId;
+    await updateKid(db, (kid) => ({ ...kid, reading: addExtraDay(kid.reading, passageId) }));
   }
   return { updated, notInApp };
 }

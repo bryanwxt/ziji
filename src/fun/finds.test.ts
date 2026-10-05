@@ -52,3 +52,18 @@ describe('treasure on the island', () => {
     expect(dig(a.finds, D2).star).toBe(true);
   });
 });
+
+describe('applyFind (final review: a find adds to what is stored, never writes over it)', () => {
+  it('adds what the find changed onto the stored state', async () => {
+    const { applyFind, DEFAULT_FINDS: D } = await import('./finds');
+    const before = { finds: { ...D, animals: ['rat'], gems: 1 }, bonusStars: 3 };
+    const after = { finds: { ...D, animals: ['rat', 'ox'], gems: 1, lastAnimalDate: '2026-10-06' }, bonusStars: 3 };
+    const stored = { finds: { ...D, animals: ['rat'], gems: 2, lastGemDate: '2026-10-06' }, bonusStars: 4 }; // a gem and a star saved meanwhile
+    expect(applyFind(stored, before, after)).toEqual({
+      finds: { ...D, animals: ['rat', 'ox'], gems: 2, lastAnimalDate: '2026-10-06', lastGemDate: '2026-10-06' },
+      bonusStars: 4,
+    });
+    const dug = { finds: { ...before.finds, lastDigDate: '2026-10-06' }, bonusStars: 4 };
+    expect(applyFind(stored, before, dug).bonusStars).toBe(5);
+  });
+});
