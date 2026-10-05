@@ -1178,3 +1178,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 /* a word longer than one character on the 认新字 card (a school 成语): one line, sized to fit (final review I3) */
 .intro .hanzi--xl.hanzi--long { white-space: nowrap; font-size: min(var(--hanzi-xl), calc(68vw / var(--len)), calc(420px / var(--len))); }
+
+/* Home on the stage (spec 2026-10-04 §3, phase D): the streak, stars, week and his name in one paper strip */
+.home__strip { background: var(--paper); border: 2px solid var(--line); border-radius: 18px; box-shadow: 0 4px 0 var(--line); padding: 6px 14px; width: min(100%, 980px); margin: 0 auto; box-sizing: border-box; }
+.home__strip .stat, .home__strip .week, .home__strip .home__who { background: none; border: 0; box-shadow: none; }
+.home__strip .stat { padding: 2px 6px; }
+.home__strip .stat--star, .home__strip .home__week, .home__strip .home__who { border-left: 2px solid var(--line); padding-left: 12px; border-radius: 0; }

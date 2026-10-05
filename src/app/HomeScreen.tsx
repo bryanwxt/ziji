@@ -151,7 +151,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           lookTimer.current = setTimeout(() => setPropPlay((p) => ({ ...p, lookAt: 0 })), REACTIONS[kind].holdMs);
         }}
       />
-      <header class="topbar">
+      <header class="topbar home__strip">
         <span class="stat stat--fire" aria-label={`连续 ${days} 天`}><Flame size={24} strokeWidth={2.75} /> {days}</span>
         <span class="stat stat--star" aria-label={`${stars} 颗星`}><Star size={24} strokeWidth={2.75} /> {stars}</span>
         <div class="home__week">

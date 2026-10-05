@@ -222,3 +222,11 @@ describe('adaptive layouts (spec §18)', () => {
     expect(css).toMatch(/@media \(min-width: 600px\) \{\s*:root \{ --q-hanzi: clamp\(64px, [^)]*\); --tile-hanzi: clamp\(40px, [^)]*, 48px\); --sentence: clamp\(28px, [^)]*\); \}/);
   });
 });
+
+describe('Home on the stage (phase D)', () => {
+  it('the top strip is one paper bar; what is in it has no pill of its own', () => {
+    expect(css).toMatch(/\.home__strip \{[^}]*background: var\(--paper\)/);
+    expect(css).toMatch(/\.home__strip \.stat, \.home__strip \.week, \.home__strip \.home__who \{[^}]*background: none[^}]*border: 0[^}]*box-shadow: none/);
+  });
+});
+

@@ -471,3 +471,15 @@ describe('找到的动物 and the gem jar', () => {
     expect(Math.min(...ys) - 7).toBeGreaterThan(-38); // a gem is about 14 tall at this scale; the rim's lower edge is y -38
   });
 });
+
+describe('Home on the stage (spec 2026-10-04 §3, phase D)', () => {
+  it('one top strip holds the streak, stars, week, seal and his name', async () => {
+    const app = await makeAppData();
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    const strips = document.querySelectorAll('.home__strip');
+    expect(strips).toHaveLength(1);
+    for (const sel of ['.stat--fire', '.stat--star', '.week', '.seal', '.home__who']) expect(strips[0]!.querySelector(sel), sel).toBeTruthy();
+  });
+});
+
