@@ -1,0 +1,115 @@
+import { act, fireEvent, render } from '@testing-library/preact';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_FINDS } from '../../fun/finds';
+import { WORLDS } from '../../fun/worlds';
+import { DEFAULT_KID, type KidState } from '../../types';
+import { MOMENTS } from './moments';
+import { WorldProps } from './WorldProps';
+import { WorldScene } from './WorldScene';
+
+vi.mock('../../audio/speech', () => ({ speak: vi.fn(), stopSpeaking: vi.fn() }));
+vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
+const still = { on: false };
+vi.mock('../motion', () => ({ reducedMotion: () => still.on }));
+import { speak } from '../../audio/speech';
+
+const kid = (over: Partial<KidState> = {}): KidState => ({ ...DEFAULT_KID, finds: { ...DEFAULT_FINDS }, ...over });
+const tap = (label: string) => fireEvent.click(document.querySelector(`.world-props [aria-label="${label}"]`)!);
+const props = (over: Record<string, unknown> = {}) => ({ kid: kid(), today: '2026-10-06', onKid: vi.fn(), onSay: vi.fn(), onReact: vi.fn(), autoEvery: 10_000_000, ...over });
+
+beforeEach(() => { vi.useFakeTimers(); still.on = false; });
+afterEach(() => vi.useRealTimers());
+
+describe('WorldProps (spec 2026-10-04 §4.5)', () => {
+  it("every world's props are buttons, labelled in Chinese", () => {
+    for (const w of WORLDS) {
+      const { unmount } = render(<WorldProps world={w.id} {...props()} />);
+      for (const m of MOMENTS[w.id]) expect(document.querySelector(`.world-props[data-world="${w.id}"] [role="button"][aria-label="${m.label}"]`), `${w.id}:${m.label}`).toBeTruthy();
+      unmount();
+    }
+  });
+  it("the box in the tall grass shows the next animal once a day", () => {
+    const onKid = vi.fn();
+    const onSay = vi.fn();
+    const { rerender } = render(<WorldProps world="grass" {...props({ onKid, onSay })} />);
+    tap('纸箱');
+    expect(onKid).toHaveBeenCalledWith(expect.objectContaining({ finds: expect.objectContaining({ animals: ['rat'] }) }));
+    expect(document.querySelector('.tap-pop[data-animal="rat"]')).toBeTruthy();
+    expect(onSay).toHaveBeenCalledWith('找到了！');
+    act(() => { vi.advanceTimersByTime(2500); });
+    const after = onKid.mock.calls[0]![0] as KidState;
+    onKid.mockClear();
+    rerender(<WorldProps world="grass" {...props({ kid: after, onKid, onSay })} />);
+    tap('纸箱');
+    expect(onKid).not.toHaveBeenCalled();
+    expect(document.querySelector('.tap-pop[data-animal="rat"]')).toBeTruthy();
+  });
+  it('a tap during a moment is ignored (review focus 1)', () => {
+    const onKid = vi.fn();
+    render(<WorldProps world="pirate" {...props({ onKid })} />);
+    tap('宝藏');
+    tap('宝藏');
+    expect(onKid).toHaveBeenCalledTimes(1);
+  });
+  it("the gem block cracks three times, then pops the day's gem; yesterday's taps don't count today (review focus 3)", () => {
+    const onKid = vi.fn();
+    const { rerender } = render(<WorldProps world="blocks" {...props({ onKid })} />);
+    for (let i = 1; i <= 2; i++) { tap('宝石'); act(() => { vi.advanceTimersByTime(600); }); }
+    expect(document.querySelectorAll('.tap-crack')).toHaveLength(2);
+    rerender(<WorldProps world="blocks" {...props({ onKid, today: '2026-10-07' })} />);
+    for (let i = 1; i <= 3; i++) { tap('宝石'); act(() => { vi.advanceTimersByTime(600); }); }
+    expect(onKid).not.toHaveBeenCalled();
+    tap('宝石');
+    expect(onKid).toHaveBeenCalledWith(expect.objectContaining({ finds: expect.objectContaining({ gems: 1 }) }));
+  });
+  it('hides the prop while it moves and shows it again (review focus 2)', () => {
+    render(<><WorldScene world="yard" time="afternoon" /><WorldProps world="yard" {...props()} /></>);
+    const ball = () => document.querySelector<SVGElement>('.world-scene [data-prop="ball"]')!;
+    tap('红球');
+    expect(ball().style.visibility).toBe('hidden');
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(ball().style.visibility).toBe('');
+  });
+  it('a prop hidden mid-moment comes back when Home goes away', () => {
+    const { rerender } = render(<><WorldScene world="yard" time="afternoon" /><WorldProps world="yard" {...props()} /></>);
+    tap('红球');
+    rerender(<><WorldScene world="yard" time="afternoon" /></>);
+    expect(document.querySelector<SVGElement>('.world-scene [data-prop="ball"]')!.style.visibility).toBe('');
+  });
+  it('some moments start by themselves on Home, and never give finds', () => {
+    const onKid = vi.fn();
+    const onReact = vi.fn();
+    render(<WorldProps world="yard" {...props({ onKid, onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1600); });
+    expect(onReact).toHaveBeenCalled();
+    expect(onKid).not.toHaveBeenCalled();
+  });
+  it('reduced motion: taps still find things, nothing starts by itself (review focus 5)', () => {
+    still.on = true;
+    const onKid = vi.fn();
+    const onReact = vi.fn();
+    render(<WorldProps world="pirate" {...props({ onKid, onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(onReact).not.toHaveBeenCalled();
+    tap('宝藏');
+    expect(onKid).toHaveBeenCalledTimes(1);
+  });
+  it('the rocket counts down in Chinese; the parrot says hello', () => {
+    render(<WorldProps world="space" {...props()} />);
+    tap('火箭');
+    expect(speak).toHaveBeenLastCalledWith('三，二，一！');
+    render(<WorldProps world="pirate" {...props()} />);
+    fireEvent.click(document.querySelector('.world-props[data-world="pirate"] [aria-label="鹦鹉"]')!);
+    expect(speak).toHaveBeenLastCalledWith('你好！');
+  });
+  it('the sprinkler: Truffle flinches toward it, says 哇！, then laughs', () => {
+    const onSay = vi.fn();
+    const onReact = vi.fn();
+    render(<WorldProps world="yard" {...props({ onSay, onReact })} />);
+    tap('洒水器');
+    expect(onReact).toHaveBeenCalledWith('flinch', -1);
+    expect(onSay).toHaveBeenLastCalledWith('哇！');
+    act(() => { vi.advanceTimersByTime(700); });
+    expect(onSay).toHaveBeenLastCalledWith('哈哈哈！');
+  });
+});
