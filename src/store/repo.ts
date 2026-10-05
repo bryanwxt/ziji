@@ -214,9 +214,27 @@ export async function getRungs(db: AppDb): Promise<Map<string, number>> {
   return new Map((await db.getAll('ladder')).map((e) => [e.wordId, e.rung]));
 }
 
-/** Notes one answer at `rung` and returns the word's new rung. */
+/** Notes one answer at `rung` and returns the word's new rung (what else the entry holds stays). */
 export async function noteRung(db: AppDb, wordId: string, rung: Rung, correct: boolean, now: Date): Promise<number> {
-  const next = nextRung((await db.get('ladder', wordId))?.rung ?? 0, rung, correct);
-  await db.put('ladder', { wordId, rung: next, at: now.getTime() });
+  const had = await db.get('ladder', wordId);
+  const next = nextRung(had?.rung ?? 0, rung, correct);
+  await db.put('ladder', { ...had, wordId, rung: next, at: now.getTime() });
   return next;
+}
+
+/** A look-alike he picked for this word (spec 2026-10-05 §3.4): 钓鱼 comes back for it. */
+export async function noteConfusion(db: AppDb, wordId: string, ch: string, now: Date): Promise<void> {
+  const had = await db.get('ladder', wordId);
+  const confused = [...new Set([...(had?.confused ?? []), ch])];
+  await db.put('ladder', { wordId, rung: had?.rung ?? 0, at: now.getTime(), ...had, confused });
+}
+
+/** He caught the right fish: stop asking. */
+export async function clearConfusion(db: AppDb, wordId: string): Promise<void> {
+  const had = await db.get('ladder', wordId);
+  if (had?.confused) await db.put('ladder', { ...had, confused: [] });
+}
+
+export async function getConfusions(db: AppDb): Promise<Map<string, string[]>> {
+  return new Map((await db.getAll('ladder')).filter((e) => e.confused?.length).map((e) => [e.wordId, e.confused!]));
 }

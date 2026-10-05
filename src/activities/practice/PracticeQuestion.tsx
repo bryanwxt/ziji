@@ -6,6 +6,8 @@ import type { CardRecord, KidState, Word } from '../../types';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { UseQuestion } from '../choose/UseQuestion';
 import { FlashcardStep } from '../flashcards/FlashcardStep';
+import { ComponentsStep } from '../components/ComponentsStep';
+import { fishItem } from '../components/zibian';
 import { zujuFor } from '../../content/zuju';
 import { BuildSentence } from './BuildSentence';
 import { PairGame } from './PairGame';
@@ -17,7 +19,8 @@ export interface PracticeResult {
   responseMs: number;
   elapsedMs: number;
   inContext: boolean;
-  asked: 'read' | 'meaning' | 'use';
+  asked: 'read' | 'meaning' | 'use' | 'zibian';
+  picked?: string;
 }
 
 interface Props {
@@ -31,10 +34,12 @@ interface Props {
   combo: number;
   closeupReady: boolean;
   onDone: (r: PracticeResult | null) => void; // null: this question can't be made any more (skip it)
+  confused?: string[]; // look-alikes he picked for this word (钓鱼)
+  knownChars?: ReadonlySet<string>;
 }
 
 /** One 练一练 question (spec 2026-10-05 §3.2): 字 and 词语 on the card, a sentence on the 选一选 stage. */
-export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone }: Props) {
+export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, confused, knownChars }: Props) {
   const sentence = item.ask === 'fit' || item.ask === 'usage';
   const use = useMemo(
     () => (item.ask === 'fit' ? fitItem(word, pool, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0), 0) : item.ask === 'usage' ? usageItem(word.text, word.id) : null),
@@ -45,12 +50,30 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     return item.ask === 'pair' ? zuciBoard(word, rng) : item.ask === 'match' ? dapeiBoard(word, rng) : null;
   }, [item, word.id]);
+  const fish = useMemo(() => (item.ask === 'fish' ? fishItem(word, confused ?? [], knownChars ?? new Set(), mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
   const answer = useRef<{ correct: boolean; ms: number } | null>(null);
   const shownAt = useRef(performance.now());
   useEffect(() => {
-    if ((sentence && !use) || (item.ask === 'build' && !zuju) || ((item.ask === 'pair' || item.ask === 'match') && !board)) onDone(null);
+    if ((sentence && !use) || (item.ask === 'build' && !zuju) || ((item.ask === 'pair' || item.ask === 'match') && !board) || (item.ask === 'fish' && !fish)) onDone(null);
   }, []);
 
+  if (item.ask === 'fish') {
+    if (!fish) return null;
+    return (
+      <ComponentsStep
+        items={[fish]}
+        kid={kid}
+        resting={resting}
+        onAnswer={(_, correct) => {
+          answer.current = { correct, ms: Math.round(performance.now() - shownAt.current) };
+        }}
+        onDone={() => {
+          const a = answer.current;
+          if (a) onDone({ correct: a.correct, hard: false, responseMs: a.ms, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'zibian' });
+        }}
+      />
+    );
+  }
   if (item.ask === 'pair' || item.ask === 'match') {
     if (!board) return null;
     return (

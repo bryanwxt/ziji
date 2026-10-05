@@ -4,13 +4,16 @@ import { builtinWords } from '../content';
 import { bankFor } from '../content/sentenceBank';
 import { mulberry32 } from '../lib/random';
 import { makeCard } from '../test/fixtures';
-import type { SessionPlan } from '../types';
-import { askable, planFreePlay, planPractice, practiceWords } from './practice';
+import type { SessionPlan, Word } from '../types';
+import { askable, planFreePlay, planPractice, practiceWords, withFish } from './practice';
+import { fishItem } from '../activities/components/zibian';
+import type { PracticeItem } from './round';
 import { createSessionRecord } from './runner';
 
 const words = builtinWords(0);
 const byId = new Map(words.map((w) => [w.id, w]));
 const id = (t: string) => words.find((w) => w.text === t)!.id;
+const fishItemFor = (w: Word) => fishItem(w, [], new Set(), mulberry32(1));
 const plan = (over: Partial<SessionPlan> = {}): SessionPlan => ({ steps: ['newwords', 'practice'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, practiceTimeBoxMs: 1, writeCandidates: [], writeCount: 0, ...over });
 
 describe('who is in 练一练 (spec 2026-10-05 §3.1)', () => {
@@ -69,5 +72,27 @@ describe('the new kinds of question (spec 2026-10-05 §3.2, phase B)', () => {
     expect(askable(byId.get(id('很'))!, words, false)('match')).toBe(false);
     expect(askable(byId.get(id('很'))!, words, false)('build')).toBe(true);
     expect(askable(byId.get(id('很'))!, words, false)('fish')).toBe(false); // only for words he has confused (Task 7)
+  });
+});
+
+describe('钓鱼 in the round (spec 2026-10-05 §3.4)', () => {
+  const p = (wordId: string): PracticeItem => ({ wordId, rung: 1, ask: 'read', grades: null, retry: false });
+  it('at most two 钓鱼 items, spread out, never next to the same word', () => {
+    const items = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].map(p);
+    const out = withFish(items, ['b', 'e', 'h']);
+    const fish = out.map((x, i) => [x, i] as const).filter(([x]) => x.ask === 'fish');
+    expect(fish).toHaveLength(2);
+    for (const [x, i] of fish) {
+      expect(out[i - 1]?.wordId).not.toBe(x.wordId);
+      expect(out[i + 1]?.wordId).not.toBe(x.wordId);
+      expect(x).toMatchObject({ grades: null, retry: false });
+    }
+    expect(fish[1]![1] - fish[0]![1]).toBeGreaterThan(2);
+  });
+  it('a confused word that has no 钓鱼 item gets none (review focus 4)', () => {
+    const rec = createSessionRecord(plan({ reviewWordIds: [id('山')] }), '2026-10-06', 0);
+    const items = planPractice(rec, new Map(), byId, words, false, mulberry32(1), new Map([[id('山'), ['出']]]));
+    const shan = byId.get(id('山'))!;
+    if (!fishItemFor(shan)) expect(items.some((x) => x.ask === 'fish')).toBe(false);
   });
 });

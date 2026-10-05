@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../content';
-import { allCards, answersSince, getRungs, getSession, getWord, logsSince, noteRung, putCards, putWords, saveKid, saveSession, updateSettings } from '../store/repo';
+import { allCards, answersSince, getConfusions, getRungs, noteConfusion, getSession, getWord, logsSince, noteRung, putCards, putWords, saveKid, saveSession, updateSettings } from '../store/repo';
 import { createSessionRecord } from '../session/runner';
 import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
@@ -17,22 +17,32 @@ const byText = new Map(words.map((w) => [w.text, w]));
 const lessonOnly = { newwords: true, practice: true, writing: false, speaking: false };
 /** Taps, then waits for the screen to change (answers save to IndexedDB before the next card shows). */
 async function tapAndWait(...els: HTMLElement[]) {
-  const before = document.body.textContent;
+  const before = document.body.innerHTML;
   for (const el of els) fireEvent.click(el);
-  await waitFor(() => expect(document.body.textContent).not.toBe(before));
+  await waitFor(() => expect(document.body.innerHTML).not.toBe(before), { timeout: 4000 });
 }
-/** Answers whatever is on screen until the celebration: 我记住了！, else the first choice then 继续. `seen` gets each screen's stage. */
-async function playThrough(max = 60, seen: string[] = []) {
+const OPEN = '.choice:not([disabled]), .fishtile:not([disabled])';
+/** 继续 when it can be tapped (a pairing board or 组句 needs several taps first). */
+const nextButton = () => {
+  const b = screen.queryByText('继续')?.closest('button');
+  return b && !b.disabled ? b : null;
+};
+/** Answers whatever is on screen until the celebration: 我记住了！, else the first open choice (and 继续 once it opens). `seen` gets each screen's stage. */
+async function playThrough(max = 80, seen: string[] = []) {
   for (let i = 0; i < max && !screen.queryByText('太棒了！'); i++) {
-    await waitFor(() => expect(screen.queryByText('太棒了！') ?? screen.queryByText('我记住了！') ?? document.querySelector('.choice:not([disabled])')).toBeTruthy());
+    await waitFor(() => expect(screen.queryByText('太棒了！') ?? screen.queryByText('我记住了！') ?? nextButton() ?? document.querySelector(OPEN)).toBeTruthy(), { timeout: 4000 }); // building 练一练's round reads every word's content
     if (screen.queryByText('太棒了！')) break;
     seen.push(document.querySelector('[data-stage]')?.getAttribute('data-stage') ?? '');
     if (screen.queryByText('我记住了！')) {
       await tapAndWait(screen.getByText('我记住了！'));
       continue;
     }
-    fireEvent.click(document.querySelector<HTMLButtonElement>('.choice:not([disabled])')!);
-    await tapAndWait(screen.getByText('继续'));
+    const next = nextButton();
+    if (next) {
+      await tapAndWait(next);
+      continue;
+    }
+    await tapAndWait(document.querySelector<HTMLElement>(OPEN)!);
   }
 }
 
@@ -172,5 +182,32 @@ describe('the lesson at its edges (review focus)', () => {
     await playThrough();
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     expect((await getRungs(app.db)).has(byText.get('火')!.id)).toBe(false);
+  });
+});
+
+describe('钓鱼 for what he confused, in 练一练 (spec 2026-10-05 §3.4)', () => {
+  it('a word he confused gets a 钓鱼 item; catching the right fish forgets the confusion', async () => {
+    const app = await setup();
+    await updateSettings(app.db, { newPerDay: 0 });
+    const gen = byText.get('根')!;
+    await putCards(app.db, [makeCard(gen.id, 'recognise', new Date(2026, 9, 1), true)]);
+    await noteConfusion(app.db, gen.id, '跟', new Date(2026, 9, 1));
+    renderWithApp(<SessionScreen free={false} />, app);
+    let fished = false;
+    for (let i = 0; i < 20 && !screen.queryByText('太棒了！'); i++) {
+      await waitFor(() => expect(screen.queryByText('太棒了！') ?? document.querySelector('.choice:not([disabled]), .fishtile:not([disabled])')).toBeTruthy());
+      if (screen.queryByText('太棒了！')) break;
+      const fish = document.querySelector<HTMLButtonElement>('.fishtile:not([disabled])');
+      if (fish) {
+        fished = true;
+        await tapAndWait(screen.getByRole('button', { name: '根' }));
+        await tapAndWait(screen.getByText('继续'));
+        continue;
+      }
+      fireEvent.click(document.querySelector<HTMLButtonElement>('.choice:not([disabled])')!);
+      await tapAndWait(screen.getByText('继续'));
+    }
+    expect(fished).toBe(true);
+    await waitFor(async () => expect((await getConfusions(app.db)).has(gen.id)).toBe(false));
   });
 });

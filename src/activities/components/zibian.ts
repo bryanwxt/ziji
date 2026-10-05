@@ -49,6 +49,24 @@ export function fillChoices(chars: string[], k: number, rng: Rng, known: Readonl
   return wrong.length < 3 ? null : shuffle([answer, ...wrong], rng);
 }
 
+/**
+ * 钓鱼 for a character he confused (spec 2026-10-05 §3.4): the word (or its two-character 组词) with the character missing, the
+ * look-alikes he picked among the fish first, then others. Null when there is no such word, or fewer than 3 look-alikes.
+ */
+export function fishItem(word: Word, confused: string[], known: ReadonlySet<string>, rng: Rng): ZibianItem | null {
+  const own = Array.from(word.text);
+  const text = own.length > 1 ? word.text : word.examples?.find((e) => Array.from(e.text).length === 2 && e.text.includes(word.text))?.text;
+  if (!text) return null;
+  const chars = Array.from(text);
+  const k = own.length > 1 ? 0 : chars.indexOf(word.text);
+  const answer = chars[k]!;
+  const fits = (o: string) => HSK_WORDS.has(chars.map((c, j) => (j === k ? o : c)).join(''));
+  const others = fillChoices(chars, k, rng, known)?.filter((c) => c !== answer) ?? [];
+  const wrong = [...new Set([...confused.filter((c) => c !== answer && !fits(c)), ...others])].slice(0, 3);
+  if (wrong.length < 3) return null;
+  return { wordId: word.id, word: text, index: k, answer, options: shuffle([answer, ...wrong], rng) };
+}
+
 export interface ZibianInput {
   words: Word[];
   knownChars: ReadonlySet<string>;

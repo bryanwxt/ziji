@@ -1,7 +1,7 @@
 import { Flame, X } from 'lucide-preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ComponentsStep } from '../activities/components/ComponentsStep';
-import { buildZibianRound, zibianCount, type ZibianItem } from '../activities/components/zibian';
+import { buildZibianRound, lookAlikeChars, zibianCount, type ZibianItem } from '../activities/components/zibian';
 import { ChooseStep } from '../activities/choose/ChooseStep';
 import { WrapupStep } from '../activities/choose/WrapupStep';
 import { planWrapup, wrapupTargets } from '../session/wrapup';
@@ -34,7 +34,7 @@ import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice,
 } from '../session/runner';
-import { addAnswer, getKid, getRungs, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
+import { addAnswer, clearConfusion, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -56,6 +56,7 @@ interface Loaded {
   choose: UseItem[] | null; // built when 选一选 starts, so it knows what he missed earlier in the lesson
   wrapup: UseItem[] | null; // built when 用一用 starts, from today's recalls
   speaking: { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo } | { kind: 'story'; scene: Scene } | null;
+  confusions: Map<string, string[]>; // look-alikes he picked, per word (钓鱼, spec 2026-10-05 §3.4)
 }
 
 export function SessionScreen({ free }: { free: boolean }) {
@@ -76,7 +77,7 @@ export function SessionScreen({ free }: { free: boolean }) {
   useEffect(() => {
     void (async () => {
       const rng = mulberry32(Date.now() >>> 0);
-      const [know, kid, parentPassages, settings, practised] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db)]);
+      const [know, kid, parentPassages, settings, practised, confusions] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db), getConfusions(db)]);
       const today = now();
       const rec = free
         ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng), localDateKey(today), today.getTime())
@@ -90,6 +91,7 @@ export function SessionScreen({ free }: { free: boolean }) {
         minutes: settings.sessionMinutes,
         choose: null,
         wrapup: null,
+        confusions,
         speaking: (() => {
           const k = kid ?? DEFAULT_KID;
           const passage = pickPassage(k.reading, readingPool(parentPassages, PASSAGES, know.knownChars), localDateKey(today));
@@ -164,7 +166,7 @@ export function SessionScreen({ free }: { free: boolean }) {
       if (!planning.current) {
         planning.current = true;
         void (async () => {
-          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, state.know.words, voice, mulberry32(Date.now() >>> 0));
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, state.know.words, voice, mulberry32(Date.now() >>> 0), state.confusions);
           planning.current = false;
           await commit(startPractice(latest.current ?? cur, queue));
         })();
@@ -196,6 +198,13 @@ export function SessionScreen({ free }: { free: boolean }) {
       await commit(finishStepIf(addActiveTime(cur, Math.round(performance.now() - stepStartedAt.current)), expected));
     })();
 
+  /** A wrong pick that is a look-alike of the character (it shares a part) is remembered for 钓鱼 (spec 2026-10-05 §3.4). */
+  const rememberConfusion = async (wordId: string, picked: string | undefined) => {
+    const w = know.wordsById.get(wordId);
+    if (rec.free || !w || !picked || Array.from(w.text).length !== 1 || picked === w.text) return;
+    if (lookAlikeChars(w.text).includes(picked)) await noteConfusion(db, wordId, picked, now());
+  };
+
   const onFlashDone = (r: FlashResult) =>
     once(async () => {
       const item = flashItem!;
@@ -204,6 +213,7 @@ export function SessionScreen({ free }: { free: boolean }) {
         const card = r.asked === 'meaning' ? await recordMeaning(db, item.wordId, outcome, now()) : await recordRecognition(db, item.wordId, outcome, now());
         know.cardsById.set(card.id, card);
       }
+      if (!r.correct) await rememberConfusion(item.wordId, r.picked);
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
@@ -232,8 +242,14 @@ export function SessionScreen({ free }: { free: boolean }) {
         else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
-        await noteRung(db, item.wordId, item.rung, r.correct, now());
+        if (item.ask !== 'fish') await noteRung(db, item.wordId, item.rung, r.correct, now());
+        if (r.asked === 'zibian') {
+          await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'zibian', correct: r.correct });
+          if (r.correct) await clearConfusion(db, item.wordId);
+          else await bringForward(db, item.wordId, know.cardsById.has(`${item.wordId}:write`) ? 'write' : 'recognise', now());
+        }
       }
+      if (!r.correct) await rememberConfusion(item.wordId, r.picked);
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
@@ -370,6 +386,8 @@ export function SessionScreen({ free }: { free: boolean }) {
           resting={resting}
           combo={combo}
           closeupReady={closeupAllowed(cardsSinceCloseup.current, reducedMotion())}
+          confused={state.confusions.get(practiceWord.id)}
+          knownChars={know.knownChars}
           onDone={(r) => void onPracticeDone(r)}
         />
       )}

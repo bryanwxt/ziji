@@ -31,7 +31,7 @@ describe('FlashcardStep', () => {
     render(<FlashcardStep {...base} item={review} voice={false} onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
     fireEvent.click(screen.getByText('继续'));
-    expect(onDone).toHaveBeenCalledWith({ correct: true, hard: false, responseMs: expect.any(Number), elapsedMs: expect.any(Number), inContext: false, asked: 'read' });
+    expect(onDone).toHaveBeenCalledWith({ correct: true, hard: false, responseMs: expect.any(Number), elapsedMs: expect.any(Number), inContext: false, asked: 'read', picked: he.pinyin });
   });
 
   it('a wrong answer reveals the right one', () => {

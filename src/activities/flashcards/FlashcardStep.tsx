@@ -29,6 +29,7 @@ export interface FlashResult {
   elapsedMs: number;
   inContext: boolean; // a meaning question on a sentence (spec §20 part 7)
   asked: 'read' | 'meaning'; // what was really asked: a meaning item with no cue falls back to reading
+  picked?: string; // the option he chose (钓鱼 remembers a look-alike, spec 2026-10-05 §3.4)
 }
 
 interface Props {
@@ -128,7 +129,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const bubble = phase === 'intro' ? '新字来了！' : phase === 'quiz' ? (quiz.cue ? '哪个字对？' : quiz.listen ? '我想吃这个字！' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
-    if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : 'read' });
+    if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : 'read', picked: choice ?? undefined });
   };  // 认新字: a miss shows the card again before he moves on; the word comes first in 练一练 too
   const proceed = () => {
     if (reintroOnMiss && result && !result.correct && !again) {

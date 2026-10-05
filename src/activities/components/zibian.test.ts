@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { HSK_WORDS } from '../../content';
 import { makeWord } from '../../test/fixtures';
 import { mulberry32 } from '../../lib/random';
-import { buildZibianRound, lookAlikeChars, zibianCount } from './zibian';
+import { buildZibianRound, fishItem, lookAlikeChars, zibianCount } from './zibian';
+import { builtinWords } from '../../content';
 
 describe('字辨 (spec §20 part 8)', () => {
   it('look-alikes share the phonetic part first (跟 → 根 很 银), then the radical (容 → 室)', () => {
@@ -43,5 +44,23 @@ describe('字辨 (spec §20 part 8)', () => {
       if (item.answer !== '银') continue; // this seed blanked 行
       expect(item.options.filter((o) => o !== '银').sort()).toEqual(['很', '跟', '根'].sort());
     }
+  });
+});
+
+const words = builtinWords(0);
+describe('钓鱼 for what he confused (spec 2026-10-05 §3.4)', () => {
+  it('fishes the word with the character he picked among the fish', () => {
+    const w = words.find((x) => x.text === '根')!;
+    const item = fishItem(w, ['跟'], new Set(), mulberry32(1))!;
+    expect(item.answer).toBe('根');
+    expect(item.options).toContain('跟');
+    expect(item.options).toHaveLength(4);
+    expect(item.word).toContain('根');
+  });
+  it('no item for a word with no two-character 组词, or too few look-alikes (review focus 4)', () => {
+    const w = words.find((x) => x.text === '根')!;
+    expect(fishItem({ ...w, examples: [] }, ['跟'], new Set(), mulberry32(1))).toBeNull();
+    const lonely = words.find((x) => Array.from(x.text).length === 1 && lookAlikeChars(x.text).length === 0 && x.examples?.length)!;
+    expect(fishItem(lonely, [], new Set(), mulberry32(1))).toBeNull();
   });
 });

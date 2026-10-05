@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getRungs, noteRung } from '../store/repo';
+import { clearConfusion, getConfusions, getRungs, noteConfusion, noteRung } from '../store/repo';
 import { openAppDb } from '../store/db';
 import { nextRung, startRung } from './ladder';
 
@@ -26,5 +26,19 @@ describe('the context ladder (spec 2026-10-05 §3.2)', () => {
     expect(await noteRung(db, 'b:火', 2, true, new Date(2026, 9, 6))).toBe(2);
     expect(await noteRung(db, 'b:水', 1, false, new Date(2026, 9, 6))).toBe(0);
     expect(await getRungs(db)).toEqual(new Map([['b:火', 2], ['b:水', 0]]));
+  });
+});
+
+describe('what he confused (spec 2026-10-05 §3.4)', () => {
+  it('remembers each look-alike he picked for a word, once, keeps them through rung changes, and forgets them when cleared', async () => {
+    const db = await openAppDb(`ladder-${Math.random()}`);
+    await noteConfusion(db, 'b:根', '跟', new Date(2026, 9, 6));
+    await noteConfusion(db, 'b:根', '跟', new Date(2026, 9, 6));
+    await noteConfusion(db, 'b:根', '很', new Date(2026, 9, 6));
+    await noteRung(db, 'b:根', 2, true, new Date(2026, 9, 6));
+    expect((await getConfusions(db)).get('b:根')).toEqual(['跟', '很']);
+    expect((await getRungs(db)).get('b:根')).toBe(2);
+    await clearConfusion(db, 'b:根');
+    expect((await getConfusions(db)).has('b:根')).toBe(false);
   });
 });

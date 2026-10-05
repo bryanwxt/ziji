@@ -8,6 +8,7 @@ import { dapeiBoard, zuciBoard } from '../practice/pairs';
 import type { CardRecord, SessionRecord, Word } from '../types';
 import { startRung } from './ladder';
 import { buildRound, type Ask, type PracticeItem, type RoundWord } from './round';
+import { fishItem } from '../activities/components/zibian';
 import { introducedNewWords } from './runner';
 
 /** Words in a free-play round (two questions each). */
@@ -51,9 +52,29 @@ export function askable(word: Word | undefined, pool: Word[], voice: boolean): (
   };
 }
 
-export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng): PracticeItem[] {
+/** At most two 钓鱼 items a lesson (spec 2026-10-05 §3.4). */
+export const MAX_FISH = 2;
+
+/** Puts up to two 钓鱼 items into the round, spread out (a third and two thirds in), never beside the same word. */
+export function withFish(items: PracticeItem[], fishIds: string[]): PracticeItem[] {
+  const out = [...items];
+  const ids = fishIds.slice(0, MAX_FISH);
+  ids.forEach((wordId, k) => {
+    let at = Math.round((out.length * (k + 1)) / (ids.length + 1));
+    while (at < out.length && (out[at - 1]?.wordId === wordId || out[at]?.wordId === wordId)) at++;
+    out.splice(at, 0, { wordId, rung: 2, ask: 'fish', grades: null, retry: false });
+  });
+  return out;
+}
+
+export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map()): PracticeItem[] {
   const words = practiceWords(rec, rungs).filter((w) => askable(wordsById.get(w.wordId), pool, voice)('read'));
-  return buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice)(ask), rng);
+  const round = buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice)(ask), rng);
+  const fish = [...confusions.keys()].filter((id) => {
+    const w = wordsById.get(id);
+    return w && !w.paused && fishItem(w, confusions.get(id)!, new Set(), mulberry32(1)) !== null;
+  });
+  return withFish(round, fish);
 }
 
 /** 再玩一会儿: a round of words he has begun, from their own rungs, twice each; practice only. */

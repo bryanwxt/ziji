@@ -54,4 +54,13 @@ describe('a 练一练 question (spec 2026-10-05 §3.2)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'meaning' }));
   });
+  it('钓鱼: the pond with the look-alike he picked among the fish; the answer comes back as a 字辨 answer', () => {
+    const gen = pool.find((w) => w.text === '根')!;
+    const onDone = vi.fn();
+    render(<PracticeQuestion {...base} word={gen} confused={['跟']} item={{ wordId: gen.id, rung: 2, ask: 'fish', grades: null, retry: false }} onDone={onDone} />);
+    expect([...document.querySelectorAll('.fishtile')].map((b) => b.textContent)).toContain('跟');
+    fireEvent.click(screen.getByRole('button', { name: '根' }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'zibian', correct: true }));
+  });
 });
