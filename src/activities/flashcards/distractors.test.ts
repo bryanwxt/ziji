@@ -89,3 +89,13 @@ it('never offers another correct reading of a polyphonic character as wrong', ()
   }
 });
 });
+
+describe('sweep: hear-and-find choices near his level', () => {
+  it('never an HSK 7–9 character for a first-level word when nearer ones are there', async () => {
+    const { builtinWords } = await import('../../content');
+    const pool = builtinWords(0);
+    const ta = pool.find((w) => w.text === '他')!;
+    for (let k = 1; k < 30; k++) for (const d of pickCharacterDistractors(ta, pool, mulberry32(k))) expect(d.level ?? 9, d.text).toBeLessThanOrEqual(3);
+  });
+});
+

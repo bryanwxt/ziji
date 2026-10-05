@@ -215,15 +215,17 @@ const sameAs = (a: string, b: string) => SAME.some((g) => g.has(a) && g.has(b));
  * Wrong choices for "which 成语 fits" (final review I7): his own 成语 first, then built-in ones used the other way (an adverb-like
  * 成语 against a describing one, so only one fits the sentence), near its level; never a near-synonym.
  */
-export function idiomWrongs(text: string, rng: Rng, own: string[] = []): string[] {
+export function idiomWrongs(text: string, rng: Rng, own: string[] = [], his?: number): string[] {
   const known = BY_TEXT.has(text);
   const adverb = ADVERBIAL.has(text);
   const fits = (t: string) => t !== text && !sameAs(text, t) && (!known || !BY_TEXT.has(t) || ADVERBIAL.has(t) !== adverb);
   const level = chengyuLevel(text);
   const mine = [...new Set(own)].filter(fits);
   const others = CHENGYU.map((x) => x.text).filter((t) => fits(t) && !mine.includes(t));
-  const near = others.filter((t) => Math.abs(chengyuLevel(t) - level) <= 1);
-  const rest = others.filter((t) => !near.includes(t) && chengyuLevel(t) <= level + 1);
+  // near the 成语's own level, and never above his window when it is known (sweep)
+  const inWindow = (t: string) => his === undefined || chengyuLevel(t) <= his + 1;
+  const near = others.filter((t) => Math.abs(chengyuLevel(t) - level) <= 1 && inWindow(t));
+  const rest = others.filter((t) => !near.includes(t) && chengyuLevel(t) <= level + 1 && inWindow(t));
   return [...shuffle(mine, rng), ...shuffle(near, rng), ...shuffle(rest, rng)].slice(0, 3);
 }
 

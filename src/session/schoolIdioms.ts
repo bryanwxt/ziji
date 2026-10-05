@@ -40,7 +40,8 @@ export async function addSchoolIdioms(db: AppDb, text: string, now: Date) {
     const meaning = i.meaning ?? chengyuOf(i.text)?.meaning;
     const had = byText.get(i.text);
     if (had) {
-      out.push({ ...had, tags: [...new Set([...(had.tags ?? []), '成语'])], ...(had.meaning || !meaning ? {} : { meaning }) });
+      // a 成语 to read: back in his lessons if it was paused, and not a writing word (sweep)
+      out.push({ ...had, paused: false, writeable: false, tags: [...new Set([...(had.tags ?? []), '成语'])], ...(had.meaning || !meaning ? {} : { meaning }) });
       tagged.push(i.text);
       return;
     }

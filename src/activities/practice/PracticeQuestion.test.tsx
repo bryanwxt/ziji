@@ -112,3 +112,24 @@ describe('final review I2: Truffle peeks only at a word he missed', () => {
   });
 });
 
+describe('sweep: 成语 questions', () => {
+  it('a retry asks the same 成语 he missed', () => {
+    const xin = pool.find((w) => w.text === '心')!;
+    for (let k = 0; k < 6; k++) {
+      const { unmount } = render(<PracticeQuestion {...base} level={1} word={xin} item={{ wordId: xin.id, rung: 5, ask: 'idiomFit', grades: null, retry: true, missed: true, idiom: '一心一意' }} onDone={vi.fn()} />);
+      expect([...document.querySelectorAll('.choice')].map((b) => b.textContent)).toContain('一心一意');
+      unmount();
+    }
+  });
+  it('reports which 成语 it asked, so a miss can bring it back', () => {
+    const xin = pool.find((w) => w.text === '心')!;
+    const onDone = vi.fn();
+    render(<PracticeQuestion {...base} level={1} word={xin} item={{ wordId: xin.id, rung: 5, ask: 'idiom', grades: 'meaning', retry: false }} onDone={onDone} />);
+    const text = [...document.querySelectorAll('.idiom > span')].map((s) => s.textContent).join('');
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.choice')!);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone.mock.calls[0]![0].idiom).toHaveLength(4);
+    expect(text).toContain('？');
+  });
+});
+

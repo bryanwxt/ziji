@@ -17,9 +17,12 @@ function sharesComponent(a: Word, b: Word): boolean {
 export function pickCharacterDistractors(target: Word, pool: Word[], rng: Rng, n = 3): Word[] {
   const sound = toneless(target.pinyin);
   const eligible = pool.filter((w) => lengthOf(w) === lengthOf(target) && w.text !== target.text && toneless(w.pinyin) !== sound);
+  // near his level first: a first-level word never gets an HSK 7–9 look-alike while nearer ones are there (sweep)
+  const near = target.level === null ? eligible : eligible.filter((w) => (w.level ?? 9) <= target.level! + 2);
   const tiers = [
-    eligible.filter((w) => sharesComponent(target, w)),
-    eligible.filter((w) => w.level !== null && w.level === target.level),
+    near.filter((w) => sharesComponent(target, w)),
+    near.filter((w) => w.level !== null && w.level === target.level),
+    near,
     eligible,
   ];
   const picked: Word[] = [];

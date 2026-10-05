@@ -135,7 +135,7 @@ export function currentPracticeItem(rec: SessionRecord): PracticeItem | null {
   return currentStep(rec) === 'practice' ? (rec.practiceQueue?.[rec.practiceIndex ?? 0] ?? null) : null;
 }
 
-export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawElapsedMs: number, inContext = false): SessionRecord {
+export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawElapsedMs: number, inContext = false, idiom?: string): SessionRecord {
   const item = currentPracticeItem(rec);
   if (!item) return rec;
   const elapsedMs = Math.min(rawElapsedMs, MAX_CARD_MS);
@@ -145,7 +145,7 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
     const { due: _due, ...again } = item; // a retry is practice only, never a due first appearance
     let at = Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length);
     while (at < queue.length && (queue[at - 1]?.wordId === item.wordId || queue[at]?.wordId === item.wordId)) at++; // never beside the same word (sweep)
-    queue.splice(at, 0, { ...again, grades: null, retry: true, missed: true });
+    queue.splice(at, 0, { ...again, grades: null, retry: true, missed: true, ...(idiom ? { idiom } : {}) }); // the same 成语 comes back (sweep)
   }
   const next: SessionRecord = {
     ...rec,

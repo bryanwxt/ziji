@@ -29,16 +29,8 @@ import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
 import { PracticeQuestion, type PracticeResult } from '../activities/practice/PracticeQuestion';
 import { planFreePlay, planPractice } from '../session/practice';
-import { idiomsFor, learnerLevel } from '../content/chengyu';
+import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { cheer, requestGreeting } from '../ui/truffle/greeting';
-
-/** His level for the 成语 window (spec 2026-10-05 §4): the level of the next built-in word he hasn't started. */
-const levels = new WeakMap<Knowledge, number>();
-function levelOf(know: Knowledge): number {
-  let l = levels.get(know);
-  if (l === undefined) levels.set(know, (l = learnerLevel(know.words, new Set(know.cards.filter((c) => c.kind === 'recognise').map((c) => c.wordId)))));
-  return l;
-}
 import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import { starsOf } from '../stats/stats';
 import {
@@ -46,7 +38,7 @@ import {
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice, wordMisses,
 } from '../session/runner';
 import { addAnswer, clearConfusion, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
-import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind } from '../types';
+import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
 import { useApp } from './AppContext';
@@ -57,6 +49,13 @@ import { WorldScene } from '../ui/worlds/WorldScene';
 import { currentWorld, timeOfDay } from '../fun/worlds';
 import { InkIcon } from '../ui/icons/InkIcon';
 
+/** His level for the 成语 window (spec 2026-10-05 §4): the level of the next built-in word he hasn't started. */
+const levels = new WeakMap<Knowledge, number>();
+function levelOf(know: Knowledge): number {
+  let l = levels.get(know);
+  if (l === undefined) levels.set(know, (l = learnerLevel(know.words, new Set(know.cards.filter((c) => c.kind === 'recognise').map((c) => c.wordId)))));
+  return l;
+}
 
 interface Loaded {
   rec: SessionRecord;
@@ -280,7 +279,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         playSfx('combo');
         cheer(comboPraise(nextCombo)); // Truffle praises him (parent, 2026-10-05: not a reddish banner)
       }
-      await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext));
+      await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom));
     })();
 
   const onWriteDone = (r: WriteResult | null) =>

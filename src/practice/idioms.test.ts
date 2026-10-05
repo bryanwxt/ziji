@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HSK_WORDS } from '../content';
-import { builtinIdiom, CHENGYU, chengyuOf, type Idiom } from '../content/chengyu';
+import { builtinIdiom, CHENGYU, chengyuLevel, chengyuOf, type Idiom } from '../content/chengyu';
 import { mulberry32 } from '../lib/random';
 import { idiomFitItem, idiomGap, idiomZuju } from './idioms';
 
@@ -66,3 +66,13 @@ describe('idiomZuju (build a sentence)', () => {
     expect(idiomZuju({ text: '心花怒放', pinyin: 'xīn huā nù fàng', sentences: ['心花怒放。'], school: true }, mulberry32(1))).toBeNull();
   });
 });
+
+describe("sweep: 'pick the 成语' wrong choices stay in his window", () => {
+  it('never above one level over his own', () => {
+    for (let k = 1; k < 40; k++) {
+      const item = idiomFitItem(asIdiom('一心一意'), null, mulberry32(k), 1)!;
+      for (const o of item.options) expect(chengyuLevel(o), o).toBeLessThanOrEqual(2);
+    }
+  });
+});
+

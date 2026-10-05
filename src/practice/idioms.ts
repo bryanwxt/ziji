@@ -33,12 +33,12 @@ export function idiomGap(idiom: Idiom, blank: string | null, rng: Rng): IdiomGap
 }
 
 /** Which 成语 fits the sentence: one of its sentences with it blanked; wrong choices from `others` (his own) first, then the list near its level. */
-export function idiomFitItem(idiom: Idiom, others: Idiom[] | null, rng: Rng): Extract<UseItem, { kind: 'fit' }> | null {
+export function idiomFitItem(idiom: Idiom, others: Idiom[] | null, rng: Rng, level?: number): Extract<UseItem, { kind: 'fit' }> | null {
   const full = shuffle(idiom.sentences, rng)[0];
   if (!full) return null;
   const at = full.indexOf(idiom.text);
   if (at < 0) return null;
-  const wrong = idiomWrongs(idiom.text, rng, (others ?? []).map((i) => i.text));
+  const wrong = idiomWrongs(idiom.text, rng, (others ?? []).map((i) => i.text), level);
   if (wrong.length < 3) return null;
   return { kind: 'fit', wordId: null, word: idiom.text, meaning: idiom.meaning, before: full.slice(0, at), after: full.slice(at + idiom.text.length), options: shuffle([idiom.text, ...wrong], rng) };
 }

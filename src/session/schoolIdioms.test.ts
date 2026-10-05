@@ -32,3 +32,13 @@ describe('school 成语 typed by the parent (spec 2026-10-05 §4)', () => {
     expect(ws[0]).toMatchObject({ tags: ['成语'], meaning: 'with one heart', listName: '听写 3' });
   });
 });
+
+describe('sweep: re-adding a word as a school 成语', () => {
+  it('a paused or writeable word he already has comes back as a 成语 to read', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('一心一意', { id: 'p:1', source: 'parent', paused: true, writeable: true })]);
+    await addSchoolIdioms(db, '一心一意', new Date(2026, 9, 6));
+    expect((await allWords(db))[0]).toMatchObject({ paused: false, writeable: false, tags: ['成语'] });
+  });
+});
+

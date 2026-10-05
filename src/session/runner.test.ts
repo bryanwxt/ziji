@@ -329,3 +329,12 @@ describe('sweep: a missed 钓鱼 is not asked again (at most two a lesson)', () 
   });
 });
 
+describe('sweep: a 成语 missed comes back as the same 成语', () => {
+  it('the retry remembers which 成语 it was', () => {
+    const plan: SessionPlan = { steps: ['practice'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, practiceTimeBoxMs: 1e9, writeCandidates: [], writeCount: 0 };
+    const items = [{ wordId: 'b:颜', rung: 5 as const, ask: 'idiom' as const, grades: null, retry: false }, ...['b:x', 'b:y', 'b:z', 'b:w', 'b:v'].map((wordId) => ({ wordId, rung: 1 as const, ask: 'read' as const, grades: null, retry: false }))];
+    const rec = afterPracticeAnswer(startPractice(createSessionRecord(plan, 'd', 0), items), false, 1000, false, '五颜六色');
+    expect(rec.practiceQueue!.find((x) => x.retry && x.wordId === 'b:颜')?.idiom).toBe('五颜六色');
+  });
+});
+
