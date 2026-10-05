@@ -1,6 +1,6 @@
-/** The context ladder (spec 2026-10-05 §3.2): 字, 词语, 句子, 组句 (phase B); 成语 comes in phase C. */
-export type Rung = 1 | 2 | 3 | 4;
-export const TOP_RUNG: Rung = 4;
+/** The context ladder (spec 2026-10-05 §3.2): 字, 词语, 句子, 组句, 成语. */
+export type Rung = 1 | 2 | 3 | 4 | 5;
+export const TOP_RUNG: Rung = 5;
 
 /** After an answer at `rung`: a right one raises his best to it; a miss puts the next start one rung below it. */
 export function nextRung(best: number, rung: Rung, correct: boolean): number {

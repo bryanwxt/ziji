@@ -20,7 +20,9 @@ describe('练一练: one word, many contexts (spec 2026-10-05 §3)', () => {
     expect(climb(1, 3)).toEqual([1, 2, 3]);
     expect(climb(2, 1)).toEqual([2]);
     expect(climb(3, 2)).toEqual([3, 4]);
-    expect(climb(4, 3)).toEqual([4, 3, 4]);
+    expect(climb(4, 3)).toEqual([4, 5, 3]);
+    expect(climb(4, 4)).toEqual([4, 5, 3, 4]);
+    expect(climb(5, 3)).toEqual([5, 3, 4]);
   });
   it('a new word appears three times, climbing 字 → 词语 → 句子', () => {
     const r = buildRound(lesson(1), all, mulberry32(1));
@@ -73,9 +75,10 @@ describe('练一练: one word, many contexts (spec 2026-10-05 §3)', () => {
     expect(r.filter((x) => x.wordId === 'r0').map((x) => x.grades)).toEqual(['recognise', 'meaning']);
     expect(r.every((x) => !x.retry)).toBe(true);
   });
-  it('rung 1 asks read or listen, rung 2 the 组词 gap, rung 3 a sentence', () => {
+  it('rung 1 asks read or listen, rung 2 a 词语 question, rung 3 a sentence, rung 4 组句, rung 5 a 成语', () => {
     const r = buildRound(lesson(9), all, mulberry32(9));
-    for (const x of r) expect({ 1: ['read', 'listen'], 2: ['word', 'pair', 'match'], 3: ['fit', 'usage'], 4: ['build'] }[x.rung]).toContain(x.ask);
+    const asks: Record<number, string[]> = { 1: ['read', 'listen'], 2: ['word', 'pair', 'match', 'whole'], 3: ['fit', 'usage'], 4: ['build'], 5: ['idiom', 'idiomFit', 'idiomBuild'] };
+    for (const x of r) expect(asks[x.rung]).toContain(x.ask);
   });
 });
 
@@ -93,3 +96,17 @@ it('组句 (rung 4) grades use, like a sentence', () => {
   const r = buildRound([revision('r0', 3, 2)], all, mulberry32(7));
   expect(r.map((x) => [x.rung, x.grades])).toEqual([[3, 'recognise'], [4, 'use']]);
 });
+
+describe('成语, the fifth rung (spec 2026-10-05 §3.2, phase C)', () => {
+  it('a 成语 question grades the meaning card once (spec §3.5)', () => {
+    const items = buildRound([{ wordId: 'a', isNew: false, from: 5, appearances: 1, gradesRecognise: false, gradesMeaning: true }], () => true, mulberry32(1));
+    expect(items[0]).toMatchObject({ rung: 5, grades: 'meaning' });
+    expect(['idiom', 'idiomFit', 'idiomBuild']).toContain(items[0]!.ask);
+  });
+  it('a word with no 成语 falls back to 组句, then to the sentence rung', () => {
+    const one = (canAsk: (id: string, a: Ask) => boolean) => buildRound([{ wordId: 'a', isNew: false, from: 5, appearances: 1, gradesRecognise: false, gradesMeaning: false }], canAsk, mulberry32(1))[0];
+    expect(one((_, a) => !a.startsWith('idiom'))).toMatchObject({ rung: 4, ask: 'build', grades: 'use' });
+    expect(one((_, a) => !a.startsWith('idiom') && a !== 'build')).toMatchObject({ rung: 3, grades: 'use' });
+  });
+});
+

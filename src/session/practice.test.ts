@@ -3,7 +3,7 @@ import { wordCue } from '../activities/flashcards/meaning';
 import { builtinWords } from '../content';
 import { bankFor } from '../content/sentenceBank';
 import { mulberry32 } from '../lib/random';
-import { makeCard } from '../test/fixtures';
+import { makeCard, makeWord } from '../test/fixtures';
 import type { SessionPlan, Word } from '../types';
 import { askable, planFreePlay, planPractice, practiceWords, withFish } from './practice';
 import { fishItem } from '../activities/components/zibian';
@@ -96,3 +96,18 @@ describe('钓鱼 in the round (spec 2026-10-05 §3.4)', () => {
     if (!fishItemFor(shan)) expect(items.some((x) => x.ask === 'fish')).toBe(false);
   });
 });
+
+describe('成语 (spec 2026-10-05 §3.2 rung 5, §4)', () => {
+  const xin = makeWord('心', { id: 'b:心', level: 1 });
+  const school = makeWord('五颜六色', { id: 'p:9', source: 'parent', tags: ['成语'] });
+  it('rung 5 needs a 成语 in his window that uses the word', () => {
+    for (const a of ['idiom', 'idiomFit', 'idiomBuild'] as const) expect(askable(xin, [], true, 1)(a), a).toBe(true);
+    expect(askable(makeWord('吗', { id: 'b:吗', level: 1 }), [], true, 1)('idiom')).toBe(false);
+    expect(askable(xin, [], true, 1)('whole')).toBe(false);
+  });
+  it('a school 成语 completes itself at rung 2 and has no rung 5 of its own', () => {
+    expect(askable(school, [], true, 1)('whole')).toBe(true);
+    for (const a of ['idiom', 'idiomFit', 'idiomBuild'] as const) expect(askable(school, [], true, 1)(a), a).toBe(false);
+  });
+});
+

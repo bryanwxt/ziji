@@ -31,7 +31,7 @@ export function idiomGap(idiom: Idiom, blank: string | null, rng: Rng): IdiomGap
 }
 
 /** Which 成语 fits the sentence: one of its sentences with it blanked; wrong choices from `others` (his own) first, then the list near its level. */
-export function idiomFitItem(idiom: Idiom, others: Idiom[] | null, rng: Rng): UseItem | null {
+export function idiomFitItem(idiom: Idiom, others: Idiom[] | null, rng: Rng): Extract<UseItem, { kind: 'fit' }> | null {
   const full = shuffle(idiom.sentences, rng)[0];
   if (!full) return null;
   const at = full.indexOf(idiom.text);

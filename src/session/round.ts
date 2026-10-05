@@ -4,9 +4,17 @@ import { shuffle, type Rng } from '../lib/random';
 import { TOP_RUNG, type Rung } from './ladder';
 
 /** read: pick the pinyin · listen: hear it, find it · word: the 组词 gap · pair: join 组词 halves · match: join 搭配 ·
- *  fit: the sentence gap · usage: 用对了吗 · build: 组句 tiles · fish: 钓鱼 for a look-alike he confused (not a rung). */
-export type Ask = 'read' | 'listen' | 'word' | 'pair' | 'match' | 'fit' | 'usage' | 'build' | 'fish';
-export const ASKS: Record<Rung, Ask[]> = { 1: ['read', 'listen'], 2: ['word', 'pair', 'match'], 3: ['fit', 'usage'], 4: ['build'] };
+ *  whole: complete a school 成语 itself (its 词语 rung) · fit: the sentence gap · usage: 用对了吗 · build: 组句 tiles ·
+ *  idiom: complete a 成语 that uses the word · idiomFit: pick that 成语 for a sentence · idiomBuild: 组句 with it ·
+ *  fish: 钓鱼 for a look-alike he confused (not a rung). */
+export type Ask = 'read' | 'listen' | 'word' | 'pair' | 'match' | 'whole' | 'fit' | 'usage' | 'build' | 'idiom' | 'idiomFit' | 'idiomBuild' | 'fish';
+export const ASKS: Record<Rung, Ask[]> = {
+  1: ['read', 'listen'],
+  2: ['word', 'pair', 'match', 'whole'],
+  3: ['fit', 'usage'],
+  4: ['build'],
+  5: ['idiom', 'idiomFit', 'idiomBuild'],
+};
 /** Which memory card an answer grades (spec §3.5); null = practice only (a retry, or already graded today). */
 export type Grades = 'recognise' | 'meaning' | 'use' | null;
 
@@ -27,11 +35,11 @@ export interface RoundWord {
 const FIRST_GAP = 3; // a word's second appearance comes at least 2 items after its first
 const LATER_GAP = 5; // then at least 4 items apart
 
-/** The rungs a word climbs, one per appearance; past the top it goes round the upper rungs again (3, 2, 3…). */
+/** The rungs a word climbs, one per appearance; past the top it goes round the upper rungs again (3, 4, 5, 3…). */
 export function climb(from: Rung, n: number): Rung[] {
   return Array.from({ length: n }, (_, i) => {
     let r = from + i;
-    while (r > TOP_RUNG) r -= 2;
+    while (r > TOP_RUNG) r -= 3;
     return r as Rung;
   });
 }
@@ -77,10 +85,10 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
     const { s, rung, ask } = pick;
     let grades: Grades = null;
     if (s.next === 0 && s.w.gradesRecognise) grades = 'recognise';
-    else if (rung === 2 && s.w.gradesMeaning && !s.meaningDone) {
-      grades = 'meaning';
+    else if ((rung === 2 || rung === 5) && s.w.gradesMeaning && !s.meaningDone) {
+      grades = 'meaning'; // 词语 and 成语 grade meaning (spec §3.5)
       s.meaningDone = true;
-    } else if (rung >= 3) grades = 'use';
+    } else if (rung === 3 || rung === 4) grades = 'use';
     out.push({ wordId: s.w.wordId, rung, ask, grades, retry: false, ...(s.next === 0 && s.w.due ? { due: true } : {}) });
     s.readyAt = p + (s.next === 0 ? FIRST_GAP : LATER_GAP);
     s.next += 1;

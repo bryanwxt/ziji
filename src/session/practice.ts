@@ -10,6 +10,19 @@ import { startRung } from './ladder';
 import { buildRound, type Ask, type PracticeItem, type RoundWord } from './round';
 import { fishItem } from '../activities/components/zibian';
 import { introducedNewWords } from './runner';
+import { idiomOf, idiomsFor, isIdiomWord, type Idiom } from '../content/chengyu';
+import { idiomFitItem, idiomGap, idiomZuju } from '../practice/idioms';
+
+const idiomCache = new WeakMap<Word[], Map<string, Idiom[]>>();
+/** The 成语 for a word at his level, worked out once per word list (planning asks each word several times). */
+function idiomsOf(word: Word, level: number, pool: Word[]): Idiom[] {
+  let byWord = idiomCache.get(pool);
+  if (!byWord) idiomCache.set(pool, (byWord = new Map()));
+  const key = `${word.id}|${word.text}|${level}`;
+  let out = byWord.get(key);
+  if (!out) byWord.set(key, (out = idiomsFor(word, level, pool)));
+  return out;
+}
 
 /** Words in a free-play round (two questions each). */
 export const FREE_PLAY_WORDS = 10;
@@ -34,8 +47,8 @@ export function practiceWords(rec: SessionRecord, rungs: ReadonlyMap<string, num
   return [...fresh, ...revision];
 }
 
-/** Whether a question type can be asked of this word: reading always, listening with the voice on, the rest when their content exists. */
-export function askable(word: Word | undefined, pool: Word[], voice: boolean): (ask: Ask) => boolean {
+/** Whether a question type can be asked of this word: reading always, listening with the voice on, the rest when their content exists. `level` is his (spec §4). */
+export function askable(word: Word | undefined, pool: Word[], voice: boolean, level = 1): (ask: Ask) => boolean {
   return (ask) => {
     if (!word || word.paused) return false;
     switch (ask) {
@@ -47,6 +60,10 @@ export function askable(word: Word | undefined, pool: Word[], voice: boolean): (
       case 'pair': return zuciBoard(word, mulberry32(1)) !== null;
       case 'match': return dapeiQuestion(word, mulberry32(1)) !== null;
       case 'build': return zujuFor(word).length > 0;
+      case 'whole': { const i = idiomOf(word); return !!i && idiomGap(i, null, mulberry32(1)) !== null; }
+      case 'idiom': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomGap(i, word.text, mulberry32(1)) !== null);
+      case 'idiomFit': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomFitItem(i, null, mulberry32(1)) !== null);
+      case 'idiomBuild': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomZuju(i, mulberry32(1)) !== null);
       case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
     }
   };
@@ -67,9 +84,9 @@ export function withFish(items: PracticeItem[], fishIds: string[]): PracticeItem
   return out;
 }
 
-export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map()): PracticeItem[] {
-  const words = practiceWords(rec, rungs).filter((w) => askable(wordsById.get(w.wordId), pool, voice)('read'));
-  const round = buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice)(ask), rng);
+export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map(), level = 1): PracticeItem[] {
+  const words = practiceWords(rec, rungs).filter((w) => askable(wordsById.get(w.wordId), pool, voice, level)('read'));
+  const round = buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice, level)(ask), rng);
   const fish = [...confusions.keys()].filter((id) => {
     const w = wordsById.get(id);
     return w && !w.paused && fishItem(w, confusions.get(id)!, new Set(), mulberry32(1)) !== null;
@@ -78,12 +95,12 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
 }
 
 /** 再玩一会儿: a round of words he has begun, from their own rungs, twice each; practice only. */
-export function planFreePlay(cards: CardRecord[], words: Word[], rungs: ReadonlyMap<string, number>, voice: boolean, rng: Rng, n = FREE_PLAY_WORDS): PracticeItem[] {
+export function planFreePlay(cards: CardRecord[], words: Word[], rungs: ReadonlyMap<string, number>, voice: boolean, rng: Rng, n = FREE_PLAY_WORDS, level = 1): PracticeItem[] {
   const byId = new Map(words.filter((w) => !w.paused).map((w) => [w.id, w]));
   const ids = shuffle([...new Set(cards.filter((c) => c.kind === 'recognise' && byId.has(c.wordId)).map((c) => c.wordId))], rng).slice(0, n);
   const round = buildRound(
     ids.map((wordId) => ({ wordId, isNew: false, from: startRung(rungs.get(wordId) ?? 0), appearances: 2, gradesRecognise: false, gradesMeaning: false })),
-    (id, ask) => askable(byId.get(id), words, voice)(ask),
+    (id, ask) => askable(byId.get(id), words, voice, level)(ask),
     rng,
   );
   return round.map((x) => ({ ...x, grades: null, retry: true }));
