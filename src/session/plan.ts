@@ -1,13 +1,13 @@
 import { endOfLocalDay } from '../lib/date';
 import { shuffle, type Rng } from '../lib/random';
 import { meaningCue } from '../activities/flashcards/meaning';
-import { isKnown } from '../srs/scheduler';
 import { PACE_START } from './pace';
+import { learnerLevel } from '../content/chengyu';
+import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
 
 export const REVIEW_CAP = 60;
 export const BACKLOG_PAUSE = 40;
-export const MAX_NEW_WRITE = 2;
 export const STEP_ORDER: ActivityKind[] = ['newwords', 'practice', 'writing', 'speaking']; // spec 2026-10-05 §2
 
 const LAST = Number.MAX_SAFE_INTEGER;
@@ -48,10 +48,6 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const perDay = newPerDay ?? Math.min(settings.newPerDay, PACE_START);
   const newLimit = backlog > BACKLOG_PAUSE || !settings.activities.newwords ? 0 : perDay;
 
-  const write = ofKind('write');
-  const hasWrite = new Set(write.map((c) => c.wordId));
-  const knownIds = new Set(recognise.filter((c) => isKnown(c.fsrs)).map((c) => c.wordId));
-
   // Meaning practice: due meaning cards, and begun words that have a 组词 cue but no meaning card yet.
   const meaning = ofKind('meaning');
   const hasMeaning = new Set(meaning.map((c) => c.wordId));
@@ -59,6 +55,11 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
 
   const newWords = active.filter((w) => !started.has(w.id)).sort(newWordOrder).slice(0, newLimit);
   const steps: StepKind[] = STEP_ORDER.filter((s) => settings.activities[s]); // spec 2026-10-05 §2: no separate 用一用
+  // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
+  const writeUnits = settings.activities.writing
+    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), cutoff, target: writeCharTarget(settings.sessionMinutes) })
+    : [];
+  const writeItems = orderWriteItems(writeUnits);
 
   return {
     steps,
@@ -66,21 +67,9 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     newWordIds: newWords.map((w) => w.id),
     flashTimeBoxMs: 0, // only lessons saved before 2026-10-05 time-boxed 认一认
     practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE),
-    writeCandidates: [
-      ...dueOf(write).map((c) => ({ wordId: c.wordId, isNew: c.fsrs.reps === 0 })), // never written yet (a school 听写 mistake): trace and hint first
-      ...active
-        .filter((w) => w.writeable && knownIds.has(w.id) && !hasWrite.has(w.id))
-        .sort(
-          (a, b) =>
-            (a.writeSkippedAt ?? 0) - (b.writeSkippedAt ?? 0) || // strokes that failed to load go last
-            (practised.get(b.id) ?? -1) - (practised.get(a.id) ?? -1) || // words from his lessons first, newest first
-            (b.rank ?? -1) - (a.rank ?? -1) || // then placed characters near his level, going down
-            newWordOrder(a, b),
-        )
-        .slice(0, MAX_NEW_WRITE)
-        .map((w) => ({ wordId: w.id, isNew: true })),
-    ],
-    writeCount: settings.sessionMinutes < 25 ? 3 : 4, // spec §20 part 3: fewer words, each new one written three ways
+    writeCandidates: writeUnits.map((u) => ({ wordId: u.wordId, isNew: u.isNew })),
+    writeItems,
+    writeCount: writeItems.length,
     meaningReviewIds: dueOf(meaning).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
     newMeaningIds: active
       .filter((w) => started.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)

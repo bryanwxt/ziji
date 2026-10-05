@@ -79,7 +79,7 @@ describe("today's plan knows what he has practised", () => {
     await putCards(db, ws.map((w) => ({ id: `${w.id}:recognise`, wordId: w.id, kind: 'recognise' as const, fsrs: seededKnownCard(now, 20) })));
     await addReviewLog(db, { cardId: 'b:1:recognise', wordId: 'b:1', kind: 'recognise', at: now.getTime() - 3_600_000, rating: Rating.Good, correct: true });
     const rec = await startOrResumeSession(db, now);
-    expect(rec.plan.writeCandidates.map((c) => c.wordId)).toEqual(['b:1', 'b:5']);
+    expect(rec.plan.writeCandidates.map((c) => c.wordId).slice(0, 2)).toEqual(['b:1', 'b:5']); // then the rest he reads, going down (spec 2026-10-05 §5)
   });
 });
 

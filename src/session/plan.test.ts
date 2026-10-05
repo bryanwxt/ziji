@@ -47,7 +47,7 @@ describe('buildSessionPlan', () => {
     expect(buildSessionPlan({ cards: due(40), words: ws, settings: settings(), now, practised }).newWordIds).toHaveLength(PACE_START); // without a pace, a lesson starts at the pace's start (spec 2026-10-05 §2.2)
   });
 
-  it('offers due write cards first, then at most 2 new ones for known writeable words', () => {
+  it('写一写 (spec 2026-10-05 §5): due writing first, then characters he reads, at his level going down', () => {
     const ws = words(6).map((w, i) => ({ ...w, writeable: i !== 4 }));
     const future = new Date(2026, 9, 20);
     const cards = [
@@ -59,13 +59,26 @@ describe('buildSessionPlan', () => {
       { wordId: 'b:0', isNew: false },
       { wordId: 'b:3', isNew: true }, // placed characters near his level first, going down
       { wordId: 'b:2', isNew: true },
+      { wordId: 'b:1', isNew: true },
     ]);
   });
 
-  it("sizes the writing step and 练一练's time box from session minutes", () => {
-    const p20 = buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 20 }), now });
-    expect([p20.writeCount, p20.practiceTimeBoxMs]).toEqual([3, Math.round((20 * 60_000 * 12) / 30)]);
-    expect(buildSessionPlan({ cards: [], words: [], settings: settings({ sessionMinutes: 25 }), now }).writeCount).toBe(4); // spec §20 part 3: 4 words at 30 minutes, 3 under 25
+  it("sizes 写一写 (9 characters at 30 minutes, 6 at 20) and 练一练's time box from session minutes", () => {
+    const ws = words(12);
+    const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
+    const chars = (min: number) => new Set(buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: min }), now }).writeItems!.map((i) => `${i.wordId}#${i.at}`)).size;
+    expect([chars(30), chars(20)]).toEqual([9, 6]);
+    const p20 = buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: 20 }), now });
+    expect(p20.writeCount).toBe(p20.writeItems!.length); // each never-written character is traced, then written from memory
+    expect(p20.writeCount).toBe(12);
+    expect(p20.practiceTimeBoxMs).toBe(Math.round((20 * 60_000 * 12) / 30));
+  });
+  it("writes today's new words after due writing, and nothing above his level", () => {
+    const ws = [makeWord('甲', { id: 'b:a', rank: 1, level: 1 }), makeWord('乙', { id: 'b:b', rank: 2, level: 3 }), makeWord('丙', { id: 'b:c', rank: 3, level: 2 })];
+    const cards = [makeCard('b:a', 'recognise', new Date(2026, 9, 20), true), makeCard('b:b', 'recognise', new Date(2026, 9, 20), true)];
+    const plan = buildSessionPlan({ cards, words: ws, settings: settings(), now, newPerDay: 1 });
+    expect(plan.newWordIds).toEqual(['b:c']);
+    expect(plan.writeCandidates.map((c) => c.wordId)).toEqual(['b:c', 'b:a']); // 乙 is HSK 3; his level is 2 (丙, his next new word)
   });
 
   it('only includes switched-on activities, in the fixed order', () => {
@@ -79,7 +92,7 @@ describe('new writing words', () => {
     const ws = [makeWord('甲', { id: 'b:a', rank: 1, writeable: true, writeSkippedAt: now.getTime() }), makeWord('乙', { id: 'b:b', rank: 2, writeable: true }), makeWord('丙', { id: 'b:c', rank: 3, writeable: true })];
     const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
     const plan = buildSessionPlan({ cards, words: ws, settings: settings(), now });
-    expect(plan.writeCandidates.map((c) => c.wordId)).toEqual(['b:c', 'b:b']);
+    expect(plan.writeCandidates.map((c) => c.wordId)).toEqual(['b:c', 'b:b', 'b:a']);
   });
 });
 
@@ -87,12 +100,12 @@ describe('写一写 after placement', () => {
   const known = (ws: ReturnType<typeof words>) => ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
   it('with no lesson words yet, starts near his level (the hardest character he recognises), not at the first characters', () => {
     const ws = words(10);
-    expect(buildSessionPlan({ cards: known(ws), words: ws, settings: settings(), now }).writeCandidates.map((c) => c.wordId)).toEqual(['b:9', 'b:8']);
+    expect(buildSessionPlan({ cards: known(ws), words: ws, settings: settings(), now }).writeCandidates.map((c) => c.wordId).slice(0, 2)).toEqual(['b:9', 'b:8']);
   });
   it('practises words from his lessons first, newest first, before placed characters', () => {
     const ws = words(10);
     const practised = new Map([['b:1', now.getTime() - 86_400_000], ['b:2', now.getTime() - 3_600_000]]);
-    expect(buildSessionPlan({ cards: known(ws), words: ws, settings: settings(), now, practised }).writeCandidates.map((c) => c.wordId)).toEqual(['b:2', 'b:1']);
+    expect(buildSessionPlan({ cards: known(ws), words: ws, settings: settings(), now, practised }).writeCandidates.map((c) => c.wordId).slice(0, 2)).toEqual(['b:2', 'b:1']);
   });
 });
 
