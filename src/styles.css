@@ -1235,8 +1235,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .intro__idiom-sentence { margin: 0; font-size: 18px; line-height: 1.25; color: var(--ink-soft); text-align: center; }
 @media (max-width: 599px) { .intro__idiom-sentence { font-size: 16px; } }
 /* a short screen gives the 成语 its room from the big character */
-@media (max-height: 760px) { .intro__card--idiom .hanzi--xl { font-size: min(var(--hanzi-xl), 84px); } }
-@media (max-height: 700px) { .intro__card--idiom .hanzi--xl { font-size: min(var(--hanzi-xl), 68px); } }
+@media (max-height: 820px) { .intro__card--idiom .hanzi--xl { font-size: min(var(--hanzi-xl), 96px); } } /* iPad landscape too: two 词语 and a 成语 */
+@media (max-height: 700px) { .intro__card--idiom .hanzi--xl { font-size: min(var(--hanzi-xl), 56px); } }
 
 /* a word longer than one character on the 认新字 card (a school 成语): one line, sized to fit (final review I3) */
 .intro .hanzi--xl.hanzi--long { white-space: nowrap; font-size: min(var(--hanzi-xl), calc(68vw / var(--len)), calc(420px / var(--len))); }
@@ -1278,3 +1278,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .intro .intro__idiom-sentence { font-size: 16px; }
 }
 @media (max-width: 599px) and (max-height: 720px) { .intro__group { padding: 4px 8px; gap: 2px; } .intro__card { gap: 4px; } }
+.hang { display: inline-block; width: 0; overflow: visible; white-space: nowrap; } /* closing punctuation that doesn't push the words off centre */
+@media (max-width: 599px) and (max-height: 700px) { /* the smallest phones: two 词语 and the 成语 fit; its example sentence waits for a bigger screen */
+  .intro .intro__idiom-sentence { display: none; }
+  .intro .word-row__zh { font-size: 20px; }
+  .intro .parts { font-size: 22px; }
+}

@@ -218,6 +218,13 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   );
 }
 
+/** A centred sentence whose closing 。！？ hangs past its edge, so the words, not the punctuation, sit on the centre line (parent, 2026-10-05). */
+function CentredSentence({ text }: { text: string }) {
+  const m = text.match(/^(.*?)([。！？!?.]+)$/u);
+  if (!m) return <>{text}</>;
+  return <>{m[1]}<span class="hang">{m[2]}</span></>;
+}
+
 /**
  * One line of Chinese on a card, the same everywhere (parent, 2026-10-05): each syllable over its own character, a small speak
  * button to its right, its English underneath.
@@ -251,13 +258,11 @@ function UsageLine({ word, en }: { word: Word; en?: string | null }) {
 }
 
 /**
- * How many 组词 the 认新字 card lists besides its usage line: one fits every screen beside the line, two without it. With a 成语
- * there is room for one fewer, but there is always a 词语 before the 成语 (parent, 2026-10-05: 一 showed only a 成语): the
- * usage line when it is a 组词, else one listed.
+ * How many 组词 the 认新字 card lists besides its usage line: always two 词语 rows in all (parent, 2026-10-05: one card showed
+ * one and another two) — the usage line and one more, or two without a line — then its 成语 when it has one.
  */
-function extraWords(line: ReturnType<typeof usageLine>, idiom: Idiom | null): number {
-  if (!idiom) return line ? 1 : 2;
-  return line?.isWord ? 0 : 1;
+function extraWords(line: ReturnType<typeof usageLine>, _idiom?: Idiom | null): number {
+  return line ? 1 : 2;
 }
 
 /** What the 认新字 card shows beside a 成语: its usage line and the 组词 listed with it (a 成语 can be either: 八's is 四面八方). */
@@ -319,7 +324,7 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
         {idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows
           <div class="intro__group intro__idiom">
             <WordRow class="example example--idiom" zh={idiom.text} py={idiom.pinyin} en={idiom.meaning} />
-            {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi">{idiom.sentences[0]}</p>}
+            {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi"><CentredSentence text={idiom.sentences[0]} /></p>}
           </div>
         )}
       </div>

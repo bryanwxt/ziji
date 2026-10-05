@@ -14,10 +14,12 @@ export function setSpeechRate(r: number): void {
   rate = r;
 }
 
+/** How clear a voice is: an iPad's downloaded Premium or Enhanced voices are much clearer than the compact default (parent, 2026-10-05). */
+const quality = (v: SpeechSynthesisVoice) => (/premium/i.test(v.name) ? 2 : /enhanced|增强|高品质|优化/i.test(v.name) ? 1 : 0);
+
 export function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  const mainland = voices.filter((v) => /^zh[-_]CN/i.test(v.lang));
+  const mainland = voices.filter((v) => /^zh[-_]CN/i.test(v.lang)).sort((a, b) => quality(b) - quality(a) || Number(b.localService) - Number(a.localService));
   return (
-    mainland.find((v) => v.localService) ??
     mainland[0] ??
     voices.find((v) => /^zh/i.test(v.lang) && !/HK|TW/i.test(v.lang)) ??
     null

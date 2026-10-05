@@ -8,6 +8,10 @@ describe('pickVoice', () => {
   it('prefers a local mainland Mandarin voice', () => {
     expect(pickVoice([v('en-US'), v('zh-TW'), v('zh-CN', false, 'net'), v('zh-CN', true, 'Tingting')])?.name).toBe('Tingting');
   });
+  it('prefers a downloaded Premium, then Enhanced, mainland voice: clearer sounds (parent, 2026-10-05)', () => {
+    expect(pickVoice([v('zh-CN', true, 'Tingting'), v('zh-CN', true, 'Tingting (Enhanced)'), v('zh-TW', true, 'Meijia (Premium)')])?.name).toBe('Tingting (Enhanced)');
+    expect(pickVoice([v('zh-CN', true, 'Tingting (Enhanced)'), v('zh-CN', true, 'Lili (Premium)'), v('zh-CN', true, 'Tingting')])?.name).toBe('Lili (Premium)');
+  });
   it('falls back to another zh voice that is not HK/TW, else null', () => {
     expect(pickVoice([v('zh')])?.lang).toBe('zh');
     expect(pickVoice([v('zh-HK'), v('en-GB')])).toBeNull();
