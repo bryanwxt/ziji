@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ZODIAC_ORDER } from '../../fun/finds';
-import { ANIMAL_FACES, BABY_DINO, GEM, SPRAY } from './tapArt';
+import { ANIMAL_FACES, BABY_DINO, GEM } from './tapArt';
 
 describe('tap art', () => {
   it('an ink face for each zodiac animal', () => {
@@ -12,7 +12,7 @@ describe('tap art', () => {
     }
   });
   it('gem, baby dino and spray', () => {
-    for (const s of [GEM, BABY_DINO, SPRAY]) {
+    for (const s of [GEM, BABY_DINO]) {
       expect(s.length).toBeGreaterThan(80);
       expect(s).not.toMatch(/NaN|undefined/);
     }

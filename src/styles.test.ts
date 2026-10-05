@@ -99,8 +99,8 @@ describe('看图说话 layout', () => {
 
 describe('world tap fun never gets in the way', () => {
   it('the tap layer sits over the scene, under Home content, and only its target takes taps', () => {
-    expect(css).toMatch(/\.world-taps \{[^}]*position: fixed[^}]*pointer-events: none/);
-    expect(css).toMatch(/\.world-taps \.tap[^{]*\{[^}]*pointer-events: all/);
+    expect(css).toMatch(/\.world-props \{[^}]*position: fixed[^}]*pointer-events: none/);
+    expect(css).toMatch(/\.world-props \.tap[^{]*\{[^}]*pointer-events: all/);
     expect(css).toMatch(/\.home \.home__main, \.home \.path, \.home \.path__row \{[^}]*pointer-events: none/);
     expect(css).toMatch(/\.home \.path__row > \* \{[^}]*pointer-events: auto/);
     expect(css).toMatch(/\.home > \.topbar, \.home > \.home__main \{[^}]*z-index: 1/);

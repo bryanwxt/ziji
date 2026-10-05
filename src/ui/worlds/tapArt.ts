@@ -72,8 +72,3 @@ export const BABY_DINO =
   `<circle cx="10" cy="-8" r="1.8" fill="${INK}"/><path d="M12 -3 q-3 2 -6 0" fill="none" ${S} stroke-width="1.6"/>` +
   `<path d="M-14 12 C-18 10 -22 12 -24 8 C-20 8 -18 6 -16 4" fill="#9fcf90" ${S}/>` +
   `<path d="M-12 14 C-12 4 4 4 4 14Z" fill="#fffaf0" ${S}/><path d="M-12 14 l3 -4 l3 4 l3 -4 l3 4 l3 -4 l1 4" fill="none" ${S} stroke-width="1.6"/>`;
-
-export const SPRAY =
-  `<g fill="none" stroke="#6ea4d4" stroke-width="3" stroke-linecap="round">` +
-  `<path d="M0 0 q-14 -26 -30 -18"/><path d="M0 0 q-4 -32 -12 -34"/><path d="M0 0 q4 -32 12 -34"/><path d="M0 0 q14 -26 30 -18"/></g>` +
-  `<g fill="#6ea4d4" stroke="${INK}" stroke-width="1.2"><circle cx="-32" cy="-14" r="2.6"/><circle cx="-13" cy="-36" r="2.6"/><circle cx="13" cy="-36" r="2.6"/><circle cx="32" cy="-14" r="2.6"/></g>`;

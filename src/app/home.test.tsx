@@ -409,12 +409,22 @@ describe('HomeScreen word of the day reading', () => {
 });
 
 describe('HomeScreen world tap fun', () => {
-  it('tapping the tall grass finds an animal, saves it, and Truffle says so', async () => {
+  it("Truffle plays with his props: tapping his bowl, he munches, looking toward it, and says so (spec 2026-10-04 §4.5)", async () => {
+    const app = await makeAppData();
+    await saveKid(app.db, app.kid!);
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    fireEvent.click(document.querySelector('.world-props [aria-label="小碗"]')!);
+    await waitFor(() => expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('好吃！'));
+    expect(document.querySelector('.home .truffle')?.getAttribute('data-expression')).toBe('content');
+    expect(document.querySelector('.home [data-part="headrot"]')?.getAttribute('transform')).toMatch(/^rotate\(-/); // the bowl is on his left
+  });
+  it('tapping the box in the tall grass finds an animal, saves it, and Truffle says so', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass'] } });
     await saveKid(app.db, app.kid!);
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
-    fireEvent.click(document.querySelector('.world-taps [aria-label="草丛"]')!);
+    fireEvent.click(document.querySelector('.world-props [aria-label="纸箱"]')!);
     await waitFor(async () => expect((await getKid(app.db))?.finds.animals).toEqual(['rat']));
     expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('找到了！');
   });

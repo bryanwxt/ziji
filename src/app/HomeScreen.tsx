@@ -20,7 +20,8 @@ import { celebrate } from '../ui/confetti';
 import { Label } from '../ui/Label';
 import { Pet } from '../ui/Pet';
 import { WorldScene } from '../ui/worlds/WorldScene';
-import { WorldTaps } from '../ui/worlds/WorldTaps';
+import { WorldProps } from '../ui/worlds/WorldProps';
+import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
 import { SCENE_VIEWBOX, SCENES } from '../ui/worlds/scenes';
 import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId } from '../fun/worlds';
 import { TabBar } from '../ui/TabBar';
@@ -45,7 +46,9 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const [arrival, setArrival] = useState<WorldId | null>(null);
   const [said, setSaid] = useState<string | null>(null); // Truffle's reaction to a tap, for a moment
   const saidTimer = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => () => clearTimeout(saidTimer.current), []);
+  const [propPlay, setPropPlay] = useState<{ react: { kind: ReactionKind; key: number } | null; lookAt: number }>({ react: null, lookAt: 0 }); // Truffle and his props
+  const lookTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => { clearTimeout(saidTimer.current); clearTimeout(lookTimer.current); }, []);
   const [journeyKid, setJourneyKid] = useState<KidState | null>(null); // the kid as saved by the journey update, until the app refreshes
 
   useEffect(() => enterSafeScreen(), []);
@@ -128,7 +131,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   return (
     <div class={`screen home${doneToday && chestOpened ? ' home--done' : ''}`}>
       <WorldScene world={world} time={timeOfDay(now())} />
-      <WorldTaps
+      <WorldProps
         world={world}
         kid={k}
         today={today}
@@ -140,6 +143,12 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           setSaid(line);
           clearTimeout(saidTimer.current);
           saidTimer.current = setTimeout(() => setSaid(null), 2200);
+        }}
+        onReact={(kind, side) => {
+          // he reacts to his prop and looks toward it (spec 2026-10-04 §4.5), then looks back
+          setPropPlay((p) => ({ react: { kind, key: (p.react?.key ?? 0) + 1 }, lookAt: side }));
+          clearTimeout(lookTimer.current);
+          lookTimer.current = setTimeout(() => setPropPlay((p) => ({ ...p, lookAt: 0 })), REACTIONS[kind].holdMs);
         }}
       />
       <header class="topbar">
@@ -219,7 +228,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       <div class="home__pet">
         {/* a tap here plays with him (spec 2026-10-04 §4.5); his room is the 松露 tab */}
         <div class="home__pet-touch">
-          <Pet kid={k} mood={sleepy ? 'sleepy' : doneToday ? 'pleased' : 'sulk'} size={150} bubble={said ?? (sleepy ? null : worldLine(world, today))} />
+          <Pet kid={k} mood={sleepy ? 'sleepy' : doneToday ? 'pleased' : 'sulk'} size={150} bubble={said ?? (sleepy ? null : worldLine(world, today))} react={propPlay.react} lookAt={propPlay.lookAt} />
         </div>
       </div>
       {arrival && (
