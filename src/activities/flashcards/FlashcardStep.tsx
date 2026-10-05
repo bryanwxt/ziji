@@ -21,6 +21,8 @@ import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
+import { pinyin } from 'pinyin-pro';
+import type { Idiom } from '../../content/chengyu';
 
 export interface FlashResult {
   correct: boolean;
@@ -47,11 +49,13 @@ interface Props {
   ask?: 'read' | 'listen' | 'word';
   /** 认新字: after a miss the card shows again before moving on (spec 2026-10-05 §2.1) */
   reintroOnMiss?: boolean;
+  /** 认新字: a 成语 that uses the word, at his level or one up (spec 2026-10-05 §2.1, §4) */
+  idiom?: Idiom | null;
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null }: Props) {
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
@@ -165,7 +169,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
         truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} calm={phase === 'quiz'} react={react} /></div>}
         sheet={sheet}
       >
-        {phase === 'intro' ? <Intro word={word} /> : (
+        {phase === 'intro' ? <Intro word={word} idiom={idiom} /> : (
           <>
             <div class="flash__prompt">
               {quiz.cue ? (
@@ -228,7 +232,7 @@ function UsageLine({ word }: { word: Word }) {
   );
 }
 
-function Intro({ word }: { word: Word }) {
+function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
   const line = usageLine(word);
   return (
     <div class="intro">
@@ -260,7 +264,18 @@ function Intro({ word }: { word: Word }) {
             </div>
           );
         })}
-        {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, line ? 1 : 2).map((e) => ( // with their English, one 组词 besides the usage line fits every screen (never the one it already shows); all of them feed the meaning questions
+        {idiom && ( // a 成语 takes the extra 组词's place, so the card still fits a phone (all 组词 still feed the questions)
+          <div class="intro__idiom">
+            <div class="example example--idiom">
+              <span class="pinyin">{pinyin(idiom.text)}</span>
+              <span class="hanzi">{idiom.text}</span>
+              <SpeakButton text={idiom.text} />
+              {idiom.meaning && <span class="example__en" lang="en">{idiom.meaning}</span>}
+            </div>
+            {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi">{idiom.sentences[0]}</p>}
+          </div>
+        )}
+        {!idiom && word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, line ? 1 : 2).map((e) => ( // with their English, one 组词 besides the usage line fits every screen (never the one it already shows); all of them feed the meaning questions
           <div class="example" key={e.text}>
             <span class="pinyin">{e.pinyin}</span>
             <span class="hanzi">{e.text}</span>

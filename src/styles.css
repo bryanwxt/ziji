@@ -1165,3 +1165,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .idiom { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: var(--q-hanzi, 64px); line-height: 1.1; }
 .idiom__slot { min-width: 1em; text-align: center; color: var(--ink-soft); border-bottom: 3px dashed var(--line, #d8cfbf); }
 .idiom__slot.is-filled { color: var(--ink); }
+
+/* the 认新字 card's 成语 (spec 2026-10-05 §2.1): its line like a 组词's, then a short sentence */
+.intro__idiom { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.intro__idiom-sentence { margin: 0; font-size: 18px; color: var(--ink-soft); text-align: center; }

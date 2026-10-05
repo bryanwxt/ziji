@@ -29,7 +29,7 @@ import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
 import { PracticeQuestion, type PracticeResult } from '../activities/practice/PracticeQuestion';
 import { planFreePlay, planPractice } from '../session/practice';
-import { learnerLevel } from '../content/chengyu';
+import { idiomsFor, learnerLevel } from '../content/chengyu';
 
 /** His level for the 成语 window (spec 2026-10-05 §4): the level of the next built-in word he hasn't started. */
 const levels = new WeakMap<Knowledge, number>();
@@ -373,6 +373,7 @@ export function SessionScreen({ free }: { free: boolean }) {
           item={flashItem}
           ask={step === 'newwords' ? 'listen' : undefined}
           reintroOnMiss={step === 'newwords'}
+          idiom={step === 'newwords' ? idiomsFor(flashWord, level, know.words)[0] ?? null : null}
           word={flashWord}
           pool={know.words}
           card={know.cardsById.get(`${flashWord.id}:recognise`)}

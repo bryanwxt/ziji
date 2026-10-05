@@ -415,3 +415,25 @@ describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
     expect(en).not.toContain(wrong.textContent!);
   });
 });
+
+describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () => {
+  it('shows the 成语 with its pinyin, English and a sentence, in place of the extra 组词', async () => {
+    const { chengyuOf } = await import('../../content/chengyu');
+    const yan = pool.find((w) => w.text === '颜')!;
+    const idiom = { ...chengyuOf('五颜六色')!, school: false };
+    render(<FlashcardStep {...base} word={yan} idiom={idiom} item={{ wordId: yan.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const box = document.querySelector('.intro__idiom')!;
+    expect(box.querySelector('.hanzi')!.textContent).toBe('五颜六色');
+    expect(box.querySelector('.pinyin')!.textContent).toBe('wǔ yán liù sè');
+    expect(box.querySelector('[lang="en"]')!.textContent).toBe(idiom.meaning);
+    expect(box.querySelector('.intro__idiom-sentence')!.textContent).toBe(idiom.sentences[0]);
+    expect(document.querySelector('.intro .example:not(.example--idiom)')).toBeNull();
+  });
+  it('without one, the card is as before', () => {
+    const ta = pool.find((w) => w.text === '他')!;
+    render(<FlashcardStep {...base} word={ta} idiom={null} item={{ wordId: ta.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.intro__idiom')).toBeNull();
+    expect(document.querySelectorAll('.intro .example')).toHaveLength(1);
+  });
+});
+
