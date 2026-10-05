@@ -52,3 +52,44 @@ describe('pairing (spec 2026-10-05 §3.2 rung 2)', () => {
     expect(tile('衣服').classList.contains('is-shown')).toBe(true);
   });
 });
+
+describe('final review C1/I4: pairing', () => {
+  it('a board with a doubled half (妈 + 妈) still finishes', () => {
+    const doubled: PairBoard = { left: ['妈', '黑', '国'], right: ['外', '妈', '色'], pairs: [['妈', '妈'], ['黑', '色'], ['国', '外']], target: ['妈', '妈'] };
+    const onDone = vi.fn();
+    render(<PairGame {...props} board={doubled} kind="pair" onDone={onDone} />);
+    const left = (t: string) => [...document.querySelectorAll<HTMLButtonElement>('.pairs__col--left .pair__tile')].find((b) => b.textContent === t)!;
+    const right = (t: string) => [...document.querySelectorAll<HTMLButtonElement>('.pairs__col--right .pair__tile')].find((b) => b.textContent === t)!;
+    for (const [l, r] of doubled.pairs) { fireEvent.click(left(l)); fireEvent.click(right(r)); }
+    expect(document.querySelector('.sheet--good')).toBeTruthy();
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
+  });
+  it("only the word's own pair is graded: a miss on another pair still counts the word right", () => {
+    const onDone = vi.fn();
+    render(<PairGame {...props} onDone={onDone} />);
+    join('刷', '足球'); // a miss on an extra
+    join('穿', '衣服');
+    join('刷', '牙');
+    join('踢', '足球');
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
+  });
+  it('a picked tile can be tapped again to let go (a slip is not a miss)', () => {
+    render(<PairGame {...props} onDone={vi.fn()} />);
+    fireEvent.click(tile('刷'));
+    expect(tile('刷').disabled).toBe(false);
+    fireEvent.click(tile('刷'));
+    expect(tile('穿').disabled).toBe(false);
+    expect(document.querySelector('.is-picked')).toBeNull();
+  });
+  it("the time that counts is the word's own pair, not the whole board", () => {
+    const onDone = vi.fn();
+    render(<PairGame {...props} onDone={onDone} />);
+    join('穿', '衣服');
+    join('刷', '牙');
+    join('踢', '足球');
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone.mock.calls[0]![0].responseMs).toBeLessThan(6000);
+  });
+});

@@ -4,7 +4,7 @@ import { bankFor } from '../content/sentenceBank';
 import { mulberry32, shuffle, type Rng } from '../lib/random';
 import { fitItem } from '../practice/useItems';
 import { zujuFor } from '../content/zuju';
-import { dapeiBoard, zuciBoard } from '../practice/pairs';
+import { dapeiQuestion, zuciBoard } from '../practice/pairs';
 import type { CardRecord, SessionRecord, Word } from '../types';
 import { startRung } from './ladder';
 import { buildRound, type Ask, type PracticeItem, type RoundWord } from './round';
@@ -45,7 +45,7 @@ export function askable(word: Word | undefined, pool: Word[], voice: boolean): (
       case 'fit': return meaningCue(word)?.kind === 'sentence' && fitItem(word, pool, mulberry32(1)) !== null;
       case 'usage': return !!bankFor(word.text);
       case 'pair': return zuciBoard(word, mulberry32(1)) !== null;
-      case 'match': return dapeiBoard(word, mulberry32(1)) !== null;
+      case 'match': return dapeiQuestion(word, mulberry32(1)) !== null;
       case 'build': return zujuFor(word).length > 0;
       case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
     }

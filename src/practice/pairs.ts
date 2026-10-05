@@ -1,7 +1,7 @@
 // The pairing boards for the 词语 rung (spec 2026-10-05 §3.2): three pairs to join, one of them the word's own. No two halves
 // from different pairs may make a word too, so a right answer can never be marked wrong.
 import { HSK_WORDS } from '../content';
-import { DAPEI, GENERAL_VERBS, isDapei } from '../content/dapei';
+import { DAPEI } from '../content/dapei';
 import { shuffle, type Rng } from '../lib/random';
 import type { Word } from '../types';
 
@@ -28,23 +28,34 @@ function board(target: [string, string], extras: [string, string][], fits: (l: s
   return { left, right, pairs, target };
 }
 
-/** 组词 pairing: the word's own two-character 组词 (at its reading) and two more HSK 词语 near its level. */
-export function zuciBoard(word: Word, rng: Rng): PairBoard | null {
+/** Characters that make a word with almost anything (不远, 两下, 走上…): never in a board's extra pairs, where they'd fit across. */
+export const PRODUCTIVE: ReadonlySet<string> = new Set([...'不没一二三四五六七八九十两几大小好有是在上下人子们的了很走想爱会能要去来说看多少天头心中高长出开']);
+
+/**
+ * 组词 pairing: the word's own two-character 组词 (at its reading, never a doubled word like 妈妈) and two more 词语 — from
+ * characters he knows when there are enough, near his level otherwise, never with a character that fits almost anywhere.
+ */
+export function zuciBoard(word: Word, rng: Rng, known?: ReadonlySet<string>): PairBoard | null {
   const chars = Array.from(word.text);
-  const own = chars.length === 2 ? word.text : word.examples?.find((e) => Array.from(e.text).length === 2 && e.text.includes(word.text))?.text;
+  const twoChar = (t: string) => { const c = Array.from(t); return c.length === 2 && c[0] !== c[1]; };
+  const own = chars.length === 2 ? (twoChar(word.text) ? word.text : undefined) : word.examples?.find((e) => twoChar(e.text) && e.text.includes(word.text))?.text;
   if (!own) return null;
   const [a, b] = Array.from(own) as [string, string];
-  const near = TWO_CHAR.filter(([w, lvl]) => w !== own && lvl <= (word.level ?? 3) + 1).map(([w]) => Array.from(w) as [string, string]);
+  const ok = (w: string) => !Array.from(w).some((ch) => PRODUCTIVE.has(ch)) && twoChar(w);
+  const near = TWO_CHAR.filter(([w, lvl]) => w !== own && ok(w) && lvl <= (word.level ?? 3) + 1).map(([w]) => w);
+  const familiar = known ? near.filter((w) => Array.from(w).every((ch) => known.has(ch))) : [];
+  const pool = familiar.length >= 6 ? familiar : near;
   const fits = (l: string, r: string) => HSK_WORDS.has(l + r) || (word.examples ?? []).some((e) => e.text === l + r);
-  return board([a, b], shuffle(near, rng), fits, rng);
+  return board([a, b], shuffle(pool, rng).map((w) => Array.from(w) as [string, string]), fits, rng);
 }
 
-/** 搭配 pairing: one of the word's own 搭配 and two more, never with a verb that goes with almost anything. */
-export function dapeiBoard(word: Word, rng: Rng): PairBoard | null {
-  const mine = DAPEI.filter(([l, r]) => l === word.text || r === word.text);
+/** A 搭配 question: the verb, its partner and the partner's three written wrong partners, shuffled. */
+export interface DapeiQuestion { verb: string; noun: string; options: string[] }
+
+/** 搭配 (final review C2): one of the word's own 搭配, asked as "which goes with it?", with wrong partners written for it. */
+export function dapeiQuestion(word: Word, rng: Rng): DapeiQuestion | null {
+  const mine = DAPEI.filter((x) => x.verb === word.text);
   if (!mine.length) return null;
-  const target = shuffle(mine, rng)[0]!;
-  const extras = shuffle(DAPEI.filter(([l, r]) => !GENERAL_VERBS.has(l) && l !== word.text && r !== word.text), rng);
-  const fits = (l: string, r: string) => isDapei(l, r) || HSK_WORDS.has(l + r);
-  return board([target[0], target[1]], extras, fits, rng);
+  const x = shuffle(mine, rng)[0]!;
+  return { verb: x.verb, noun: x.noun, options: shuffle([x.noun, ...x.wrong], rng) };
 }

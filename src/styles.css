@@ -1149,7 +1149,14 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* pairing (spec 2026-10-05 §3.2 rung 2) */
 .pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 28px; width: 100%; max-width: 520px; }
 .pairs__col { display: flex; flex-direction: column; gap: 12px; }
+.pairs__col--left { order: -1; }
 .pair__tile { font-size: var(--tile-hanzi, 40px); }
 .pair__tile.is-picked { outline: 4px solid var(--blue, #4aa3ff); }
 .pair__tile.is-matched { background: var(--green-soft, #c9f0d0); }
 .pair__tile.is-shown { background: var(--orange-soft, #ffe2c2); }
+
+/* 搭配 (spec 2026-10-05 §3.2 rung 2) */
+.match { display: flex; align-items: center; justify-content: center; gap: 14px; font-size: var(--q-hanzi, 64px); line-height: 1.1; }
+.match__plus { font-size: 0.5em; color: var(--ink-soft); }
+.match__slot { min-width: 1.2em; text-align: center; color: var(--ink-soft); border-bottom: 3px dashed var(--line, #d8cfbf); }
+.match__slot.is-filled { color: var(--ink); }

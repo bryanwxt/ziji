@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { BUILTIN, builtinWords, HSK_WORDS } from '../content';
-import { DAPEI, GENERAL_VERBS, isDapei } from '../content/dapei';
+import { DAPEI, isDapei } from '../content/dapei';
 import { mulberry32 } from '../lib/random';
-import { dapeiBoard, zuciBoard, type PairBoard } from './pairs';
+import { dapeiQuestion, PRODUCTIVE, zuciBoard, type PairBoard } from './pairs';
 
 const words = builtinWords(0);
 const byText = new Map(words.map((w) => [w.text, w]));
@@ -11,13 +11,23 @@ const level = new Map(BUILTIN.map((c) => [c.char, c.level]));
 const isWord = (s: string) => HSK_WORDS.has(s) || words.some((w) => w.examples?.some((e) => e.text === s));
 const crossPairs = (b: PairBoard) => b.pairs.flatMap(([l], i) => b.pairs.filter((_, j) => j !== i).map(([, r]) => [l, r] as const));
 
-describe('the 搭配 bank (spec 2026-10-05 §6)', () => {
+describe('the 搭配 bank (spec 2026-10-05 §6, final review C2)', () => {
   it('written in characters he meets by about HSK 3, no pair twice', () => {
-    for (const [a, b] of DAPEI) for (const ch of a + b) expect(level.get(ch) ?? 9, `${a}${b}: ${ch}`).toBeLessThanOrEqual(4);
-    expect(new Set(DAPEI.map(([a, b]) => `${a}|${b}`)).size).toBe(DAPEI.length);
-    expect(DAPEI.length).toBeGreaterThanOrEqual(90);
+    for (const x of DAPEI) for (const ch of x.verb + x.noun + x.wrong.join('')) expect(level.get(ch) ?? 9, `${x.verb}${x.noun}: ${ch}`).toBeLessThanOrEqual(4);
+    expect(new Set(DAPEI.map((x) => `${x.verb}|${x.noun}`)).size).toBe(DAPEI.length);
+    expect(DAPEI.length).toBeGreaterThanOrEqual(60);
     expect(isDapei('穿', '衣服')).toBe(true);
     expect(isDapei('穿', '牙')).toBe(false);
+  });
+  it('every pair has three different wrong partners, none of them right with its verb', () => {
+    for (const x of DAPEI) {
+      expect(new Set(x.wrong).size, x.verb + x.noun).toBe(3);
+      for (const w of x.wrong) {
+        expect(w, x.verb + x.noun).not.toBe(x.noun);
+        expect(isDapei(x.verb, w), `${x.verb}${w}`).toBe(false);
+        expect(HSK_WORDS.has(x.verb + w), `${x.verb}${w}`).toBe(false);
+      }
+    }
   });
 });
 
@@ -44,28 +54,18 @@ describe('组词 pairing (spec 2026-10-05 §3.2 rung 2)', () => {
   });
 });
 
-describe('搭配 pairing (spec 2026-10-05 §3.2 rung 2)', () => {
-  it("one of the word's own 搭配 and two more", () => {
-    const b = dapeiBoard(byText.get('穿')!, mulberry32(2))!;
-    expect(b.target[0]).toBe('穿');
-    expect(b.pairs).toHaveLength(3);
-    for (const [l, r] of b.pairs) expect(isDapei(l, r)).toBe(true);
+describe('搭配 (spec 2026-10-05 §3.2 rung 2, final review C2)', () => {
+  it('the verb with its partner and its three written wrong partners, shuffled', () => {
+    const q = dapeiQuestion(byText.get('穿')!, mulberry32(2))!;
+    expect(q.verb).toBe('穿');
+    expect(q.options).toHaveLength(4);
+    expect(q.options).toContain(q.noun);
+    const entry = DAPEI.find((x) => x.verb === '穿' && x.noun === q.noun)!;
+    for (const w of entry.wrong) expect(q.options).toContain(w);
   });
-  it('no board has a cross pair that is also a listed 搭配 or a word, and general verbs are never the extra pairs (review focus 1)', () => {
-    for (const [a, b0] of DAPEI) {
-      for (const text of [a, b0]) {
-        const w = byText.get(text) ?? { ...words[0]!, id: `x:${text}`, text };
-        for (let seed = 1; seed <= 3; seed++) {
-          const b = dapeiBoard(w, mulberry32(seed));
-          if (!b) continue;
-          for (const [l, r] of crossPairs(b)) expect(isDapei(l, r) || HSK_WORDS.has(l + r), `${text}: ${l}${r}`).toBe(false);
-          for (const [l] of b.pairs.filter((p) => p !== b.target)) expect(GENERAL_VERBS.has(l), l).toBe(false);
-        }
-      }
-    }
-  });
-  it('a word with no 搭配 has no board', () => {
-    expect(dapeiBoard(byText.get('很')!, mulberry32(1))).toBeNull();
+  it('only for a verb in the bank: never for a word on the other side, or a word with no 搭配', () => {
+    expect(dapeiQuestion({ ...byText.get('穿')!, text: '衣服' }, mulberry32(1))).toBeNull();
+    expect(dapeiQuestion(byText.get('很')!, mulberry32(1))).toBeNull();
   });
 });
 
@@ -73,13 +73,38 @@ describe('the board never gives the answer away (WebKit review, 2026-10-05)', ()
   it('no pair sits on the same row', () => {
     for (const w of words.slice(0, 200)) {
       for (let seed = 1; seed <= 4; seed++) {
-        for (const b of [zuciBoard(w, mulberry32(seed)), dapeiBoard(w, mulberry32(seed))]) {
+        for (const b of [zuciBoard(w, mulberry32(seed))]) {
           if (!b) continue;
           b.left.forEach((l, i) => expect(b.pairs.some(([a, r]) => a === l && r === b.right[i]), `${l}${b.right[i]}`).toBe(false));
         }
       }
     }
-    const chuan = dapeiBoard(byText.get('穿')!, mulberry32(3))!;
-    chuan.left.forEach((l, i) => expect(chuan.pairs.some(([a, r]) => a === l && r === chuan.right[i])).toBe(false));
+  });
+});
+
+describe('final review C1/C2: 组词 boards', () => {
+  it('never a doubled target (妈妈): another 组词, or no board', () => {
+    for (const t of ['妈', '爸', '哥', '姐', '谢', '常']) {
+      const w = byText.get(t);
+      if (!w) continue;
+      for (let seed = 1; seed <= 4; seed++) {
+        const b = zuciBoard(w, mulberry32(seed));
+        if (b) expect(b.target[0], t).not.toBe(b.target[1]);
+      }
+    }
+  });
+  it('extras never use characters that make a word with almost anything (不, numbers, 大, 小, 走, 想…)', () => {
+    for (const w of words.slice(0, 200)) {
+      for (let seed = 1; seed <= 3; seed++) {
+        const b = zuciBoard(w, mulberry32(seed));
+        if (!b) continue;
+        for (const p of b.pairs.filter((x) => x !== b.target)) for (const ch of p) expect(PRODUCTIVE.has(ch), `${w.text}: ${p.join('')}`).toBe(false);
+      }
+    }
+  });
+  it('with what he knows, extras use characters he knows', () => {
+    const known = new Set(words.slice(0, 400).map((w) => w.text));
+    const b = zuciBoard(byText.get('火')!, mulberry32(5), known)!;
+    for (const p of b.pairs.filter((x) => x !== b.target)) for (const ch of p) expect(known.has(ch), p.join('')).toBe(true);
   });
 });

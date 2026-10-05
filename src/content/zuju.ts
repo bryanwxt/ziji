@@ -1,5 +1,6 @@
 // 组句 (spec 2026-10-05 §3.2 rung 4): a sentence that uses the word, cut into word tiles for him to put in order. Built only
 // from sentences written for this app (the bank) and his class sentences (on the iPad); never generated from nothing.
+import type { Rng } from '../lib/random';
 import type { Word } from '../types';
 import { HSK_WORDS } from '.';
 import { bankFor, fillGap, SENTENCE_BANK } from './sentenceBank';
@@ -12,7 +13,7 @@ const PUNCT = new Set([...'，。！？、；：']);
 const PARTICLES = new Set([...'了吗吧呢的得着过']);
 const NUMERALS = new Set([...'一二三四五六七八九十两几这那每哪']);
 const MEASURES = new Set([...'个本杯只条张件位次天点岁块双把辆台首节些']);
-const TIME_WORDS = new Set(['今天', '明天', '昨天', '现在', '早上', '晚上', '上午', '下午', '中午', '每天', '后来', '刚才', '以前', '星期天', '周末']);
+const TIME_WORDS = new Set(['今天', '明天', '昨天', '现在', '早上', '晚上', '上午', '下午', '中午', '每天', '天天', '后来', '刚才', '以前', '星期天', '周末', '放学后']);
 const SUBJECTS = new Set(['我', '你', '他', '她', '它', '我们', '你们', '他们', '她们', '大家', '爸爸', '妈妈', '哥哥', '姐姐', '弟弟', '妹妹', '爷爷', '奶奶', '老师']);
 
 let dict: Set<string> | null = null;
@@ -39,10 +40,20 @@ export function tiles(sentence: string): string[] {
   return out;
 }
 
-/** The orders accepted besides the written one: a leading time word may follow the subject (今天我… / 我今天…). */
+/**
+ * The orders accepted besides the written one (final review I3): a time word before or after the subject (今天我… / 我今天…),
+ * and the two names around 和/跟 swapped (我和哥哥… / 哥哥和我…). He hears the sentence first, so other orders that change
+ * who does what (我给妈妈 / 妈妈给我) are not his to guess.
+ */
 function ordersOf(t: string[]): string[][] {
-  const out = [t];
-  if (t.length >= 3 && TIME_WORDS.has(t[0]!) && SUBJECTS.has(t[1]!)) out.push([t[1]!, t[0]!, ...t.slice(2)]);
+  const out: string[][] = [t];
+  const add = (o: string[]) => { if (!out.some((x) => x.join('|') === o.join('|'))) out.push(o); };
+  if (t.length >= 3 && TIME_WORDS.has(t[0]!) && SUBJECTS.has(t[1]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
+  if (t.length >= 3 && SUBJECTS.has(t[0]!) && TIME_WORDS.has(t[1]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
+  for (const o of [...out]) {
+    const k = o.findIndex((x) => x === '和' || x === '跟');
+    if (k > 0 && k < o.length - 1 && SUBJECTS.has(o[k - 1]!) && SUBJECTS.has(o[k + 1]!)) add([...o.slice(0, k - 1), o[k + 1]!, o[k]!, o[k - 1]!, ...o.slice(k + 2)]);
+  }
   return out;
 }
 
@@ -58,4 +69,10 @@ export function zujuFor(word: Word): ZujuItem[] {
     out.push({ full, tiles: t, orders: ordersOf(t) });
   }
   return out;
+}
+
+/** One of the word's 组句 sentences for this lesson (final review I5): a word back at 组句 gets a different one now and then. */
+export function pickZuju(word: Word, rng: Rng): ZujuItem | null {
+  const all = zujuFor(word);
+  return all.length ? all[Math.floor(rng() * all.length)]! : null;
 }

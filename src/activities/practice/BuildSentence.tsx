@@ -32,6 +32,7 @@ export function BuildSentence({ item, word, kid, resting, onDone }: Props) {
   const [placed, setPlaced] = useState<number[]>([]);
   const [result, setResult] = useState<{ correct: boolean; responseMs: number } | null>(null);
   const shownAt = useRef(performance.now());
+  useEffect(() => speak(item.full), [item]); // he hears it first (final review I3): the order is the one he heard
 
   useEffect(() => {
     if (placed.length < item.tiles.length || result) return;
@@ -66,6 +67,7 @@ export function BuildSentence({ item, word, kid, resting, onDone }: Props) {
       )}
     >
       <div class="build">
+        <span class="build__listen"><SpeakButton text={item.full} /></span>
         <div class="build__answer hanzi" aria-label="句子">
           {placed.map((i) => (
             <button key={i} type="button" class="build__placed" disabled={done} onClick={() => setPlaced(placed.filter((p) => p !== i))}>

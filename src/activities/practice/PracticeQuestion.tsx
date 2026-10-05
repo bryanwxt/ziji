@@ -8,10 +8,11 @@ import { UseQuestion } from '../choose/UseQuestion';
 import { FlashcardStep } from '../flashcards/FlashcardStep';
 import { ComponentsStep } from '../components/ComponentsStep';
 import { fishItem } from '../components/zibian';
-import { zujuFor } from '../../content/zuju';
+import { pickZuju } from '../../content/zuju';
 import { BuildSentence } from './BuildSentence';
 import { PairGame } from './PairGame';
-import { dapeiBoard, zuciBoard } from '../../practice/pairs';
+import { dapeiQuestion, zuciBoard } from '../../practice/pairs';
+import { MatchQuestion } from './MatchQuestion';
 
 export interface PracticeResult {
   correct: boolean;
@@ -45,16 +46,17 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     () => (item.ask === 'fit' ? fitItem(word, pool, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0), 0) : item.ask === 'usage' ? usageItem(word.text, word.id) : null),
     [item, word.id],
   );
-  const zuju = useMemo(() => (item.ask === 'build' ? zujuFor(word)[0] ?? null : null), [item, word.id]);
+  const zuju = useMemo(() => (item.ask === 'build' ? pickZuju(word, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
+  const match = useMemo(() => (item.ask === 'match' ? dapeiQuestion(word, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
   const board = useMemo(() => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
-    return item.ask === 'pair' ? zuciBoard(word, rng) : item.ask === 'match' ? dapeiBoard(word, rng) : null;
+    return item.ask === 'pair' ? zuciBoard(word, rng, knownChars) : null;
   }, [item, word.id]);
   const fish = useMemo(() => (item.ask === 'fish' ? fishItem(word, confused ?? [], knownChars ?? new Set(), mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
   const answer = useRef<{ correct: boolean; ms: number } | null>(null);
   const shownAt = useRef(performance.now());
   useEffect(() => {
-    if ((sentence && !use) || (item.ask === 'build' && !zuju) || ((item.ask === 'pair' || item.ask === 'match') && !board) || (item.ask === 'fish' && !fish)) onDone(null);
+    if ((sentence && !use) || (item.ask === 'build' && !zuju) || (item.ask === 'pair' && !board) || (item.ask === 'match' && !match) || (item.ask === 'fish' && !fish)) onDone(null);
   }, []);
 
   if (item.ask === 'fish') {
@@ -74,12 +76,23 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
       />
     );
   }
-  if (item.ask === 'pair' || item.ask === 'match') {
+  if (item.ask === 'match') {
+    if (!match) return null;
+    return (
+      <MatchQuestion
+        question={match}
+        kid={kid}
+        resting={resting}
+        onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning' })}
+      />
+    );
+  }
+  if (item.ask === 'pair') {
     if (!board) return null;
     return (
       <PairGame
         board={board}
-        kind={item.ask}
+        kind="pair"
         kid={kid}
         resting={resting}
         onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning' })}

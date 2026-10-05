@@ -49,3 +49,14 @@ describe('组句 (spec 2026-10-05 §3.2 rung 4)', () => {
     expect(document.querySelector('.sheet--good')).toBeTruthy();
   });
 });
+
+describe('final review I3: he hears the sentence first', () => {
+  it('the sentence is said when the tiles appear, and he can hear it again', () => {
+    vi.mocked(speak).mockClear();
+    render(<BuildSentence {...props} onDone={vi.fn()} />);
+    expect(speak).toHaveBeenCalledWith(item.full);
+    vi.mocked(speak).mockClear();
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.build__listen button, button.build__listen')!);
+    expect(speak).toHaveBeenCalled();
+  });
+});

@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { makeWord } from '../test/fixtures';
 import { SENTENCE_BANK } from './sentenceBank';
-import { MAX_TILES, MIN_TILES, tiles, zujuFor } from './zuju';
+import { MAX_TILES, MIN_TILES, pickZuju, tiles, zujuFor } from './zuju';
+import { mulberry32 } from '../lib/random';
 
 describe('组句 (spec 2026-10-05 §3.2 rung 4, §6)', () => {
   it('cuts a sentence into word tiles: the longest word first', () => {
@@ -40,5 +41,21 @@ describe('组句 (spec 2026-10-05 §3.2 rung 4, §6)', () => {
     const w = makeWord('很', { sentences: [{ text: '我们的老师很好。', pinyin: '' }] });
     expect(zujuFor(w)[0]!.full).toBe('我们的老师很好。');
     expect(SENTENCE_BANK.filter((b) => zujuFor(makeWord(b.word)).length > 0).length).toBeGreaterThan(150);
+  });
+});
+
+describe('final review I3/I5: natural orders, heard first, and variety', () => {
+  it('a time word may come before or after the subject, either way it was written', () => {
+    const w = makeWord('喝', { sentences: [{ text: '我今天喝牛奶。', pinyin: '' }] });
+    expect(zujuFor(w).find((x) => x.full === '我今天喝牛奶。')!.orders).toContainEqual(['今天', '我', '喝', '牛奶。']);
+  });
+  it('the two around 和 or 跟 may swap', () => {
+    const w = makeWord('和', { sentences: [{ text: '我和哥哥都喜欢打球。', pinyin: '' }] });
+    expect(zujuFor(w).find((x) => x.full === '我和哥哥都喜欢打球。')!.orders).toContainEqual(['哥哥', '和', '我', '都', '喜欢', '打球。']);
+  });
+  it('each lesson picks one of the word’s sentences, not always the first', () => {
+    const word = SENTENCE_BANK.map((b) => makeWord(b.word)).find((w) => zujuFor(w).length >= 2)!;
+    const seen = new Set(Array.from({ length: 20 }, (_, i) => pickZuju(word, mulberry32(i + 1))!.full));
+    expect(seen.size).toBeGreaterThan(1);
   });
 });
