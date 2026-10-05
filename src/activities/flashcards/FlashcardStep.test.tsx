@@ -492,3 +492,14 @@ describe('nothing on the 认新字 card twice (parent, 2026-10-05: 四面八方 
     expect(document.querySelector('.intro__idiom')).toBeNull();
   });
 });
+
+describe('the new word is picked out in every row (parent, 2026-10-05: only the usage line did it)', () => {
+  it('each 词语 and the 成语 highlight the character', async () => {
+    const { builtinIdiom } = await import('../../content/chengyu');
+    const yi = pool.find((w) => w.text === '一')!;
+    render(<FlashcardStep {...base} word={yi} idiom={builtinIdiom('一心一意')!} item={{ wordId: yi.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const rows = [...document.querySelectorAll('.intro .word-row')];
+    expect(rows.length).toBeGreaterThan(1);
+    for (const r of rows) expect(r.querySelector('.label__cell--mark .label__ch')?.textContent, r.textContent!).toBe('一');
+  });
+});

@@ -241,6 +241,12 @@ function WordRow({ zh, py, en, mark, class: cls, textClass }: { zh: string; py?:
   );
 }
 
+/** Where the new word sits in a 词语 or 成语, to pick it out like the usage line does (parent, 2026-10-05: only one row was). */
+function markOf(text: string, target: string): [number, number] | undefined {
+  const at = text.indexOf(target);
+  return at < 0 ? undefined : [hanChars(text.slice(0, at)).length, hanChars(target).length];
+}
+
 /** The usage line's syllables: the word's own reading where it sits, the rest read in context. */
 function usagePinyin(word: Word, line: NonNullable<ReturnType<typeof usageLine>>): string {
   if (line.isWord) return line.pinyin;
@@ -318,12 +324,12 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
         {(line || listed.length > 0) && (
           <div class="intro__group">
             {line && <UsageLine word={word} en={glossFor(line.full)} />}
-            {listed.map((e) => <WordRow key={e.text} class="example" zh={e.text} py={e.pinyin} en={glossFor(e.text)} />)}
+            {listed.map((e) => <WordRow key={e.text} class="example" zh={e.text} py={e.pinyin} en={glossFor(e.text)} mark={markOf(e.text, word.text)} />)}
           </div>
         )}
         {idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows
           <div class="intro__group intro__idiom">
-            <WordRow class="example example--idiom" zh={idiom.text} py={idiom.pinyin} en={idiom.meaning} />
+            <WordRow class="example example--idiom" zh={idiom.text} py={idiom.pinyin} en={idiom.meaning} mark={markOf(idiom.text, word.text)} />
             {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi"><CentredSentence text={idiom.sentences[0]} /></p>}
           </div>
         )}
