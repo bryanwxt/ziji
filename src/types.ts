@@ -152,6 +152,8 @@ export interface SessionRecord {
   writePass?: number; // the pass within the current 写一写 word (spec §20 part 3)
   writeRedo?: string[]; // words to write once more at the end of 写一写
   writeRedoIndex?: number;
+  writeMisses?: Record<string, number>; // spec 2026-10-05 §5: each word's misses from memory so far, rated on its last character
+  writeSkipped?: string[]; // words whose strokes failed to load this lesson: their other characters are skipped
   practiceQueue?: PracticeItem[]; // 练一练's round, built when the step starts (spec 2026-10-05 §3)
   practiceIndex?: number;
   practiceElapsedMs?: number;

@@ -38,16 +38,39 @@ export function currentFlashItem(rec: SessionRecord): FlashItem | null {
 /** 写一写 passes (spec §20 part 3): a new word is traced, written with a hint, then from memory; a review word from memory only. */
 export type WritePass = 'trace' | 'hint' | 'recall';
 const NEW_WORD_PASSES: WritePass[] = ['trace', 'hint', 'recall'];
-export interface WriteTask { wordId: string; isNew: boolean; pass: WritePass; redo: boolean }
+/** `at`: the character of the word to write (spec 2026-10-05 §5); `last`: this item finishes the word, so it rates its write card. */
+export interface WriteTask { wordId: string; isNew: boolean; pass: WritePass; redo: boolean; at?: number; last?: boolean }
 
-const mainWritingDone = (rec: SessionRecord) => rec.writeDone >= rec.plan.writeCount || rec.writeIndex >= rec.plan.writeCandidates.length;
+const itemKey = (i: { wordId: string; at: number }) => `${i.wordId}#${i.at}`;
+const fromKey = (key: string) => { const k = key.lastIndexOf('#'); return { wordId: key.slice(0, k), at: Number(key.slice(k + 1)) }; };
+/** The next character to write from `from`, past words whose strokes failed to load. */
+function nextItem(rec: SessionRecord, from: number): number {
+  const items = rec.plan.writeItems ?? [];
+  let i = from;
+  while (i < items.length && rec.writeSkipped?.includes(items[i]!.wordId)) i++;
+  return i;
+}
+const mainWritingDone = (rec: SessionRecord) =>
+  rec.plan.writeItems
+    ? nextItem(rec, rec.writeIndex) >= rec.plan.writeItems.length
+    : rec.writeDone >= rec.plan.writeCount || rec.writeIndex >= rec.plan.writeCandidates.length;
+
+/** A word's misses from memory so far this lesson (tracing doesn't count): its last character adds its own and rates it. */
+export const wordMisses = (rec: SessionRecord, wordId: string): number => rec.writeMisses?.[wordId] ?? 0;
 
 /** The word and pass to write now; after the main words, the words to redo once more (redo: true). */
 export function currentWriteTask(rec: SessionRecord): WriteTask | null {
   if (currentStep(rec) !== 'writing') return null;
   if (mainWritingDone(rec)) {
     const id = (rec.writeRedo ?? [])[rec.writeRedoIndex ?? 0];
-    return id ? { wordId: id, isNew: false, pass: 'recall', redo: true } : null;
+    if (!id) return null;
+    if (!rec.plan.writeItems) return { wordId: id, isNew: false, pass: 'recall', redo: true };
+    return { ...fromKey(id), isNew: false, pass: 'recall', redo: true };
+  }
+  const items = rec.plan.writeItems;
+  if (items) {
+    const it = items[nextItem(rec, rec.writeIndex)]!;
+    return { wordId: it.wordId, isNew: it.isNew, pass: it.pass, redo: false, at: it.at, last: !!it.last };
   }
   const c = rec.plan.writeCandidates[rec.writeIndex]!;
   const passes: WritePass[] = c.isNew ? NEW_WORD_PASSES : ['recall'];
@@ -159,7 +182,8 @@ export function afterWriteWord(rec: SessionRecord, done: boolean, rawElapsedMs: 
   if (!task) return rec;
   const base: SessionRecord = { ...rec, activeMs: rec.activeMs + Math.min(rawElapsedMs, MAX_WORD_MS) };
   let next: SessionRecord;
-  if (task.redo) next = { ...base, writeRedoIndex: (rec.writeRedoIndex ?? 0) + 1 };
+  if (rec.plan.writeItems && !task.redo) next = afterWriteItem(rec, base, task, done, outcome);
+  else if (task.redo) next = { ...base, writeRedoIndex: (rec.writeRedoIndex ?? 0) + 1 };
   else if (!done) next = { ...base, writeIndex: rec.writeIndex + 1, writePass: 0 };
   else if (task.pass !== 'recall') next = { ...base, writePass: (rec.writePass ?? 0) + 1 };
   else {
@@ -168,3 +192,26 @@ export function afterWriteWord(rec: SessionRecord, done: boolean, rawElapsedMs: 
   }
   return currentWriteTask(next) ? next : finishStep(next);
 }
+
+/**
+ * One character written (spec 2026-10-05 §5). A recall adds its misses to the word's; one that needed a hint or had more than 3
+ * misses is written once more at the end — never straight after itself. A character that couldn't load skips the rest of its word.
+ */
+function afterWriteItem(rec: SessionRecord, base: SessionRecord, task: WriteTask, done: boolean, outcome: { hinted?: boolean; misses?: number }): SessionRecord {
+  const i = nextItem(rec, rec.writeIndex);
+  if (!done) return { ...base, writeIndex: i + 1, writeSkipped: [...(rec.writeSkipped ?? []), task.wordId] };
+  const key = itemKey({ wordId: task.wordId, at: task.at ?? 0 });
+  const recall = task.pass === 'recall';
+  const misses = outcome.misses ?? 0;
+  let redo = recall && (outcome.hinted || misses > 3) ? [...(rec.writeRedo ?? []), key] : (rec.writeRedo ?? []);
+  const next: SessionRecord = {
+    ...base, writeIndex: i + 1, writeDone: rec.writeDone + 1, writeRedo: redo,
+    ...(recall ? { writeMisses: { ...(rec.writeMisses ?? {}), [task.wordId]: wordMisses(rec, task.wordId) + misses } } : {}),
+  };
+  if (mainWritingDone(next) && redo[0] === key) {
+    redo = redo.length > 1 ? [...redo.slice(1), key] : []; // never the same character twice in a row
+    return { ...next, writeRedo: redo };
+  }
+  return next;
+}
+

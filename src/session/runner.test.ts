@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionPlan, SessionRecord, StepKind } from '../types';
+import type { WriteItem } from './writing';
 import {
   addActiveTime, afterFlashAnswer, afterWriteWord, MAX_CARD_MS, MAX_STEP_MS, MAX_WORD_MS, createSessionRecord, currentFlashItem,
-  currentStep, currentWriteTask, finishStep, finishStepIf, skipFlashItem,
+  currentStep, currentWriteTask, finishStep, finishStepIf, skipFlashItem, wordMisses,
 } from './runner';
 
 const plan = (over: Partial<SessionPlan> = {}): SessionPlan => ({
@@ -229,3 +230,58 @@ describe('final review I1: only due revision left over counts as revision piling
     expect(rec.practiceQueue!.filter((x) => x.due)).toHaveLength(1);
   });
 });
+
+describe('写一写 by character (spec 2026-10-05 §5)', () => {
+  const items: WriteItem[] = [
+    { wordId: 'w', at: 0, pass: 'trace', isNew: true },
+    { wordId: 'a', at: 0, pass: 'recall', isNew: false, last: true },
+    { wordId: 'w', at: 1, pass: 'trace', isNew: true },
+    { wordId: 'b', at: 0, pass: 'recall', isNew: false, last: true },
+    { wordId: 'w', at: 0, pass: 'recall', isNew: true },
+    { wordId: 'c', at: 0, pass: 'recall', isNew: false, last: true },
+    { wordId: 'w', at: 1, pass: 'recall', isNew: true, last: true },
+  ];
+  const wp: SessionPlan = { steps: ['writing', 'speaking'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: items.length, writeItems: items };
+  const tag = (rec: SessionRecord) => { const t = currentWriteTask(rec); return t && `${t.wordId}#${t.at}:${t.pass}${t.last ? '!' : ''}${t.redo ? ' redo' : ''}`; };
+  it('walks the characters in order, then moves on', () => {
+    let rec = createSessionRecord(wp, 'd', 0);
+    const seen: string[] = [];
+    while (currentWriteTask(rec)) { seen.push(tag(rec)!); rec = afterWriteWord(rec, true, 10); }
+    expect(seen).toEqual(['w#0:trace', 'a#0:recall!', 'w#1:trace', 'b#0:recall!', 'w#0:recall', 'c#0:recall!', 'w#1:recall!']);
+    expect(currentStep(rec)).toBe('speaking');
+    expect(rec.writeDone).toBe(7);
+  });
+  it("adds up a word's misses from memory (not tracing) until its last character", () => {
+    let rec = createSessionRecord(wp, 'd', 0);
+    rec = afterWriteWord(rec, true, 10, { misses: 5 }); // tracing w#0
+    for (let i = 0; i < 3; i++) rec = afterWriteWord(rec, true, 10);
+    rec = afterWriteWord(rec, true, 10, { misses: 2 }); // w#0 from memory
+    expect(wordMisses(rec, 'w')).toBe(2);
+    expect(wordMisses(rec, 'a')).toBe(0);
+  });
+  it('a character that could not load skips the rest of its word', () => {
+    let rec = createSessionRecord(wp, 'd', 0);
+    rec = afterWriteWord(rec, false, 10);
+    const seen: string[] = [];
+    while (currentWriteTask(rec)) { seen.push(tag(rec)!); rec = afterWriteWord(rec, true, 10); }
+    expect(seen).toEqual(['a#0:recall!', 'b#0:recall!', 'c#0:recall!']);
+  });
+  it('writes a hinted or much-missed character once more at the end, never right after itself', () => {
+    let rec = createSessionRecord(wp, 'd', 0);
+    for (let i = 0; i < 5; i++) rec = afterWriteWord(rec, true, 10);
+    rec = afterWriteWord(rec, true, 10, { hinted: true }); // c
+    rec = afterWriteWord(rec, true, 10, { misses: 4 }); // w#1, the last item
+    expect(tag(rec)).toBe('c#0:recall redo'); // c first: w#1 was just written
+    rec = afterWriteWord(rec, true, 10, { hinted: true }); // a redo never queues another
+    expect(tag(rec)).toBe('w#1:recall redo');
+    rec = afterWriteWord(rec, true, 10);
+    expect(currentStep(rec)).toBe('speaking');
+  });
+  it('drops a lone redo of the character just written (it would come twice in a row)', () => {
+    let rec = createSessionRecord(wp, 'd', 0);
+    for (let i = 0; i < 6; i++) rec = afterWriteWord(rec, true, 10);
+    rec = afterWriteWord(rec, true, 10, { hinted: true }); // w#1, the last item
+    expect(currentStep(rec)).toBe('speaking');
+  });
+});
+
