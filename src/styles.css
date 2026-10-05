@@ -592,7 +592,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .room__tabs .chip { min-height: 52px; min-width: 110px; font-size: 22px; justify-content: center; }
 .room__tabs .chip.is-on { background: var(--green); }
 .powers { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; width: 100%; max-width: 760px; }
-.power-row { min-height: 64px; display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); }
+.power-row { min-height: 64px; height: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 4px; padding: 8px 14px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); }
 .power-row.is-on { background: var(--green-soft); }
 .power-row:disabled { opacity: 0.55; box-shadow: 4px 4px 0 var(--line-strong); border-color: var(--line-strong); }
 .power-row__mark { font-size: 28px; }
@@ -600,8 +600,8 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .power-row__pips { display: flex; gap: 4px; }
 .power-row__pips i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); }
 .power-row__count { font-weight: 900; font-size: 16px; min-width: 52px; text-align: right; }
-.power-row { flex-wrap: wrap; }
-.power-row__ready { flex-basis: 100%; font-size: 13px; color: var(--green-ink); text-align: left; }
+.power-row__top { display: flex; align-items: center; gap: 10px; }
+.power-row__ready { display: flex; align-items: center; gap: 4px; font-size: 16px; color: var(--green-ink); text-align: left; }
 .card--gold .zika__stars { color: var(--ink); }
 
 /* Truffle's room: outfits */
@@ -1296,3 +1296,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .choices--pinyin .choice, .placement__choices--pinyin .choice { font-weight: 700; }
 @media (max-width: 599px) and (max-height: 720px) { .stage:has(.sheet--oops) .stage__card .choice { min-height: var(--tap-main); } } /* a miss's sheet on the smallest phones: shorter tiles keep them in the card */
 .field .hint { margin: 4px 0; font-size: 14px; color: var(--ink-soft); }
+/* Truffle's bubble never moves the screen (parent, 2026-10-05: tapping him shifted everything on the placement result, the
+   chest, pet set-up): its room above him is kept whether he speaks or not, and the bubble sits in it. Lessons (bubble
+   beside him), Home and the room (bubble always there / floated) keep their own layout. */
+.pet:not(.stage__truffle .pet, .home .pet, .room .pet) { padding-top: var(--bubble-room, 72px); }
+.pet:not(.stage__truffle .pet, .home .pet, .room .pet) > .pet__bubble { position: absolute; top: 0; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: min(92vw, 560px); }

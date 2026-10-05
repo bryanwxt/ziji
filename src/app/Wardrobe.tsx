@@ -181,11 +181,14 @@ export function Wardrobe() {
                   disabled={tier === 0}
                   onClick={() => void save({ ...k, activePower: p.id })}
                 >
-                  <span class="power-row__mark"><InkIcon name={tier > 0 ? p.mark : 'lock'} size={30} /></span>
-                  <span class="power-row__name hanzi">{p.radicals[0]}</span>
+                  {/* one line for the family, the hint on its own line under it (parent, 2026-10-05: a wrapping row overlapped the next) */}
+                  <span class="power-row__top">
+                    <span class="power-row__mark"><InkIcon name={tier > 0 ? p.mark : 'lock'} size={30} /></span>
+                    <span class="power-row__name hanzi">{p.radicals[0]}</span>
+                    <span class="power-row__pips" aria-hidden="true">{[1, 2, 3].map((t) => <i key={t} class={t <= tier ? 'is-on' : ''} style={t <= tier ? { background: p.color } : undefined} />)}</span>
+                    <span class="power-row__count">{pr?.known ?? 0}/{pr?.size ?? 0}</span>
+                  </span>
                   {ready && <span class="power-row__ready"><InkIcon name="sparkle" size={16} /> <Label zh="完成练习就解锁" /></span>}
-                  <span class="power-row__pips" aria-hidden="true">{[1, 2, 3].map((t) => <i key={t} class={t <= tier ? 'is-on' : ''} style={t <= tier ? { background: p.color } : undefined} />)}</span>
-                  <span class="power-row__count">{pr?.known ?? 0}/{pr?.size ?? 0}</span>
                 </button>
               );
             })}
