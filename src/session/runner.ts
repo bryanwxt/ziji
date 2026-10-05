@@ -1,10 +1,9 @@
 import type { FlashItem, SessionPlan, SessionRecord, StepKind } from '../types';
 import { noteRecall } from './recall';
+import type { PracticeItem } from './round';
 
 /** A missed card comes back about 3 cards later, then about 6 after that (or at the end of a short queue). Spec §20 part 2. */
 export const RETRY_GAPS = [3, 6] as const;
-/** A new word's second reading comes about this many cards after its intro. */
-export const REPEAT_GAP = 5;
 // Ceilings on the time one card, written word or whole step can count, so an app
 // left open or backgrounded can't use up the time box or inflate the parent's minutes.
 export const MAX_CARD_MS = 60_000;
@@ -12,30 +11,8 @@ export const MAX_WORD_MS = 3 * 60_000;
 export const MAX_STEP_MS = 10 * 60_000;
 
 export function createSessionRecord(plan: SessionPlan, date: string, now: number, free = false): SessionRecord {
-  // Reading reviews lead, with one meaning review after every two (meaning takes at most a third of the head);
-  // new words come next, so a meaning backlog can never push them out of the time box; then the rest.
-  const read = plan.reviewWordIds.map((wordId): FlashItem => ({ wordId, isNew: false, retry: false }));
-  const mean = (plan.meaningReviewIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: false, mode: 'meaning' }));
-  const head: FlashItem[] = [];
-  let m = 0;
-  read.forEach((item, i) => {
-    head.push(item);
-    if (i % 2 === 1 && m < mean.length) head.push(mean[m++]!);
-  });
-  // A new word is met 3 times (spec §20 part 2): intro + reading, a second reading about 5 cards on, then its meaning.
-  const fresh: FlashItem[] = plan.newWordIds.map((wordId) => ({ wordId, isNew: true, retry: false }));
-  for (const wordId of plan.newWordIds) {
-    const intro = fresh.findIndex((i) => i.wordId === wordId && i.isNew);
-    fresh.splice(Math.min(intro + 1 + REPEAT_GAP, fresh.length), 0, { wordId, isNew: false, retry: true });
-  }
-  const freshMeaning = (plan.newWordMeaningIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: false, mode: 'meaning' }));
-  const flashQueue: FlashItem[] = [
-    ...head,
-    ...fresh,
-    ...freshMeaning,
-    ...mean.slice(m),
-    ...(plan.newMeaningIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: false, mode: 'meaning' })),
-  ];
+  // 认新字 (spec 2026-10-05 §2.1): each new word's card, then its recall. 练一练 builds its own round when it starts.
+  const flashQueue: FlashItem[] = plan.newWordIds.map((wordId) => ({ wordId, isNew: true, retry: false }));
   return {
     date, startedAt: now, activeMs: 0, free, plan, stepIndex: 0,
     flashQueue, flashIndex: 0, flashElapsedMs: 0, writeIndex: 0, writeDone: 0,
@@ -62,7 +39,8 @@ export function currentStep(rec: SessionRecord): StepKind | null {
 }
 
 export function currentFlashItem(rec: SessionRecord): FlashItem | null {
-  return currentStep(rec) === 'flashcards' ? (rec.flashQueue[rec.flashIndex] ?? null) : null;
+  const step = currentStep(rec);
+  return step === 'flashcards' || step === 'newwords' ? (rec.flashQueue[rec.flashIndex] ?? null) : null;
 }
 
 /** 写一写 passes (spec §20 part 3): a new word is traced, written with a hint, then from memory; a review word from memory only. */
@@ -104,8 +82,9 @@ export function afterFlashAnswer(rec: SessionRecord, correct: boolean, rawElapse
   const elapsedMs = Math.min(rawElapsedMs, MAX_CARD_MS);
   const item = currentFlashItem(rec);
   if (!item) return rec;
+  const legacy = currentStep(rec) === 'flashcards'; // a lesson saved before 2026-10-05: its own retries and time box
   const flashQueue = [...rec.flashQueue];
-  if (!correct && !item.retry) {
+  if (legacy && !correct && !item.retry) {
     const again = { ...item, isNew: false, retry: true };
     const first = Math.min(rec.flashIndex + 1 + RETRY_GAPS[0], flashQueue.length);
     flashQueue.splice(first, 0, again);
@@ -119,13 +98,60 @@ export function afterFlashAnswer(rec: SessionRecord, correct: boolean, rawElapse
     flashElapsedMs: rec.flashElapsedMs + elapsedMs,
     activeMs: rec.activeMs + elapsedMs,
   };
-  const done = next.flashIndex >= flashQueue.length || next.flashElapsedMs >= rec.plan.flashTimeBoxMs;
+  const done = next.flashIndex >= flashQueue.length || (legacy && next.flashElapsedMs >= rec.plan.flashTimeBoxMs);
   return done ? finishStep(next) : next;
 }
 
 export function skipFlashItem(rec: SessionRecord): SessionRecord {
   const next = { ...rec, flashIndex: rec.flashIndex + 1 };
   return next.flashIndex >= rec.flashQueue.length ? finishStep(next) : next;
+}
+
+/** A missed 练一练 item comes back once, about 4 items later, at the same rung, as practice only (spec 2026-10-05 §3.2). */
+export const PRACTICE_RETRY_GAP = 4;
+
+/** 练一练's round, built when the step starts (it needs today's 认新字 answers and his rungs); an empty round ends the step. */
+export function startPractice(rec: SessionRecord, queue: PracticeItem[]): SessionRecord {
+  const next: SessionRecord = { ...rec, practiceQueue: queue, practiceIndex: 0, practiceElapsedMs: 0 };
+  return queue.length ? next : finishStep(next);
+}
+
+export function currentPracticeItem(rec: SessionRecord): PracticeItem | null {
+  return currentStep(rec) === 'practice' ? (rec.practiceQueue?.[rec.practiceIndex ?? 0] ?? null) : null;
+}
+
+export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawElapsedMs: number, inContext = false): SessionRecord {
+  const item = currentPracticeItem(rec);
+  if (!item) return rec;
+  const elapsedMs = Math.min(rawElapsedMs, MAX_CARD_MS);
+  const index = rec.practiceIndex ?? 0;
+  const queue = [...rec.practiceQueue!];
+  if (!correct && !item.retry) queue.splice(Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length), 0, { ...item, grades: null, retry: true });
+  const next: SessionRecord = {
+    ...rec,
+    practiceQueue: queue,
+    practiceIndex: index + 1,
+    practiceElapsedMs: (rec.practiceElapsedMs ?? 0) + elapsedMs,
+    activeMs: rec.activeMs + elapsedMs,
+    recalls: noteRecall(rec.recalls, item.wordId, correct, inContext),
+  };
+  if (next.practiceIndex! >= queue.length) return finishStep(next);
+  if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) return finishStep({ ...next, practiceLeft: queue.length - next.practiceIndex! });
+  return next;
+}
+
+export function skipPracticeItem(rec: SessionRecord): SessionRecord {
+  const next: SessionRecord = { ...rec, practiceIndex: (rec.practiceIndex ?? 0) + 1 };
+  return next.practiceIndex! >= (rec.practiceQueue?.length ?? 0) ? finishStep(next) : next;
+}
+
+/** 再玩一会儿 (spec 2026-10-05 §7): one 练一练 round of words he knows; never saved, never graded, no time box. */
+export function createFreePracticeRecord(queue: PracticeItem[], date: string, now: number): SessionRecord {
+  const plan: SessionPlan = {
+    steps: ['practice'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, practiceTimeBoxMs: Number.POSITIVE_INFINITY,
+    writeCandidates: [], writeCount: 0,
+  };
+  return { ...createSessionRecord(plan, date, now, true), practiceQueue: queue, practiceIndex: 0, practiceElapsedMs: 0 };
 }
 
 /**

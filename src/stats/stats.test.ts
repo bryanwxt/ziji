@@ -3,7 +3,7 @@ import { Rating } from 'ts-fsrs';
 import { createSessionRecord } from '../session/runner';
 import { makeCard, makeWord } from '../test/fixtures';
 import type { ReviewLog, SessionPlan, SessionRecord } from '../types';
-import { dueTomorrow, minutesPerDay, streak, summarize, totalStars, troubleWords, weekDays, weeklyAccuracy } from './stats';
+import { dueTomorrow, minutesPerDay, starsOf, streak, summarize, totalStars, troubleWords, weekDays, weeklyAccuracy } from './stats';
 
 const emptyPlan: SessionPlan = { steps: [], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 };
 const session = (date: string, over: Partial<SessionRecord> = {}): SessionRecord => ({ ...createSessionRecord(emptyPlan, date, 0), completed: true, ...over });
@@ -115,4 +115,8 @@ describe('stars (deferred minor, plan 13)', () => {
     const old = { date: '2026-10-04', completedSteps: steps } as unknown as import('../types').SessionRecord;
     expect(totalStars([old], 0)).toBe(6);
   });
+});
+
+it('练一练 counts two stars (it replaces three starred steps), so a full lesson stays at 5', () => {
+  expect(starsOf(['newwords', 'practice', 'writing', 'speaking'])).toBe(5);
 });

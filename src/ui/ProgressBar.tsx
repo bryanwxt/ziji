@@ -2,7 +2,7 @@ import type { StepKind } from '../types';
 import { InkIcon } from './icons/InkIcon';
 import type { IconName } from './icons/icons';
 
-const ICONS: Record<StepKind, IconName | null> = { flashcards: null, choose: 'speech', writing: 'pen', components: 'fish', speaking: 'mic', wrapup: 'star' };
+const ICONS: Record<StepKind, IconName | null> = { flashcards: null, choose: 'speech', writing: 'pen', components: 'fish', speaking: 'mic', wrapup: 'star', newwords: null, practice: 'speech' };
 
 export function ProgressBar({ steps, stepIndex, fraction }: { steps: StepKind[]; stepIndex: number; fraction: number }) {
   const pct = Math.round(fraction * 100);

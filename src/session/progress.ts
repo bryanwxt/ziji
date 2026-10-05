@@ -11,6 +11,12 @@ export function sessionProgress(rec: SessionRecord, stepFraction = 0): number {
     const byCards = rec.flashQueue.length ? rec.flashIndex / rec.flashQueue.length : 0;
     const byTime = Number.isFinite(rec.plan.flashTimeBoxMs) && rec.plan.flashTimeBoxMs > 0 ? rec.flashElapsedMs / rec.plan.flashTimeBoxMs : 0;
     within = Math.max(byCards, byTime);
+  } else if (step === 'newwords') {
+    within = rec.flashQueue.length ? rec.flashIndex / rec.flashQueue.length : 0;
+  } else if (step === 'practice') {
+    const n = rec.practiceQueue?.length ?? 0;
+    const box = rec.plan.practiceTimeBoxMs ?? 0;
+    within = Math.max(n ? (rec.practiceIndex ?? 0) / n : 0, Number.isFinite(box) && box > 0 ? (rec.practiceElapsedMs ?? 0) / box : 0);
   } else if (step === 'writing') {
     within = rec.plan.writeCount ? rec.writeDone / rec.plan.writeCount : 0;
   } else {

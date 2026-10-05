@@ -27,11 +27,13 @@ describe('用一用 (spec §20 part 7)', () => {
     expect(r.dropped).toEqual(['w12', 'w13']);
   });
   it('a new word 认一认 never reached (its time ran out) is not a target: he was never taught it', () => {
-    let rec = createSessionRecord({ steps: ['flashcards', 'wrapup'], reviewWordIds: ['r'], newWordIds: ['n1', 'n2'], flashTimeBoxMs: 1, writeCandidates: [], writeCount: 0 }, 'd', 0);
+    // a lesson saved before 2026-10-05: its 认一认 queue held the review, then the new words
+    const queue = [{ wordId: 'r', isNew: false, retry: false }, { wordId: 'n1', isNew: true, retry: false }, { wordId: 'n2', isNew: true, retry: false }];
+    let rec = { ...createSessionRecord({ steps: ['flashcards', 'wrapup'], reviewWordIds: ['r'], newWordIds: ['n1', 'n2'], flashTimeBoxMs: 1, writeCandidates: [], writeCount: 0 }, 'd', 0), flashQueue: queue };
     rec = afterFlashAnswer(rec, true, 10); // r answered, then the time box ends 认一认
     expect(wrapupTargets(rec)).toEqual([]);
     expect(introducedNewWords(rec)).toEqual([]);
-    const met = afterFlashAnswer({ ...createSessionRecord({ ...rec.plan, flashTimeBoxMs: 1e9 }, 'd', 0), flashIndex: 1 }, true, 10); // n1 introduced
+    const met = afterFlashAnswer({ ...createSessionRecord({ ...rec.plan, flashTimeBoxMs: 1e9 }, 'd', 0), flashQueue: queue, flashIndex: 1 }, true, 10); // n1 introduced
     expect(introducedNewWords(met)).toEqual(['n1']);
   });
   it('no word twice in a row: words with an extra item go first, so their extra comes after the others', () => {

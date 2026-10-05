@@ -1,6 +1,7 @@
 import { DEFAULT_FINDS, type Finds } from './fun/finds';
 import type { Card as FsrsCard, Grade } from 'ts-fsrs';
 import type { Recall } from './session/recall';
+import type { PracticeItem } from './session/round';
 
 export type ZodiacId = 'rat' | 'ox' | 'tiger' | 'rabbit' | 'dragon' | 'snake' | 'horse' | 'goat' | 'monkey' | 'rooster' | 'dog' | 'pig';
 
@@ -106,7 +107,7 @@ export interface PlacementResult {
 
 /** The parent can switch each of these on or off; 用一用 (wrapup) closes the lesson whenever 认一认 or 选一选 runs (spec §20). */
 export type ActivityKind = 'flashcards' | 'choose' | 'writing' | 'components' | 'speaking';
-export type StepKind = ActivityKind | 'wrapup';
+export type StepKind = ActivityKind | 'wrapup' | 'newwords' | 'practice';
 
 export interface SessionPlan {
   steps: StepKind[];
@@ -117,6 +118,7 @@ export interface SessionPlan {
   writeCount: number;
   meaningReviewIds?: string[]; // due meaning cards (optional: sessions saved before plan 11 have none)
   newMeaningIds?: string[]; // begun words starting meaning practice
+  practiceTimeBoxMs?: number; // 练一练's time box (spec 2026-10-05 §2)
   newWordMeaningIds?: string[]; // today's new words that have a cue: their meaning question comes in the same lesson (spec §20 part 2)
 }
 
@@ -145,6 +147,10 @@ export interface SessionRecord {
   writePass?: number; // the pass within the current 写一写 word (spec §20 part 3)
   writeRedo?: string[]; // words to write once more at the end of 写一写
   writeRedoIndex?: number;
+  practiceQueue?: PracticeItem[]; // 练一练's round, built when the step starts (spec 2026-10-05 §3)
+  practiceIndex?: number;
+  practiceElapsedMs?: number;
+  practiceLeft?: number; // items the time box left for tomorrow (pacing reads it, spec §2.2)
 }
 
 export type RecordingPrompt =

@@ -14,16 +14,12 @@ const plan = (over: Partial<SessionPlan> = {}): SessionPlan => ({
   writeCount: 2,
   ...over,
 });
+/** A lesson saved before 2026-10-05 (spec 2026-10-05 §7): its 认一认 queue held the reviews, built by the old record. */
+const legacy = (p: SessionPlan, date = 'd'): SessionRecord => ({ ...createSessionRecord(p, date, 0), flashQueue: p.reviewWordIds.map((wordId) => ({ wordId, isNew: false, retry: false })) });
 
 describe('session runner', () => {
-  it('queues reviews before new words (each new word read again after it)', () => {
-    const rec = createSessionRecord(plan(), '2026-10-02', 0);
-    expect(rec.flashQueue.map((i) => [i.wordId, i.isNew])).toEqual([['r1', false], ['r2', false], ['n1', true], ['n1', false]]);
-    expect(currentStep(rec)).toBe('flashcards');
-  });
-
   it('re-shows a wrong card later as retries; a missed retry adds no more', () => {
-    let rec = createSessionRecord(plan({ newWordIds: [] }), 'd', 0);
+    let rec = legacy(plan({ newWordIds: [] }));
     rec = afterFlashAnswer(rec, false, 1000);
     expect(rec.flashQueue.map((i) => i.wordId)).toEqual(['r1', 'r2', 'r1', 'r1']);
     expect(rec.flashQueue[2]).toEqual({ wordId: 'r1', isNew: false, retry: true });
@@ -38,12 +34,12 @@ describe('session runner', () => {
   });
 
   it('ends flashcards when the time box runs out', () => {
-    const rec = afterFlashAnswer(createSessionRecord(plan({ flashTimeBoxMs: 5000 }), 'd', 0), true, 6000);
+    const rec = afterFlashAnswer(legacy(plan({ flashTimeBoxMs: 5000 })), true, 6000);
     expect(currentStep(rec)).toBe('writing');
   });
 
   it('skips an item without counting time', () => {
-    const rec = skipFlashItem(createSessionRecord(plan(), 'd', 0));
+    const rec = skipFlashItem(legacy(plan()));
     expect(currentFlashItem(rec)?.wordId).toBe('r2');
     expect(rec.flashElapsedMs).toBe(0);
   });
@@ -79,7 +75,7 @@ describe('session runner', () => {
 
 describe('idle time does not count as practice', () => {
   it('caps one card at a minute so a backgrounded app cannot eat the time box', () => {
-    const rec = afterFlashAnswer(createSessionRecord(plan({ flashTimeBoxMs: 8 * 60_000 }), 'd', 0), true, 20 * 60_000);
+    const rec = afterFlashAnswer(legacy(plan({ flashTimeBoxMs: 8 * 60_000 })), true, 20 * 60_000);
     expect(rec.flashElapsedMs).toBe(MAX_CARD_MS);
     expect(currentStep(rec)).toBe('flashcards');
   });
@@ -90,45 +86,24 @@ describe('idle time does not count as practice', () => {
   });
 });
 
-describe('meaning items in the queue', () => {
-it('interleaves reading and meaning reviews, then new words, then new meaning items', () => {
-  const p = plan({ steps: ['flashcards'], reviewWordIds: ['a', 'b'], meaningReviewIds: ['c'], newWordIds: ['n'], newMeaningIds: ['m'] });
-  const q = createSessionRecord(p, '2026-10-04', 0).flashQueue.map((i) => `${i.wordId}:${i.mode ?? 'read'}${i.isNew ? '+new' : ''}`);
-  expect(q).toEqual(['a:read', 'b:read', 'c:meaning', 'n:read+new', 'n:read', 'm:meaning']); // n: its second reading
-});
-it('meaning reviews take at most one slot in three, and never push new words behind them', () => {
-  const p = plan({ steps: ['flashcards'], reviewWordIds: ['a', 'b', 'c', 'd'], meaningReviewIds: ['m1', 'm2', 'm3', 'm4', 'm5'], newWordIds: ['n'], newMeaningIds: ['x'] });
-  const q = createSessionRecord(p, '2026-10-04', 0).flashQueue.map((i) => i.wordId);
-  expect(q).toEqual(['a', 'b', 'm1', 'c', 'd', 'm2', 'n', 'n', 'm3', 'm4', 'm5', 'x']);
-});
-});
-
 describe('reading repetition (spec §20 part 2)', () => {
   const p = { steps: ['flashcards'] as StepKind[], reviewWordIds: ['r1', 'r2'], newWordIds: ['n1', 'n2'], flashTimeBoxMs: 1e9, writeCandidates: [], writeCount: 0, newWordMeaningIds: ['n1'] };
-  it('a new word is met 3 times: intro + reading, a second reading about 5 items on, a meaning question near the end', () => {
-    const q = createSessionRecord(p, '2026-10-05', 0).flashQueue;
-    expect(q.map((i) => `${i.wordId}${i.isNew ? '*' : ''}${i.retry ? '+' : ''}${i.mode === 'meaning' ? 'm' : ''}`)).toEqual(['r1', 'r2', 'n1*', 'n2*', 'n1+', 'n2+', 'n1m']);
-  });
-  it('the second reading sits about 5 items after its intro when more new words follow', () => {
-    const q = createSessionRecord({ ...p, reviewWordIds: [], newWordIds: ['a', 'b', 'c', 'd', 'e', 'f', 'g'], newWordMeaningIds: [] }, 'd', 0).flashQueue.map((i) => `${i.wordId}${i.isNew ? '*' : ''}`);
-    expect(q.indexOf('a') - q.indexOf('a*')).toBe(6);
-  });
   it('a missed item comes back twice: about 3 items later, then about 6 after that', () => {
     const many = { ...p, reviewWordIds: Array.from({ length: 14 }, (_, i) => `r${i}`), newWordIds: [], newWordMeaningIds: [] };
-    const rec = afterFlashAnswer(createSessionRecord(many, '2026-10-05', 0), false, 100);
+    const rec = afterFlashAnswer(legacy(many, '2026-10-05'), false, 100);
     const ids = rec.flashQueue.map((i) => i.wordId);
     expect(ids.indexOf('r0', 1)).toBe(4);
     expect(ids.indexOf('r0', 5)).toBe(11);
   });
   it("counts today's recalls per word, with the in-context flag", () => {
-    let rec = createSessionRecord(p, '2026-10-05', 0);
+    let rec = legacy(p, '2026-10-05');
     rec = afterFlashAnswer(rec, true, 100, true);
     expect(rec.recalls?.r1).toEqual({ right: 1, inContext: 1, missed: false });
     rec = afterFlashAnswer(rec, false, 100);
     expect(rec.recalls?.r2).toEqual({ right: 0, inContext: 0, missed: true });
   });
   it('an old saved lesson without recalls resumes and counts', () => {
-    const old = { ...createSessionRecord(p, '2026-10-05', 0) } as SessionRecord;
+    const old = { ...legacy(p, '2026-10-05') } as SessionRecord;
     delete (old as { recalls?: unknown }).recalls;
     expect(afterFlashAnswer(old, true, 10).recalls?.r1?.right).toBe(1);
   });
@@ -167,5 +142,79 @@ describe('ending a step once', () => {
     const once = finishStepIf(rec, 'choose');
     expect(currentStep(once)).toBe('components');
     expect(finishStepIf(once, 'choose')).toBe(once);
+  });
+});
+
+import { createFreePracticeRecord, currentPracticeItem, afterPracticeAnswer, skipPracticeItem, startPractice, PRACTICE_RETRY_GAP } from './runner';
+import type { PracticeItem } from './round';
+
+const planOf = (over: Partial<SessionPlan> = {}): SessionPlan => ({ steps: ['newwords', 'practice'], reviewWordIds: ['b:a'], newWordIds: ['b:x', 'b:y'], flashTimeBoxMs: 0, practiceTimeBoxMs: 60_000, writeCandidates: [], writeCount: 0, ...over });
+const p = (wordId: string, over: Partial<PracticeItem> = {}): PracticeItem => ({ wordId, rung: 1, ask: 'read', grades: 'recognise', retry: false, ...over });
+
+describe('认新字 (spec 2026-10-05 §2.1)', () => {
+  it("the lesson's flash queue is today's new words, each introduced once, nothing else", () => {
+    expect(createSessionRecord(planOf(), '2026-10-06', 0).flashQueue).toEqual([
+      { wordId: 'b:x', isNew: true, retry: false },
+      { wordId: 'b:y', isNew: true, retry: false },
+    ]);
+  });
+  it('a miss adds no retry (the word comes first in 练一练 instead), and 认新字 ends after its last word', () => {
+    let rec = createSessionRecord(planOf(), '2026-10-06', 0);
+    rec = afterFlashAnswer(rec, false, 1000);
+    expect(rec.flashQueue).toHaveLength(2);
+    expect(rec.recalls?.['b:x']?.missed).toBe(true);
+    rec = afterFlashAnswer(rec, true, 1000);
+    expect(currentStep(rec)).toBe('practice');
+  });
+});
+
+describe('练一练 on the record (spec 2026-10-05 §3)', () => {
+  const inPractice = () => {
+    const rec = createSessionRecord(planOf({ newWordIds: [] }), '2026-10-06', 0);
+    expect(currentStep(rec)).toBe('newwords');
+    return finishStep(rec);
+  };
+  it('an empty round ends the step at once (review focus 4)', () => {
+    expect(currentStep(startPractice(inPractice(), []))).toBeNull();
+  });
+  it('items come in order; a right answer moves on', () => {
+    const rec = startPractice(inPractice(), [p('b:a'), p('b:b')]);
+    expect(currentPracticeItem(rec)?.wordId).toBe('b:a');
+    expect(currentPracticeItem(afterPracticeAnswer(rec, true, 2000))?.wordId).toBe('b:b');
+  });
+  it('a miss brings the item back once, about 4 items later, at the same rung, as an ungraded retry', () => {
+    const queue = ['b:a', 'b:b', 'b:c', 'b:d', 'b:e', 'b:f'].map((w) => p(w, { rung: 2, ask: 'word', grades: 'meaning' }));
+    const rec = afterPracticeAnswer(startPractice(inPractice(), queue), false, 2000);
+    const again = rec.practiceQueue!.filter((x) => x.wordId === 'b:a');
+    expect(again).toHaveLength(2);
+    expect(again[1]).toEqual({ wordId: 'b:a', rung: 2, ask: 'word', grades: null, retry: true });
+    expect(rec.practiceQueue!.findIndex((x, i) => i > 0 && x.wordId === 'b:a')).toBe(1 + PRACTICE_RETRY_GAP);
+    expect(afterPracticeAnswer({ ...rec, practiceIndex: 1 + PRACTICE_RETRY_GAP }, false, 100).practiceQueue).toHaveLength(7); // a retry never adds another
+  });
+  it('the time box ends the round and notes what was left for tomorrow (pacing reads it)', () => {
+    const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a'), p('b:b'), p('b:c')]), true, 60_000);
+    expect(currentStep(rec)).toBeNull();
+    expect(rec.practiceLeft).toBe(2);
+  });
+  it('finishing every item leaves nothing over', () => {
+    const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a')]), true, 1000);
+    expect(currentStep(rec)).toBeNull();
+    expect(rec.practiceLeft ?? 0).toBe(0);
+  });
+  it('a skipped item (a paused word) moves on without a recall', () => {
+    const rec = skipPracticeItem(startPractice(inPractice(), [p('b:a'), p('b:b')]));
+    expect(currentPracticeItem(rec)?.wordId).toBe('b:b');
+    expect(rec.recalls?.['b:a']).toBeUndefined();
+  });
+  it('the round is kept on the record, so a lesson resumes at the same item (review focus 1)', () => {
+    const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a'), p('b:b'), p('b:c')]), true, 1000);
+    const back = structuredClone(rec);
+    expect(currentPracticeItem(back)).toEqual(p('b:b'));
+  });
+  it('free play is one 练一练 round, never time-boxed', () => {
+    const rec = createFreePracticeRecord([p('b:a', { grades: null, retry: true })], '2026-10-06', 0);
+    expect(rec.free).toBe(true);
+    expect(currentStep(rec)).toBe('practice');
+    expect(currentStep(afterPracticeAnswer(rec, true, 10 * 60_000))).toBeNull(); // ended by its last item, not by time
   });
 });

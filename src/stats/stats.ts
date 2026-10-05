@@ -47,8 +47,8 @@ export function streak(sessions: SessionRecord[], today: string): number {
   return n;
 }
 
-/** One star per finished activity; 用一用 closes the lesson but isn't a star of its own. */
-export const starsOf = (steps: readonly string[]) => steps.filter((s) => s !== 'wrapup').length;
+/** One star per finished activity; 用一用 closes the lesson but isn't a star of its own; 练一练 counts two (it replaces 选一选, 钓鱼 and 用一用, spec 2026-10-05). */
+export const starsOf = (steps: readonly string[]) => steps.reduce((n, s) => n + (s === 'wrapup' ? 0 : s === 'practice' ? 2 : 1), 0);
 /** Lessons before this day counted 用一用 as a star: they keep it, so his total (and a stars goal) never goes down. */
 export const WRAPUP_NO_STAR_FROM = '2026-10-05';
 
