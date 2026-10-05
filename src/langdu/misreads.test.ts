@@ -69,6 +69,13 @@ describe('saving misreads again (deferred minors, plan 8)', () => {
     await applyMisreads(db, { ...rec, misread: ['天'] }, ['天', '地'], now);
     expect((await getKid(db))!.reading.extra).toBe(1);
   });
+  it('sweep: unmarking every character and marking again adds no second extra day', async () => {
+    const { db, rec } = await setup();
+    await applyMisreads(db, rec, ['天'], now);
+    await applyMisreads(db, (await listRecordings(db))[0]!, [], now);
+    await applyMisreads(db, (await listRecordings(db))[0]!, ['天'], now);
+    expect((await getKid(db))!.reading.extra).toBe(1);
+  });
   it('unmarking a character takes away the priority it was given', async () => {
     const { db, rec } = await setup();
     await applyMisreads(db, rec, ['天'], now);

@@ -802,6 +802,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .path__bubble { top: -36px; font-size: 16px; }
 .home .path__row > .path__bubble { pointer-events: none; } /* a label: a tap on it is a tap on the stop */
 .home .path__row > .path__name, .home .pet__bubble { pointer-events: none; } /* labels too: a tap goes through to the world target under them */
+.home .path__row > .path__name--current { pointer-events: auto; cursor: pointer; } /* except the current stop's: it starts the step */
 .home__pet { position: absolute; z-index: 2; bottom: calc(var(--nav-h) + 4px); left: 50%; transform: translateX(-50%); pointer-events: none; }
 .home__pet .truffle { width: var(--pet-home); height: auto; }
 .home__pet .pet__bubble { font-size: 17px; }

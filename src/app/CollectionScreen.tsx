@@ -141,7 +141,17 @@ export function CollectionScreen() {
         )}
       </div>
       {shown && (
-        <div class="zika-big" role="dialog" aria-modal="true" aria-label={`字卡：${shown.char}`} onClick={() => setShown(null)} onKeyDown={(e) => { if (e.key === 'Escape') setShown(null); }}>
+        <div class="zika-big" role="dialog" aria-modal="true" aria-label={`字卡：${shown.char}`} onClick={() => setShown(null)} onKeyDown={(e) => {
+          if (e.key === 'Escape') setShown(null);
+          if (e.key !== 'Tab') return;
+          // Tab goes round inside the card (sweep): from the last button to the first, and back with Shift
+          const all = [...e.currentTarget.querySelectorAll<HTMLElement>('button')];
+          const edge = e.shiftKey ? all[0] : all[all.length - 1];
+          if (document.activeElement === edge || !e.currentTarget.contains(document.activeElement)) {
+            e.preventDefault();
+            (e.shiftKey ? all[all.length - 1] : all[0])?.focus();
+          }
+        }}>
           <div class={`zika zika--big${shown.gold ? ' card--gold' : ''}`} onClick={(e) => e.stopPropagation()}>
             <button ref={closeBtn} type="button" class="icon-btn zika-big__close" aria-label="关闭" onClick={() => setShown(null)}><X size={30} strokeWidth={3} /></button>
             {/* centred like the lesson cards: the character on the card's centre line, its speak button hanging to its right */}

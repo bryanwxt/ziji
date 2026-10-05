@@ -53,8 +53,15 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const [chest, setChest] = useState<ChestResult | null>(null);
   const [landed, setLanded] = useState(0);
   const [powered, setPowered] = useState(false);
-  const [nudge, setNudge] = useState(0); // a tap, not a hold, on the chest: it wiggles as a hint (children tap first)
-  const hint = () => setNudge((n) => n + 1);
+  // a tap, not a hold, on the chest: it wiggles as a hint (children tap first). The wiggle restarts on the same element, so
+  // keyboard focus stays on the hold button (sweep: a remount dropped it to the page)
+  const hint = () => {
+    const el = chestRef.current;
+    if (!el) return;
+    el.classList.remove('chest-hint');
+    void el.offsetWidth;
+    el.classList.add('chest-hint');
+  };
   const [wiggle, setWiggle] = useState(1); // the key of his next excited wiggle at the chest
   const still = reducedMotion();
   const stars = rec.free ? 0 : starsOf(rec.completedSteps);
@@ -130,6 +137,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     const { kid: next, result } = openChest(kidRef.current, rec.date, settings.zodiac);
     await save(next).catch(() => {}); // never strand the child on this screen, even if saving fails
     setChest(result);
+    chestRef.current?.classList.remove('chest-hint');
     playSfx('chest');
     const r = chestRef.current?.getBoundingClientRect();
     if (r) burst(r.left + r.width / 2, r.top + r.height * 0.35, { count: 16 });
@@ -202,7 +210,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
                 <Truffle mood="cheer" outfit={kid.outfit} accessory={visibleAccessory(kid)} size={130} alive react={chest ? WATCH_POUNCE : still ? null : { kind: 'excited', key: wiggle }} />
               </div>
             )}
-            <div ref={chestRef} key={nudge} class={nudge && !chest ? 'chest-hint' : undefined}>
+            <div ref={chestRef}>
               <div class="chest-art" onClick={chest ? undefined : hint}><Chest open={!!chest} /></div>
               {!chest && <HoldButton label="按住打开宝箱" onComplete={() => void open()} onTooShort={hint} />}
             </div>

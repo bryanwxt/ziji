@@ -35,7 +35,8 @@ export function TodayPath({ nodes, started, onStart, speakingName = '朗读' }: 
             >
               <span class={`path__icon${icon === '字' ? ' path__icon--hanzi' : ''}`}>{icon}</span>
             </button>
-            <span class="path__name"><Label zh={name(n.kind)} /></span>
+            {/* the current stop's name starts it too: a child taps the word as often as the circle (sweep) */}
+            <span class={`path__name${isCurrent ? ' path__name--current' : ''}`} onClick={isCurrent ? onStart : undefined}><Label zh={name(n.kind)} /></span>
           </li>
         );
       })}

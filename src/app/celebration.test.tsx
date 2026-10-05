@@ -65,6 +65,17 @@ describe('Celebration chest', () => {
     fireEvent.click(document.querySelector('.chest-art')!); // the picture of the chest says the same
     expect(document.querySelector('.chest-hint')).toBeTruthy();
   });
+  it('sweep: the hint keeps keyboard focus on the hold button (no remount)', async () => {
+    await setup('2026-10-02', ['flashcards']);
+    fireEvent.click(screen.getByText('继续'));
+    const chest = await screen.findByRole('button', { name: '按住打开宝箱' });
+    chest.focus();
+    fireEvent(chest, new Event('pointerdown', { bubbles: true }));
+    fireEvent(chest, new Event('pointerup', { bubbles: true }));
+    expect(document.querySelector('.chest-hint')).toBeTruthy();
+    expect(document.activeElement).toBe(chest);
+    expect(chest.isConnected).toBe(true);
+  });
   it('gives no chest for a session with no activities in it', async () => {
     await setup('2026-10-02', []);
     expect(screen.getByText('回家')).toBeTruthy();

@@ -213,6 +213,23 @@ describe('CollectionScreen', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(document.activeElement).toBe(card));
   });
+  it('sweep: Tab stays inside the card dialog, round and round', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    await putCards(app.db, [makeCard('b:河', 'recognise', new Date(2026, 9, 20), true)]);
+    renderWithApp(<CollectionScreen />, app);
+    fireEvent.click(await screen.findByRole('button', { name: '河' }));
+    const dialog = screen.getByRole('dialog');
+    const buttons = [...dialog.querySelectorAll<HTMLElement>('button')];
+    const first = buttons[0]!;
+    const last = buttons[buttons.length - 1]!;
+    await waitFor(() => expect(document.activeElement).toBe(first));
+    last.focus();
+    fireEvent.keyDown(last, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
   it('金卡 shows only cards he can read and write; none yet shows none', async () => {
     const app = await makeAppData();
     await putWords(app.db, builtinWords(0));

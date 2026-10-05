@@ -10,7 +10,10 @@ import type { Recording } from '../types';
  */
 export async function applyMisreads(db: AppDb, recording: Recording, chars: string[], now: Date): Promise<{ updated: number; notInApp: string[] }> {
   const before = new Set(recording.misread ?? []);
-  await updateRecording(db, { ...recording, misread: chars });
+  // the passage's extra day comes with the first marks only: saving again, or unmarking and marking again, doesn't add another
+  const giveDay = chars.length > 0 && before.size === 0 && !recording.extraDayGiven && recording.prompt.kind === 'passage';
+  // (marks saved before the flag existed got their day then)
+  await updateRecording(db, { ...recording, misread: chars, ...(giveDay || recording.extraDayGiven || before.size > 0 ? { extraDayGiven: true } : {}) });
   let updated = 0;
   const notInApp: string[] = [];
   for (const ch of chars) {
@@ -44,8 +47,7 @@ export async function applyMisreads(db: AppDb, recording: Recording, chars: stri
     const back = listedAt === misreadMark ? misreadPrev : listedAt;
     await putWords(db, [back == null ? rest : { ...rest, listedAt: back }]);
   }
-  // the passage's extra day comes with the first marks only: saving again doesn't add another
-  if (chars.length && before.size === 0 && recording.prompt.kind === 'passage') {
+  if (giveDay && recording.prompt.kind === 'passage') {
     const kid = await getKid(db);
     if (kid) await saveKid(db, { ...kid, reading: addExtraDay(kid.reading, recording.prompt.passageId) });
   }

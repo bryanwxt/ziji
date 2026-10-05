@@ -182,6 +182,7 @@ export interface Recording {
   durationSec: number;
   level?: number; // average loudness (RMS 0..1) while reading; older recordings have none
   misread?: string[]; // characters the parent confirmed he misread
+  extraDayGiven?: boolean; // its marks have given the passage its one extra day (never a second, however often re-marked)
 }
 
 export interface PicturePrompt {

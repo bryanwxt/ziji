@@ -239,3 +239,9 @@ describe('sweep: the chest-watching Truffle', () => {
     expect(css).toMatch(/\.celebrate__watch \.truffle \{[^}]*width: clamp\(130px, 24dvh, 200px\);[^}]*height: auto;/);
   });
 });
+
+describe('sweep: the current path stop', () => {
+  it("its name takes the tap (it starts the step) while the other names let taps through to the world", () => {
+    expect(css).toMatch(/\.home \.path__row > \.path__name--current \{ pointer-events: auto;/);
+  });
+});
