@@ -1,6 +1,7 @@
 // 成语 (spec 2026-10-05 §4): about 150 common 成语 from the app's HSK list, each with an English meaning and short sentences
 // written for this app. A 成语's level is its hardest character's (HSK files nearly all 成语 under 7–9).
 import { BUILTIN } from '.';
+import type { Word } from '../types';
 
 export interface Chengyu { text: string; meaning: string; sentences: string[] }
 
@@ -171,3 +172,41 @@ const LEVEL = new Map(BUILTIN.map((ch) => [ch.char, ch.level as number]));
 const BY_TEXT = new Map(CHENGYU.map((x) => [x.text, x]));
 export const chengyuLevel = (text: string): number => Math.max(...Array.from(text).map((ch) => LEVEL.get(ch) ?? 7));
 export const chengyuOf = (text: string): Chengyu | undefined => BY_TEXT.get(text);
+
+/** A 成语 to use with a word: built-in, or one of his school 成语 (on the iPad only). */
+export interface Idiom { text: string; meaning?: string; sentences: string[]; school: boolean }
+
+const once = (text: string, part: string) => { const at = text.indexOf(part); return at >= 0 && text.indexOf(part, at + 1) < 0; };
+
+/** A school 成语: a four-character word the parent or a worksheet tagged 成语. */
+export const isIdiomWord = (w: Word): boolean => !!w.tags?.includes('成语') && Array.from(w.text).length === 4;
+
+/** A school 成语 word as a 成语: his class sentences first, then the list's; the parent's meaning, else the list's. */
+export function idiomOf(w: Word): Idiom | null {
+  if (!isIdiomWord(w)) return null;
+  const built = chengyuOf(w.text);
+  const own = (w.sentences ?? []).map((s) => s.text).filter((s) => once(s, w.text));
+  return { text: w.text, meaning: w.meaning ?? built?.meaning, sentences: [...own, ...(built?.sentences ?? [])], school: true };
+}
+
+/**
+ * The 成语 that use a word once (spec §4): his school 成语 first (any level), then built-in ones at his level, one level up,
+ * then easier ones, the nearest first; never above one level up. Once only: a second copy would give a completion away.
+ */
+export function idiomsFor(word: Word, level: number, pool: Word[]): Idiom[] {
+  const school = pool.filter((w) => !w.paused && w.text !== word.text && isIdiomWord(w) && once(w.text, word.text)).map((w) => idiomOf(w)!);
+  const taken = new Set(school.map((i) => i.text));
+  const rank = (l: number) => (l === level ? 0 : l === level + 1 ? 1 : 2 + (level - l));
+  const built = CHENGYU.filter((x) => x.text !== word.text && !taken.has(x.text) && once(x.text, word.text) && chengyuLevel(x.text) <= level + 1)
+    .map((x) => ({ x, r: rank(chengyuLevel(x.text)) }))
+    .sort((a, b) => a.r - b.r)
+    .map(({ x }): Idiom => ({ text: x.text, meaning: x.meaning, sentences: [...x.sentences], school: false }));
+  return [...school, ...built];
+}
+
+/** His level (spec §4): the level of the next built-in word he hasn't started, in rank order; 7 when he has started them all. */
+export function learnerLevel(words: Word[], started: ReadonlySet<string>): number {
+  const next = words.filter((w) => w.source === 'builtin' && !w.paused && !started.has(w.id)).sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity))[0];
+  if (next) return next.level ?? 1;
+  return words.some((w) => w.source === 'builtin') ? 7 : 1;
+}
