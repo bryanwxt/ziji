@@ -98,8 +98,8 @@ describe('new-word card (parent report: it repeated the example phrases)', () =>
     const counts: string[] = [];
     for (const w of pool.filter((x) => (x.examples?.length ?? 0) >= 2).slice(0, 300)) {
       const { unmount } = render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
-      const usage = document.querySelector('.usage__text')?.textContent ?? '';
-      const examples = [...document.querySelectorAll('.intro .example .hanzi')].map((e) => e.textContent!);
+      const usage = document.querySelector('.usage__text .label')?.getAttribute('data-zh') ?? '';
+      const examples = [...document.querySelectorAll('.intro .example:not(.example--idiom) .label')].map((e) => e.getAttribute('data-zh')!);
       if (examples.some((e) => usage === e || usage.includes(e)) || new Set(examples).size !== examples.length) counts.push(`${w.text}: ${usage} | ${examples.join(' ')}`);
       unmount();
     }
@@ -113,7 +113,7 @@ describe('new-word card in English too (parent, 2026-10-04)', () => {
     render(<FlashcardStep {...base} word={er} item={{ wordId: er.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     const en = [...document.querySelectorAll('.intro [lang="en"]')].map((e) => e.textContent);
     expect(en[0]).toMatch(/child|son/);
-    const phrases = [...document.querySelectorAll('.intro .usage__text, .intro .example .hanzi')].map((e) => e.textContent!.replace(/\s/g, ''));
+    const phrases = [...document.querySelectorAll('.intro .usage__text .label, .intro .example .label')].map((e) => e.getAttribute('data-zh')!);
     expect(phrases.length).toBeGreaterThan(0);
     expect(en.length).toBe(1 + phrases.length); // one English line per phrase as well
   });
@@ -269,8 +269,9 @@ describe('the usage line (spec §20 part 1)', () => {
     render(<FlashcardStep {...base} word={hen} item={{ wordId: hen.id, isNew: false, retry: false }} voice={false} onDone={vi.fn()} />);
     expect(document.querySelector('.usage')).toBeNull(); // not before he answers
     fireEvent.click(document.querySelector<HTMLButtonElement>('.choices button')!);
-    expect(document.querySelector('.flash__prompt .usage')?.textContent).toContain('这个书包很大。');
-    expect(document.querySelector('.usage__word')?.textContent).toBe('很');
+    expect(document.querySelector('.flash__prompt .usage .label')?.getAttribute('data-zh')).toBe('这个书包很大。');
+    expect([...document.querySelectorAll('.usage .label__cell--mark .label__ch')].map((e) => e.textContent).join('')).toBe('很'); // the word picked out, its pinyin over it
+    expect(document.querySelector('.usage .label__cell--mark .label__py')?.textContent).toBe('hěn');
     expect(speak).not.toHaveBeenCalledWith('这个书包很大。');
     cleanup();
   });
@@ -435,8 +436,8 @@ describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () =
     const idiom = builtinIdiom('五颜六色')!;
     render(<FlashcardStep {...base} word={yan} idiom={idiom} item={{ wordId: yan.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     const box = document.querySelector('.intro__idiom')!;
-    expect(box.querySelector('.hanzi')!.textContent).toBe('五颜六色');
-    expect(box.querySelector('.pinyin')!.textContent).toBe('wǔ yán liù sè');
+    expect(box.querySelector('.label')!.getAttribute('data-zh')).toBe('五颜六色');
+    expect([...box.querySelectorAll('.label__py')].map((e) => e.textContent)).toEqual(['wǔ', 'yán', 'liù', 'sè']); // each syllable over its own character
     expect(box.querySelector('[lang="en"]')!.textContent).toBe(idiom.meaning);
     expect(box.querySelector('.intro__idiom-sentence')!.textContent).toBe(idiom.sentences[0]);
   });

@@ -14,8 +14,10 @@ const BLANK = '＿';
 export const spokenBlanks = (zh: string) => zh.replaceAll(BLANK, '空格');
 
 /** Chinese text with each syllable shown small directly above its own character, for a P2 reader. */
-export function Label({ zh, py: given, pinyinFor }: {
+export function Label({ zh, py: given, pinyinFor, mark }: {
   zh: string;
+  /** Han characters to highlight, as [first, count] counted in Han characters (the word inside a usage line) */
+  mark?: [number, number];
   /** syllables for its Han characters, from context (子 in 儿子 is zi) */
   py?: string;
   /** which characters show their pinyin (all when omitted) — for fading pinyin as he learns */
@@ -45,13 +47,15 @@ export function Label({ zh, py: given, pinyinFor }: {
     const py = out.map((c) => (c.zh ? c.py : !c.blank && /[\p{L}\p{N}]/u.test(c.ch) ? c.ch.trim() : '')).filter(Boolean).join(' ');
     return { cells: out, py };
   }, [zh, given, pinyinFor]);
+  let han = -1;
+  const marked = (c: Cell) => !!mark && !!c.zh && (++han, han >= mark[0] && han < mark[0] + mark[1]);
   return (
-    <span class="label" data-py={py}>
+    <span class="label" data-py={py} data-zh={zh}>
       {/* one cell already reads as the whole text; several get a single readable copy so 你好 isn't read 你…好 */}
       {cells.length > 1 && <span class="sr-only">{spokenBlanks(zh)}</span>}
       <span class="label__cells" aria-hidden={cells.length > 1 ? 'true' : undefined}>
         {cells.map((c, i) => (
-          <span key={i} class={c.blank ? 'label__cell label__cell--blank' : c.zh ? 'label__cell label__cell--zh' : 'label__cell'}>
+          <span key={i} class={`${c.blank ? 'label__cell label__cell--blank' : c.zh ? 'label__cell label__cell--zh' : 'label__cell'}${marked(c) ? ' label__cell--mark' : ''}`}>
             <small class="label__py" aria-hidden="true">{c.py}</small>
             <span class="label__ch">{c.ch}</span>
           </span>

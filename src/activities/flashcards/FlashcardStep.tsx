@@ -1,4 +1,6 @@
+import { pinyin } from 'pinyin-pro';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import '../../content/pinyinFixes';
 import { playSfx } from '../../audio/sfx';
 import { speak } from '../../audio/speech';
 import { getCharInfo, hanChars } from '../../content';
@@ -221,19 +223,36 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   );
 }
 
-/** The word in use, highlighted, with a speak button (spec §20 part 1). Read aloud only when tapped, so reviews keep their pace. */
-function UsageLine({ word }: { word: Word }) {
-  const line = usageLine(word);
-  if (!line) return null;
+/**
+ * One line of Chinese on a card, the same everywhere (parent, 2026-10-05): each syllable over its own character, a small speak
+ * button to its right, its English underneath.
+ */
+function WordRow({ zh, py, en, mark, class: cls, textClass }: { zh: string; py?: string; en?: string | null; mark?: [number, number]; class: string; textClass?: string }) {
   return (
-    <div class="usage" lang="zh">
-      {/* pinyin above, like every 组词 and 成语 on the card (parent, 2026-10-05): over the whole 组词, or over the word in a sentence */}
-      <span class="hanzi usage__text" data-py={line.isWord ? line.pinyin : undefined}>
-        {line.before}<mark class="usage__word" data-py={line.isWord ? undefined : line.pinyin}>{word.text}</mark>{line.after}
-      </span>
-      <SpeakButton text={line.full} />
+    <div class={`word-row ${cls}`} lang="zh">
+      <div class="word-row__line">
+        <span class={`hanzi word-row__zh${textClass ? ` ${textClass}` : ''}`}><Label zh={zh} py={py} mark={mark} /></span>
+        <SpeakButton text={zh} small />
+      </div>
+      {en && <p class="word-row__en" lang="en">{en}</p>}
     </div>
   );
+}
+
+/** The usage line's syllables: the word's own reading where it sits, the rest read in context. */
+function usagePinyin(word: Word, line: NonNullable<ReturnType<typeof usageLine>>): string {
+  if (line.isWord) return line.pinyin;
+  const syl = pinyin(line.full, { type: 'all' }).filter((d) => d.isZh).map((d) => d.pinyin);
+  const own = line.pinyin.trim().split(/\s+/);
+  if (own.length === hanChars(word.text).length) own.forEach((p, i) => { syl[hanChars(line.before).length + i] = p; });
+  return syl.join(' ');
+}
+
+/** The word in use, highlighted, with a speak button (spec §20 part 1). Read aloud only when tapped, so reviews keep their pace. */
+function UsageLine({ word, en }: { word: Word; en?: string | null }) {
+  const line = usageLine(word);
+  if (!line) return null;
+  return <WordRow class="usage" textClass="usage__text" zh={line.full} py={usagePinyin(word, line)} mark={[hanChars(line.before).length, hanChars(word.text).length]} en={en} />;
 }
 
 /**
@@ -248,18 +267,19 @@ function extraWords(line: ReturnType<typeof usageLine>, idiom: Idiom | null): nu
 
 function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
   const line = usageLine(word);
+  const long = Array.from(word.text).length > 1;
   return (
     <div class="intro">
       <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`}>
-        <div class="pinyin">{word.pinyin}</div>
-        {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
-        <div class={`hanzi hanzi--xl${Array.from(word.text).length > 1 ? ' hanzi--long' : ''}`} style={Array.from(word.text).length > 1 ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
-        <div class="intro__say">
+        <div class="intro__head">
+          <div class="intro__char">
+            <div class="pinyin">{word.pinyin}</div>
+            {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
+            <div class={`hanzi hanzi--xl${long ? ' hanzi--long' : ''}`} style={long ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
+          </div>
           <SpeakButton text={word.text} />
-          {cardMeaning(word) && <p class="intro__en" lang="en">{cardMeaning(word)}</p>}
         </div>
-        <UsageLine word={word} />
-        {line && glossFor(line.full) && <p class="intro__en intro__en--phrase" lang="en">{glossFor(line.full)}</p>}
+        {cardMeaning(word) && <p class="intro__en" lang="en">{cardMeaning(word)}</p>}
         {hanChars(word.text).length <= 2 && hanChars(word.text).map((ch) => { // a 成语's four characters' parts would crowd the card
           const info = getCharInfo(ch);
           const parts = info?.components ?? [];
@@ -279,26 +299,13 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
             </div>
           );
         })}
-        {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom)).map((e) => ( // with their English, never the one the usage line already shows; all of them feed the meaning questions
-          <div class="example" key={e.text}>
-            <span class="word-ruby"> {/* pinyin over the 组词, laid out like the 成语 below it (parent, 2026-10-05: 一's card looked off) */}
-              <span class="pinyin">{e.pinyin}</span>
-              <span class="hanzi">{e.text}</span>
-            </span>
-            <SpeakButton text={e.text} />
-            {glossFor(e.text) && <span class="example__en" lang="en">{glossFor(e.text)}</span>}
-          </div>
+        {line && <UsageLine word={word} en={glossFor(line.full)} />}
+        {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom)).map((e) => ( // never the one the usage line already shows; all of them feed the meaning questions
+          <WordRow key={e.text} class="example" zh={e.text} py={e.pinyin} en={glossFor(e.text)} />
         ))}
         {idiom && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语)
           <div class="intro__idiom">
-            <div class="example example--idiom">
-              <span class="idiom-ruby">
-                <span class="pinyin">{idiom.pinyin}</span>
-                <span class="hanzi">{idiom.text}</span>
-              </span>
-              <SpeakButton text={idiom.text} />
-              {idiom.meaning && <span class="example__en" lang="en">{idiom.meaning}</span>}
-            </div>
+            <WordRow class="example example--idiom" zh={idiom.text} py={idiom.pinyin} en={idiom.meaning} />
             {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi">{idiom.sentences[0]}</p>}
           </div>
         )}
