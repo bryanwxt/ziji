@@ -236,7 +236,7 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
   const line = usageLine(word);
   return (
     <div class="intro">
-      <div class="intro__card">
+      <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`}>
         <div class="pinyin">{word.pinyin}</div>
         <div class="hanzi hanzi--xl">{word.text}</div>
         <div class="intro__say">
@@ -267,8 +267,10 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
         {idiom && ( // a 成语 takes the extra 组词's place, so the card still fits a phone (all 组词 still feed the questions)
           <div class="intro__idiom">
             <div class="example example--idiom">
-              <span class="pinyin">{pinyin(idiom.text)}</span>
-              <span class="hanzi">{idiom.text}</span>
+              <span class="idiom-ruby">
+                <span class="pinyin">{pinyin(idiom.text)}</span>
+                <span class="hanzi">{idiom.text}</span>
+              </span>
               <SpeakButton text={idiom.text} />
               {idiom.meaning && <span class="example__en" lang="en">{idiom.meaning}</span>}
             </div>

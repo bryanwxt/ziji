@@ -18,6 +18,9 @@ const cardClipped = (page: import('playwright-core').Page, name: string) => page
     if ((el instanceof SVGElement && el.ownerSVGElement) || el.closest('.sr-only, [aria-hidden="true"]')) continue;
     const r = el.getBoundingClientRect();
     if (r.width && r.height && (r.top < card.top - 2 || r.bottom > card.bottom + 2 || r.left < card.left - 2 || r.right > card.right + 2)) return [`${n}: clipped by the card: ${(el.textContent ?? '').trim().slice(0, 12)}`];
+    // a box inside the card that has to scroll hides its last rows (the 认新字 card scrolls rather than squash)
+    const o = getComputedStyle(el).overflowY;
+    if ((o === 'auto' || o === 'scroll' || o === 'hidden') && el.scrollHeight > el.clientHeight + 2) return [`${n}: ${el.className} scrolls ${el.scrollHeight - el.clientHeight}px`];
   }
   return [];
 }, name);
@@ -61,6 +64,21 @@ for (const size of SIZES) {
     await page.waitForTimeout(300);
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+  }
+  // 成语 (phase C): each question, then with the sheet open after a miss; the 认新字 card with a 成语
+  for (const c of ['idiom', 'idiom-fit', 'idiom-build', 'intro-idiom']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+    if (c === 'idiom' || c === 'idiom-fit') {
+      const right = c === 'idiom' ? '足' : '美中不足';
+      const wrong = await page.$$eval('.choice', (bs, r) => bs.map((b) => b.textContent!).find((t) => t !== r)!, right);
+      await page.click(`.choice:text-is("${wrong}")`);
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `fit-shots/stage-cases/${c}-wrong-${size.name}.png` });
+      problems.push(...(await cardClipped(page, `${size.name} ${c} wrong`)));
+    }
   }
   await page.goto(`file://${dir}/index.html?case=build`);
   for (let i = 0; i < 6 && (await page.$('.build__bank .choice')); i++) await page.click('.build__bank .choice');

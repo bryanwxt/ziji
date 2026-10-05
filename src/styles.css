@@ -1168,4 +1168,10 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 /* the 认新字 card's 成语 (spec 2026-10-05 §2.1): its line like a 组词's, then a short sentence */
 .intro__idiom { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.intro__idiom-sentence { margin: 0; font-size: 18px; color: var(--ink-soft); text-align: center; }
+.idiom-ruby { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.idiom-ruby .pinyin { font-size: 14px; }
+.intro__idiom-sentence { margin: 0; font-size: 18px; line-height: 1.25; color: var(--ink-soft); text-align: center; }
+@media (max-width: 599px) { .intro__idiom-sentence { font-size: 16px; } }
+/* a short screen gives the 成语 its room from the big character */
+@media (max-height: 760px) { .intro__card--idiom .hanzi--xl { font-size: min(var(--hanzi-xl), 84px); } }
+@media (max-height: 700px) { .intro__card--idiom .hanzi--xl { font-size: min(var(--hanzi-xl), 68px); } }
