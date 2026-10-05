@@ -201,3 +201,60 @@ describe('his idle life follows his mood (spec 2026-10-04 §4.6)', () => {
   });
 });
 
+describe('sweep: a smooth rig', () => {
+  const rigY = (c: Element) => Number((c.querySelector('[data-part="rig"]')!.getAttribute('transform') ?? '').match(/translate\([^ ]+ ([^)]+)\)/)?.[1] ?? 0);
+  const pawY = (c: Element, side: 'l' | 'r') => Number((c.querySelector(`[data-part="paw-${side}"]`)!.getAttribute('transform') ?? '').match(/translate\([^ ]+ ([^)]+)\)/)?.[1] ?? 0);
+  it('a new reaction mid-hop carries on from where he is, never snapping to the ground for a frame', () => {
+    reduced = false;
+    const { container, rerender } = render(<Truffle alive expression="neutral" react={{ kind: 'right', key: 1 }} />);
+    act(() => run(20)); // up in the air
+    const up = rigY(container);
+    expect(up).toBeLessThan(-20);
+    rerender(<Truffle alive expression="neutral" react={{ kind: 'right', key: 2 }} />);
+    act(() => run(1));
+    expect(rigY(container)).toBeLessThan(up / 2);
+  });
+  it('a new paw move takes over from where the paw is', () => {
+    reduced = false;
+    const { container, rerender } = render(<Truffle alive expression="neutral" react={{ kind: 'hello', key: 1 }} />);
+    act(() => run(25)); // waving, paw up
+    const up = pawY(container, 'r');
+    expect(up).toBeLessThan(-40);
+    rerender(<Truffle alive expression="neutral" react={{ kind: 'right', key: 2 }} />);
+    act(() => run(1));
+    expect(pawY(container, 'r')).toBeLessThan(up / 2);
+  });
+  it('a reaction with no paw move lowers a raised paw, never further up first', () => {
+    reduced = false;
+    const { container, rerender } = render(<Truffle alive expression="neutral" react={{ kind: 'hello', key: 1 }} />);
+    act(() => run(25));
+    const up = pawY(container, 'r');
+    rerender(<Truffle alive expression="neutral" react={{ kind: 'wrong', key: 2 }} />);
+    act(() => run(1));
+    expect(pawY(container, 'r')).toBeGreaterThanOrEqual(up);
+  });
+  it('his eyes let go of a finger that has stopped moving', () => {
+    reduced = false;
+    const { container } = render(<Truffle alive expression="neutral" />);
+    container.querySelector('svg')!.getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 200, right: 200, bottom: 200, x: 0, y: 0, toJSON: () => ({}) });
+    document.dispatchEvent(new PointerEvent('pointermove', { clientX: 5000, clientY: 0 }));
+    act(() => run(40));
+    const iris = () => Number((container.querySelector('[data-part="iris-l"]')!.getAttribute('transform') ?? '').match(/translate\(([^ ]+)/)?.[1] ?? 0);
+    expect(Math.abs(iris())).toBeGreaterThan(1);
+    act(() => run(260)); // ~4 s with no movement
+    expect(Math.abs(iris())).toBeLessThan(0.5);
+  });
+  it('nothing is rewritten on a frame where nothing changed', () => {
+    reduced = true; // no breathing: once settled, every frame is the same
+    const { container } = render(<Truffle alive expression="neutral" />);
+    act(() => run(60));
+    const spy = vi.spyOn(Element.prototype, 'setAttribute');
+    act(() => run(3));
+    const writes = spy.mock.calls.filter(([n]) => n !== 'data-expression').length;
+    spy.mockRestore();
+    reduced = false;
+    expect(writes).toBe(0);
+    expect(container.querySelector('svg')).toBeTruthy();
+  });
+});
+

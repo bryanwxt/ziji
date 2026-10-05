@@ -18,12 +18,30 @@ const pawTransform = (dx: number, dy: number, r: number, cx: number) =>
   Math.abs(dx) + Math.abs(dy) + Math.abs(r) < 0.05 ? '' : `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) rotate(${r.toFixed(2)} ${cx} 266)`;
 /** From wherever the paws are back to his feet in 200 ms (a reaction without paws, or a question coming up, cut a move short). */
 function settlePaws(from: PawPose): (t: number) => PawPose | null {
-  return (t) => (t > 200 ? null : (Object.fromEntries(Object.entries(from).map(([k, v]) => [k, v * (1 - t / 200)])) as unknown as PawPose));
+  return (t) => {
+    if (t > 200) return null;
+    const k = 1 - t / 200;
+    return { lx: from.lx * k, ly: from.ly * k, lr: from.lr * k, rx: from.rx * k, ry: from.ry * k, rr: from.rr * k };
+  };
 }
+/** How long a new reaction carries the old pose before it is all its own (no snap to the ground or the feet; sweep). */
+const CARRY_MS = 160;
 
 /** Paints a face and pose onto Truffle's parts (the same geometry the markup was drawn with). */
-export function paint(els: (part: string) => Element | null, f: Face, pose: Pose, extras: Record<string, number>) {
-  const set = (part: string, attr: string, value: string | number) => els(part)?.setAttribute(attr, String(value));
+export function paint(els: (part: string) => Element | null, f: Face, pose: Pose, extras: Record<string, number>, memo?: WeakMap<Element, Record<string, string>>) {
+  // a value already there is not written again: a still frame costs no style or layout work (sweep)
+  const set = (part: string, attr: string, value: string | number) => {
+    const el = els(part);
+    if (!el) return;
+    const v = String(value);
+    if (memo) {
+      let seen = memo.get(el);
+      if (!seen) memo.set(el, (seen = {}));
+      if (seen[attr] === v) return;
+      seen[attr] = v;
+    }
+    el.setAttribute(attr, v);
+  };
   const lidTop = Math.min(1, f.lidTop + pose.blink * (1 - f.lidTop));
   for (const [side, cx] of [['l', EYE_L], ['r', EYE_R]] as const) {
     const up = upperLid(cx, lidTop, f.lidArc);
@@ -57,7 +75,7 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
   set('headrot', 'transform', `rotate(${tilt.toFixed(2)} 160 190)`);
   set('rig', 'transform', pose.rig);
   set('body', 'transform', pose.body);
-  els('tail')?.setAttribute('style', `transform-origin:214px 246px;${pose.tail ? `transform:${pose.tail}` : ''}`);
+  set('tail', 'style', `transform-origin:214px 246px;${pose.tail ? `transform:${pose.tail}` : ''}`);
   set('paw-l', 'transform', pose.pawL);
   set('paw-r', 'transform', pose.pawR);
   for (const e of EXTRA_KEYS) set(`extra-${e}`, 'opacity', (extras[e] ?? 0).toFixed(3));
@@ -105,17 +123,19 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
   const track = useRef<{ fn: Track; start: number; purr: boolean } | null>(null);
   const paws = useRef<{ fn: (t: number) => PawPose | null; start: number } | null>(null); // the paws' move (spec §4.6)
   const lastPaws = useRef<PawPose>(PAW_REST);
+  const carry = useRef<{ m: Motion; p: PawPose; at: number } | null>(null); // where he was when a new reaction cut in
   const lag = useRef({ y: 0, v: 0 });
   const lastMotion = useRef<Motion>(REST);
   // idle life, scheduled by frame time
   const idle = useRef({ nextBlink: -1, blinkAt: -1, again: false, nextFlick: -1, flickAt: -1, flickSide: 1, nextKnead: -1 });
   const gaze = useRef({ x: 0, y: 0, vx: 0, vy: 0, aim: { x: 0, y: 0 }, aimAt: -Infinity });
-  const pointer = useRef<{ x: number; y: number } | null>(null);
+  const pointer = useRef<{ x: number; y: number; at: number } | null>(null);
   const vel = useRef<Record<string, number>>({});
   const extras = useRef<Record<string, number>>(Object.fromEntries(EXTRA_KEYS.map((e) => [e, e === opts.expr ? 1 : 0])));
   const extraVel = useRef<Record<string, number>>({});
   const raf = useRef(0);
   const talking = useRef(false); // the iPad is speaking: his mouth moves (spec §4.6)
+  const talkFace = useRef<Face>({ ...PRESETS.neutral }); // reused each frame while talking (no new object per frame)
   const visible = useRef(true);
   const onScreen = useRef(true);
 
@@ -133,6 +153,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
     if (!svg) return;
     // parts come and go (a hood hides his ears; taking it off makes new ones), so a miss or a detached part is looked up again
     const cache = new Map<string, Element>();
+    const memo = new WeakMap<Element, Record<string, string>>(); // what is already painted on each part
     const els = (part: string) => {
       let el = cache.get(part);
       if (!el?.isConnected) {
@@ -159,6 +180,8 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       if (pending.current) {
         const def = REACTIONS[pending.current.kind];
         pending.current = null;
+        // (paws a new reaction doesn't move already ease down by settlePaws below: carrying them too would double them)
+        carry.current = { m: track.current ? lastMotion.current : REST, p: def.paws ? lastPaws.current : PAW_REST, at: now };
         hold.current = { expr: def.expr, until: now + def.holdMs, then: def.then };
         after.current = null;
         track.current = def.track && !reduced ? { fn: TRACKS[def.track], start: now, purr: def.track === 'purr' } : null;
@@ -208,6 +231,18 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         if (sample) pw = sample;
         else paws.current = null;
       }
+      // a new reaction starts from where the last one left him, easing over in CARRY_MS (never a one-frame snap)
+      const c = carry.current;
+      if (c) {
+        const k = (now - c.at) / CARRY_MS;
+        if (k >= 1) carry.current = null;
+        else {
+          const w = 1 - k;
+          m = { y: m.y + c.m.y * w, squash: m.squash + c.m.squash * w, shake: m.shake + c.m.shake * w, lean: m.lean + c.m.lean * w };
+          pw = { lx: pw.lx + c.p.lx * w, ly: pw.ly + c.p.ly * w, lr: pw.lr + c.p.lr * w, rx: pw.rx + c.p.rx * w, ry: pw.ry + c.p.ry * w, rr: pw.rr + c.p.rr * w };
+        }
+      }
+      if (track.current) lastMotion.current = m;
       lastPaws.current = pw;
       lag.current.v = (lag.current.v + (-m.y * 0.18 - lag.current.y) * 0.2) * 0.7;
       lag.current.y += lag.current.v;
@@ -250,6 +285,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       const tail = purring && !reduced ? `rotate(${(Math.sin(t * 1.1) * 3).toFixed(2)}deg)` : life.tailSwish ? `rotate(${(Math.sin(t * 2.3) * 8).toFixed(2)}deg)` : '';
       // where he looks: the finger when free, the card while calm, otherwise ahead
       const g = gaze.current;
+      if (pointer.current && now - pointer.current.at > 2000) pointer.current = null; // a finger that stopped moving is let go (sweep)
       if (life.followPointer) g.aim = pointer.current ? gazeToward(svg.getBoundingClientRect(), pointer.current) : { x: 0, y: 0 };
       else if (calm) {
         if (now - g.aimAt >= 500) {
@@ -266,8 +302,12 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       };
       // talking: the mouth opens and closes while the iPad speaks; the face itself is untouched, so it settles when speech ends
       if (talking.current && (Math.floor(now / 500) !== Math.floor((now - 17) / 500))) settleIfSilent(); // about twice a second
-      const face = talking.current && !reduced ? { ...cur.current, mouthOpen: Math.max(cur.current.mouthOpen, 0.12 + 0.38 * Math.abs(Math.sin(t * 13))) } : cur.current;
-      paint(els, face, pose, extras.current);
+      let face = cur.current;
+      if (talking.current && !reduced) {
+        face = Object.assign(talkFace.current, cur.current);
+        face.mouthOpen = Math.max(cur.current.mouthOpen, 0.12 + 0.38 * Math.abs(Math.sin(t * 13)));
+      }
+      paint(els, face, pose, extras.current, memo);
       start();
     };
     const start = () => {
@@ -284,11 +324,12 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
     };
     document.addEventListener('visibilitychange', onVisibility);
     const offTalk = onSpeaking((on) => { talking.current = on; });
-    const onPointer = (e: PointerEvent) => { pointer.current = { x: e.clientX, y: e.clientY }; };
+    const onPointer = (e: PointerEvent) => { pointer.current = { x: e.clientX, y: e.clientY, at: performance.now() }; };
     document.addEventListener('pointermove', onPointer, { passive: true });
     let io: IntersectionObserver | null = null;
     if (typeof IntersectionObserver === 'function') {
-      io = new IntersectionObserver(([entry]) => {
+      io = new IntersectionObserver((entries) => {
+        const entry = entries[entries.length - 1]; // the latest says where he is now
         onScreen.current = !!entry?.isIntersecting;
         if (onScreen.current) start();
         else stop();
