@@ -14,11 +14,33 @@ export function setSpeechRate(r: number): void {
   rate = r;
 }
 
-/** How clear a voice is: an iPad's downloaded Premium or Enhanced voices are much clearer than the compact default (parent, 2026-10-05). */
-const quality = (v: SpeechSynthesisVoice) => (/premium/i.test(v.name) ? 2 : /enhanced|增强|高品质|优化/i.test(v.name) ? 1 : 0);
+/**
+ * How clear a voice is: an iPad's downloaded Premium or Enhanced voices are much clearer than the compact default (parent,
+ * 2026-10-05). iPadOS often names them all "Tingting"; the quality is in the voiceURI (com.apple.voice.enhanced.zh-CN.…).
+ */
+export const voiceQuality = (v: SpeechSynthesisVoice): number => {
+  const id = `${v.name} ${v.voiceURI ?? ''}`;
+  return /premium/i.test(id) ? 2 : /enhanced|增强|高品质|优化/i.test(id) ? 1 : 0;
+};
+
+/** The parent's pick (Settings → Voice), by voiceURI; null: the clearest the iPad has. */
+let preferred: string | null = null;
+export function setPreferredVoice(uri: string | null): void {
+  preferred = uri;
+  if (available()) voice = pickVoice(speechSynthesis.getVoices());
+}
+/** The voice speaking now, for the parent's Voice setting. */
+export const currentVoice = (): SpeechSynthesisVoice | null => voice;
+/** The Mandarin voices this iPad lets the app use, clearest first. */
+export function chineseVoices(): SpeechSynthesisVoice[] {
+  if (!available()) return [];
+  return speechSynthesis.getVoices().filter((v) => /^zh/i.test(v.lang) && !/HK|TW/i.test(v.lang)).sort((a, b) => voiceQuality(b) - voiceQuality(a));
+}
 
 export function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  const mainland = voices.filter((v) => /^zh[-_]CN/i.test(v.lang)).sort((a, b) => quality(b) - quality(a) || Number(b.localService) - Number(a.localService));
+  const chosen = preferred ? voices.find((v) => v.voiceURI === preferred) : undefined;
+  if (chosen) return chosen;
+  const mainland = voices.filter((v) => /^zh[-_]CN/i.test(v.lang)).sort((a, b) => voiceQuality(b) - voiceQuality(a) || Number(b.localService) - Number(a.localService));
   return (
     mainland[0] ??
     voices.find((v) => /^zh/i.test(v.lang) && !/HK|TW/i.test(v.lang)) ??
@@ -27,8 +49,11 @@ export function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice 
 }
 
 /** Voices load asynchronously on iPad Safari; wait briefly for them. */
-export async function loadChineseVoice(timeoutMs = 1500): Promise<SpeechSynthesisVoice | null> {
+export async function loadChineseVoice(timeoutMs = 1500, pref: string | null = null): Promise<SpeechSynthesisVoice | null> {
+  preferred = pref;
   if (!available()) return (voice = null);
+  // the iPad can add voices after the first list (a downloaded Enhanced one): pick again whenever the list changes
+  speechSynthesis.addEventListener?.('voiceschanged', () => { voice = pickVoice(speechSynthesis.getVoices()) ?? voice; });
   voice = pickVoice(speechSynthesis.getVoices());
   if (!voice) {
     voice = await new Promise<SpeechSynthesisVoice | null>((resolve) => {

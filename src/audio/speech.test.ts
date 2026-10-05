@@ -190,3 +190,23 @@ describe('a lone character between pauses is said as taught (写一写: 长，�
     expect(spokenAs('调，空调的，调')).toBe('条，空调的，条');
   });
 });
+
+describe('the iPad\'s downloaded voices (parent, 2026-10-05: a new Enhanced voice wasn\'t used)', () => {
+  const uv = (name: string, uri: string) => ({ lang: 'zh-CN', localService: true, name, voiceURI: uri }) as SpeechSynthesisVoice;
+  it('reads the quality from the voiceURI when the names are the same', async () => {
+    const { pickVoice, setPreferredVoice } = await import('./speech');
+    setPreferredVoice(null);
+    const compact = uv('Tingting', 'com.apple.voice.compact.zh-CN.Tingting');
+    const enhanced = uv('Tingting', 'com.apple.voice.enhanced.zh-CN.Tingting');
+    expect(pickVoice([compact, enhanced])).toBe(enhanced);
+  });
+  it('the parent\'s pick wins', async () => {
+    const { pickVoice, setPreferredVoice } = await import('./speech');
+    const a = uv('Tingting', 'com.apple.voice.enhanced.zh-CN.Tingting');
+    const b = uv('Lili', 'com.apple.voice.compact.zh-CN.Lili');
+    setPreferredVoice('com.apple.voice.compact.zh-CN.Lili');
+    expect(pickVoice([a, b])).toBe(b);
+    setPreferredVoice(null);
+    expect(pickVoice([a, b])).toBe(a);
+  });
+});

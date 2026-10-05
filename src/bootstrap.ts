@@ -21,7 +21,8 @@ export async function bootstrap(dbName: string): Promise<Booted> {
   await seedBuiltinWords(db, builtinWords(Date.now()), stored !== CONTENT_VERSION);
   if (stored !== CONTENT_VERSION) await updateSettings(db, { contentVersion: CONTENT_VERSION });
   await applySettingsMigration(db);
-  const [settings, kid, voice] = await Promise.all([getSettings(db), getKid(db), loadChineseVoice()]);
+  const [settings, kid] = await Promise.all([getSettings(db), getKid(db)]);
+  const voice = await loadChineseVoice(1500, settings.voiceURI ?? null);
   setSpeechRate(settings.speechRate);
   setSfxEnabled(settings.soundEffects);
   // Ask Safari not to evict our data (home-screen apps are also exempt from its 7-day cleanup).

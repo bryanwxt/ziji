@@ -5,7 +5,7 @@ import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { PassagesPanel } from './PassagesPanel';
 import { SettingsPanel } from './SettingsPanel';
 
-vi.mock('../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn(), setSpeechRate: vi.fn() }));
+vi.mock('../audio/speech', async (real) => ({ ...(await real<typeof import('../audio/speech')>()), stopSpeaking: vi.fn(), speak: vi.fn(), setSpeechRate: vi.fn() }));
 vi.mock('../audio/sfx', () => ({ setSfxEnabled: vi.fn() }));
 
 describe('PassagesPanel', () => {

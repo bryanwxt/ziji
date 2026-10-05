@@ -12,7 +12,7 @@ import { WordsPanel } from './WordsPanel';
 
 vi.mock('../content/strokes', () => ({ strokeAvailability: vi.fn(async () => 'yes') }));
 vi.mock('../lib/files', () => ({ saveTextFile: vi.fn(async () => {}) }));
-vi.mock('../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn(), setSpeechRate: vi.fn() }));
+vi.mock('../audio/speech', async (real) => ({ ...(await real<typeof import('../audio/speech')>()), stopSpeaking: vi.fn(), speak: vi.fn(), setSpeechRate: vi.fn() }));
 vi.mock('../audio/sfx', () => ({ setSfxEnabled: vi.fn() }));
 
 import { saveTextFile } from '../lib/files';
@@ -177,5 +177,23 @@ describe('WordsPanel school 成语 (spec 2026-10-05 §4)', () => {
     expect(await screen.findByText('Added 2 成语.')).toBeTruthy();
     const ws = await allWords(app.db);
     expect(ws.filter((w) => w.tags?.includes('成语')).map((w) => w.text).sort()).toEqual(['一心一意', '五颜六色']);
+  });
+});
+
+describe('Voice setting (parent, 2026-10-05)', () => {
+  it('lists the Mandarin voices the app can use, saves a pick, and can test it', async () => {
+    const voices = [
+      { lang: 'zh-CN', localService: true, name: 'Tingting', voiceURI: 'com.apple.voice.compact.zh-CN.Tingting' },
+      { lang: 'zh-CN', localService: true, name: 'Tingting', voiceURI: 'com.apple.voice.enhanced.zh-CN.Tingting' },
+      { lang: 'zh-HK', localService: true, name: 'Sinji', voiceURI: 'x' },
+    ];
+    vi.stubGlobal('speechSynthesis', { getVoices: () => voices, cancel: vi.fn(), speak: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    const app = await makeAppData();
+    renderWithApp(<SettingsPanel />, app);
+    const select = screen.getByLabelText('Voice') as HTMLSelectElement;
+    expect([...select.options].map((o) => o.textContent)).toEqual(['The clearest on this iPad (automatic)', 'Tingting · Enhanced · zh-CN', 'Tingting · Standard · zh-CN']);
+    fireEvent.change(select, { target: { value: 'com.apple.voice.enhanced.zh-CN.Tingting' } });
+    await waitFor(async () => expect((await getSettings(app.db)).voiceURI).toBe('com.apple.voice.enhanced.zh-CN.Tingting'));
+    vi.unstubAllGlobals();
   });
 });

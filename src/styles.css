@@ -1295,3 +1295,4 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* pinyin answers semi-bold, not heavy: beside character answers the weight no longer jumps between questions (parent, 2026-10-05) */
 .choices--pinyin .choice, .placement__choices--pinyin .choice { font-weight: 700; }
 @media (max-width: 599px) and (max-height: 720px) { .stage:has(.sheet--oops) .stage__card .choice { min-height: var(--tap-main); } } /* a miss's sheet on the smallest phones: shorter tiles keep them in the card */
+.field .hint { margin: 4px 0; font-size: 14px; color: var(--ink-soft); }

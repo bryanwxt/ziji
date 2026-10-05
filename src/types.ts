@@ -240,6 +240,7 @@ export interface Settings {
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
   langdu: boolean; // 朗读 is parked too (parent, 2026-10-05: "not very useful at the moment"): off by default, no parent switch yet
+  voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
   placementResult?: PlacementResult;
   baselines?: Partial<Record<Skill, number>>;
   pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)

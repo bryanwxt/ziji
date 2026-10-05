@@ -1,8 +1,8 @@
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { SetupPin } from '../app/SetupPin';
 import { setSfxEnabled } from '../audio/sfx';
-import { setSpeechRate, speak } from '../audio/speech';
+import { chineseVoices, currentVoice, setPreferredVoice, setSpeechRate, speak, voiceQuality } from '../audio/speech';
 import { ONESIES, type ZodiacId } from '../fun/costumes';
 import { introLines } from '../langdu/intro';
 import { AsrTest } from './AsrTest';
@@ -62,6 +62,7 @@ export function SettingsPanel() {
         <input id="st-new" type="number" min={0} max={10} value={s.newPerDay}
           onChange={(e) => void save({ newPerDay: clampInt(e.currentTarget.value, 0, 10, s.newPerDay) })} />
       </div>
+      <VoiceField value={s.voiceURI ?? null} onChange={(uri) => { setPreferredVoice(uri); void save({ voiceURI: uri }); }} />
       <fieldset class="field">
         <legend>Activities</legend>
         {(Object.keys(ACTIVITY_LABELS) as ActivityKind[]).filter((k) => k !== 'speaking' || s.langdu || s.story).map((k) => ( // parked 朗读 / 看图说话: no switch
@@ -123,5 +124,35 @@ export function SettingsPanel() {
         <button type="button" class="btn" onClick={() => setChangingPin(true)}>Change PIN</button>
       </div>
     </section>
+  );
+}
+
+const QUALITY = ['Standard', 'Enhanced', 'Premium'];
+
+/**
+ * Which Mandarin voice speaks (parent, 2026-10-05: a downloaded Enhanced voice wasn't used). Lists the voices the iPad lets
+ * the app use: one downloaded in Settings → Accessibility that isn't here, the iPad doesn't offer to web apps.
+ */
+function VoiceField({ value, onChange }: { value: string | null; onChange: (uri: string | null) => void }) {
+  const [voices, setVoices] = useState(chineseVoices());
+  const [using, setUsing] = useState(currentVoice()?.name ?? null);
+  useEffect(() => {
+    const update = () => { setVoices(chineseVoices()); setUsing(currentVoice()?.name ?? null); };
+    update();
+    if (typeof speechSynthesis === 'undefined' || !speechSynthesis) return;
+    const synth = speechSynthesis;
+    synth.addEventListener?.('voiceschanged', update);
+    return () => synth.removeEventListener?.('voiceschanged', update);
+  }, []);
+  return (
+    <div class="field">
+      <label for="st-voice">Voice</label>
+      <select id="st-voice" value={value ?? ''} onChange={(e) => { const uri = e.currentTarget.value || null; onChange(uri); setUsing(currentVoice()?.name ?? null); }}>
+        <option value="">The clearest on this iPad (automatic)</option>
+        {voices.map((v) => <option key={v.voiceURI} value={v.voiceURI}>{`${v.name} · ${QUALITY[voiceQuality(v)]} · ${v.lang}`}</option>)}
+      </select>
+      <p class="hint">Now speaking: {using ?? 'no Mandarin voice found'}. {voices.length} Mandarin voice{voices.length === 1 ? '' : 's'} available to the app.</p>
+      <button type="button" class="btn btn--secondary" onClick={() => speak('你好！我是松露。我们一起学汉字吧！')}>Test the voice</button>
+    </div>
   );
 }
