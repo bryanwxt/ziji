@@ -1,12 +1,11 @@
 import type { TimeOfDay, WorldId } from '../../fun/worlds';
-import { SCENE_VIEWBOX, SCENES, timeLayers } from './scenes';
+import { SCENE_VIEWBOX, sceneFor } from './scenes';
 
-/** The journey world behind Home: time-of-day wash, the world, then evening extras. Decorative. */
+/** The journey world behind Home and the lessons, at its time of day. Decorative. */
 export function WorldScene({ world, time }: { world: WorldId; time: TimeOfDay }) {
-  const { wash, over } = timeLayers(time, world);
   return (
     <div class="world-scene" data-world={world} data-time={time} aria-hidden="true">
-      <svg viewBox={SCENE_VIEWBOX} preserveAspectRatio="xMidYMax slice" dangerouslySetInnerHTML={{ __html: wash + SCENES[world] + over }} />
+      <svg viewBox={SCENE_VIEWBOX} preserveAspectRatio="xMidYMax slice" dangerouslySetInnerHTML={{ __html: sceneFor(world, time) }} />
     </div>
   );
 }
