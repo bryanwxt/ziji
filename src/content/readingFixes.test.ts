@@ -35,9 +35,10 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     const { createHash } = await import('node:crypto');
     const { default: data } = await import('./builtin.json');
     const { CONTENT_VERSION, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES } = await import('.');
-    const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES])).digest('hex').slice(0, 16);
+    const { EXTRA_EXAMPLES } = await import('./extraExamples');
+    const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES, EXTRA_EXAMPLES])).digest('hex').slice(0, 16);
     // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
-    const PINNED: Record<string, string> = { '1.5': 'e8d2030805d5210e' }; // 1.4 and 1.5 changed how examples are chosen (code), not the data
+    const PINNED: Record<string, string> = { '1.6': '0878e4cea3c73de5' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes
     expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
   });
   it('了 means what it does when read le, not "clear, to finish"', async () => {
@@ -93,5 +94,30 @@ describe('one reading per card (parent, 2026-10-05: 调 was taught as tiáo next
       }
     }
     expect(bad).toEqual([]);
+  });
+});
+
+describe('组词 written for the app (parent, 2026-10-05: 一, 九, 猫… had none)', () => {
+  it('every HSK 1–6 character has a 组词 now, and each written one has its English', async () => {
+    const { builtinWords } = await import('.');
+    const { glossFor } = await import('./glossary');
+    const { EXTRA_EXAMPLES } = await import('./extraExamples');
+    const singles = builtinWords(0).filter((w) => [...w.text].length === 1 && (w.level ?? 9) <= 6);
+    expect(singles.filter((w) => !w.examples?.length).map((w) => w.text)).toEqual([]);
+    for (const [t] of Object.values(EXTRA_EXAMPLES).flat()) expect(glossFor(t), t).toBeTruthy();
+  });
+  it('every written 组词 is kept: none says its character another way', async () => {
+    const { builtinWords } = await import('.');
+    const { EXTRA_EXAMPLES } = await import('./extraExamples');
+    const byText = new Map(builtinWords(0).map((w) => [w.text, w]));
+    for (const [ch, list] of Object.entries(EXTRA_EXAMPLES)) expect(byText.get(ch)!.examples!.slice(0, list.length).map((e) => e.text), ch).toEqual(list.map(([t]) => t)); // first, before the HSK list's
+  });
+  it('cards read and mean what a child meets: 夹子 jiā, 咳嗽 ké, 提供 gōng; 咸 salty, 戴 to wear', async () => {
+    const { builtinWords } = await import('.');
+    const { cardMeaning } = await import('./glossary');
+    const byText = new Map(builtinWords(0).map((w) => [w.text, w]));
+    expect(['夹', '咳', '供'].map((c) => byText.get(c)!.pinyin)).toEqual(['jiā', 'ké', 'gōng']);
+    expect(cardMeaning(byText.get('咸')!)).toBe('salty');
+    expect(cardMeaning(byText.get('戴')!)).toMatch(/wear/);
   });
 });
