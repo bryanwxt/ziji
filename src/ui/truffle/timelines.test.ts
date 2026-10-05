@@ -1,6 +1,6 @@
 // src/ui/truffle/timelines.test.ts
 import { describe, expect, it } from 'vitest';
-import { REACTIONS, REST, TRACKS } from './timelines';
+import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS } from './timelines';
 
 describe('body moves (spec §4.1, §4.4)', () => {
   it('a hop crouches first, rises with a stretch, lands with a squash and ends at rest', () => {
@@ -43,3 +43,40 @@ describe('prop moments (spec 2026-10-04 §4.5)', () => {
     expect(REACTIONS.proud).toMatchObject({ expr: 'proud', track: 'nod' });
   });
 });
+
+describe('paw moves (spec 2026-10-04 §4.6, phase E)', () => {
+  const size = (p: typeof PAW_REST) => Math.abs(p.lx) + Math.abs(p.ly) + Math.abs(p.lr) + Math.abs(p.rx) + Math.abs(p.ry) + Math.abs(p.rr);
+  it('every paw move starts and ends at rest, then stops', () => {
+    for (const [name, tr] of Object.entries(PAW_TRACKS)) {
+      expect(size(tr(0)!), `${name} start`).toBeLessThan(0.05);
+      let last = PAW_REST;
+      let t = 0;
+      for (; t < 6000; t += 16) { const p = tr(t); if (!p) break; last = p; }
+      expect(t, `${name} ends`).toBeLessThan(6000);
+      expect(size(last), `${name} end`).toBeLessThan(0.05);
+    }
+  });
+  it('covering his eyes brings both paws up to his eyes; a wave is the right paw only', () => {
+    const peak = (tr: (t: number) => typeof PAW_REST | null) => { let best = PAW_REST; for (let t = 0; t < 4000; t += 16) { const p = tr(t); if (!p) break; if (size(p) > size(best)) best = p; } return best; };
+    const c = peak(PAW_TRACKS.cover);
+    expect(c.ly).toBeLessThanOrEqual(-140);
+    expect(c.ry).toBeLessThanOrEqual(-140);
+    const w = peak(PAW_TRACKS.wave);
+    expect(w.ry).toBeLessThan(-40);
+    expect(Math.abs(w.ly) + Math.abs(w.lx) + Math.abs(w.lr)).toBe(0);
+  });
+  it('which reactions use which paws', () => {
+    expect(REACTIONS.right.paws).toBe('raise');
+    expect(REACTIONS.hard.paws).toBe('clap');
+    expect(REACTIONS.done.paws).toBe('clap');
+    expect(REACTIONS.streak.paws).toBe('knead');
+    expect(REACTIONS.purr.paws).toBe('knead');
+    expect(REACTIONS.pounce.paws).toBe('swat');
+    expect(REACTIONS.hello).toMatchObject({ expr: 'happy', track: 'hop', paws: 'wave' });
+    expect(REACTIONS.peek).toMatchObject({ expr: 'embarrassed', paws: 'cover' });
+    expect(REACTIONS.huff).toMatchObject({ expr: 'grumpy', track: 'shake' });
+    expect(REACTIONS.bouncy).toMatchObject({ expr: 'joy', track: 'bigHop', paws: 'wave' });
+    expect(REACTIONS.wrong.paws).toBeUndefined(); // never anything that could read as sad or scolding
+  });
+});
+
