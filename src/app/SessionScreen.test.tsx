@@ -28,7 +28,7 @@ const nextButton = () => {
   return b && !b.disabled ? b : null;
 };
 /** Answers whatever is on screen until the celebration: 我记住了！, else the first open choice (and 继续 once it opens). `seen` gets each screen's stage. */
-async function playThrough(max = 80, seen: string[] = []) {
+async function playThrough(max = 150, seen: string[] = []) {
   for (let i = 0; i < max && !screen.queryByText('太棒了！'); i++) {
     await waitFor(() => expect(screen.queryByText('太棒了！') ?? screen.queryByText('我记住了！') ?? nextButton() ?? document.querySelector(OPEN)).toBeTruthy(), { timeout: 4000 }); // building 练一练's round reads every word's content
     if (screen.queryByText('太棒了！')) break;
@@ -75,7 +75,7 @@ describe('SessionScreen', () => {
     const app = await setup();
     renderWithApp(<SessionScreen free={false} />, app);
     const stages: string[] = [];
-    await playThrough(60, stages);
+    await playThrough(150, stages); // wrong first picks add retries: 37–47 screens locally, more on a bad draw
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     const rec = (await getSession(app.db, '2026-10-02'))!;
     expect(rec.completed).toBe(true);
