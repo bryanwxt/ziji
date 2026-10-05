@@ -18,8 +18,11 @@ export async function bootstrap(dbName: string): Promise<Booted> {
   const db = await openAppDb(dbName);
   // the 3,000 built-in words are rewritten only when the content changed (a launch used to rewrite them all)
   const stored = (await db.get('settings', 'main'))?.contentVersion;
-  await seedBuiltinWords(db, builtinWords(Date.now()), stored !== CONTENT_VERSION);
-  if (stored !== CONTENT_VERSION) await updateSettings(db, { contentVersion: CONTENT_VERSION });
+  const pre = await getSettings(db);
+  const course = pre.course ?? 'cl';
+  const stale = stored !== CONTENT_VERSION || (pre.contentCourse ?? 'cl') !== course; // new content, or words written for the other course
+  await seedBuiltinWords(db, builtinWords(Date.now(), course), stale);
+  if (stale) await updateSettings(db, { contentVersion: CONTENT_VERSION, contentCourse: course });
   await applySettingsMigration(db);
   const [settings, kid] = await Promise.all([getSettings(db), getKid(db)]);
   const voice = await loadChineseVoice(1500, settings.voiceURI ?? null);

@@ -6,7 +6,8 @@ import { chineseVoices, currentVoice, setPreferredVoice, setSpeechRate, speak, v
 import { ONESIES, type ZodiacId } from '../fun/costumes';
 import { introLines } from '../langdu/intro';
 import { AsrTest } from './AsrTest';
-import { updateSettings } from '../store/repo';
+import { seedBuiltinWords, updateSettings } from '../store/repo';
+import { builtinWords, type Course } from '../content';
 import type { ActivityKind, OralInfo, Settings } from '../types';
 
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
@@ -39,6 +40,12 @@ export function SettingsPanel() {
     await refresh();
   };
 
+  /** The course decides which 识写字 he writes: the built-in words are rewritten for it now, his progress kept (parent, 2026-10-06). */
+  const setCourse = async (course: Course) => {
+    await seedBuiltinWords(db, builtinWords(Date.now(), course), true);
+    await save({ course, contentCourse: course });
+  };
+
   // fields save as he types: merge into the latest details, not a stale render's copy
   const oral = useRef(s.oral);
   const saveOral = (patch: Partial<OralInfo>) => {
@@ -61,6 +68,14 @@ export function SettingsPanel() {
         <label for="st-new">New words per day: the most (the app finds his number, from 3 up to this)</label>
         <input id="st-new" type="number" min={0} max={10} value={s.newPerDay}
           onChange={(e) => void save({ newPerDay: clampInt(e.currentTarget.value, 0, 10, s.newPerDay) })} />
+      </div>
+      <div class="field">
+        <label for="st-course">Course</label>
+        <select id="st-course" value={s.course ?? 'cl'} onChange={(e) => void setCourse(e.currentTarget.value as Course)}>
+          <option value="cl">华文 (Chinese)</option>
+          <option value="hcl">高级华文 (Higher Chinese)</option>
+        </select>
+        <p class="hint">Both read the same characters in the same order. 高级华文 writes more (435 by the end of P2, to 350), so 写一写 and 听写 practise its list.</p>
       </div>
       <VoiceField value={s.voiceURI ?? null} onChange={(uri) => { setPreferredVoice(uri); void save({ voiceURI: uri }); }} />
       <fieldset class="field">

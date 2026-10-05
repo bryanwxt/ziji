@@ -243,6 +243,8 @@ export interface Settings {
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
   langdu: boolean; // 朗读 is parked too (parent, 2026-10-05: "not very useful at the moment"): off by default, no parent switch yet
+  course?: 'cl' | 'hcl'; // 华文 or 高级华文: which 识写字 he practises writing (both read the same characters); absent: 'cl'
+  contentCourse?: 'cl' | 'hcl'; // the course the stored built-in words were written for
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
   placementResult?: PlacementResult;
   baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)

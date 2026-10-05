@@ -9,7 +9,7 @@ import { SWEEP_MEANINGS, SWEEP_PINYIN } from './sweepFixes';
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.9`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists)
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.10`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists
 export const PASSAGES: Passage[] = passages as Passage[];
 
 const infoByChar = new Map<string, CharInfo>(
@@ -42,16 +42,21 @@ export const builtinWordId = (char: string) => `b:${char}`;
  * then the rest in their HSK order. New words, placement bands and writing all follow this, so the app teaches what school
  * teaches when it teaches it. MOE's own lists: 识读字 to recognise, 识写字 to write.
  */
-const MOE_LESSONS = (moe as { lessons: { term: string; lesson: number; read: string; write: string }[] }).lessons;
+const MOE_LESSONS = (moe as { lessons: { term: string; lesson: number; read: string; write: string; writeHcl: string }[] }).lessons;
 const MOE_ORDER = new Map<string, number>();
 const MOE_TERM = new Map<string, string>();
 for (const l of MOE_LESSONS) for (const ch of Array.from(l.read)) if (!MOE_ORDER.has(ch)) { MOE_ORDER.set(ch, MOE_ORDER.size); MOE_TERM.set(ch, l.term); }
-const MOE_WRITE = new Set(MOE_LESSONS.flatMap((l) => Array.from(l.write)));
+/** The 识写字 of his course: 华文 (CL) or 高级华文 (HCL, which writes more: 435 by the end of P2 to CL's 350). Both read the same. */
+export type Course = 'cl' | 'hcl';
+const MOE_WRITE: Record<Course, Set<string>> = {
+  cl: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.write))),
+  hcl: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.writeHcl))),
+};
 const schoolRank = (c: BuiltinChar): number => MOE_ORDER.get(c.char) ?? MOE_ORDER.size + c.rank;
 /** The textbook term that teaches a character (二上), if it's one of his school characters. */
 export const schoolTerm = (char: string): string | undefined => MOE_TERM.get(char);
 
-export function builtinWords(now: number): Word[] {
+export function builtinWords(now: number, course: Course = 'cl'): Word[] {
   return BUILTIN.map((c) => ({
     id: builtinWordId(c.char),
     text: c.char,
@@ -60,7 +65,7 @@ export function builtinWords(now: number): Word[] {
     level: c.level,
     rank: schoolRank(c),
     source: 'builtin' as const,
-    writeable: MOE_ORDER.has(c.char) ? MOE_WRITE.has(c.char) : c.writeable, // a school character is written once its book asks
+    writeable: MOE_ORDER.has(c.char) ? MOE_WRITE[course].has(c.char) : c.writeable, // a school character is written once his course's book asks
     paused: false,
     createdAt: now,
     examples: examplesFor(c),

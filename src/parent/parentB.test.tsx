@@ -197,3 +197,26 @@ describe('Voice setting (parent, 2026-10-05)', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('Course: 华文 or 高级华文 (parent, 2026-10-06)', () => {
+  it('高级华文 writes more of his school characters; reading stays the same', async () => {
+    const { builtinWords } = await import('../content');
+    const cl = new Map(builtinWords(0, 'cl').map((w) => [w.text, w]));
+    const hcl = new Map(builtinWords(0, 'hcl').map((w) => [w.text, w]));
+    expect(cl.get('井')!.writeable).toBe(false); // CL only reads it; HCL writes it
+    expect(hcl.get('井')!.writeable).toBe(true);
+    expect(hcl.get('井')!.rank).toBe(cl.get('井')!.rank); // same order either way
+  });
+  it('switching rewrites the stored words for that course and remembers it', async () => {
+    const { allWords } = await import('../store/repo');
+    const { builtinWords } = await import('../content');
+    const { seedBuiltinWords } = await import('../store/repo');
+    const app = await makeAppData();
+    await seedBuiltinWords(app.db, builtinWords(0, 'cl'), true);
+    renderWithApp(<SettingsPanel />, app);
+    fireEvent.change(screen.getByLabelText('Course'), { target: { value: 'hcl' } });
+    await waitFor(async () => expect((await getSettings(app.db)).course).toBe('hcl'));
+    await waitFor(async () => expect((await allWords(app.db)).find((w) => w.text === '井')?.writeable).toBe(true));
+    expect((await getSettings(app.db)).contentCourse).toBe('hcl');
+  });
+});
