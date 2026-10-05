@@ -1,19 +1,12 @@
 import { render } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { WORLDS } from '../../fun/worlds';
-import { INK } from './legacy';
 import { SCENES, WORLD_ART } from './scenes';
 import { WorldScene } from './WorldScene';
 
 describe('world scenes', () => {
-  it('every world is drawn: in paper, or in ink until it is redrawn', () => {
-    for (const w of WORLDS) expect(WORLD_ART[w.id] ?? INK[w.id], w.id).toBeTruthy();
-  });
-  it('a world still in ink keeps its ink rules (outlines, no gradients or filters)', () => {
-    for (const w of WORLDS.filter((x) => !WORLD_ART[x.id])) {
-      expect(SCENES[w.id]).toContain('#2a2630');
-      expect(SCENES[w.id]).not.toMatch(/Gradient|<filter|url\(#/);
-    }
+  it('every world is storybook paper now', () => {
+    for (const w of WORLDS) expect(WORLD_ART[w.id], w.id).toBeTruthy();
   });
   it('WorldScene draws the world at its time of day, decorative only', () => {
     const { container } = render(<WorldScene world="yard" time="afternoon" />);
