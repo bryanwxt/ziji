@@ -186,9 +186,9 @@ describe('练一练 on the record (spec 2026-10-05 §3)', () => {
     expect(afterPracticeAnswer({ ...rec, practiceIndex: 1 + PRACTICE_RETRY_GAP }, false, 100).practiceQueue).toHaveLength(7); // a retry never adds another
   });
   it('the time box ends the round and notes what was left for tomorrow (pacing reads it)', () => {
-    const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a'), p('b:b'), p('b:c')]), true, 60_000);
+    const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a'), p('b:b', { due: true }), p('b:c', { due: true })]), true, 60_000);
     expect(currentStep(rec)).toBeNull();
-    expect(rec.practiceLeft).toBe(2);
+    expect(rec.practiceLeft).toBe(2); // two due words never reached
   });
   it('finishing every item leaves nothing over', () => {
     const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a')]), true, 1000);
@@ -210,5 +210,22 @@ describe('练一练 on the record (spec 2026-10-05 §3)', () => {
     expect(rec.free).toBe(true);
     expect(currentStep(rec)).toBe('practice');
     expect(currentStep(afterPracticeAnswer(rec, true, 10 * 60_000))).toBeNull(); // ended by its last item, not by time
+  });
+});
+
+describe('final review I1: only due revision left over counts as revision piling up', () => {
+  const inPractice = () => finishStep(createSessionRecord(planOf({ newWordIds: [] }), '2026-10-06', 0));
+  it('time running out with only new-word rungs, retries or meaning starts left leaves nothing due over', () => {
+    const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a', { due: true }), p('b:b'), p('b:c', { retry: true })]), true, 60_000);
+    expect(currentStep(rec)).toBeNull();
+    expect(rec.practiceLeft).toBe(0);
+  });
+  it('a due word never reached counts', () => {
+    const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a'), p('b:b', { due: true }), p('b:c')]), true, 60_000);
+    expect(rec.practiceLeft).toBe(1);
+  });
+  it('a retry is not a due first appearance', () => {
+    const rec = afterPracticeAnswer(startPractice(inPractice(), [p('b:a', { due: true }), p('b:b'), p('b:c'), p('b:d'), p('b:e'), p('b:f')]), false, 1000);
+    expect(rec.practiceQueue!.filter((x) => x.due)).toHaveLength(1);
   });
 });

@@ -19,13 +19,14 @@ export function practiceWords(rec: SessionRecord, rungs: ReadonlyMap<string, num
   }));
   const reading = new Set(rec.plan.reviewWordIds);
   const meaning = new Set([...(rec.plan.meaningReviewIds ?? []), ...(rec.plan.newMeaningIds ?? [])]);
+  const meaningDue = new Set(rec.plan.meaningReviewIds ?? []);
   const seen = new Set(introduced);
   const revision: RoundWord[] = [];
   for (const wordId of [...rec.plan.reviewWordIds, ...(rec.plan.meaningReviewIds ?? []), ...(rec.plan.newMeaningIds ?? [])]) {
     if (seen.has(wordId)) continue;
     seen.add(wordId);
     const from = startRung(rungs.get(wordId) ?? 0);
-    revision.push({ wordId, isNew: false, from, appearances: from === 1 ? 2 : 1, gradesRecognise: reading.has(wordId), gradesMeaning: meaning.has(wordId) });
+    revision.push({ wordId, isNew: false, from, appearances: from === 1 ? 2 : 1, gradesRecognise: reading.has(wordId), gradesMeaning: meaning.has(wordId), due: reading.has(wordId) || meaningDue.has(wordId) });
   }
   return [...fresh, ...revision];
 }

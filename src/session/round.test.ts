@@ -77,3 +77,13 @@ describe('练一练: one word, many contexts (spec 2026-10-05 §3)', () => {
     for (const x of r) expect({ 1: ['read', 'listen'], 2: ['word'], 3: ['fit', 'usage'] }[x.rung]).toContain(x.ask);
   });
 });
+
+describe('final review I1: due revision comes before words only starting their meaning practice', () => {
+  it('a due word starts sooner than a meaning start, and its first appearance is marked due', () => {
+    const start: RoundWord = { wordId: 's0', isNew: false, from: 1, appearances: 2, gradesRecognise: false, gradesMeaning: true };
+    const due: RoundWord = { wordId: 'd0', isNew: false, from: 3, appearances: 1, gradesRecognise: true, gradesMeaning: false, due: true };
+    const r = buildRound([fresh('n0'), start, due], all, mulberry32(6));
+    expect(r.findIndex((x) => x.wordId === 'd0')).toBeLessThan(r.findIndex((x) => x.wordId === 's0'));
+    expect(r.filter((x) => x.due).map((x) => x.wordId)).toEqual(['d0']);
+  });
+});

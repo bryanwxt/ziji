@@ -9,7 +9,8 @@ export const ASKS: Record<Rung, Ask[]> = { 1: ['read', 'listen'], 2: ['word'], 3
 /** Which memory card an answer grades (spec §3.5); null = practice only (a retry, or already graded today). */
 export type Grades = 'recognise' | 'meaning' | 'use' | null;
 
-export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean }
+/** due: the first appearance of a word whose revision is due today (pacing counts these when time runs out, spec §2.2). */
+export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean }
 
 export interface RoundWord {
   wordId: string;
@@ -19,6 +20,7 @@ export interface RoundWord {
   gradesRecognise: boolean; // its reading card is due today: its first appearance grades it
   gradesMeaning: boolean; // its meaning card is due (or starts) today: its first 词语 question grades it
   early?: boolean; // missed in 认新字: it comes back first
+  due?: boolean; // its reading or meaning card is due today (not a meaning start): it starts before words that only start meaning practice
 }
 
 const FIRST_GAP = 3; // a word's second appearance comes at least 2 items after its first
@@ -49,8 +51,10 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
   const early = slots.filter((s) => s.w.early);
   const news = slots.filter((s) => s.w.isNew && !s.w.early);
   const revs = slots.filter((s) => !s.w.isNew && !s.w.early);
-  // words that need more appearances start sooner, so the round never ends on one word's last items crammed together
-  const firsts: Slot[] = [...early, ...[...news, ...revs].sort((a, b) => b.rungs.length - a.rungs.length)];
+  // words that need more appearances start sooner, so the round never ends on one word's last items crammed together;
+  // due revision starts before words only starting meaning practice, so time running out never leaves the due ones behind
+  const most = (list: Slot[]) => [...list].sort((a, b) => b.rungs.length - a.rungs.length);
+  const firsts: Slot[] = [...early, ...most([...news, ...revs.filter((s) => s.w.due)]), ...most(revs.filter((s) => !s.w.due))];
 
   const out: PracticeItem[] = [];
   let lastWord: string | null = null;
@@ -76,7 +80,7 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
       grades = 'meaning';
       s.meaningDone = true;
     } else if (rung === 3) grades = 'use';
-    out.push({ wordId: s.w.wordId, rung, ask, grades, retry: false });
+    out.push({ wordId: s.w.wordId, rung, ask, grades, retry: false, ...(s.next === 0 && s.w.due ? { due: true } : {}) });
     s.readyAt = p + (s.next === 0 ? FIRST_GAP : LATER_GAP);
     s.next += 1;
     lastWord = s.w.wordId;

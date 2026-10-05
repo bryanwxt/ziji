@@ -147,3 +147,12 @@ describe('pacing in the lesson plan (spec 2026-10-05 §2.2)', () => {
     expect((await startOrResumeSession(db, new Date(2026, 9, 6, 16))).plan.newWordIds).toHaveLength(6);
   });
 });
+
+describe('final review I2: a lowered ceiling applies today', () => {
+  it('the cached pace never goes over the ceiling the parent just set', async () => {
+    const db = await freshDb();
+    await putWords(db, builtinWords(0));
+    await updateSettings(db, { newPerDay: 3, pace: { day: '2026-10-06', perDay: 6, reason: 'kept 9 of 10 recent new words' } });
+    expect((await startOrResumeSession(db, new Date(2026, 9, 6, 16))).plan.newWordIds).toHaveLength(3);
+  });
+});

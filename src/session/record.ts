@@ -69,7 +69,7 @@ export async function markWriteSkipped(db: AppDb, wordId: string, now: Date): Pr
 /** Today's number of new words, worked out once a day from the last few lessons and saved for the Skills panel (spec 2026-10-05 §2.2). */
 async function todaysPace(db: AppDb, now: Date, settings: Settings): Promise<number> {
   const today = localDateKey(now);
-  if (settings.pace?.day === today) return settings.pace.perDay;
+  if (settings.pace?.day === today) return Math.min(settings.pace.perDay, settings.newPerDay); // a ceiling lowered today applies today
   const sessions = (await allSessions(db)).filter((s) => !s.free && s.date < today).sort((a, b) => b.date.localeCompare(a.date));
   const logs = await logsSince(db, addDays(now, -(LOOKBACK_DAYS + 1)).getTime());
   const rounds = sessions.filter((s) => s.completedSteps.includes('practice')).slice(0, 2).map(ranOut);

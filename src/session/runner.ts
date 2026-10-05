@@ -118,7 +118,10 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   const elapsedMs = Math.min(rawElapsedMs, MAX_CARD_MS);
   const index = rec.practiceIndex ?? 0;
   const queue = [...rec.practiceQueue!];
-  if (!correct && !item.retry) queue.splice(Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length), 0, { ...item, grades: null, retry: true });
+  if (!correct && !item.retry) {
+    const { due: _due, ...again } = item; // a retry is practice only, never a due first appearance
+    queue.splice(Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length), 0, { ...again, grades: null, retry: true });
+  }
   const next: SessionRecord = {
     ...rec,
     practiceQueue: queue,
@@ -128,7 +131,8 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
     recalls: noteRecall(rec.recalls, item.wordId, correct, inContext),
   };
   if (next.practiceIndex! >= queue.length) return finishStep(next);
-  if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) return finishStep({ ...next, practiceLeft: queue.length - next.practiceIndex! });
+  // what time left for tomorrow: only due revision never reached counts (new words' later rungs, retries and meaning starts don't)
+  if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) return finishStep({ ...next, practiceLeft: queue.slice(next.practiceIndex!).filter((x) => x.due).length });
   return next;
 }
 

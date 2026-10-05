@@ -67,7 +67,7 @@ export function SkillsPanel() {
           ? `Placement (${new Date(p.at).toLocaleDateString()}) — Reading: ${hsk(p.reading)} · Understanding: ${hsk(p.understanding)}`
           : 'Placement: not done yet'}
       </p>
-      {d.settings.pace && <p>New words: {d.settings.pace.perDay} a day — {d.settings.pace.reason} (most {d.settings.newPerDay})</p>}
+      {d.settings.pace && <p>New words: {Math.min(d.settings.pace.perDay, d.settings.newPerDay)} a day — {d.settings.pace.reason} (most {d.settings.newPerDay})</p>}
       {p && p.missed.length > 0 && <p class="hanzi">Missed in placement: {p.missed.slice(0, 12).map((id) => byId.get(id)?.text ?? '').join(' ')}</p>}
       <table class="skills__table">
         <thead>
