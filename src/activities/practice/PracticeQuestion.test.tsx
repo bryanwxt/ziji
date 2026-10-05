@@ -45,4 +45,13 @@ describe('a 练一练 question (spec 2026-10-05 §3.2)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'use', inContext: true }));
   });
+  it('搭配 pairing on the stage; the answer comes back as a meaning answer', () => {
+    const chuan = pool.find((w) => w.text === '穿')!;
+    const onDone = vi.fn();
+    render(<PracticeQuestion {...base} word={chuan} item={{ wordId: chuan.id, rung: 2, ask: 'match', grades: 'meaning', retry: false }} onDone={onDone} />);
+    expect(document.querySelectorAll('.pair__tile')).toHaveLength(6);
+    for (let i = 0; i < 30 && document.querySelector('.pair__tile:not([disabled])'); i++) fireEvent.click(document.querySelector<HTMLButtonElement>('.pair__tile:not([disabled])')!);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'meaning' }));
+  });
 });

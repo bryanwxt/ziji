@@ -8,6 +8,8 @@ import { UseQuestion } from '../choose/UseQuestion';
 import { FlashcardStep } from '../flashcards/FlashcardStep';
 import { zujuFor } from '../../content/zuju';
 import { BuildSentence } from './BuildSentence';
+import { PairGame } from './PairGame';
+import { dapeiBoard, zuciBoard } from '../../practice/pairs';
 
 export interface PracticeResult {
   correct: boolean;
@@ -39,12 +41,28 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     [item, word.id],
   );
   const zuju = useMemo(() => (item.ask === 'build' ? zujuFor(word)[0] ?? null : null), [item, word.id]);
+  const board = useMemo(() => {
+    const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
+    return item.ask === 'pair' ? zuciBoard(word, rng) : item.ask === 'match' ? dapeiBoard(word, rng) : null;
+  }, [item, word.id]);
   const answer = useRef<{ correct: boolean; ms: number } | null>(null);
   const shownAt = useRef(performance.now());
   useEffect(() => {
-    if ((sentence && !use) || (item.ask === 'build' && !zuju)) onDone(null);
+    if ((sentence && !use) || (item.ask === 'build' && !zuju) || ((item.ask === 'pair' || item.ask === 'match') && !board)) onDone(null);
   }, []);
 
+  if (item.ask === 'pair' || item.ask === 'match') {
+    if (!board) return null;
+    return (
+      <PairGame
+        board={board}
+        kind={item.ask}
+        kid={kid}
+        resting={resting}
+        onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning' })}
+      />
+    );
+  }
   if (item.ask === 'build') {
     if (!zuju) return null;
     return (
