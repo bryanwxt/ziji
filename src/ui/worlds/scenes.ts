@@ -5,6 +5,8 @@ import type { WorldArt } from './art';
 import { eveningLights, eveningSky } from './evening';
 import { INK, inkLayers } from './legacy';
 import { YARD } from './yard';
+import { SEA } from './sea';
+import { SPACE } from './space';
 import { BLOCKS } from './blocks';
 import { DINO } from './dino';
 import { GRASS } from './grass';
@@ -13,7 +15,7 @@ import { RACE } from './race';
 export const SCENE_VIEWBOX = '0 0 360 480';
 
 /** The worlds in storybook paper so far. */
-export const WORLD_ART: Partial<Record<WorldId, WorldArt>> = { yard: YARD, grass: GRASS, race: RACE, blocks: BLOCKS, dino: DINO };
+export const WORLD_ART: Partial<Record<WorldId, WorldArt>> = { yard: YARD, grass: GRASS, race: RACE, blocks: BLOCKS, dino: DINO, sea: SEA, space: SPACE };
 
 /** Each world by day (thumbnails in 松露's room, the arrival card). */
 export const SCENES = Object.fromEntries(WORLDS.map((w) => {
