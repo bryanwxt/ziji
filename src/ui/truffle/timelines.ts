@@ -4,7 +4,7 @@ import type { Expression } from './rig';
 export interface Motion { y: number; squash: number; shake: number; lean: number }
 export const REST: Motion = { y: 0, squash: 0, shake: 0, lean: 0 };
 export type Track = (t: number) => Motion | null;
-export type ReactionKind = 'right' | 'hard' | 'wrong' | 'streak' | 'newWord' | 'nod' | 'done' | 'excited' | 'pounce' | 'flinch' | 'purr';
+export type ReactionKind = 'right' | 'hard' | 'wrong' | 'streak' | 'newWord' | 'nod' | 'done' | 'excited' | 'pounce' | 'flinch' | 'purr' | 'munch' | 'watch' | 'proud';
 export type Reaction = { kind: ReactionKind; key: number };
 
 const easeOut = (k: number) => 1 - (1 - k) ** 3;
@@ -47,6 +47,7 @@ export const TRACKS = {
   shake: track([[110, { shake: -6 }], [250, { shake: 6 }], [390, { shake: -3 }], [550, { shake: 0 }]]),
   pounce: track([[450, { lean: 6 }], [710, { squash: 0.1, lean: 8 }], [830, { squash: -0.08, y: -30, lean: 12 }], [1030, { squash: 0, y: 0, lean: 4 }, easeIn], [1100, { squash: 0.06 }], [1400, { squash: 0, lean: 0 }, back]]),
   nod: track([[120, { y: 2, shake: 0 }], [260, { y: 0 }, back]]),
+  chew: track([[110, { y: 2 }], [220, { y: 0 }], [330, { y: 2 }], [440, { y: 0 }], [550, { y: 2 }], [700, { y: 0 }, back]]),
   wiggle: track([[150, { lean: -4 }], [300, { lean: 4 }], [450, { lean: -3 }], [600, { lean: 3 }], [760, { lean: 0 }]]),
   /** a tap on his head: he ducks, then shakes it off 140 ms later (one reaction, so nothing replaces the duck) */
   flinch: both(track([[90, { squash: 0.06, y: 3 }], [390, { squash: 0, y: 0 }, back]]), track([[110, { shake: -6 }], [250, { shake: 6 }], [390, { shake: -3 }], [550, { shake: 0 }]]), 140),
@@ -61,6 +62,9 @@ export const REACTIONS: Record<ReactionKind, { expr: Expression; track: keyof ty
   streak: { expr: 'content', track: 'purr', holdMs: 2200 },
   newWord: { expr: 'surprised', track: null, holdMs: 700, then: 'curious' },
   nod: { expr: 'happy', track: 'nod', holdMs: 500 },
+  munch: { expr: 'content', track: 'chew', holdMs: 1300 },
+  watch: { expr: 'curious', track: null, holdMs: 1800 },
+  proud: { expr: 'proud', track: 'nod', holdMs: 1500 },
   done: { expr: 'joy', track: 'bigHop', holdMs: 1400, then: 'proud' },
   excited: { expr: 'surprised', track: 'wiggle', holdMs: 900 },
   pounce: { expr: 'joy', track: 'pounce', holdMs: 1500 },

@@ -30,3 +30,16 @@ describe('body moves (spec §4.1, §4.4)', () => {
     expect(REACTIONS.pounce.track).toBe('pounce');
   });
 });
+
+describe('prop moments (spec 2026-10-04 §4.5)', () => {
+  it('munching: content, with a chew that ends at rest', () => {
+    expect(REACTIONS.munch.expr).toBe('content');
+    expect(REACTIONS.munch.track).toBe('chew');
+    expect(TRACKS.chew(200)!.y).toBeGreaterThan(0); // a dip of the head
+    expect(TRACKS.chew(5000)).toBeNull();
+  });
+  it('watching: curious and still; admiring his statue: proud with a nod', () => {
+    expect(REACTIONS.watch).toMatchObject({ expr: 'curious', track: null });
+    expect(REACTIONS.proud).toMatchObject({ expr: 'proud', track: 'nod' });
+  });
+});
