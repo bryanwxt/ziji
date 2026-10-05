@@ -97,6 +97,7 @@ for (const size of SIZES) {
   }
   await page.goto(`file://${dir}/index.html?case=build`);
   for (let i = 0; i < 6 && (await page.$('.build__bank .choice')); i++) await page.click('.build__bank .choice');
+  await page.click('.sheet .btn'); // 好了！: the marked sheet is the tallest state
   await page.waitForTimeout(300);
   await page.screenshot({ path: `fit-shots/stage-cases/build-done-${size.name}.png` });
   problems.push(...(await cardClipped(page, `${size.name} build done`)));

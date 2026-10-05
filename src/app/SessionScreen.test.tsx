@@ -24,7 +24,7 @@ async function tapAndWait(...els: HTMLElement[]) {
 const OPEN = '.choice:not([disabled]), .fishtile:not([disabled])';
 /** 继续 when it can be tapped (a pairing board or 组句 needs several taps first). */
 const nextButton = () => {
-  const b = screen.queryByText('继续')?.closest('button');
+  const b = (screen.queryByText('继续') ?? screen.queryByText('好了！'))?.closest('button'); // 好了！ checks a finished 组句
   return b && !b.disabled ? b : null;
 };
 /** Answers whatever is on screen until the celebration: 我记住了！, else the first open choice (and 继续 once it opens). `seen` gets each screen's stage. */

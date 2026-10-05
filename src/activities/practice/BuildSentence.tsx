@@ -34,14 +34,15 @@ export function BuildSentence({ item, word, kid, resting, onDone }: Props) {
   const shownAt = useRef(performance.now());
   useEffect(() => speak(item.full), [item]); // he hears it first (final review I3): the order is the one he heard
 
-  useEffect(() => {
+  // marked when he says he is done, so a slip on the last tile can still be taken back (sweep)
+  const check = () => {
     if (placed.length < item.tiles.length || result) return;
     const built = placed.map((i) => item.tiles[i]!).join('');
     const correct = item.orders.some((o) => o.join('') === built);
     setResult({ correct, responseMs: Math.round(performance.now() - shownAt.current) });
     playSfx(correct ? 'correct' : 'wrong');
     speak(item.full); // the sentence as it goes, either way (spec §3.6)
-  }, [placed]);
+  };
 
   const done = result !== null;
   return (
@@ -49,7 +50,7 @@ export function BuildSentence({ item, word, kid, resting, onDone }: Props) {
       activity="use"
       truffle={<Pet kid={kid} mood={done ? (result.correct ? 'pleased' : 'side') : resting} bubble={done ? null : '排一排！'} size={180} calm={!done} react={done ? { kind: result.correct ? 'right' : 'wrong', key: 1 } : null} />}
       sheet={!done ? (
-        <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
+        <FeedbackSheet actionLabel="好了！" disabled={placed.length < item.tiles.length} onAction={check} />
       ) : (
         <FeedbackSheet
           tone={result.correct ? 'good' : 'oops'}

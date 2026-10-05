@@ -43,6 +43,7 @@ describe('a 练一练 question (spec 2026-10-05 §3.2)', () => {
     render(<PracticeQuestion {...base} word={hen} item={{ wordId: hen.id, rung: 4, ask: 'build', grades: 'use', retry: false }} onDone={onDone} />);
     expect(document.querySelectorAll('.build__bank .choice').length).toBeGreaterThanOrEqual(4);
     while (document.querySelector('.build__bank .choice')) fireEvent.click(document.querySelector<HTMLButtonElement>('.build__bank .choice')!);
+    fireEvent.click(screen.getByText('好了！'));
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'use', inContext: true }));
   });
