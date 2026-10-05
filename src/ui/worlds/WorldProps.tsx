@@ -33,7 +33,9 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
   const busy = useRef(false);
   const gemTaps = useRef({ day: today, n: 0 }); // taps count toward one day's gem only
   const hidden = useRef<HTMLElement | SVGElement | null>(null);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]); // the playing moment's (its end, a line after)
+  const auto = useRef(false); // the playing moment started by itself: a tap takes over from it
+  const lastTouch = useRef(Date.now());
   const run = useRef(0);
   const latest = useRef({ kid, today, onKid, onSay, onReact });
   latest.current = { kid, today, onKid, onSay, onReact };
@@ -45,9 +47,18 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
   };
   const later = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms));
   useEffect(() => () => { timers.current.forEach(clearTimeout); show(); }, []);
+  // a moment starts by itself only when he has left the screen alone for a while (final review I1)
+  useEffect(() => {
+    const touched = () => { lastTouch.current = Date.now(); };
+    document.addEventListener('pointerdown', touched, true);
+    return () => document.removeEventListener('pointerdown', touched, true);
+  }, []);
 
-  const play = (prop: string, o: Outcome, auto = false) => {
+  const play = (prop: string, o: Outcome, byItself = false) => {
     const still = reducedMotion();
+    timers.current.forEach(clearTimeout); // the last moment's are done (or it was taken over)
+    timers.current = [];
+    auto.current = byItself;
     const { svg, hide } = momentFx(world, o.fx, still);
     show(); // another moment's prop comes back first
     if (hide) {
@@ -65,13 +76,13 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     });
     if (o.say) latest.current.onSay(o.say);
     if (o.later) { const line = o.later.say; later(o.later.ms, () => latest.current.onSay(line)); }
-    if (o.speak && !auto) speak(o.speak); // a moment that starts by itself never talks out loud
+    if (o.speak && !byItself) speak(o.speak); // a moment that starts by itself never talks out loud
     if (o.sfx) playSfx(o.sfx);
     latest.current.onReact(o.react, art.props[prop]!.x < 180 ? -1 : 1);
   };
 
   const onTap = (prop: string) => {
-    if (busy.current) return; // a moment that is playing ignores taps
+    if (busy.current && !auto.current) return; // a moment he started ignores taps; one that started by itself gives way
     const { kid: k, today: day } = latest.current;
     if (gemTaps.current.day !== day) gemTaps.current = { day, n: 0 };
     const o = runMoment(world, prop, k, day, prop === 'gem-block' ? ++gemTaps.current.n : 0);
@@ -87,7 +98,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     let t: ReturnType<typeof setTimeout>;
     const next = () => {
       t = setTimeout(() => {
-        if (!busy.current && document.visibilityState !== 'hidden') {
+        if (!busy.current && document.visibilityState !== 'hidden' && Date.now() - lastTouch.current >= autoEvery) {
           const m = autos[Math.floor(Math.random() * autos.length)]!;
           const { kid: k, today: day } = latest.current;
           const { kid: _found, ...o } = runMoment(world, m.prop, k, day, 0);

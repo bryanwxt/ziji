@@ -117,4 +117,27 @@ describe('WorldProps (spec 2026-10-04 §4.5)', () => {
     act(() => { vi.advanceTimersByTime(700); });
     expect(onSay).toHaveBeenLastCalledWith('哈哈哈！');
   });
+  it("final review I1: a child's tap during a moment that started by itself plays the tapped one (no tap is lost)", () => {
+    const onKid = vi.fn();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    render(<WorldProps world="grass" {...props({ onKid, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1100); }); // the butterfly starts by itself
+    expect(document.querySelector('.world-props__fx')).toBeTruthy();
+    tap('纸箱');
+    expect(onKid).toHaveBeenCalledWith(expect.objectContaining({ finds: expect.objectContaining({ animals: ['rat'] }) }));
+    vi.mocked(Math.random).mockRestore();
+  });
+  it('final review I1: moments start by themselves only when he has left the screen alone for a while', () => {
+    const onReact = vi.fn();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    render(<WorldProps world="yard" {...props({ onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(900); });
+    fireEvent.pointerDown(document.body); // he is busy with Home
+    act(() => { vi.advanceTimersByTime(300); }); // the timer comes round, but he touched the screen 300 ms ago
+    expect(onReact).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(onReact).toHaveBeenCalled();
+    vi.mocked(Math.random).mockRestore();
+  });
 });
+
