@@ -64,6 +64,21 @@ for (const size of SIZES) {
     await page.waitForTimeout(300);
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+    if (c === 'pair') {
+      // play it with wrong tries (always the last open right tile): the board ends explaining every 组词, and nothing is cut off
+      for (let k = 0; k < 30; k++) {
+        const left = await page.$('.pairs__col--left .pair__tile:not(.is-matched):not(.is-shown)');
+        if (!left) break;
+        await left.click();
+        const rights = await page.$$('.pairs__col--right .pair__tile:not(.is-matched):not(.is-shown)');
+        await rights[rights.length - 1]!.click();
+        await page.waitForTimeout(40);
+      }
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `fit-shots/stage-cases/pair-done-${size.name}.png` });
+      if (!(await page.$('.pair-summary'))) problems.push(`${size.name} pair: no 组词 explained after wrong tries`);
+      problems.push(...(await cardClipped(page, `${size.name} pair done`)));
+    }
   }
   // 成语 (phase C): each question, then with the sheet open after a miss; the 认新字 card with a 成语
   for (const c of ['idiom', 'idiom-fit', 'idiom-build', 'intro-idiom', 'intro-idiom-word', 'intro-school-idiom']) {

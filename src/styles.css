@@ -355,7 +355,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @keyframes node-bounce { 50% { transform: translateY(-6px); } }
 .path__name { margin-top: 12px; font-weight: 900; color: var(--ink-soft); font-size: 18px; background: var(--paper); border-radius: 10px; padding: 0 8px 2px; }
 .path__bubble {
-  position: absolute; top: -50px; z-index: 2; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 4px 14px;
+  position: absolute; top: -50px; z-index: 2; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 1px 14px 6px; /* the pinyin row's own top space: less padding above keeps the words centred (parent, 2026-10-05) */
   color: var(--green-ink); font-weight: 900; font-size: 20px; white-space: nowrap; animation: node-bounce 1.8s ease-in-out infinite;
 }
 
@@ -1301,3 +1301,10 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
    beside him), Home and the room (bubble always there / floated) keep their own layout. */
 .pet:not(.stage__truffle .pet, .home .pet, .room .pet) { padding-top: var(--bubble-room, 72px); }
 .pet:not(.stage__truffle .pet, .home .pet, .room .pet) > .pet__bubble { position: absolute; top: 0; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: min(92vw, 560px); }
+.pet__bubble .label__py { padding-bottom: 2px; } /* a tall character (荡's 艹) clear of its pinyin (parent, 2026-10-05) */
+.pet__bubble .label { line-height: 1.25; }
+.pair-summary { display: flex; flex-direction: column; gap: 2px; flex-basis: 100%; }
+.pair-summary__row { margin: 0; display: flex; align-items: flex-end; gap: 8px; font-family: var(--font); font-size: 15px; color: var(--ink-soft); }
+.pair-summary__row .hanzi { font-size: 22px; color: var(--ink); }
+.pair-summary__row .label__py { font-size: 11px; }
+.pair-summary__row.is-missed .hanzi { color: var(--orange-ink); } /* the ones he got wrong */

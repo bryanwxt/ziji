@@ -5,7 +5,8 @@ import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32 } from '../../lib/random';
 import type { PairBoard } from '../../practice/pairs';
 import type { KidState } from '../../types';
-import { MeaningNote } from '../../ui/stage/MeaningNote';
+import { glossFor } from '../../content/glossary';
+import { Label } from '../../ui/Label';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Pet } from '../../ui/Pet';
@@ -51,6 +52,7 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
   const pick = (l: number) => {
     if (picked === l) return setPicked(null); // let go
     setPicked(l);
+    speak(board.left[l]!); // he hears what he picked: reading, not just matching shapes (parent, 2026-10-05)
     if (isTarget(l) && !target.current.pickedAt) target.current.pickedAt = performance.now();
   };
   const tapRight = (r: number) => {
@@ -74,6 +76,7 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
   };
 
   const done = result !== null;
+  const anyMiss = Object.values(missed).some((n) => n > 0);
   const cls = (key: string, isPicked: boolean) => `choice press pair__tile${joined.has(key) ? (shown.has(key) ? ' is-shown' : ' is-matched') : ''}${isPicked ? ' is-picked' : ''}`;
   // the two tiles of a pair share a colour, in the order he joined them, so he sees which go together (parent, 2026-10-05)
   const order = [...joined];
@@ -88,11 +91,22 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
         <FeedbackSheet
           tone={result.correct ? 'good' : 'oops'}
           title={result.correct ? lines.cheer : lines.comfort}
-          detail={result.correct ? undefined : (
-            <>
-              <span class="hanzi">{board.pairs.map(([l, r]) => l + r).join('　')}</span>
-              <MeaningNote right={board.target.join('')} />
-            </>
+          // after any wrong try every 组词 on the board is explained, the missed ones marked, and it waits for him to read
+          // them: a board cleared by guessing still teaches (parent, 2026-10-05)
+          auto={!anyMiss}
+          detail={result.correct && !anyMiss ? undefined : (
+            <div class="pair-summary">
+              {board.pairs.map(([l, r], i) => {
+                const word = l + r;
+                const wrong = (missed[board.left.indexOf(l)] ?? 0) > 0;
+                return (
+                  <p key={i} class={`pair-summary__row${wrong ? ' is-missed' : ''}`}>
+                    <span class="hanzi"><Label zh={word} /></span>
+                    {glossFor(word) && <span lang="en">{glossFor(word)}</span>}
+                  </p>
+                );
+              })}
+            </div>
           )}
           actionLabel="继续"
           onAction={() => onDone(result)}
