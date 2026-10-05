@@ -71,7 +71,7 @@ function Screen({ route }: { route: Route }) {
     case 'placement':
       return <PlacementScreen />;
     case 'session':
-      return <SessionScreen key={String(route.free)} free={route.free} />;
+      return <SessionScreen key={`${route.free}:${!!route.extra}`} free={route.free} extra={route.extra} />;
     case 'parent':
       return <ParentArea />;
     case 'stickers':

@@ -205,6 +205,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           {doneToday && chestOpened && (
             <div class="card done-card">
               <p class="done-today"><Label zh="今天完成了！" /> <InkIcon name="party" size={30} /></p>
+              {/* one lesson a day is the baseline; another is his choice (parent, 2026-10-05): new words and what's due, for stars */}
+              <button type="button" class="btn btn--primary" onClick={() => { primeSpeech(); go({ name: 'session', free: false, extra: true }); }}><Label zh="再学一课" /></button>
               {hasCards && (
                 <button type="button" class="btn btn--secondary" onClick={() => play(true)}><Label zh="再玩一会儿" /></button>
               )}

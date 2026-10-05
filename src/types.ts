@@ -142,6 +142,7 @@ export interface SessionRecord {
   startedAt: number;
   activeMs: number;
   free: boolean; // free play: never saved, never reviewed by the scheduler
+  extra?: boolean; // another lesson after the day's: graded, but never saved over the day's record (its stars go to bonusStars)
   plan: SessionPlan;
   stepIndex: number;
   flashQueue: FlashItem[];

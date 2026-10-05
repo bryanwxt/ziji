@@ -5,7 +5,7 @@ import type { KidState, Settings } from '../types';
 
 export type Route =
   | { name: 'home' }
-  | { name: 'session'; free: boolean }
+  | { name: 'session'; free: boolean; extra?: boolean }
   | { name: 'placement' }
   | { name: 'parent' }
   | { name: 'stickers' }

@@ -64,6 +64,19 @@ describe('HomeScreen', () => {
     fireEvent.click(screen.getByText('再玩一会儿'));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: true });
   });
+  it('offers another lesson once today is done: one is the baseline, more is his choice (parent, 2026-10-05)', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02' } });
+    await saveSession(app.db, done('2026-10-02', ['flashcards']));
+    renderWithApp(<HomeScreen />, app);
+    expect(await screen.findByText('今天完成了！')).toBeTruthy();
+    fireEvent.click(screen.getByText('再学一课'));
+    expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false, extra: true });
+  });
+  it('no extra lesson before today\'s is done', async () => {
+    renderWithApp(<HomeScreen />, await makeAppData());
+    await screen.findByText('今天的练习');
+    expect(screen.queryByText('再学一课')).toBeNull();
+  });
   it('marks Home as done for today (a phone then leaves out the all-ticked path); not before', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02' } });
     await saveSession(app.db, done('2026-10-02', ['flashcards']));

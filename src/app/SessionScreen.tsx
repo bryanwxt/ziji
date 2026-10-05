@@ -39,7 +39,8 @@ function levelOf(know: Knowledge): number {
   if (l === undefined) levels.set(know, (l = learnerLevel(know.words, new Set(know.cards.filter((c) => c.kind === 'recognise').map((c) => c.wordId)))));
   return l;
 }
-import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { starsOf } from '../stats/stats';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice, wordMisses,
@@ -69,7 +70,7 @@ interface Loaded {
   confusions: Map<string, string[]>; // look-alikes he picked, per word (钓鱼, spec 2026-10-05 §3.4)
 }
 
-export function SessionScreen({ free }: { free: boolean }) {
+export function SessionScreen({ free, extra = false }: { free: boolean; extra?: boolean }) {
   const { db, now, go, voice } = useApp();
   const [state, setState] = useState<Loaded | null>(null);
   const [combo, setCombo] = useState(0);
@@ -91,7 +92,7 @@ export function SessionScreen({ free }: { free: boolean }) {
       const today = now();
       const rec = free
         ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng, undefined, levelOf(know)), localDateKey(today), today.getTime())
-        : await startOrResumeSession(db, today);
+        : extra ? await startExtraLesson(db, today) : await startOrResumeSession(db, today);
       // a lesson just begun: the first Truffle he sees waves and says hello (spec 2026-10-04 §4.6); never on coming back to it
       if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex && rec.plan.steps[0] === 'newwords' && rec.flashQueue.length > 0) requestGreeting('你好！我们开始吧！'); // it opens on a new word's card, never on a question (spec §4.3)
       latest.current = rec;
@@ -129,8 +130,13 @@ export function SessionScreen({ free }: { free: boolean }) {
   const commit = async (next: SessionRecord) => {
     const was = latest.current;
     latest.current = next;
-    if (!next.free) await saveSession(db, next);
-    if (!next.free && next.completed && !was?.completed) {
+    if (!next.free && !next.extra) await saveSession(db, next); // an extra lesson never replaces the day's record
+    if (next.extra && next.completed && !was?.completed) {
+      // its stars count on top of the day's (they aren't in a saved day): the celebration then shows them landing
+      const fresh = await getKid(db);
+      if (fresh) await saveKid(db, { ...fresh, bonusStars: fresh.bonusStars + starsOf(next.completedSteps) });
+    }
+    if (!next.free && !next.extra && next.completed && !was?.completed) {
       // a finished daily lesson hatches a dino egg he tapped in 恐龙谷
       const fresh = await getKid(db);
       if (fresh) {

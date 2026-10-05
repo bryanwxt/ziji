@@ -6,7 +6,7 @@ import { builtinWords } from '../content';
 import { seededKnownCard } from '../srs/scheduler';
 import { DEFAULT_SETTINGS } from '../types';
 import { freshDb, makeWord } from '../test/fixtures';
-import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession } from './record';
+import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession } from './record';
 /** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
 const DISTINCT = Array.from('一二三四五六七八九十人大小山水火木日月田上下中天地子女手口目耳心土石云雨花草米竹虫鱼羊牛马鸟');
 
@@ -156,5 +156,24 @@ describe('final review I2: a lowered ceiling applies today', () => {
     await putWords(db, builtinWords(0));
     await updateSettings(db, { newPerDay: 3, pace: { day: '2026-10-06', perDay: 6, reason: 'kept 9 of 10 recent new words' } });
     expect((await startOrResumeSession(db, new Date(2026, 9, 6, 16))).plan.newWordIds).toHaveLength(3);
+  });
+});
+
+describe('an extra lesson (parent, 2026-10-05: more than one lesson a day; the baseline stays one)', () => {
+  it('is a fresh real lesson with the next new words; today\'s lesson stays as it was', async () => {
+    const db = await freshDb();
+    await putWords(db, builtinWords(0).slice(0, 20));
+    const today = await startOrResumeSession(db, now);
+    const done = { ...today, completed: true, completedSteps: today.plan.steps, flashIndex: today.flashQueue.length };
+    await saveSession(db, done);
+    // he met today's new words: their cards exist now
+    for (const id of today.plan.newWordIds) await recordRecognition(db, id, { correct: true, responseMs: 900 }, now);
+    const extra = await startExtraLesson(db, new Date(2026, 9, 2, 17));
+    expect(extra.extra).toBe(true);
+    expect(extra.free).toBe(false);
+    expect(extra.completed).toBe(false);
+    expect(extra.plan.newWordIds.length).toBeGreaterThan(0);
+    expect(extra.plan.newWordIds.some((id) => today.plan.newWordIds.includes(id))).toBe(false);
+    expect(await getSession(db, '2026-10-02')).toEqual(done); // never saved over the day's lesson
   });
 });

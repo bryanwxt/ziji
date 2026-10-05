@@ -86,8 +86,21 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
   if (existing && (existing.completed || existing.activeMs > 0 || existing.stepIndex > 0 || existing.flashIndex > 0 || existing.writeIndex > 0)) {
     return existing;
   }
-  const [cards, words, settings, practised] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db)]);
-  const rec = createSessionRecord(buildSessionPlan({ cards, words, settings, now, practised, newPerDay: await todaysPace(db, now, settings) }), date, now.getTime());
+  const rec = createSessionRecord(await planNow(db, now), date, now.getTime());
   await saveSession(db, rec);
   return rec;
+}
+
+async function planNow(db: AppDb, now: Date) {
+  const [cards, words, settings, practised] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db)]);
+  return buildSessionPlan({ cards, words, settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
+}
+
+/**
+ * Another lesson after today's (parent, 2026-10-05: more than one a day, the baseline stays one): planned fresh from where he
+ * is now, so it brings the next new words and what is due. Graded like any lesson, but never saved over the day's record:
+ * the day, its streak and its chest stay the first lesson's. Leaving one part-way keeps his answers; the next starts afresh.
+ */
+export async function startExtraLesson(db: AppDb, now: Date): Promise<SessionRecord> {
+  return { ...createSessionRecord(await planNow(db, now), localDateKey(now), now.getTime()), extra: true };
 }
