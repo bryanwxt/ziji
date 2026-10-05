@@ -3,9 +3,10 @@
 import { shuffle, type Rng } from '../lib/random';
 import { TOP_RUNG, type Rung } from './ladder';
 
-/** read: pick the pinyin · listen: hear it, find it · word: the 组词 gap · fit: the sentence gap · usage: 用对了吗. */
-export type Ask = 'read' | 'listen' | 'word' | 'fit' | 'usage';
-export const ASKS: Record<Rung, Ask[]> = { 1: ['read', 'listen'], 2: ['word'], 3: ['fit', 'usage'] };
+/** read: pick the pinyin · listen: hear it, find it · word: the 组词 gap · pair: join 组词 halves · match: join 搭配 ·
+ *  fit: the sentence gap · usage: 用对了吗 · build: 组句 tiles · fish: 钓鱼 for a look-alike he confused (not a rung). */
+export type Ask = 'read' | 'listen' | 'word' | 'pair' | 'match' | 'fit' | 'usage' | 'build' | 'fish';
+export const ASKS: Record<Rung, Ask[]> = { 1: ['read', 'listen'], 2: ['word', 'pair', 'match'], 3: ['fit', 'usage'], 4: ['build'] };
 /** Which memory card an answer grades (spec §3.5); null = practice only (a retry, or already graded today). */
 export type Grades = 'recognise' | 'meaning' | 'use' | null;
 
@@ -79,7 +80,7 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
     else if (rung === 2 && s.w.gradesMeaning && !s.meaningDone) {
       grades = 'meaning';
       s.meaningDone = true;
-    } else if (rung === 3) grades = 'use';
+    } else if (rung >= 3) grades = 'use';
     out.push({ wordId: s.w.wordId, rung, ask, grades, retry: false, ...(s.next === 0 && s.w.due ? { due: true } : {}) });
     s.readyAt = p + (s.next === 0 ? FIRST_GAP : LATER_GAP);
     s.next += 1;

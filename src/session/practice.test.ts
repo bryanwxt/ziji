@@ -59,3 +59,15 @@ describe('what a word can be asked', () => {
     expect(new Set(items.map((x) => x.wordId)).size).toBe(5);
   });
 });
+
+describe('the new kinds of question (spec 2026-10-05 §3.2, phase B)', () => {
+  it('组词 pairing needs a two-character 组词; 搭配 pairing a listed 搭配; 组句 a sentence that cuts into tiles', () => {
+    const fire = byId.get(id('火'))!;
+    expect(askable(fire, words, false)('pair')).toBe(true);
+    expect(askable({ ...fire, examples: [] }, words, false)('pair')).toBe(false);
+    expect(askable(byId.get(id('穿'))!, words, false)('match')).toBe(true);
+    expect(askable(byId.get(id('很'))!, words, false)('match')).toBe(false);
+    expect(askable(byId.get(id('很'))!, words, false)('build')).toBe(true);
+    expect(askable(byId.get(id('很'))!, words, false)('fish')).toBe(false); // only for words he has confused (Task 7)
+  });
+});

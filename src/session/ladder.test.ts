@@ -14,11 +14,11 @@ describe('the context ladder (spec 2026-10-05 §3.2)', () => {
     expect(nextRung(2, 1, false)).toBe(0);
     expect(nextRung(1, 3, false)).toBe(1); // a miss above his best leaves it where it was
   });
-  it('a revision word starts on the rung after his best, from 字, never past the top', () => {
+  it('a revision word starts on the rung after his best, from 字, never past the top (组句, phase B)', () => {
     expect(startRung(0)).toBe(1);
-    expect(startRung(1)).toBe(2);
     expect(startRung(2)).toBe(3);
-    expect(startRung(3)).toBe(3);
+    expect(startRung(3)).toBe(4);
+    expect(startRung(4)).toBe(4);
   });
   it('the rung memory is kept per word in the database', async () => {
     const db = await openAppDb(`ladder-${Math.random()}`);

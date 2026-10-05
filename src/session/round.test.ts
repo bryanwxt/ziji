@@ -19,7 +19,8 @@ describe('练一练: one word, many contexts (spec 2026-10-05 §3)', () => {
   it('a word climbs one rung per appearance; past the top it goes round the upper rungs', () => {
     expect(climb(1, 3)).toEqual([1, 2, 3]);
     expect(climb(2, 1)).toEqual([2]);
-    expect(climb(3, 2)).toEqual([3, 2]);
+    expect(climb(3, 2)).toEqual([3, 4]);
+    expect(climb(4, 3)).toEqual([4, 3, 4]);
   });
   it('a new word appears three times, climbing 字 → 词语 → 句子', () => {
     const r = buildRound(lesson(1), all, mulberry32(1));
@@ -74,7 +75,7 @@ describe('练一练: one word, many contexts (spec 2026-10-05 §3)', () => {
   });
   it('rung 1 asks read or listen, rung 2 the 组词 gap, rung 3 a sentence', () => {
     const r = buildRound(lesson(9), all, mulberry32(9));
-    for (const x of r) expect({ 1: ['read', 'listen'], 2: ['word'], 3: ['fit', 'usage'] }[x.rung]).toContain(x.ask);
+    for (const x of r) expect({ 1: ['read', 'listen'], 2: ['word', 'pair', 'match'], 3: ['fit', 'usage'], 4: ['build'] }[x.rung]).toContain(x.ask);
   });
 });
 
@@ -86,4 +87,9 @@ describe('final review I1: due revision comes before words only starting their m
     expect(r.findIndex((x) => x.wordId === 'd0')).toBeLessThan(r.findIndex((x) => x.wordId === 's0'));
     expect(r.filter((x) => x.due).map((x) => x.wordId)).toEqual(['d0']);
   });
+});
+
+it('组句 (rung 4) grades use, like a sentence', () => {
+  const r = buildRound([revision('r0', 3, 2)], all, mulberry32(7));
+  expect(r.map((x) => [x.rung, x.grades])).toEqual([[3, 'recognise'], [4, 'use']]);
 });
