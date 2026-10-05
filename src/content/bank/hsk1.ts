@@ -40,7 +40,7 @@ export const BANK_1: BankItem[] = [
   { word: '住', type: 'v', gaps: [{ text: '我＿在这里。', wrong: ['吃', '喝', '写'] }, { text: '爷爷奶奶＿在我家。', wrong: ['吃', '喝', '写'] }], misuse: '我住了一碗饭。' },
   { word: '叫', type: 'v', gaps: [{ text: '他＿什么名字？', wrong: ['吃', '喝', '跑'] }, { text: '妈妈在＿我回家。', wrong: ['吃', '喝', '写'] }], misuse: '这本书很叫。' },
   { word: '问', type: 'v', gaps: [{ text: '你可以＿他。', wrong: ['吃', '喝', '跑'] }, { text: '有不会的就要＿。', wrong: ['吃', '喝', '跑'] }], misuse: '我问了一碗饭。' },
-  { word: '回', type: 'v', gaps: [{ text: '我们五点＿家。', wrong: ['吃', '喝', '写'] }, { text: '下课了，同学们＿到教室。', wrong: ['吃', '喝', '写'] }], misuse: '这个书包很回。' },
+  { word: '回', type: 'v', gaps: [{ text: '我们五点＿家。', wrong: ['吃', '喝', '写'] }, { text: '上课了，同学们＿到教室。', wrong: ['吃', '喝', '写'] }], misuse: '这个书包很回。' },
   { word: '进', type: 'v', gaps: [{ text: '请＿来。', wrong: ['吃', '喝', '写'] }, { text: '他跑＿了教室。', wrong: ['吃', '喝', '写'] }], misuse: '我进很高兴。' },
   { word: '出', type: 'v', gaps: [{ text: '我们＿去玩吧。', wrong: ['吃', '喝', '写'] }, { text: '太阳＿来了。', wrong: ['吃', '喝', '写'] }], misuse: '我出了一碗饭。' },
   { word: '到', type: 'v', gaps: [{ text: '我们＿学校了。', wrong: ['吃', '喝', '写'] }, { text: '车站＿了，下车吧。', wrong: ['吃', '喝', '写'] }], misuse: '我到很高兴。' },

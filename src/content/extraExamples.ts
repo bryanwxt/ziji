@@ -36,6 +36,18 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
   烟: [['烟花', 'yān huā', 'fireworks'], ['冒烟', 'mào yān', 'to give off smoke']],
   笨: [['笨重', 'bèn zhòng', 'heavy and clumsy'], ['笨手笨脚', 'bèn shǒu bèn jiǎo', 'clumsy']],
   暗: [['黑暗', 'hēi àn', 'dark; darkness'], ['暗暗', 'àn àn', 'secretly; quietly']],
+  // second sweep (HSK 5–9): the new readings, and everyday words where dropped ones were unsuitable or obscure
+  帖: [['请帖', 'qǐng tiě', 'invitation card']], 荫: [['树荫', 'shù yīn', 'shade of a tree']], 咧: [['咧嘴', 'liě zuǐ', 'to grin']],
+  唉: [['唉声叹气', 'āi shēng tàn qì', 'to sigh']], 唠: [['唠叨', 'láo dao', 'to nag; to chatter']], 倔: [['倔强', 'jué jiàng', 'stubborn']],
+  粘: [['粘贴', 'zhān tiē', 'to paste; to stick']], 喇: [['喇叭', 'lǎ ba', 'horn; trumpet']], 遛: [['遛狗', 'liù gǒu', 'to walk the dog']],
+  曝: [['曝光', 'bào guāng', 'to expose']], 枪: [['水枪', 'shuǐ qiāng', 'water gun']], 鬼: [['鬼脸', 'guǐ liǎn', 'a funny face']],
+  傻: [['傻笑', 'shǎ xiào', 'to giggle']], 凶: [['凶猛', 'xiōng měng', 'fierce']], 肿: [['红肿', 'hóng zhǒng', 'red and swollen']],
+  暴: [['暴雨', 'bào yǔ', 'rainstorm']], 艾: [['艾草', 'ài cǎo', 'mugwort']], 茅: [['茅屋', 'máo wū', 'thatched hut']],
+  屠: [['屠夫', 'tú fū', 'butcher']], 绑: [['绑鞋带', 'bǎng xié dài', 'to tie shoelaces']], 悠: [['悠久', 'yōu jiǔ', 'long-standing']],
+  纲: [['大纲', 'dà gāng', 'outline']], 吊: [['吊灯', 'diào dēng', 'hanging lamp']], 扣: [['扣子', 'kòu zi', 'button']],
+  炒: [['炒饭', 'chǎo fàn', 'fried rice']], 股: [['一股', 'yì gǔ', 'a stream; a wisp']], 兰: [['兰花', 'lán huā', 'orchid']],
+  杖: [['拐杖', 'guǎi zhàng', 'walking stick']], 哗: [['喧哗', 'xuān huá', 'noisy; to make a racket']], 怠: [['怠慢', 'dài màn', 'to neglect (a guest)']],
+  栓: [['消防栓', 'xiāo fáng shuān', 'fire hydrant']], 禅: [['坐禅', 'zuò chán', 'to meditate']],
   // HSK 2
   又: [['又来了', 'yòu lái le', 'here it comes again'], ['又一次', 'yòu yí cì', 'once again']],
   亿: [['一亿', 'yí yì', 'one hundred million'], ['亿万', 'yì wàn', 'hundreds of millions']],

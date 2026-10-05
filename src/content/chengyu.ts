@@ -17,7 +17,7 @@ export const CHENGYU: readonly Chengyu[] = [
   c('四面八方', 'from all directions', '人们从四面八方来了。'),
   c('五花八门', 'all sorts of things', '我们玩的东西五花八门。'),
   c('一动不动', 'perfectly still', '小猫坐在那里一动不动。'),
-  c('一干二净', 'completely, all gone', '弟弟的饭吃得一干二净。'),
+  c('一干二净', 'completely, all gone', '这碗饭弟弟吃得一干二净。'),
   c('一天到晚', 'all day long', '他一天到晚都在看书。'),
   c('半真半假', 'half true, half false', '他讲的故事半真半假。'),
   c('说干就干', 'start as soon as it is said', '他说干就干，马上去做。'),
@@ -149,7 +149,7 @@ export const CHENGYU: readonly Chengyu[] = [
   c('胸有成竹', 'sure of oneself, with a plan ready', '考试前他胸有成竹。'),
   c('自相矛盾', 'contradict oneself', '他讲的故事自相矛盾。'),
   c('犹豫不决', 'unable to decide', '买哪一个，他犹豫不决。'),
-  c('毫不犹豫', 'without a moment\'s doubt', '他毫不犹豫跳进了水里。'),
+  c('毫不犹豫', 'without a moment\'s doubt', '他毫不犹豫举起了手。'),
   c('朝夕相处', 'together day after day', '同学们朝夕相处，感情很好。'),
   c('得不偿失', 'not worth it', '不睡觉玩游戏得不偿失。'),
   c('惊慌失措', 'panic', '遇到危险不要惊慌失措。'),
@@ -167,7 +167,7 @@ export const CHENGYU: readonly Chengyu[] = [
   c('争分夺秒', 'race against the clock', '他争分夺秒做作业。'),
   c('左顾右盼', 'look left and right', '他在门口左顾右盼。'),
   c('三番五次', 'again and again', '妈妈三番五次叫他起床。'),
-  c('理直气壮', 'bold because one is right', '他回答问题时理直气壮。'),
+  c('理直气壮', 'bold because one is right', '他没有做错，说话理直气壮。'),
   c('恰到好处', 'just right', '这道菜的味道恰到好处。'),
 ];
 

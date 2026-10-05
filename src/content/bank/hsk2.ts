@@ -17,7 +17,7 @@ export const BANK_2: BankItem[] = [
   { word: '或者', type: 'conj', gaps: [{ text: '你可以喝茶＿喝水。', wrong: ['还是', '但是', '所以'] }, { text: '我们明天＿后天去公园。', wrong: ['但是', '所以', '因为'] }], misuse: '或者我很高兴。', clue: '问问题用"还是"，不是问题用"或者"' },
   { word: '然后', type: 'adv', gaps: [{ text: '我先洗手，＿吃饭。', wrong: ['如果', '虽然', '但是'] }, { text: '我们先去公园，＿去商店。', wrong: ['如果', '虽然', '所以'] }], misuse: '我然后很高兴。' },
   { word: '刚才', type: 'n', gaps: [{ text: '我＿看见他了。', wrong: ['明天', '以后', '经常'] }, { text: '你＿去哪里了？', wrong: ['明天', '以后', '已经'] }], misuse: '我明天刚才去学校。', clue: '刚才：说话前一会儿' },
-  { word: '忽然', type: 'adv', gaps: [{ text: '天＿下起雨来了。', wrong: ['一直', '经常', '一定'] }, { text: '我们正在上课，灯＿关了。', wrong: ['一直', '经常', '一定'] }], misuse: '这本书很忽然。' },
+  { word: '忽然', type: 'adv', gaps: [{ text: '天＿下起雨来了。', wrong: ['一直', '经常', '一定'] }, { text: '我们正在上课，灯＿关了。', wrong: ['一直', '经常', '特别'] }], misuse: '这本书很忽然。' },
   { word: '一定', type: 'adv', gaps: [{ text: '我明天＿来。', wrong: ['已经', '刚才', '忽然'] }, { text: '你＿要多喝水。', wrong: ['已经', '刚才', '忽然'] }], misuse: '我一定了一本书。' },
   { word: '一直', type: 'adv', gaps: [{ text: '雨＿下到晚上。', wrong: ['刚才', '一起', '一样'] }, { text: '你往前＿走，就到了。', wrong: ['刚才', '一起', '一样'] }], misuse: '我一直了一碗饭。' },
   { word: '经常', type: 'adv', gaps: [{ text: '我＿去图书馆看书。', wrong: ['礼物', '动物', '句子'] }, { text: '他＿帮助别人。', wrong: ['礼物', '动物', '句子'] }], misuse: '这本书很经常。' },

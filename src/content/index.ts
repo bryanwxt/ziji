@@ -8,7 +8,7 @@ import { SWEEP_MEANINGS, SWEEP_PINYIN } from './sweepFixes';
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.7`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.8`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences)
 export const PASSAGES: Passage[] = passages as Passage[];
 
 const infoByChar = new Map<string, CharInfo>(
@@ -64,7 +64,10 @@ function examplesFor(c: BuiltinChar): Example[] {
  * The reading a P2 child meets, where the dictionary's citation reading isn't it (了 is le every day, liǎo only in 了解;
  * 夹子 jiā, 咳嗽 ké, 提供 gōng — parent, 2026-10-05).
  */
-export const READING_FIXES: Record<string, string> = { 了: 'le', 夹: 'jiā', 咳: 'ké', 供: 'gōng', 教: 'jiāo', 兴: 'xìng', 漂: 'piào', 切: 'qiē' }; // the last four: content sweep
+export const READING_FIXES: Record<string, string> = {
+  了: 'le', 夹: 'jiā', 咳: 'ké', 供: 'gōng', 教: 'jiāo', 兴: 'xìng', 漂: 'piào', 切: 'qiē', // content sweep
+  帖: 'tiě', 荫: 'yīn', 咧: 'liě', 唉: 'āi', 唠: 'láo', 倔: 'jué', 粘: 'zhān', 喇: 'lǎ', 遛: 'liù', 曝: 'bào', // second sweep
+};
 /** A built-in character's reading as his lessons teach it. */
 export const builtinReading = (c: BuiltinChar): string => READING_FIXES[c.char] ?? c.pinyin;
 /** 组词 readings the source data gets wrong (包子's 子 is 轻声). */
@@ -89,6 +92,9 @@ export const EXAMPLE_DROPS = new Set<string>([
   '自杀', '谋害', '绯闻', '暗杀', '抽烟', '笨蛋', '收买', '风流', // unsuitable
   '板块', '新兴', '风度', '第一手', '卖弄', '饱和', '雷同', '哭笑不得', // obscure, or adult words a child can't use
   '心脏', '心脏病', // zàng, on 脏's zāng ("dirty") card
+  // second sweep (HSK 5–9)
+  '开枪', '酒鬼', '傻瓜', '凶手', '肿瘤', '暴力', '艾滋病', '茅台', '枪毙', '屠杀', '绑架', '忽悠', '偷窥',
+  '纲领', '吊销', '回扣', '炒股', '伊斯兰教', '禅杖', '哗变', '怠工', '抚恤', '血栓',
 ]);
 
 const toneless = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
