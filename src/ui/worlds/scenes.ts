@@ -5,11 +5,13 @@ import type { WorldArt } from './art';
 import { eveningLights, eveningSky } from './evening';
 import { INK, inkLayers } from './legacy';
 import { YARD } from './yard';
+import { GRASS } from './grass';
+import { RACE } from './race';
 
 export const SCENE_VIEWBOX = '0 0 360 480';
 
 /** The worlds in storybook paper so far. */
-export const WORLD_ART: Partial<Record<WorldId, WorldArt>> = { yard: YARD };
+export const WORLD_ART: Partial<Record<WorldId, WorldArt>> = { yard: YARD, grass: GRASS, race: RACE };
 
 /** Each world by day (thumbnails in 松露's room, the arrival card). */
 export const SCENES = Object.fromEntries(WORLDS.map((w) => {

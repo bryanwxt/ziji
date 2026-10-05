@@ -11,7 +11,7 @@ const LIGHT: Record<WorldId, string> = { yard: 'lantern', grass: 'firefly', race
 const paper = Object.entries(WORLD_ART) as [WorldId, WorldArt][];
 
 describe('the storybook paper worlds (spec 2026-10-04 §2)', () => {
-  it('the yard is one of them', () => expect(paper.map(([w]) => w)).toContain('yard'));
+  it('these worlds are in storybook paper', () => expect(paper.map(([w]) => w)).toEqual(expect.arrayContaining(['yard', 'grass', 'race'])));
   for (const [w, a] of paper) {
     describe(w, () => {
       const day = sceneFor(w, 'afternoon');
