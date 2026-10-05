@@ -862,8 +862,15 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
      answer, and a slimmer 继续 leaves the English one line each (parent, 2026-10-05: the sheet was cut off on an iPhone) */
   .stage__sheet .sheet--oops .sheet__title:has(+ .sheet__detail) { display: none; }
   .stage__sheet .sheet--oops:has(.sheet__detail) .btn { min-width: 0; padding: 10px 12px; }
-  .sheet__en { font-size: 15px; }
+  .sheet__en { font-size: 15px; line-height: 1.2; gap: 0; }
+  .sheet__en-zh { font-size: 18px; }
+  .sheet__en-zh .label__py { font-size: 10px; min-height: 1em; }
+  .sheet__en-line { gap: 6px; }
 }
+@media (max-width: 599px) and (max-height: 720px) { /* the smallest phones: the answer and its English, not the long hint, so the card keeps its tiles */
+  .stage__sheet .sheet__detail .clue { display: none; }
+}
+
 @media (orientation: landscape) and (min-height: 600px) {
   .sheet { align-self: flex-end; max-width: 62%; }
   .sheet--neutral { max-width: none; align-self: stretch; justify-content: flex-end; }
@@ -1005,7 +1012,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* 认一认 meaning question: the 组词 word with the character blanked (spec §19) */
 .meaning-prompt { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .meaning-cue { white-space: nowrap; font-size: min(var(--hanzi-xl), calc(70vw / var(--len, 2))); line-height: 1.05; background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); padding: 0.04em 0.2em 0.08em; }
-.meaning-cue__blank { color: transparent; display: inline-block; width: 0.95em; height: 0.95em; line-height: 0.95em; overflow: hidden; vertical-align: -0.1em; border: 2.5px dashed var(--ink); border-radius: 6px; opacity: 0.55; margin: 0 0.08em; } /* the same dashed box as a Label's gap */
+.meaning-cue__blank { color: transparent; display: inline-block; width: 0.95em; height: 0.95em; line-height: 0.95em; overflow: visible; vertical-align: -0.1em; border: 2.5px dashed var(--ink); border-radius: 6px; opacity: 0.55; margin: 0 0.08em; } /* the same dashed box as a Label's gap */
 @media (max-width: 599px) {
   /* the new-word card on a phone: smaller speak buttons (still ≥44px), tighter rows */
   .intro__card { padding: 10px 18px; gap: 4px; }
@@ -1042,7 +1049,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* 钓鱼 as 字辨: the word with its gap, and four fish (spec §20 part 8) */
 .pond--four { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 420px; }
 .zibian__word { font-size: clamp(48px, 8dvh, 80px); gap: 4px; padding: 4px 20px; background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); }
-.zibian__blank { color: transparent; display: inline-block; width: 0.95em; height: 0.95em; line-height: 0.95em; overflow: hidden; vertical-align: -0.1em; border: 2.5px dashed var(--ink); border-radius: 6px; opacity: 0.55; margin: 0 0.08em; }
+.zibian__blank { color: transparent; display: inline-block; width: 0.95em; height: 0.95em; line-height: 0.95em; overflow: visible; vertical-align: -0.1em; border: 2.5px dashed var(--ink); border-radius: 6px; opacity: 0.55; margin: 0 0.08em; }
 .zibian__radical { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-size: 20px; }
 /* its feedback: one compact row per character (银：钅 金), and 继续 always inside the bar */
 .zibian__why { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -1214,6 +1221,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .idiom { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: var(--q-hanzi, 64px); line-height: 1.1; }
 .idiom__slot { min-width: 1em; text-align: center; color: var(--ink-soft); border-bottom: 3px dashed var(--line, #d8cfbf); }
 .idiom__slot.is-filled { color: var(--ink); }
+/* every gap is the same dashed box, never a ？ (parent, 2026-10-05: one popped up in 词语搭配): one box wide per missing character */
+.match__slot:not(.is-filled), .idiom__slot:not(.is-filled) { color: transparent; display: inline-block; vertical-align: -0.1em; width: calc(0.95em * var(--n, 1) + 0.1em * (var(--n, 1) - 1)); min-width: 0; height: 0.95em; line-height: 0.95em; overflow: visible; border: 2.5px dashed var(--ink); border-radius: 6px; opacity: 0.55; margin: 0 0.08em; }
 
 /* the 认新字 card's 成语 (spec 2026-10-05 §2.1): its line like a 组词's, then a short sentence */
 .intro__idiom { display: flex; flex-direction: column; align-items: center; gap: 2px; }

@@ -16,9 +16,11 @@ export interface WritingCue {
 /** The example word to show for a character: one that uses this reading, preferring one where it appears once. */
 export function pickExample(word: Word): { example: Example; once: boolean } | null {
   const usable = (word.examples ?? []).filter((e) => e.text.length > word.text.length && e.text.includes(word.text) && sameReading(e, word));
-  const once = usable.find((e) => e.text.split(word.text).length === 2);
-  const example = once ?? usable[0];
-  return example ? { example, once: !!once } : null;
+  const single = (e: Example) => e.text.split(word.text).length === 2;
+  // a word where it keeps its full tone first (说话 over 笑话 for 话): the voice says a 轻声 lightly, and he writes from its sound
+  const ranked = [...usable].sort((a, b) => Number(single(b)) - Number(single(a)) || Number(keepsTone(b, word)) - Number(keepsTone(a, word)));
+  const example = ranked[0];
+  return example ? { example, once: single(example) } : null;
 }
 
 /** `at`: write only that character of a longer word (spec 2026-10-05 §5) — the gap is its alone, the others show (朋＿). */
@@ -44,7 +46,8 @@ function wholeWordCue(word: Word): WritingCue {
   const picked = pickExample(word);
   if (!picked) return { meaning, blanked: null, blankedPy: null, speech: word.text, sentence: null };
   const { example, once } = picked;
-  const speech = `${word.text}，${example.text}的${word.text}`;
+  // the character on its own at the end, after a pause, so its own tone is the last thing he hears (笑话的话 ran into 的话)
+  const speech = `${word.text}，${example.text}的，${word.text}`;
   if (!once) return { meaning, blanked: null, blankedPy: null, speech, sentence: null }; // 爸爸 → two empty boxes would tell him nothing
   return {
     meaning,
@@ -64,6 +67,14 @@ function kidMeaning(word: Word): string | null {
 }
 
 /** Does the example say the character the way the prompt does? A neutral tone of the same syllable counts (儿子 zi for 子 zǐ). */
+/** Does the 组词 say the character with its tone, not as a 轻声 (笑话's hua)? Unknown alignment counts as yes. */
+function keepsTone(e: Example, word: Word): boolean {
+  const syl = e.pinyin.trim().split(/\s+/);
+  const at = e.text.indexOf(word.text);
+  if (syl.length !== [...e.text].length || at < 0) return true;
+  return word.pinyin.trim().split(/\s+/).every((_, j) => syllableTone(syl[at + j] ?? '').tone !== 5);
+}
+
 function sameReading(e: Example, word: Word): boolean {
   const syl = e.pinyin.trim().split(/\s+/);
   const want = word.pinyin.trim().split(/\s+/);

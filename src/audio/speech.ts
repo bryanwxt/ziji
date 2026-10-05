@@ -51,6 +51,8 @@ const isShortWord = (text: string) => {
  */
 export function spokenAs(text: string, reading?: string): string {
   const { sayAs, poly, plain } = SAY_AS as { sayAs: Record<string, string>; poly: Record<string, string>; plain: Record<string, string> };
+  // a character said on its own between pauses (写一写's "长，长城的，长") is said as taught too
+  if (text.includes('，')) return text.split('，').map((part) => (Array.from(part).length === 1 ? spokenAs(part, reading) : part)).join('，');
   if (!(text in poly)) return text;
   if (reading && reading !== poly[text]) return plain[reading] ?? text;
   return sayAs[text] ?? text;

@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../../content';
 import { createEmptyCard, State } from 'ts-fsrs';
 import { DEFAULT_KID } from '../../types';
-import { FlashcardStep } from './FlashcardStep';
+import { FlashcardStep , introIdiom, shownOnCard } from './FlashcardStep';
 import { makeWord } from '../../test/fixtures';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
@@ -464,3 +464,31 @@ describe('a hard question (spec 2026-10-04 §4.6, phase E)', () => {
   });
 });
 
+
+describe('nothing on the 认新字 card twice (parent, 2026-10-05: 四面八方 as both the usage line and the 成语 on 八)', () => {
+  it('八 gets a 成语 the card does not already show, or none', async () => {
+    const { idiomsFor } = await import('../../content/chengyu');
+    const ba = pool.find((w) => w.text === '八')!;
+    const pick = introIdiom(ba, idiomsFor(ba, 1, pool));
+    expect(shownOnCard(ba).some((t) => pick && t.includes(pick.text))).toBe(false);
+  });
+  it('for every built-in character at every level, the card never repeats a phrase', async () => {
+    const { idiomsFor } = await import('../../content/chengyu');
+    const twice: string[] = [];
+    for (const w of pool.filter((x) => Array.from(x.text).length === 1)) {
+      for (const level of [1, 3, 6]) {
+        const pick = introIdiom(w, idiomsFor(w, level, pool));
+        if (pick && shownOnCard(w).some((t) => t.includes(pick.text))) twice.push(`${w.text}: ${pick.text}`);
+      }
+    }
+    expect(twice).toEqual([]);
+  });
+  it('the card itself drops a 成语 it already shows, whoever picked it', async () => {
+    const { builtinIdiom } = await import('../../content/chengyu');
+    const ba = pool.find((w) => w.text === '八')!;
+    const dup = builtinIdiom('四面八方');
+    if (!dup || !shownOnCard(ba).some((t) => t.includes('四面八方'))) return; // only meaningful while 八's usage line is 四面八方
+    render(<FlashcardStep {...base} word={ba} idiom={dup} item={{ wordId: ba.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.intro__idiom')).toBeNull();
+  });
+});

@@ -70,7 +70,7 @@ export function UseQuestion({ item, kid, resting, bubble, closing, onAnswer, onN
           detail={
             correct && !item.pair ? undefined : (
               <>
-                {!correct && <span class="hanzi">{fullSentence(item)}</span>}
+                {!correct && item.kind !== 'fit' && <span class="hanzi">{fullSentence(item)}</span>} {/* a 选一选 card already shows its sentence filled in */}
                 {item.pair && <span class="pair hanzi">{`${item.word} + ${item.pair}`}</span>}
                 {!correct && <MeaningNote right={item.word} picked={item.kind === 'fit' ? choice : null} rightMeaning={item.kind === 'fit' ? item.meaning : undefined} />}
                 {!correct && item.kind === 'fit' && item.clue && <span class="clue hanzi">{item.clue}</span>}

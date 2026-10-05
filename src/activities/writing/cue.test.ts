@@ -5,7 +5,7 @@ import { pickExample, writingCue } from './cue';
 describe('writingCue', () => {
   it('gives the first meaning, a blanked word that uses it, and says which character', () => {
     const er = makeWord('儿', { pinyin: 'ér', meaning: 'son, child', examples: [{ text: '儿子', pinyin: 'ér zi' }, { text: '好玩儿', pinyin: 'hǎo wán ér' }] });
-    expect(writingCue(er)).toEqual({ meaning: 'son', blanked: '＿子', blankedPy: 'zi', speech: '儿，儿子的儿', sentence: null });
+    expect(writingCue(er)).toEqual({ meaning: 'son', blanked: '＿子', blankedPy: 'zi', speech: '儿，儿子的，儿', sentence: null });
   });
   it('without an example word there is no blank, and it just says the character', () => {
     const ba = makeWord('八', { meaning: 'eight; 8', examples: [] });
@@ -40,21 +40,21 @@ describe('writingCue meanings a child can use', () => {
 describe('writingCue example word', () => {
   it('prefers a word where the character appears once', () => {
     const nai = makeWord('奶', { pinyin: 'nǎi', meaning: 'milk', examples: [{ text: '奶奶', pinyin: 'nǎi nai' }, { text: '牛奶', pinyin: 'niú nǎi' }] });
-    expect(writingCue(nai)).toMatchObject({ blanked: '牛＿', blankedPy: 'niú', speech: '奶，牛奶的奶' });
+    expect(writingCue(nai)).toMatchObject({ blanked: '牛＿', blankedPy: 'niú', speech: '奶，牛奶的，奶' });
   });
   it('a doubled word is still said aloud but not shown as two empty boxes', () => {
     const ba = makeWord('爸', { pinyin: 'bà', meaning: 'father', examples: [{ text: '爸爸', pinyin: 'bà ba' }] });
-    expect(writingCue(ba)).toMatchObject({ blanked: null, speech: '爸，爸爸的爸' });
+    expect(writingCue(ba)).toMatchObject({ blanked: null, speech: '爸，爸爸的，爸' });
   });
   it('skips a word that uses a different reading from the one being written', () => {
     const xing = makeWord('行', { pinyin: 'xíng', meaning: 'walk', examples: [{ text: '银行', pinyin: 'yín háng' }, { text: '行人', pinyin: 'xíng rén' }] }); // 长 now has a bank sentence
-    expect(writingCue(xing)).toMatchObject({ blanked: '＿人', speech: '行，行人的行' });
+    expect(writingCue(xing)).toMatchObject({ blanked: '＿人', speech: '行，行人的，行' });
     const wei = makeWord('为', { pinyin: 'wèi', examples: [{ text: '成为', pinyin: 'chéng wéi' }] });
     expect(writingCue(wei)).toMatchObject({ blanked: null, speech: '为' });
   });
   it('a neutral-tone use of the same syllable still counts (儿子 for 子)', () => {
     const zi = makeWord('子', { pinyin: 'zǐ', examples: [{ text: '儿子', pinyin: 'ér zi' }] });
-    expect(writingCue(zi)).toMatchObject({ blanked: '儿＿', speech: '子，儿子的子' });
+    expect(writingCue(zi)).toMatchObject({ blanked: '儿＿', speech: '子，儿子的，子' });
   });
 });
 
@@ -100,5 +100,16 @@ describe('the gap carries the sound he writes (parent, 2026-10-05: the pinyin sa
   });
   it('falls back to the others alone when they don\'t line up', () => {
     expect(gapPinyin('＿实', 'shí', 'chéng shí', 5)).toBe('shí'); // no syllable at that place
+  });
+});
+
+describe('he hears the tone he writes (parent, 2026-10-05: 笑话 was heard as huā)', () => {
+  it('prefers a 组词 where the character keeps its full tone, and says the character alone last', () => {
+    const hua = makeWord('话', { pinyin: 'huà', examples: [{ text: '笑话', pinyin: 'xiào hua' }, { text: '说话', pinyin: 'shuō huà' }] });
+    expect(writingCue(hua)).toMatchObject({ blanked: '说＿', speech: '话，说话的，话' });
+  });
+  it('a 轻声 word is still used when it is the only one', () => {
+    const hua = makeWord('话', { pinyin: 'huà', examples: [{ text: '笑话', pinyin: 'xiào hua' }] });
+    expect(writingCue(hua).speech).toBe('话，笑话的，话');
   });
 });

@@ -58,7 +58,7 @@ export function MatchQuestion({ question, kid, resting, onDone }: Props) {
       <div class="match">
         <span class="match__word hanzi">{question.verb}</span>
         <span class="match__plus" aria-hidden="true">+</span>
-        <span class={`match__slot hanzi${done ? ' is-filled' : ''}`}>{done ? question.noun : '？'}</span>
+        <span class={`match__slot hanzi${done ? ' is-filled' : ''}`} style={`--n:${Array.from(question.noun).length}`} aria-label={done ? undefined : '空格'}>{done ? question.noun : '？'}</span>
       </div>
       <div class="choices">
         {question.options.map((o) => (

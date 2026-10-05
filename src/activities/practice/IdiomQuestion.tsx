@@ -58,7 +58,7 @@ export function IdiomQuestion({ gap, kid, resting, onDone }: Props) {
       <div class="idiom hanzi">
         {Array.from(text).map((ch, i) => (
           i === gap.at
-            ? <span key={i} class={`idiom__slot${done ? ' is-filled' : ''}`}>{done ? gap.answer : '？'}</span>
+            ? <span key={i} class={`idiom__slot${done ? ' is-filled' : ''}`} aria-label={done ? undefined : '空格'}>{done ? gap.answer : '？'}</span>
             : <span key={i} class="idiom__char">{ch}</span>
         ))}
       </div>

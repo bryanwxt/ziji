@@ -89,9 +89,9 @@ describe('WritingStep cue: more than the pinyin (parent, 2026-10-04)', () => {
     expect(document.querySelector('.write__sentence')).toBeNull();
     expect(document.querySelector('.write__blank .label')?.getAttribute('data-py')).toBe('zi');
     expect(screen.getByText('空格子')).toBeTruthy(); // the screen-reader copy says the gap
-    expect(speak).toHaveBeenLastCalledWith('儿，儿子的儿');
+    expect(speak).toHaveBeenLastCalledWith('儿，儿子的，儿');
     fireEvent.click(screen.getByLabelText('听'));
-    expect(speak).toHaveBeenLastCalledWith('儿，儿子的儿');
+    expect(speak).toHaveBeenLastCalledWith('儿，儿子的，儿');
   });
   it('a word with no cue shows neither line', () => {
     render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén', source: 'parent' })} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);

@@ -179,3 +179,10 @@ describe('a sound button tapped again while the iPad is still talking (parent, 2
     expect(said(synth)).toEqual([]);
   });
 });
+
+describe('a lone character between pauses is said as taught (写一写: 长，长城的，长)', () => {
+  it('each one-character part goes through the say-as table; words are left alone', async () => {
+    const { spokenAs } = await import('./speech');
+    expect(spokenAs('调，空调的，调')).toBe('条，空调的，条');
+  });
+});

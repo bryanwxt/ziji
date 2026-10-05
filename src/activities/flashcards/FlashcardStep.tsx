@@ -260,6 +260,19 @@ function extraWords(line: ReturnType<typeof usageLine>, idiom: Idiom | null): nu
   return line?.isWord ? 0 : 1;
 }
 
+/** What the 认新字 card shows beside a 成语: its usage line and the 组词 listed with it (a 成语 can be either: 八's is 四面八方). */
+export function shownOnCard(word: Word): string[] {
+  const line = usageLine(word);
+  const listed = (word.examples ?? []).filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, {} as Idiom)).map((e) => e.text);
+  return [line?.full, ...listed].filter((t): t is string => !!t);
+}
+
+/** The card's 成语: the first one the card doesn't already show, so nothing is shown twice (parent, 2026-10-05: 四面八方 twice on 八). */
+export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
+  const shown = shownOnCard(word);
+  return idioms.find((i) => !shown.some((t) => t.includes(i.text))) ?? null;
+}
+
 function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
   const line = usageLine(word);
   const long = Array.from(word.text).length > 1;
@@ -298,7 +311,7 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
         {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom)).map((e) => ( // never the one the usage line already shows; all of them feed the meaning questions
           <WordRow key={e.text} class="example" zh={e.text} py={e.pinyin} en={glossFor(e.text)} />
         ))}
-        {idiom && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语)
+        {idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows
           <div class="intro__idiom">
             <WordRow class="example example--idiom" zh={idiom.text} py={idiom.pinyin} en={idiom.meaning} />
             {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi">{idiom.sentences[0]}</p>}
