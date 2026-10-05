@@ -14,11 +14,11 @@ const PUNCT = new Set([...'，。！？、；：']);
 const PARTICLES = new Set([...'了吗吧呢的得着过']);
 const NUMERALS = new Set([...'一二三四五六七八九十两几这那每哪']);
 const MEASURES = new Set([...'个本杯只条张件位次天点岁块双把辆台首节些']);
-const TIME_WORDS = new Set(['今天', '明天', '昨天', '现在', '早上', '晚上', '上午', '下午', '中午', '每天', '天天', '后来', '刚才', '以前', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期天', '星期日', '周末', '放学后', '今年', '去年', '明年', '有一天']);
-const SUBJECTS = new Set(['我', '你', '他', '她', '它', '我们', '你们', '他们', '她们', '大家', '爸爸', '妈妈', '哥哥', '姐姐', '弟弟', '妹妹', '爷爷', '奶奶', '老师']);
+const TIME_WORDS = new Set(['今天', '明天', '昨天', '现在', '早上', '晚上', '上午', '下午', '中午', '每天', '后来', '刚才', '以前', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期天', '星期日', '周末', '放学后', '今年', '去年', '明年', '有一天']);
+const SUBJECTS = new Set(['我', '你', '他', '她', '它', '我们', '你们', '他们', '她们', '大家', '爸爸', '妈妈', '哥哥', '姐姐', '弟弟', '妹妹', '爷爷', '奶奶', '老师', '朋友', '同学']);
 
 let dict: Set<string> | null = null;
-const known = () => (dict ??= new Set([...HSK_WORDS.keys(), ...SENTENCE_BANK.map((b) => b.word)]));
+const known = () => (dict ??= new Set([...HSK_WORDS.keys(), ...SENTENCE_BANK.map((b) => b.word), ...TIME_WORDS, '不知道', '一下', '有点', '早点', '小猫', '小狗', '小鸟', '面条', '过去']));
 
 /**
  * Word tiles, the longest dictionary word first. Punctuation and a lone 了/吗/吧/的… stay with the word before it, a number
@@ -50,7 +50,7 @@ function ordersOf(t: string[]): string[][] {
   const out: string[][] = [t];
   const add = (o: string[]) => { if (!out.some((x) => x.join('|') === o.join('|'))) out.push(o); };
   if (t.length >= 3 && TIME_WORDS.has(t[0]!) && SUBJECTS.has(t[1]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
-  if (t.length >= 3 && SUBJECTS.has(t[0]!) && TIME_WORDS.has(t[1]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
+  if (t.length >= 3 && SUBJECTS.has(t[0]!) && TIME_WORDS.has(t[1]!) && !['或者', '还是', '和', '到'].includes(t[2]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
   for (const o of [...out]) {
     const k = o.findIndex((x) => x === '和' || x === '跟');
     if (k > 0 && k < o.length - 1 && SUBJECTS.has(o[k - 1]!) && SUBJECTS.has(o[k + 1]!)) add([...o.slice(0, k - 1), o[k + 1]!, o[k]!, o[k - 1]!, ...o.slice(k + 2)]);
