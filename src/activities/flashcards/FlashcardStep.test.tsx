@@ -381,8 +381,8 @@ describe('认新字: a missed word is shown again (spec 2026-10-05 §2.1)', () =
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).not.toHaveBeenCalled();
     expect(screen.getByText('我记住了！')).toBeTruthy(); // the card again
-    const t0 = Date.now();
-    const clock = vi.spyOn(Date, 'now').mockReturnValue(t0 + 800); // he has had a moment to look
+    const t0 = performance.now();
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(t0 + 800); // he has had a moment to look
     fireEvent.click(screen.getByText('我记住了！'));
     clock.mockRestore();
     expect(onDone).toHaveBeenCalledTimes(1);
@@ -396,7 +396,22 @@ describe('认新字: a missed word is shown again (spec 2026-10-05 §2.1)', () =
     fireEvent.click(screen.getByText('继续'));
     fireEvent.click(screen.getByText('我记住了！')); // the second tap of a double tap
     expect(onDone).not.toHaveBeenCalled();
-    expect(document.querySelector('.pet__bubble')?.textContent).toContain('再看一看！');
+    expect(document.querySelector('.pet__bubble')?.textContent).toContain('再看一遍！');
+  });
+  it("sweep: the pause is timed on the page's own clock, so a wall clock that stands still (the WebKit sweep's) never stalls him", () => {
+    const wall = vi.spyOn(Date, 'now').mockReturnValue(1_790_000_000_000);
+    let t = 1000;
+    const page = vi.spyOn(performance, 'now').mockImplementation(() => t);
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} ask="read" reintroOnMiss voice={false} onDone={onDone} />);
+    fireEvent.click(screen.getByText('我记住了！'));
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
+    fireEvent.click(screen.getByText('继续'));
+    t += 800; // he has looked at the card again
+    fireEvent.click(screen.getByText('我记住了！'));
+    wall.mockRestore();
+    page.mockRestore();
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
   it('a right answer moves straight on', () => {
     const onDone = vi.fn();
