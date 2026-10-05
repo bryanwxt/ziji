@@ -279,8 +279,10 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
         })}
         {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom)).map((e) => ( // with their English, never the one the usage line already shows; all of them feed the meaning questions
           <div class="example" key={e.text}>
-            <span class="pinyin">{e.pinyin}</span>
-            <span class="hanzi">{e.text}</span>
+            <span class="word-ruby"> {/* pinyin over the 组词, laid out like the 成语 below it (parent, 2026-10-05: 一's card looked off) */}
+              <span class="pinyin">{e.pinyin}</span>
+              <span class="hanzi">{e.text}</span>
+            </span>
             <SpeakButton text={e.text} />
             {glossFor(e.text) && <span class="example__en" lang="en">{glossFor(e.text)}</span>}
           </div>
