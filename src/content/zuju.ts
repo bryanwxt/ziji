@@ -57,18 +57,19 @@ function ordersOf(t: string[]): string[][] {
   return out;
 }
 
+/** A sentence as a 组句: 4–6 different tiles with `keep` whole in one; null when it doesn't cut that way. */
+export function zujuOf(full: string, keep: string): ZujuItem | null {
+  const t = tiles(full);
+  if (t.length < MIN_TILES || t.length > MAX_TILES || new Set(t).size !== t.length) return null;
+  if (!t.some((x) => x.includes(keep))) return null;
+  return { full, tiles: t, orders: ordersOf(t) };
+}
+
 /** The 组句 sentences for a word: his class sentences first, then the bank's, each 4–6 different tiles with the word whole in one. */
 export function zujuFor(word: Word): ZujuItem[] {
   const bank = bankFor(word.text);
   const sentences = [...(word.sentences ?? []).map((s) => s.text), ...(bank ? bank.gaps.map((g) => fillGap(g, word.text)) : [])];
-  const out: ZujuItem[] = [];
-  for (const full of sentences) {
-    const t = tiles(full);
-    if (t.length < MIN_TILES || t.length > MAX_TILES || new Set(t).size !== t.length) continue;
-    if (!t.some((x) => x.includes(word.text))) continue;
-    out.push({ full, tiles: t, orders: ordersOf(t) });
-  }
-  return out;
+  return sentences.map((s) => zujuOf(s, word.text)).filter((z): z is ZujuItem => z !== null);
 }
 
 /** One of the word's 组句 sentences for this lesson (final review I5): a word back at 组句 gets a different one now and then. */
