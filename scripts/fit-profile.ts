@@ -6,6 +6,7 @@ import { COSTUMES } from '../src/fun/costumes';
 import { ACCESSORIES } from '../src/fun/pet';
 import { WORLDS, type WorldId } from '../src/fun/worlds';
 import { localDateKey } from '../src/lib/date';
+import { hashPin } from '../src/lib/hash';
 import { applyPlacement } from '../src/placement/apply';
 import { seededKnownCard } from '../src/srs/scheduler';
 import { createSessionRecord } from '../src/session/runner';
@@ -22,6 +23,7 @@ export interface FitProfileOptions {
   doneToday?: boolean;
   world?: WorldId;
   pin?: boolean; // false: stop at the PIN set-up
+  pinCode?: string; // a test PIN the sweep can type to reach the parent area (else the gate never opens)
   kid?: boolean; // false: stop at PetSetup
   placementDone?: boolean; // false: stop at the placement quiz
   writeSentence?: boolean; // 写一写 opens on 保持, whose cue is a long class sentence
@@ -56,7 +58,7 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
   const placed = [...words.slice(0, 80), ...school].map((w) => w.id);
   await applyPlacement(db, { readingIds: placed, understandingIds: placed.slice(0, 40), missed: [], reading: 0, understanding: 0 }, o.now);
   await updateSettings(db, {
-    pinHash: o.pin === false ? null : 'fit-check',
+    pinHash: o.pin === false ? null : o.pinCode ? await hashPin(o.pinCode) : 'fit-check',
     placementDone: o.placementDone ?? true,
     activities: { ...DEFAULT_SETTINGS.activities, ...o.activities },
     langdu: o.langdu ?? false,

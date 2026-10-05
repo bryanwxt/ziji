@@ -335,6 +335,20 @@ async function sweep(browser: Browser, size: Size) {
     const moved = boxes.findIndex((b) => b !== boxes[0]);
     if (moved > 0) results.push({ size: size.name, flow: 'placement', step: moved, sig: 'steady', problems: [`question size changed between questions: ${boxes[0]} → ${boxes[moved]}`] });
   });
+  // the placement check re-run from Settings (sweep): its 回家 ✕ against the card and Truffle's bubble
+  const FIT_PIN = '2580'; // a test PIN for this local sweep only
+  await run('placement-rerun', AFTERNOON, { pinCode: FIT_PIN }, async (p) => {
+    await tabTo(p, '家长');
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.click('.tab:has-text("Settings")');
+    await p.click('button:has-text("Re-run placement check")');
+    for (let i = 0; i < 3; i++) {
+      await p.waitForSelector('.placement[data-ready="true"]');
+      await check(p, size, 'placement-rerun', i);
+      await p.click('.placement .btn--big');
+      await p.waitForTimeout(150);
+    }
+  });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });
   await run('room', AFTERNOON, {}, async (p) => {
