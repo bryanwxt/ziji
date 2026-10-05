@@ -31,4 +31,10 @@ describe('buildFitProfile', () => {
     expect(readBackup(await buildFitProfile({ now: NOW, kid: false })).file.kid).toBeNull();
     expect((readBackup(await buildFitProfile({ now: NOW, placementDone: false })).file.settings as { placementDone: boolean }).placementDone).toBe(false);
   });
+  it('sweep: can own every costume and accessory, so the chest gives stars', async () => {
+    const { openChest } = await import('../src/fun/costumes');
+    const p = readBackup(await buildFitProfile({ now: NOW, ownsAll: true }));
+    const kid = p.file.kid as Parameters<typeof openChest>[0];
+    expect(openChest(kid, '2026-10-06', null).result.kind).toBe('stars');
+  });
 });

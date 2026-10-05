@@ -145,7 +145,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
       <Stage
         activity="placement"
         truffle={<Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={180} calm />}
-        sheet={<FeedbackSheet actionLabel="不知道" actionIcon={<InkIcon name="think" size={30} />} onAction={() => void answer(false, true)} />}
+        sheet={<FeedbackSheet quiet actionLabel="不知道" actionIcon={<InkIcon name="think" size={30} />} onAction={() => void answer(false, true)} />}
       >
         {q && (
           <>
@@ -159,7 +159,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
                 </div>
               )}
               {q.style === 'fit' && (
-                <div class={`hanzi ${Array.from(q.item.before + q.item.after).length <= 3 ? 'placement__word' : 'placement__sentence'}`}>
+                <div class={`hanzi ${Array.from(q.item.before + q.item.after).length <= 3 ? 'placement__word' : 'placement__sentence'}`} data-q={Array.from(q.item.before + q.item.after).length <= 3 ? true : undefined}>
                   {q.item.before}<span class="meaning-cue__blank" aria-label="空格">？</span>{q.item.after}
                 </div>
               )}

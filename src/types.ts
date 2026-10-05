@@ -244,9 +244,9 @@ export interface Settings {
   langdu: boolean; // 朗读 is parked too (parent, 2026-10-05: "not very useful at the moment"): off by default, no parent switch yet
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
   placementResult?: PlacementResult;
-  baselines?: Partial<Record<Skill, number>>;
+  baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
   pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)
-  contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION) // % right on his class worksheets, typed in by the parent (stays on the iPad)
+  contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION)
 }
 
 export const DEFAULT_SETTINGS: Settings = {

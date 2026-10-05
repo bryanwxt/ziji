@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { addDays } from '../lib/date';
 import { bandLevel, rankBands } from '../placement/walk';
@@ -33,6 +33,15 @@ export function SkillsPanel() {
     setD({ logs, answers, words, cards, reads, settings });
   };
   useEffect(() => void load(), []);
+  const typing = useRef(new Map<Skill, { value: string; t: ReturnType<typeof setTimeout> }>()); // baselines typed, not yet saved
+  const alive = useRef(true);
+  const save = useRef<((s: Skill, value: string) => Promise<void>) | null>(null); // the latest setBaseline (defined once the data is in)
+  useEffect(() => () => { // leaving: what was typed is saved, one box after another
+    alive.current = false;
+    const left = [...typing.current.entries()];
+    typing.current.clear();
+    void left.reduce((p, [s, { value, t }]) => { clearTimeout(t); return p.then(() => save.current?.(s, value)); }, Promise.resolve());
+  }, []);
   if (!d) return <p>Loading…</p>;
 
   const acc = skillAccuracy(d.logs, d.answers);
@@ -43,13 +52,22 @@ export function SkillsPanel() {
   const pct = (s: Skill) => (acc[s].total ? Math.round((acc[s].right * 100) / acc[s].total) : null);
 
   const setBaseline = async (s: Skill, value: string) => {
+    clearTimeout(typing.current.get(s)?.t);
+    typing.current.delete(s);
     const n = Math.round(Number(value));
-    const baselines = { ...d.settings.baselines };
+    const baselines = { ...(await getSettings(db)).baselines }; // what is stored: another box may have just saved
     if (value.trim() === '' || !Number.isFinite(n)) delete baselines[s];
     else baselines[s] = Math.min(100, Math.max(0, n));
     await updateSettings(db, { baselines });
-    setD({ ...d, settings: { ...d.settings, baselines } });
+    if (!alive.current) return;
+    setD((cur) => (cur ? { ...cur, settings: { ...cur.settings, baselines } } : cur));
     await refresh();
+  };
+  save.current = setBaseline;
+  // saved after a pause in typing too: on iPad Safari leaving by a tab may never fire change (sweep)
+  const typed = (s: Skill, value: string) => {
+    clearTimeout(typing.current.get(s)?.t);
+    typing.current.set(s, { value, t: setTimeout(() => void setBaseline(s, value), 800) });
   };
   const practise = async (s: Skill, wordId: string) => {
     const kind = SKILL_CARD[s] === 'write' && !d.cards.some((c) => c.id === `${wordId}:write`) ? 'recognise' : SKILL_CARD[s];
@@ -83,7 +101,7 @@ export function SkillsPanel() {
                 <td>{now === null ? '—' : `${now}% (${acc[s].total})`}</td>
                 <td>
                   <input type="number" min={0} max={100} aria-label={`Class baseline for ${LABEL[s]} (% right)`} defaultValue={base === undefined ? '' : String(base)}
-                    onChange={(e) => void setBaseline(s, e.currentTarget.value)} /> {/* saved when he's done typing, not per keystroke */}
+                    onInput={(e) => typed(s, e.currentTarget.value)} onChange={(e) => void setBaseline(s, e.currentTarget.value)} /> {/* saved when he's done typing, not per keystroke */}
                 </td>
                 <td>{now === null || base === undefined ? '—' : `${now - base >= 0 ? '+' : ''}${now - base}`}</td>
               </tr>

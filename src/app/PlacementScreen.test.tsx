@@ -29,6 +29,20 @@ async function walkThrough(pick: () => HTMLElement, each?: () => void): Promise<
 const dontKnow = () => screen.getByText('不知道');
 
 describe('PlacementScreen (spec §19 part 6)', () => {
+  it('sweep: 不知道 is the quiet button, and every word-sized prompt is marked for the layout check', async () => {
+    const app = await setup();
+    renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
+    let fitWords = 0;
+    await walkThrough(dontKnow, () => {
+      const btn = dontKnow().closest('button')!;
+      expect(btn.className).not.toMatch(/btn--primary/);
+      expect(btn.className).toMatch(/btn--ghost/);
+      for (const w of document.querySelectorAll('.placement__prompt .placement__word')) {
+        if (w.querySelector('.meaning-cue__blank')) fitWords++;
+        expect(w.hasAttribute('data-q')).toBe(true);
+      }
+    });
+  }, 30_000);
   it('opens with reading questions, then mixes styles; 不知道 always works; no right/wrong is shown', async () => {
     const app = await setup();
     renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);

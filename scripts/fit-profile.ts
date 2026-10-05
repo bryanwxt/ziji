@@ -2,6 +2,8 @@
 import 'fake-indexeddb/auto';
 import { builtinWords } from '../src/content';
 import { makeParentWords } from '../src/content/parseWordList';
+import { COSTUMES } from '../src/fun/costumes';
+import { ACCESSORIES } from '../src/fun/pet';
 import { WORLDS, type WorldId } from '../src/fun/worlds';
 import { localDateKey } from '../src/lib/date';
 import { applyPlacement } from '../src/placement/apply';
@@ -23,6 +25,7 @@ export interface FitProfileOptions {
   kid?: boolean; // false: stop at PetSetup
   placementDone?: boolean; // false: stop at the placement quiz
   writeSentence?: boolean; // 写一写 opens on 保持, whose cue is a long class sentence
+  ownsAll?: boolean; // every costume and accessory owned: the chest gives stars (sweep: that prize was never screenshotted)
 }
 
 const LONG_PASSAGE =
@@ -74,6 +77,7 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
       speakingLast: o.speakingLast ?? null,
       lastChestDate: o.doneToday ? today : null,
       bonusStars: 3,
+      ...(o.ownsAll ? { ownedCostumes: COSTUMES.map((c) => c.id), ownedAccessories: [...ACCESSORIES] } : {}),
     });
   }
   const json = await exportBackup(db, { includeMedia: false, now: t });

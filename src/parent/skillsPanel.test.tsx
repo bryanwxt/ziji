@@ -27,6 +27,17 @@ describe('SkillsPanel (spec §19 part 7)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Practise 根 more (Look-alike characters (字辨))' }));
     await waitFor(async () => expect((await allCards(app.db))[0]!.fsrs.due.getTime()).toBeLessThanOrEqual(app.now().getTime()));
   });
+  it('sweep: a baseline typed and left (a tab tapped, no change event on iPad Safari) is still saved', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    const { unmount } = renderWithApp(<SkillsPanel />, app);
+    const box = await screen.findByLabelText('Class baseline for Look-alike characters (字辨) (% right)');
+    fireEvent.input(box, { target: { value: '61' } });
+    await waitFor(async () => expect((await getSettings(app.db)).baselines?.zibian).toBe(61), { timeout: 3000 }); // after a pause in typing
+    fireEvent.input(screen.getByLabelText('Class baseline for Reading (认一认) (% right)'), { target: { value: '70' } });
+    unmount(); // he leaves straight away
+    await waitFor(async () => expect((await getSettings(app.db)).baselines).toMatchObject({ zibian: 61, reading: 70 }));
+  });
   it('before any placement or practice it says so', async () => {
     const app = await makeAppData();
     renderWithApp(<SkillsPanel />, app);

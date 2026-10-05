@@ -13,7 +13,9 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     expect(byText.get('了')!.pinyin).toBe('le');
   });
   it('包子 is bāo zi everywhere it appears', () => {
-    for (const ch of ['包', '子']) expect(byText.get(ch)!.examples!.find((e) => e.text === '包子')?.pinyin ?? 'bāo zi').toBe('bāo zi');
+    const found = ['包', '子'].flatMap((ch) => byText.get(ch)!.examples!.filter((e) => e.text === '包子'));
+    expect(found.length).toBeGreaterThan(0); // sweep: the example must be there to be checked
+    for (const e of found) expect(e.pinyin).toBe('bāo zi');
   });
   it('never offers the toneless form of the answer as wrong (爸 is ba in 爸爸)', () => {
     for (const ch of ['爸', '妈', '哥', '子']) {
