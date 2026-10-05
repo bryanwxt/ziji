@@ -29,6 +29,22 @@ function sameReading(exPinyin: string, at: number, word: Word): boolean {
 
 export const MAX_SENTENCE_CUE = 30;
 
+/** The 组词 cue alone, for the 词语 rung (spec 2026-10-05 §3.2): a longer word that uses this one once, at its reading, whose other part is not a glue character. */
+export function wordCue(word: Word): MeaningCue | null {
+  for (const ex of word.examples ?? []) {
+    if (ex.text.length <= word.text.length) continue;
+    const at = ex.text.indexOf(word.text);
+    if (at < 0 || ex.text.indexOf(word.text, at + 1) >= 0) continue; // once only: 妈妈 would give it away
+    if (!sameReading(ex.pinyin, Array.from(ex.text.slice(0, at)).length, word)) continue;
+    const before = ex.text.slice(0, at);
+    const after = ex.text.slice(at + word.text.length);
+    const rest = before + after;
+    if (Array.from(rest).length === 1 && GLUE.has(rest)) continue;
+    return { kind: 'word', source: 'word', full: ex.text, pinyin: ex.pinyin, before, after };
+  }
+  return null;
+}
+
 /**
  * The word in use, with the word blanked (spec §19 part 2, §20 part 4). Never English. In order:
  * his class sentence, a sentence-bank gap (`variant` picks which of its two), then 组词 — a longer example that
@@ -56,18 +72,7 @@ export function meaningCue(word: Word, variant = 0): MeaningCue | null {
       wrong: [...gap.wrong], clue: bank.clue, pair: word.pairs?.[0] ?? bank.pair,
     };
   }
-  for (const ex of word.examples ?? []) {
-    if (ex.text.length <= word.text.length) continue;
-    const at = ex.text.indexOf(word.text);
-    if (at < 0 || ex.text.indexOf(word.text, at + 1) >= 0) continue; // once only: 妈妈 would give it away
-    if (!sameReading(ex.pinyin, Array.from(ex.text.slice(0, at)).length, word)) continue;
-    const before = ex.text.slice(0, at);
-    const after = ex.text.slice(at + word.text.length);
-    const rest = before + after;
-    if (Array.from(rest).length === 1 && GLUE.has(rest)) continue;
-    return { kind: 'word', source: 'word', full: ex.text, pinyin: ex.pinyin, before, after };
-  }
-  return null;
+  return wordCue(word);
 }
 
 /**

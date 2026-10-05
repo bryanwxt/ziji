@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeWord } from '../../test/fixtures';
-import { meaningCue, pickSoundAlikes, usageLine } from './meaning';
+import { meaningCue, pickSoundAlikes, usageLine, wordCue } from './meaning';
+import { bankFor } from '../../content/sentenceBank';
 import { builtinWords, HSK_WORDS } from '../../content';
 import { mulberry32 } from '../../lib/random';
 
@@ -159,5 +160,16 @@ describe('characters that swap for each other in real words', () => {
       const out = pickSoundAlikes(ta, cue, pool, mulberry32(seed));
       expect(out.filter((c) => '她它'.includes(c))).toEqual([]);
     }
+  });
+});
+
+describe('wordCue: the 词语 rung (spec 2026-10-05 §3.2)', () => {
+  it('is the 组词 cue alone, even for a word that has a sentence', () => {
+    const w = builtinWords(0).find((x) => bankFor(x.text) && wordCue(x))!;
+    expect(meaningCue(w)!.kind).toBe('sentence'); // meaningCue still puts the sentence first
+    expect(wordCue(w)!.kind).toBe('word');
+  });
+  it('is null without a usable 组词', () => {
+    expect(wordCue(makeWord('欺负', { examples: [] }))).toBeNull();
   });
 });

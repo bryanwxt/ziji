@@ -18,7 +18,7 @@ import type { Reaction } from '../../ui/truffle/timelines';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
-import { meaningCue, pickSoundAlikes, usageLine, type MeaningCue } from './meaning';
+import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 
 export interface FlashResult {
@@ -41,26 +41,31 @@ interface Props {
   combo: number; // run of right answers before this card
   closeupReady: boolean;
   onDone: (result: FlashResult) => void;
+  /** what 认新字 or 练一练 asks (spec 2026-10-05 §3.2): read (pinyin), listen (find the character), word (the 组词 gap). Without it the card decides, as before. */
+  ask?: 'read' | 'listen' | 'word';
+  /** 认新字: after a miss the card shows again before moving on (spec 2026-10-05 §2.1) */
+  reintroOnMiss?: boolean;
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false }: Props) {
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
-    const cue = item.mode === 'meaning' ? meaningCue(word) : null;
+    const cue = ask === 'word' ? wordCue(word) : ask ? null : item.mode === 'meaning' ? meaningCue(word) : null;
     if (cue) {
       return { listen: false, cue, answer: word.text, options: shuffle([word.text, ...(cue.wrong ?? pickSoundAlikes(word, cue, pool, rng))], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
     }
     const lookAlikes = pickCharacterDistractors(word, pool, rng);
-    const listen = voice && lookAlikes.length >= 3 && (card?.fsrs.reps ?? 0) % 2 === 0;
+    const listen = voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
     const answer = listen ? word.text : word.pinyin;
     const wrong = listen ? lookAlikes.map((w) => w.text) : pickPinyinDistractors(word, pool, rng);
     return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
   }, [word.id]);
   const [phase, setPhase] = useState<Phase>(item.isNew && !item.retry ? 'intro' : 'quiz');
   const [choice, setChoice] = useState<string | null>(null);
+  const [again, setAgain] = useState(false);
   const [result, setResult] = useState<{ correct: boolean; hard: boolean; responseMs: number } | null>(null);
   const shownAt = useRef(performance.now());
   // what he reacts to (spec 2026-10-04 §4.4): a new word when it is shown, then each answer
@@ -123,10 +128,17 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
     if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : 'read' });
+  };  // 认新字: a miss shows the card again before he moves on; the word comes first in 练一练 too
+  const proceed = () => {
+    if (reintroOnMiss && result && !result.correct && !again) {
+      setAgain(true);
+      setPhase('intro');
+    } else next();
   };
 
+
   const sheet =
-    phase === 'intro' ? <FeedbackSheet actionLabel="我记住了！" onAction={() => setPhase('quiz')} />
+    phase === 'intro' ? <FeedbackSheet actionLabel="我记住了！" onAction={() => (again ? next() : setPhase('quiz'))} />
     : phase === 'quiz' ? <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
     : result ? (
         <FeedbackSheet
@@ -140,7 +152,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
             </>
           )}
           actionLabel="继续"
-          onAction={next}
+          onAction={proceed}
         />
       ) : null;
   return (

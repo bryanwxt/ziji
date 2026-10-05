@@ -1,3 +1,5 @@
+import { wordCue } from './meaning';
+import { bankFor } from '../../content/sentenceBank';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../../content';
@@ -342,5 +344,47 @@ describe('Truffle in 认一认 (spec 2026-10-04 §4.3–4.4)', () => {
   it('a new word: surprised when it is shown', () => {
     render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
     expect(document.querySelector('.stage__truffle svg.truffle')!.getAttribute('data-expression')).toBe('surprised');
+  });
+});
+
+describe('asked by the round (spec 2026-10-05 §3.2)', () => {
+  it("ask 'word': the 组词 gap, even for a word that has a sentence", () => {
+    const w = pool.find((x) => bankFor(x.text) && wordCue(x))!;
+    const cue = wordCue(w)!;
+    render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: false, retry: false, mode: 'meaning' }} ask="word" voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.stage__card')!.textContent).toContain(cue.before || cue.after);
+    expect(screen.getByRole('button', { name: w.text })).toBeTruthy();
+  });
+  it("ask 'read': pick the pinyin, even with the voice on and an even review count", () => {
+    render(<FlashcardStep {...base} item={review} ask="read" voice onDone={vi.fn()} />);
+    expect(screen.getByRole('button', { name: he.pinyin })).toBeTruthy();
+  });
+  it("ask 'listen': hear it, find the character", () => {
+    const w = pool.find((x) => x.text === '他')!;
+    render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: false, retry: false }} ask="listen" voice onDone={vi.fn()} />);
+    expect(screen.getByRole('button', { name: '他' })).toBeTruthy();
+  });
+});
+
+describe('认新字: a missed word is shown again (spec 2026-10-05 §2.1)', () => {
+  it('after a miss, 继续 shows the card again; 我记住了！ then moves on, once', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} ask="read" reintroOnMiss voice={false} onDone={onDone} />);
+    fireEvent.click(screen.getByText('我记住了！'));
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).not.toHaveBeenCalled();
+    expect(screen.getByText('我记住了！')).toBeTruthy(); // the card again
+    fireEvent.click(screen.getByText('我记住了！'));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onDone.mock.calls[0]![0]).toMatchObject({ correct: false, asked: 'read' });
+  });
+  it('a right answer moves straight on', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} ask="read" reintroOnMiss voice={false} onDone={onDone} />);
+    fireEvent.click(screen.getByText('我记住了！'));
+    fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });
