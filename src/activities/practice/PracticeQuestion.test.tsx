@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../../content';
 import { bankFor } from '../../content/sentenceBank';
 import { DEFAULT_KID } from '../../types';
+import { makeWord } from '../../test/fixtures';
 import { PracticeQuestion } from './PracticeQuestion';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
@@ -65,3 +66,39 @@ describe('a 练一练 question (spec 2026-10-05 §3.2)', () => {
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'zibian', correct: true }));
   });
 });
+
+describe('成语 questions (spec 2026-10-05 §3.2 rung 5, phase C)', () => {
+  const xin = pool.find((w) => w.text === '心')!;
+  const item = (ask: 'idiom' | 'idiomFit' | 'idiomBuild' | 'whole', word = xin) => ({ wordId: word.id, rung: (ask === 'whole' ? 2 : 5) as 2 | 5, ask, grades: 'meaning' as const, retry: false });
+  it('completes a 成语 that uses the word, graded as meaning', () => {
+    const onDone = vi.fn();
+    render(<PracticeQuestion {...base} level={1} word={xin} item={item('idiom')} onDone={onDone} />);
+    expect(document.querySelector('.idiom')!.textContent).toContain('？');
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.choice')!);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'meaning' }));
+  });
+  it('picks the 成语 for a sentence', () => {
+    render(<PracticeQuestion {...base} level={1} word={xin} item={item('idiomFit')} onDone={vi.fn()} />);
+    const opts = [...document.querySelectorAll('.choice')].map((b) => b.textContent!);
+    expect(opts).toHaveLength(4);
+    for (const o of opts) expect(Array.from(o)).toHaveLength(4);
+  });
+  it('builds a sentence with the 成语', () => {
+    render(<PracticeQuestion {...base} level={1} word={xin} item={item('idiomBuild')} onDone={vi.fn()} />);
+    expect(document.querySelector('.build')).toBeTruthy();
+    expect([...document.querySelectorAll('.build button')].some((b) => Array.from(b.textContent ?? '').length >= 4)).toBe(true);
+  });
+  it('a school 成语 completes itself', () => {
+    const school = makeWord('五颜六色', { id: 'p:9', source: 'parent', tags: ['成语'], pinyin: 'wǔ yán liù sè' });
+    render(<PracticeQuestion {...base} level={1} word={school} item={item('whole', school)} onDone={vi.fn()} />);
+    expect(document.querySelector('.idiom')!.textContent).toMatch(/^[五颜六色？]{4}$/);
+  });
+  it('skips the question when the word has no 成语 at his level', () => {
+    const onDone = vi.fn();
+    const ma = pool.find((w) => w.text === '吗')!;
+    render(<PracticeQuestion {...base} level={1} word={ma} item={item('idiom', ma)} onDone={onDone} />);
+    expect(onDone).toHaveBeenCalledWith(null);
+  });
+});
+

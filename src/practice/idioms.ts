@@ -1,8 +1,9 @@
 // 成语 questions, rung 5 (spec 2026-10-05 §3.2): complete the 成语, pick it for a sentence, build a sentence with it.
 import { BUILTIN, HSK_WORDS } from '../content';
-import { CHENGYU, chengyuLevel, chengyuOf, type Idiom } from '../content/chengyu';
+import { CHENGYU, chengyuLevel, chengyuOf, idiomsFor, type Idiom } from '../content/chengyu';
 import { zujuOf, type ZujuItem } from '../content/zuju';
 import { shuffle, type Rng } from '../lib/random';
+import type { Word } from '../types';
 import type { UseItem } from './useItems';
 
 /** Complete the 成语: `at` is where the answer goes. */
@@ -48,4 +49,16 @@ export function idiomFitItem(idiom: Idiom, others: Idiom[] | null, rng: Rng): Ex
 export function idiomZuju(idiom: Idiom, rng: Rng): ZujuItem | null {
   const all = idiom.sentences.map((s) => zujuOf(s, idiom.text)).filter((z): z is ZujuItem => z !== null);
   return all.length ? all[Math.floor(rng() * all.length)]! : null;
+}
+
+/**
+ * The 成语 for this lesson's question about a word: one his school 成语 if any can be asked, else one at the closest
+ * level that can (spec §4), picked at random among those so a word back at rung 5 meets a different one now and then.
+ */
+export function pickIdiom(word: Word, level: number, pool: Word[], rng: Rng, usable: (i: Idiom) => boolean): Idiom | null {
+  const all = idiomsFor(word, level, pool).filter(usable);
+  const first = all[0];
+  if (!first) return null;
+  const tier = first.school ? all.filter((i) => i.school) : all.filter((i) => !i.school && chengyuLevel(i.text) === chengyuLevel(first.text));
+  return shuffle(tier, rng)[0]!;
 }

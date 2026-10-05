@@ -13,6 +13,9 @@ import { BuildSentence } from './BuildSentence';
 import { PairGame } from './PairGame';
 import { dapeiQuestion, zuciBoard } from '../../practice/pairs';
 import { MatchQuestion } from './MatchQuestion';
+import { IdiomQuestion } from './IdiomQuestion';
+import { idiomFitItem, idiomGap, idiomZuju, pickIdiom } from '../../practice/idioms';
+import { idiomOf, idiomsFor } from '../../content/chengyu';
 
 export interface PracticeResult {
   correct: boolean;
@@ -37,10 +40,11 @@ interface Props {
   onDone: (r: PracticeResult | null) => void; // null: this question can't be made any more (skip it)
   confused?: string[]; // look-alikes he picked for this word (钓鱼)
   knownChars?: ReadonlySet<string>;
+  level?: number; // his level, for the 成语 window (spec §4)
 }
 
 /** One 练一练 question (spec 2026-10-05 §3.2): 字 and 词语 on the card, a sentence on the 选一选 stage. */
-export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, confused, knownChars }: Props) {
+export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, confused, knownChars, level = 1 }: Props) {
   const sentence = item.ask === 'fit' || item.ask === 'usage';
   const use = useMemo(
     () => (item.ask === 'fit' ? fitItem(word, pool, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0), 0) : item.ask === 'usage' ? usageItem(word.text, word.id) : null),
@@ -53,11 +57,65 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     return item.ask === 'pair' ? zuciBoard(word, rng, knownChars) : null;
   }, [item, word.id]);
   const fish = useMemo(() => (item.ask === 'fish' ? fishItem(word, confused ?? [], knownChars ?? new Set(), mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
+  // 成语 (rung 5): one that uses the word at his level; a school 成语's own completion at rung 2
+  const idiom = useMemo(() => {
+    const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
+    if (item.ask === 'whole') { const own = idiomOf(word); return { gap: own && idiomGap(own, null, rng), fit: null, build: null }; }
+    if (item.ask === 'idiom') { const i = pickIdiom(word, level, pool, rng, (x) => idiomGap(x, word.text, mulberry32(1)) !== null); return { gap: i && idiomGap(i, word.text, rng), fit: null, build: null }; }
+    if (item.ask === 'idiomFit') {
+      const i = pickIdiom(word, level, pool, rng, (x) => idiomFitItem(x, null, mulberry32(1)) !== null);
+      return { gap: null, fit: i && idiomFitItem(i, idiomsFor(word, level, pool).filter((x) => x.school), rng), build: null };
+    }
+    if (item.ask === 'idiomBuild') { const i = pickIdiom(word, level, pool, rng, (x) => idiomZuju(x, mulberry32(1)) !== null); return { gap: null, fit: null, build: i && { idiom: i, zuju: idiomZuju(i, rng) } }; }
+    return null;
+  }, [item, word.id]);
   const answer = useRef<{ correct: boolean; ms: number } | null>(null);
   const shownAt = useRef(performance.now());
   useEffect(() => {
     if ((sentence && !use) || (item.ask === 'build' && !zuju) || (item.ask === 'pair' && !board) || (item.ask === 'match' && !match) || (item.ask === 'fish' && !fish)) onDone(null);
+    else if (idiom && !idiom.gap && !idiom.fit && !idiom.build?.zuju) onDone(null);
   }, []);
+
+  if (idiom) {
+    if (idiom.gap) {
+      return (
+        <IdiomQuestion
+          gap={idiom.gap}
+          kid={kid}
+          resting={resting}
+          onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning', picked: r.picked })}
+        />
+      );
+    }
+    if (idiom.fit) {
+      return (
+        <UseQuestion
+          item={idiom.fit}
+          kid={kid}
+          resting={resting}
+          onAnswer={(correct, ms) => {
+            answer.current = { correct, ms };
+          }}
+          onNext={() => {
+            const a = answer.current;
+            if (a) onDone({ correct: a.correct, hard: false, responseMs: a.ms, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: true, asked: 'meaning' });
+          }}
+        />
+      );
+    }
+    if (idiom.build?.zuju) {
+      return (
+        <BuildSentence
+          item={idiom.build.zuju}
+          word={{ ...word, text: idiom.build.idiom.text }}
+          kid={kid}
+          resting={resting}
+          onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: true, asked: 'use' })}
+        />
+      );
+    }
+    return null;
+  }
 
   if (item.ask === 'fish') {
     if (!fish) return null;

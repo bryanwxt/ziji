@@ -1160,3 +1160,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .match__plus { font-size: 0.5em; color: var(--ink-soft); }
 .match__slot { min-width: 1.2em; text-align: center; color: var(--ink-soft); border-bottom: 3px dashed var(--line, #d8cfbf); }
 .match__slot.is-filled { color: var(--ink); }
+
+/* 成语 completion (spec 2026-10-05 §3.2 rung 5): the four characters, one a gap */
+.idiom { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: var(--q-hanzi, 64px); line-height: 1.1; }
+.idiom__slot { min-width: 1em; text-align: center; color: var(--ink-soft); border-bottom: 3px dashed var(--line, #d8cfbf); }
+.idiom__slot.is-filled { color: var(--ink); }

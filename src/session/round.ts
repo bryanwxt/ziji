@@ -85,6 +85,7 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
     const { s, rung, ask } = pick;
     let grades: Grades = null;
     if (s.next === 0 && s.w.gradesRecognise) grades = 'recognise';
+    else if (ask === 'idiomBuild') grades = 'use'; // a 组句 is a use question on any rung
     else if ((rung === 2 || rung === 5) && s.w.gradesMeaning && !s.meaningDone) {
       grades = 'meaning'; // 词语 and 成语 grade meaning (spec §3.5)
       s.meaningDone = true;

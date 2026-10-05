@@ -29,6 +29,15 @@ import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
 import { PracticeQuestion, type PracticeResult } from '../activities/practice/PracticeQuestion';
 import { planFreePlay, planPractice } from '../session/practice';
+import { learnerLevel } from '../content/chengyu';
+
+/** His level for the 成语 window (spec 2026-10-05 §4): the level of the next built-in word he hasn't started. */
+const levels = new WeakMap<Knowledge, number>();
+function levelOf(know: Knowledge): number {
+  let l = levels.get(know);
+  if (l === undefined) levels.set(know, (l = learnerLevel(know.words, new Set(know.cards.filter((c) => c.kind === 'recognise').map((c) => c.wordId)))));
+  return l;
+}
 import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession, USE_READING_MS } from '../session/record';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
@@ -80,7 +89,7 @@ export function SessionScreen({ free }: { free: boolean }) {
       const [know, kid, parentPassages, settings, practised, confusions] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db), getConfusions(db)]);
       const today = now();
       const rec = free
-        ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng), localDateKey(today), today.getTime())
+        ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng, undefined, levelOf(know)), localDateKey(today), today.getTime())
         : await startOrResumeSession(db, today);
       latest.current = rec;
       setState({
@@ -166,7 +175,7 @@ export function SessionScreen({ free }: { free: boolean }) {
       if (!planning.current) {
         planning.current = true;
         void (async () => {
-          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, state.know.words, voice, mulberry32(Date.now() >>> 0), state.confusions);
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, state.know.words, voice, mulberry32(Date.now() >>> 0), state.confusions, levelOf(state.know));
           planning.current = false;
           await commit(startPractice(latest.current ?? cur, queue));
         })();
@@ -178,6 +187,7 @@ export function SessionScreen({ free }: { free: boolean }) {
   if (!state || !rec) return <div class="screen loading"><InkIcon name="paw" size={88} label="加载中" /></div>;
   if (rec.completed) return <Celebration rec={rec} />;
   const { know, kid } = state;
+  const level = levelOf(know);
   const resting = restingMood(correct);
 
   const once = (fn: () => Promise<void>) => async () => {
@@ -237,7 +247,7 @@ export function SessionScreen({ free }: { free: boolean }) {
       }
       if (!rec.free && !item.retry) {
         // a sentence takes reading time first: that doesn't make a right answer slow (as in 选一选)
-        const outcome = { correct: r.correct, responseMs: r.asked === 'use' ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs };
+        const outcome = { correct: r.correct, responseMs: r.asked === 'use' || r.inContext ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs };
         if (item.grades === 'recognise') know.cardsById.set(`${item.wordId}:recognise`, await recordRecognition(db, item.wordId, outcome, now()));
         else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs));
@@ -388,6 +398,7 @@ export function SessionScreen({ free }: { free: boolean }) {
           closeupReady={closeupAllowed(cardsSinceCloseup.current, reducedMotion())}
           confused={state.confusions.get(practiceWord.id)}
           knownChars={know.knownChars}
+          level={level}
           onDone={(r) => void onPracticeDone(r)}
         />
       )}

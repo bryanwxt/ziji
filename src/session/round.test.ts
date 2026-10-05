@@ -99,14 +99,17 @@ it('组句 (rung 4) grades use, like a sentence', () => {
 
 describe('成语, the fifth rung (spec 2026-10-05 §3.2, phase C)', () => {
   it('a 成语 question grades the meaning card once (spec §3.5)', () => {
-    const items = buildRound([{ wordId: 'a', isNew: false, from: 5, appearances: 1, gradesRecognise: false, gradesMeaning: true }], () => true, mulberry32(1));
+    const items = buildRound([{ wordId: 'a', isNew: false, from: 5, appearances: 1, gradesRecognise: false, gradesMeaning: true }], (_, a) => a !== 'idiomBuild', mulberry32(1));
     expect(items[0]).toMatchObject({ rung: 5, grades: 'meaning' });
-    expect(['idiom', 'idiomFit', 'idiomBuild']).toContain(items[0]!.ask);
+    expect(['idiom', 'idiomFit']).toContain(items[0]!.ask);
   });
   it('a word with no 成语 falls back to 组句, then to the sentence rung', () => {
     const one = (canAsk: (id: string, a: Ask) => boolean) => buildRound([{ wordId: 'a', isNew: false, from: 5, appearances: 1, gradesRecognise: false, gradesMeaning: false }], canAsk, mulberry32(1))[0];
     expect(one((_, a) => !a.startsWith('idiom'))).toMatchObject({ rung: 4, ask: 'build', grades: 'use' });
     expect(one((_, a) => !a.startsWith('idiom') && a !== 'build')).toMatchObject({ rung: 3, grades: 'use' });
   });
+  it('a 组句 with the 成语 grades use, like rung 4 (many taps would make a meaning answer look slow)', () => {
+    const items = buildRound([{ wordId: 'a', isNew: false, from: 5, appearances: 1, gradesRecognise: false, gradesMeaning: true }], (_, a) => a === 'idiomBuild' || a === 'read', mulberry32(1));
+    expect(items[0]).toMatchObject({ rung: 5, ask: 'idiomBuild', grades: 'use' });
+  });
 });
-

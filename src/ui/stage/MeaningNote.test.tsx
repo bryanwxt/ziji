@@ -21,3 +21,12 @@ describe('English on the sheet after a wrong answer (spec 2026-10-05 §3.6)', ()
     expect(render(<MeaningNote right="欺负欺负" />).container.innerHTML).toBe('');
   });
 });
+
+describe('a 成语 on the sheet (spec §3.6, phase C)', () => {
+  it("gives the 成语's meaning from the list", async () => {
+    const { chengyuOf } = await import('../../content/chengyu');
+    const { container } = render(<MeaningNote right="五颜六色" />);
+    expect(container.querySelector('.sheet__en')!.textContent).toBe(`五颜六色 ${chengyuOf('五颜六色')!.meaning}`);
+  });
+});
+
