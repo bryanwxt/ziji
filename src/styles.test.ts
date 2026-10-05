@@ -229,7 +229,13 @@ describe('Home on the stage (phase D)', () => {
     expect(css).toMatch(/\.home__strip \.stat, \.home__strip \.week, \.home__strip \.home__who \{[^}]*background: none[^}]*border: 0[^}]*box-shadow: none/);
   });
   it("Home's cards are paper cards like the lesson card: cream, soft shadow, no ink outline", () => {
-    expect(css).toMatch(/\.home__cards \.card, \.home__cards \.goal \{[^}]*background: #fffaf0[^}]*border: 0[^}]*box-shadow: 0 8px 22px/);
+    expect(css.match(/#fffaf0/gi) ?? []).toHaveLength(1); // sweep: only --surface itself spells it out
+    expect(css).toMatch(/\.home__cards \.card, \.home__cards \.goal \{[^}]*background: var\(--surface\)[^}]*border: 0[^}]*box-shadow: 0 8px 22px/);
   });
 });
 
+describe('sweep: the chest-watching Truffle', () => {
+  it('grows toward the planned ~200px where the screen has room, and stays 130px on a short one', () => {
+    expect(css).toMatch(/\.celebrate__watch \.truffle \{[^}]*width: clamp\(130px, 24dvh, 200px\);[^}]*height: auto;/);
+  });
+});
