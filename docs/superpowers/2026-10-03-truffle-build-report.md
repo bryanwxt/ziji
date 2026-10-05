@@ -686,3 +686,35 @@ Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md §4; plan docs/super
 - IntersectionObserver uses entries[0], not the last entry
 - first stroke's purr may be silent on the iPad until a tap has played a sound
 - a touch bubble can carry ≤ 1.2 s into the next question (字辨, 写一写)
+
+## Lesson redesign phase A (2026-10-05): new words first, one mixed round
+
+Spec docs/superpowers/specs/2026-10-05-ziji-lesson-flow-design.md; plan docs/superpowers/plans/2026-10-05-ziji-lesson-a.md; branch lesson-a; Native, opus final review. Suite 962/962; `npm run fit` 491 screens, 0 problems; stage cases ok.
+
+- A lesson is 认新字 → 练一练 → 写一写 → 朗读 → 宝箱. 认新字: each new word's card, then a hear-and-find recall (a miss shows the card again). 练一练: today's new words and due revision in one round, each word climbing 字 → 词语 → 句子, interleaved, spaced, the question type changing; each word remembers its rung (DB v4 `ladder`).
+- New words per day adapt 3–8 from how many he keeps; the parent's number is the ceiling (old default 4 → 8); the Skills panel shows today's number and why.
+- 练一练 counts 2 stars (a full lesson stays 5). Free play is a 练一练 round of known words. Lessons saved before the update finish in the old flow.
+- Also: a word of one or two characters is said a quarter slower (parent: placement's voiced words were too fast).
+
+### Rulings
+- Task 3: legacy-flow tests build their 认一认 queue by hand; tests of the old queue order deleted — cost: none
+- Task 3: SessionScreen's meaning test was red from Task 3 until Task 7 (between them new plans still had the old step with an empty queue); not shippable mid-branch — cost: none once Task 7 landed
+- Task 4: pacing tests use each file's own fixtures; default newPerDay tests now expect the ceiling 8 and a start of 4 — cost: none
+- Task 7: SessionScreen tests play through with a helper that waits for each answer to save — cost: none
+- Task 7: a revision word appearing once grades its reading (spec §3.5 first appearance); its meaning starts on later appearances — cost: a one-appearance word never starts a meaning card from a sentence
+- Task 7: migration tests check their own fields at lessonVersion 4; tests for removed behaviours (用一用, 9-minute 认一认, old free play, newWordMeaningIds) removed — cost: none
+- Task 7: the sweep's lesson flows changed with the step names (tsc checks scripts/) — cost: none
+- Task 7: session tests that isolated a step use the new switch names — cost: none
+- Final: "ran out of time" counts only due revision never reached — cost: none
+- Final (declined to judge): ms window for a repeat grade if iOS kills the app mid-save; a parent's deliberate 4 becomes the ceiling 8; one-appearance revision words start meaning a day later; rung noted at the planned rung if a 词语 cue vanished mid-round; old-flow screens not in the sweep
+
+### Final review fixes
+- I1 pacing pinned at 3 ("revision piling up" on nearly every lesson; due revision started last) — due first appearances marked and started first; only those count — round/runner tests RED→GREEN
+- I2 a lowered ceiling didn't apply to a plan rebuilt the same day — cached pace clamped — record test RED→GREEN
+
+### Deferred minors
+- a retry can land right next to the same word
+- 认新字 stays on the path (and earns a star) on days with no new words
+- after a miss in 认新字 a quick double tap skips the re-shown card; its bubble still says 新字来了！
+- restoring an older backup doesn't run the settings migration until the next launch
+- a day with new words switched off resets the pace to 3 the next day
