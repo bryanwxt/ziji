@@ -870,3 +870,40 @@ Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md (§2, §4.5, §6); p
 - the bowl's munch sound plays when the moment starts by itself
 - no test pins the hidden-page skip for self-started moments
 - the blocks world's evening torch may read as a Minecraft torch — parent to judge from the screenshots
+
+## Stage phase D (2026-10-05): Home on the stage
+
+Spec docs/superpowers/specs/2026-10-04-ziji-stage-design.md (§3 Home and Celebrations, §4.4); plan docs/superpowers/plans/2026-10-05-ziji-stage-d.md; branch stage-d; Native, opus final review. Suite 1236/1236; WebKit sweep 500 screens, 0 problems; stage cases ok.
+
+- **Top strip:** the streak, stars, week dots, 字己 seal and his name sit in one paper strip.
+- **Today's stops** sit on a path drawn in each world's colours: a dirt path with pebbles (yard), a mown path, the race road with its dashes, stepping blocks, a stone path, a sand path, moon dust, and sand on the beach.
+- **Cards:** Home's cards are paper cards like the lesson card (cream, soft shadow, no ink outline).
+- **The reward goal** shows in Chinese with an ink icon, and never the parent's English note or an emoji.
+  - The parent area asks for the Chinese title and the icon.
+  - An older goal can get a Chinese title inline, and shows 我的奖励 until it has one.
+- **The celebration** is on a sunburst in the current world's colours (rays turn slowly, and stand still with reduced motion).
+  - Truffle is centre stage.
+  - At the chest he watches and wiggles, then pounces as it opens.
+- **Screenshots for the parent:**
+  - fit-shots/stage-cases/bursts.png (every world's sunburst);
+  - fit-shots/*/home-*.png;
+  - fit-shots/*/newwords-14/15.png (the celebration).
+
+### Rulings
+- Truffle keeps his Home spot (centre, on the ground): the lower-left and lower-right are the props' tap boxes — cost: Home and lessons place him differently
+- "Stops on the world's own path" is a ribbon drawn per world under the stops, not stops placed at scene coordinates (the crop differs at every size) — cost: the path is Home's, not the world art's
+- Task 2: the parent's emoji picker became an ink-icon picker; new goals save no emoji — cost: none
+- Task 4: Home's cards stay centred with the lesson card's paper look, rather than moving to a right-hand column (Truffle and the stops are centred, and the props take the outer quarters) — cost: Home's cards and the lesson card sit in different places
+- Task 5: Truffle's svg carries data-react / data-react-key; the night celebration's contrast tests moved to the sunburst — cost: none
+- Final: the blocks path drew beads, not square blocks — re-graded Important and fixed — cost: none
+
+### Final review fixes
+- I1 no pounce when the chest opened within the first wiggle (both reactions shared key 1) — the pounce has its own key — RED→GREEN
+- I2 the goal's Chinese title failed silently on digits or "!" and took a lone "！" — needs a Chinese character and no Latin letters, with a message — RED→GREEN
+- the blocks path's line caps (a duplicate attribute made round beads) — RED→GREEN
+
+### Deferred minors
+- an older goal's inline Chinese title always saves the gift icon; a Chinese title can't be edited later; claimed goals still show the inline box
+- the opened-chest stars-prize layout isn't in the sweep's screenshots
+- Home's paper-card colour is hard-coded (#fffaf0, the same as --surface)
+- the chest-watching Truffle is 130px, not about 200 as planned
