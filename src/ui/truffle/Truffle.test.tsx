@@ -210,3 +210,17 @@ describe('accessories never hide earned powers', () => {
     }
   });
 });
+
+describe('paws (spec 2026-10-04 §4.6, phase E)', () => {
+  it('his front paws are parts of their own, drawn in front of his head so he can cover his eyes', () => {
+    const { container } = render(<Truffle mood="neutral" />);
+    const all = [...container.querySelectorAll('[data-part]')].map((e) => e.getAttribute('data-part'));
+    expect(all).toContain('paw-l');
+    expect(all).toContain('paw-r');
+    expect(all.indexOf('paw-l')).toBeGreaterThan(all.indexOf('headpos'));
+    expect(container.querySelector('[data-part="paw-l"]')!.innerHTML).toContain('M122 262');
+    expect(container.querySelector('[data-part="paw-r"]')!.innerHTML).toContain('M198 262');
+    expect(container.querySelector('[data-part="body"]')!.innerHTML).not.toContain('M122 262');
+  });
+});
+

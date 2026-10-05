@@ -5,7 +5,7 @@ import { useRig } from './useRig';
 import { POWERS, type PowerId } from '../../fun/powers';
 import { accessoryLayer } from './accessories';
 import { costumeLayer } from './costumes';
-import { BODY, EAR_IN_L, EAR_IN_R, EAR_L, EAR_R, HEAD_SHAPE, TAIL, type TruffleMood } from './parts';
+import { EAR_IN_L, EAR_IN_R, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, type TruffleMood } from './parts';
 import { powerLayer } from './powers';
 import { browTransform, EXTRAS, EYE_L, EYE_R, EYE_Y, FUR, lowerLid, MOOD_EXPRESSION, mouthPath, PRESETS, upperLid, type Expression, type Face } from './rig';
 import type { Reaction } from './timelines';
@@ -127,7 +127,7 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
         {wear?.back && <g class="truffle__outfit-back" dangerouslySetInnerHTML={{ __html: wear.back }} />}
         {acc?.back && <g class="truffle__accessory truffle__accessory--back" dangerouslySetInnerHTML={{ __html: acc.back }} />}
         <g class="truffle__tail" data-part="tail" style="transform-origin:214px 246px" {...part('tail')} dangerouslySetInnerHTML={{ __html: TAIL }} />
-        <g class="truffle__body" data-part="body" style="transform-origin:160px 276px" {...part('body')} dangerouslySetInnerHTML={{ __html: BODY }} />
+        <g class="truffle__body" data-part="body" style="transform-origin:160px 276px" {...part('body')} dangerouslySetInnerHTML={{ __html: TORSO }} />
         {wear && <g class="truffle__outfit-body" dangerouslySetInnerHTML={{ __html: wear.body }} />}
         {acc?.under && <g class="truffle__accessory truffle__accessory--under" dangerouslySetInnerHTML={{ __html: acc.under }} />}
         <g class="truffle__headpos" data-part="headpos" {...part('head')}>
@@ -147,6 +147,9 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
             {layer?.head && <g class="truffle__power-head" dangerouslySetInnerHTML={{ __html: layer.head }} />}
           </g>
         </g>
+        {/* his front paws, in front of his head (spec 2026-10-04 §4.6): at rest at his feet; they wave, knead and cover his eyes */}
+        <g class="truffle__paw" data-part="paw-l" style="transform-origin:138px 266px" {...part('body')} dangerouslySetInnerHTML={{ __html: PAW_L }} />
+        <g class="truffle__paw" data-part="paw-r" style="transform-origin:182px 266px" {...part('body')} dangerouslySetInnerHTML={{ __html: PAW_R }} />
         {layer?.front && <g class="truffle__power-front" dangerouslySetInnerHTML={{ __html: layer.front }} />}
         {acc?.over && <g class="truffle__accessory truffle__accessory--over" dangerouslySetInnerHTML={{ __html: acc.over }} />}
       </g>
