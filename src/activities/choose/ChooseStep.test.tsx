@@ -103,3 +103,15 @@ describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
     expect(en).toContain('在');
   });
 });
+
+describe('sweep: a missed sentence with a clue', () => {
+  it('shows the clue, and its English', async () => {
+    const { UseQuestion } = await import('./UseQuestion');
+    const item = { kind: 'fit' as const, wordId: 'b:跟', word: '跟', before: '我', after: '妈妈去公园。', options: ['跟', '很', '银', '对'], clue: '跟：和别人一起' };
+    render(<UseQuestion item={item} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onNext={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '很' }));
+    expect(document.querySelector('.clue')?.textContent).toContain('跟：和别人一起');
+    expect(document.querySelector('.clue__en')?.textContent).toBe('跟 = together with someone');
+  });
+});
+

@@ -65,3 +65,14 @@ describe('wrong choices that would be right (review of plan 13)', () => {
     for (const s of ['这本书很喜欢我。', '你能来帮助吗？', '你喝茶或者喝水？', '我记住了很高兴。']) expect(SENTENCE_BANK.map((i) => i.misuse)).not.toContain(s);
   });
 });
+
+describe('sweep: every clue has its English for the sheet after a miss', () => {
+  it('each bank clue has a short English line', async () => {
+    const { CLUE_EN } = await import('./bank/clueEn');
+    for (const b of SENTENCE_BANK.filter((x) => x.clue)) {
+      expect(CLUE_EN[b.word], b.word).toBeTruthy();
+      expect(CLUE_EN[b.word]!.length).toBeLessThanOrEqual(80);
+    }
+  });
+});
+
