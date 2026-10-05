@@ -934,8 +934,15 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* 字卡 and 松露's room: the lists scroll, the bars stay */
 .scroll-panel { width: 100%; }
 .room { min-height: 0; flex: 1; justify-content: flex-start; }
-.room .pet { position: static; background: none; }
+.room .pet { position: relative; background: none; } /* relative: his bubble and hearts sit by him, not by the room */
 .room .pet .truffle { width: var(--pet); height: auto; }
+/* his bubble floats beside him: in the flow above him it pushed the tabs and the grid down each time he spoke (parent, 2026-10-05) */
+.room .pet__bubble { position: absolute; left: calc(50% + var(--pet) / 2 + 6px); top: 12%; margin: 0; z-index: 1; }
+.room .pet__bubble::after { left: -7px; bottom: auto; top: 50%; transform: translateY(-50%) rotate(135deg); }
+@media (orientation: landscape) and (min-height: 600px) { /* he has a column of his own there: the bubble goes above him */
+  .room .pet__bubble { top: auto; bottom: calc(100% + 4px); left: 0; right: 0; margin: 0 auto; width: max-content; }
+  .room .pet__bubble::after { left: 50%; top: auto; bottom: -9px; transform: translateX(-50%) rotate(45deg); }
+}
 .room [role="tabpanel"] { align-content: start; padding: 4px 4px 12px; }
 .zika-grid { grid-template-columns: repeat(auto-fill, minmax(clamp(84px, 22vw, 104px), 1fr)); padding: 0 4px 4px 0; } /* room for the cards' shadow: the scroll panel clips it */
 .error__msg { max-height: 40dvh; overflow: auto; white-space: pre-wrap; font-size: 14px; }

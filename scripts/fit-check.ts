@@ -184,6 +184,11 @@ async function open(browser: Browser, size: { name: string; width: number; heigh
 async function check(page: Page, size: Size, flow: string, step: number) {
   console.error(`[${new Date().toTimeString().slice(0, 8)}] ${size.name} ${flow}-${step}`); // progress, so a hang shows where
   await page.waitForTimeout(500);
+  // measure once entrances have settled: a card still scaling in reads a 44px button as 40–43px (a false "under 44px")
+  await page.evaluate(() => Promise.race([
+    Promise.all(document.getAnimations().filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime ?? Infinity)).map((a) => a.finished.catch(() => {}))),
+    new Promise((r) => setTimeout(r, 1500)),
+  ]));
   const sig = await page.evaluate(signature);
   const problems = await page.evaluate(probe, { main: MAIN, scrollers: SCROLLERS });
   problems.push(...(await stageChecks(page, size, flow, step)));
@@ -333,6 +338,14 @@ async function sweep(browser: Browser, size: Size) {
     await p.waitForSelector('.room__tabs');
     let i = 0;
     for (const tab of await p.$$('.room__tabs [role="tab"], .room__tabs .chip')) { await tab.click(); await check(p, size, 'room', i++); }
+    // tapping Truffle: his bubble shows and nothing below him moves (parent, 2026-10-05: the whole screen shifted)
+    const tabsTop = () => p.evaluate(() => Math.round(document.querySelector('.room__tabs')!.getBoundingClientRect().top));
+    const before = await tabsTop();
+    await p.click('.room .pet svg.truffle');
+    await p.waitForSelector('.room .pet__bubble');
+    await check(p, size, 'room-tap', 0);
+    const after = await tabsTop();
+    if (after !== before) results.push({ size: size.name, flow: 'room-tap', step: 0, sig: 'steady', problems: [`the tabs moved ${after - before}px when Truffle spoke`] });
   });
   await run('pin-gate', AFTERNOON, {}, async (p) => { await tabTo(p, '家长'); await check(p, size, 'pin-gate', 0); });
   // Lessons, one activity at a time
