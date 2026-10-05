@@ -144,14 +144,17 @@ export function CollectionScreen() {
         <div class="zika-big" role="dialog" aria-modal="true" aria-label={`字卡：${shown.char}`} onClick={() => setShown(null)} onKeyDown={(e) => { if (e.key === 'Escape') setShown(null); }}>
           <div class={`zika zika--big${shown.gold ? ' card--gold' : ''}`} onClick={(e) => e.stopPropagation()}>
             <button ref={closeBtn} type="button" class="icon-btn zika-big__close" aria-label="关闭" onClick={() => setShown(null)}><X size={30} strokeWidth={3} /></button>
-            <span class="zika__py">{shown.pinyin}</span>
-            <span class="zika__char hanzi">{shown.char}</span>
-            <SpeakButton text={shown.char} />
+            {/* centred like the lesson cards: the character on the card's centre line, its speak button hanging to its right */}
+            <span class="zika__head">
+              <span class="zika__py">{shown.pinyin}</span>
+              <span class="zika__char hanzi">{shown.char}</span>
+              <SpeakButton text={shown.char} />
+            </span>
             {/* its English, and its 组词's, as on the lesson cards (parent, 2026-10-05) */}
             {shownWord && cardMeaning(shownWord) && <span class="zika__en" lang="en">{cardMeaning(shownWord)}</span>}
             {shown.example && (
               <span class="zika__example">
-                <span class="zika__example-line"><span class="hanzi"><Label zh={shown.example} py={shownWord?.examples?.find((e) => e.text === shown.example)?.pinyin} /></span><SpeakButton text={shown.example} small /></span>
+                <span class="word-row__line zika__example-line"><span class="hanzi"><Label zh={shown.example} py={shownWord?.examples?.find((e) => e.text === shown.example)?.pinyin} /></span><SpeakButton text={shown.example} small /></span>
                 {glossFor(shown.example) && <span class="zika__en" lang="en">{glossFor(shown.example)}</span>}
               </span>
             )}

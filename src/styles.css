@@ -579,10 +579,13 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .zika--big .zika__char { font-size: 150px; }
 .zika--big .zika__py { font-size: 28px; }
 .zika__example { font-size: 32px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.zika__example-line { display: flex; align-items: center; gap: 10px; }
+.zika__head { position: relative; display: flex; flex-direction: column; align-items: center; }
+.zika__head > .speak { position: absolute; left: calc(100% + 14px); top: 50%; margin-top: -32px; }
+.zika--big .zika__py { font-style: normal; font-weight: 800; }
 .zika__example .label__py { font-size: 14px; }
 .zika__en { font-family: var(--font, system-ui); font-size: 17px; font-weight: 700; color: var(--ink-soft); text-align: center; max-width: 100%; }
-.zika-big__close { position: absolute; top: 8px; right: 8px; }
+.zika-big__close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; } /* small and in the corner: clear of the speak button */
+.zika--big { padding-top: 48px; }
 
 /* Truffle's room */
 .room__tabs { display: flex; gap: 10px; }
@@ -1258,3 +1261,20 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 @keyframes burst-turn { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .burst--turning::before { animation: none; } }
 .celebrate__watch { display: flex; justify-content: center; margin-bottom: -18px; }
+
+/* the 认新字 card in three soft groups with one type scale (parent, 2026-10-05: "a bit busy", "font sizes feel off"):
+   the character; its 词语; its 成语. Every 词语 and 成语 line is the same size, every English line too. */
+.intro__group { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 14px; background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.intro__card { gap: 10px; }
+.intro .word-row__zh { font-size: 24px; }
+.intro .word-row__zh .label__cell--zh { min-width: 1.1em; } /* a word reads as one word, not spaced-out characters */
+.intro .word-row__zh .label__py { font-size: 13px; }
+.intro .word-row__en, .intro .intro__en { font-size: 16px; font-weight: 700; }
+.intro .intro__idiom-sentence { font-size: 17px; }
+@media (max-width: 599px) {
+  .intro__card { gap: 6px; }
+  .intro__group { padding: 6px 8px; gap: 4px; }
+  .intro .word-row__zh { font-size: 22px; }
+  .intro .intro__idiom-sentence { font-size: 16px; }
+}
+@media (max-width: 599px) and (max-height: 720px) { .intro__group { padding: 4px 8px; gap: 2px; } .intro__card { gap: 4px; } }

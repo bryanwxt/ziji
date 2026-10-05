@@ -276,6 +276,8 @@ export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
 function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
   const line = usageLine(word);
   const long = Array.from(word.text).length > 1;
+  // never the one the usage line already shows; all of them feed the meaning questions
+  const listed = (word.examples ?? []).filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom));
   return (
     <div class="intro">
       <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`}>
@@ -307,12 +309,15 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
             </div>
           );
         })}
-        {line && <UsageLine word={word} en={glossFor(line.full)} />}
-        {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom)).map((e) => ( // never the one the usage line already shows; all of them feed the meaning questions
-          <WordRow key={e.text} class="example" zh={e.text} py={e.pinyin} en={glossFor(e.text)} />
-        ))}
+        {/* soft groups (parent, 2026-10-05: "a bit busy"): the character above, then its 词语, then its 成语 */}
+        {(line || listed.length > 0) && (
+          <div class="intro__group">
+            {line && <UsageLine word={word} en={glossFor(line.full)} />}
+            {listed.map((e) => <WordRow key={e.text} class="example" zh={e.text} py={e.pinyin} en={glossFor(e.text)} />)}
+          </div>
+        )}
         {idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows
-          <div class="intro__idiom">
+          <div class="intro__group intro__idiom">
             <WordRow class="example example--idiom" zh={idiom.text} py={idiom.pinyin} en={idiom.meaning} />
             {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi">{idiom.sentences[0]}</p>}
           </div>
