@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { useId, useRef } from 'preact/hooks';
 import { reducedMotion } from '../motion';
+import { P } from '../worlds/kit/palette';
 import { useRig } from './useRig';
 import type { PawPose } from './timelines';
 import { POWERS, type PowerId } from '../../fun/powers';
@@ -125,6 +126,8 @@ export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, siz
       data-accessory={acc ? accessory! : undefined}
       {...a11y}
     >
+      {/* his ground shadow stays on the ground and shrinks as he goes up (spec §4.1) */}
+      <ellipse data-part="shadow" cx="160" cy="279" rx="64" ry="7" fill={P.shadow} opacity="0.16" />
       <g class="truffle__rig" data-part="rig">
         {layer && <g class="truffle__power-back" dangerouslySetInnerHTML={{ __html: layer.back }} />}
         {wear?.back && <g class="truffle__outfit-back" dangerouslySetInnerHTML={{ __html: wear.back }} />}

@@ -10,7 +10,7 @@ const KEYS = ['lidTop', 'lidBottom', 'lidArc', 'pupil', 'browY', 'browAngle', 'b
 const EXTRA_KEYS = Object.keys(EXTRAS) as Expression[];
 
 /** The extra state the loop paints besides the face: where he looks and how the body is posed. */
-export interface Pose { gx: number; gy: number; tilt: number; headY: number; rig: string; body: string; tail: string; blink: number; earL: number; earR: number; pawL: string; pawR: string }
+export interface Pose { gx: number; gy: number; tilt: number; headY: number; rig: string; body: string; tail: string; blink: number; earL: number; earR: number; pawL: string; pawR: string; shadow?: string }
 export const REST_POSE: Pose = { gx: 0, gy: 0, tilt: 0, headY: 0, rig: '', body: '', tail: '', blink: 0, earL: 0, earR: 0, pawL: '', pawR: '' };
 
 /** A paw's transform from its offsets (around where it sits at his feet), or none at rest. */
@@ -74,6 +74,7 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
   set('headpos', 'transform', `translate(${(pose.gx * 3).toFixed(2)} ${(pose.gy * 2 + pose.headY).toFixed(2)})`);
   set('headrot', 'transform', `rotate(${tilt.toFixed(2)} 160 190)`);
   set('rig', 'transform', pose.rig);
+  set('shadow', 'transform', pose.shadow ?? '');
   set('body', 'transform', pose.body);
   set('tail', 'style', `transform-origin:214px 246px;${pose.tail ? `transform:${pose.tail}` : ''}`);
   set('paw-l', 'transform', pose.pawL);
@@ -299,6 +300,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         gx: g.x, gy: g.y, tilt: m.shake + Math.max(-1, Math.min(1, lookAt)) * 4, headY: lag.current.y - br * 0.7,
         rig: rigTransform(m, shimmer), body, tail, blink, earL: flickL, earR: flickR,
         pawL: pawTransform(pw.lx, pw.ly, pw.lr, 138), pawR: pawTransform(pw.rx, pw.ry, pw.rr, 182),
+        shadow: m.y < -0.5 ? `translate(160 279) scale(${Math.max(0.55, 1 + m.y / 110).toFixed(3)}) translate(-160 -279)` : '',
       };
       // talking: the mouth opens and closes while the iPad speaks; the face itself is untouched, so it settles when speech ends
       if (talking.current && (Math.floor(now / 500) !== Math.floor((now - 17) / 500))) settleIfSilent(); // about twice a second

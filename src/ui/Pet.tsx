@@ -27,6 +27,8 @@ interface Props {
 }
 
 type Part = 'head' | 'body' | 'tail';
+/** What he says to an answer when the screen has nothing of its own to say (spec §4.4: 对了！ with variety; 嗯？ never scolding). */
+const CHEERS: Partial<Record<Reaction['kind'], string[]>> = { right: ['对了！', '真棒！', '好厉害！'], hard: ['好厉害！', '真棒！'], streak: ['真棒！', '对了！'], wrong: ['嗯？'] };
 const HEART = 'M12 21 C5 15 2 11 2 7.5 C2 4.5 4.5 2 7.5 2 C9.5 2 11 3 12 4.5 C13 3 14.5 2 16.5 2 C19.5 2 22 4.5 22 7.5 C22 11 19 15 12 21Z';
 
 /** Truffle with an optional speech bubble, wearing the child's chosen accessory; stroke him and he purrs (spec §4.5). */
@@ -40,9 +42,17 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
   const purrStop = useRef<ReturnType<typeof setTimeout> | null>(null);
   const purredAt = useRef(0);
 
-  // the screen's reaction wins whenever it sends a new one
+  // the screen's reaction wins whenever it sends a new one; an answer gets its short line, three in a row hearts (spec §4.4)
+  const [cheer, setCheer] = useState<string | null>(null);
   useEffect(() => {
-    if (react) setCurrent(react);
+    if (!react) return;
+    setCurrent(react);
+    const line = CHEERS[react.kind]?.[Math.floor(Math.random() * CHEERS[react.kind]!.length)];
+    if (line) {
+      setCheer(line);
+      later(1200, () => setCheer((c) => (c === line ? null : c)));
+    }
+    if (react.kind === 'streak') for (let i = 0; i < 3; i++) heart(20 + i * 30);
   }, [react?.key]);
   const later = (ms: number, fn: () => void) => {
     const id = setTimeout(() => {
@@ -56,6 +66,11 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
     later(ms, () => setSaid((s) => (s === text ? null : s)));
   };
   const play = (kind: Reaction['kind']) => setCurrent({ kind, key: 1e6 + ++n.current });
+  const heart = (x: number) => {
+    const id = ++n.current;
+    setHearts((h) => [...h, { id, x }]);
+    later(1400, () => setHearts((h) => h.filter((v) => v.id !== id)));
+  };
   // the lesson asked for a greeting: the first live Truffle waves and says it (spec 2026-10-04 §4.6)
   useEffect(() => {
     if (!alive) return;
@@ -72,6 +87,24 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
       say(line, 1800);
     });
   }, [alive]);
+  // a question has come up: what a touch made him say (and a line still on its way, a purr still going) stops here (sweep)
+  const wasCalm = useRef(calm);
+  useEffect(() => {
+    const onset = calm && !wasCalm.current;
+    wasCalm.current = calm;
+    if (!onset) return;
+    timers.current.forEach(clearTimeout);
+    timers.current.clear();
+    if (purrStop.current) {
+      clearTimeout(purrStop.current);
+      purrStop.current = null;
+      stopPurr();
+    }
+    press.current = null;
+    setSaid(null);
+    setCheer(null);
+    setHearts([]);
+  }, [calm]);
   useEffect(
     () => () => {
       timers.current.forEach(clearTimeout);
@@ -113,11 +146,7 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
       stopPurr();
       say('呼噜～', 1200);
     }, 800);
-    if (p.moves++ % 6 === 0) {
-      const id = ++n.current;
-      setHearts((h) => [...h, { id, x: 30 + Math.random() * 40 }]);
-      later(1400, () => setHearts((h) => h.filter((x) => x.id !== id)));
-    }
+    if (p.moves++ % 6 === 0) heart(30 + Math.random() * 40);
   };
   const onUp = () => {
     const p = press.current;
@@ -133,7 +162,7 @@ export function Pet({ kid, mood = 'sulk', bubble = null, size = 120, lookAt = 0,
     }
   };
 
-  const shown = said ?? bubble;
+  const shown = said ?? bubble ?? cheer; // a touch line, then the screen's own, then his answer line
   return (
     <div class="pet" onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => (press.current = null)}>
       {shown && (

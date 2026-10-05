@@ -29,6 +29,20 @@ function audio(): AudioContext | null {
   return ctx;
 }
 
+/**
+ * iPad Safari only lets sound start inside a tap. Stroking Truffle is a drag, never a tap, so a purr before any sound had
+ * played stayed silent: the first touch anywhere wakes the sound, then the listeners go (sweep).
+ */
+export function armAudioWake(): void {
+  if (typeof document === 'undefined') return;
+  const events = ['touchend', 'pointerup', 'keydown'] as const;
+  const wake = () => {
+    if (audio()?.state === 'suspended') return; // still waking (resume is async): the next touch tries again
+    if (ctx) events.forEach((e) => document.removeEventListener(e, wake, true));
+  };
+  events.forEach((e) => document.addEventListener(e, wake, true));
+}
+
 export function playSfx(name: Sfx): void {
   const ac = audio();
   if (!ac) return;

@@ -11,6 +11,20 @@ import { startPurr } from '../audio/sfx';
 const tap = (el: Element) => { fireEvent.pointerDown(el, { clientX: 10, clientY: 10, pointerId: 1 }); fireEvent.pointerUp(el, { clientX: 10, clientY: 10, pointerId: 1 }); };
 
 describe('touching Truffle (spec §4.5)', () => {
+  it('a question coming up clears what a touch made him say, and a line still on its way (sweep)', () => {
+    vi.useFakeTimers();
+    const { container, rerender } = render(<Pet kid={DEFAULT_KID} />);
+    tap(container.querySelector('[data-part="headpos"]')!);
+    expect(container.querySelector('.pet__bubble')!.textContent).toContain('哼');
+    rerender(<Pet kid={DEFAULT_KID} calm />);
+    expect(container.querySelector('.pet__bubble')).toBeNull();
+    rerender(<Pet kid={DEFAULT_KID} />);
+    tap(container.querySelector('[data-part="tail"]')!);
+    rerender(<Pet kid={DEFAULT_KID} calm />);
+    act(() => { vi.advanceTimersByTime(500); }); // the 喵！ after the pounce never lands on the question
+    vi.useRealTimers();
+    expect(container.querySelector('.pet__bubble')).toBeNull();
+  });
   it('a tap on his head: a grumpy 哼！', () => {
     const { container } = render(<Pet kid={DEFAULT_KID} />);
     tap(container.querySelector('[data-part="headpos"]')!);
@@ -69,6 +83,28 @@ describe('greetings (spec 2026-10-04 §4.6)', () => {
     const second = render(<Pet kid={DEFAULT_KID} bubble="新字来了！" />);
     expect(second.container.querySelector('.pet__bubble')?.textContent).not.toContain('你好');
     expect(second.container.querySelector('svg.truffle')?.getAttribute('data-react')).toBeNull();
+  });
+});
+
+describe('his answer lines (sweep: spec §4.4 对了！ / 嗯？)', () => {
+  it('a right answer: 对了！ or another cheer; a wrong one: 嗯？ — and the screen\'s own line wins', () => {
+    vi.useFakeTimers();
+    const { container, rerender } = render(<Pet kid={DEFAULT_KID} />);
+    rerender(<Pet kid={DEFAULT_KID} react={{ kind: 'right', key: 1 }} />);
+    const said = container.querySelector('.pet__bubble')!.textContent!;
+    expect(['对了', '真棒', '好厉害'].some((w) => said.includes(w))).toBe(true);
+    rerender(<Pet kid={DEFAULT_KID} react={{ kind: 'wrong', key: 2 }} />);
+    expect(container.querySelector('.pet__bubble')!.textContent).toContain('嗯？');
+    act(() => { vi.advanceTimersByTime(1500); });
+    expect(container.querySelector('.pet__bubble')).toBeNull(); // a short line
+    rerender(<Pet kid={DEFAULT_KID} bubble="明天再来！" react={{ kind: 'right', key: 3 }} />);
+    expect(container.querySelector('.pet__bubble')!.textContent).toContain('明天再来');
+    vi.useRealTimers();
+  });
+  it('three in a row: hearts float up', () => {
+    const { container, rerender } = render(<Pet kid={DEFAULT_KID} />);
+    rerender(<Pet kid={DEFAULT_KID} react={{ kind: 'streak', key: 1 }} />);
+    expect(container.querySelectorAll('.pet__heart').length).toBeGreaterThanOrEqual(3);
   });
 });
 

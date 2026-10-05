@@ -51,6 +51,8 @@ export const TRACKS = {
   wiggle: track([[150, { lean: -4 }], [300, { lean: 4 }], [450, { lean: -3 }], [600, { lean: 3 }], [760, { lean: 0 }]]),
   /** a tap on his head: he ducks, then shakes it off 140 ms later (one reaction, so nothing replaces the duck) */
   flinch: both(track([[90, { squash: 0.06, y: 3 }], [390, { squash: 0, y: 0 }, back]]), track([[110, { shake: -6 }], [250, { shake: 6 }], [390, { shake: -3 }], [550, { shake: 0 }]]), 140),
+  /** a new word: he leans in toward the card, has a good look, and comes back upright (spec §4.4) */
+  lean: track([[320, { lean: 5 }], [1300, { lean: 5 }], [1700, { lean: 0 }, back]]),
   purr: track([[2200, {}]]), // the body shimmer comes from the loop's purr flag; the track only holds the time
 } satisfies Record<string, Track>;
 
@@ -100,7 +102,7 @@ export const REACTIONS: Record<ReactionKind, { expr: Expression; track: keyof ty
   hard: { expr: 'joy', track: 'bigHop', holdMs: 1500, paws: 'clap' },
   wrong: { expr: 'curious', track: null, holdMs: 1600 },
   streak: { expr: 'content', track: 'purr', holdMs: 2200, paws: 'knead' },
-  newWord: { expr: 'surprised', track: null, holdMs: 700, then: 'curious' },
+  newWord: { expr: 'surprised', track: 'lean', holdMs: 700, then: 'curious' },
   nod: { expr: 'happy', track: 'nod', holdMs: 500 },
   munch: { expr: 'content', track: 'chew', holdMs: 1300 },
   watch: { expr: 'curious', track: null, holdMs: 1800 },

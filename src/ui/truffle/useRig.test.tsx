@@ -258,3 +258,23 @@ describe('sweep: a smooth rig', () => {
   });
 });
 
+
+describe('his ground shadow (sweep: spec §4.1 "the ground shadow scales with height")', () => {
+  it('shrinks while he is up in a hop and is whole again on the ground', () => {
+    reduced = false;
+    const { container } = render(<Truffle alive expression="neutral" react={{ kind: 'hard', key: 1 }} />);
+    const shadow = () => container.querySelector('[data-part="shadow"]')!;
+    const scale = () => Number((shadow().getAttribute('transform') ?? '').match(/scale\(([^ )]+)/)?.[1] ?? 1);
+    expect(shadow()).not.toBeNull();
+    let least = 1;
+    for (let i = 0; i < 60; i++) { act(() => run(1)); least = Math.min(least, scale()); }
+    expect(least).toBeLessThan(0.85);
+    act(() => run(300));
+    expect(scale()).toBeCloseTo(1, 2);
+  });
+  it('sits under him, outside the part that hops', () => {
+    const { container } = render(<Truffle mood="neutral" />);
+    const shadow = container.querySelector('[data-part="shadow"]')!;
+    expect(shadow.closest('[data-part="rig"]')).toBeNull();
+  });
+});

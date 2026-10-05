@@ -80,3 +80,12 @@ describe('paw moves (spec 2026-10-04 §4.6, phase E)', () => {
   });
 });
 
+
+describe('a new word (sweep: spec §4.4 "he leans toward the card")', () => {
+  it('he leans in, holds, and comes back upright', () => {
+    expect(REACTIONS.newWord.track).toBe('lean');
+    expect(TRACKS.lean(500)!.lean).toBeGreaterThan(3);
+    expect(TRACKS.lean(0)).toEqual(REST);
+    expect(TRACKS.lean(5000)).toBeNull();
+  });
+});
