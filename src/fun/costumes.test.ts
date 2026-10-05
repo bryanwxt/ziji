@@ -107,3 +107,22 @@ describe('telling the zodiac onesies apart (parent, 2026-10-06: some were hard t
   });
 });
 
+describe('myth costumes (parent, 2026-10-06: he is really into the Greek myths)', () => {
+  it('every Greek god, the heroes and the creatures, and the Chinese figures, in their own wardrobe sets', async () => {
+    const { GREEK, CHINESE } = await import('./costumes');
+    expect(GREEK.map((c) => c.zh)).toEqual([
+      '宙斯', '赫拉', '波塞冬', '得墨忒耳', '雅典娜', '阿波罗', '阿耳忒弥斯', '阿瑞斯', '阿佛洛狄忒', '赫菲斯托斯', '赫尔墨斯', '狄俄尼索斯', '哈迪斯', '赫斯提亚',
+      '赫拉克勒斯', '奥德修斯', '珀耳修斯', '阿喀琉斯', '忒修斯', '伊阿宋',
+      '美杜莎', '米诺陶洛斯', '飞马', '刻耳柏洛斯',
+    ]);
+    expect(CHINESE.map((c) => c.zh)).toEqual(['孙悟空', '哪吒', '嫦娥', '后羿', '财神', '招财猫', '舞狮']);
+    expect(COSTUMES).toHaveLength(12 + 13 + 24 + 7);
+    expect(new Set(COSTUMES.map((c) => c.id)).size).toBe(COSTUMES.length);
+    expect(GREEK.every((c) => c.set === 'greek') && CHINESE.every((c) => c.set === 'chinese')).toBe(true);
+    expect(costumeById('nezha')).toMatchObject({ py: 'né zhā' });
+  });
+  it("the first chest still gives his own zodiac animal, never a hooded creature", () => {
+    expect(openChest(DEFAULT_KID, '2026-10-02', 'minotaur' as never).result).toEqual({ kind: 'costume', id: 'dragon' });
+  });
+});
+

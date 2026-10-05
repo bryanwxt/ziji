@@ -1,34 +1,11 @@
 import { costumeById, type Costume } from '../../fun/costumes';
+import { BODY, belly, eyes, hood, INK, num, pair, ropeTail, S, s2, tint } from './costumeKit';
+import { MYTH_HOOD, MYTH_OUTFIT } from './mythCostumes';
 import { EYE_L, EYE_R, EYE_Y, FUR } from './rig';
 
 // Costume art in Truffle's viewBox (30 20 260 270). Ink outlines match the mascot (3.2px, round joins).
 // Redrawn 2026-10-06 (parent: some, like the zodiac ones, were hard to identify): each zodiac hood wears the animal's own
 // face, one big shape that names it, and its own tail in place of his; each outfit carries one thing a child knows it by.
-const INK = '#2a2630';
-const S = `stroke="${INK}" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"`;
-const s2 = `stroke="${INK}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"`;
-
-/** Mirror an x coordinate across Truffle's centre line (x = 160). */
-const mx = (x: number) => 320 - x;
-
-const BODY = 'M110 186 C90 200 86 238 104 258 C120 276 200 276 216 258 C234 238 230 200 210 186 Z';
-const belly = (fill = '#fffdf7') => `<ellipse cx="160" cy="236" rx="36" ry="30" fill="${fill}" opacity=".85"/>`;
-/** Hood: a dome over the head with the face left open (even-odd). Covers the cat's own ears. */
-const HOOD =
-  'M160 28 C224 28 270 64 276 116 C280 152 268 184 246 200 L74 200 C52 184 40 152 44 116 C50 64 96 28 160 28 Z ' +
-  'M160 76 C210 76 250 102 250 138 C250 174 210 198 160 198 C110 198 70 174 70 138 C70 102 110 76 160 76 Z';
-
-const tint = (color: string) => `<path d="${BODY}" fill="${color}" ${S}/>`;
-const hood = (color: string) => `<path d="${HOOD}" fill="${color}" fill-rule="evenodd" ${S}/>`;
-const pair = (draw: (flip: (x: number) => number) => string) => draw((x) => x) + draw(mx);
-/** The animal's own eyes on the hood, above his face (as on an animal onesie). */
-const eyes = (dx = 22, y = 54, r = 5.5) =>
-  pair((f) => `<circle cx="${f(160 - dx)}" cy="${y}" r="${r}" fill="${INK}"/><circle cx="${f(160 - dx) + 1.6}" cy="${y - 1.8}" r="1.7" fill="#fff"/>`);
-/** A tail drawn as a thick stroke with an ink edge (in his tail's place, so it swishes with him). */
-const ropeTail = (d: string, color: string, w = 8) =>
-  `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${w + 3.2}" stroke-linecap="round" stroke-linejoin="round"/>` +
-  `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-
 interface Animal { behind?: string; front: string; tail: string; body?: string; belly?: string }
 
 /** Each zodiac onesie: behind the hood, on the hood (its face), its tail, and marks on the body. */
@@ -124,10 +101,6 @@ const ANIMAL: Record<string, (c: Costume) => Animal> = {
     tail: ropeTail('M210 248 C230 252 244 240 238 230 C232 222 222 232 230 238 C238 244 252 236 254 224', '#ffb3c7', 5),
   }),
 };
-
-/** Text in the app's rounded font (a jersey number). */
-const num = (n: string, x: number, y: number, fill: string, size = 34) =>
-  `<text x="${x}" y="${y}" font-family="Nunito, sans-serif" font-weight="900" font-size="${size}" text-anchor="middle" dominant-baseline="middle" fill="${fill}" stroke="${INK}" stroke-width="2" paint-order="stroke">${n}</text>`;
 
 interface Outfit { back?: string; body: string; head: string; hidesEars?: boolean }
 
@@ -229,15 +202,15 @@ export function costumeLayer(id: string | null | undefined): { back: string; bod
   const c = costumeById(id);
   if (!c) return null;
   if (c.kind === 'onesie') {
-    const a = ANIMAL[c.id]!(c);
+    const a: Animal & { back?: string } = (ANIMAL[c.id] ?? MYTH_HOOD[c.id])!(c);
     return {
-      back: '',
+      back: a.back ?? '',
       body: tint(c.color) + (a.belly ?? belly()) + (a.body ?? ''),
       head: (a.behind ?? '') + hood(c.color) + `<g data-hood-face="${c.id}">${a.front}</g>`,
       tail: a.tail,
       hidesEars: true,
     };
   }
-  const o = OUTFIT[c.id]!(c);
+  const o = (OUTFIT[c.id] ?? MYTH_OUTFIT[c.id])!(c);
   return { back: o.back ?? '', body: o.body, head: o.head, hidesEars: !!o.hidesEars };
 }

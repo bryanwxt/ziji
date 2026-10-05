@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { BUILTIN } from '../content';
 import { ACCESSORY_DEFS } from '../fun/accessories';
 import { accessoryThumb } from '../ui/truffle/accessories';
-import { costumeById, ONESIES, OUTFITS } from '../fun/costumes';
+import { CHINESE, costumeById, GREEK, ONESIES, OUTFITS } from '../fun/costumes';
 import { POWERS, powerFamilies, powerProgress, type PowerProgress } from '../fun/powers';
 import { saveKid } from '../store/repo';
 import { DEFAULT_KID, type KidState } from '../types';
@@ -77,7 +77,7 @@ export function Wardrobe() {
         </div>
         {tab === 'outfits' ? (
           <div class="outfits scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
-            {([['生肖', ONESIES], ['衣服', OUTFITS]] as const).map(([title, list]) => (
+            {([['生肖', ONESIES], ['衣服', OUTFITS], ['希腊', GREEK], ['中国', CHINESE]] as const).map(([title, list]) => (
               <section key={title}>
                 <h2><Label zh={title} /></h2>
                 <div class="outfit-grid">

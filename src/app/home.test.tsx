@@ -99,6 +99,14 @@ describe('HomeScreen', () => {
 });
 
 describe('Wardrobe', () => {
+  it('has four shelves: 生肖, 衣服, 希腊 and 中国 (parent, 2026-10-06: the myth costumes)', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['zeus', 'wukong'] } });
+    renderWithApp(<Wardrobe />, app);
+    const shelves = [...(await screen.findAllByRole('heading', { level: 2 }))].map((h) => h.querySelector('.sr-only')?.textContent ?? h.textContent);
+    expect(shelves.slice(0, 4)).toEqual(['生肖', '衣服', '希腊', '中国']); // then the accessories' shelves
+    expect(screen.getByRole('button', { name: '宙斯' })).toHaveProperty('disabled', false);
+    expect(screen.getByRole('button', { name: '孙悟空' })).toHaveProperty('disabled', false);
+  });
   it('an owned costume shows a small Truffle wearing it; a locked one shows the lock', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['tiger'] } });
     renderWithApp(<Wardrobe />, app);

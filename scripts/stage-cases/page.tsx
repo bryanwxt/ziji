@@ -9,6 +9,7 @@ import { FeedbackSheet } from '../../src/ui/stage/FeedbackSheet';
 import { Stage } from '../../src/ui/stage/Stage';
 import { Pet } from '../../src/ui/Pet';
 import { Truffle } from '../../src/ui/truffle/Truffle';
+import { COSTUMES } from '../../src/fun/costumes';
 import { Label } from '../../src/ui/Label';
 import { PairGame } from '../../src/activities/practice/PairGame';
 import { BuildSentence } from '../../src/activities/practice/BuildSentence';
@@ -103,6 +104,15 @@ else if (which === 'worlds') {
   // every world by day and by evening, for the parent to look over (spec 2026-10-04 §2)
   const cell = (w: WorldId, t: 'afternoon' | 'evening') => `<figure style="margin:0"><svg viewBox="0 0 360 480" width="180" height="240">${sceneFor(w, t)}</svg><figcaption>${w} · ${t}</figcaption></figure>`;
   app.innerHTML = `<div style="display:grid;grid-template-columns:repeat(8,180px);gap:6px;padding:8px;font:11px sans-serif;background:#fff">${WORLDS.map((w) => cell(w.id, 'afternoon')).join('')}${WORLDS.map((w) => cell(w.id, 'evening')).join('')}</div>`;
+}
+else if (which === 'costumes') {
+  // every costume, shelf by shelf, for the parent to look over (2026-10-06: easy to tell apart?)
+  render(
+    <div style="display:grid;grid-template-columns:repeat(8,150px);gap:6px;padding:8px;background:#fbf6ea;font:600 13px sans-serif;text-align:center">
+      {COSTUMES.map((c) => <div key={c.id}><Truffle mood="cheer" outfit={c.id} size={140} /><div>{c.zh}</div></div>)}
+    </div>,
+    app,
+  );
 }
 else if (which === 'bursts') {
   // the celebration's sunburst in every world's colours, with its heading, for the parent to look over (phase D)

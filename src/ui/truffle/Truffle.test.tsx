@@ -120,10 +120,10 @@ describe('Truffle costumes', () => {
     expect(container.querySelector('[data-part="tail"]')!.innerHTML).toBe(own); // an outfit leaves his own tail
   });
   it("every onesie's ears, horns and spikes stay inside his box (30 20 260 270), so a tile or a clipped screen never cuts them", async () => {
-    const { ONESIES } = await import('../../fun/costumes');
+    const { COSTUMES } = await import('../../fun/costumes');
     const { costumeLayer } = await import('./costumes');
     const out: string[] = [];
-    for (const c of ONESIES) {
+    for (const c of COSTUMES.filter((x) => x.kind === 'onesie')) { // the zodiac and the hooded creatures
       const l = costumeLayer(c.id)!;
       const art = l.back + l.head;
       for (const m of art.matchAll(/<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"/g)) {
@@ -146,8 +146,8 @@ describe('Truffle costumes', () => {
       const { container, unmount } = render(<Truffle outfit={c.id} />);
       expect(container.querySelector('svg.truffle')?.getAttribute('data-outfit')).toBe(c.id);
       expect(container.querySelector('.truffle__outfit-body')?.innerHTML.length).toBeGreaterThan(10);
-      // a jersey or a gi is all body: nothing on his head
-      if (c.id !== 'football' && c.id !== 'gi') expect(container.querySelector('.truffle__outfit-head')?.innerHTML.length, c.id).toBeGreaterThan(10);
+      // a jersey, a gi, the Golden Fleece and the fortune cat's collar are all body: nothing on his head
+      if (!['football', 'gi', 'jason', 'luckycat'].includes(c.id)) expect(container.querySelector('.truffle__outfit-head')?.innerHTML.length, c.id).toBeGreaterThan(10);
       unmount();
     }
   });

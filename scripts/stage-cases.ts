@@ -133,6 +133,10 @@ for (const size of SIZES) {
   await page.goto(`file://${dir}/index.html?case=bursts`);
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'fit-shots/stage-cases/bursts.png' });
+  await page.setViewportSize({ width: 1260, height: 1500 });
+  await page.goto(`file://${dir}/index.html?case=costumes`);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'fit-shots/stage-cases/costumes.png', fullPage: true });
   await page.close();
   const m = await browser.newPage({ viewport: { width: 1024, height: 768 } });
   for (const world of ['yard', 'grass', 'race', 'blocks', 'dino', 'sea', 'space', 'pirate']) {
