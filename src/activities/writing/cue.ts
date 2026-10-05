@@ -20,7 +20,17 @@ export function pickExample(word: Word): { example: Example; once: boolean } | n
   return example ? { example, once: !!once } : null;
 }
 
-export function writingCue(word: Word): WritingCue {
+/** `at`: write only that character of a longer word (spec 2026-10-05 §5) — the gap is its alone, the others show (朋＿). */
+export function writingCue(word: Word, at?: number): WritingCue {
+  const cue = wholeWordCue(word);
+  const chars = Array.from(word.text);
+  if (at === undefined || chars.length < 2) return cue;
+  const gap = '＿'.repeat(chars.length);
+  const part = chars.map((c, i) => (i === at ? '＿' : c)).join('');
+  return { ...cue, sentence: cue.sentence?.replace(gap, part) ?? null, blanked: cue.blanked?.split(gap).join(part) ?? null };
+}
+
+function wholeWordCue(word: Word): WritingCue {
   const meaning = kidMeaning(word);
   // More than the pinyin (parent, 2026-10-04): a sentence that uses the word, with a gap for it, said in full after the word.
   // A sentence that shows one of the word's characters outside the gap would give away what he is writing: try the other, else 组词.

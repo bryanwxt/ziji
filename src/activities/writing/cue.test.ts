@@ -76,3 +76,15 @@ describe('the sentence cue never shows what he is writing (review of plan 14)', 
     expect(writingCue(w).sentence).toBeNull();
   });
 });
+
+describe('one character of a longer word (spec 2026-10-05 §5)', () => {
+  it('blanks only that character; the other shows', () => {
+    const w = makeWord('朋友', { id: 'p:1', source: 'parent', pinyin: 'péng you', sentences: [{ text: '他是我最好的朋友，我们天天一起玩。', pinyin: '' }] });
+    expect(writingCue(w).sentence).toContain('＿＿');
+    const cue = writingCue(w, 1);
+    expect(cue.sentence).toContain('朋＿');
+    expect(cue.sentence!.split('＿').length - 1).toBe(1);
+    expect(writingCue(w, 0).sentence).toContain('＿友');
+  });
+});
+

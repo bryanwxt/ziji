@@ -41,7 +41,7 @@ function levelOf(know: Knowledge): number {
 import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startOrResumeSession, USE_READING_MS } from '../session/record';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
-  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice,
+  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice, wordMisses,
 } from '../session/runner';
 import { addAnswer, clearConfusion, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind } from '../types';
@@ -276,8 +276,10 @@ export function SessionScreen({ free }: { free: boolean }) {
   const onWriteDone = (r: WriteResult | null) =>
     once(async () => {
       const task = writeCandidate!;
-      // only the recall pass rates the word (spec §20 part 3); a redo at the end is extra practice
-      if (r && !rec.free && task.pass === 'recall' && !task.redo) await recordWriting(db, task.wordId, r.totalMisses, now());
+      // only the recall pass rates the word (spec §20 part 3); a redo at the end is extra practice. Written a character at a time
+      // (spec 2026-10-05 §5), the word is rated once, on the character that finishes it, with all its misses from memory.
+      const rates = task.at === undefined ? true : !!task.last;
+      if (r && !rec.free && task.pass === 'recall' && !task.redo && rates) await recordWriting(db, task.wordId, wordMisses(rec, task.wordId) + r.totalMisses, now());
       if (!r && task.isNew) await markWriteSkipped(db, task.wordId, now());
       // a new word written from memory with no misses showed the close-up if one was due: start the cooldown again
       if (r && task.pass === 'recall' && isHardWrite(task.isNew, r.totalMisses) && closeupAllowed(cardsSinceCloseup.current, reducedMotion())) cardsSinceCloseup.current = 0;
@@ -411,6 +413,7 @@ export function SessionScreen({ free }: { free: boolean }) {
           resting={resting}
           isNew={!!writeCandidate?.isNew}
           pass={writeCandidate!.pass}
+          at={writeCandidate!.at}
           closeupReady={closeupAllowed(cardsSinceCloseup.current, reducedMotion())}
           onDone={(r) => void onWriteDone(r)}
         />

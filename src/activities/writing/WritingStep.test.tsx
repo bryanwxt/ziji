@@ -43,6 +43,16 @@ describe('WritingStep', () => {
     act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 0 }));
     expect(document.querySelector('.closeup')).toBeNull(); // not due: no close-up
   });
+  it('writes only the character it is given (spec 2026-10-05 §5)', () => {
+    quizzes.length = 0;
+    const onDone = vi.fn();
+    render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén' })} at={1} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={onDone} />);
+    expect(document.querySelectorAll('.dots .dot')).toHaveLength(1);
+    expect(vi.mocked(HanziWriter.create).mock.calls.at(-1)![1]).toBe('人');
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 2 }));
+    fireEvent.click(screen.getByText('完成'));
+    expect(onDone).toHaveBeenCalledWith({ totalMisses: 2, hinted: false, elapsedMs: expect.any(Number) });
+  });
   it('skips the word when its stroke data cannot load', () => {
     const onDone = vi.fn();
     render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={onDone} />);

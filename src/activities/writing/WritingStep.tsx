@@ -34,13 +34,15 @@ interface Props {
   onDone: (result: WriteResult | null) => void;
   /** a 咦！ close-up is due (one every few hard wins, never with reduced motion) */
   closeupReady?: boolean;
+  /** write only this character of the word (spec 2026-10-05 §5); without it, every character in turn */
+  at?: number;
 }
 
 const PASS_BUBBLE: Record<WritePass, string> = { trace: '描一描！', hint: '看提示写！', recall: '写一写！' };
 
-export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupReady = false }: Props) {
-  const chars = useMemo(() => hanChars(word.text), [word.id]);
-  const cue = useMemo(() => writingCue(word), [word.id]);
+export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupReady = false, at }: Props) {
+  const chars = useMemo(() => (at === undefined ? hanChars(word.text) : hanChars(word.text).slice(at, at + 1)), [word.id, at]);
+  const cue = useMemo(() => writingCue(word, at), [word.id, at]);
   const [index, setIndex] = useState(0);
   const [misses, setMisses] = useState(0);
   const [charMisses, setCharMisses] = useState<number | null>(null);
