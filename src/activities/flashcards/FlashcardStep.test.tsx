@@ -1,6 +1,7 @@
 import { wordCue } from './meaning';
 import { bankFor } from '../../content/sentenceBank';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
+import { glossFor } from '../../content/glossary';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../../content';
 import { createEmptyCard, State } from 'ts-fsrs';
@@ -393,7 +394,8 @@ describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
   it('after a wrong hear-and-find answer: both characters, in English', () => {
     const w = pool.find((x) => x.text === '他')!;
     render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: false, retry: false }} ask="listen" voice onDone={vi.fn()} />);
-    const wrong = [...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== '他')!;
+    // a wrong choice with a gloss (the distractors are random; a rare one like 俱 has none, and then only 他 is explained)
+    const wrong = [...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== '他' && glossFor(b.textContent!))!;
     fireEvent.click(wrong);
     const en = document.querySelector('.sheet [lang="en"]')!.textContent!;
     expect(en).toContain('他');
