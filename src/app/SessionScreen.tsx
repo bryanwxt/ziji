@@ -184,7 +184,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       if (!planning.current) {
         planning.current = true;
         void (async () => {
-          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, state.know.words, voice, mulberry32(Date.now() >>> 0), state.confusions, levelOf(state.know));
+          // the look-alikes as they are now: a mix-up in today's 认新字 is fished today, not a lesson later (sweep)
+          const confusions = await getConfusions(db);
+          setState((st) => (st ? { ...st, confusions } : st));
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, state.know.words, voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know));
           planning.current = false;
           await commit(startPractice(latest.current ?? cur, queue));
         })();

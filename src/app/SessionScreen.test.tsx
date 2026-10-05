@@ -121,6 +121,21 @@ describe('SessionScreen', () => {
     expect(document.querySelector('.pet__bubble')?.textContent ?? '').not.toContain('你好');
   });
 
+  it('sweep: a mix-up noted in today\'s 认新字 is fished in today\'s 练一练, not a lesson later', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, [byText.get('根')!, byText.get('跟')!].map((w, i) => ({ ...w, rank: i + 1 })));
+    await updateSettings(app.db, { newPerDay: 2, activities: lessonOnly });
+    renderWithApp(<SessionScreen free={false} />, app);
+    await screen.findByText('我记住了！');
+    await noteConfusion(app.db, byText.get('根')!.id, '跟', new Date(2026, 9, 2)); // as a 认新字 miss would note it
+    await learnCurrentWord();
+    await screen.findByText('我记住了！');
+    await learnCurrentWord();
+    await waitFor(async () => expect((await getSession(app.db, '2026-10-02'))?.practiceQueue).toBeTruthy(), { timeout: 4000 });
+    const q = (await getSession(app.db, '2026-10-02'))!.practiceQueue!;
+    expect(q.some((x) => x.ask === 'fish' && x.wordId === byText.get('根')!.id)).toBe(true);
+  });
+
   it('skips a word that was paused after the plan was made', async () => {
     const app = await setup();
     const first = renderWithApp(<SessionScreen free={false} />, app);
@@ -218,8 +233,8 @@ describe('钓鱼 for what he confused, in 练一练 (spec 2026-10-05 §3.4)', ()
     await noteConfusion(app.db, gen.id, '跟', new Date(2026, 9, 1));
     renderWithApp(<SessionScreen free={false} />, app);
     let fished = false;
-    for (let i = 0; i < 20 && !screen.queryByText('太棒了！'); i++) {
-      await waitFor(() => expect(screen.queryByText('太棒了！') ?? document.querySelector('.choice:not([disabled]), .fishtile:not([disabled])')).toBeTruthy());
+    for (let i = 0; i < 60 && !screen.queryByText('太棒了！'); i++) {
+      await waitFor(() => expect(screen.queryByText('太棒了！') ?? nextButton() ?? document.querySelector(OPEN)).toBeTruthy(), { timeout: 4000 });
       if (screen.queryByText('太棒了！')) break;
       const fish = document.querySelector<HTMLButtonElement>('.fishtile:not([disabled])');
       if (fish) {
@@ -228,8 +243,9 @@ describe('钓鱼 for what he confused, in 练一练 (spec 2026-10-05 §3.4)', ()
         await tapAndWait(screen.getByText('继续'));
         continue;
       }
-      fireEvent.click(document.querySelector<HTMLButtonElement>('.choice:not([disabled])')!);
-      await tapAndWait(screen.getByText('继续'));
+      const next = nextButton();
+      if (next) await tapAndWait(next); // the shared walker's rules: 继续 once it opens, else the first open tile
+      else await tapAndWait(document.querySelector<HTMLElement>(OPEN)!);
     }
     expect(fished).toBe(true);
     await waitFor(async () => expect((await getConfusions(app.db)).has(gen.id)).toBe(false));

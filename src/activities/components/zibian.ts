@@ -55,7 +55,8 @@ export function fillChoices(chars: string[], k: number, rng: Rng, known: Readonl
  */
 export function fishItem(word: Word, confused: string[], known: ReadonlySet<string>, rng: Rng): ZibianItem | null {
   const own = Array.from(word.text);
-  const text = own.length > 1 ? word.text : word.examples?.find((e) => Array.from(e.text).length === 2 && e.text.includes(word.text))?.text;
+  // a 组词 that holds the character once: 妈妈 would show the answer beside the gap (sweep)
+  const text = own.length > 1 ? word.text : word.examples?.find((e) => Array.from(e.text).length === 2 && e.text.split(word.text).length === 2)?.text;
   if (!text) return null;
   const chars = Array.from(text);
   const k = own.length > 1 ? 0 : chars.indexOf(word.text);

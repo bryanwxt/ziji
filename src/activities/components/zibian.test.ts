@@ -64,3 +64,14 @@ describe('钓鱼 for what he confused (spec 2026-10-05 §3.4)', () => {
     expect(fishItem(lonely, [], new Set(), mulberry32(1))).toBeNull();
   });
 });
+
+describe('sweep: 钓鱼 details', () => {
+  it('never fishes in a doubled word (妈妈 would show the answer beside the gap)', () => {
+    const ma = makeWord('妈', { id: 'b:妈', examples: [{ text: '妈妈', pinyin: 'mā ma' }, { text: '姑妈', pinyin: 'gū mā' }] });
+    for (let s = 1; s < 20; s++) {
+      const item = fishItem(ma, ['码'], new Set(), mulberry32(s));
+      if (item) expect(item.word).not.toBe('妈妈');
+    }
+  });
+});
+

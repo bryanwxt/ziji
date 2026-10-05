@@ -46,3 +46,14 @@ describe('what he confused (spec 2026-10-05 §3.4)', () => {
     expect((await getConfusions(db)).has('b:根')).toBe(false);
   });
 });
+
+describe('sweep: the newest mix-ups first', () => {
+  it('confusions come newest first, so the two a lesson fishes are the freshest', async () => {
+    const db = await openAppDb(`ladder-${Math.random()}`);
+    await noteConfusion(db, 'b:a', '甲', new Date(2026, 9, 1));
+    await noteConfusion(db, 'b:z', '乙', new Date(2026, 9, 3));
+    await noteConfusion(db, 'b:m', '丙', new Date(2026, 9, 2));
+    expect([...(await getConfusions(db)).keys()]).toEqual(['b:z', 'b:m', 'b:a']);
+  });
+});
+

@@ -98,6 +98,7 @@ export interface LadderEntry {
   rung: number;
   at: number;
   confused?: string[]; // look-alike characters he picked for it (spec 2026-10-05 §3.4)
+  confusedAt?: number; // the last time he mixed it up (the newest are fished first)
 }
 
 /** The last placement check's two levels (band indexes, -1 = none) and the words he missed. */

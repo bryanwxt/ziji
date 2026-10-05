@@ -141,7 +141,7 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   const elapsedMs = Math.min(rawElapsedMs, MAX_CARD_MS);
   const index = rec.practiceIndex ?? 0;
   const queue = [...rec.practiceQueue!];
-  if (!correct && !item.retry) {
+  if (!correct && !item.retry && item.ask !== 'fish') { // a missed 钓鱼 isn't asked again: at most two a lesson (sweep)
     const { due: _due, ...again } = item; // a retry is practice only, never a due first appearance
     let at = Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length);
     while (at < queue.length && (queue[at - 1]?.wordId === item.wordId || queue[at]?.wordId === item.wordId)) at++; // never beside the same word (sweep)

@@ -226,7 +226,7 @@ export async function noteRung(db: AppDb, wordId: string, rung: Rung, correct: b
 export async function noteConfusion(db: AppDb, wordId: string, ch: string, now: Date): Promise<void> {
   const had = await db.get('ladder', wordId);
   const confused = [...new Set([...(had?.confused ?? []), ch])];
-  await db.put('ladder', { wordId, rung: had?.rung ?? 0, at: now.getTime(), ...had, confused });
+  await db.put('ladder', { wordId, rung: had?.rung ?? 0, at: now.getTime(), ...had, confused, confusedAt: now.getTime() });
 }
 
 /** He caught the right fish: stop asking. */
@@ -236,5 +236,7 @@ export async function clearConfusion(db: AppDb, wordId: string): Promise<void> {
 }
 
 export async function getConfusions(db: AppDb): Promise<Map<string, string[]>> {
-  return new Map((await db.getAll('ladder')).filter((e) => e.confused?.length).map((e) => [e.wordId, e.confused!]));
+  // newest first, so the two a lesson fishes are the freshest mix-ups (sweep)
+  const list = (await db.getAll('ladder')).filter((e) => e.confused?.length).sort((a, b) => (b.confusedAt ?? b.at ?? 0) - (a.confusedAt ?? a.at ?? 0));
+  return new Map(list.map((e) => [e.wordId, e.confused!]));
 }

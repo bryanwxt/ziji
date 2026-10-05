@@ -320,3 +320,12 @@ describe('sweep: 写一写 details', () => {
   });
 });
 
+describe('sweep: a missed 钓鱼 is not asked again (at most two a lesson)', () => {
+  it('no retry for a fish item', () => {
+    const plan: SessionPlan = { steps: ['practice'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, practiceTimeBoxMs: 1e9, writeCandidates: [], writeCount: 0 };
+    const items = [{ wordId: 'b:a', rung: 2 as const, ask: 'fish' as const, grades: null, retry: false }, ...['b:x', 'b:y', 'b:z', 'b:w', 'b:v'].map((wordId) => ({ wordId, rung: 1 as const, ask: 'read' as const, grades: null, retry: false }))];
+    const rec = afterPracticeAnswer(startPractice(createSessionRecord(plan, 'd', 0), items), false, 1000);
+    expect(rec.practiceQueue!.filter((x) => x.ask === 'fish')).toHaveLength(1);
+  });
+});
+
