@@ -228,5 +228,8 @@ describe('Home on the stage (phase D)', () => {
     expect(css).toMatch(/\.home__strip \{[^}]*background: var\(--paper\)/);
     expect(css).toMatch(/\.home__strip \.stat, \.home__strip \.week, \.home__strip \.home__who \{[^}]*background: none[^}]*border: 0[^}]*box-shadow: none/);
   });
+  it("Home's cards are paper cards like the lesson card: cream, soft shadow, no ink outline", () => {
+    expect(css).toMatch(/\.home__cards \.card, \.home__cards \.goal \{[^}]*background: #fffaf0[^}]*border: 0[^}]*box-shadow: 0 8px 22px/);
+  });
 });
 
