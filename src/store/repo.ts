@@ -48,6 +48,19 @@ export async function saveKid(db: AppDb, kid: KidState): Promise<void> {
   await db.put('kid', kid, MAIN);
 }
 
+/**
+ * Change his state from what is stored, in one transaction: two saves at the same moment (Home's daily one and a find from a
+ * prop tap) both land (sweep). `change` returns null to leave it as it is; with no kid yet nothing happens. Returns what was saved.
+ */
+export async function updateKid(db: AppDb, change: (kid: KidState) => KidState | null): Promise<KidState | null> {
+  const tx = db.transaction('kid', 'readwrite');
+  const stored = normalizeKid(await tx.store.get(MAIN));
+  const next = stored ? change(stored) : null;
+  if (next) await tx.store.put(next, MAIN);
+  await tx.done;
+  return next;
+}
+
 /** Adds missing built-in words; with refresh, also brings existing ones up to the current content (keeping his and the parent's state). */
 export async function seedBuiltinWords(db: AppDb, words: Word[], refresh = true): Promise<number> {
   const tx = db.transaction('words', 'readwrite');

@@ -30,12 +30,12 @@ export function onCheer(fn: (line: string) => void): () => void {
  * How he feels about today (spec 2026-10-04 §4.6), from the days he finished a lesson: 'streak' when yesterday was one of them,
  * 'missed' when the last one was before yesterday, otherwise 'plain' (a new child, or only today so far).
  */
-export function dayMood(doneDates: string[], today: string): 'missed' | 'streak' | 'plain' {
+export function dayMood(doneDates: string[], today: string, startedDates: string[] = []): 'missed' | 'streak' | 'plain' {
   const past = doneDates.filter((d) => d < today);
   if (!past.length) return 'plain';
   const y = new Date(`${today}T12:00:00`);
   y.setDate(y.getDate() - 1);
   const yesterday = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
   if (past.includes(yesterday)) return 'streak';
-  return past.some((d) => d > yesterday) ? 'plain' : 'missed';
+  return startedDates.includes(yesterday) ? 'plain' : 'missed'; // he was here yesterday, if only for a start (sweep)
 }

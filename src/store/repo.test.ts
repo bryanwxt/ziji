@@ -185,3 +185,24 @@ describe('deleting a word (deferred minor, plan 11)', () => {
     expect(await allCards(db)).toEqual([]);
   });
 });
+
+describe('updateKid (sweep: two saves of his state at the same moment)', () => {
+  it('each change is made to what is stored, so neither is lost', async () => {
+    const { updateKid } = await import('./repo');
+    const db = await freshDb();
+    await saveKid(db, { ...DEFAULT_KID });
+    await Promise.all([
+      updateKid(db, (k) => ({ ...k, greetedOn: '2026-10-06' })),
+      updateKid(db, (k) => ({ ...k, bonusStars: k.bonusStars + 1 })),
+    ]);
+    expect(await getKid(db)).toMatchObject({ greetedOn: '2026-10-06', bonusStars: DEFAULT_KID.bonusStars + 1 });
+  });
+  it('null leaves it as it is; with no kid yet there is nothing to change', async () => {
+    const { updateKid } = await import('./repo');
+    const db = await freshDb();
+    expect(await updateKid(db, (k) => ({ ...k, bonusStars: 9 }))).toBeNull();
+    expect(await getKid(db)).toBeNull();
+    await saveKid(db, { ...DEFAULT_KID });
+    expect(await updateKid(db, () => null)).toBeNull();
+  });
+});

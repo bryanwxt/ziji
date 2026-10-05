@@ -14,6 +14,11 @@ describe('greetings and his memory of the days (spec 2026-10-04 §4.6)', () => {
     expect(dayMood(['2026-10-02'], '2026-10-02')).toBe('plain');
     expect(dayMood(['2026-09-30'], '2026-10-01')).toBe('streak'); // across a month end
   });
+  it('sweep: a lesson started yesterday but not finished is not "days away" — no sulk, and no streak', () => {
+    expect(dayMood(['2026-09-28'], '2026-10-02', ['2026-10-01'])).toBe('plain');
+    expect(dayMood(['2026-09-28'], '2026-10-02', ['2026-09-29'])).toBe('missed');
+    expect(dayMood([], '2026-10-02', ['2026-10-01'])).toBe('plain');
+  });
 });
 
 describe('final review: a greeting never lands on a later screen', () => {

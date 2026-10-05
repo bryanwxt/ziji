@@ -11,7 +11,7 @@ import { stepsOn } from '../session/plan';
 import { streak, totalStars, weekDays } from '../stats/stats';
 import { pickExample } from '../activities/writing/cue';
 import { WeekStrip } from './WeekStrip';
-import { allSessions, getKid, listParentPassages, listRewards, saveKid } from '../store/repo';
+import { allSessions, getKid, listParentPassages, listRewards, saveKid, updateKid } from '../store/repo';
 import { pickPassage, readingPool } from '../langdu/cycle';
 import { nextSpeaking } from '../kantu/flow';
 import { PASSAGES } from '../content';
@@ -24,7 +24,7 @@ import { WorldProps } from '../ui/worlds/WorldProps';
 import { dayMood } from '../ui/truffle/greeting';
 import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
 import { SCENE_VIEWBOX, SCENES } from '../ui/worlds/scenes';
-import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId } from '../fun/worlds';
+import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId, resetWorlds } from '../fun/worlds';
 import { settleJourney } from '../placement/journey';
 import { TabBar } from '../ui/TabBar';
 import { useApp } from './AppContext';
@@ -80,31 +80,46 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   useEffect(() => {
     if (!data) return;
     void (async () => {
-      // build on what's stored now (a just-saved costume or star must not be overwritten); no kid yet: nothing to record
-      const stored = (await getKid(db)) ?? kid;
-      if (!stored) return;
       // worlds count what he learns after placement (src/placement/journey.ts); an older install's worlds are redone once
-      const j = await settleJourney(db, stored, data.know.known);
-      const redone = j.kid !== stored;
-      const u = updateWorlds(j.kid, j.count);
-      let next = u.kid;
-      // once a day he shows how he feels about it (spec 2026-10-04 §4.6): a little sulk after days away, extra bouncy on a streak
+      const first = (await getKid(db)) ?? kid;
+      if (!first) return; // no kid yet: nothing to record
+      const j = await settleJourney(db, first, data.know.known);
+      const redo = j.kid !== first;
+      // then build on what's stored now, in one transaction (a just-saved costume, star or find must not be overwritten — sweep)
       const day = localDateKey(now());
-      const greet = next.greetedOn !== day;
-      if (greet) {
-        next = { ...next, greetedOn: day };
-        const mood = dayMood(data.sessions.filter((s) => s.completed && !s.free).map((s) => s.date), day);
-        if (mood !== 'plain') {
-          setPropPlay((p) => ({ react: { kind: mood === 'missed' ? 'huff' : 'bouncy', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
-          setSaid(mood === 'missed' ? '你去哪儿了？我好想你！' : '又见面了！');
-          clearTimeout(saidTimer.current);
-          saidTimer.current = setTimeout(() => setSaid(null), 2600);
+      let changed = false;
+      let arrived: ReturnType<typeof updateWorlds>['arrived'] | undefined;
+      let mood: ReturnType<typeof dayMood> | null = null;
+      const plan = (stored: KidState): KidState | null => {
+        const u = updateWorlds(redo ? resetWorlds(stored, j.count) : stored, j.count);
+        let next = u.kid;
+        // once a day he shows how he feels about it (spec 2026-10-04 §4.6): a little sulk after days away, extra bouncy on a streak
+        const greet = next.greetedOn !== day;
+        mood = null;
+        if (greet) {
+          next = { ...next, greetedOn: day };
+          const lessons = data.sessions.filter((s) => !s.free);
+          mood = dayMood(lessons.filter((s) => s.completed).map((s) => s.date), day, lessons.map((s) => s.date));
         }
+        changed = u.changed;
+        arrived = u.arrived;
+        return u.changed || greet || redo ? next : null;
+      };
+      let saved = await updateKid(db, plan);
+      if (!saved && kid && !(await getKid(db))) { // nothing stored yet: start from the one on screen
+        saved = plan(kid);
+        if (saved) await saveKid(db, saved);
       }
-      if (!u.changed && !greet && !redone) return;
-      await saveKid(db, next);
-      setJourneyKid(next);
-      if (u.changed) setArrival(u.arrived);
+      if (!saved) return;
+      const m = mood as ReturnType<typeof dayMood> | null;
+      if (m && m !== 'plain') {
+        setPropPlay((p) => ({ react: { kind: m === 'missed' ? 'huff' : 'bouncy', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
+        setSaid(m === 'missed' ? '你去哪儿了？我好想你！' : '又见面了！');
+        clearTimeout(saidTimer.current);
+        saidTimer.current = setTimeout(() => setSaid(null), 2600);
+      }
+      setJourneyKid(saved);
+      if (changed) setArrival(arrived!);
       await refresh();
     })();
   }, [data]);
@@ -156,7 +171,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         today={today}
         onKid={(next) => {
           setJourneyKid(next);
-          void saveKid(db, next).then(refresh);
+          void updateKid(db, (cur) => ({ ...cur, finds: next.finds, bonusStars: next.bonusStars })).then(refresh); // only what a find changes
         }}
         onSay={(line) => {
           setSaid(line);
