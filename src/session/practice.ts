@@ -48,25 +48,38 @@ export function practiceWords(rec: SessionRecord, rungs: ReadonlyMap<string, num
 }
 
 /** Whether a question type can be asked of this word: reading always, listening with the voice on, the rest when their content exists. `level` is his (spec §4). */
+const askCache = new WeakMap<Word[], Map<string, boolean>>();
 export function askable(word: Word | undefined, pool: Word[], voice: boolean, level = 1): (ask: Ask) => boolean {
+  // building a round asks each word about each question type many times: worked out once per word list (sweep: ~370 → ~40 ms)
+  let cache = askCache.get(pool);
+  if (!cache) askCache.set(pool, (cache = new Map()));
   return (ask) => {
     if (!word || word.paused) return false;
-    switch (ask) {
-      case 'read': return true;
-      case 'listen': return voice;
-      case 'word': return wordCue(word) !== null;
-      case 'fit': return meaningCue(word)?.kind === 'sentence' && fitItem(word, pool, mulberry32(1)) !== null;
-      case 'usage': return !!bankFor(word.text);
-      case 'pair': return zuciBoard(word, mulberry32(1)) !== null;
-      case 'match': return dapeiQuestion(word, mulberry32(1)) !== null;
-      case 'build': return zujuFor(word).length > 0;
-      case 'whole': { const i = idiomOf(word); return !!i && idiomGap(i, null, mulberry32(1)) !== null; }
-      case 'idiom': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomGap(i, word.text, mulberry32(1)) !== null);
-      case 'idiomFit': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomFitItem(i, null, mulberry32(1)) !== null);
-      case 'idiomBuild': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomZuju(i, mulberry32(1)) !== null);
-      case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
-    }
+    const key = `${word.id}|${word.text}|${word.examples?.length ?? 0}|${word.sentences?.length ?? 0}|${word.tags?.join(',') ?? ''}|${ask}|${voice ? 1 : 0}|${level}`;
+    const hit = cache!.get(key);
+    if (hit !== undefined) return hit;
+    const can = canAsk(word, pool, voice, level, ask);
+    cache!.set(key, can);
+    return can;
   };
+}
+
+function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: Ask): boolean {
+  switch (ask) {
+    case 'read': return true;
+    case 'listen': return voice;
+    case 'word': return wordCue(word) !== null;
+    case 'fit': return meaningCue(word)?.kind === 'sentence' && fitItem(word, pool, mulberry32(1)) !== null;
+    case 'usage': return !!bankFor(word.text);
+    case 'pair': return zuciBoard(word, mulberry32(1)) !== null;
+    case 'match': return dapeiQuestion(word, mulberry32(1)) !== null;
+    case 'build': return zujuFor(word).length > 0;
+    case 'whole': { const i = idiomOf(word); return !!i && idiomGap(i, null, mulberry32(1)) !== null; }
+    case 'idiom': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomGap(i, word.text, mulberry32(1)) !== null);
+    case 'idiomFit': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomFitItem(i, null, mulberry32(1)) !== null);
+    case 'idiomBuild': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomZuju(i, mulberry32(1)) !== null);
+    case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
+  }
 }
 
 /** At most two 钓鱼 items a lesson (spec 2026-10-05 §3.4). */
