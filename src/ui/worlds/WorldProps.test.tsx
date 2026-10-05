@@ -141,10 +141,10 @@ describe('WorldProps (spec 2026-10-04 §4.5)', () => {
     vi.mocked(Math.random).mockRestore();
   });
   it('sweep: a crack stays with its world — switching worlds clears it and brings back a hidden prop', () => {
-    const { rerender } = render(<><WorldScene world="blocks" /><WorldProps world="blocks" {...props()} /></>);
+    const { rerender } = render(<><WorldScene world="blocks" time="morning" /><WorldProps world="blocks" {...props()} /></>);
     tap('宝石');
     expect(document.querySelector('.world-props__fx')).toBeTruthy();
-    rerender(<><WorldScene world="yard" /><WorldProps world="yard" {...props()} /></>);
+    rerender(<><WorldScene world="yard" time="morning" /><WorldProps world="yard" {...props()} /></>);
     expect(document.querySelector('.world-props__fx')).toBeNull();
     expect([...document.querySelectorAll<SVGElement>('.world-scene [style*="visibility"]')].filter((e) => e.style.visibility === 'hidden')).toHaveLength(0);
   });

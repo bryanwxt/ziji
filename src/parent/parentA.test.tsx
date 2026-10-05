@@ -135,4 +135,32 @@ describe('RewardsPanel: what he sees (spec 2026-10-04 §3, phase D)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save Chinese title for Lego set' }));
     await waitFor(async () => expect((await listRewards(app.db))[0]).toMatchObject({ zh: '乐高', icon: 'gift' }));
   });
+  it('sweep: an older goal picks its icon with its Chinese title', async () => {
+    const app = await makeAppData();
+    await saveReward(app.db, { id: 'g', title: 'Lego set', emoji: '🧱', metric: 'stars', target: 40, createdAt: 0, claimedAt: null });
+    renderWithApp(<RewardsPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Chinese title for Lego set'), { target: { value: '乐高' } });
+    fireEvent.change(screen.getByLabelText('Icon for Lego set'), { target: { value: 'car' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Chinese title for Lego set' }));
+    await waitFor(async () => expect((await listRewards(app.db))[0]).toMatchObject({ zh: '乐高', icon: 'car' }));
+  });
+  it('sweep: a Chinese title and icon can be changed later', async () => {
+    const app = await makeAppData();
+    await saveReward(app.db, { id: 'g', title: 'Lego set', emoji: '', zh: '乐高', icon: 'gift', metric: 'stars', target: 40, createdAt: 0, claimedAt: null });
+    renderWithApp(<RewardsPanel />, app);
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Chinese title for Lego set' }));
+    const input = screen.getByLabelText('Chinese title for Lego set') as HTMLInputElement;
+    expect(input.value).toBe('乐高');
+    fireEvent.input(input, { target: { value: '大乐高' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Chinese title for Lego set' }));
+    await waitFor(async () => expect((await listRewards(app.db))[0]).toMatchObject({ zh: '大乐高', icon: 'gift' }));
+    await waitFor(() => expect(screen.queryByLabelText('Chinese title for Lego set')).toBeNull()); // closed again
+  });
+  it('sweep: a goal already given asks for nothing', async () => {
+    const app = await makeAppData();
+    await saveReward(app.db, { id: 'g', title: 'Lego set', emoji: '🧱', metric: 'stars', target: 40, createdAt: 0, claimedAt: 5 });
+    renderWithApp(<RewardsPanel />, app);
+    await screen.findByText(/Given/);
+    expect(screen.queryByLabelText('Chinese title for Lego set')).toBeNull();
+  });
 });

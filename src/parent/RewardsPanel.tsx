@@ -22,7 +22,7 @@ export function RewardsPanel() {
   const [title, setTitle] = useState('');
   const [zh, setZh] = useState('');
   const [icon, setIcon] = useState<IconName>('gift');
-  const [fix, setFix] = useState<Record<string, string>>({}); // Chinese titles being added to older goals
+  const [fix, setFix] = useState<Record<string, { zh: string; icon: IconName }>>({}); // Chinese titles being added or changed
   const [zhError, setZhError] = useState<string | null>(null);
   const [metric, setMetric] = useState<RewardGoal['metric']>('stars');
   const [target, setTarget] = useState('100');
@@ -50,11 +50,15 @@ export function RewardsPanel() {
     await saveReward(db, { ...g, claimedAt: now().getTime() });
     await load();
   };
+  const editing = (g: RewardGoal) => fix[g.id] ?? (!g.zh ? { zh: '', icon: g.icon ?? 'gift' } : null); // an older goal asks until it has one
   const saveZh = async (g: RewardGoal) => {
-    const t = (fix[g.id] ?? '').trim();
-    if (!isChineseTitle(t)) { setZhError(NOT_CHINESE); return; }
+    const e = editing(g);
+    const t = (e?.zh ?? '').trim();
+    if (!e || !isChineseTitle(t)) { setZhError(NOT_CHINESE); return; }
     setZhError(null);
-    await saveReward(db, { ...g, zh: t, icon: g.icon ?? 'gift' });
+    await saveReward(db, { ...g, zh: t, icon: e.icon });
+    const { [g.id]: _done, ...rest } = fix;
+    setFix(rest);
     await load();
   };
   const remove = async (g: RewardGoal) => {
@@ -113,12 +117,24 @@ export function RewardsPanel() {
                     <td>{g.icon ? <InkIcon name={g.icon} size={30} /> : <span style={{ fontSize: '28px' }}>{g.emoji}</span>}</td>
                     <td>
                       {g.title}
-                      {g.zh ? <div lang="zh">{g.zh}</div> : (
-                        <div class="row" style={{ justifyContent: 'flex-start', gap: '6px' }}>
-                          <input aria-label={`Chinese title for ${g.title}`} lang="zh" placeholder="Shown to him in Chinese" value={fix[g.id] ?? ''} onInput={(e) => setFix({ ...fix, [g.id]: e.currentTarget.value })} />
-                          <button type="button" class="small-btn" aria-label={`Save Chinese title for ${g.title}`} onClick={() => void saveZh(g)}>Save</button>
-                        </div>
-                      )}
+                      {(() => {
+                        const e = g.claimedAt ? null : editing(g); // a goal already given asks for nothing
+                        if (!e) return g.zh ? (
+                          <div class="row" style={{ justifyContent: 'flex-start', gap: '6px' }}>
+                            <span lang="zh">{g.zh}</span>
+                            {!g.claimedAt && <button type="button" class="small-btn" aria-label={`Edit Chinese title for ${g.title}`} onClick={() => setFix({ ...fix, [g.id]: { zh: g.zh ?? '', icon: g.icon ?? 'gift' } })}>Edit</button>}
+                          </div>
+                        ) : null;
+                        return (
+                          <div class="row" style={{ justifyContent: 'flex-start', gap: '6px' }}>
+                            <input aria-label={`Chinese title for ${g.title}`} lang="zh" placeholder="Shown to him in Chinese" value={e.zh} onInput={(ev) => setFix({ ...fix, [g.id]: { ...e, zh: ev.currentTarget.value } })} />
+                            <select aria-label={`Icon for ${g.title}`} value={e.icon} onChange={(ev) => setFix({ ...fix, [g.id]: { ...e, icon: ev.currentTarget.value as IconName } })}>
+                              {GOAL_ICONS.map((n) => <option key={n} value={n}>{n}</option>)}
+                            </select>
+                            <button type="button" class="small-btn" aria-label={`Save Chinese title for ${g.title}`} onClick={() => void saveZh(g)}>Save</button>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td>{p.value} / {g.target} {g.metric === 'stars' ? '⭐' : 'characters'}</td>
                     <td>
