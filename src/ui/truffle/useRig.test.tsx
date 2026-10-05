@@ -6,7 +6,7 @@ import { Truffle } from './Truffle';
 let reduced = false;
 vi.mock('../motion', () => ({ reducedMotion: () => reduced }));
 let talk: ((on: boolean) => void) | null = null;
-vi.mock('../../audio/speaking', () => ({ onSpeaking: (fn: (on: boolean) => void) => { talk = fn; return () => { talk = null; }; } }));
+vi.mock('../../audio/speaking', () => ({ onSpeaking: (fn: (on: boolean) => void) => { talk = fn; return () => { talk = null; }; }, settleIfSilent: () => {} }));
 
 let frames: FrameRequestCallback[] = [];
 let clock = 0; // frame time keeps counting across run() calls, so idle timing can be sampled frame by frame

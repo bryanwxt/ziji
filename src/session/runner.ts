@@ -143,7 +143,7 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   const queue = [...rec.practiceQueue!];
   if (!correct && !item.retry) {
     const { due: _due, ...again } = item; // a retry is practice only, never a due first appearance
-    queue.splice(Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length), 0, { ...again, grades: null, retry: true });
+    queue.splice(Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length), 0, { ...again, grades: null, retry: true, missed: true });
   }
   const next: SessionRecord = {
     ...rec,

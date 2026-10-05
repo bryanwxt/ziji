@@ -93,7 +93,7 @@ export function SessionScreen({ free }: { free: boolean }) {
         ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng, undefined, levelOf(know)), localDateKey(today), today.getTime())
         : await startOrResumeSession(db, today);
       // a lesson just begun: the first Truffle he sees waves and says hello (spec 2026-10-04 §4.6); never on coming back to it
-      if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex) requestGreeting('你好！我们开始吧！');
+      if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex && rec.plan.steps[0] === 'newwords' && rec.flashQueue.length > 0) requestGreeting('你好！我们开始吧！'); // it opens on a new word's card, never on a question (spec §4.3)
       latest.current = rec;
       setState({
         rec,
@@ -378,6 +378,7 @@ export function SessionScreen({ free }: { free: boolean }) {
           item={flashItem}
           ask={step === 'newwords' ? 'listen' : undefined}
           reintroOnMiss={step === 'newwords'}
+          peek={step === 'flashcards' && flashItem.retry} // an older lesson's retries are words he missed
           idiom={step === 'newwords' ? idiomsFor(flashWord, level, know.words)[0] ?? null : null}
           word={flashWord}
           pool={know.words}

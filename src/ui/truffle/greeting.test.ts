@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { dayMood, requestGreeting, takeGreeting } from './greeting';
 
 describe('greetings and his memory of the days (spec 2026-10-04 §4.6)', () => {
@@ -15,3 +15,14 @@ describe('greetings and his memory of the days (spec 2026-10-04 §4.6)', () => {
     expect(dayMood(['2026-09-30'], '2026-10-01')).toBe('streak'); // across a month end
   });
 });
+
+describe('final review: a greeting never lands on a later screen', () => {
+  it('one not taken within a few seconds is dropped', () => {
+    vi.useFakeTimers();
+    requestGreeting('你好！');
+    vi.advanceTimersByTime(5000);
+    expect(takeGreeting()).toBeNull();
+    vi.useRealTimers();
+  });
+});
+

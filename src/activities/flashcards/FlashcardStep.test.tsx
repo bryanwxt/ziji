@@ -439,11 +439,11 @@ describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () =
 
 describe('a hard question (spec 2026-10-04 §4.6, phase E)', () => {
   it('a word he missed comes back: Truffle covers his eyes and peeks', () => {
-    render(<FlashcardStep {...base} item={{ wordId: he.id, isNew: false, retry: true }} ask="read" voice={false} onDone={vi.fn()} />);
+    render(<FlashcardStep {...base} item={{ wordId: he.id, isNew: false, retry: true }} peek ask="read" voice={false} onDone={vi.fn()} />);
     expect(document.querySelector('svg.truffle')?.getAttribute('data-react')).toBe('peek');
   });
-  it('a first try does not', () => {
-    render(<FlashcardStep {...base} item={{ wordId: he.id, isNew: false, retry: false }} ask="read" voice={false} onDone={vi.fn()} />);
+  it('a first try does not, nor a practice-only question (free play marks every item retry)', () => {
+    render(<FlashcardStep {...base} item={{ wordId: he.id, isNew: false, retry: true }} ask="read" voice={false} onDone={vi.fn()} />);
     expect(document.querySelector('svg.truffle')?.getAttribute('data-react')).not.toBe('peek');
   });
 });

@@ -1,16 +1,18 @@
 // Truffle greets the child at the start of a lesson (spec 2026-10-04 §4.6). The lesson asks once; the next live Truffle to
 // appear takes the greeting (each screen draws its own Truffle, so none of them needs to know).
-let pending: string | null = null;
+let pending: { line: string; at: number } | null = null;
+/** A greeting not taken within this long is dropped, so it never lands on a later screen (final review). */
+const GREETING_MS = 4000;
 
 export function requestGreeting(line: string): void {
-  pending = line;
+  pending = { line, at: Date.now() };
 }
 
 /** The greeting waiting for the next Truffle, if any; taking it clears it. */
 export function takeGreeting(): string | null {
-  const line = pending;
+  const p = pending;
   pending = null;
-  return line;
+  return p && Date.now() - p.at <= GREETING_MS ? p.line : null;
 }
 
 /**

@@ -50,11 +50,13 @@ interface Props {
   reintroOnMiss?: boolean;
   /** 认新字: a 成语 that uses the word, at his level or one up (spec 2026-10-05 §2.1, §4) */
   idiom?: Idiom | null;
+  /** a word he missed is back: Truffle covers his eyes and peeks (spec 2026-10-04 §4.6) */
+  peek?: boolean;
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, peek = false }: Props) {
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
@@ -76,7 +78,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   // what he reacts to (spec 2026-10-04 §4.4): a new word when it is shown, then each answer
   const reactN = useRef(0);
   // a new word surprises him; a word he missed coming back makes him cover his eyes and peek (spec 2026-10-04 §4.6)
-  const [react, setReact] = useState<Reaction | null>(() => (item.isNew && !item.retry ? { kind: 'newWord', key: ++reactN.current } : item.retry ? { kind: 'peek', key: ++reactN.current } : null));
+  const [react, setReact] = useState<Reaction | null>(() => (item.isNew && !item.retry ? { kind: 'newWord', key: ++reactN.current } : peek ? { kind: 'peek', key: ++reactN.current } : null));
   const quizAt = useRef(performance.now());
   const petRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef(new Map<string, HTMLButtonElement>());

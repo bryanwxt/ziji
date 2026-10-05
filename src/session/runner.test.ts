@@ -182,7 +182,7 @@ describe('练一练 on the record (spec 2026-10-05 §3)', () => {
     const rec = afterPracticeAnswer(startPractice(inPractice(), queue), false, 2000);
     const again = rec.practiceQueue!.filter((x) => x.wordId === 'b:a');
     expect(again).toHaveLength(2);
-    expect(again[1]).toEqual({ wordId: 'b:a', rung: 2, ask: 'word', grades: null, retry: true });
+    expect(again[1]).toEqual({ wordId: 'b:a', rung: 2, ask: 'word', grades: null, retry: true, missed: true }); // he missed it: Truffle peeks when it comes back
     expect(rec.practiceQueue!.findIndex((x, i) => i > 0 && x.wordId === 'b:a')).toBe(1 + PRACTICE_RETRY_GAP);
     expect(afterPracticeAnswer({ ...rec, practiceIndex: 1 + PRACTICE_RETRY_GAP }, false, 100).practiceQueue).toHaveLength(7); // a retry never adds another
   });

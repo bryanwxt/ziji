@@ -102,3 +102,13 @@ describe('成语 questions (spec 2026-10-05 §3.2 rung 5, phase C)', () => {
   });
 });
 
+describe('final review I2: Truffle peeks only at a word he missed', () => {
+  it('a retry after a miss peeks; a free-play question (also marked retry) does not', () => {
+    const missed = render(<PracticeQuestion {...base} word={he} item={{ wordId: he.id, rung: 1, ask: 'read', grades: null, retry: true, missed: true }} onDone={vi.fn()} />);
+    expect(missed.container.querySelector('svg.truffle')?.getAttribute('data-react')).toBe('peek');
+    missed.unmount();
+    const free = render(<PracticeQuestion {...base} word={he} item={{ wordId: he.id, rung: 1, ask: 'read', grades: null, retry: true }} onDone={vi.fn()} />);
+    expect(free.container.querySelector('svg.truffle')?.getAttribute('data-react')).not.toBe('peek');
+  });
+});
+

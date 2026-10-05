@@ -222,5 +222,11 @@ describe('paws (spec 2026-10-04 §4.6, phase E)', () => {
     expect(container.querySelector('[data-part="paw-r"]')!.innerHTML).toContain('M198 262');
     expect(container.querySelector('[data-part="body"]')!.innerHTML).not.toContain('M122 262');
   });
+  it('final review I1: a held item (the wand) moves with his right paw, so a raised paw never leaves a third one behind', () => {
+    const { container } = render(<Truffle mood="neutral" accessory="wand" />);
+    const pawR = container.querySelector('[data-part="paw-r"]')!;
+    expect(pawR.querySelector('.truffle__accessory--over')).toBeTruthy();
+    expect(container.querySelectorAll('.truffle__accessory--over')).toHaveLength(1);
+  });
 });
 

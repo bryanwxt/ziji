@@ -19,7 +19,7 @@ export const ASKS: Record<Rung, Ask[]> = {
 export type Grades = 'recognise' | 'meaning' | 'use' | null;
 
 /** due: the first appearance of a word whose revision is due today (pacing counts these when time runs out, spec §2.2). */
-export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean }
+export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean; missed?: boolean } // missed: it came back after a wrong answer (Truffle peeks)
 
 export interface RoundWord {
   wordId: string;

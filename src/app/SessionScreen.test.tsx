@@ -111,6 +111,16 @@ describe('SessionScreen', () => {
     expect(document.querySelector('.pet__bubble')?.textContent ?? '').not.toContain('你好');
   });
 
+  it('final review: with no new words today the lesson starts on a question, and he does not greet over it (spec §4.3)', async () => {
+    const app = await setup();
+    await updateSettings(app.db, { activities: { newwords: false, practice: true, writing: false, speaking: false } });
+    await putCards(app.db, [makeCard(words[0]!.id, 'recognise', new Date(2026, 9, 1))]);
+    renderWithApp(<SessionScreen free={false} />, app);
+    await waitFor(() => expect(document.querySelector('.choice, .fishtile, .tap')).toBeTruthy(), { timeout: 4000 });
+    await new Promise((r) => setTimeout(r, 300));
+    expect(document.querySelector('.pet__bubble')?.textContent ?? '').not.toContain('你好');
+  });
+
   it('skips a word that was paused after the plan was made', async () => {
     const app = await setup();
     const first = renderWithApp(<SessionScreen free={false} />, app);

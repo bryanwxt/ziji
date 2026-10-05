@@ -2,7 +2,7 @@ import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
 import { cardCentre, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
-import { onSpeaking } from '../../audio/speaking';
+import { onSpeaking, settleIfSilent } from '../../audio/speaking';
 import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS, type Motion, type PawPose, type Reaction, type Track } from './timelines';
 
 type Key = keyof Face;
@@ -265,6 +265,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         pawL: pawTransform(pw.lx, pw.ly, pw.lr, 138), pawR: pawTransform(pw.rx, pw.ry, pw.rr, 182),
       };
       // talking: the mouth opens and closes while the iPad speaks; the face itself is untouched, so it settles when speech ends
+      if (talking.current && (Math.floor(now / 500) !== Math.floor((now - 17) / 500))) settleIfSilent(); // about twice a second
       const face = talking.current && !reduced ? { ...cur.current, mouthOpen: Math.max(cur.current.mouthOpen, 0.12 + 0.38 * Math.abs(Math.sin(t * 13))) } : cur.current;
       paint(els, face, pose, extras.current);
       start();

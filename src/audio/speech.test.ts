@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { onSpeaking, pickVoice, setSpeechRate, speak, stopSpeaking } from './speech';
+import { settleIfSilent } from './speaking';
 
 const v = (lang: string, localService = true, name = lang) => ({ lang, localService, name }) as SpeechSynthesisVoice;
 
@@ -83,6 +84,26 @@ describe('talking (spec 2026-10-04 §4.6): who is told when the iPad speaks', ()
     speak('你好');
     spoken[0]!.onstart!();
     stopSpeaking();
+    off();
+    expect(seen).toEqual([true, false]);
+  });
+});
+
+describe('final review: the mouth never keeps going after speech has quietly stopped', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('a check finds the iPad silent (no end event came) and turns talking off', () => {
+    const spoken: { onstart?: () => void }[] = [];
+    const synth = { cancel: vi.fn(), speak: (u: never) => spoken.push(u), getVoices: () => [], speaking: true, pending: false };
+    vi.stubGlobal('speechSynthesis', synth);
+    vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; volume = 1; voice = null; constructor(t: string) { this.text = t; } });
+    const seen: boolean[] = [];
+    const off = onSpeaking((on) => seen.push(on));
+    speak('你好');
+    spoken[0]!.onstart!();
+    settleIfSilent();
+    expect(seen).toEqual([true]); // still speaking
+    synth.speaking = false; // backgrounded mid-utterance: no onend ever comes
+    settleIfSilent();
     off();
     expect(seen).toEqual([true, false]);
   });

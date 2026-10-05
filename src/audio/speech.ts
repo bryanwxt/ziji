@@ -2,6 +2,7 @@ import { setSpeaking } from './speaking';
 
 let voice: SpeechSynthesisVoice | null = null;
 let rate = 0.8;
+let current: SpeechSynthesisUtterance | null = null; // kept, so the browser never drops it (and its end event) early
 
 const available = () => typeof speechSynthesis !== 'undefined' && !!speechSynthesis;
 
@@ -53,6 +54,7 @@ export function speak(text: string, { queue = false }: { queue?: boolean } = {})
   u.onstart = () => setSpeaking(true);
   u.onend = () => setSpeaking(false);
   u.onerror = () => setSpeaking(false);
+  current = u;
   u.lang = 'zh-CN';
   u.rate = isShortWord(text) ? Math.round(rate * SHORT_WORD_PACE * 100) / 100 : rate;
   if (voice) u.voice = voice;
