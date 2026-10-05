@@ -282,7 +282,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Celebration */
 .celebrate { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; text-align: center; }
 .celebrate h1 { font-size: 56px; margin: 0; }
-.celebrate--night .label__py { opacity: 0.85; }
+.celebrate--burst .label__py { opacity: 0.85; }
 .stars { font-size: 72px; display: flex; gap: 10px; min-height: 86px; }
 .chest { background: none; border: none; padding: 0; }
 .chest svg { overflow: visible; }
@@ -491,11 +491,11 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
   background: linear-gradient(rgba(42,38,48,.18), rgba(42,38,48,.18)) center / 1.5px 100% no-repeat, linear-gradient(90deg, rgba(42,38,48,.18), rgba(42,38,48,.18)) center / 100% 1.5px no-repeat; }
 .wotd__py { font-style: italic; font-weight: 800; }
 
-/* Celebration on red */
-/* cream text on its own headings only: a colour on the whole block leaked into Truffle's bubble and the hold button */
-.celebrate--night > h1, .celebrate--night > p, .celebrate--night .prize__costume { color: var(--paper); }
-.celebrate--night > h1 { text-shadow: 4px 4px 0 var(--ink); }
-.celebrate--night .pet__bubble, .celebrate--night .hold { color: var(--ink); text-shadow: none; }
+/* Celebration on the world's sunburst (spec 2026-10-04 §3, phase D) */
+/* ink text with a paper shadow on its own headings only: a colour on the whole block leaked into Truffle's bubble and the hold button */
+.celebrate--burst > h1, .celebrate--burst > p, .celebrate--burst .prize__costume { color: var(--ink); }
+.celebrate--burst > h1 { text-shadow: 3px 3px 0 var(--paper); }
+.celebrate--burst .pet__bubble, .celebrate--burst .hold { color: var(--ink); text-shadow: none; }
 
 /* Hold button */
 .hold { color: var(--ink); position: relative; width: 112px; height: 112px; border-radius: 50%; border: var(--panel-border); background: var(--surface); box-shadow: var(--panel-shadow); display: grid; place-items: center; touch-action: none; }
@@ -527,8 +527,8 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .part--radical { color: var(--green-ink); text-decoration: underline 3px var(--green); text-underline-offset: 6px; }
 .swatch { display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--surface); border: 2.5px solid var(--line-strong); }
 .swatch.is-on { background: var(--green-soft); border: var(--panel-border); box-shadow: 3px 3px 0 var(--ink); }
-.celebrate--night > p, .celebrate--night > h1 .label__py { text-shadow: 2px 2px 0 var(--ink); }
-.celebrate--night > p { font-size: 26px; font-weight: 900; }
+.celebrate--burst > p, .celebrate--burst > h1 .label__py { text-shadow: 2px 2px 0 var(--paper); }
+.celebrate--burst > p { font-size: 26px; font-weight: 900; }
 @media (prefers-reduced-motion: reduce) {
   .hold.is-holding .hold__ring circle { transition: stroke-dashoffset var(--hold-ms, 1200ms) linear !important; }
 }
@@ -1191,3 +1191,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* Home's cards are paper cards on the stage, like the lesson card (spec 2026-10-04 §3) */
 .home__cards .card, .home__cards .goal { background: #fffaf0; border: 0; box-shadow: 0 8px 22px rgba(43, 58, 42, 0.18); border-radius: 18px; }
 .home__cards .goal--reached { background: var(--green-soft); }
+/* the celebration's sunburst in the world's colours (spec 2026-10-04 §3, phase D): rays and a soft glow; the rays turn slowly
+   (a transform on a copy, never repainting the gradient), and stand still with reduced motion */
+.burst { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--burst-a); pointer-events: none; }
+.burst::before { content: ''; position: absolute; left: 50%; top: 42%; width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax; background: repeating-conic-gradient(from 0deg, var(--burst-a) 0 10deg, var(--burst-b) 10deg 20deg); }
+.burst::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 42%, var(--burst-glow) 0 18%, transparent 60%); }
+.burst--turning::before { animation: burst-turn 60s linear infinite; }
+@keyframes burst-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .burst--turning::before { animation: none; } }
+.celebrate__watch { display: flex; justify-content: center; margin-bottom: -18px; }

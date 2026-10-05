@@ -14,18 +14,22 @@ import { celebrate } from '../ui/confetti';
 import { Label } from '../ui/Label';
 import { burst, flyAlong } from '../ui/motion';
 import { Pet } from '../ui/Pet';
-import { Scene } from '../ui/Scene';
 import { Truffle } from '../ui/truffle/Truffle';
 import type { Reaction } from '../ui/truffle/timelines';
 import { useApp } from './AppContext';
 import { loadKnowledge } from './knowledge';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { accessoryById } from '../fun/accessories';
+import { currentWorld } from '../fun/worlds';
+import { burstStyle } from '../ui/worlds/burst';
+import { reducedMotion } from '../ui/motion';
 
 type Phase = 'stars' | 'chest' | 'power' | 'badges';
 // his moments here (spec 2026-10-04 §4.4): an overjoyed hop at the stars, then proud; a pounce as the chest's prize appears
 const DONE: Reaction = { kind: 'done', key: 1 };
 const POUNCE: Reaction = { kind: 'pounce', key: 1 };
+/** He wiggles with excitement at the closed chest every so often (spec 2026-10-04 §4.4). */
+const WATCH_EVERY_MS = 2400;
 
 interface Sequence {
   order: Phase[];
@@ -49,6 +53,8 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const [powered, setPowered] = useState(false);
   const [nudge, setNudge] = useState(0); // a tap, not a hold, on the chest: it wiggles as a hint (children tap first)
   const hint = () => setNudge((n) => n + 1);
+  const [wiggle, setWiggle] = useState(1); // the key of his next excited wiggle at the chest
+  const still = reducedMotion();
   const stars = rec.free ? 0 : starsOf(rec.completedSteps);
 
   useEffect(() => {
@@ -87,6 +93,13 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
       cancelled = true;
     };
   }, [seq]);
+
+  // at the closed chest he wiggles now and then; never with reduced motion
+  useEffect(() => {
+    if (phase !== 'chest' || chest || still) return;
+    const t = setInterval(() => setWiggle((n) => n + 1), WATCH_EVERY_MS);
+    return () => clearInterval(t);
+  }, [phase, chest]);
 
   if (!seq || !kid) return <div class="screen loading"><InkIcon name="star" size={88} label="加载中" /></div>;
 
@@ -137,14 +150,15 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
 
   return (
     <div class="screen">
-      <Scene kind="night" />
+      {/* a sunburst in the current world's colours (spec 2026-10-04 §3) */}
+      <div class={`burst${still ? '' : ' burst--turning'}`} data-world={currentWorld(kid)} style={burstStyle(currentWorld(kid))} aria-hidden="true" />
       {!rec.free && (
         <header class="topbar">
           <span class="spacer" />
           <span key={landed} ref={counterRef} class={`chip ${landed ? 'is-bumping' : ''}`}><InkIcon name="star" size={20} /> {seq.starsBefore + landed}</span>
         </header>
       )}
-      <div class="celebrate celebrate--night">
+      <div class="celebrate celebrate--burst">
         {phase === 'stars' && (
           <>
             <h1><Label zh={rec.free ? '练习得很好！' : '太棒了！'} /></h1>
@@ -178,6 +192,12 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
                 ) : (
                   <span class="prize__stars"><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /></span>
                 )}
+              </div>
+            )}
+            {(!chest || chest.kind === 'stars') && (
+              // he watches the chest and wiggles, then pounces when it opens (spec 2026-10-04 §4.4)
+              <div class="celebrate__watch">
+                <Truffle mood="cheer" outfit={kid.outfit} accessory={visibleAccessory(kid)} size={130} alive react={chest ? POUNCE : still ? null : { kind: 'excited', key: wiggle }} />
               </div>
             )}
             <div ref={chestRef} key={nudge} class={nudge && !chest ? 'chest-hint' : undefined}>

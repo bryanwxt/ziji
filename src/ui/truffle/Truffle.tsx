@@ -112,6 +112,7 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
       height={Math.round((size * 270) / 260)}
       data-mood={mood}
       data-expression={expr}
+      data-react={react?.kind}
       data-calm={calm ? 'true' : undefined}
       data-alive={alive ? 'true' : undefined}
       data-power={layer ? power! : undefined}
