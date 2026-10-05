@@ -336,6 +336,9 @@ async function sweep(browser: Browser, size: Size) {
   // Lessons, one activity at a time
   const only = (...ks: ActivityKind[]): Record<ActivityKind, boolean> => ({ newwords: ks.includes('newwords'), practice: ks.includes('practice'), writing: ks.includes('writing'), speaking: ks.includes('speaking') });
   await run('newwords', AFTERNOON, { activities: only('newwords') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'newwords'); });
+  for (const w of WORLDS) { // each world behind a lesson card (parent, 2026-10-05: scenery showed round the card and buttons)
+    await run(`lesson-${w.id}`, AFTERNOON, { world: w.id, activities: only('newwords') }, async (p) => { await startLesson(p); await walkLesson(p, size, `lesson-${w.id}`, { firstOnly: true }); });
+  }
   await run('practice', AFTERNOON, { activities: only('newwords', 'practice') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'practice'); });
   await run('practice-evening', EVENING, { activities: only('newwords', 'practice') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'practice-evening'); });
   await run('writing', AFTERNOON, { activities: only('writing') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing', { firstOnly: true }); });

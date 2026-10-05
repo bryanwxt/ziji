@@ -176,6 +176,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
             <div class="flash__prompt">
               {quiz.cue ? (
                 <div class="meaning-prompt">
+                  {quiz.cue.kind === 'word' && <div class="pinyin meaning-prompt__py">{quiz.cue.pinyin}</div>} {/* above the 组词, as on every card */}
                   {quiz.cue.kind === 'sentence' ? (
                     <div class={`meaning-cue meaning-cue--sentence${Array.from(quiz.cue.full).length <= 4 ? ' meaning-cue--short' : ''}`} lang="zh" data-q={Array.from(quiz.cue.full).length <= 4 || undefined} style={`--len:${Array.from(quiz.cue.full).length}`}>
                       <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} />
@@ -188,7 +189,6 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                       {quiz.cue.after}
                     </div>
                   )}
-                  {quiz.cue.kind === 'word' && <div class="pinyin">{quiz.cue.pinyin}</div>}
                 </div>
               ) : (
                 <>
@@ -227,8 +227,10 @@ function UsageLine({ word }: { word: Word }) {
   if (!line) return null;
   return (
     <div class="usage" lang="zh">
-      <span class="hanzi usage__text">{line.before}<mark class="usage__word">{word.text}</mark>{line.after}</span>
-      {line.pinyin && <span class="pinyin">{line.pinyin}</span>}
+      {/* pinyin above, like every 组词 and 成语 on the card (parent, 2026-10-05): over the whole 组词, or over the word in a sentence */}
+      <span class="hanzi usage__text" data-py={line.isWord ? line.pinyin : undefined}>
+        {line.before}<mark class="usage__word" data-py={line.isWord ? undefined : line.pinyin}>{word.text}</mark>{line.after}
+      </span>
       <SpeakButton text={line.full} />
     </div>
   );
