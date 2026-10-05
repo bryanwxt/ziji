@@ -976,7 +976,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* 认一认 meaning question: the 组词 word with the character blanked (spec §19) */
 .meaning-prompt { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .meaning-cue { white-space: nowrap; font-size: min(var(--hanzi-xl), calc(70vw / var(--len, 2))); line-height: 1.05; background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); padding: 0.04em 0.2em 0.08em; }
-.meaning-cue__blank { color: var(--muted); border-bottom: 4px dashed var(--ink); padding: 0 0.05em; }
+.meaning-cue__blank { color: transparent; display: inline-block; width: 0.95em; height: 0.95em; line-height: 0.95em; overflow: hidden; vertical-align: -0.1em; border: 2.5px dashed var(--ink); border-radius: 6px; opacity: 0.55; margin: 0 0.08em; } /* the same dashed box as a Label's gap */
 @media (max-width: 599px) {
   /* the new-word card on a phone: smaller speak buttons (still ≥44px), tighter rows */
   .intro__card { padding: 10px 18px; gap: 4px; }
@@ -1001,7 +1001,6 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .meaning-cue.meaning-cue--sentence { white-space: normal; font-size: clamp(24px, 3.6dvh, 34px); line-height: 1.5; padding: 10px 16px; max-width: min(100%, 640px); text-align: left; }
 
 /* the word in use after a 认一认 answer and on the new-word card (spec §20 part 1) */
-.meaning-prompt__py { margin-bottom: -4px; }
 .hanzi--lg { font-family: var(--hanzi); font-size: clamp(56px, 10dvh, 110px); line-height: 1.05; }
 .flash__prompt .hanzi--lg { background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); padding: 0.04em 0.18em 0.08em; }
 .flash__prompt { display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -1014,7 +1013,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* 钓鱼 as 字辨: the word with its gap, and four fish (spec §20 part 8) */
 .pond--four { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 420px; }
 .zibian__word { font-size: clamp(48px, 8dvh, 80px); gap: 4px; padding: 4px 20px; background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); }
-.zibian__blank { color: var(--muted); border-bottom: 4px dashed var(--ink); padding: 0 0.05em; }
+.zibian__blank { color: transparent; display: inline-block; width: 0.95em; height: 0.95em; line-height: 0.95em; overflow: hidden; vertical-align: -0.1em; border: 2.5px dashed var(--ink); border-radius: 6px; opacity: 0.55; margin: 0 0.08em; }
 .zibian__radical { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-size: 20px; }
 /* its feedback: one compact row per character (银：钅 金), and 继续 always inside the bar */
 .zibian__why { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }

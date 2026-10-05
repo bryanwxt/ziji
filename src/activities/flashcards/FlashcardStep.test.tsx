@@ -232,7 +232,11 @@ describe('认一认 meaning questions (spec §19)', () => {
     const onDone = vi.fn();
     render(<FlashcardStep {...base} word={xi} item={{ wordId: 'b:惜', isNew: false, retry: false, mode: 'meaning' }} voice onDone={onDone} />);
     expect(document.querySelector('.meaning-cue')?.textContent).toContain('珍');
-    expect(document.querySelector('.meaning-cue__blank')).toBeTruthy();
+    // the gap is a dashed box with its syllable over it, the other characters with theirs (parent, 2026-10-05)
+    const blank = document.querySelector('.meaning-cue .label__cell--blank')!;
+    expect(blank).toBeTruthy();
+    expect(blank.querySelector('.label__py')!.textContent).toBe('xī');
+    expect(document.querySelector('.meaning-cue .label__cell--zh .label__py')!.textContent).toBe('zhēn');
     expect(speak).toHaveBeenCalledWith('珍惜');
     expect(document.body.textContent).not.toContain('cherish');
     expect(document.querySelectorAll('.choice')).toHaveLength(4);

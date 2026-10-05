@@ -178,17 +178,15 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
             <div class="flash__prompt">
               {quiz.cue ? (
                 <div class="meaning-prompt">
-                  {quiz.cue.kind === 'word' && <div class="pinyin meaning-prompt__py">{quiz.cue.pinyin}</div>} {/* above the 组词, as on every card */}
                   {quiz.cue.kind === 'sentence' ? (
                     <div class={`meaning-cue meaning-cue--sentence${Array.from(quiz.cue.full).length <= 4 ? ' meaning-cue--short' : ''}`} lang="zh" data-q={Array.from(quiz.cue.full).length <= 4 || undefined} style={`--len:${Array.from(quiz.cue.full).length}`}>
                       <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} />
                       <SpeakButton text={phase === 'feedback' ? quiz.cue.full : `${quiz.cue.before}，，${quiz.cue.after}`} />
                     </div>
                   ) : (
-                    <div class="hanzi meaning-cue" lang="zh" data-q style={`--len:${Array.from(quiz.cue.full).length}`}>
-                      {quiz.cue.before}
-                      <span class="meaning-cue__blank" aria-label="空格">{phase === 'feedback' ? word.text : '？'}</span>
-                      {quiz.cue.after}
+                    // like every line on the card: each syllable over its character, the gap a dashed box with its sound over it (parent, 2026-10-05)
+                    <div class="meaning-cue meaning-cue--sentence meaning-cue--short meaning-cue--word" lang="zh" data-q style={`--len:${Array.from(quiz.cue.full).length}`}>
+                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} py={quiz.cue.pinyin} />
                     </div>
                   )}
                 </div>

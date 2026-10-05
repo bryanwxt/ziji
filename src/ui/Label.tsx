@@ -27,18 +27,21 @@ export function Label({ zh, py: given, pinyinFor, mark }: {
     const out: Cell[] = [];
     const all = pinyin(zh, { type: 'all' });
     const ctx = given?.trim().split(/\s+/);
-    const fits = ctx && ctx.length === all.filter((d) => d.isZh).length;
+    const zhCount = all.filter((d) => d.isZh).length;
+    const fits = ctx && ctx.length === zhCount;
+    // syllables for the blanks too: the gap's sound is the clue in a 组词 with its character missing (parent, 2026-10-05)
+    const withBlanks = ctx && !fits && ctx.length === zhCount + (zh.match(/＿/g) ?? []).length;
     let k = 0;
     for (const d of all) {
       if (d.isZh) {
-        const syl = fits ? ctx[k++]! : d.pinyin;
+        const syl = fits || withBlanks ? ctx[k++]! : d.pinyin;
         out.push({ py: !pinyinFor || pinyinFor(d.origin) ? syl : '', ch: d.origin, zh: true });
         continue;
       }
       // pinyin-pro may hand a run like "＿！" over as one piece; split out each blank
       for (const part of d.origin.split(/(＿)/).filter(Boolean)) {
         const prev = out[out.length - 1];
-        if (part === BLANK) out.push({ py: '', ch: BLANK, blank: true });
+        if (part === BLANK) out.push({ py: withBlanks ? ctx[k++]! : '', ch: BLANK, blank: true });
         else if (prev && !prev.zh && !prev.blank) prev.ch += part; // keep "45" or "！" runs together
         else out.push({ py: '', ch: part });
       }
