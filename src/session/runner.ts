@@ -143,7 +143,9 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   const queue = [...rec.practiceQueue!];
   if (!correct && !item.retry) {
     const { due: _due, ...again } = item; // a retry is practice only, never a due first appearance
-    queue.splice(Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length), 0, { ...again, grades: null, retry: true, missed: true });
+    let at = Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length);
+    while (at < queue.length && (queue[at - 1]?.wordId === item.wordId || queue[at]?.wordId === item.wordId)) at++; // never beside the same word (sweep)
+    queue.splice(at, 0, { ...again, grades: null, retry: true, missed: true });
   }
   const next: SessionRecord = {
     ...rec,

@@ -26,7 +26,8 @@ export async function applyDictationMistakes(db: AppDb, text: string, now: Date,
   // new words are added; a built-in on no list joins the 听写 list, so its 写 choice survives the next launch's re-seed
   const { added, promoted } = makeParentWords(writable, { listName: DICTATION_LIST, writeable: true, existing, now: now.getTime() });
   // first in the new-word queue too, ahead of older unstarted lists (as 朗读 misreads are)
-  for (const w of [...added, ...promoted]) w.listedAt = -now.getTime();
+  const typed = new Map(writable.map((p, i) => [p.text, i]));
+  for (const w of [...added, ...promoted]) w.listedAt = -now.getTime() + (typed.get(w.text) ?? 0); // in the order typed
   await putWords(db, [...added, ...promoted]);
   const byText = new Map([...existing, ...promoted, ...added].map((w) => [w.text, w]));
   const marked: string[] = [];

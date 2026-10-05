@@ -142,3 +142,18 @@ describe('imported class data in backups (deferred minor, plan 12)', () => {
     expect([w.sentences, w.pairs, w.tags]).toEqual([[{ text: '要保持安静。', pinyin: '' }], ['安静'], ['成语']]);
   });
 });
+
+describe('sweep: restoring an older backup', () => {
+  it('runs the settings migration straight away (old activity switches become today\'s)', async () => {
+    const db = await freshDb();
+    await db.put('settings', { newPerDay: 4, sessionMinutes: 30, lessonVersion: 3, activities: { flashcards: true, choose: true, components: false, writing: true, speaking: true } } as never, 'main');
+    const text = await exportBackup(db, { includeMedia: false, now: 1 });
+    const target = await freshDb();
+    await applyBackup(target, readBackup(text));
+    const s = await getSettings(target);
+    expect(s.lessonVersion).toBe(4);
+    expect(s.activities).toMatchObject({ newwords: true, practice: true, writing: true, speaking: true });
+    expect(s.newPerDay).toBe(8);
+  });
+});
+

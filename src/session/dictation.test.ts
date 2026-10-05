@@ -101,3 +101,13 @@ describe('school 听写 mistakes (spec §19 part 3)', () => {
     expect(byId.get(plan.newWordIds[0]!)).toBe('新加坡');
   });
 });
+
+describe('sweep: 听写 mistakes keep the order typed', () => {
+  it('each new word comes first in line in the order the parent typed it', async () => {
+    const db = await freshDb();
+    await applyDictationMistakes(db, '新加坡\n小学\n朋友们', new Date(2026, 9, 6), async () => 'yes');
+    const ws = (await allWords(db)).filter((w) => w.listName === '听写 mistakes').sort((a, b) => a.listedAt! - b.listedAt!);
+    expect(ws.map((w) => w.text)).toEqual(['新加坡', '小学', '朋友们']);
+  });
+});
+

@@ -70,6 +70,7 @@ export async function markWriteSkipped(db: AppDb, wordId: string, now: Date): Pr
 async function todaysPace(db: AppDb, now: Date, settings: Settings): Promise<number> {
   const today = localDateKey(now);
   if (settings.pace?.day === today) return Math.min(settings.pace.perDay, settings.newPerDay); // a ceiling lowered today applies today
+  if (settings.newPerDay <= 0) return 0; // new words switched off: his pace is kept for when they come back (sweep)
   const sessions = (await allSessions(db)).filter((s) => !s.free && s.date < today).sort((a, b) => b.date.localeCompare(a.date));
   const logs = await logsSince(db, addDays(now, -(LOOKBACK_DAYS + 1)).getTime());
   const rounds = sessions.filter((s) => s.completedSteps.includes('practice')).slice(0, 2).map(ranOut);

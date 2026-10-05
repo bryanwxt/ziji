@@ -177,3 +177,15 @@ describe('an extra lesson (parent, 2026-10-05: more than one lesson a day; the b
     expect(await getSession(db, '2026-10-02')).toEqual(done); // never saved over the day's lesson
   });
 });
+
+describe('sweep: a day with new words switched off keeps his pace', () => {
+  it('switching new words off for a day and back on picks up where he was, not at 3', async () => {
+    const db = await freshDb();
+    await putWords(db, builtinWords(0));
+    await updateSettings(db, { pace: { day: '2026-10-05', perDay: 6, reason: 'kept 9 of 10 recent new words' }, newPerDay: 0 });
+    expect((await startOrResumeSession(db, new Date(2026, 9, 6, 16))).plan.newWordIds).toHaveLength(0);
+    await updateSettings(db, { newPerDay: 8 });
+    expect((await startOrResumeSession(db, new Date(2026, 9, 7, 16))).plan.newWordIds).toHaveLength(6);
+  });
+});
+

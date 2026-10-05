@@ -285,3 +285,14 @@ describe('写一写 by character (spec 2026-10-05 §5)', () => {
   });
 });
 
+describe('sweep: a retry never lands right beside the same word', () => {
+  it('moves past an item for the same word', () => {
+    const items = ['b:a', 'b:x', 'b:y', 'b:z', 'b:a', 'b:w', 'b:v'].map((wordId) => ({ wordId, rung: 1 as const, ask: 'read' as const, grades: null, retry: false }));
+    const plan: SessionPlan = { steps: ['practice'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, practiceTimeBoxMs: 1e9, writeCandidates: [], writeCount: 0 };
+    let rec = startPractice({ ...createSessionRecord(plan, 'd', 0) }, items);
+    rec = afterPracticeAnswer(rec, false, 1000); // b:a missed: its retry would land beside the second b:a
+    const q = rec.practiceQueue!.map((x) => x.wordId);
+    for (let i = 1; i < q.length; i++) expect(q[i] === q[i - 1], q.join(' ')).toBe(false);
+  });
+});
+

@@ -170,3 +170,17 @@ describe('the lesson (spec 2026-10-05 §2)', () => {
     expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings, now: new Date(2026, 9, 6) }).newWordIds).toEqual([]);
   });
 });
+
+describe('sweep: plan details', () => {
+  it('a day with no new words has no 认新字 stop (and no star for it)', () => {
+    const ws = words(3);
+    const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
+    expect(buildSessionPlan({ cards, words: ws, settings: settings(), now }).steps).not.toContain('newwords');
+  });
+  it('a meaning card for a word with no cue any more is not taken as due (it would hold a slot it can never use)', () => {
+    const ws = [makeWord('欺负', { id: 'p:1', rank: null, examples: [] })];
+    const cards = [makeCard('p:1', 'recognise', new Date(2026, 9, 20), true), makeCard('p:1', 'meaning', hoursAgo(2))];
+    expect(buildSessionPlan({ cards, words: ws, settings: settings(), now }).meaningReviewIds).toEqual([]);
+  });
+});
+

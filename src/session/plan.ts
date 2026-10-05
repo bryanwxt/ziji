@@ -35,6 +35,7 @@ export const MEANING_REVIEW_CAP = 30;
 
 export function buildSessionPlan({ cards, words, settings, now, practised = new Map(), newPerDay }: PlanInput): SessionPlan {
   const active = words.filter((w) => !w.paused);
+  const byId = new Map(active.map((w) => [w.id, w]));
   const activeIds = new Set(active.map((w) => w.id));
   const cutoff = endOfLocalDay(now).getTime();
   const ofKind = (kind: CardKind) => cards.filter((c) => c.kind === kind);
@@ -57,7 +58,8 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const meaningOrder = (a: Word, b: Word) => (practised.get(b.id) ?? -1) - (practised.get(a.id) ?? -1) || newWordOrder(a, b);
 
   const newWords = active.filter((w) => !started.has(w.id)).sort(newWordOrder).slice(0, newLimit);
-  const steps: StepKind[] = stepsOn(settings); // spec 2026-10-05 §2: no separate 用一用
+  // spec 2026-10-05 §2: no separate 用一用; a day with no new words starts at 练一练 (no empty 认新字 stop, no star for it)
+  const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0);
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
   const writeUnits = settings.activities.writing
     ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), cutoff, target: writeCharTarget(settings.sessionMinutes) })
@@ -73,7 +75,8 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     writeCandidates: writeUnits.map((u) => ({ wordId: u.wordId, isNew: u.isNew })),
     writeItems,
     writeCount: writeItems.length,
-    meaningReviewIds: dueOf(meaning).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
+    // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
+    meaningReviewIds: dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
     newMeaningIds: active
       .filter((w) => started.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)
       .sort(meaningOrder)

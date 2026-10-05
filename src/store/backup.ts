@@ -1,6 +1,7 @@
 import { openDB } from 'idb';
 import type { KidState, Settings } from '../types';
 import { DB_NAME, DB_VERSION, LIST_STORES, type AppDb, type ListStore } from './db';
+import { applySettingsMigration } from './settings';
 
 export const BACKUP_FORMAT = 'hanzi-buddy-backup';
 export const BACKUP_FORMAT_VERSION = 1;
@@ -160,6 +161,7 @@ export async function applyBackup(db: AppDb, preview: BackupPreview): Promise<vo
   if (settings) ops.push(tx.objectStore('settings').put(settings, 'main'));
   if (kid) ops.push(tx.objectStore('kid').put(kid, 'main'));
   await Promise.all([...ops, tx.done]);
+  await applySettingsMigration(db); // an older backup's settings move to today's at once, not on the next launch (sweep)
 }
 
 /** Emergency dump of whatever is on disk, for when the app cannot open its database normally. */
