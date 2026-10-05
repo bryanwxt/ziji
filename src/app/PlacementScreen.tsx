@@ -86,18 +86,23 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
     setAsked((n) => n + 1);
     const next = walkStep(walk, { style: question.style, wordId: question.wordId, correct, dontKnow }, bands.length);
     setWalk(next);
-    if (next.done) {
-      const levels = placementLevels(next.answers);
-      const ids = placementIds(bands, next.answers);
-      let known = ids.readingIds.length;
-      try {
-        await applyPlacement(db, { ...ids, ...levels }, now());
-        known = (await loadKnowledge(db)).known;
-      } catch (e) {
-        console.error('placement: could not save the result', e); // he still gets his close; the check runs again next launch
-      }
-      setResult({ known, ...levels });
+    if (next.done) await finish(placementIds(bands, next.answers), placementLevels(next.answers));
+  };
+  const finish = async (ids: ReturnType<typeof placementIds>, levels: ReturnType<typeof placementLevels>) => {
+    let known = ids.readingIds.length;
+    try {
+      await applyPlacement(db, { ...ids, ...levels }, now());
+      known = (await loadKnowledge(db)).known;
+    } catch (e) {
+      console.error('placement: could not save the result', e); // he still gets his close; the check runs again next launch
     }
+    setResult({ known, ...levels });
+  };
+  /** Skip the check (parent, 2026-10-05): nothing placed, so lessons start from the first character; practised words stay. */
+  const skip = () => {
+    if (result) return;
+    setWalk((w) => (w ? { ...w, done: true } : w));
+    void finish({ readingIds: [], understandingIds: [], missed: [] }, { reading: -1, understanding: -1 });
   };
 
   const k = kid ?? DEFAULT_KID;
@@ -134,6 +139,9 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
           <X size={34} strokeWidth={3} />
         </button>
       )}
+      <button type="button" class="placement__skip" aria-label="跳过，从头开始" onClick={skip}>
+        <Label zh="跳过，从头开始" />
+      </button>
       <Stage
         activity="placement"
         truffle={<Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={180} calm />}

@@ -1056,6 +1056,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 }
 
 .placement__home { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 12px; z-index: 3; } /* back home from a re-run started in Settings */
+/* skip the check, start at the start (parent, 2026-10-05): quiet, in its own strip above the card so it never covers a question */
+.placement__skip { position: absolute; top: max(8px, env(safe-area-inset-top)); right: 12px; z-index: 3; min-height: 44px; padding: 2px 14px; font-size: 16px; background: var(--surface); color: var(--ink-soft); border: 2px solid var(--line-strong); box-shadow: none; border-radius: 999px; }
+.screen.placement > .stage { margin-top: 48px; }
 
 /* the placement check: every question the same size (the parent saw it jump between styles) */
 .placement__prompt {

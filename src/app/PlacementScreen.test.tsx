@@ -126,3 +126,16 @@ describe('Truffle in placement (spec 2026-10-04 §4.4, spec §14: no right or wr
     });
   });
 });
+
+describe('skipping placement (parent, 2026-10-05: an option to start at the start)', () => {
+  it('跳过 ends the check with nothing placed: he starts from the first character', async () => {
+    const app = await setup();
+    renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
+    await waitFor(() => expect(document.querySelector('[data-question="0"]')).toBeTruthy(), LONG);
+    fireEvent.click(screen.getByRole('button', { name: '跳过，从头开始' }));
+    expect(await screen.findByText('开始！', {}, LONG)).toBeTruthy();
+    expect(document.querySelector('h1')!.textContent).toContain('我们从第一个字开始！');
+    expect((await getSettings(app.db)).placementDone).toBe(true);
+    expect((await allCards(app.db)).filter((c) => c.kind === 'recognise')).toHaveLength(0);
+  });
+});
