@@ -718,3 +718,39 @@ Spec docs/superpowers/specs/2026-10-05-ziji-lesson-flow-design.md; plan docs/sup
 - after a miss in 认新字 a quick double tap skips the re-shown card; its bubble still says 新字来了！
 - restoring an older backup doesn't run the settings migration until the next launch
 - a day with new words switched off resets the pace to 3 the next day
+
+## Lesson redesign phase B (2026-10-05): pairing, 组句, English on the sheet, 钓鱼 for look-alikes
+
+Spec docs/superpowers/specs/2026-10-05-ziji-lesson-flow-design.md (§3.2 rungs 2 and 4, §3.4, §3.6, §6); plan docs/superpowers/plans/2026-10-05-ziji-lesson-b.md; branch lesson-b; Native (the parent's standing instruction: loop the phases, deploy each), opus final review. Suite 1017/1017; `npm run fit` 502 screens, 0 problems; stage cases ok (pair, match, build, fish at three sizes).
+
+- 练一练's 词语 rung gains 组词 pairing (join character halves on a 3×3 board; three misses on a tile show its match; only the word's own pair is graded) and 搭配 (the verb + which partner, with three written wrong partners).
+- 组句 is the ladder's fourth rung: he hears the sentence, then taps the word tiles into it (tiles can be taken back; natural order swaps accepted; a different sentence now and then).
+- After a wrong answer the sheet explains in English: the right answer and what he picked when it's a word.
+- 钓鱼 comes back only for a look-alike he picked by mistake, at most twice a lesson, until he catches the right fish.
+
+### Rulings
+- Task 1: 钓鱼's English compares the two characters (根 · 跟), as the spec's example — cost: none
+- Task 3: the 搭配 bank keeps to characters up to about HSK 3 (踢足球, 弹钢琴 dropped) — cost: those everyday pairs missing
+- Task 7: the session test helper taps 继续 only when enabled and waits up to 4 s (building a round reads every word's content, ~45 ms on the Mac) — cost: none
+- Task 7: FlashcardStep reports the option picked — cost: none
+- Task 8: a board never lines a pair up on one row (found in WebKit) — cost: none
+- Task 8: pairing/组句 containers aren't marked as a question prompt (their tiles follow tile sizes) — cost: none
+- Task 8: a new card-clipping probe for the new stage cases — cost: two similar probes
+- Final: the right column comes first in the page so "tap the first open tile" always moves the game on — cost: screen readers read right halves first
+- Final: 搭配 asked as "verb + which partner?" with written wrong partners, not a board — cost: looks closer to a choice question
+- Final (declined to judge): the 搭配 bank's size vs ~300; pinyin on placed 组句 tiles
+
+### Final review fixes
+- C1 组词 pairing never finished for doubled words (妈妈) — tiles tracked by place; no doubled targets — RED→GREEN
+- C2 boards marked natural pairs wrong — 搭配 with written wrong partners; 组词 extras from known, non-productive characters — RED→GREEN
+- I3 组句 rejected natural orders — heard first; time-word and 和/跟 swaps accepted — RED→GREEN
+- I4 pairing graded the whole board, slowly, no undo — only the word's own pair, timed from its pick; a pick can be let go — RED→GREEN
+- I5 组句 always the same sentence — one of the word's sentences each lesson — RED→GREEN
+
+### Deferred minors
+- odd 组句 cuts (不知|道, 在家|里, 面|条, 同学|们, 小|猫; measure words 座/道/场/片; his own class word not in the cutting dictionary)
+- the 搭配 bank is ~68 pairs (spec target ~300)
+- a missed 钓鱼 gets a retry, so up to 4 a lesson; a fish caught on the retry doesn't clear the look-alike
+- the sheet lacks pinyin for the right answer; 了 shows its liǎo gloss; a sentence-clue miss gets no English
+- planning a round builds boards/tiles per word per ask (~70–80 ms on the Mac)
+- a right tile tapped with nothing picked does nothing; 钓鱼 for a doubled 组词 gives the answer away; confusions fished in key order; today's 认新字 mix-ups wait a lesson; 组句 grades on the last tile; PairGame speak() dead branch
