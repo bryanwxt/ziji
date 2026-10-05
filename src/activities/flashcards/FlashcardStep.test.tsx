@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../../content';
 import { createEmptyCard, State } from 'ts-fsrs';
 import { DEFAULT_KID } from '../../types';
-import { FlashcardStep , introIdiom, shownOnCard } from './FlashcardStep';
+import { FlashcardStep , introIdiom, introSpoken, shownOnCard } from './FlashcardStep';
 import { makeWord } from '../../test/fixtures';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
@@ -513,5 +513,20 @@ describe('parts only when they teach something (parent, 2026-10-05: 夕 showed �
     const xi = pool.find((w) => w.text === '夕')!;
     render(<FlashcardStep {...base} word={xi} item={{ wordId: xi.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     expect(document.querySelector('.intro .parts')).toBeNull();
+  });
+});
+
+describe('the new-word card reads every row (parent, 2026-10-05: only the first 词语 was read)', () => {
+  it('the character, then each 词语, then the 成语, each queued after the last', async () => {
+    const { builtinIdiom } = await import('../../content/chengyu');
+    vi.mocked(speak).mockClear();
+    const yi = pool.find((w) => w.text === '一')!;
+    const idiom = builtinIdiom('一心一意')!;
+    render(<FlashcardStep {...base} word={yi} idiom={idiom} item={{ wordId: yi.id, isNew: true, retry: false }} voice onDone={vi.fn()} />);
+    const said = vi.mocked(speak).mock.calls.map(([t]) => t);
+    expect(said).toEqual(['一', ...introSpoken(yi, idiom)]);
+    expect(said).toContain('一心一意');
+    expect(introSpoken(yi, idiom).length).toBe(3); // two 词语 and the 成语
+    expect(vi.mocked(speak).mock.calls.slice(1).every(([, o]) => (o as { queue?: boolean })?.queue)).toBe(true);
   });
 });

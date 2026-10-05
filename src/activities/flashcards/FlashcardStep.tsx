@@ -88,8 +88,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   useEffect(() => {
     if (phase === 'intro') {
       speak(word.text, { reading: word.pinyin });
-      const line = usageLine(word);
-      if (line) speak(line.full, { queue: true }); // after the character, not over it (spec §20 part 1)
+      // then every 词语 and the 成语 the card shows, in order, each after the last (parent, 2026-10-05: only the first was read)
+      for (const text of introSpoken(word, idiom)) speak(text, { queue: true });
     }
     if (phase === 'quiz') {
       quizAt.current = performance.now();
@@ -269,6 +269,14 @@ function UsageLine({ word, en }: { word: Word; en?: string | null }) {
  */
 function extraWords(line: ReturnType<typeof usageLine>, _idiom?: Idiom | null): number {
   return line ? 1 : 2;
+}
+
+/** The lines the 认新字 card reads after its character: the usage line, the listed 组词, then its 成语 when it shows one. */
+export function introSpoken(word: Word, idiom: Idiom | null): string[] {
+  const line = usageLine(word);
+  const listed = (word.examples ?? []).filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom)).map((e) => e.text);
+  const shownIdiom = idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) ? [idiom.text] : [];
+  return [...(line ? [line.full] : []), ...listed, ...shownIdiom];
 }
 
 /** What the 认新字 card shows beside a 成语: its usage line and the 组词 listed with it (a 成语 can be either: 八's is 四面八方). */
