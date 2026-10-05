@@ -109,3 +109,29 @@ describe('final review: the mouth never keeps going after speech has quietly sto
   });
 });
 
+
+describe('a lone 多音字 is said with the reading the card teaches (parent, 2026-10-05: 调 on its 空调 card was said diào)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const said = () => {
+    const spoken: SpeechSynthesisUtterance[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: SpeechSynthesisUtterance) => spoken.push(u), getVoices: () => [] });
+    vi.stubGlobal('SpeechSynthesisUtterance', class {
+      text: string; lang = ''; rate = 1; volume = 1; voice: SpeechSynthesisVoice | null = null;
+      constructor(t: string) { this.text = t; }
+    });
+    return spoken;
+  };
+  it('调 alone is said as 条 (tiáo, the only way 条 is read); 空调 and other text are said as written', () => {
+    const spoken = said();
+    speak('调');
+    speak('空调');
+    speak('猫');
+    expect(spoken.map((u) => u.text)).toEqual(['条', '空调', '猫']);
+  });
+  it('a word that teaches the other reading is said that way', () => {
+    const spoken = said();
+    speak('长', { reading: 'zhǎng' });
+    speak('长', { reading: 'cháng' });
+    expect(spoken.map((u) => u.text)).toEqual(['掌', '常']);
+  });
+});

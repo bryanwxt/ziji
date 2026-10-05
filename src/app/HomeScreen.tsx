@@ -209,7 +209,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           )}
           {wotd && (
             <div class="card wotd">
-              <button type="button" class="wotd__main" aria-label={`今日一字：${wotd}`} onClick={() => speak(wotd)}>
+              <button type="button" class="wotd__main" aria-label={`今日一字：${wotd}`} onClick={() => speak(wotd, { reading: wotdWord?.pinyin })}>
                 <span class="label-tag">今日一字</span>
                 <span class="wotd__grid" aria-hidden="true">{wotd}</span>
                 <span class="wotd__py" aria-hidden="true">{wotdWord?.pinyin ?? pinyin(wotd)}</span>

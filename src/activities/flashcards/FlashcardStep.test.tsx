@@ -131,7 +131,7 @@ describe('new-word card in English too (parent, 2026-10-04)', () => {
     vi.mocked(speak).mockClear();
     const ta = pool.find((w) => w.text === '他')!;
     render(<FlashcardStep {...base} word={ta} item={{ wordId: ta.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
-    expect(vi.mocked(speak).mock.calls[0]).toEqual(['他']);
+    expect(vi.mocked(speak).mock.calls[0]).toEqual(['他', { reading: 'tā' }]); // its reading goes too: a 多音字 is said the way its card teaches
     expect(vi.mocked(speak).mock.calls[1]![1]).toEqual({ queue: true });
   });
   it('English stays on the new-word card: the quiz that follows has none', () => {

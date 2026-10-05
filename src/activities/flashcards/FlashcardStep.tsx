@@ -85,7 +85,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
 
   useEffect(() => {
     if (phase === 'intro') {
-      speak(word.text);
+      speak(word.text, { reading: word.pinyin });
       const line = usageLine(word);
       if (line) speak(line.full, { queue: true }); // after the character, not over it (spec §20 part 1)
     }
@@ -93,7 +93,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       quizAt.current = performance.now();
       // A class sentence is read around its blank: saying the word would give the answer away (its choices don't share its sound).
       if (quiz.cue) speak(quiz.cue.kind === 'sentence' ? `${quiz.cue.before}，，${quiz.cue.after}` : quiz.cue.full);
-      else if (quiz.listen) speak(word.text);
+      else if (quiz.listen) speak(word.text, { reading: word.pinyin });
     }
   }, [phase]);
 
@@ -119,7 +119,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       playSfx('wrong');
     }
     if (quiz.cue) speak(quiz.cue.full);
-    else if (!quiz.listen || !correct) speak(word.text);
+    else if (!quiz.listen || !correct) speak(word.text, { reading: word.pinyin });
   };
 
   const optionState = (o: string) => {
