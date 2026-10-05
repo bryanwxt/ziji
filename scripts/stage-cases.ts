@@ -25,7 +25,7 @@ const cardClipped = (page: import('playwright-core').Page, name: string) => page
   return [];
 }, name);
 
-const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
+const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
 const problems: string[] = [];
 const browser = await webkit.launch();
 for (const size of SIZES) {

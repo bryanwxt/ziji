@@ -1279,7 +1279,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .intro .intro__idiom-sentence { font-size: 16px; }
 }
 @media (max-width: 599px) and (max-height: 720px) { .intro__group { padding: 4px 8px; gap: 2px; } .intro__card { gap: 4px; } }
-.hang { display: inline-block; width: 0; overflow: visible; white-space: nowrap; } /* closing punctuation that doesn't push the words off centre */
+.hang { display: inline-block; width: 0.55em; overflow: visible; white-space: nowrap; } /* closing punctuation that doesn't push the words off centre */
 @media (max-width: 599px) and (max-height: 700px) { /* the smallest phones: two 词语 and the 成语 fit; its example sentence waits for a bigger screen */
   .intro .intro__idiom-sentence { display: none; }
   .intro .word-row__zh { font-size: 20px; }
@@ -1287,7 +1287,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 }
 .meaning-cue--word .label__ch { font-family: var(--hanzi); font-weight: 400; } /* the 组词 cue in the cards' Chinese face, not the bold UI font */
 /* a line of Chinese centres on its words: a closing ！ or 。 hangs past the edge (parent, 2026-10-05: 宝箱！, Truffle's 喵！) */
-.label__cell:last-child:not(.label__cell--zh):not(.label__cell--blank) { width: 0; overflow: visible; align-items: flex-start; }
+.label__cell:last-child:not(.label__cell--zh):not(.label__cell--blank) { width: 0.55em; overflow: visible; align-items: flex-start; } /* half a slot: a full-width ！ draws in its left half, so the line centres and it stays inside a bubble (parent, 2026-10-05: 0 pushed ！/～ past the bubble's edge) */
 /* the auto-continue countdown: a bar that fills along the 继续 button's foot as the pause runs out (parent, 2026-10-05) */
 .btn--countdown { position: relative; overflow: hidden; }
 .btn--countdown::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: var(--green); transform-origin: left center; animation: countdown var(--auto, 1400ms) linear forwards; }

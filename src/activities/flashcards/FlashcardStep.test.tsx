@@ -503,3 +503,15 @@ describe('the new word is picked out in every row (parent, 2026-10-05: only the 
     for (const r of rows) expect(r.querySelector('.label__cell--mark .label__ch')?.textContent, r.textContent!).toBe('一');
   });
 });
+
+describe('parts only when they teach something (parent, 2026-10-05: 夕 showed 勹 + 丶)', () => {
+  it('他 shows 亻 + 也 (亻 means person); 夕 shows no parts', () => {
+    const ta = pool.find((w) => w.text === '他')!;
+    const { unmount } = render(<FlashcardStep {...base} word={ta} item={{ wordId: ta.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.intro .parts')).toBeTruthy();
+    unmount();
+    const xi = pool.find((w) => w.text === '夕')!;
+    render(<FlashcardStep {...base} word={xi} item={{ wordId: xi.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.intro .parts')).toBeNull();
+  });
+});

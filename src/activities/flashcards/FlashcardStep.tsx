@@ -304,7 +304,9 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
         {hanChars(word.text).length <= 2 && hanChars(word.text).map((ch) => { // a 成语's four characters' parts would crowd the card
           const info = getCharInfo(ch);
           const parts = info?.components ?? [];
-          if (!info || parts.length < 2) return null;
+          // only parts that teach something: a radical with a meaning (亻 person, 氵 water). Fragments like 夕's 勹 + 丶
+          // mean nothing to a young child and only crowd the card (parent, 2026-10-05)
+          if (!info || parts.length < 2 || !parts.some((p) => p === info.radical && radicalMeaning(p))) return null;
           return (
             <div class="parts" key={ch}>
               {parts.map((p, i) => {

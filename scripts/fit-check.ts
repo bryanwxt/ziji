@@ -15,6 +15,7 @@ const EVENING = new Date(2026, 9, 6, 21, 0); // timeOfDay() calls this 'evening'
 const SIZES = [
   { name: 'iphone-se', width: 375, height: 667 },
   { name: 'iphone-15', width: 390, height: 844 },
+  { name: 'iphone-safari', width: 390, height: 664 }, // in Safari, not from the home screen: the browser's bars take ~180px (parent, 2026-10-05)
   { name: 'ipad-portrait', width: 768, height: 1024 },
   { name: 'ipad-landscape', width: 1024, height: 768 },
   { name: 'ipad-air-landscape', width: 1180, height: 820 },
