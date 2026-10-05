@@ -381,9 +381,22 @@ describe('认新字: a missed word is shown again (spec 2026-10-05 §2.1)', () =
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).not.toHaveBeenCalled();
     expect(screen.getByText('我记住了！')).toBeTruthy(); // the card again
+    const t0 = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(t0 + 800); // he has had a moment to look
     fireEvent.click(screen.getByText('我记住了！'));
+    clock.mockRestore();
     expect(onDone).toHaveBeenCalledTimes(1);
     expect(onDone.mock.calls[0]![0]).toMatchObject({ correct: false, asked: 'read' });
+  });
+  it('sweep: a quick double tap on 继续 never skips the card shown again; Truffle says to look again', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} ask="read" reintroOnMiss voice={false} onDone={onDone} />);
+    fireEvent.click(screen.getByText('我记住了！'));
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== he.pinyin)!);
+    fireEvent.click(screen.getByText('继续'));
+    fireEvent.click(screen.getByText('我记住了！')); // the second tap of a double tap
+    expect(onDone).not.toHaveBeenCalled();
+    expect(document.querySelector('.pet__bubble')?.textContent).toContain('再看一看！');
   });
   it('a right answer moves straight on', () => {
     const onDone = vi.fn();

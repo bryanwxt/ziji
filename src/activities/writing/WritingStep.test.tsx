@@ -53,6 +53,10 @@ describe('WritingStep', () => {
     fireEvent.click(screen.getByText('完成'));
     expect(onDone).toHaveBeenCalledWith({ totalMisses: 2, hinted: false, elapsedMs: expect.any(Number) });
   });
+  it("sweep: writing one character of a word shows that character's own reading", () => {
+    render(<WritingStep word={makeWord('朋友', { pinyin: 'péng you' })} at={1} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={vi.fn()} />);
+    expect(document.querySelector('.write__prompt .pinyin')?.textContent).toBe('yǒu');
+  });
   it('skips the word when its stroke data cannot load', () => {
     const onDone = vi.fn();
     render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} resting="sulk" isNew={false} pass="recall" onDone={onDone} />);

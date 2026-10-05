@@ -75,6 +75,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const [phase, setPhase] = useState<Phase>(item.isNew && !item.retry ? 'intro' : 'quiz');
   const [choice, setChoice] = useState<string | null>(null);
   const [again, setAgain] = useState(false);
+  const againAt = useRef(0); // when the card came back after a miss: a double tap on 继续 must not skip it (sweep)
   const [result, setResult] = useState<{ correct: boolean; hard: boolean; responseMs: number } | null>(null);
   const shownAt = useRef(performance.now());
   // what he reacts to (spec 2026-10-04 §4.4): a new word when it is shown, then each answer
@@ -142,13 +143,14 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const proceed = () => {
     if (reintroOnMiss && result && !result.correct && !again) {
       setAgain(true);
+      againAt.current = Date.now();
       setPhase('intro');
     } else next();
   };
 
 
   const sheet =
-    phase === 'intro' ? <FeedbackSheet actionLabel="我记住了！" onAction={() => (again ? next() : setPhase('quiz'))} />
+    phase === 'intro' ? <FeedbackSheet actionLabel="我记住了！" onAction={() => (again ? (Date.now() - againAt.current >= 600 ? next() : undefined) : setPhase('quiz'))} />
     : phase === 'quiz' ? <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
     : result ? (
         <FeedbackSheet

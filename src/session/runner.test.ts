@@ -296,3 +296,27 @@ describe('sweep: a retry never lands right beside the same word', () => {
   });
 });
 
+describe('sweep: 写一写 details', () => {
+  const items: WriteItem[] = [
+    { wordId: 'a', at: 0, pass: 'recall', isNew: false, last: true },
+    { wordId: 'w', at: 0, pass: 'recall', isNew: false },
+    { wordId: 'b', at: 0, pass: 'recall', isNew: false, last: true },
+    { wordId: 'w', at: 1, pass: 'recall', isNew: false, last: true },
+  ];
+  const wp: SessionPlan = { steps: ['writing', 'speaking'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: items.length, writeItems: items };
+  it("a word that can't load counts its other characters as done for the progress bar", () => {
+    let rec = createSessionRecord(wp, 'd', 0);
+    rec = afterWriteWord(rec, true, 10); // a
+    rec = afterWriteWord(rec, false, 10); // w#0 fails: w#1 is skipped too
+    expect(rec.writeDone).toBe(3);
+  });
+  it('a hinted character is never redone straight after itself, even when the last item fails to load', () => {
+    const its: WriteItem[] = [{ wordId: 'a', at: 0, pass: 'recall', isNew: false, last: true }, { wordId: 'b', at: 0, pass: 'recall', isNew: false, last: true }, { wordId: 'c', at: 0, pass: 'recall', isNew: false, last: true }];
+    let rec = createSessionRecord({ ...wp, writeItems: its, writeCount: 3 }, 'd', 0);
+    rec = afterWriteWord(rec, true, 10); // a
+    rec = afterWriteWord(rec, true, 10, { hinted: true }); // b, hinted
+    rec = afterWriteWord(rec, false, 10); // c can't load: the next would be b's redo, right after b
+    expect(currentStep(rec)).toBe('speaking');
+  });
+});
+

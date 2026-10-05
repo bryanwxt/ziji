@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { makeCard, makeWord } from '../test/fixtures';
+import { State } from 'ts-fsrs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget, type WriteItem, type WriteUnit } from './writing';
 import { mulberry32 } from '../lib/random';
 import { writingCue } from '../activities/writing/cue';
@@ -116,6 +117,29 @@ describe('final review I2: a character comes once a lesson, and a repeated one i
   it('the cue blanks every copy of the character', () => {
     const w = makeWord('一心一意', { id: 'p:3', source: 'parent', pinyin: 'yì xīn yí yì', sentences: [{ text: '我们要一心一意学习，不要东张西望。', pinyin: '' }] });
     expect(writingCue(w, 0).sentence).toContain('＿心＿意');
+  });
+});
+
+describe('sweep: which characters', () => {
+  const now2 = new Date(2026, 9, 6, 10);
+  const base2 = { newWordIds: [] as string[], practised: new Map<string, number>(), level: 2, cutoff: now2.getTime() + 86_400_000, target: 9 };
+  it('a recent lesson word he has started misreading again is not written yet', () => {
+    const words = [makeWord('一', { id: 'b:一' }), makeWord('二', { id: 'b:二' })];
+    const lapsed = makeCard('b:一', 'recognise', new Date(2026, 9, 7));
+    lapsed.fsrs = { ...lapsed.fsrs, state: State.Relearning };
+    const cards = [lapsed, makeCard('b:二', 'recognise', new Date(2026, 9, 7))];
+    const units = pickWriteUnits({ ...base2, cards, words, practised: new Map([['b:一', now2.getTime()], ['b:二', now2.getTime()]]) });
+    expect(units.map((u) => u.wordId)).toEqual(['b:二']);
+  });
+  it('a due word whose strokes failed to load goes behind the other due words', () => {
+    const words = [makeWord('甲', { id: 'b:甲', writeSkippedAt: now2.getTime() }), makeWord('乙', { id: 'b:乙' })];
+    const cards = [makeCard('b:甲', 'write', new Date(now2.getTime() - 7200_000)), makeCard('b:乙', 'write', new Date(now2.getTime() - 3600_000))];
+    expect(pickWriteUnits({ ...base2, cards, words }).map((u) => u.wordId)).toEqual(['b:乙', 'b:甲']);
+  });
+  it('a due word longer than the lesson\'s count is still written (on its own), never left forever', () => {
+    const words = [makeWord('我们的新学校', { id: 'p:1', source: 'parent', level: null, rank: null })];
+    const cards = [makeCard('p:1', 'write', new Date(now2.getTime() - 3600_000))];
+    expect(pickWriteUnits({ ...base2, cards, words, target: 4 }).map((u) => u.chars.join(''))).toEqual(['我们的新学校']);
   });
 });
 

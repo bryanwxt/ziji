@@ -287,7 +287,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       // (spec 2026-10-05 §5), the word is rated once, on the character that finishes it, with all its misses from memory.
       const rates = task.at === undefined ? true : !!task.last;
       if (r && !rec.free && task.pass === 'recall' && !task.redo && rates) await recordWriting(db, task.wordId, wordMisses(rec, task.wordId) + r.totalMisses, now());
-      if (!r && task.isNew) await markWriteSkipped(db, task.wordId, now());
+      if (!r) await markWriteSkipped(db, task.wordId, now()); // any word whose strokes failed goes behind the others next time (sweep)
       // a new word written from memory with no misses showed the close-up if one was due: start the cooldown again
       if (r && task.pass === 'recall' && isHardWrite(task.isNew, r.totalMisses) && closeupAllowed(cardsSinceCloseup.current, reducedMotion())) cardsSinceCloseup.current = 0;
       await commit(afterWriteWord(rec, r !== null, r?.elapsedMs ?? 0, { hinted: r?.hinted, misses: r?.totalMisses }));

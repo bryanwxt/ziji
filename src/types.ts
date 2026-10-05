@@ -158,6 +158,7 @@ export interface SessionRecord {
   writeRedoIndex?: number;
   writeMisses?: Record<string, number>; // spec 2026-10-05 §5: each word's misses from memory so far, rated on its last character
   writeSkipped?: string[]; // words whose strokes failed to load this lesson: their other characters are skipped
+  writeLast?: string; // the last character written ('id#at'): a redo never comes straight after it
   practiceQueue?: PracticeItem[]; // 练一练's round, built when the step starts (spec 2026-10-05 §3)
   practiceIndex?: number;
   practiceElapsedMs?: number;

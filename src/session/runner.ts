@@ -201,13 +201,20 @@ export function afterWriteWord(rec: SessionRecord, done: boolean, rawElapsedMs: 
  */
 function afterWriteItem(rec: SessionRecord, base: SessionRecord, task: WriteTask, done: boolean, outcome: { hinted?: boolean; misses?: number }): SessionRecord {
   const i = nextItem(rec, rec.writeIndex);
-  if (!done) return { ...base, writeIndex: i + 1, writeSkipped: [...(rec.writeSkipped ?? []), task.wordId] };
+  if (!done) {
+    // the word's other characters go too, and count as done for the progress bar (sweep)
+    const left = (rec.plan.writeItems ?? []).slice(i).filter((x) => x.wordId === task.wordId).length;
+    let redo = rec.writeRedo ?? [];
+    const skipped: SessionRecord = { ...base, writeIndex: i + 1, writeDone: rec.writeDone + left, writeSkipped: [...(rec.writeSkipped ?? []), task.wordId] };
+    if (mainWritingDone(skipped) && redo[0] && redo[0] === rec.writeLast) redo = redo.length > 1 ? [...redo.slice(1), redo[0]] : []; // never straight after itself
+    return { ...skipped, writeRedo: redo };
+  }
   const key = itemKey({ wordId: task.wordId, at: task.at ?? 0 });
   const recall = task.pass === 'recall';
   const misses = outcome.misses ?? 0;
   let redo = recall && (outcome.hinted || misses > 3) ? [...(rec.writeRedo ?? []), key] : (rec.writeRedo ?? []);
   const next: SessionRecord = {
-    ...base, writeIndex: i + 1, writeDone: rec.writeDone + 1, writeRedo: redo,
+    ...base, writeIndex: i + 1, writeDone: rec.writeDone + 1, writeRedo: redo, writeLast: key,
     ...(recall ? { writeMisses: { ...(rec.writeMisses ?? {}), [task.wordId]: wordMisses(rec, task.wordId) + misses } } : {}),
   };
   if (mainWritingDone(next) && redo[0] === key) {

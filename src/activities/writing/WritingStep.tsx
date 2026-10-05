@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../audio/sfx';
 import { speak } from '../../audio/speech';
 import { hanChars } from '../../content';
+import { pinyin } from 'pinyin-pro';
+import { syllableTone } from '../flashcards/tones';
 import { loadStrokeData } from '../../content/strokes';
 import type { KidState, Word } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
@@ -36,6 +38,13 @@ interface Props {
   closeupReady?: boolean;
   /** write only this character of the word (spec 2026-10-05 §5); without it, every character in turn */
   at?: number;
+}
+
+/** One character's reading: its syllable in the word, or its own tone where the word says it lightly (友 in 朋友 → yǒu). */
+function charReading(word: Word, at: number): string {
+  const syl = word.pinyin.trim().split(/\s+/)[at];
+  const ch = hanChars(word.text)[at] ?? '';
+  return syl && syllableTone(syl).tone !== 5 ? syl : pinyin(ch);
 }
 
 const PASS_BUBBLE: Record<WritePass, string> = { trace: '描一描！', hint: '看提示写！', recall: '写一写！' };
@@ -178,7 +187,7 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
           {cue.blanked ? (
             <div class="word-row__line write__blank"><Label zh={cue.blanked} py={gapPinyin(cue.blanked, cue.blankedPy, word.pinyin, index)} /><SpeakButton text={cue.speech} small /></div>
           ) : (
-            <div class="word-row__line write__prompt"><span class="pinyin">{word.pinyin}</span><SpeakButton text={cue.speech} small /></div>
+            <div class="word-row__line write__prompt"><span class="pinyin">{at === undefined ? word.pinyin : charReading(word, at)}</span><SpeakButton text={cue.speech} small /></div>
           )}
           {cue.sentence && (
             <>

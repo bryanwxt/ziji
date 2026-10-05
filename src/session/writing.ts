@@ -1,5 +1,6 @@
 // 写一写 (spec 2026-10-05 §5): 8–10 characters from memory, at or below his level, traced only once, never back to back.
 import { hanChars } from '../content';
+import { State } from 'ts-fsrs';
 import { isKnown } from '../srs/scheduler';
 import type { CardRecord, Word } from '../types';
 
@@ -25,12 +26,14 @@ export function pickWriteUnits({ cards, words, newWordIds, practised, level, cut
   const byId = new Map(words.filter((w) => !w.paused && w.writeable).map((w) => [w.id, w]));
   const write = new Map(cards.filter((c) => c.kind === 'write').map((c) => [c.wordId, c]));
   const reads = new Map(cards.filter((c) => c.kind === 'recognise').map((c) => [c.wordId, c]));
-  const due = [...write.values()].filter((c) => byId.has(c.wordId) && c.fsrs.due.getTime() <= cutoff).sort((a, b) => a.fsrs.due.getTime() - b.fsrs.due.getTime());
+  const skippedAt = (id: string) => byId.get(id)?.writeSkippedAt ?? 0;
+  // due ones by when they came due; one whose strokes failed to load goes behind the rest (sweep)
+  const due = [...write.values()].filter((c) => byId.has(c.wordId) && c.fsrs.due.getTime() <= cutoff).sort((a, b) => skippedAt(a.wordId) - skippedAt(b.wordId) || a.fsrs.due.getTime() - b.fsrs.due.getTime());
   const unwritten = (w: Word) => !write.has(w.id);
   const skippedLast = (a: Word, b: Word) => (a.writeSkippedAt ?? 0) - (b.writeSkippedAt ?? 0); // strokes that failed to load go last
   const today = newWordIds.map((id) => byId.get(id)).filter((w): w is Word => !!w && unwritten(w));
   const recent = [...byId.values()]
-    .filter((w) => unwritten(w) && reads.has(w.id) && practised.has(w.id))
+    .filter((w) => unwritten(w) && reads.has(w.id) && practised.has(w.id) && reads.get(w.id)!.fsrs.state !== State.Relearning) // he can read it now (sweep)
     .sort((a, b) => skippedLast(a, b) || practised.get(b.id)! - practised.get(a.id)!);
   const readable = [...byId.values()]
     .filter((w) => { const r = reads.get(w.id); return unwritten(w) && !practised.has(w.id) && !!r && isKnown(r.fsrs) && (w.level ?? 0) <= level; })
@@ -43,7 +46,8 @@ export function pickWriteUnits({ cards, words, newWordIds, practised, level, cut
     const all = hanChars(w.text);
     const ats = all.map((_, i) => i).filter((i) => all.indexOf(all[i]!) === i && !taken.has(all[i]!));
     const chars = ats.map((i) => all[i]!);
-    if (seen.has(w.id) || !chars.length || n + chars.length > target) return; // a word that doesn't fit waits; a shorter one may
+    // a word that doesn't fit waits and a shorter one may; one longer than the whole count is written on its own (sweep)
+    if (seen.has(w.id) || !chars.length || (n + chars.length > target && n > 0)) return;
     seen.add(w.id);
     for (const c of chars) taken.add(c);
     out.push({ wordId: w.id, chars, ats, isNew });
