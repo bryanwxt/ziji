@@ -20,7 +20,7 @@ const speakingOnly = { newwords: false, practice: false, writing: false, speakin
 
 async function setup() {
   const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });
-  await updateSettings(app.db, { activities: speakingOnly, oral: { name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' } });
+  await updateSettings(app.db, { activities: speakingOnly, langdu: true, oral: { name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' } });
   await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
   await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story' }); // a 朗读 day (they alternate)
   return app;

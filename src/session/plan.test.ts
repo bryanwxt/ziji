@@ -86,7 +86,7 @@ describe('buildSessionPlan', () => {
   });
 
   it('only includes switched-on activities, in the fixed order', () => {
-    const s = settings({ activities: { newwords: false, practice: true, writing: false, speaking: true } });
+    const s = settings({ activities: { newwords: false, practice: true, writing: false, speaking: true }, langdu: true });
     expect(buildSessionPlan({ cards: [], words: [], settings: s, now }).steps).toEqual(['practice', 'speaking']);
   });
 });
@@ -157,7 +157,10 @@ describe('the new-word pause (deferred minor, plan 5)', () => {
 
 describe('the lesson (spec 2026-10-05 §2)', () => {
   it('认新字 → 练一练 → 写一写 → 朗读, with no separate 用一用', () => {
-    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing', 'speaking']);
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: { ...DEFAULT_SETTINGS, langdu: true }, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing', 'speaking']);
+  });
+  it('朗读 parked (the default, parent 2026-10-05): no speaking step', () => {
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing']);
   });
   it('练一练 has about 12 of 30 minutes', () => {
     expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).practiceTimeBoxMs).toBe(12 * 60_000);

@@ -18,7 +18,7 @@ const speakingOnly = { newwords: false, practice: false, writing: false, speakin
 
 async function setup(kid: Partial<typeof DEFAULT_KID>, withPassage = true) {
   const app = await makeAppData({ now: () => new Date(2026, 9, 6, 17) });
-  await updateSettings(app.db, { activities: speakingOnly, story: true }); // 看图说话 is parked by default; these tests switch it on
+  await updateSettings(app.db, { activities: speakingOnly, story: true, langdu: true }); // 看图说话 and 朗读 are parked by default; these tests switch them on
   if (withPassage) await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
   await saveKid(app.db, { ...DEFAULT_KID, ...kid });
   return app;
@@ -100,7 +100,7 @@ describe('the dino egg hatches after a finished lesson', () => {
 describe('看图说话 is parked by default', () => {
   it('a fresh profile gets 朗读, not a story', async () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 6, 17) });
-    await updateSettings(app.db, { activities: speakingOnly });
+    await updateSettings(app.db, { activities: speakingOnly, langdu: true }); // 朗读 is parked too; on here
     await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
     await saveKid(app.db, { ...DEFAULT_KID });
     renderWithApp(<SessionScreen free={false} />, app);
@@ -109,9 +109,21 @@ describe('看图说话 is parked by default', () => {
   });
   it('with nothing to read, the speaking step is skipped', async () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 6, 17) });
-    await updateSettings(app.db, { activities: speakingOnly });
+    await updateSettings(app.db, { activities: speakingOnly, langdu: true });
     await saveKid(app.db, { ...DEFAULT_KID });
     renderWithApp(<SessionScreen free={false} />, app);
     expect(await screen.findByText('太棒了！', {}, SAVED)).toBeTruthy();
+  });
+});
+
+describe('朗读 parked (parent, 2026-10-05)', () => {
+  it('a lesson that still has its speaking stop passes it by', async () => {
+    const app = await makeAppData({ now: () => new Date(2026, 9, 6, 17) });
+    await updateSettings(app.db, { activities: { newwords: false, practice: false, writing: false, speaking: true } });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    await saveKid(app.db, { ...DEFAULT_KID });
+    renderWithApp(<SessionScreen free={false} />, app);
+    expect(await screen.findByText('太棒了！', {}, SAVED)).toBeTruthy();
+    expect(screen.queryByText('老师好！')).toBeNull();
   });
 });

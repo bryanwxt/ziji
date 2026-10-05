@@ -64,7 +64,7 @@ export function SettingsPanel() {
       </div>
       <fieldset class="field">
         <legend>Activities</legend>
-        {(Object.keys(ACTIVITY_LABELS) as ActivityKind[]).map((k) => (
+        {(Object.keys(ACTIVITY_LABELS) as ActivityKind[]).filter((k) => k !== 'speaking' || s.langdu || s.story).map((k) => ( // parked 朗读 / 看图说话: no switch
           <label key={k}>
             <input type="checkbox" checked={s.activities[k]} onChange={(e) => void save({ activities: { ...s.activities, [k]: e.currentTarget.checked } })} />{' '}
             {ACTIVITY_LABELS[k]}

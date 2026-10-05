@@ -9,6 +9,9 @@ import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settin
 export const REVIEW_CAP = 60;
 export const BACKLOG_PAUSE = 40;
 export const STEP_ORDER: ActivityKind[] = ['newwords', 'practice', 'writing', 'speaking']; // spec 2026-10-05 §2
+/** The lesson's steps the parent has on. The speaking step needs 朗读 or 看图说话 back from being parked (settings.langdu / story). */
+export const stepsOn = (settings: Pick<Settings, 'activities' | 'story' | 'langdu'>): ActivityKind[] =>
+  STEP_ORDER.filter((s) => settings.activities[s] && (s !== 'speaking' || settings.langdu || settings.story));
 
 const LAST = Number.MAX_SAFE_INTEGER;
 
@@ -54,7 +57,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const meaningOrder = (a: Word, b: Word) => (practised.get(b.id) ?? -1) - (practised.get(a.id) ?? -1) || newWordOrder(a, b);
 
   const newWords = active.filter((w) => !started.has(w.id)).sort(newWordOrder).slice(0, newLimit);
-  const steps: StepKind[] = STEP_ORDER.filter((s) => settings.activities[s]); // spec 2026-10-05 §2: no separate 用一用
+  const steps: StepKind[] = stepsOn(settings); // spec 2026-10-05 §2: no separate 用一用
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
   const writeUnits = settings.activities.writing
     ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), cutoff, target: writeCharTarget(settings.sessionMinutes) })
