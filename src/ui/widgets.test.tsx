@@ -71,7 +71,7 @@ describe('Label digits', () => {
   it('keeps numbers together in the pinyin line', () => {
     const { container } = render(<Label zh="我认识 45 个字" />);
     expect(container.querySelector('.label')?.getAttribute('data-py')).toBe('wǒ rèn shi 45 gè zì');
-    expect([...container.querySelectorAll('.label__ch')].map((c) => c.textContent)).toContain(' 45 ');
+    expect([...container.querySelectorAll('.label__ch')].map((c) => c.textContent)).toContain('45'); // its own slot, no padding spaces (parent, 2026-10-05: wide gaps around the number)
   });
 });
 

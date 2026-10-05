@@ -38,8 +38,9 @@ export function Label({ zh, py: given, pinyinFor, mark }: {
         out.push({ py: !pinyinFor || pinyinFor(d.origin) ? syl : '', ch: d.origin, zh: true });
         continue;
       }
-      // pinyin-pro may hand a run like "＿！" over as one piece; split out each blank
-      for (const part of d.origin.split(/(＿)/).filter(Boolean)) {
+      // pinyin-pro may hand a run like "＿！" over as one piece; split out each blank. Spaces around a number go: its own
+      // slot keeps it apart, so "得到了 4 颗星" doesn't get wide gaps (parent, 2026-10-05)
+      for (const part of d.origin.split(/(＿)/).map((p) => (/\d/.test(p) ? p.trim() : p)).filter((p) => p.trim() || p === BLANK)) {
         const prev = out[out.length - 1];
         if (part === BLANK) out.push({ py: withBlanks ? ctx[k++]! : '', ch: BLANK, blank: true });
         else if (prev && !prev.zh && !prev.blank) prev.ch += part; // keep "45" or "！" runs together

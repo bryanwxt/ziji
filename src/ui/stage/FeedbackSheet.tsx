@@ -55,7 +55,8 @@ export function FeedbackSheet({ tone = 'neutral', title, detail, actionLabel, ac
           </div>
         </div>
       )}
-      <button type="button" class={`btn btn--big ${tone === 'oops' ? 'btn--oops' : 'btn--primary'}`} disabled={disabled} onClick={go}>
+      {/* a right answer's bar fills across the button as the pause runs out, so he sees when it goes on (parent, 2026-10-05) */}
+      <button type="button" class={`btn btn--big ${tone === 'oops' ? 'btn--oops' : 'btn--primary'}${tone === 'good' && !disabled ? ' btn--countdown' : ''}`} style={tone === 'good' && !disabled ? `--auto:${AUTO_NEXT_MS}ms` : undefined} disabled={disabled} onClick={go}>
         <Label zh={actionLabel} />{actionIcon}
       </button>
     </div>

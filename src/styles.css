@@ -1288,3 +1288,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .meaning-cue--word .label__ch { font-family: var(--hanzi); font-weight: 400; } /* the 组词 cue in the cards' Chinese face, not the bold UI font */
 /* the chest's lines centre on their words: a closing ！ or 。 hangs past the edge (parent, 2026-10-05) */
 .celebrate .label__cell:last-child:not(.label__cell--zh):not(.label__cell--blank) { width: 0; overflow: visible; align-items: flex-start; }
+/* the auto-continue countdown: a bar that fills along the 继续 button's foot as the pause runs out (parent, 2026-10-05) */
+.btn--countdown { position: relative; overflow: hidden; }
+.btn--countdown::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: var(--green); transform-origin: left center; animation: countdown var(--auto, 1400ms) linear forwards; }
+@keyframes countdown { from { transform: scaleX(0); } to { transform: scaleX(1); } }

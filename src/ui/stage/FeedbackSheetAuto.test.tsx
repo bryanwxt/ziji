@@ -38,3 +38,14 @@ describe('a right answer moves on by itself', () => {
     expect(go).not.toHaveBeenCalled();
   });
 });
+
+describe('the countdown shows on the button (parent, 2026-10-05)', () => {
+  it('a right answer\'s button counts down for exactly the pause; a miss\'s does not', () => {
+    const { container, rerender } = render(<FeedbackSheet tone="good" title="真厉害！" actionLabel="继续" onAction={() => {}} />);
+    const btn = container.querySelector('button')!;
+    expect(btn.classList.contains('btn--countdown')).toBe(true);
+    expect(btn.style.getPropertyValue('--auto').trim()).toBe(`${AUTO_NEXT_MS}ms`);
+    rerender(<FeedbackSheet tone="oops" title="慢慢来！" actionLabel="继续" onAction={() => {}} />);
+    expect(container.querySelector('button')!.classList.contains('btn--countdown')).toBe(false);
+  });
+});
