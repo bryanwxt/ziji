@@ -132,7 +132,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
     </button>
   );
   return (
-    <div class="screen placement" data-ready={ready ? 'true' : 'false'} data-asked={asked} data-question={shown}>
+    <div class={`screen placement${rerun ? ' placement--rerun' : ''}`} data-ready={ready ? 'true' : 'false'} data-asked={asked} data-question={shown}>
       <Scene kind="home" />
       {rerun && (
         <button type="button" class="icon-btn placement__home" aria-label="回家" onClick={() => go({ name: 'home' })}>

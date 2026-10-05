@@ -116,6 +116,7 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
     fireEvent.click(await screen.findByRole('button', { name: '回家' }));
     expect(app.go).toHaveBeenCalledWith({ name: 'home' });
+    expect(document.querySelector('.placement')!.classList.contains('placement--rerun')).toBe(true); // its card makes room for the ✕ (sweep)
   });
 });
 

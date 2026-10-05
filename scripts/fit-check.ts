@@ -378,7 +378,7 @@ async function sweep(browser: Browser, size: Size) {
   await run('writing-sentence', AFTERNOON, { activities: only('writing'), writeSentence: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing-sentence'); });
   await run('langdu', AFTERNOON, { activities: only('speaking'), speakingLast: 'story', langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu'); });
   await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then the chest
-  await run('chest-stars', AFTERNOON, { activities: only('newwords'), ownsAll: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-stars'); }); // the chest's stars prize
+  await run('chest-stars', AFTERNOON, { ownsAll: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-stars'); }); // the chest's stars prize
   await run('langdu-extra', AFTERNOON, { doneToday: true, langdu: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
 }
 
