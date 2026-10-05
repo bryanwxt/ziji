@@ -754,3 +754,49 @@ Spec docs/superpowers/specs/2026-10-05-ziji-lesson-flow-design.md (§3.2 rungs 2
 - the sheet lacks pinyin for the right answer; 了 shows its liǎo gloss; a sentence-clue miss gets no English
 - planning a round builds boards/tiles per word per ask (~70–80 ms on the Mac)
 - a right tile tapped with nothing picked does nothing; 钓鱼 for a doubled 组词 gives the answer away; confusions fished in key order; today's 认新字 mix-ups wait a lesson; 组句 grades on the last tile; PairGame speak() dead branch
+
+## Lesson redesign phase C (2026-10-05): 成语
+
+Spec docs/superpowers/specs/2026-10-05-ziji-lesson-flow-design.md (§2.1, §3.2 rung 5, §3.5, §3.6, §4); plan docs/superpowers/plans/2026-10-05-ziji-lesson-c.md; branch lesson-c; Native, opus final review. Suite 1086/1086; stage cases ok (5 成语 screens at three sizes, wrong sheets included); full WebKit sweep 0 problems.
+
+- **152 built-in 成语** (src/content/chengyu.ts), written for the app from the HSK four-character words. Each has a short English meaning and a sentence he can read: its characters are at most one level above the 成语's, and the sentence cuts cleanly into 组句 tiles. **For the parent's review:** the list, meanings and sentences are in that file.
+- **A 成语's level** is its hardest character's level, because HSK files nearly all 成语 under 7–9. **His level** is the level of the next built-in word he hasn't started. A word gets 成语 at his level or one up; easier ones only when nothing else fits, and never harder. The 成语 must read the character the way its card does.
+- **The 认新字 card** shows a 成语 that uses the new character: pinyin, English and a sentence, in place of the extra 组词.
+- **练一练's fifth rung:**
+  - complete the 成语 (五＿六色);
+  - pick the 成语 for a sentence;
+  - build a sentence with it.
+  - A word reaches it after 组句, and at the top cycles 句子 → 组句 → 成语.
+- **School 成语:** the Words tab has a "School 成语" box (one a line, optional `= meaning`). Worksheet imports tagged 成语 count too. They come first among new words, and complete themselves on the 词语 rung. They stay on the iPad.
+
+### Rulings
+- Task 1: 152 entries (by level, 1–6: 11/46/35/31/14/15); sentences rewritten where the tile cutter split them oddly — cost: none
+- Task 4: older ladder tests updated to the spec's rung 3–5 cycle — cost: none
+- Task 5: a 组句 with the 成语 grades use, like rung 4; its many taps would rate a right answer slow — cost: rung 5 grades meaning only through completion and "pick the 成语"
+- Task 5: "pick the 成语" takes the sentence-reading allowance off before grading — cost: none
+- Task 5: rung 5 picks at random among the closest 成语 so it varies — cost: none
+- Task 6: typed school 成语 go first in the new-word line, like 听写 mistakes — cost: a long list fills the next lessons' new words with 成语
+- Task 6: a phase-B test flaked on a random distractor with no English (俱); the test now picks one that has English — cost: such a sheet shows only the right answer's English
+- Task 8: on short screens (≤760px, ≤700px tall) the 认新字 card's big character shrinks when a 成语 shows — cost: a smaller character on an iPhone SE for those words
+- Task 8: the card check now also flags a box that has to scroll — cost: none
+- Task 8: 成语 screens are checked in the stage cases, since the random lesson walk rarely reaches rung 5 — cost: three middle phone sizes see them only by chance
+- Final: "pick the 成语" offering a second right answer was re-graded Important — cost: none
+- Final: wrong 成语 are drawn from those used the other way (adverb-like vs describing) and never from a near-synonym group, instead of hand-picking 3 per sentence — cost: he may sometimes rule one out by sentence shape
+- Final (declined to judge): 成语 aren't in the content-hash pin; they're never stored on the iPad, so no CONTENT_VERSION bump — cost: none
+
+### Final review fixes
+- I1 a 成语 could read the character another way (了 le → 没完没了 liǎo; 为, 应, 还, 长…) — readings now match the card — RED→GREEN
+- I2 wrong 成语 pinyin from the library (说干就干, 一言一行, 粗心大意, 一动不动) — fixed — RED→GREEN
+- I3 a school 成语's own card wrapped and scrolled — long words fit one line; no parts rows for 3+ characters — stage case RED→GREEN
+- I4 a parent-typed 成语 meaning never reached the sheet — shown when the 成语 list has none — RED→GREEN
+- I5 a completion could offer a character that makes a real phrase (千门万户, 全心全力…) — excluded — RED→GREEN
+- I6 头头是道 misused and 7 unnatural sentences — rewritten
+- I7 "pick the 成语" could offer a near-synonym (一天到晚 / 从早到晚…) — excluded — RED→GREEN
+
+### Deferred minors
+- "pick the 成语" wrong choices follow the 成语's level ±1, not his window
+- a 成语 retry may show a different 成语 from the one he missed
+- re-adding an existing word as a school 成语 keeps its paused/writeable flags
+- SessionScreen recomputes the card's 成语 each render; levelOf sits between imports
+- some entries are 四字词语 rather than strict 成语 (一不小心, 说干就干, 难得一见, 随处可见…); 地 is dropped after adverb-like 成语
+- a hear-and-find distractor can be an HSK 7–9 character with no English (他 vs 俱)
