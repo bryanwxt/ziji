@@ -30,7 +30,7 @@ import { idiomFitItem, idiomGap, idiomZuju } from '../../src/practice/idioms';
 import { builtinWords } from '../../src/content';
 import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
-import type { Reaction } from '../../src/ui/truffle/timelines';
+import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
 
 const screen = (body: preact.ComponentChildren) => (
   <div class="screen">
@@ -74,6 +74,14 @@ if (which === 'faces') {
       <span />
       {(Object.keys(PRESETS) as Expression[]).map((e) => <span key={e}>{e}</span>)}
       {looks.map((l) => [<span key={l.label}>{l.label}</span>, ...(Object.keys(PRESETS) as Expression[]).map((e) => <Truffle key={`${l.label}-${e}`} expression={e} size={80} label={null} {...l.props} />)])}
+      <span>paws</span>
+      {(Object.keys(PAW_TRACKS) as (keyof typeof PAW_TRACKS)[]).map((k) => {
+        // each paw move at its furthest (spec 2026-10-04 §4.6), to look over and to check it stays inside his box
+        let best = PAW_TRACKS[k](0)!;
+        const size = (p: typeof best) => Math.abs(p.lx) + Math.abs(p.ly) + Math.abs(p.rx) + Math.abs(p.ry);
+        for (let t = 0; t < 3000; t += 16) { const p = PAW_TRACKS[k](t); if (!p) break; if (size(p) > size(best)) best = p; }
+        return <Truffle key={`paw-${k}`} expression="happy" size={80} label={null} paws={best} />;
+      })}
     </div>,
     app,
   );

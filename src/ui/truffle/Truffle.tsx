@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { useId, useRef } from 'preact/hooks';
 import { reducedMotion } from '../motion';
 import { useRig } from './useRig';
+import type { PawPose } from './timelines';
 import { POWERS, type PowerId } from '../../fun/powers';
 import { accessoryLayer } from './accessories';
 import { costumeLayer } from './costumes';
@@ -18,6 +19,8 @@ interface Props {
   accessory?: string | null;
   size?: number;
   lookAt?: number; // -1 (left) … 1 (right): tilts the head
+  /** a still paw pose (the faces sheet draws each paw move at its peak); the live rig moves the paws itself */
+  paws?: PawPose;
   label?: string | null; // null → decorative
   bounce?: boolean;
   power?: string | null;
@@ -86,7 +89,7 @@ function FaceRig({ f, expr, id }: { f: Face; expr: Expression; id: string }) {
 }
 
 /** Truffle 松露: his drawing cut into parts and posed by the face rig (spec 2026-10-04 §4.1). */
-export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 0, label = '松露', bounce = false, power = null, powerTier = 0, outfit = null, expression, alive = false, calm = false, react = null, onPart }: Props) {
+export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, size = 160, lookAt = 0, label = '松露', bounce = false, power = null, powerTier = 0, outfit = null, expression, alive = false, calm = false, react = null, onPart }: Props) {
   const id = `truffle-${useId()}`;
   const a11y = label === null ? { 'aria-hidden': 'true' as const } : { role: 'img' as const, 'aria-label': label };
   const expr = expression ?? MOOD_EXPRESSION[mood];
@@ -148,8 +151,8 @@ export function Truffle({ mood = 'sulk', accessory = null, size = 160, lookAt = 
           </g>
         </g>
         {/* his front paws, in front of his head (spec 2026-10-04 §4.6): at rest at his feet; they wave, knead and cover his eyes */}
-        <g class="truffle__paw" data-part="paw-l" style="transform-origin:138px 266px" {...part('body')} dangerouslySetInnerHTML={{ __html: PAW_L }} />
-        <g class="truffle__paw" data-part="paw-r" style="transform-origin:182px 266px" {...part('body')} dangerouslySetInnerHTML={{ __html: PAW_R }} />
+        <g class="truffle__paw" data-part="paw-l" transform={paws ? `translate(${paws.lx} ${paws.ly}) rotate(${paws.lr} 138 266)` : undefined} {...part('body')} dangerouslySetInnerHTML={{ __html: PAW_L }} />
+        <g class="truffle__paw" data-part="paw-r" transform={paws ? `translate(${paws.rx} ${paws.ry}) rotate(${paws.rr} 182 266)` : undefined} {...part('body')} dangerouslySetInnerHTML={{ __html: PAW_R }} />
         {layer?.front && <g class="truffle__power-front" dangerouslySetInnerHTML={{ __html: layer.front }} />}
         {acc?.over && <g class="truffle__accessory truffle__accessory--over" dangerouslySetInnerHTML={{ __html: acc.over }} />}
       </g>

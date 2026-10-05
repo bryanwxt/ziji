@@ -161,6 +161,15 @@ for (const size of SIZES) {
   if (reacting > 20) problems.push(`alive: slow frames while reacting: p95 ${reacting.toFixed(1)}ms over 120 frames`);
   const reactWork = await work();
   if (reactWork > 8) problems.push(`alive: too much work per frame while reacting: p95 ${reactWork.toFixed(1)}ms (budget 8)`);
+  // his paws (phase E): a wave and covering his eyes, timed the same way
+  for (const kind of ['hello', 'peek']) {
+    await page.waitForTimeout(1800);
+    await work();
+    await page.evaluate((k) => (window as unknown as { react: (k: string) => void }).react(k), kind);
+    await p95();
+    const w = await work();
+    if (w > 8) problems.push(`alive: too much work per frame while he ${kind === 'hello' ? 'waves' : 'covers his eyes'}: p95 ${w.toFixed(1)}ms (budget 8)`);
+  }
   await page.waitForTimeout(1500); // REACTIONS.right: a 910 ms hop, a 1200 ms hold
   const rest = await page.evaluate(() => document.querySelector('[data-part="rig"]')!.getAttribute('transform') ?? '');
   if (!/^translate\(0\.00 0\.00\) translate\(160 276\) scale\(1\.0000 1\.0000\)/.test(rest)) problems.push(`alive: not back at rest after a reaction (${rest})`);
