@@ -18,6 +18,24 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
   累: [['累了', 'lèi le', 'tired now'], ['很累', 'hěn lèi', 'very tired']],
   您: [['您好', 'nín hǎo', 'hello (polite)'], ['谢谢您', 'xiè xie nín', 'thank you (polite)']],
   渴: [['口渴', 'kǒu kě', 'thirsty'], ['渴了', 'kě le', 'thirsty now']],
+  // content sweep: everyday 组词 where the list's were obscure, unsuitable or at another reading (shown first)
+  教: [['教书', 'jiāo shū', 'to teach (at a school)'], ['教给', 'jiāo gěi', 'to teach (someone)']],
+  兴: [['高兴', 'gāo xìng', 'happy; glad'], ['兴趣', 'xìng qù', 'interest (in something)']],
+  切: [['切菜', 'qiē cài', 'to cut vegetables'], ['切开', 'qiē kāi', 'to cut open']],
+  脏: [['弄脏', 'nòng zāng', 'to make dirty'], ['很脏', 'hěn zāng', 'very dirty']],
+  弄: [['弄坏', 'nòng huài', 'to break'], ['弄脏', 'nòng zāng', 'to make dirty']],
+  饱: [['吃饱', 'chī bǎo', 'to have eaten enough; full'], ['很饱', 'hěn bǎo', 'very full']],
+  哭: [['大哭', 'dà kū', 'to cry loudly'], ['哭了', 'kū le', 'cried']],
+  雷: [['打雷', 'dǎ léi', 'to thunder'], ['雷声', 'léi shēng', 'thunder']],
+  块: [['一块', 'yí kuài', 'a piece; one dollar'], ['冰块', 'bīng kuài', 'ice cube']],
+  岁: [['几岁', 'jǐ suì', 'how old?'], ['八岁', 'bā suì', 'eight years old']],
+  第: [['第一', 'dì yī', 'first'], ['第二', 'dì èr', 'second']],
+  点: [['一点', 'yì diǎn', 'a little'], ['几点', 'jǐ diǎn', 'what time?']],
+  风: [['大风', 'dà fēng', 'strong wind'], ['刮风', 'guā fēng', 'windy; the wind blows']],
+  买: [['买东西', 'mǎi dōng xi', 'to go shopping'], ['买菜', 'mǎi cài', 'to buy food (groceries)']],
+  烟: [['烟花', 'yān huā', 'fireworks'], ['冒烟', 'mào yān', 'to give off smoke']],
+  笨: [['笨重', 'bèn zhòng', 'heavy and clumsy'], ['笨手笨脚', 'bèn shǒu bèn jiǎo', 'clumsy']],
+  暗: [['黑暗', 'hēi àn', 'dark; darkness'], ['暗暗', 'àn àn', 'secretly; quietly']],
   // HSK 2
   又: [['又来了', 'yòu lái le', 'here it comes again'], ['又一次', 'yòu yí cì', 'once again']],
   亿: [['一亿', 'yí yì', 'one hundred million'], ['亿万', 'yì wàn', 'hundreds of millions']],
@@ -31,7 +49,7 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
   猫: [['小猫', 'xiǎo māo', 'kitten; little cat'], ['猫咪', 'māo mī', 'kitty']],
   喊: [['大喊', 'dà hǎn', 'to shout loudly'], ['喊叫', 'hǎn jiào', 'to yell']],
   湖: [['湖水', 'hú shuǐ', 'lake water'], ['西湖', 'xī hú', 'West Lake']],
-  漂: [['漂流', 'piāo liú', 'to drift; rafting'], ['漂浮', 'piāo fú', 'to float']],
+  漂: [['漂亮', 'piào liang', 'pretty; beautiful']], // piào: the reading a child meets (content sweep)
   篇: [['一篇', 'yì piān', 'one (story, piece of writing)'], ['这篇', 'zhè piān', 'this (story, essay)']],
   // HSK 3
   刀: [['小刀', 'xiǎo dāo', 'small knife'], ['刀子', 'dāo zi', 'knife']],
