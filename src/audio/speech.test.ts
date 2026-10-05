@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { pickVoice, setSpeechRate, speak } from './speech';
+import { onSpeaking, pickVoice, setSpeechRate, speak, stopSpeaking } from './speech';
 
 const v = (lang: string, localService = true, name = lang) => ({ lang, localService, name }) as SpeechSynthesisVoice;
 
@@ -54,3 +54,37 @@ describe('speak', () => {
     expect(() => speak('河')).not.toThrow();
   });
 });
+
+describe('talking (spec 2026-10-04 §4.6): who is told when the iPad speaks', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const stub = () => {
+    const spoken: (SpeechSynthesisUtterance & { onstart?: () => void; onend?: () => void; onerror?: () => void })[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: never) => spoken.push(u), getVoices: () => [] });
+    vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; volume = 1; voice = null; constructor(t: string) { this.text = t; } });
+    return spoken;
+  };
+  it('on when an utterance starts, off when it ends or fails', () => {
+    const spoken = stub();
+    const seen: boolean[] = [];
+    const off = onSpeaking((on) => seen.push(on));
+    speak('你好');
+    spoken[0]!.onstart!();
+    spoken[0]!.onend!();
+    speak('我们');
+    spoken[1]!.onstart!();
+    spoken[1]!.onerror!();
+    off();
+    expect(seen).toEqual([true, false, true, false]);
+  });
+  it('off when speech is stopped (nothing stays open)', () => {
+    const spoken = stub();
+    const seen: boolean[] = [];
+    const off = onSpeaking((on) => seen.push(on));
+    speak('你好');
+    spoken[0]!.onstart!();
+    stopSpeaking();
+    off();
+    expect(seen).toEqual([true, false]);
+  });
+});
+

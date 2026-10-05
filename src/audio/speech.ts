@@ -1,7 +1,11 @@
+import { setSpeaking } from './speaking';
+
 let voice: SpeechSynthesisVoice | null = null;
 let rate = 0.8;
 
 const available = () => typeof speechSynthesis !== 'undefined' && !!speechSynthesis;
+
+export { onSpeaking } from './speaking';
 
 export function setSpeechRate(r: number): void {
   rate = r;
@@ -41,8 +45,14 @@ const isShortWord = (text: string) => {
 /** Say Chinese text. It cuts off whatever is playing, unless `queue` (then it waits its turn: the character, then its usage line). */
 export function speak(text: string, { queue = false }: { queue?: boolean } = {}): void {
   if (!available()) return;
-  if (!queue) speechSynthesis.cancel();
+  if (!queue) {
+    speechSynthesis.cancel();
+    setSpeaking(false); // a cancelled utterance may never say it ended
+  }
   const u = new SpeechSynthesisUtterance(text);
+  u.onstart = () => setSpeaking(true);
+  u.onend = () => setSpeaking(false);
+  u.onerror = () => setSpeaking(false);
   u.lang = 'zh-CN';
   u.rate = isShortWord(text) ? Math.round(rate * SHORT_WORD_PACE * 100) / 100 : rate;
   if (voice) u.voice = voice;
@@ -52,6 +62,7 @@ export function speak(text: string, { queue = false }: { queue?: boolean } = {})
 /** Silence any speech in progress (before recording him, and when leaving a screen). */
 export function stopSpeaking(): void {
   if (available()) speechSynthesis.cancel();
+  setSpeaking(false);
 }
 
 /** iOS only allows speech after a user gesture; call this from the first tap. */

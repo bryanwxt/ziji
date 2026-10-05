@@ -5,6 +5,8 @@ import { Truffle } from './Truffle';
 
 let reduced = false;
 vi.mock('../motion', () => ({ reducedMotion: () => reduced }));
+let talk: ((on: boolean) => void) | null = null;
+vi.mock('../../audio/speaking', () => ({ onSpeaking: (fn: (on: boolean) => void) => { talk = fn; return () => { talk = null; }; } }));
 
 let frames: FrameRequestCallback[] = [];
 let clock = 0; // frame time keeps counting across run() calls, so idle timing can be sampled frame by frame
@@ -150,6 +152,34 @@ describe('paws (spec 2026-10-04 §4.6, phase E)', () => {
     const { container } = render(<Truffle alive expression="neutral" react={{ kind: 'hello', key: 1 }} />);
     act(() => run(25));
     expect(paw(container, 'r')).toBe('');
+    reduced = false;
+  });
+});
+
+describe('talking (spec 2026-10-04 §4.6)', () => {
+  const mouth = (c: Element) => c.querySelector('[data-part="mouth"]')!.getAttribute('d');
+  it('his mouth moves while the iPad speaks, and settles when it stops', () => {
+    reduced = false;
+    const { container } = render(<Truffle alive expression="neutral" />);
+    act(() => run(40));
+    const still = mouth(container);
+    act(() => talk!(true));
+    const seen = new Set<string | null>();
+    for (let i = 0; i < 12; i++) { act(() => run(2)); seen.add(mouth(container)); }
+    expect(seen.size).toBeGreaterThan(3); // opening and closing
+    act(() => talk!(false));
+    act(() => run(80));
+    expect(mouth(container)).toBe(still);
+  });
+  it('reduced motion: the mouth does not flap', () => {
+    reduced = true;
+    const { container } = render(<Truffle alive expression="neutral" />);
+    act(() => run(40));
+    const still = mouth(container);
+    act(() => talk!(true));
+    act(() => run(20));
+    expect(mouth(container)).toBe(still);
+    act(() => talk!(false));
     reduced = false;
   });
 });

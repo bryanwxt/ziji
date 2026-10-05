@@ -2,6 +2,7 @@ import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
 import { cardCentre, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
+import { onSpeaking } from '../../audio/speaking';
 import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS, type Motion, type PawPose, type Reaction, type Track } from './timelines';
 
 type Key = keyof Face;
@@ -114,6 +115,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
   const extras = useRef<Record<string, number>>(Object.fromEntries(EXTRA_KEYS.map((e) => [e, e === opts.expr ? 1 : 0])));
   const extraVel = useRef<Record<string, number>>({});
   const raf = useRef(0);
+  const talking = useRef(false); // the iPad is speaking: his mouth moves (spec §4.6)
   const visible = useRef(true);
   const onScreen = useRef(true);
 
@@ -255,7 +257,9 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         rig: rigTransform(m, shimmer), body, tail, blink, earL: flickL, earR: flickR,
         pawL: pawTransform(pw.lx, pw.ly, pw.lr, 138), pawR: pawTransform(pw.rx, pw.ry, pw.rr, 182),
       };
-      paint(els, cur.current, pose, extras.current);
+      // talking: the mouth opens and closes while the iPad speaks; the face itself is untouched, so it settles when speech ends
+      const face = talking.current && !reduced ? { ...cur.current, mouthOpen: Math.max(cur.current.mouthOpen, 0.12 + 0.38 * Math.abs(Math.sin(t * 13))) } : cur.current;
+      paint(els, face, pose, extras.current);
       start();
     };
     const start = () => {
@@ -271,6 +275,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       else stop();
     };
     document.addEventListener('visibilitychange', onVisibility);
+    const offTalk = onSpeaking((on) => { talking.current = on; });
     const onPointer = (e: PointerEvent) => { pointer.current = { x: e.clientX, y: e.clientY }; };
     document.addEventListener('pointermove', onPointer, { passive: true });
     let io: IntersectionObserver | null = null;
@@ -288,6 +293,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
       document.removeEventListener('pointermove', onPointer);
+      offTalk();
       io?.disconnect();
     };
   }, [opts.alive]);
