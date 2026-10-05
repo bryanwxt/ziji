@@ -143,14 +143,14 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const proceed = () => {
     if (reintroOnMiss && result && !result.correct && !again) {
       setAgain(true);
-      againAt.current = Date.now();
+      againAt.current = performance.now(); // the page clock: a wall clock can stand still or jump
       setPhase('intro');
     } else next();
   };
 
 
   const sheet =
-    phase === 'intro' ? <FeedbackSheet actionLabel="我记住了！" onAction={() => (again ? (Date.now() - againAt.current >= 600 ? next() : undefined) : setPhase('quiz'))} />
+    phase === 'intro' ? <FeedbackSheet actionLabel="我记住了！" onAction={() => (again ? (performance.now() - againAt.current >= 600 ? next() : undefined) : setPhase('quiz'))} />
     : phase === 'quiz' ? <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
     : result ? (
         <FeedbackSheet
