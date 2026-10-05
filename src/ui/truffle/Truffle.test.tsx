@@ -105,6 +105,20 @@ describe('Truffle powers', () => {
 });
 
 describe('Truffle costumes', () => {
+  it('a zodiac onesie has the animal\'s own tail in his tail\'s place (it swishes with his), and its face on the hood', async () => {
+    const { ONESIES } = await import('../../fun/costumes');
+    for (const c of ONESIES) {
+      const { container, unmount } = render(<Truffle outfit={c.id} />);
+      const tail = container.querySelector('[data-part="tail"]')!;
+      expect(tail.innerHTML, c.id).not.toBe(render(<Truffle />).container.querySelector('[data-part="tail"]')!.innerHTML);
+      expect(tail.innerHTML.length, c.id).toBeGreaterThan(40);
+      expect(container.querySelector('.truffle__outfit-head [data-hood-face]'), c.id).toBeTruthy();
+      unmount();
+    }
+    const own = render(<Truffle />).container.querySelector('[data-part="tail"]')!.innerHTML;
+    const { container } = render(<Truffle outfit="chef" />);
+    expect(container.querySelector('[data-part="tail"]')!.innerHTML).toBe(own); // an outfit leaves his own tail
+  });
   it("every onesie's ears, horns and spikes stay inside his box (30 20 260 270), so a tile or a clipped screen never cuts them", async () => {
     const { ONESIES } = await import('../../fun/costumes');
     const { costumeLayer } = await import('./costumes');
@@ -132,7 +146,8 @@ describe('Truffle costumes', () => {
       const { container, unmount } = render(<Truffle outfit={c.id} />);
       expect(container.querySelector('svg.truffle')?.getAttribute('data-outfit')).toBe(c.id);
       expect(container.querySelector('.truffle__outfit-body')?.innerHTML.length).toBeGreaterThan(10);
-      expect(container.querySelector('.truffle__outfit-head')?.innerHTML.length).toBeGreaterThan(10);
+      // a jersey or a gi is all body: nothing on his head
+      if (c.id !== 'football' && c.id !== 'gi') expect(container.querySelector('.truffle__outfit-head')?.innerHTML.length, c.id).toBeGreaterThan(10);
       unmount();
     }
   });

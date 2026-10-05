@@ -5,9 +5,15 @@ import { canOpenChest, costumeById, COSTUMES, ONESIES, openChest, OUTFITS, visib
 import { ACCESSORIES } from './pet';
 
 describe('costumes', () => {
-  it('has 12 onesies and 8 outfits with Chinese names', () => {
+  it('has 12 onesies and 13 outfits with Chinese names', () => {
     expect(ONESIES).toHaveLength(12);
-    expect(OUTFITS).toHaveLength(8);
+    expect(OUTFITS).toHaveLength(13);
+    // the parent's additions (2026-10-06): a robot, a chess rook, a football jersey, basketball, a BJJ gi
+    expect(costumeById('robot')).toMatchObject({ zh: '机器人', py: 'jī qì rén', kind: 'outfit' });
+    expect(costumeById('rook')).toMatchObject({ zh: '城堡', py: 'chéng bǎo', kind: 'outfit' });
+    expect(costumeById('football')).toMatchObject({ zh: '足球服', py: 'zú qiú fú', kind: 'outfit' });
+    expect(costumeById('basketball')).toMatchObject({ zh: '篮球服', py: 'lán qiú fú', kind: 'outfit' });
+    expect(costumeById('gi')).toMatchObject({ zh: '柔术服', py: 'róu shù fú', kind: 'outfit' });
     expect(costumeById('tiger')).toMatchObject({ zh: '虎', py: 'hǔ', kind: 'onesie' });
     expect(costumeById('nope')).toBeUndefined();
   });
@@ -89,3 +95,15 @@ describe('chest replays', () => {
     expect(openChest(first, '2026-10-05', 'tiger').result).toEqual(openChest(first, '2026-10-05', 'tiger').result);
   });
 });
+
+describe('telling the zodiac onesies apart (parent, 2026-10-06: some were hard to identify)', () => {
+  const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const far = (a: string, b: string) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]!)) > 70;
+  it('the lookalikes no longer share a colour', () => {
+    const col = (id: string) => costumeById(id)!.color;
+    for (const [a, b] of [['ox', 'horse'], ['ox', 'monkey'], ['ox', 'dog'], ['horse', 'monkey'], ['horse', 'dog'], ['monkey', 'dog'], ['dragon', 'snake'], ['rabbit', 'goat']]) {
+      expect(far(col(a!), col(b!)), `${a} vs ${b}`).toBe(true);
+    }
+  });
+});
+

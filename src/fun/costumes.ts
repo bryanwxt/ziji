@@ -6,7 +6,7 @@ import { ACCESSORIES, CHEST_BONUS_STARS } from './pet';
 import type { ZodiacId } from '../types';
 
 export type { ZodiacId };
-export type OutfitId = 'astronaut' | 'chef' | 'wizard' | 'explorer' | 'pirate' | 'hero' | 'pixel' | 'raincoat';
+export type OutfitId = 'astronaut' | 'chef' | 'wizard' | 'explorer' | 'pirate' | 'hero' | 'pixel' | 'raincoat' | 'robot' | 'rook' | 'football' | 'basketball' | 'gi';
 
 export interface Costume {
   id: ZodiacId | OutfitId;
@@ -21,10 +21,11 @@ const f = (id: OutfitId, zh: string, py: string, color: string): Costume => ({ i
 
 /** The 12 生肖, in zodiac order. */
 export const ONESIES: Costume[] = [
-  o('rat', '鼠', 'shǔ', '#a9a9b8'), o('ox', '牛', 'niú', '#8a5a3c'), o('tiger', '虎', 'hǔ', '#ffa53d'),
-  o('rabbit', '兔', 'tù', '#fff1f4'), o('dragon', '龙', 'lóng', '#5cc46f'), o('snake', '蛇', 'shé', '#7fcf6a'),
-  o('horse', '马', 'mǎ', '#c98a52'), o('goat', '羊', 'yáng', '#f4efe6'), o('monkey', '猴', 'hóu', '#a8754f'),
-  o('rooster', '鸡', 'jī', '#ff6a5a'), o('dog', '狗', 'gǒu', '#d9a066'), o('pig', '猪', 'zhū', '#ffb6c8'),
+  // colours kept apart, so the lookalikes (ox/horse/monkey/dog, dragon/snake, rabbit/goat) never share one (parent, 2026-10-06)
+  o('rat', '鼠', 'shǔ', '#9d9cad'), o('ox', '牛', 'niú', '#f7f4ee'), o('tiger', '虎', 'hǔ', '#ffa53d'),
+  o('rabbit', '兔', 'tù', '#fdf6f9'), o('dragon', '龙', 'lóng', '#3fae66'), o('snake', '蛇', 'shé', '#b4cf4a'),
+  o('horse', '马', 'mǎ', '#c77b3f'), o('goat', '羊', 'yáng', '#e6d3a3'), o('monkey', '猴', 'hóu', '#6b4a3a'),
+  o('rooster', '鸡', 'jī', '#e0533c'), o('dog', '狗', 'gǒu', '#e8c27a'), o('pig', '猪', 'zhū', '#ffb3c7'),
 ];
 
 export const OUTFITS: Costume[] = [
@@ -32,6 +33,10 @@ export const OUTFITS: Costume[] = [
   f('wizard', '魔法师', 'mó fǎ shī', '#7b5cd6'), f('explorer', '探险家', 'tàn xiǎn jiā', '#c9a86a'),
   f('pirate', '海盗', 'hǎi dào', '#2f4a7a'), f('hero', '超人', 'chāo rén', '#ff4a3d'),
   f('pixel', '像素', 'xiàng sù', '#5ccf7a'), f('raincoat', '雨衣', 'yǔ yī', '#ffd23f'),
+  // the parent's additions (2026-10-06)
+  f('robot', '机器人', 'jī qì rén', '#c9d1dc'), f('rook', '城堡', 'chéng bǎo', '#efe4cc'),
+  f('football', '足球服', 'zú qiú fú', '#d8262e'), f('basketball', '篮球服', 'lán qiú fú', '#2f6fd6'),
+  f('gi', '柔术服', 'róu shù fú', '#fbfaf6'),
 ];
 
 export const COSTUMES: Costume[] = [...ONESIES, ...OUTFITS];

@@ -129,7 +129,7 @@ export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, siz
         {layer && <g class="truffle__power-back" dangerouslySetInnerHTML={{ __html: layer.back }} />}
         {wear?.back && <g class="truffle__outfit-back" dangerouslySetInnerHTML={{ __html: wear.back }} />}
         {acc?.back && <g class="truffle__accessory truffle__accessory--back" dangerouslySetInnerHTML={{ __html: acc.back }} />}
-        <g class="truffle__tail" data-part="tail" style="transform-origin:214px 246px" {...part('tail')} dangerouslySetInnerHTML={{ __html: TAIL }} />
+        <g class="truffle__tail" data-part="tail" style="transform-origin:214px 246px" {...part('tail')} dangerouslySetInnerHTML={{ __html: wear?.tail ?? TAIL }} />
         <g class="truffle__body" data-part="body" style="transform-origin:160px 276px" {...part('body')} dangerouslySetInnerHTML={{ __html: TORSO }} />
         {wear && <g class="truffle__outfit-body" dangerouslySetInnerHTML={{ __html: wear.body }} />}
         {acc?.under && <g class="truffle__accessory truffle__accessory--under" dangerouslySetInnerHTML={{ __html: acc.under }} />}
