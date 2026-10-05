@@ -80,11 +80,11 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
     return () => clearTimeout(t);
   }, [question, tapGuardMs]);
 
-  const answer = async (correct: boolean) => {
+  const answer = async (correct: boolean, dontKnow = false) => {
     if (!walk || !question || result || !ready || walk.done) return;
     if (tapGuardMs > 0) setReady(false);
     setAsked((n) => n + 1);
-    const next = walkStep(walk, { style: question.style, wordId: question.wordId, correct }, bands.length);
+    const next = walkStep(walk, { style: question.style, wordId: question.wordId, correct, dontKnow }, bands.length);
     setWalk(next);
     if (next.done) {
       const levels = placementLevels(next.answers);
@@ -137,7 +137,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
       <Stage
         activity="placement"
         truffle={<Pet kid={k} mood="neutral" bubble={q ? BUBBLE[q.style] : undefined} size={180} calm />}
-        sheet={<FeedbackSheet actionLabel="不知道" actionIcon={<InkIcon name="think" size={30} />} onAction={() => void answer(false)} />}
+        sheet={<FeedbackSheet actionLabel="不知道" actionIcon={<InkIcon name="think" size={30} />} onAction={() => void answer(false, true)} />}
       >
         {q && (
           <>

@@ -7,17 +7,21 @@ export const PER_VISIT = 4;
 export const MAX_QUESTIONS = 40;
 export const WARMUP = 3; // easy reading questions first, so a nervous start doesn't skew the result
 export const LOW_START = 2; // band 3: where the walk starts when the warm-up went badly (at most 1 of 3 right)
+/** 不知道 this many times in a row ends the visit as a miss; each further one steps down at once (parent, 2026-10-05). */
+export const DONT_KNOW_RUN = 3;
 
 export type Style = 'read' | 'listen' | 'fill' | 'fit'; // 读一读 听一听 补一补 选一选 (真的假的 was dropped: a 50/50 guess, and odd to the parent)
 export const READING_STYLES: Style[] = ['read', 'listen', 'fill'];
 
-export interface WalkAnswer { band: number; style: Style; wordId: string; correct: boolean }
+export interface WalkAnswer { band: number; style: Style; wordId: string; correct: boolean; dontKnow?: boolean } // dontKnow: he tapped 不知道 (a miss, said honestly)
 
 const share = (xs: WalkAnswer[]) => (xs.length ? xs.filter((a) => a.correct).length / xs.length : 0);
 export interface WalkState {
   band: number;
   warmup: number; // warm-up questions answered (not scored)
   warmRight?: number; // warm-up questions answered right
+  warmDontKnow?: number; // warm-up questions answered 不知道
+  dontKnowRun?: number; // 不知道 in a row, now
   visit: WalkAnswer[]; // this visit's answers so far
   answers: WalkAnswer[]; // every scored answer
   visits: Record<number, number>; // completed visits per band
@@ -48,23 +52,27 @@ export function walkStep(s: WalkState, a: Omit<WalkAnswer, 'band'>, bandCount: n
   if (s.done) return s;
   if (s.warmup < WARMUP) {
     const warmRight = (s.warmRight ?? 0) + (a.correct ? 1 : 0);
+    const warmDontKnow = (s.warmDontKnow ?? 0) + (a.dontKnow ? 1 : 0);
     const last = s.warmup + 1 === WARMUP;
-    // a shaky warm-up starts the walk low: quicker for a beginner, and a guesser isn't carried up by luck
-    return { ...s, warmup: s.warmup + 1, warmRight, band: last && warmRight <= 1 ? Math.min(s.band, LOW_START) : s.band };
+    // a shaky warm-up starts the walk low: quicker for a beginner, and a guesser isn't carried up by luck; all 不知道: the first band
+    const band = !last ? s.band : warmDontKnow === WARMUP ? 0 : warmRight <= 1 ? Math.min(s.band, LOW_START) : s.band;
+    return { ...s, warmup: s.warmup + 1, warmRight, warmDontKnow, band };
   }
   const answer = { ...a, band: s.band };
   const visit = [...s.visit, answer];
   const answers = [...s.answers, answer];
-  if (visit.length < PER_VISIT) return { ...s, visit, answers, done: answers.length >= MAX_QUESTIONS };
+  const dontKnowRun = a.dontKnow ? (s.dontKnowRun ?? 0) + 1 : 0; // a guess, right or wrong, breaks the run
+  const lost = dontKnowRun >= DONT_KNOW_RUN; // he keeps saying he doesn't know: down now, not after the rest of the visit
+  if (!lost && visit.length < PER_VISIT) return { ...s, visit, answers, dontKnowRun, done: answers.length >= MAX_QUESTIONS };
   const right = share(visit) * PER_VISIT; // 0–4 right
   const seen = (s.visits[s.band] ?? 0) + 1;
-  const move: -1 | 0 | 1 = right >= 3 ? 1 : right <= 1 ? -1 : seen >= 2 ? -1 : 0;
+  const move: -1 | 0 | 1 = lost || right <= 1 ? -1 : right >= 3 ? 1 : seen >= 2 ? -1 : 0;
   const turns = s.turns + (move !== 0 && s.direction !== 0 && move !== s.direction ? 1 : 0);
   const band = s.band + move;
   const done = turns >= 2 || answers.length >= MAX_QUESTIONS || band < 0 || band >= bandCount;
   return {
     band: Math.max(0, Math.min(bandCount - 1, band)), warmup: s.warmup, visit: [], answers,
-    visits: { ...s.visits, [s.band]: seen }, direction: move === 0 ? s.direction : move, turns, done,
+    visits: { ...s.visits, [s.band]: seen }, direction: move === 0 ? s.direction : move, turns, done, dontKnowRun,
   };
 }
 

@@ -310,7 +310,8 @@ async function sweep(browser: Browser, size: Size) {
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));
   await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));
   await run('placement', AFTERNOON, { placementDone: false }, async (p) => {
-    // each style is its own screen (spec §19 part 6): answer 不知道 and look again, ten times
+    // each style is its own screen (spec §19 part 6): answer and look again, ten times — a guess between the 不知道 taps, as
+    // 不知道 three times running steps down at once and six from the start end the check (parent, 2026-10-05)
     // and every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
     const boxes: string[] = [];
     for (let i = 0; i < 11; i++) {
@@ -318,7 +319,8 @@ async function sweep(browser: Browser, size: Size) {
       await check(p, size, 'placement', i);
       boxes.push(await p.evaluate(() => ['.placement__prompt', '.placement__choices', '.placement .btn--big']
         .map((sel) => { const r = document.querySelector(sel)!.getBoundingClientRect(); return [r.top, r.height, r.width].map(Math.round).join(','); }).join(' | ')));
-      await p.click('.placement .btn--big');
+      const guess = i % 2 === 1 ? await p.$('.placement .choice') : null;
+      await (guess ? guess.click() : p.click('.placement .btn--big'));
       await p.waitForTimeout(150);
     }
     const moved = boxes.findIndex((b) => b !== boxes[0]);

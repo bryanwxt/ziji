@@ -17,10 +17,10 @@ const SEED = 20261002; // a fixed walk: the screen's own seed comes from the clo
 const LONG = { timeout: 10_000 }; // saving a strong reader's result writes hundreds of cards; a loaded machine is slow
 
 /** Answers one question at a time, each only once it is on screen (never a stale one twice), until the result shows. */
-async function walkThrough(pick: () => HTMLElement, each?: () => void) {
+async function walkThrough(pick: () => HTMLElement, each?: () => void): Promise<number> {
   for (let i = 0; i < 80; i++) {
     await waitFor(() => expect(document.querySelector(`[data-question="${i}"]`) ?? screen.queryByText('开始！')).toBeTruthy(), LONG);
-    if (screen.queryByText('开始！')) return;
+    if (screen.queryByText('开始！')) return i;
     each?.();
     fireEvent.click(pick());
   }
@@ -66,7 +66,7 @@ describe('PlacementScreen (spec §19 part 6)', () => {
       const app = await setup();
       const { unmount } = renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={7} />, app);
       const seen: string[] = [];
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 5; i++) { // 不知道 six times would end it
         await waitFor(() => expect(document.querySelector('[data-asked]')?.getAttribute('data-asked')).toBe(String(i)));
         await waitFor(() => expect(document.querySelector(`[data-question="${i}"]`)).toBeTruthy());
         seen.push(`${bubble()}|${document.querySelector('.placement__prompt')!.textContent}`);
@@ -91,7 +91,7 @@ describe('PlacementScreen (spec §19 part 6)', () => {
   it('a child who knows no characters yet gets a kind start, not "0" (deferred minor, plan 5)', async () => {
     const app = await setup();
     renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
-    await walkThrough(dontKnow);
+    expect(await walkThrough(dontKnow)).toBe(6); // 3 warm-up, 3 at the first band (parent, 2026-10-05: it took 15)
     expect(screen.getByText('开始！')).toBeTruthy();
     expect(document.querySelector('h1')!.textContent).toContain('我们从第一个字开始！');
     expect(screen.queryByText(/认识 0 个字/)).toBeNull();

@@ -107,3 +107,31 @@ describe('children who guess (review of plan 14)', () => {
   });
 
 });
+
+describe('不知道 (parent, 2026-10-05: tapping it over and over took 15 taps to end)', () => {
+  const dk = { style: 'read' as Style, wordId: 'x', correct: false, dontKnow: true };
+  const taps = (s: WalkState, steps: (boolean | 'dk')[], n = 30) =>
+    steps.reduce((st, c) => (st.done ? st : walkStep(st, c === 'dk' ? dk : ans(c), n)), s);
+  const count = (s: WalkState, n = 30) => { let st = s; let k = 0; while (!st.done && k < 100) { st = walkStep(st, dk, n); k++; } return k; };
+
+  it('all 不知道 from the start ends after 6 taps: 3 warm-up, then 3 at the first band', () => {
+    expect(count(startWalk(30))).toBe(6);
+    const s = taps(startWalk(30), ['dk', 'dk', 'dk', 'dk', 'dk', 'dk']);
+    expect(placementLevels(s.answers).reading).toBe(-1);
+  });
+  it('a warm-up of only 不知道 starts at the first band', () => {
+    expect(taps(startWalk(30), ['dk', 'dk', 'dk']).band).toBe(0);
+    expect(taps(startWalk(30), ['dk', false, 'dk']).band).toBe(LOW_START); // a guess among them: the shaky start as before
+  });
+  it('3 不知道 in a row end that visit and step down; each further one steps down again', () => {
+    const s = taps(warm(), ['dk', 'dk', 'dk']);
+    expect([s.band, s.visit.length]).toEqual([5, 0]);
+    expect(taps(s, ['dk']).band).toBe(4);
+    expect(taps(s, ['dk', 'dk']).band).toBe(3);
+  });
+  it('one 不知道 among guesses counts as a miss, nothing more', () => {
+    expect(taps(warm(), [true, 'dk', true, true]).band).toBe(7);
+    expect(taps(warm(), ['dk', 'dk', true, 'dk']).visit.length).toBe(0); // a right answer breaks the run: the visit runs its 4
+    expect(taps(warm(), ['dk', 'dk', true, 'dk']).band).toBe(5);
+  });
+});
