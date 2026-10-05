@@ -9,6 +9,7 @@ import { FeedbackSheet } from '../../src/ui/stage/FeedbackSheet';
 import { Stage } from '../../src/ui/stage/Stage';
 import { Pet } from '../../src/ui/Pet';
 import { Truffle } from '../../src/ui/truffle/Truffle';
+import { Label } from '../../src/ui/Label';
 import { PairGame } from '../../src/activities/practice/PairGame';
 import { BuildSentence } from '../../src/activities/practice/BuildSentence';
 import { ComponentsStep } from '../../src/activities/components/ComponentsStep';
@@ -20,6 +21,7 @@ import { WorldProps } from '../../src/ui/worlds/WorldProps';
 import { sceneFor } from '../../src/ui/worlds/scenes';
 import { WORLDS, type WorldId } from '../../src/fun/worlds';
 import { DEFAULT_FINDS } from '../../src/fun/finds';
+import { burstStyle } from '../../src/ui/worlds/burst';
 import type { ReactionKind } from '../../src/ui/truffle/timelines';
 import { IdiomQuestion } from '../../src/activities/practice/IdiomQuestion';
 import { FlashcardStep } from '../../src/activities/flashcards/FlashcardStep';
@@ -93,6 +95,20 @@ else if (which === 'worlds') {
   // every world by day and by evening, for the parent to look over (spec 2026-10-04 §2)
   const cell = (w: WorldId, t: 'afternoon' | 'evening') => `<figure style="margin:0"><svg viewBox="0 0 360 480" width="180" height="240">${sceneFor(w, t)}</svg><figcaption>${w} · ${t}</figcaption></figure>`;
   app.innerHTML = `<div style="display:grid;grid-template-columns:repeat(8,180px);gap:6px;padding:8px;font:11px sans-serif;background:#fff">${WORLDS.map((w) => cell(w.id, 'afternoon')).join('')}${WORLDS.map((w) => cell(w.id, 'evening')).join('')}</div>`;
+}
+else if (which === 'bursts') {
+  // the celebration's sunburst in every world's colours, with its heading, for the parent to look over (phase D)
+  render(
+    <div style="display:grid;grid-template-columns:repeat(4,240px);gap:8px;padding:8px;background:#fff">
+      {WORLDS.map((w) => (
+        <div key={w.id} style="position:relative;height:300px;overflow:hidden;border-radius:12px;transform:translateZ(0)">
+          <div class="burst" style={burstStyle(w.id)} />
+          <div class="celebrate celebrate--burst" style="position:relative;height:100%"><h1><Label zh="太棒了！" /></h1><Truffle mood="cheer" size={110} /><p>{w.id}</p></div>
+        </div>
+      ))}
+    </div>,
+    app,
+  );
 }
 else if (which === 'moments') {
   // Home's world with its props and a live Truffle: each moment is tapped and its frames timed (spec 2026-10-04 §6)

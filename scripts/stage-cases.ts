@@ -114,6 +114,10 @@ for (const size of SIZES) {
   await page.waitForTimeout(300);
   mkdirSync('fit-shots/stage-cases', { recursive: true });
   await page.screenshot({ path: 'fit-shots/stage-cases/worlds.png' });
+  await page.setViewportSize({ width: 1000, height: 640 });
+  await page.goto(`file://${dir}/index.html?case=bursts`);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'fit-shots/stage-cases/bursts.png' });
   await page.close();
   const m = await browser.newPage({ viewport: { width: 1024, height: 768 } });
   for (const world of ['yard', 'grass', 'race', 'blocks', 'dino', 'sea', 'space', 'pirate']) {
