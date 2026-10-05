@@ -89,6 +89,13 @@ export interface AnswerLog {
   correct: boolean;
 }
 
+/** A word's place on the context ladder (spec 2026-10-05 §3.2): the highest rung he has answered right, lowered by a miss. */
+export interface LadderEntry {
+  wordId: string;
+  rung: number;
+  at: number;
+}
+
 /** The last placement check's two levels (band indexes, -1 = none) and the words he missed. */
 export interface PlacementResult {
   at: number;

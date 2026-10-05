@@ -1,4 +1,5 @@
 import { WORLDS, worldById } from '../fun/worlds';
+import { nextRung, type Rung } from '../session/ladder';
 import { normalizeFinds } from '../fun/finds';
 import { migrateAccessory } from '../fun/accessories';
 import { DEFAULT_KID, DEFAULT_READING, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type ReadingState, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
@@ -206,4 +207,16 @@ function normalizeStory(v: unknown): { next: number; told: number } {
   const x = (v && typeof v === 'object' ? v : {}) as { next?: unknown; told?: unknown };
   const n = (a: unknown) => (typeof a === 'number' && Number.isInteger(a) && a >= 0 ? a : 0);
   return { next: n(x.next), told: n(x.told) };
+}
+
+/** Every word's rung on the context ladder (words never practised in 练一练 have none: rung 0). */
+export async function getRungs(db: AppDb): Promise<Map<string, number>> {
+  return new Map((await db.getAll('ladder')).map((e) => [e.wordId, e.rung]));
+}
+
+/** Notes one answer at `rung` and returns the word's new rung. */
+export async function noteRung(db: AppDb, wordId: string, rung: Rung, correct: boolean, now: Date): Promise<number> {
+  const next = nextRung((await db.get('ladder', wordId))?.rung ?? 0, rung, correct);
+  await db.put('ladder', { wordId, rung: next, at: now.getTime() });
+  return next;
 }
