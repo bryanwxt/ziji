@@ -230,13 +230,14 @@ export interface Settings {
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
   placementResult?: PlacementResult;
   baselines?: Partial<Record<Skill, number>>;
+  pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)
   contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION) // % right on his class worksheets, typed in by the parent (stays on the iPad)
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   pinHash: null,
   sessionMinutes: 30,
-  newPerDay: 4,
+  newPerDay: 8, // the ceiling the app paces under (spec 2026-10-05 §2.2)
   activities: { flashcards: true, choose: true, writing: true, components: true, speaking: true },
   speechRate: 0.8,
   soundEffects: true,

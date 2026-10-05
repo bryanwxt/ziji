@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { Rating } from 'ts-fsrs';
-import { addReviewLog, allCards, allWords, getSession, logsSince, putCards, putWords, saveSession, updateSettings } from '../store/repo';
+import { addReviewLog, allCards, allWords, getSession, getSettings, logsSince, putCards, putWords, saveSession, updateSettings } from '../store/repo';
+import { builtinWords } from '../content';
 import { seededKnownCard } from '../srs/scheduler';
 import { DEFAULT_SETTINGS } from '../types';
 import { freshDb, makeWord } from '../test/fixtures';
@@ -126,5 +127,23 @@ describe('response time in words-in-use answers (deferred minor, plan 13)', () =
     const db = await freshDb();
     await recordUse(db, 'b:很', true, new Date(2026, 9, 5, 10), 8_000);
     expect((await logsSince(db, 0))[0]!.rating).toBe(Rating.Good);
+  });
+});
+
+describe('pacing in the lesson plan (spec 2026-10-05 §2.2)', () => {
+  it('a new install starts at 4 new words a day, under a ceiling of 8, and saves why', async () => {
+    const db = await freshDb();
+    await putWords(db, builtinWords(0));
+    const rec = await startOrResumeSession(db, new Date(2026, 9, 6, 16));
+    expect(rec.plan.newWordIds).toHaveLength(4);
+    const s = await getSettings(db);
+    expect(s.newPerDay).toBe(8);
+    expect(s.pace).toMatchObject({ day: '2026-10-06', perDay: 4 });
+  });
+  it('the pace is worked out once a day', async () => {
+    const db = await freshDb();
+    await putWords(db, builtinWords(0));
+    await updateSettings(db, { pace: { day: '2026-10-06', perDay: 6, reason: 'kept 9 of 10 recent new words' } });
+    expect((await startOrResumeSession(db, new Date(2026, 9, 6, 16))).plan.newWordIds).toHaveLength(6);
   });
 });

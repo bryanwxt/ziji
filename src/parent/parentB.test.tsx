@@ -51,7 +51,7 @@ describe('SettingsPanel', () => {
   it('saves settings within sensible limits', async () => {
     const app = await makeAppData();
     renderWithApp(<SettingsPanel />, app);
-    fireEvent.change(screen.getByLabelText('New words per day (0–10)'), { target: { value: '15' } });
+    fireEvent.change(screen.getByLabelText('New words per day: the most (the app finds his number, from 3 up to this)'), { target: { value: '15' } });
     await waitFor(async () => expect((await getSettings(app.db)).newPerDay).toBe(10));
     fireEvent.click(screen.getByLabelText('朗读 reading aloud'));
     await waitFor(async () => expect((await getSettings(app.db)).activities.speaking).toBe(false));

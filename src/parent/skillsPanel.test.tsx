@@ -34,3 +34,12 @@ describe('SkillsPanel (spec §19 part 7)', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 });
+
+describe('pacing in the Skills panel', () => {
+  it("shows today's number of new words and why (spec 2026-10-05 §2.2)", async () => {
+    const app = await makeAppData();
+    await updateSettings(app.db, { newPerDay: 8, pace: { day: '2026-10-06', perDay: 5, reason: 'kept 9 of 10 recent new words' } });
+    renderWithApp(<SkillsPanel />, app);
+    expect(await screen.findByText('New words: 5 a day — kept 9 of 10 recent new words (most 8)')).toBeTruthy();
+  });
+});

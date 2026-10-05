@@ -59,7 +59,7 @@ export function SettingsPanel() {
           onChange={(e) => void save({ sessionMinutes: clampInt(e.currentTarget.value, 10, 40, s.sessionMinutes) })} />
       </div>
       <div class="field">
-        <label for="st-new">New words per day (0–10)</label>
+        <label for="st-new">New words per day: the most (the app finds his number, from 3 up to this)</label>
         <input id="st-new" type="number" min={0} max={10} value={s.newPerDay}
           onChange={(e) => void save({ newPerDay: clampInt(e.currentTarget.value, 0, 10, s.newPerDay) })} />
       </div>

@@ -2,6 +2,7 @@ import { endOfLocalDay } from '../lib/date';
 import { shuffle, type Rng } from '../lib/random';
 import { meaningCue } from '../activities/flashcards/meaning';
 import { isKnown } from '../srs/scheduler';
+import { PACE_START } from './pace';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
 
 export const REVIEW_CAP = 60;
@@ -23,13 +24,14 @@ export interface PlanInput {
   settings: Settings;
   now: Date;
   practised?: ReadonlyMap<string, number>; // words answered in lessons → when last; placement guesses aren't here
+  newPerDay?: number; // today's pace (spec 2026-10-05 §2.2); without one, the pace's start under the ceiling
 }
 
 export const FLASH_SHARE = 9 / 30; // 认一认's share of the lesson: 9 of 30 minutes (spec §20 part 5; 7 until the parent asked for more volume)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
 
-export function buildSessionPlan({ cards, words, settings, now, practised = new Map() }: PlanInput): SessionPlan {
+export function buildSessionPlan({ cards, words, settings, now, practised = new Map(), newPerDay }: PlanInput): SessionPlan {
   const active = words.filter((w) => !w.paused);
   const activeIds = new Set(active.map((w) => w.id));
   const cutoff = endOfLocalDay(now).getTime();
@@ -44,7 +46,8 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const dueRecognise = dueOf(recognise);
   // a real backlog pauses new words; first rechecks of placement guesses (never practised) don't
   const backlog = dueRecognise.filter((c) => practised.has(c.wordId)).length;
-  const newLimit = backlog > BACKLOG_PAUSE ? 0 : settings.newPerDay;
+  const perDay = newPerDay ?? Math.min(settings.newPerDay, PACE_START);
+  const newLimit = backlog > BACKLOG_PAUSE ? 0 : perDay;
 
   const write = ofKind('write');
   const hasWrite = new Set(write.map((c) => c.wordId));

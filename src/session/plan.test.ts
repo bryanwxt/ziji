@@ -4,6 +4,7 @@ import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type Settings } from '../types';
 import { buildFreePlayQueue, buildSessionPlan } from './plan';
 import { createFreePlayRecord } from './runner';
+import { PACE_START } from './pace';
 
 const now = new Date(2026, 9, 2, 8, 0);
 const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000);
@@ -43,7 +44,7 @@ describe('buildSessionPlan', () => {
     const due = (n: number) => ws.slice(0, n).map((w) => makeCard(w.id, 'recognise', hoursAgo(1)));
     const practised = new Map(ws.map((w) => [w.id, 1]));
     expect(buildSessionPlan({ cards: due(41), words: ws, settings: settings(), now, practised }).newWordIds).toEqual([]);
-    expect(buildSessionPlan({ cards: due(40), words: ws, settings: settings(), now, practised }).newWordIds).toHaveLength(DEFAULT_SETTINGS.newPerDay);
+    expect(buildSessionPlan({ cards: due(40), words: ws, settings: settings(), now, practised }).newWordIds).toHaveLength(PACE_START); // without a pace, a lesson starts at the pace's start (spec 2026-10-05 §2.2)
   });
 
   it('offers due write cards first, then at most 2 new ones for known writeable words', () => {
@@ -129,7 +130,10 @@ describe('new words meet their meaning in the same lesson (spec §20 part 2)', (
     expect(plan.newWordIds).toEqual(['p:1', 'b:很']);
     expect(plan.newWordMeaningIds).toEqual(['b:很']); // 欺负 has no sentence, bank item or 组词
   });
-  it('4 new words a day by default', () => expect(DEFAULT_SETTINGS.newPerDay).toBe(4));
+  it('new words per day: 8 at most by default; a lesson starts at 4 (spec 2026-10-05 §2.2)', () => {
+    expect(DEFAULT_SETTINGS.newPerDay).toBe(8);
+    expect(PACE_START).toBe(4);
+  });
 });
 
 describe('用一用 closes the lesson (spec §20 part 7)', () => {

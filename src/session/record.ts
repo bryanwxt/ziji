@@ -1,8 +1,9 @@
-import { endOfLocalDay, localDateKey } from '../lib/date';
+import { addDays, endOfLocalDay, localDateKey } from '../lib/date';
 import { newCard, review, toRating } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
-import { addReviewLog, allCards, allWords, getCard, getSession, getSettings, getWord, putCards, putWords, saveSession, practisedWords } from '../store/repo';
-import type { CardKind, CardRecord, Grade, SessionRecord } from '../types';
+import { addReviewLog, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
+import type { CardKind, CardRecord, Grade, SessionRecord, Settings } from '../types';
+import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
 
@@ -65,6 +66,18 @@ export async function markWriteSkipped(db: AppDb, wordId: string, now: Date): Pr
   if (word) await putWords(db, [{ ...word, writeSkippedAt: now.getTime() }]);
 }
 
+/** Today's number of new words, worked out once a day from the last few lessons and saved for the Skills panel (spec 2026-10-05 §2.2). */
+async function todaysPace(db: AppDb, now: Date, settings: Settings): Promise<number> {
+  const today = localDateKey(now);
+  if (settings.pace?.day === today) return settings.pace.perDay;
+  const sessions = (await allSessions(db)).filter((s) => !s.free && s.date < today).sort((a, b) => b.date.localeCompare(a.date));
+  const logs = await logsSince(db, addDays(now, -(LOOKBACK_DAYS + 1)).getTime());
+  const rounds = sessions.filter((s) => s.completedSteps.includes('practice')).slice(0, 2).map(ranOut);
+  const pace = nextPace({ prev: settings.pace?.perDay ?? null, ceiling: settings.newPerDay, kept: keptRecent(sessions, logs, today), ranOut: [rounds[0] ?? false, rounds[1] ?? false] });
+  await updateSettings(db, { pace: { day: today, ...pace } });
+  return pace.perDay;
+}
+
 /** Today's session if one exists (finished or not), otherwise a new plan. Earlier days are never resumed. */
 export async function startOrResumeSession(db: AppDb, now: Date): Promise<SessionRecord> {
   const date = localDateKey(now);
@@ -74,7 +87,7 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
     return existing;
   }
   const [cards, words, settings, practised] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db)]);
-  const rec = createSessionRecord(buildSessionPlan({ cards, words, settings, now, practised }), date, now.getTime());
+  const rec = createSessionRecord(buildSessionPlan({ cards, words, settings, now, practised, newPerDay: await todaysPace(db, now, settings) }), date, now.getTime());
   await saveSession(db, rec);
   return rec;
 }
