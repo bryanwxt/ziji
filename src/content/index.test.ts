@@ -9,7 +9,12 @@ describe('content module', () => {
   it('maps every built-in character to an active built-in word', () => {
     const words = builtinWords(123);
     expect(words).toHaveLength(3000);
-    expect(words[0]).toMatchObject({ id: `b:${BUILTIN[0]!.char}`, source: 'builtin', paused: false, createdAt: 123, rank: 0 });
+    expect(words[0]).toMatchObject({ id: `b:${BUILTIN[0]!.char}`, source: 'builtin', paused: false, createdAt: 123 });
+    // school order (MOE 《欢乐伙伴2.0》): 一上 lesson 1 opens with 衣, so it comes first; a character his books don't teach comes after them all
+    const byText = new Map(words.map((w) => [w.text, w]));
+    expect(byText.get('衣')!.rank).toBe(0);
+    expect(byText.get('竹')!.rank).toBeLessThan(200); // 一上, though HSK puts it late
+    expect(byText.get('介')!.rank).toBeGreaterThanOrEqual(1031); // not in his books through 三下
   });
   it('knows the components of 河', () => {
     expect(getCharInfo('河')?.components).toContain('氵');

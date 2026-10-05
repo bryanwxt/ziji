@@ -38,9 +38,10 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     const { default: data } = await import('./builtin.json');
     const { CONTENT_VERSION, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES, EXAMPLE_DROPS } = await import('.');
     const { EXTRA_EXAMPLES } = await import('./extraExamples');
-    const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES, EXTRA_EXAMPLES, [...EXAMPLE_DROPS]])).digest('hex').slice(0, 16);
+    const moe = (await import('./moe2024.json')).default;
+    const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES, EXTRA_EXAMPLES, [...EXAMPLE_DROPS], moe])).digest('hex').slice(0, 16);
     // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
-    const PINNED: Record<string, string> = { '1.8': 'eeeab9f0f05862d3' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes; 1.7 the content sweep; 1.8 the second sweep
+    const PINNED: Record<string, string> = { '1.9': '3950fe68dce23750' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes; 1.7 the content sweep; 1.8 the second sweep; 1.9 school order
     expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
   });
   it('了 means what it does when read le, not "clear, to finish"', async () => {
@@ -145,5 +146,25 @@ describe('content sweep (parent, 2026-10-05)', () => {
     const words = builtinWords(0).filter((w) => [...w.text].length === 1);
     expect(words.flatMap((w) => w.examples ?? []).filter((e) => EXAMPLE_DROPS.has(e.text))).toEqual([]);
     expect(words.filter((w) => (w.level ?? 9) <= 6 && !w.examples?.length).map((w) => w.text)).toEqual([]);
+  });
+});
+
+describe('school order (parent, 2026-10-06: MOE 《欢乐伙伴2.0》 lists)', () => {
+  it('P1–P2 is 746 characters to recognise and 350 to write, as the syllabus asks (700–750, 300–350)', async () => {
+    const moe = (await import('./moe2024.json')).default as { lessons: { term: string; read: string; write: string }[] };
+    const p12 = moe.lessons.filter((l) => ['一上', '一下', '二上', '二下'].includes(l.term));
+    const uniq = (xs: string[]) => new Set(xs.flatMap((x) => Array.from(x))).size;
+    expect(uniq(p12.map((l) => l.read))).toBeGreaterThanOrEqual(700);
+    expect(uniq(p12.map((l) => l.read))).toBeLessThanOrEqual(760);
+    expect(uniq(p12.map((l) => l.write))).toBeGreaterThanOrEqual(300);
+    expect(uniq(p12.map((l) => l.write))).toBeLessThanOrEqual(360);
+  });
+  it('a school character is written only once his books ask him to write it', async () => {
+    const { builtinWords, schoolTerm } = await import('.');
+    const byText = new Map(builtinWords(0).map((w) => [w.text, w]));
+    expect(byText.get('口')!.writeable).toBe(true); // 一上 识写字
+    expect(byText.get('竹')!.writeable).toBe(false); // read in 一上, never on a 识写字 list through 三下
+    expect(schoolTerm('竹')).toBe('一上');
+    expect(schoolTerm('介')).toBeUndefined();
   });
 });

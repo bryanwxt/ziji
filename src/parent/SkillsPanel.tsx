@@ -1,3 +1,4 @@
+import { schoolTerm } from '../content';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { addDays } from '../lib/date';
@@ -47,7 +48,13 @@ export function SkillsPanel() {
   const acc = skillAccuracy(d.logs, d.answers);
   const byId = new Map(d.words.map((w) => [w.id, w]));
   const bands = rankBands(d.words);
-  const hsk = (band: number) => (band < 0 ? 'none yet' : bandLevel(bands, band) >= 7 ? 'HSK 7–9' : `HSK ${bandLevel(bands, band)}`);
+  // where a band sits: his school term (P2 term 2, 二下) while it's within his textbook's lists, else its HSK level
+  const hsk = (band: number) => {
+    if (band < 0) return 'none yet';
+    const term = schoolTerm(bands[Math.min(band, bands.length - 1)]?.at(-1)?.text ?? '');
+    if (term) return `P${'一二三四五六'.indexOf(term[0]!) + 1} term ${term[1] === '上' ? 1 : 2} (${term})`;
+    return bandLevel(bands, band) >= 7 ? 'HSK 7–9' : `HSK ${bandLevel(bands, band)}`;
+  };
   const p = d.settings.placementResult;
   const pct = (s: Skill) => (acc[s].total ? Math.round((acc[s].right * 100) / acc[s].total) : null);
 

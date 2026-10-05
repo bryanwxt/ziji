@@ -1,6 +1,7 @@
 import { X } from 'lucide-preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { speak } from '../audio/speech';
+import { schoolTerm } from '../content';
 import { applyPlacement, placementIds } from '../placement/apply';
 import { nextQuestion, visitStyles, type PlacementQuestion } from '../placement/questions';
 import { bandLevel, placementLevels, rankBands, startWalk, walkStep, WARMUP, type Style, type WalkState } from '../placement/walk';
@@ -20,9 +21,14 @@ import { loadKnowledge } from './knowledge';
 const BUBBLE: Record<Style, string> = { read: '这个字怎么读？', listen: '听一听，是哪个字？', fill: '少了哪个字？', fit: '哪个词对？' };
 const LEVEL = ['一级', '二级', '三级', '四级', '五级', '六级', '七—九级'];
 
-/** A band's HSK level in Chinese (the level of its last character), or 还没开始 for none. */
+/**
+ * Where a band sits: the textbook term of its last character (二上) while the bands follow his school books, then its HSK
+ * level beyond them; 还没开始 for none (parent, 2026-10-06: school terms are what a parent and child know).
+ */
 function levelName(bands: Word[][], band: number): string {
-  return band < 0 ? '还没开始' : (LEVEL[bandLevel(bands, band) - 1] ?? '七—九级');
+  if (band < 0) return '还没开始';
+  const last = bands[Math.min(band, bands.length - 1)]?.at(-1)?.text;
+  return (last && schoolTerm(last)) ?? (LEVEL[bandLevel(bands, band) - 1] ?? '七—九级');
 }
 
 /**

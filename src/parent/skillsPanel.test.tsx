@@ -16,7 +16,7 @@ describe('SkillsPanel (spec §19 part 7)', () => {
     await updateSettings(app.db, { placementResult: { at: app.now().getTime(), reading: 8, understanding: 4, missed: [gen.id] } });
     renderWithApp(<SkillsPanel />, app);
     expect((await screen.findAllByText('Look-alike characters (字辨)')).length).toBe(2); // its row, and its missed words
-    expect(screen.getByText(/Reading: HSK 3 · Understanding: HSK 2/)).toBeTruthy();
+    expect(screen.getByText(/Reading: P\d term \d \(.{2}\) · Understanding: P\d term \d \(.{2}\)/)).toBeTruthy(); // school terms (MOE order, 2026-10-06)
     expect(screen.getByText('0% (1)')).toBeTruthy();
     const box = screen.getByLabelText('Class baseline for Look-alike characters (字辨) (% right)');
     fireEvent.input(box, { target: { value: '5' } }); // still typing: nothing saved yet

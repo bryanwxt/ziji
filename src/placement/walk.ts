@@ -2,11 +2,11 @@ import type { Word } from '../types';
 
 /** The adaptive placement check (spec §19 part 6): 30 bands of 100 characters, 4 questions a visit, two results. */
 export const BAND_SIZE = 100;
-export const START_BAND = 6; // band 7 of 30: the first HSK 3 band, just past what a P2 child usually reads
+export const START_BAND = 6; // band 7 of 30: with school order (MOE 2.0 lists), late 二上/二下 — where a P2 child is in his books
 export const PER_VISIT = 4;
 export const MAX_QUESTIONS = 40;
 export const WARMUP = 3; // easy reading questions first, so a nervous start doesn't skew the result
-export const LOW_START = 2; // band 3: where the walk starts when the warm-up went badly (at most 1 of 3 right)
+export const LOW_START = 2; // band 3 (一上/一下 in school order): where the walk starts when the warm-up went badly (at most 1 of 3 right)
 /** 不知道 this many times in a row ends the visit as a miss; each further one steps down at once (parent, 2026-10-05). */
 export const DONT_KNOW_RUN = 3;
 
