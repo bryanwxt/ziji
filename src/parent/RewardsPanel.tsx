@@ -6,15 +6,21 @@ import { totalStars } from '../stats/stats';
 import { allSessions, deleteReward, getKid, listRewards, saveReward } from '../store/repo';
 import type { RewardGoal } from '../types';
 import { newId } from '../lib/id';
+import { InkIcon } from '../ui/icons/InkIcon';
+import type { IconName } from '../ui/icons/icons';
 
-const EMOJIS = ['🍦', '🧸', '🎮', '📚', '🏊', '🍕', '🎬', '🧩', '🎨', '⚽'];
+/** The ink icons a goal can wear on Home (spec 2026-10-04 §3: a Chinese title with an ink icon). */
+export const GOAL_ICONS: IconName[] = ['gift', 'star', 'car', 'food', 'party', 'heart', 'medal', 'paw', 'fish', 'tree', 'sun'];
+const HAN = /^[\p{Script=Han}，。！？、\s]+$/u;
 
 export function RewardsPanel() {
   const { db, now } = useApp();
   const [goals, setGoals] = useState<RewardGoal[]>([]);
   const [stats, setStats] = useState({ stars: 0, known: 0 });
   const [title, setTitle] = useState('');
-  const [emoji, setEmoji] = useState(EMOJIS[0]!);
+  const [zh, setZh] = useState('');
+  const [icon, setIcon] = useState<IconName>('gift');
+  const [fix, setFix] = useState<Record<string, string>>({}); // Chinese titles being added to older goals
   const [metric, setMetric] = useState<RewardGoal['metric']>('stars');
   const [target, setTarget] = useState('100');
 
@@ -29,13 +35,20 @@ export function RewardsPanel() {
 
   const add = async () => {
     const n = Math.round(Number(target));
-    if (!title.trim() || !(n >= 1)) return;
-    await saveReward(db, { id: newId(), title: title.trim(), emoji, metric, target: n, createdAt: now().getTime(), claimedAt: null });
+    if (!title.trim() || !HAN.test(zh.trim()) || !(n >= 1)) return;
+    await saveReward(db, { id: newId(), title: title.trim(), emoji: '', zh: zh.trim(), icon, metric, target: n, createdAt: now().getTime(), claimedAt: null });
     setTitle('');
+    setZh('');
     await load();
   };
   const claim = async (g: RewardGoal) => {
     await saveReward(db, { ...g, claimedAt: now().getTime() });
+    await load();
+  };
+  const saveZh = async (g: RewardGoal) => {
+    const t = (fix[g.id] ?? '').trim();
+    if (!HAN.test(t)) return;
+    await saveReward(db, { ...g, zh: t, icon: g.icon ?? 'gift' });
     await load();
   };
   const remove = async (g: RewardGoal) => {
@@ -53,10 +66,14 @@ export function RewardsPanel() {
           <label for="rw-title">Reward</label>
           <input id="rw-title" value={title} placeholder="e.g. Ice cream outing" onInput={(e) => setTitle(e.currentTarget.value)} />
         </div>
+        <div class="field">
+          <label for="rw-zh">Shown to him (Chinese)</label>
+          <input id="rw-zh" lang="zh" value={zh} placeholder="e.g. 冰淇淋" onInput={(e) => setZh(e.currentTarget.value)} />
+        </div>
         <div class="row" style={{ justifyContent: 'flex-start' }}>
-          {EMOJIS.map((e) => (
-            <button key={e} type="button" class={`swatch ${e === emoji ? 'is-on' : ''}`} style={{ width: '56px', height: '56px', fontSize: '30px' }} aria-label={e} aria-pressed={e === emoji} onClick={() => setEmoji(e)}>
-              {e}
+          {GOAL_ICONS.map((n) => (
+            <button key={n} type="button" class={`swatch ${n === icon ? 'is-on' : ''}`} style={{ width: '56px', height: '56px' }} aria-label={n} aria-pressed={n === icon} onClick={() => setIcon(n)}>
+              <InkIcon name={n} size={34} />
             </button>
           ))}
         </div>
@@ -86,8 +103,16 @@ export function RewardsPanel() {
                 const p = goalProgress(g, stats);
                 return (
                   <tr key={g.id}>
-                    <td style={{ fontSize: '28px' }}>{g.emoji}</td>
-                    <td>{g.title}</td>
+                    <td>{g.icon ? <InkIcon name={g.icon} size={30} /> : <span style={{ fontSize: '28px' }}>{g.emoji}</span>}</td>
+                    <td>
+                      {g.title}
+                      {g.zh ? <div lang="zh">{g.zh}</div> : (
+                        <div class="row" style={{ justifyContent: 'flex-start', gap: '6px' }}>
+                          <input aria-label={`Chinese title for ${g.title}`} lang="zh" placeholder="Shown to him in Chinese" value={fix[g.id] ?? ''} onInput={(e) => setFix({ ...fix, [g.id]: e.currentTarget.value })} />
+                          <button type="button" class="small-btn" aria-label={`Save Chinese title for ${g.title}`} onClick={() => void saveZh(g)}>Save</button>
+                        </div>
+                      )}
+                    </td>
                     <td>{p.value} / {g.target} {g.metric === 'stars' ? '⭐' : 'characters'}</td>
                     <td>
                       {g.claimedAt ? `Given ${new Date(g.claimedAt).toLocaleDateString()}`

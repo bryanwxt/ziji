@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { hashPin } from '../lib/hash';
 import { createSessionRecord } from '../session/runner';
-import { addReviewLog, getSettings, listRewards, putCards, putWords, saveSession } from '../store/repo';
+import { addReviewLog, getSettings, listRewards, putCards, putWords, saveReward, saveSession } from '../store/repo';
 import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS, type SessionPlan } from '../types';
@@ -92,6 +92,7 @@ describe('RewardsPanel', () => {
     await saveSession(app.db, { ...createSessionRecord(emptyPlan, '2026-10-01', 0), completed: true, completedSteps: ['flashcards'] });
     renderWithApp(<RewardsPanel />, app);
     fireEvent.input(await screen.findByLabelText('Reward'), { target: { value: 'Ice cream' } });
+    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '冰淇淋' } });
     fireEvent.input(screen.getByLabelText('Target'), { target: { value: '1' } });
     fireEvent.click(screen.getByText('Add goal'));
     fireEvent.click(await screen.findByText('Mark as given'));
@@ -99,11 +100,25 @@ describe('RewardsPanel', () => {
   });
 });
 
-describe('RewardsPanel emoji picker', () => {
-  it('marks the chosen emoji as pressed', async () => {
+describe('RewardsPanel: what he sees (spec 2026-10-04 §3, phase D)', () => {
+  it('a goal needs a Chinese title; its ink icon is picked', async () => {
     const app = await makeAppData();
     renderWithApp(<RewardsPanel />, app);
-    const first = (await screen.findAllByRole('button', { pressed: true }))[0]!;
-    expect(first.className).toContain('swatch');
+    fireEvent.input(await screen.findByLabelText('Reward'), { target: { value: 'Lego set' } });
+    fireEvent.click(screen.getByText('Add goal'));
+    expect(await listRewards(app.db)).toHaveLength(0); // no Chinese title yet
+    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '乐高' } });
+    fireEvent.click(screen.getByRole('button', { name: 'car' }));
+    expect(screen.getByRole('button', { name: 'car' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByText('Add goal'));
+    await waitFor(async () => expect((await listRewards(app.db))[0]).toMatchObject({ title: 'Lego set', zh: '乐高', icon: 'car' }));
+  });
+  it('an older goal without a Chinese title can get one', async () => {
+    const app = await makeAppData();
+    await saveReward(app.db, { id: 'g', title: 'Lego set', emoji: '🧱', metric: 'stars', target: 40, createdAt: 0, claimedAt: null });
+    renderWithApp(<RewardsPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Chinese title for Lego set'), { target: { value: '乐高' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Chinese title for Lego set' }));
+    await waitFor(async () => expect((await listRewards(app.db))[0]).toMatchObject({ zh: '乐高', icon: 'gift' }));
   });
 });

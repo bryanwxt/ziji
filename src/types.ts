@@ -1,3 +1,4 @@
+import type { IconName } from './ui/icons/icons';
 import type { WriteItem } from './session/writing';
 import { DEFAULT_FINDS, type Finds } from './fun/finds';
 import type { Card as FsrsCard, Grade } from 'ts-fsrs';
@@ -304,8 +305,10 @@ export const DEFAULT_KID: KidState = {
 
 export interface RewardGoal {
   id: string;
-  title: string;
-  emoji: string;
+  title: string; // the parent's own note (English is fine): Home never shows it
+  emoji: string; // goals saved before 2026-10-05 had an emoji; Home never shows it
+  zh?: string; // what he sees on Home, in Chinese (spec 2026-10-04 §3, phase D)
+  icon?: IconName; // its ink icon on Home
   metric: 'stars' | 'known';
   target: number;
   createdAt: number;

@@ -168,15 +168,16 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         <div class="home__cards">
           {goal && progress && (
             <div class={`goal ${progress.reached ? 'goal--reached' : ''}`}>
-              <span class="goal__emoji">{goal.emoji}</span>
+              {/* what he sees is Chinese with an ink icon; the parent's English note and older emoji stay in the parent area (spec 2026-10-04 §3) */}
+              <span class="goal__icon"><InkIcon name={goal.icon ?? 'gift'} size={34} /></span>
               <div class="goal__body">
-                <strong>{goal.title}</strong>
+                <strong><Label zh={goal.zh ?? '我的奖励'} /></strong>
                 {progress.reached ? (
-                  <span><Label zh="你做到了！" /> Ask your parent for {goal.emoji}</span>
+                  <span><Label zh="你做到了！找爸爸妈妈拿奖励吧！" /></span>
                 ) : (
                   <>
                     <div class="progress"><div class="progress__fill" style={{ width: `${Math.round(progress.fraction * 100)}%` }} /></div>
-                    <small>{progress.value} / {goal.target} {goal.metric === 'stars' ? <InkIcon name="star" size={16} /> : '字'}</small>
+                    <small class="goal__count">{progress.value} / {goal.target} {goal.metric === 'stars' ? <InkIcon name="star" size={16} /> : '字'}</small>
                   </>
                 )}
               </div>

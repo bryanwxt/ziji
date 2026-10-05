@@ -57,9 +57,10 @@ describe('HomeScreen', () => {
     await saveReward(app.db, { id: 'g', title: 'Ice cream', emoji: '🍦', metric: 'stars', target: 10, createdAt: 0, claimedAt: null });
     renderWithApp(<HomeScreen />, app);
     expect(await screen.findByText('今天完成了！')).toBeTruthy();
-    expect(screen.getByText('Ice cream')).toBeTruthy();
-    expect(document.querySelector('.goal small')?.textContent?.trim()).toBe('1 / 10');
-    expect(document.querySelector('.goal small svg.inkicon')).toBeTruthy();
+    expect(screen.queryByText('Ice cream')).toBeNull(); // the parent's own note: Home shows Chinese only (phase D)
+    expect(document.querySelector('.goal')?.textContent).toContain('我的奖励');
+    expect(document.querySelector('.goal .goal__count')?.textContent?.trim()).toBe('1 / 10');
+    expect(document.querySelector('.goal .goal__count svg.inkicon')).toBeTruthy();
     fireEvent.click(screen.getByText('再玩一会儿'));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: true });
   });
@@ -480,6 +481,33 @@ describe('Home on the stage (spec 2026-10-04 §3, phase D)', () => {
     const strips = document.querySelectorAll('.home__strip');
     expect(strips).toHaveLength(1);
     for (const sel of ['.stat--fire', '.stat--star', '.week', '.seal', '.home__who']) expect(strips[0]!.querySelector(sel), sel).toBeTruthy();
+  });
+});
+
+describe('the reward goal on Home (spec 2026-10-04 §3, phase D)', () => {
+  const emojiRe = /\p{Extended_Pictographic}/u;
+  it('shows its Chinese title and ink icon, never the English or the emoji', async () => {
+    const app = await makeAppData();
+    await saveReward(app.db, { id: 'g', title: 'Lego set', emoji: '🧱', zh: '乐高', icon: 'car', metric: 'stars', target: 40, createdAt: 0, claimedAt: null });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    const goal = document.querySelector('.goal')!;
+    expect(goal.textContent).toContain('乐高');
+    expect(goal.textContent).not.toContain('Lego');
+    expect(emojiRe.test(goal.textContent ?? '')).toBe(false);
+    expect(goal.querySelector('svg.inkicon')).toBeTruthy();
+  });
+  it('a reached goal tells him to ask for it, in Chinese', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, bonusStars: 5 } });
+    await saveKid(app.db, app.kid!);
+    await saveReward(app.db, { id: 'g', title: 'Lego set', emoji: '🧱', zh: '乐高', icon: 'gift', metric: 'stars', target: 1, createdAt: 0, claimedAt: null });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    const goal = document.querySelector('.goal--reached')!;
+    expect(goal.textContent).toContain('你做到了！');
+    expect(goal.textContent).toContain('找爸爸妈妈拿奖励吧！');
+    expect(goal.textContent).not.toMatch(/Ask|parent|Lego/);
+    expect(emojiRe.test(goal.textContent ?? '')).toBe(false);
   });
 });
 
