@@ -15,6 +15,9 @@ const PARTICLES = new Set([...'了吗吧呢的得着过']);
 const NUMERALS = new Set([...'一二三四五六七八九十两几这那每哪']);
 const MEASURES = new Set([...'个本杯只条张件位次天点岁块双把辆台首节些']);
 const TIME_WORDS = new Set(['今天', '明天', '昨天', '现在', '早上', '晚上', '上午', '下午', '中午', '每天', '后来', '刚才', '以前', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期天', '星期日', '周末', '放学后', '今年', '去年', '明年', '有一天']);
+/** A clock time is a time word too (parent, 2026-10-05: 八点我们上课 / 我们八点上课): 八点, 七点半, 十点钟. */
+const CLOCK = /^[一二三四五六七八九十两0-9]+点(半|钟)?[，,]?$/u;
+const isTime = (t: string) => TIME_WORDS.has(t) || CLOCK.test(t);
 const SUBJECTS = new Set(['我', '你', '他', '她', '它', '我们', '你们', '他们', '她们', '大家', '爸爸', '妈妈', '哥哥', '姐姐', '弟弟', '妹妹', '爷爷', '奶奶', '老师', '朋友', '同学']);
 
 let dict: Set<string> | null = null;
@@ -35,6 +38,7 @@ export function tiles(sentence: string): string[] {
     const prev = out[last];
     if (prev !== undefined && len === 1 && (PUNCT.has(piece) || PARTICLES.has(piece))) out[last] = prev + piece;
     else if (prev !== undefined && len === 1 && ((NUMERALS.has(prev) && MEASURES.has(piece)) || prev === piece)) out[last] = prev + piece;
+    else if (prev !== undefined && len === 1 && CLOCK.test(prev) && (piece === '半' || piece === '钟')) out[last] = prev + piece; // 七点半, 八点钟
     else out.push(piece);
     i += len;
   }
@@ -49,8 +53,8 @@ export function tiles(sentence: string): string[] {
 function ordersOf(t: string[]): string[][] {
   const out: string[][] = [t];
   const add = (o: string[]) => { if (!out.some((x) => x.join('|') === o.join('|'))) out.push(o); };
-  if (t.length >= 3 && TIME_WORDS.has(t[0]!) && SUBJECTS.has(t[1]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
-  if (t.length >= 3 && SUBJECTS.has(t[0]!) && TIME_WORDS.has(t[1]!) && !['或者', '还是', '和', '到'].includes(t[2]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
+  if (t.length >= 3 && isTime(t[0]!) && SUBJECTS.has(t[1]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
+  if (t.length >= 3 && SUBJECTS.has(t[0]!) && isTime(t[1]!) && !['或者', '还是', '和', '到'].includes(t[2]!)) add([t[1]!, t[0]!, ...t.slice(2)]);
   for (const o of [...out]) {
     const k = o.findIndex((x) => x === '和' || x === '跟');
     if (k > 0 && k < o.length - 1 && SUBJECTS.has(o[k - 1]!) && SUBJECTS.has(o[k + 1]!)) add([...o.slice(0, k - 1), o[k + 1]!, o[k]!, o[k - 1]!, ...o.slice(k + 2)]);

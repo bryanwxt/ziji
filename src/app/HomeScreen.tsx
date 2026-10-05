@@ -96,7 +96,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         const mood = dayMood(data.sessions.filter((s) => s.completed && !s.free).map((s) => s.date), day);
         if (mood !== 'plain') {
           setPropPlay((p) => ({ react: { kind: mood === 'missed' ? 'huff' : 'bouncy', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
-          setSaid(mood === 'missed' ? '你去哪儿了？' : '又见面了！');
+          setSaid(mood === 'missed' ? '你去哪儿了？我好想你！' : '又见面了！');
           clearTimeout(saidTimer.current);
           saidTimer.current = setTimeout(() => setSaid(null), 2600);
         }

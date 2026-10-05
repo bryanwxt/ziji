@@ -557,14 +557,14 @@ describe("Truffle's memory (spec 2026-10-04 §4.6, phase E)", () => {
     await saveSession(app.db, done('2026-09-28', ['flashcards']));
     const first = renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
-    await waitFor(() => expect(bubble()).toBe('你去哪儿了？'));
+    await waitFor(() => expect(bubble()).toBe('你去哪儿了？我好想你！'));
     await waitFor(() => expect(react()).toBe('huff'));
     await waitFor(async () => expect((await getKid(app.db))?.greetedOn).toBe('2026-10-02'));
     first.unmount();
     renderWithApp(<HomeScreen />, { ...app, kid: (await getKid(app.db))! });
     await screen.findByText('今天的练习');
     await new Promise((r) => setTimeout(r, 200));
-    expect(bubble()).not.toBe('你去哪儿了？');
+    expect(bubble()).not.toBe('你去哪儿了？我好想你！');
   });
   it('on a streak day he is extra bouncy', async () => {
     const app = await makeAppData();

@@ -65,3 +65,19 @@ describe('组句 for a school 成语 (phase C)', () => {
     expect(zujuFor(makeWord('五颜六色', { id: 'p:9', source: 'parent', tags: ['成语'], level: null, rank: null })).length).toBeGreaterThan(0);
   });
 });
+
+describe('clock times (parent, 2026-10-05: 八点我们上课 / 我们八点上课)', () => {
+  it('a clock time is one tile and moves before or after the subject like any time word', async () => {
+    const { tiles } = await import('./zuju');
+    expect(tiles('我们八点上课。')).toContain('八点');
+    expect(tiles('我七点半起床。')).toContain('七点半');
+  });
+});
+
+describe('clock times move like time words', () => {
+  it('我们八点上课 also accepts 八点我们上课', async () => {
+    const { zujuOf } = await import('./zuju');
+    const z = zujuOf('我们八点在学校上课。', '上课')!;
+    expect(z.orders.map((o) => o.join(''))).toEqual(expect.arrayContaining(['我们八点在学校上课。', '八点我们在学校上课。']));
+  });
+});

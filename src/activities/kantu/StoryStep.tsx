@@ -58,7 +58,7 @@ function StoryScreen({ scene, screen, told, kid, last, blocked, onNext }: { scen
       <div class="kantu">
         {screen.kind === 'ask' ? (
           <div class="kantu__ask">
-            <Pet kid={kid} mood="content" size={110} bubble="松露问你" />
+            <Pet kid={kid} mood="content" size={110} bubble="松露问你：" />
             <span class="grainy kantu__frame"><svg class="kantu__pic kantu__pic--small" viewBox={SCENE_VIEW} role="img" aria-label={scene.title} dangerouslySetInnerHTML={{ __html: SCENE_ART[scene.id] }} /></span>
           </div>
         ) : (

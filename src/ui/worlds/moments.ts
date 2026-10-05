@@ -65,7 +65,7 @@ export function runMoment(world: WorldId, prop: string, kid: KidState, today: st
       return { fx: { kind: 'crack', cracks: r.cracks, gem: r.gem }, react: r.gem ? 'excited' : 'watch', ...(r.gem ? { kid: { ...kid, finds: r.finds }, say: '宝石！' } : {}) };
     }
     case 'blocks:post': return { fx: { kind: 'scratch' }, react: 'excited' };
-    case 'blocks:statue': return { fx: { kind: 'sparkle' }, react: 'proud', say: '像我！' };
+    case 'blocks:statue': return { fx: { kind: 'sparkle' }, react: 'proud', say: '真像我！' };
     case 'dino:nest': {
       if (f.dinoHatched) return { fx: { kind: 'hop' }, react: 'excited', say: '你好，小恐龙！' };
       const next = tapEgg(f);
