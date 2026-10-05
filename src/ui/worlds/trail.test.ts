@@ -22,4 +22,10 @@ describe("today's stops on a path drawn for each world (spec 2026-10-04 §3, pha
     expect(trailSvg('blocks')).toContain('data-mark="blocks"');
     expect(trailSvg('yard')).toContain('data-mark="stones"');
   });
+  it('final review: each stroke has one line cap; the blocks are square (butt caps), the pebbles round', () => {
+    for (const w of ['yard', 'race', 'blocks'] as const) for (const p of trailSvg(w).match(/<path[^>]*>/g)!) expect(p.match(/stroke-linecap=/g), `${w}: ${p}`).toHaveLength(1);
+    expect(trailSvg('blocks')).toMatch(/stroke-linecap="butt"[^>]*data-mark="blocks"|data-mark="blocks"[^>]*stroke-linecap="butt"/);
+    expect(trailSvg('yard')).toMatch(/stroke-linecap="round"[^>]*data-mark="stones"/);
+  });
 });
+

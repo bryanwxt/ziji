@@ -17,15 +17,15 @@ export const WORLD_TRAIL: Record<WorldId, { fill: string; edge: string; mark: Ma
 };
 
 const LINE = 'M-4 15 C12 8 26 21 42 14 S70 7 86 14 S100 17 104 12';
-const stroke = (colour: string, width: number, extra = '') => `<path d="${LINE}" fill="none" stroke="${colour}" stroke-width="${width}" stroke-linecap="round" vector-effect="non-scaling-stroke"${extra}/>`;
+const stroke = (colour: string, width: number, extra = '', cap: 'round' | 'butt' = 'round') => `<path d="${LINE}" fill="none" stroke="${colour}" stroke-width="${width}" stroke-linecap="${cap}" vector-effect="non-scaling-stroke"${extra}/>`;
 
 /** The world's path, in a 0 0 100 24 box stretched to the row. */
 export function trailSvg(world: WorldId): string {
   const t = WORLD_TRAIL[world];
   const marks: Record<Mark, string> = {
-    dash: stroke(t.markColour, 3, ' stroke-dasharray="14 12" stroke-linecap="butt" data-mark="dash"'),
+    dash: stroke(t.markColour, 3, ' stroke-dasharray="14 12" data-mark="dash"', 'butt'),
     stones: stroke(t.markColour, 7, ' stroke-dasharray="0 26" data-mark="stones"'),
-    blocks: stroke(t.markColour, 18, ' stroke-dasharray="18 14" stroke-linecap="butt" data-mark="blocks"'),
+    blocks: stroke(t.markColour, 18, ' stroke-dasharray="18 14" data-mark="blocks"', 'butt'),
     none: '',
   };
   return stroke(t.edge, 40) + stroke(t.fill, 32) + marks[t.mark];

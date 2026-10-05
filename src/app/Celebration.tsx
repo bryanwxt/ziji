@@ -30,6 +30,8 @@ const DONE: Reaction = { kind: 'done', key: 1 };
 const POUNCE: Reaction = { kind: 'pounce', key: 1 };
 /** He wiggles with excitement at the closed chest every so often (spec 2026-10-04 §4.4). */
 const WATCH_EVERY_MS = 2400;
+/** His pounce as the chest opens: a key the wiggles never use, so the rig always plays it (final review I1). */
+const WATCH_POUNCE: Reaction = { kind: 'pounce', key: -1 };
 
 interface Sequence {
   order: Phase[];
@@ -197,7 +199,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
             {(!chest || chest.kind === 'stars') && (
               // he watches the chest and wiggles, then pounces when it opens (spec 2026-10-04 §4.4)
               <div class="celebrate__watch">
-                <Truffle mood="cheer" outfit={kid.outfit} accessory={visibleAccessory(kid)} size={130} alive react={chest ? POUNCE : still ? null : { kind: 'excited', key: wiggle }} />
+                <Truffle mood="cheer" outfit={kid.outfit} accessory={visibleAccessory(kid)} size={130} alive react={chest ? WATCH_POUNCE : still ? null : { kind: 'excited', key: wiggle }} />
               </div>
             )}
             <div ref={chestRef} key={nudge} class={nudge && !chest ? 'chest-hint' : undefined}>

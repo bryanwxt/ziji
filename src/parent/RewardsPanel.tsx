@@ -11,7 +11,9 @@ import type { IconName } from '../ui/icons/icons';
 
 /** The ink icons a goal can wear on Home (spec 2026-10-04 §3: a Chinese title with an ink icon). */
 export const GOAL_ICONS: IconName[] = ['gift', 'star', 'car', 'food', 'party', 'heart', 'medal', 'paw', 'fish', 'tree', 'sun'];
-const HAN = /^[\p{Script=Han}，。！？、\s]+$/u;
+/** What he sees must be Chinese: at least one character, and no Latin letters (digits and punctuation are fine). */
+const isChineseTitle = (t: string) => /\p{Script=Han}/u.test(t) && !/[A-Za-z]/.test(t);
+const NOT_CHINESE = 'Use Chinese characters — this is the title he sees on Home.';
 
 export function RewardsPanel() {
   const { db, now } = useApp();
@@ -21,6 +23,7 @@ export function RewardsPanel() {
   const [zh, setZh] = useState('');
   const [icon, setIcon] = useState<IconName>('gift');
   const [fix, setFix] = useState<Record<string, string>>({}); // Chinese titles being added to older goals
+  const [zhError, setZhError] = useState<string | null>(null);
   const [metric, setMetric] = useState<RewardGoal['metric']>('stars');
   const [target, setTarget] = useState('100');
 
@@ -35,7 +38,9 @@ export function RewardsPanel() {
 
   const add = async () => {
     const n = Math.round(Number(target));
-    if (!title.trim() || !HAN.test(zh.trim()) || !(n >= 1)) return;
+    if (!isChineseTitle(zh.trim())) { setZhError(NOT_CHINESE); return; }
+    setZhError(null);
+    if (!title.trim() || !(n >= 1)) return;
     await saveReward(db, { id: newId(), title: title.trim(), emoji: '', zh: zh.trim(), icon, metric, target: n, createdAt: now().getTime(), claimedAt: null });
     setTitle('');
     setZh('');
@@ -47,7 +52,8 @@ export function RewardsPanel() {
   };
   const saveZh = async (g: RewardGoal) => {
     const t = (fix[g.id] ?? '').trim();
-    if (!HAN.test(t)) return;
+    if (!isChineseTitle(t)) { setZhError(NOT_CHINESE); return; }
+    setZhError(null);
     await saveReward(db, { ...g, zh: t, icon: g.icon ?? 'gift' });
     await load();
   };
@@ -70,6 +76,7 @@ export function RewardsPanel() {
           <label for="rw-zh">Shown to him (Chinese)</label>
           <input id="rw-zh" lang="zh" value={zh} placeholder="e.g. 冰淇淋" onInput={(e) => setZh(e.currentTarget.value)} />
         </div>
+        {zhError && <p role="alert">{zhError}</p>}
         <div class="row" style={{ justifyContent: 'flex-start' }}>
           {GOAL_ICONS.map((n) => (
             <button key={n} type="button" class={`swatch ${n === icon ? 'is-on' : ''}`} style={{ width: '56px', height: '56px' }} aria-label={n} aria-pressed={n === icon} onClick={() => setIcon(n)}>

@@ -113,6 +113,20 @@ describe('RewardsPanel: what he sees (spec 2026-10-04 §3, phase D)', () => {
     fireEvent.click(screen.getByText('Add goal'));
     await waitFor(async () => expect((await listRewards(app.db))[0]).toMatchObject({ title: 'Lego set', zh: '乐高', icon: 'car' }));
   });
+  it('final review I2: a Chinese title may have digits and punctuation; a title with no Chinese is refused, and says so', async () => {
+    const app = await makeAppData();
+    renderWithApp(<RewardsPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Reward'), { target: { value: 'Movie' } });
+    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: 'Lego' } });
+    fireEvent.click(screen.getByText('Add goal'));
+    expect(await screen.findByText(/Use Chinese characters/)).toBeTruthy();
+    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '！' } });
+    fireEvent.click(screen.getByText('Add goal'));
+    expect(await listRewards(app.db)).toHaveLength(0);
+    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '看电影2次!' } });
+    fireEvent.click(screen.getByText('Add goal'));
+    await waitFor(async () => expect((await listRewards(app.db))[0]).toMatchObject({ zh: '看电影2次!' }));
+  });
   it('an older goal without a Chinese title can get one', async () => {
     const app = await makeAppData();
     await saveReward(app.db, { id: 'g', title: 'Lego set', emoji: '🧱', metric: 'stars', target: 40, createdAt: 0, claimedAt: null });
