@@ -34,6 +34,11 @@ async function playThrough(max = 150, seen: string[] = []) {
     if (screen.queryByText('太棒了！')) break;
     seen.push(document.querySelector('[data-stage]')?.getAttribute('data-stage') ?? '');
     if (screen.queryByText('我记住了！')) {
+      // a card shown again after a miss lets him go on only after a short look (a double tap can't skip it): wait it out
+      if (document.querySelector('.pet__bubble')?.textContent?.includes('再看一遍')) {
+        await new Promise((r) => setTimeout(r, 650));
+        if (!screen.queryByText('我记住了！')) continue; // a tap before the wait was already moving him on
+      }
       await tapAndWait(screen.getByText('我记住了！'));
       continue;
     }
