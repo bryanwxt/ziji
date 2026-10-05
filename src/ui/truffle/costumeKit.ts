@@ -14,7 +14,11 @@ export const HOOD =
   'M160 76 C210 76 250 102 250 138 C250 174 210 198 160 198 C110 198 70 174 70 138 C70 102 110 76 160 76 Z';
 
 export const tint = (color: string) => `<path d="${BODY}" fill="${color}" ${S}/>`;
-export const hood = (color: string) => `<path d="${HOOD}" fill="${color}" fill-rule="evenodd" ${S}/>`;
+/** The hood, with a shade round the face opening and a highlight on its crown (so it reads as cloth, not a flat cut-out). */
+export const hood = (color: string) =>
+  `<path d="${HOOD}" fill="${color}" fill-rule="evenodd" ${S}/>` +
+  `<path d="M160 76 C210 76 250 102 250 138 C250 174 210 198 160 198 C110 198 70 174 70 138 C70 102 110 76 160 76 Z" transform="translate(160 137) scale(1.075) translate(-160 -137)" fill="none" stroke="${shade(color, 0.16)}" stroke-width="7"/>` +
+  `<path d="M74 92 C88 62 116 42 148 37" stroke="#fff" stroke-opacity=".42" stroke-width="7" fill="none" stroke-linecap="round"/>`;
 export const pair = (draw: (flip: (x: number) => number) => string) => draw((x) => x) + draw(mx);
 /** The animal's own eyes on the hood, above his face (as on an animal onesie). */
 export const eyes = (dx = 22, y = 54, r = 5.5) =>
@@ -131,3 +135,35 @@ export const wings = (x: number, y: number, dir: -1 | 1, k = 1) => {
   return `<path d="M${p(0, 0)} C${p(8, -20)} ${p(34, -28)} ${p(44, -18)} C${p(36, -14)} ${p(38, -8)} ${p(44, -4)} C${p(34, -2)} ${p(34, 4)} ${p(38, 8)} C${p(24, 10)} ${p(10, 6)} ${p(0, 0)} Z" fill="#fffdf7" ${s2}/>` +
     `<path d="M${p(12, -8)} L${p(36, -14)} M${p(12, 0)} L${p(34, 2)}" stroke="#b9b3bd" stroke-width="1.6" fill="none"/>`;
 };
+
+/**
+ * A fur fringe round the face opening (a lion's mane, a lion-dance head): one band, its outer edge in tufts. `from`/`to` are
+ * angles in turns round his face (0.5 = his left, 0.75 = the top, 1 = his right).
+ */
+export const fringe = (color: string, kind: 'fluff' | 'spike' = 'fluff', from = 0.42, to = 1.08, n = 15) => {
+  const cx = 160;
+  const cy = 137;
+  const pt = (t: number, r: number) => [cx + (90 + r) * Math.cos(t * 2 * Math.PI), cy + (61 + r * 0.85) * Math.sin(t * 2 * Math.PI)] as const;
+  const out: string[] = [];
+  const [x0, y0] = pt(from, 0);
+  let d = `M${f1(x0)} ${f1(y0)}`;
+  for (let i = 0; i < n; i++) {
+    const a = from + ((to - from) * i) / n;
+    const b = from + ((to - from) * (i + 1)) / n;
+    const m = (a + b) / 2;
+    const [px, py] = pt(m, kind === 'spike' ? 24 : 17);
+    const [bx, by] = pt(b, 4);
+    d += kind === 'spike' ? ` L${f1(px)} ${f1(py)} L${f1(bx)} ${f1(by)}` : ` Q${f1(px)} ${f1(py)} ${f1(bx)} ${f1(by)}`;
+  }
+  // back along the opening's edge
+  for (let i = n; i >= 0; i--) {
+    const [x, y] = pt(from + ((to - from) * i) / n, -3);
+    d += ` L${f1(x)} ${f1(y)}`;
+  }
+  out.push(`<path d="${d} Z" fill="${color}" ${S}/>`);
+  return out.join('');
+};
+
+/** A horse's muzzle on a hood: a long pale oval with nostril slits (dots would read as a pig's snout). */
+export const MUZZLE = (fill: string) =>
+  `<ellipse cx="160" cy="70" rx="21" ry="13" fill="${fill}" ${S}/><path d="M151 66 q3 4 1 8 M169 66 q-3 4 -1 8" stroke="${INK}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;

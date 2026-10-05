@@ -113,10 +113,10 @@ describe('myth costumes (parent, 2026-10-06: he is really into the Greek myths)'
     expect(GREEK.map((c) => c.zh)).toEqual([
       '宙斯', '赫拉', '波塞冬', '得墨忒耳', '雅典娜', '阿波罗', '阿耳忒弥斯', '阿瑞斯', '阿佛洛狄忒', '赫菲斯托斯', '赫尔墨斯', '狄俄尼索斯', '哈迪斯', '赫斯提亚',
       '赫拉克勒斯', '奥德修斯', '珀耳修斯', '阿喀琉斯', '忒修斯', '伊阿宋',
-      '美杜莎', '米诺陶洛斯', '飞马', '刻耳柏洛斯',
+      '美杜莎', '米诺陶洛斯', '刻耳柏洛斯', // 飞马 dropped: no room for wings that read (parent, 2026-10-06)
     ]);
     expect(CHINESE.map((c) => c.zh)).toEqual(['孙悟空', '哪吒', '嫦娥', '后羿', '财神', '招财猫', '舞狮']);
-    expect(COSTUMES).toHaveLength(12 + 13 + 24 + 7);
+    expect(COSTUMES).toHaveLength(12 + 13 + 23 + 7);
     expect(new Set(COSTUMES.map((c) => c.id)).size).toBe(COSTUMES.length);
     expect(GREEK.every((c) => c.set === 'greek') && CHINESE.every((c) => c.set === 'chinese')).toBe(true);
     expect(costumeById('nezha')).toMatchObject({ py: 'né zhā' });

@@ -2,7 +2,7 @@
 // and Chinese myth figures, the fortune cat and the lion dance. Each carries the thing a child knows the figure by. Drawn from
 // the old stories and pictures, never a film's or a game's version of them.
 import type { Costume } from '../../fun/costumes';
-import { band, crown, eyes, helmet, hood, INK, pair, robe, ropeTail, S, s2, shade, staff, tint, toga, wings, wreath } from './costumeKit';
+import { band, crown, eyes, fringe, helmet, hood, INK, MUZZLE, pair, robe, ropeTail, S, s2, shade, staff, tint, toga, wings, wreath } from './costumeKit';
 
 export interface MythOutfit { back?: string; body: string; head: string; hidesEars?: boolean }
 export interface MythHood { back?: string; behind?: string; front: string; tail: string; body?: string; belly?: string }
@@ -142,10 +142,8 @@ export const MYTH_OUTFIT: Record<string, (c: Costume) => MythOutfit> = {
     // the lion's skin over his head (its mane round his face), the paws tied on his chest, his club
     body: tint('#c4883a') + `<path d="M126 196 L148 214 L160 204 L172 214 L194 196" fill="none" stroke="${c.color}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>` +
       `<path d="M226 266 L238 184" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M226 266 L238 184" stroke="#8a5a3c" stroke-width="11" stroke-linecap="round"/><circle cx="234" cy="206" r="3" fill="${INK}"/><circle cx="232" cy="224" r="3" fill="${INK}"/>`,
-    head: [...Array(14)].map((_, i) => {
-      const t = Math.PI * (0.92 + (1.16 * i) / 13);
-      return `<circle cx="${(160 + 102 * Math.cos(t)).toFixed(1)}" cy="${(132 + 82 * Math.sin(t)).toFixed(1)}" r="15" fill="#a8703f" ${s2}/>`;
-    }).join('') + hood(c.color) + `<g data-hood-face="heracles">${eyes(24, 54)}<ellipse cx="160" cy="70" rx="15" ry="9" fill="#a8703f" ${s2}/><path d="M154 66 L166 66 L160 72 Z" fill="${INK}"/></g>`,
+    head: pair((f) => `<circle cx="${f(108)}" cy="40" r="14" fill="#a8703f" ${S}/><circle cx="${f(108)}" cy="40" r="7" fill="#e8c38a"/>`) + hood(c.color) + fringe('#a8703f', 'spike', 0.4, 1.1, 17) +
+      `<g data-hood-face="heracles">${eyes(24, 52)}<ellipse cx="160" cy="66" rx="16" ry="10" fill="#e8c38a" ${s2}/><path d="M153 61 L167 61 L160 68 Z" fill="${INK}"/></g>`,
     hidesEars: true,
   }),
   odysseus: (c) => ({
@@ -177,13 +175,14 @@ export const MYTH_OUTFIT: Record<string, (c: Costume) => MythOutfit> = {
     head: band(GOLD, 78, 10) + `<path d="M160 72 l6 8 -6 8 -6 -8 Z" fill="#d8262e" ${s2}/>`,
   }),
   jason: (c) => ({
-    // the Golden Fleece over his shoulders
-    back: `<path d="M110 188 C78 220 70 258 80 284 L240 284 C250 258 242 220 210 188 Z" fill="${GOLD}" ${S}/>` +
-      [[96, 232], [112, 256], [92, 270], [224, 232], [208, 256], [228, 270]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="#ffe08a" ${s2}/>`).join(''),
-    body: tint(c.color) + [118, 138, 160, 182, 202].map((x, i) => `<circle cx="${x}" cy="${[198, 192, 190, 192, 198][i]}" r="9" fill="${GOLD}" ${s2}/>`).join(''),
+    // the Golden Fleece: a ram's golden wool, curly at its edges, over his shoulders, with the ram's horn as its clasp
+    back: `<path d="M110 188 C78 220 70 258 80 284 L240 284 C250 258 242 220 210 188 Z" fill="${GOLD}" ${S}/>`,
+    body: tint(c.color) +
+      `<path d="M98 200 C110 184 210 184 222 200 C228 214 220 228 210 230 C204 238 192 238 186 232 C178 240 166 240 160 232 C154 240 142 240 134 232 C128 238 116 238 110 230 C100 228 92 214 98 200 Z" fill="${GOLD}" ${S}/>` +
+      [[112, 212], [134, 220], [160, 222], [186, 220], [208, 212], [124, 200], [196, 200]].map(([x, y]) => `<path d="M${x! - 5} ${y} a5 5 0 1 1 5 5 a3 3 0 1 1 -2 -4" stroke="${shade(GOLD, 0.35)}" stroke-width="1.8" fill="none"/>`).join('') +
+      `<circle cx="160" cy="200" r="8" fill="#e8d6b0" ${S}/><path d="M156 200 a4 4 0 1 1 4 4 a2.4 2.4 0 1 1 -1.6 -3.2" stroke="${INK}" stroke-width="1.6" fill="none"/>`,
     head: '',
   }),
-  // ---- a creature that is clothes, not a hood ----
   medusa: (c) => ({
     // friendly snakes for hair
     body: robe(c.color, GOLD),
@@ -199,17 +198,20 @@ export const MYTH_OUTFIT: Record<string, (c: Costume) => MythOutfit> = {
     head: band(GOLD, 78, 12) + pair((f) => `<path d="M${f(80)} 104 C${f(64)} 104 ${f(60)} 88 ${f(72)} 86 C${f(80)} 86 ${f(80)} 96 ${f(74)} 96" fill="none" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M${f(80)} 104 C${f(64)} 104 ${f(60)} 88 ${f(72)} 86 C${f(80)} 86 ${f(80)} 96 ${f(74)} 96" fill="none" stroke="${GOLD}" stroke-width="4.5" stroke-linecap="round"/>`),
   }),
   nezha: (c) => ({
-    // twin hair buns, the red sash, the gold ring, fire wheels at his feet
-    back: `<path d="M70 200 C40 170 60 130 90 150 C70 170 80 196 110 196" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="M70 200 C40 170 60 130 90 150 C70 170 80 196 110 196" fill="none" stroke="${c.color}" stroke-width="9" stroke-linecap="round"/>` +
-      `<path d="M250 200 C280 170 260 130 230 150 C250 170 240 196 210 196" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="M250 200 C280 170 260 130 230 150 C250 170 240 196 210 196" fill="none" stroke="${c.color}" stroke-width="9" stroke-linecap="round"/>`,
-    body: tint('#fbe9d6') + `<path d="M110 200 C140 214 180 214 210 200" fill="none" stroke="${c.color}" stroke-width="12" stroke-linecap="round"/>` +
-      `<circle cx="160" cy="232" r="16" fill="none" stroke="${INK}" stroke-width="9"/><circle cx="160" cy="232" r="16" fill="none" stroke="${GOLD}" stroke-width="5"/>` +
+    // twin hair buns tied with red, the red sash (混天绫) flowing out behind him, the gold ring, fire wheels at his feet
+    back: pair((f) => ropeTail(`M${f(112)} 200 C${f(84)} 196 ${f(66)} 212 ${f(70)} 232 C${f(74)} 252 ${f(58)} 266 ${f(44)} 258`, c.color, 11) +
+      `<path d="M${f(48)} 256 L${f(34)} 248 L${f(40)} 262 L${f(34)} 272 Z" fill="${c.color}" ${s2}/>`),
+    body: tint('#fbe9d6') + `<path d="M110 200 C140 214 180 214 210 200" fill="none" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M110 200 C140 214 180 214 210 200" fill="none" stroke="${c.color}" stroke-width="11" stroke-linecap="round"/>` +
+      `<circle cx="160" cy="232" r="16" fill="none" stroke="${INK}" stroke-width="9"/><circle cx="160" cy="232" r="16" fill="none" stroke="${GOLD}" stroke-width="5"/><path d="M150 222 a14 14 0 0 1 10 -4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>` +
       pair((f) => `<circle cx="${f(96)}" cy="266" r="12" fill="${GOLD}" ${S}/><circle cx="${f(96)}" cy="266" r="4" fill="${INK}"/><path d="M${f(84)} 262 C${f(76)} 252 ${f(82)} 246 ${f(86)} 252 C${f(84)} 244 ${f(92)} 240 ${f(94)} 250" fill="#ff6a3d" ${s2}/>`),
-    head: pair((f) => `<circle cx="${f(122)}" cy="44" r="17" fill="#2a2630" ${S}/><path d="M${f(112)} 36 C${f(116)} 30 ${f(124)} 30 ${f(128)} 32" stroke="#fff" stroke-opacity=".45" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M${f(108)} 56 C${f(116)} 62 ${f(130)} 62 ${f(138)} 54" stroke="${c.color}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M${f(138)} 56 l${f(146) - f(138)} 8 l${f(140) - f(146)} 2 Z" fill="${c.color}" ${s2}/>`) + `<circle cx="160" cy="92" r="4" fill="#d8262e"/>`,
+    head: pair((f) => `<circle cx="${f(124)}" cy="42" r="14" fill="#2a2630" ${S}/><path d="M${f(116)} 34 C${f(120)} 30 ${f(126)} 30 ${f(130)} 32" stroke="#fff" stroke-opacity=".45" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+      `<path d="M${f(110)} 52 C${f(118)} 58 ${f(130)} 58 ${f(138)} 52" stroke="${c.color}" stroke-width="5.5" fill="none" stroke-linecap="round"/><path d="M${f(136)} 54 l${f(144) - f(136)} 7 l${f(138) - f(144)} 3 Z" fill="${c.color}" ${s2}/>`) +
+      `<circle cx="160" cy="92" r="4" fill="#d8262e"/>`,
   }),
   change: (c) => ({
     // the full moon behind her, ribbons, and the little jade rabbit
-    back: `<circle cx="240" cy="66" r="40" fill="#fff3c4" ${S}/><path d="M96 196 C60 214 52 250 66 276 M224 196 C260 214 268 250 254 276" fill="none" stroke="#ff9fbf" stroke-width="7" stroke-linecap="round"/>`,
+    back: `<circle cx="240" cy="66" r="40" fill="#fff3c4" ${S}/><path d="M218 50 a8 8 0 1 0 8 10" stroke="#f0dc9a" stroke-width="3" fill="none"/>` +
+      pair((f) => ropeTail(`M${f(108)} 198 C${f(76)} 208 ${f(84)} 236 ${f(64)} 252 C${f(52)} 262 ${f(56)} 274 ${f(68)} 280`, '#ff9fbf', 8)),
     body: robe(c.color, '#ff9fbf') + `<ellipse cx="160" cy="244" rx="14" ry="11" fill="#fffdf7" ${S}/><ellipse cx="153" cy="230" rx="4" ry="10" fill="#fffdf7" ${s2}/><ellipse cx="166" cy="230" rx="4" ry="10" fill="#fffdf7" ${s2}/><circle cx="156" cy="242" r="1.6" fill="${INK}"/><circle cx="164" cy="242" r="1.6" fill="${INK}"/>`,
     // two upright loops of hair (双环髻) over a small bun, a hairpin with a flower and pearls
     head: pair((f) => { const a = f(0) === 0 ? -22 : 22; return `<ellipse cx="${f(134)}" cy="42" rx="10" ry="16" transform="rotate(${a} ${f(134)} 42)" fill="none" stroke="${INK}" stroke-width="12"/><ellipse cx="${f(134)}" cy="42" rx="10" ry="16" transform="rotate(${a} ${f(134)} 42)" fill="none" stroke="#3a3440" stroke-width="7"/>`; }) + `<ellipse cx="160" cy="56" rx="22" ry="12" fill="#3a3440" ${S}/><path d="M146 44 C152 40 160 39 166 40" stroke="#fff" stroke-opacity=".4" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M176 46 L212 60" stroke="${GOLD}" stroke-width="4" stroke-linecap="round"/><circle cx="178" cy="46" r="7" fill="#ff9fbf" ${s2}/><circle cx="178" cy="46" r="2.6" fill="${GOLD}"/><path d="M210 60 L212 74 M206 60 L204 72" stroke="${GOLD}" stroke-width="1.6"/><circle cx="212" cy="76" r="3" fill="#fffdf7" ${s2}/><circle cx="204" cy="74" r="3" fill="#fffdf7" ${s2}/>`,
@@ -246,34 +248,20 @@ export const MYTH_HOOD: Record<string, (c: Costume) => MythHood> = {
     belly: `<rect x="122" y="214" width="76" height="40" rx="6" fill="#e8d6b0" ${s2}/><path d="M130 246 L130 222 L190 222 L190 246 L140 246 L140 232 L180 232 L180 240 L150 240" fill="none" stroke="${c.color}" stroke-width="3.5"/>`,
     tail: ropeTail('M210 250 C238 256 258 240 258 214', c.color, 5) + `<path d="M252 214 C250 198 266 196 266 212 C266 222 254 224 252 214 Z" fill="${INK}"/>`,
   }),
-  pegasus: (c) => ({
-    // the winged horse: white, a blue mane, great wings
-    back: pair((f) => {
-      const d = (x: number) => f(x);
-      return `<path d="M${d(118)} 214 C${d(90)} 180 ${d(56)} 172 ${d(38)} 182 C${d(48)} 190 ${d(46)} 198 ${d(40)} 206 C${d(54)} 208 ${d(56)} 216 ${d(50)} 224 C${d(66)} 224 ${d(72)} 232 ${d(70)} 240 C${d(90)} 236 ${d(108)} 230 ${d(118)} 214 Z" fill="#fffdf7" ${S}/>`;
-    }),
-    behind: pair((f) => `<path d="M${f(98)} 50 L${f(92)} 24 L${f(120)} 38 Z" fill="${c.color}" ${S}/>`),
-    front: `<path d="M114 46 Q120 24 134 32 Q142 18 152 29 Q160 14 168 29 Q178 18 186 32 Q200 24 206 46 Q190 38 160 38 Q130 38 114 46 Z" fill="#6fb3ff" ${s2}/>` +
-      eyes(26, 56) + `<ellipse cx="160" cy="71" rx="22" ry="12" fill="#f0e6f6" ${S}/><ellipse cx="152" cy="71" rx="2.6" ry="3.6" fill="${INK}"/><ellipse cx="168" cy="71" rx="2.6" ry="3.6" fill="${INK}"/>`,
-    tail: `<path d="M210 246 C236 236 262 238 272 260 C262 254 254 254 250 262 C246 252 236 250 230 258 C228 250 218 252 212 256 Z" fill="#6fb3ff" ${S}/>`,
-  }),
   cerberus: (c) => ({
     // three friendly heads: his hood, and one on each shoulder; a spiky collar
     front: eyes() + `<path d="M149 64 Q160 59 171 64 Q169 77 160 80 Q151 77 149 64 Z" fill="${INK}"/>` +
       pair((f) => `<path d="M${f(70)} 80 L${f(56)} 48 L${f(92)} 64 Z" fill="${c.color}" ${S}/>`),
     body: `<path d="M110 194 C140 206 180 206 210 194" fill="none" stroke="${INK}" stroke-width="10" stroke-linecap="round"/>` +
       [122, 142, 160, 178, 198].map((x) => `<path d="M${x - 5} 200 L${x} 210 L${x + 5} 200 Z" fill="#c9d1dc" ${s2}/>`).join('') +
-      pair((f) => `<circle cx="${f(98)}" cy="214" r="18" fill="${c.color}" ${S}/><path d="M${f(86)} 202 L${f(80)} 186 L${f(96)} 196 Z" fill="${c.color}" ${s2}/><circle cx="${f(92)}" cy="210" r="2.6" fill="#fff"/><circle cx="${f(104)}" cy="210" r="2.6" fill="#fff"/><ellipse cx="${f(98)}" cy="220" rx="4" ry="3" fill="${INK}"/>`),
+      pair((f) => `<path d="M${f(84)} 204 L${f(78)} 180 L${f(96)} 194 Z M${f(112)} 194 L${f(118)} 178 L${f(104)} 190 Z" fill="${c.color}" ${S}/><circle cx="${f(98)}" cy="208" r="19" fill="${c.color}" ${S}/>` +
+        `<ellipse cx="${f(98)}" cy="216" rx="11" ry="8" fill="#9c96a3" ${s2}/><circle cx="${f(91)}" cy="203" r="3" fill="#fff"/><circle cx="${f(105)}" cy="203" r="3" fill="#fff"/><circle cx="${f(91)}" cy="203" r="1.5" fill="${INK}"/><circle cx="${f(105)}" cy="203" r="1.5" fill="${INK}"/><path d="M${f(94)} 212 Q${f(98)} 209 ${f(102)} 212 Q${f(98)} 218 ${f(94)} 212 Z" fill="${INK}"/><path d="M${f(96)} 222 q2 5 4 0" fill="#ff8fab" ${s2}/>`),
     tail: ropeTail('M210 248 C232 244 246 228 250 206', c.color, 10),
   }),
   liondance: (c) => ({
     // the lion-dance head: a horn, a mirror on its brow, big bright eyes, a white fluffy fringe round the face; a fringed body
-    front: `<path d="M152 38 L160 23 L168 38 Z" fill="${GOLD}" ${S}/><circle cx="160" cy="45" r="6" fill="#c9eaff" ${S}/>` +
-      pair((f) => `<circle cx="${f(124)}" cy="56" r="11" fill="#fffdf7" ${S}/><circle cx="${f(126)}" cy="58" r="5.5" fill="${INK}"/><path d="M${f(110)} 43 Q${f(124)} 35 ${f(138)} 43" fill="none" stroke="${GOLD}" stroke-width="4" stroke-linecap="round"/>`) +
-      [...Array(11)].map((_, i) => {
-        const t = Math.PI * (1.06 + (0.88 * i) / 10);
-        return `<circle cx="${(160 + 92 * Math.cos(t)).toFixed(1)}" cy="${(138 + 64 * Math.sin(t)).toFixed(1)}" r="9" fill="#fffdf7" ${s2}/>`;
-      }).join('') + pair((f) => `<circle cx="${f(72)}" cy="${150}" r="9" fill="#fffdf7" ${s2}/><circle cx="${f(82)}" cy="${172}" r="9" fill="#fffdf7" ${s2}/>`),
+    front: fringe('#fffdf7', 'fluff', 0.36, 1.14, 19) + `<path d="M152 38 L160 23 L168 38 Z" fill="${GOLD}" ${S}/><circle cx="160" cy="45" r="6" fill="#c9eaff" ${S}/>` +
+      pair((f) => `<circle cx="${f(124)}" cy="56" r="11" fill="#fffdf7" ${S}/><circle cx="${f(126)}" cy="58" r="5.5" fill="${INK}"/><path d="M${f(110)} 43 Q${f(124)} 35 ${f(138)} 43" fill="none" stroke="${GOLD}" stroke-width="4" stroke-linecap="round"/>`),
     body: `<path d="M102 252 C130 262 190 262 218 252" fill="none" stroke="${GOLD}" stroke-width="8" stroke-linecap="round"/>` +
       [110, 124, 138, 152, 166, 180, 194, 208].map((x) => `<path d="M${x} 256 L${x + 3} 268" stroke="${GOLD}" stroke-width="3" stroke-linecap="round"/>`).join('') +
       pair((f) => `<circle cx="${f(110)}" cy="214" r="8" fill="#fffdf7" ${s2}/>`),
