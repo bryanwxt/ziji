@@ -276,8 +276,8 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
             <div class="pinyin">{word.pinyin}</div>
             {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
             <div class={`hanzi hanzi--xl${long ? ' hanzi--long' : ''}`} style={long ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
+            <SpeakButton text={word.text} />
           </div>
-          <SpeakButton text={word.text} />
         </div>
         {cardMeaning(word) && <p class="intro__en" lang="en">{cardMeaning(word)}</p>}
         {hanChars(word.text).length <= 2 && hanChars(word.text).map((ch) => { // a 成语's four characters' parts would crowd the card
