@@ -37,7 +37,7 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     const { CONTENT_VERSION, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES } = await import('.');
     const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES])).digest('hex').slice(0, 16);
     // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
-    const PINNED: Record<string, string> = { '1.4': 'e8d2030805d5210e' }; // 1.4 changed how examples are chosen (code), not the data
+    const PINNED: Record<string, string> = { '1.5': 'e8d2030805d5210e' }; // 1.4 and 1.5 changed how examples are chosen (code), not the data
     expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
   });
   it('了 means what it does when read le, not "clear, to finish"', async () => {
@@ -55,6 +55,9 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
   });
 });
 
+/** 一 and 不 change tone in speech (一半 yí, 一边 yì, 不对 bú) without being another reading. */
+const SANDHI: Record<string, string[]> = { 一: ['yí', 'yì'], 不: ['bú'] };
+
 describe('one reading per card (parent, 2026-10-05: 调 was taught as tiáo next to 调查 diàochá)', () => {
   it('a character keeps only the 组词 that say it the way his card does', async () => {
     const { builtinWords } = await import('.');
@@ -62,6 +65,12 @@ describe('one reading per card (parent, 2026-10-05: 调 was taught as tiáo next
     expect(byText.get('调')!.examples!.map((e) => e.text)).toEqual(['空调']); // not 调查, 强调 (diào)
     expect(byText.get('觉')!.examples!.map((e) => e.text)).not.toContain('睡觉'); // jiào, on a jué card
     expect(byText.get('长')!.examples!.map((e) => e.text)).not.toContain('班长'); // zhǎng, on a cháng card
+  });
+  it('a tone change in speech is the same reading: 一 and 不 keep their 组词 (parent, 2026-10-05: 一 showed no 词语)', async () => {
+    const { builtinWords } = await import('.');
+    const byText = new Map(builtinWords(0).map((w) => [w.text, w]));
+    expect(byText.get('一')!.examples!.map((e) => e.text)).toEqual(['一半', '一样', '一边']); // yí, yí, yì
+    expect(byText.get('不')!.examples!.length).toBeGreaterThan(0);
   });
   it('a 轻声 syllable of the same sound still counts (包子 zi on a zǐ card)', async () => {
     const { builtinWords } = await import('.');
@@ -79,7 +88,7 @@ describe('one reading per card (parent, 2026-10-05: 调 was taught as tiáo next
         chars.forEach((ch, i) => {
           if (ch !== w.text) return;
           const s = syl[i]!;
-          if (s !== w.pinyin && !(strip(s) === strip(w.pinyin) && strip(s) === s)) bad.push(`${w.text} ${w.pinyin}: ${e.text} ${e.pinyin}`);
+          if (s !== w.pinyin && !(strip(s) === strip(w.pinyin) && strip(s) === s) && !(SANDHI[w.text] ?? []).includes(s)) bad.push(`${w.text} ${w.pinyin}: ${e.text} ${e.pinyin}`);
         });
       }
     }

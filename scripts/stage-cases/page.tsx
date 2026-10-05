@@ -140,7 +140,7 @@ else if (which === 'intro-school-idiom') {
   const w = { ...words[0]!, id: 'p:1', text: '五颜六色', pinyin: 'wǔ yán liù sè', source: 'parent' as const, level: null, rank: null, tags: ['成语'], meaning: 'all kinds of bright colours', examples: [], sentences: [{ text: '公园里的花五颜六色。', pinyin: '' }] };
   render(screen(<FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={[...words, w]} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
 }
-else if (which === 'idiom' || which === 'idiom-fit' || which === 'idiom-build' || which === 'intro-idiom') {
+else if (which === 'idiom' || which === 'idiom-fit' || which === 'idiom-build' || which === 'intro-idiom' || which === 'intro-idiom-word') {
   // 成语 (spec 2026-10-05 §2.1, §3.2 rung 5): the list's longest sentence on each question, its longest meaning on the card
   const words = builtinWords(0);
   const idiom = builtinIdiom('美中不足')!;
@@ -151,6 +151,10 @@ else if (which === 'idiom' || which === 'idiom-fit' || which === 'idiom-build' |
     which === 'idiom' ? <IdiomQuestion gap={idiomGap(idiom, '足', rng)!} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
     : which === 'idiom-fit' ? <UseQuestion item={idiomFitItem(idiom, null, rng)!} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onNext={() => {}} />
     : which === 'idiom-build' ? <BuildSentence item={idiomZuju(idiom, rng)!} word={{ ...yan, text: idiom.text }} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
+    : which === 'intro-idiom-word' ? (() => { // a card with no usage line: a 组词 with its English before the 成语 (parent, 2026-10-05: 一)
+      const yi = words.find((x) => x.text === '一')!;
+      return <FlashcardStep item={{ wordId: yi.id, isNew: true, retry: false }} ask="listen" word={yi} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={builtinIdiom('一心一意')!} onDone={() => {}} />;
+    })()
     : <FlashcardStep item={{ wordId: cheng.id, isNew: true, retry: false }} ask="listen" word={cheng} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={builtinIdiom('胸有成竹')!} onDone={() => {}} />;
   render(screen(body), app);
 }

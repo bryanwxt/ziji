@@ -66,7 +66,7 @@ for (const size of SIZES) {
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
   }
   // 成语 (phase C): each question, then with the sheet open after a miss; the 认新字 card with a 成语
-  for (const c of ['idiom', 'idiom-fit', 'idiom-build', 'intro-idiom', 'intro-school-idiom']) {
+  for (const c of ['idiom', 'idiom-fit', 'idiom-build', 'intro-idiom', 'intro-idiom-word', 'intro-school-idiom']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(300);
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });

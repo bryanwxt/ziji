@@ -90,9 +90,9 @@ export function meaningCue(word: Word, variant = 0): MeaningCue | null {
  * is one (variant 1), so the intro never shows the exact sentence 认一认's meaning question will blank. The pinyin is the
  * word's own for a sentence (a whole sentence's pinyin won't fit a phone), the 组词 word's for a 组词.
  */
-export function usageLine(word: Word): { before: string; after: string; full: string; pinyin: string } | null {
+export function usageLine(word: Word): { before: string; after: string; full: string; pinyin: string; isWord: boolean } | null {
   const cue = meaningCue(word, 1);
-  return cue ? { before: cue.before, after: cue.after, full: cue.full, pinyin: cue.kind === 'word' ? cue.pinyin : word.pinyin } : null;
+  return cue ? { before: cue.before, after: cue.after, full: cue.full, pinyin: cue.kind === 'word' ? cue.pinyin : word.pinyin, isWord: cue.kind === 'word' } : null;
 }
 
 /** Same-sound choices (same syllable first, then same initial), minus any that would make a real word with the cue. */

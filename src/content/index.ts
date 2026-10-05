@@ -6,7 +6,7 @@ import type { BuiltinChar, CharInfo, Passage, Word } from '../types';
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.4`; // .4: 组词 at the card's reading only
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.5`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading
 export const PASSAGES: Passage[] = passages as Passage[];
 
 const infoByChar = new Map<string, CharInfo>(
@@ -63,14 +63,18 @@ const toneless = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '
 /**
  * Does this 组词 say the character the way his card teaches it? One reading per card (parent, 2026-10-05: a 调 tiáo card
  * showed 调查 diàochá); the other reading is its own word. A 轻声 syllable of the same sound counts (东西 xi, 杯子 zi).
+ * A tone change in speech is the same reading (一半 yí, 一边 yì, 不对 bú): parent, 2026-10-05, 一 had lost all its 组词.
  * Examples whose pinyin doesn't line up one syllable per character are kept: they can't be checked.
  */
 function saysItAs(e: { text: string; pinyin: string }, char: string, reading: string): boolean {
   const chars = Array.from(e.text);
   const syl = e.pinyin.trim().split(/\s+/);
   if (syl.length !== chars.length) return true;
-  return chars.every((ch, i) => ch !== char || syl[i] === reading || (toneless(syl[i]!) === syl[i] && syl[i] === toneless(reading)));
+  return chars.every((ch, i) => ch !== char || syl[i] === reading || (toneless(syl[i]!) === syl[i] && syl[i] === toneless(reading))
+    || (SANDHI[char] ?? []).includes(syl[i]!));
 }
+/** 一 and 不 change tone before another syllable without being another reading. */
+const SANDHI: Record<string, string[]> = { 一: ['yí', 'yì'], 不: ['bú'] };
 
 /** Radical and components of every character in the text, de-duplicated, in order. */
 export function wordComponents(text: string): string[] {

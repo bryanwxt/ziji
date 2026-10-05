@@ -234,6 +234,16 @@ function UsageLine({ word }: { word: Word }) {
   );
 }
 
+/**
+ * How many 组词 the 认新字 card lists besides its usage line: one fits every screen beside the line, two without it. With a 成语
+ * there is room for one fewer, but there is always a 词语 before the 成语 (parent, 2026-10-05: 一 showed only a 成语): the
+ * usage line when it is a 组词, else one listed.
+ */
+function extraWords(line: ReturnType<typeof usageLine>, idiom: Idiom | null): number {
+  if (!idiom) return line ? 1 : 2;
+  return line?.isWord ? 0 : 1;
+}
+
 function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
   const line = usageLine(word);
   return (
@@ -267,7 +277,15 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
             </div>
           );
         })}
-        {idiom && ( // a 成语 takes the extra 组词's place, so the card still fits a phone (all 组词 still feed the questions)
+        {word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom)).map((e) => ( // with their English, never the one the usage line already shows; all of them feed the meaning questions
+          <div class="example" key={e.text}>
+            <span class="pinyin">{e.pinyin}</span>
+            <span class="hanzi">{e.text}</span>
+            <SpeakButton text={e.text} />
+            {glossFor(e.text) && <span class="example__en" lang="en">{glossFor(e.text)}</span>}
+          </div>
+        ))}
+        {idiom && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语)
           <div class="intro__idiom">
             <div class="example example--idiom">
               <span class="idiom-ruby">
@@ -280,14 +298,6 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
             {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi">{idiom.sentences[0]}</p>}
           </div>
         )}
-        {!idiom && word.examples?.filter((e) => !line?.full.includes(e.text)).slice(0, line ? 1 : 2).map((e) => ( // with their English, one 组词 besides the usage line fits every screen (never the one it already shows); all of them feed the meaning questions
-          <div class="example" key={e.text}>
-            <span class="pinyin">{e.pinyin}</span>
-            <span class="hanzi">{e.text}</span>
-            <SpeakButton text={e.text} />
-            {glossFor(e.text) && <span class="example__en" lang="en">{glossFor(e.text)}</span>}
-          </div>
-        ))}
       </div>
     </div>
   );

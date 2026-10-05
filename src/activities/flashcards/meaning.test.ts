@@ -131,7 +131,7 @@ describe('bank cues (spec §20 part 4)', () => {
 
 describe('usageLine (spec §20 part 1)', () => {
   it("is the bank's other sentence with the word in place, and the word's pinyin", () => {
-    expect(usageLine(makeWord('很', { pinyin: 'hěn' }))).toEqual({ before: '这个书包', after: '大。', full: '这个书包很大。', pinyin: 'hěn' });
+    expect(usageLine(makeWord('很', { pinyin: 'hěn' }))).toEqual({ before: '这个书包', after: '大。', full: '这个书包很大。', pinyin: 'hěn', isWord: false });
   });
   it("never the sentence 认一认's meaning question will blank, so the intro doesn't give its answer away", () => {
     const w = makeWord('很', { pinyin: 'hěn' });
@@ -144,7 +144,7 @@ describe('usageLine (spec §20 part 1)', () => {
   });
   it('falls back to a 组词 word with its pinyin', () => {
     const w = makeWord('惜', { pinyin: 'xī', examples: [{ text: '珍惜', pinyin: 'zhēn xī' }] });
-    expect(usageLine(w)).toEqual({ before: '珍', after: '', full: '珍惜', pinyin: 'zhēn xī' });
+    expect(usageLine(w)).toEqual({ before: '珍', after: '', full: '珍惜', pinyin: 'zhēn xī', isWord: true });
   });
   it('no usage line when there is nothing to show (a parent word with no sentence, no bank item, no 组词)', () => {
     expect(usageLine(makeWord('欺负', { level: null, source: 'parent' }))).toBeNull();

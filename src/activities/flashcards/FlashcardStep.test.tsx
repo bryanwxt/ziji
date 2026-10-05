@@ -417,7 +417,19 @@ describe('the sheet explains a miss in English (spec 2026-10-05 §3.6)', () => {
 });
 
 describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () => {
-  it('shows the 成语 with its pinyin, English and a sentence, in place of the extra 组词', async () => {
+  it('its 组词 come first, with their English, then the 成语 (parent, 2026-10-05: a card showed only a 成语)', async () => {
+    const { builtinIdiom } = await import('../../content/chengyu');
+    const yi = pool.find((w) => w.text === '一')!;
+    const idiom = builtinIdiom('一心一意')!;
+    render(<FlashcardStep {...base} word={yi} idiom={idiom} item={{ wordId: yi.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const shown = [...document.querySelectorAll('.intro .example')];
+    const words = shown.filter((e) => !e.classList.contains('example--idiom'));
+    expect(words.length).toBeGreaterThanOrEqual(1);
+    expect(words.length).toBeLessThanOrEqual(2);
+    expect(words.every((e) => e.querySelector('[lang="en"]'))).toBe(true);
+    expect(shown.at(-1)!.classList.contains('example--idiom')).toBe(true); // the 成语 comes after them
+  });
+  it('shows the 成语 with its pinyin, English and a sentence', async () => {
     const { builtinIdiom, chengyuOf } = await import('../../content/chengyu');
     const yan = pool.find((w) => w.text === '颜')!;
     const idiom = builtinIdiom('五颜六色')!;
@@ -427,7 +439,6 @@ describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () =
     expect(box.querySelector('.pinyin')!.textContent).toBe('wǔ yán liù sè');
     expect(box.querySelector('[lang="en"]')!.textContent).toBe(idiom.meaning);
     expect(box.querySelector('.intro__idiom-sentence')!.textContent).toBe(idiom.sentences[0]);
-    expect(document.querySelector('.intro .example:not(.example--idiom)')).toBeNull();
   });
   it('without one, the card is as before', () => {
     const ta = pool.find((w) => w.text === '他')!;
