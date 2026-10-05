@@ -151,6 +151,20 @@ describe('Wardrobe', () => {
 });
 
 describe('CollectionScreen', () => {
+  it('a card opened shows its English and its 组词\'s, with pinyin over the 组词 (parent, 2026-10-05)', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    await putCards(app.db, [makeCard('b:河', 'recognise', new Date(2026, 9, 20), true)]);
+    renderWithApp(<CollectionScreen />, app);
+    fireEvent.click(await screen.findByRole('button', { name: '河' }));
+    const big = document.querySelector('.zika--big')!;
+    const en = [...big.querySelectorAll('.zika__en')].map((e) => e.textContent);
+    expect(en[0]).toMatch(/river/);
+    if (big.querySelector('.zika__example')) {
+      expect(en.length).toBe(2);
+      expect(big.querySelector('.zika__example .label__py')?.textContent).toBeTruthy();
+    }
+  });
   it('counts caught cards and filters by power', async () => {
     const app = await makeAppData();
     await putWords(app.db, builtinWords(0));

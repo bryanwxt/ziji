@@ -1,7 +1,8 @@
 import { X } from 'lucide-preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { speak } from '../audio/speech';
-import { BUILTIN } from '../content';
+import { BUILTIN, builtinWordId } from '../content';
+import { cardMeaning, glossFor } from '../content/glossary';
 import { collectionCards, type CharCard } from '../fun/collection';
 import { POWERS, powerDef, type PowerId } from '../fun/powers';
 import { completedBadges, stickerFamilies } from '../fun/stickers';
@@ -62,6 +63,7 @@ export function CollectionScreen() {
     el.classList.add('is-nudged');
   };
 
+  const shownWord = shown ? know.wordsById.get(builtinWordId(shown.char)) : undefined;
   return (
     <div class="screen">
       <Scene kind="home" />
@@ -145,7 +147,14 @@ export function CollectionScreen() {
             <span class="zika__py">{shown.pinyin}</span>
             <span class="zika__char hanzi">{shown.char}</span>
             <SpeakButton text={shown.char} />
-            {shown.example && <span class="zika__example hanzi">{shown.example} <SpeakButton text={shown.example} /></span>}
+            {/* its English, and its 组词's, as on the lesson cards (parent, 2026-10-05) */}
+            {shownWord && cardMeaning(shownWord) && <span class="zika__en" lang="en">{cardMeaning(shownWord)}</span>}
+            {shown.example && (
+              <span class="zika__example">
+                <span class="zika__example-line"><span class="hanzi"><Label zh={shown.example} py={shownWord?.examples?.find((e) => e.text === shown.example)?.pinyin} /></span><SpeakButton text={shown.example} small /></span>
+                {glossFor(shown.example) && <span class="zika__en" lang="en">{glossFor(shown.example)}</span>}
+              </span>
+            )}
             <span class="zika__stars">{[1, 2, 3].map((i) => <InkIcon key={i} name={i <= shown.stars ? 'star' : 'starOutline'} size={26} />)}</span>
           </div>
         </div>
