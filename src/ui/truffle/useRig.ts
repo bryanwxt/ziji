@@ -2,15 +2,23 @@ import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
 import { cardCentre, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
-import { REACTIONS, REST, TRACKS, type Motion, type Reaction, type Track } from './timelines';
+import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS, type Motion, type PawPose, type Reaction, type Track } from './timelines';
 
 type Key = keyof Face;
 const KEYS = ['lidTop', 'lidBottom', 'lidArc', 'pupil', 'browY', 'browAngle', 'browShow', 'browAsym', 'smile', 'mouthOpen', 'earL', 'earR', 'blush', 'tilt'] as const satisfies readonly Key[];
 const EXTRA_KEYS = Object.keys(EXTRAS) as Expression[];
 
 /** The extra state the loop paints besides the face: where he looks and how the body is posed. */
-export interface Pose { gx: number; gy: number; tilt: number; headY: number; rig: string; body: string; tail: string; blink: number; earL: number; earR: number }
-export const REST_POSE: Pose = { gx: 0, gy: 0, tilt: 0, headY: 0, rig: '', body: '', tail: '', blink: 0, earL: 0, earR: 0 };
+export interface Pose { gx: number; gy: number; tilt: number; headY: number; rig: string; body: string; tail: string; blink: number; earL: number; earR: number; pawL: string; pawR: string }
+export const REST_POSE: Pose = { gx: 0, gy: 0, tilt: 0, headY: 0, rig: '', body: '', tail: '', blink: 0, earL: 0, earR: 0, pawL: '', pawR: '' };
+
+/** A paw's transform from its offsets (around where it sits at his feet), or none at rest. */
+const pawTransform = (dx: number, dy: number, r: number, cx: number) =>
+  Math.abs(dx) + Math.abs(dy) + Math.abs(r) < 0.05 ? '' : `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) rotate(${r.toFixed(2)} ${cx} 266)`;
+/** From wherever the paws are back to his feet in 200 ms (a reaction without paws, or a question coming up, cut a move short). */
+function settlePaws(from: PawPose): (t: number) => PawPose | null {
+  return (t) => (t > 200 ? null : (Object.fromEntries(Object.entries(from).map(([k, v]) => [k, v * (1 - t / 200)])) as unknown as PawPose));
+}
 
 /** Paints a face and pose onto Truffle's parts (the same geometry the markup was drawn with). */
 export function paint(els: (part: string) => Element | null, f: Face, pose: Pose, extras: Record<string, number>) {
@@ -49,6 +57,8 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
   set('rig', 'transform', pose.rig);
   set('body', 'transform', pose.body);
   els('tail')?.setAttribute('style', `transform-origin:214px 246px;${pose.tail ? `transform:${pose.tail}` : ''}`);
+  set('paw-l', 'transform', pose.pawL);
+  set('paw-r', 'transform', pose.pawR);
   for (const e of EXTRA_KEYS) set(`extra-${e}`, 'opacity', (extras[e] ?? 0).toFixed(3));
 }
 
@@ -92,6 +102,8 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
   const hold = useRef<{ expr: Expression; until: number; then?: Expression } | null>(null);
   const after = useRef<Expression | null>(null);
   const track = useRef<{ fn: Track; start: number; purr: boolean } | null>(null);
+  const paws = useRef<{ fn: (t: number) => PawPose | null; start: number } | null>(null); // the paws' move (spec §4.6)
+  const lastPaws = useRef<PawPose>(PAW_REST);
   const lag = useRef({ y: 0, v: 0 });
   const lastMotion = useRef<Motion>(REST);
   // idle life, scheduled by frame time
@@ -139,6 +151,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         hold.current = null;
         after.current = null;
         if (track.current) track.current = { fn: settle(lastMotion.current), start: now, purr: false };
+        if (paws.current) paws.current = { fn: settlePaws(lastPaws.current), start: now };
       }
       wasCalm = calm;
       if (pending.current) {
@@ -147,6 +160,8 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         hold.current = { expr: def.expr, until: now + def.holdMs, then: def.then };
         after.current = null;
         track.current = def.track && !reduced ? { fn: TRACKS[def.track], start: now, purr: def.track === 'purr' } : null;
+        // its paw move, if it has one; otherwise a running one goes back to his feet (never stuck raised)
+        paws.current = def.paws && !reduced ? { fn: PAW_TRACKS[def.paws], start: now } : paws.current ? { fn: settlePaws(lastPaws.current), start: now } : null;
       }
       // which expression shows now: a held reaction, what follows it, or his own
       if (hold.current && now >= hold.current.until) {
@@ -178,6 +193,13 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
           if (track.current.purr) shimmer = Math.sin(now / 1000 * 95) * 0.5;
         } else track.current = null;
       }
+      let pw: PawPose = PAW_REST;
+      if (paws.current) {
+        const sample = paws.current.fn(now - paws.current.start);
+        if (sample) pw = sample;
+        else paws.current = null;
+      }
+      lastPaws.current = pw;
       lag.current.v = (lag.current.v + (-m.y * 0.18 - lag.current.y) * 0.2) * 0.7;
       lag.current.y += lag.current.v;
       // blinks (sometimes two) and ear flicks
@@ -231,6 +253,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
       const pose: Pose = {
         gx: g.x, gy: g.y, tilt: m.shake + Math.max(-1, Math.min(1, lookAt)) * 4, headY: lag.current.y - br * 0.7,
         rig: rigTransform(m, shimmer), body, tail, blink, earL: flickL, earR: flickR,
+        pawL: pawTransform(pw.lx, pw.ly, pw.lr, 138), pawR: pawTransform(pw.rx, pw.ry, pw.rr, 182),
       };
       paint(els, cur.current, pose, extras.current);
       start();

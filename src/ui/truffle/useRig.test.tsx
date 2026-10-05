@@ -123,3 +123,34 @@ describe('the animation loop (spec §4.1, review focus 1)', () => {
     expect(container.querySelector('[data-part="rig"]')!.getAttribute('transform') ?? '').not.toMatch(/scale\(1\.0[1-9]/);
   });
 });
+
+describe('paws (spec 2026-10-04 §4.6, phase E)', () => {
+  const paw = (c: Element, side: 'l' | 'r') => c.querySelector(`[data-part="paw-${side}"]`)!.getAttribute('transform') ?? '';
+  it('hello: the right paw waves while he greets, then is back at his feet', () => {
+    reduced = false;
+    const { container } = render(<Truffle alive expression="neutral" react={{ kind: 'hello', key: 1 }} />);
+    act(() => run(25)); // ~400 ms: mid-wave
+    expect(paw(container, 'r')).toMatch(/translate\([^)]*-\d/);
+    expect(paw(container, 'l')).toBe('');
+    act(() => run(120));
+    expect(paw(container, 'r')).toBe('');
+  });
+  it('a paw move cut short by another reaction still ends with the paws at rest (review focus 2)', () => {
+    reduced = false;
+    const { container, rerender } = render(<Truffle alive expression="neutral" react={{ kind: 'peek', key: 1 }} />);
+    act(() => run(15));
+    expect(paw(container, 'l')).not.toBe('');
+    rerender(<Truffle alive expression="neutral" react={{ kind: 'wrong', key: 2 }} />);
+    act(() => run(200));
+    expect(paw(container, 'l')).toBe('');
+    expect(paw(container, 'r')).toBe('');
+  });
+  it('reduced motion: the paws never move', () => {
+    reduced = true;
+    const { container } = render(<Truffle alive expression="neutral" react={{ kind: 'hello', key: 1 }} />);
+    act(() => run(25));
+    expect(paw(container, 'r')).toBe('');
+    reduced = false;
+  });
+});
+
