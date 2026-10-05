@@ -47,6 +47,18 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
   };
   const later = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms));
   useEffect(() => () => { timers.current.forEach(clearTimeout); show(); }, []);
+  // another world: what this one was playing (a crack on its block, a hidden prop) stays behind (sweep)
+  const shownWorld = useRef(world);
+  useEffect(() => {
+    if (shownWorld.current === world) return;
+    shownWorld.current = world;
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    busy.current = false;
+    auto.current = false;
+    show();
+    setFx(null);
+  }, [world]);
   // a moment starts by itself only when he has left the screen alone for a while (final review I1)
   useEffect(() => {
     const touched = () => { lastTouch.current = Date.now(); };
@@ -77,7 +89,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     if (o.say) latest.current.onSay(o.say);
     if (o.later) { const line = o.later.say; later(o.later.ms, () => latest.current.onSay(line)); }
     if (o.speak && !byItself) speak(o.speak); // a moment that starts by itself never talks out loud
-    if (o.sfx) playSfx(o.sfx);
+    if (o.sfx && !byItself) playSfx(o.sfx); // nor makes a sound (sweep)
     latest.current.onReact(o.react, art.props[prop]!.x < 180 ? -1 : 1);
   };
 
@@ -98,7 +110,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     let t: ReturnType<typeof setTimeout>;
     const next = () => {
       t = setTimeout(() => {
-        if (!busy.current && document.visibilityState !== 'hidden' && Date.now() - lastTouch.current >= autoEvery) {
+        if (!busy.current && !reducedMotion() && document.visibilityState !== 'hidden' && Date.now() - lastTouch.current >= autoEvery) {
           const m = autos[Math.floor(Math.random() * autos.length)]!;
           const { kid: k, today: day } = latest.current;
           const { kid: _found, ...o } = runMoment(world, m.prop, k, day, 0);

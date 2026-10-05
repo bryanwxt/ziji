@@ -12,6 +12,7 @@ vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 const still = { on: false };
 vi.mock('../motion', () => ({ reducedMotion: () => still.on }));
 import { speak } from '../../audio/speech';
+import { playSfx } from '../../audio/sfx';
 
 const kid = (over: Partial<KidState> = {}): KidState => ({ ...DEFAULT_KID, finds: { ...DEFAULT_FINDS }, ...over });
 const tap = (label: string) => fireEvent.click(document.querySelector(`.world-props [aria-label="${label}"]`)!);
@@ -139,5 +140,43 @@ describe('WorldProps (spec 2026-10-04 §4.5)', () => {
     expect(onReact).toHaveBeenCalled();
     vi.mocked(Math.random).mockRestore();
   });
+  it('sweep: a crack stays with its world — switching worlds clears it and brings back a hidden prop', () => {
+    const { rerender } = render(<><WorldScene world="blocks" /><WorldProps world="blocks" {...props()} /></>);
+    tap('宝石');
+    expect(document.querySelector('.world-props__fx')).toBeTruthy();
+    rerender(<><WorldScene world="yard" /><WorldProps world="yard" {...props()} /></>);
+    expect(document.querySelector('.world-props__fx')).toBeNull();
+    expect([...document.querySelectorAll<SVGElement>('.world-scene [style*="visibility"]')].filter((e) => e.style.visibility === 'hidden')).toHaveLength(0);
+  });
+  it('sweep: reduced motion switched on while Home is open stops moments starting by themselves', () => {
+    const onReact = vi.fn();
+    render(<WorldProps world="yard" {...props({ onReact, autoEvery: 1000 })} />);
+    still.on = true;
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(onReact).not.toHaveBeenCalled();
+  });
+  it("sweep: the parrot's hello is Truffle's bubble line", () => {
+    const onSay = vi.fn();
+    render(<WorldProps world="pirate" {...props({ onSay, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1600); });
+    expect(onSay).toHaveBeenCalledWith('你好！');
+  });
+  it('sweep: a moment that starts by itself makes no sound', () => {
+    vi.mocked(playSfx).mockClear();
+    const onReact = vi.fn();
+    vi.spyOn(Math, 'random').mockReturnValue(0); // the bowl
+    render(<WorldProps world="yard" {...props({ onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1100); });
+    expect(onReact).toHaveBeenCalledWith('munch', expect.any(Number));
+    expect(playSfx).not.toHaveBeenCalled();
+    vi.mocked(Math.random).mockRestore();
+  });
+  it('sweep: nothing starts by itself while the page is hidden', () => {
+    const onReact = vi.fn();
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    render(<WorldProps world="yard" {...props({ onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(5000); });
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    expect(onReact).not.toHaveBeenCalled();
+  });
 });
-

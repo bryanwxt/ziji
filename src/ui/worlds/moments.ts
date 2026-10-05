@@ -81,7 +81,7 @@ export function runMoment(world: WorldId, prop: string, kid: KidState, today: st
       return { fx: { kind: 'dig', star: r.star }, react: 'excited', ...(r.star ? { kid: { ...kid, finds: r.finds, bonusStars: kid.bonusStars + 1 }, say: '找到星星了！' } : { say: '挖呀挖！' }) };
     }
     case 'pirate:chest': return { fx: { kind: 'open' }, react: 'excited', say: '哇！' };
-    case 'pirate:parrot': return { fx: { kind: 'flap' }, react: 'watch', speak: '你好！' };
+    case 'pirate:parrot': return { fx: { kind: 'flap' }, react: 'watch', say: '你好！' }; // it only starts by itself, which never speaks: Truffle says hello back
   }
   throw new Error(`no moment for ${world}:${prop}`);
 }

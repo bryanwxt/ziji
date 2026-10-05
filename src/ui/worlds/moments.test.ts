@@ -69,7 +69,7 @@ describe('prop moments (spec 2026-10-04 §4.5)', () => {
   });
   it('the rocket counts down in Chinese; the parrot says hello; the sprinkler gets a flinch, then a laugh', () => {
     expect(runMoment('space', 'rocket', kid(), DAY, 1).speak).toBe('三，二，一！');
-    expect(runMoment('pirate', 'parrot', kid(), DAY, 1).speak).toBe('你好！');
+    expect(runMoment('pirate', 'parrot', kid(), DAY, 1).say).toBe('你好！'); // his bubble: the parrot only starts by itself, which never speaks
     const s = runMoment('yard', 'sprinkler', kid(), DAY, 1);
     expect(s).toMatchObject({ react: 'flinch', say: '哇！', later: { say: '哈哈哈！', ms: 700 } });
   });
