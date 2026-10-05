@@ -106,6 +106,8 @@ export interface PlacementResult {
   reading: number;
   understanding: number;
   missed: string[];
+  /** known characters the journey starts from: what placement found (worlds count what he learns after it). Missing on older saves. */
+  worldBase?: number;
 }
 
 /** The parent can switch each of these on or off (spec 2026-10-05 §7). */

@@ -4,7 +4,7 @@ import type { KidState } from '../types';
 export type WorldId = 'yard' | 'grass' | 'race' | 'blocks' | 'dino' | 'sea' | 'space' | 'pirate';
 export interface WorldDef { id: WorldId; zh: string; py: string; at: number }
 
-/** The journey, in unlock order. "at" is the known-character count (认识 N 个字). */
+/** The journey, in unlock order. "at" is the characters learned since placement (src/placement/journey.ts). */
 export const WORLDS: WorldDef[] = [
   { id: 'yard', zh: '后院', py: 'hòuyuàn', at: 0 },
   { id: 'grass', zh: '草丛', py: 'cǎocóng', at: 30 },
@@ -35,6 +35,12 @@ export function updateWorlds(kid: KidState, known: number): WorldUpdate {
   const newest = fresh[fresh.length - 1]!;
   const arrived = newest === 'yard' ? null : newest;
   return { kid: { ...kid, worldsSeen, world: arrived ? null : kid.world }, arrived, changed: true };
+}
+
+/** His worlds as the count reaches them now, keeping the room's pick only if it is still reached (a one-off when the counting changes). */
+export function resetWorlds(kid: KidState, count: number): KidState {
+  const worldsSeen = reachedWorlds(count);
+  return { ...kid, worldsSeen, world: kid.world && worldsSeen.includes(kid.world as WorldId) ? kid.world : null };
 }
 
 export function currentWorld(kid: KidState): WorldId {

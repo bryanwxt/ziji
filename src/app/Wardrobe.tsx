@@ -15,6 +15,7 @@ import { useApp } from './AppContext';
 import { loadKnowledge } from './knowledge';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { currentWorld, WORLDS } from '../fun/worlds';
+import { journeyCount } from '../placement/journey';
 import { SCENES } from '../ui/worlds/scenes';
 import { GEM } from '../ui/worlds/tapArt';
 
@@ -29,9 +30,13 @@ export function Wardrobe() {
   const [k, setK] = useState<KidState>({ ...DEFAULT_KID, ...kid });
   const [tab, setTab] = useState<RoomTab>('outfits');
   const [progress, setProgress] = useState<PowerProgress[] | null>(null);
+  const [learned, setLearned] = useState(0); // toward the next world: characters learned since placement
 
   useEffect(() => {
-    void loadKnowledge(db).then((know) => setProgress(powerProgress(powerFamilies(BUILTIN), know.knownChars)));
+    void loadKnowledge(db).then(async (know) => {
+      setProgress(powerProgress(powerFamilies(BUILTIN), know.knownChars));
+      setLearned(await journeyCount(db, know.known));
+    });
   }, []);
 
   const save = async (next: KidState) => {
@@ -154,7 +159,7 @@ export function Wardrobe() {
                   <span class="grainy place__frame"><svg class="place__thumb" viewBox="0 160 360 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true" dangerouslySetInnerHTML={{ __html: SCENES[w.id] }} /></span>
                   <Label zh={w.zh} />
                   {!reached && (
-                    <span class="place__lock"><InkIcon name="lock" size={20} /> <Label zh={`${w.at} 个字`} /></span>
+                    <span class="place__lock"><InkIcon name="lock" size={20} /> <Label zh={`再学 ${Math.max(1, w.at - learned)} 个字`} /></span>
                   )}
                 </button>
               );

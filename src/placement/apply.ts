@@ -2,7 +2,8 @@ import { meaningCue } from '../activities/flashcards/meaning';
 import { NEW_MEANING_PER_DAY } from '../session/plan';
 import { newCard } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
-import { allCards, allWords, deleteCards, practisedByKind, putCards, updateSettings } from '../store/repo';
+import { allCards, allWords, deleteCards, getSettings, practisedByKind, putCards, updateSettings } from '../store/repo';
+import { countKnownReading, startingPoint, unpractisedKnown } from './journey';
 import type { CardRecord, Word } from '../types';
 import { seedPlacementCards } from './placement';
 import { placementLevels, type WalkAnswer } from './walk';
@@ -30,6 +31,10 @@ export function placementIds(bands: Word[][], answers: WalkAnswer[]): { readingI
  */
 export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date): Promise<number> {
   const [words, cards, byKind] = await Promise.all([allWords(db), allCards(db), practisedByKind(db)]);
+  // what he learned in the app before this placement keeps counting toward his worlds (journey.ts)
+  const before = await getSettings(db);
+  const oldBase = !before.placementResult ? 0 : before.placementResult.worldBase ?? unpractisedKnown(cards, byKind);
+  const learnedBefore = Math.max(0, countKnownReading(cards) - oldBase);
   const practised = (c: CardRecord) => !!byKind.get(c.kind)?.has(c.wordId); // practice of that kind: a meaning answer doesn't keep a guessed reading
   const byId = new Map(words.map((w) => [w.id, w]));
   const hasCue = (id: string) => { const w = byId.get(id); return !!w && meaningCue(w) !== null; };
@@ -54,6 +59,7 @@ export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date):
       }),
   ].filter((c) => !kept.has(c.id));
   await putCards(db, seeds);
-  await updateSettings(db, { placementDone: true, placementResult: { at: now.getTime(), reading: r.reading, understanding: r.understanding, missed: r.missed } });
+  const worldBase = startingPoint(countKnownReading(await allCards(db)), learnedBefore);
+  await updateSettings(db, { placementDone: true, placementResult: { at: now.getTime(), reading: r.reading, understanding: r.understanding, missed: r.missed, worldBase } });
   return seeds.filter((c) => c.kind === 'recognise').length;
 }

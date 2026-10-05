@@ -25,6 +25,7 @@ import { dayMood } from '../ui/truffle/greeting';
 import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
 import { SCENE_VIEWBOX, SCENES } from '../ui/worlds/scenes';
 import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId } from '../fun/worlds';
+import { settleJourney } from '../placement/journey';
 import { TabBar } from '../ui/TabBar';
 import { useApp } from './AppContext';
 import { loadKnowledge, type Knowledge } from './knowledge';
@@ -82,7 +83,10 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       // build on what's stored now (a just-saved costume or star must not be overwritten); no kid yet: nothing to record
       const stored = (await getKid(db)) ?? kid;
       if (!stored) return;
-      const u = updateWorlds(stored, data.know.known);
+      // worlds count what he learns after placement (src/placement/journey.ts); an older install's worlds are redone once
+      const j = await settleJourney(db, stored, data.know.known);
+      const redone = j.kid !== stored;
+      const u = updateWorlds(j.kid, j.count);
       let next = u.kid;
       // once a day he shows how he feels about it (spec 2026-10-04 §4.6): a little sulk after days away, extra bouncy on a streak
       const day = localDateKey(now());
@@ -97,7 +101,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           saidTimer.current = setTimeout(() => setSaid(null), 2600);
         }
       }
-      if (!u.changed && !greet) return;
+      if (!u.changed && !greet && !redone) return;
       await saveKid(db, next);
       setJourneyKid(next);
       if (u.changed) setArrival(u.arrived);
