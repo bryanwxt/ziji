@@ -1,5 +1,6 @@
 import { pinyin } from 'pinyin-pro';
 import { HSK_WORDS } from '../../content';
+import { CHENGYU, chengyuLevel, chengyuOf, isIdiomWord } from '../../content/chengyu';
 import { BLANK, bankFor, fillGap } from '../../content/sentenceBank';
 import { shuffle, type Rng } from '../../lib/random';
 import { syllableTone, toneless } from './tones';
@@ -61,6 +62,16 @@ export function meaningCue(word: Word, variant = 0): MeaningCue | null {
     const s = usable[variant % usable.length]!;
     const at = s.text.indexOf(word.text);
     return { kind: 'sentence', source: 'class', full: s.text, pinyin: s.pinyin, before: s.text.slice(0, at), after: s.text.slice(at + word.text.length), pair: word.pairs?.[0] };
+  }
+  // a school 成语 in the list: its sentence, with other 成语 near its level as the wrong choices (spec 2026-10-05 §4)
+  const idiom = isIdiomWord(word) ? chengyuOf(word.text) : undefined;
+  if (idiom) {
+    const full = idiom.sentences[variant % idiom.sentences.length]!;
+    const at = full.indexOf(word.text);
+    const level = chengyuLevel(word.text);
+    const near = CHENGYU.filter((c) => c.text !== word.text && Math.abs(chengyuLevel(c.text) - level) <= 1).map((c) => c.text);
+    const from = word.text.codePointAt(0)! % Math.max(1, near.length - 2);
+    return { kind: 'sentence', source: 'bank', full, pinyin: '', before: full.slice(0, at), after: full.slice(at + word.text.length), wrong: near.slice(from, from + 3), pair: word.pairs?.[0] };
   }
   const bank = bankFor(word.text);
   if (bank) {

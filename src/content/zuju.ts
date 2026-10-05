@@ -4,6 +4,7 @@ import type { Rng } from '../lib/random';
 import type { Word } from '../types';
 import { HSK_WORDS } from '.';
 import { bankFor, fillGap, SENTENCE_BANK } from './sentenceBank';
+import { chengyuOf, isIdiomWord } from './chengyu';
 
 export interface ZujuItem { full: string; tiles: string[]; orders: string[][] }
 
@@ -68,7 +69,8 @@ export function zujuOf(full: string, keep: string): ZujuItem | null {
 /** The 组句 sentences for a word: his class sentences first, then the bank's, each 4–6 different tiles with the word whole in one. */
 export function zujuFor(word: Word): ZujuItem[] {
   const bank = bankFor(word.text);
-  const sentences = [...(word.sentences ?? []).map((s) => s.text), ...(bank ? bank.gaps.map((g) => fillGap(g, word.text)) : [])];
+  const idiom = isIdiomWord(word) ? chengyuOf(word.text) : undefined; // a school 成语 also takes the 成语 list's sentences
+  const sentences = [...(word.sentences ?? []).map((s) => s.text), ...(bank ? bank.gaps.map((g) => fillGap(g, word.text)) : []), ...(idiom?.sentences ?? [])];
   return sentences.map((s) => zujuOf(s, word.text)).filter((z): z is ZujuItem => z !== null);
 }
 

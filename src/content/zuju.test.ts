@@ -59,3 +59,9 @@ describe('final review I3/I5: natural orders, heard first, and variety', () => {
     expect(seen.size).toBeGreaterThan(1);
   });
 });
+
+describe('组句 for a school 成语 (phase C)', () => {
+  it('uses the 成语 list sentences', () => {
+    expect(zujuFor(makeWord('五颜六色', { id: 'p:9', source: 'parent', tags: ['成语'], level: null, rank: null })).length).toBeGreaterThan(0);
+  });
+});

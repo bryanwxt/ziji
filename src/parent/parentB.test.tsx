@@ -166,3 +166,15 @@ describe('school 听写 mistakes (spec §19 part 3)', () => {
     expect((await allWords(app.db)).filter((w) => w.text === '新加坡')).toHaveLength(1);
   });
 });
+
+describe('WordsPanel school 成语 (spec 2026-10-05 §4)', () => {
+  it('adds typed 成语 as school words tagged 成语', async () => {
+    const app = await makeAppData();
+    renderWithApp(<WordsPanel />, app);
+    fireEvent.input(await screen.findByLabelText(/School 成语, one a line/), { target: { value: '五颜六色\n一心一意 = with one heart' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add 成语' }));
+    expect(await screen.findByText('Added 2 成语.')).toBeTruthy();
+    const ws = await allWords(app.db);
+    expect(ws.filter((w) => w.tags?.includes('成语')).map((w) => w.text).sort()).toEqual(['一心一意', '五颜六色']);
+  });
+});

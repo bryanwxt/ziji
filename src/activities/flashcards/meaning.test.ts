@@ -173,3 +173,17 @@ describe('wordCue: the 词语 rung (spec 2026-10-05 §3.2)', () => {
     expect(wordCue(makeWord('欺负', { examples: [] }))).toBeNull();
   });
 });
+
+describe('a school 成语 (spec 2026-10-05 §4, phase C)', () => {
+  it('with no class sentence, uses the 成语 list sentence with other 成语 as wrong choices', () => {
+    const cue = meaningCue(makeWord('五颜六色', { id: 'p:9', source: 'parent', tags: ['成语'], level: null, rank: null }))!;
+    expect(cue).toMatchObject({ kind: 'sentence', source: 'bank' });
+    expect(cue.full).toContain('五颜六色');
+    expect(cue.wrong).toHaveLength(3);
+    for (const w of cue.wrong!) { expect(Array.from(w)).toHaveLength(4); expect(w).not.toBe('五颜六色'); }
+  });
+  it('his class sentence still comes first', () => {
+    const cue = meaningCue({ ...makeWord('五颜六色', { id: 'p:9', source: 'parent', tags: ['成语'], level: null, rank: null }), sentences: [{ text: '花园里的花五颜六色，真好看。', pinyin: '' }] })!;
+    expect(cue.source).toBe('class');
+  });
+});

@@ -3,6 +3,7 @@ import { useApp } from '../app/AppContext';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
 import { hanChars } from '../content';
 import { makeParentWords, parseWordList, type ParseResult } from '../content/parseWordList';
+import { addSchoolIdioms } from '../session/schoolIdioms';
 import { strokeAvailability } from '../content/strokes';
 import { localDateKey } from '../lib/date';
 import { isKnown } from '../srs/scheduler';
@@ -25,6 +26,8 @@ export function WordsPanel() {
   const [query, setQuery] = useState('');
   const [mistakes, setMistakes] = useState('');
   const [mistakeMessage, setMistakeMessage] = useState<string | null>(null);
+  const [idioms, setIdioms] = useState('');
+  const [idiomMessage, setIdiomMessage] = useState<string | null>(null);
   const busy = useRef(false);
 
   const reload = async () => setKnow(await loadKnowledge(db));
@@ -169,6 +172,34 @@ export function WordsPanel() {
           Bring back
         </button>
         {mistakeMessage && <p role="status">{mistakeMessage}</p>}
+      </section>
+
+      <section class="panel">
+        <h2>School 成语</h2>
+        <p>成语 from his class. Each comes up as a new word first, then in 练一练 (filling in a character, a sentence, 组句). They stay on this iPad. The app knows the meaning of common ones; for others, add one after = if you like.</p>
+        <div class="field">
+          <label for="tx-idioms">School 成语, one a line (成语 = English meaning)</label>
+          <textarea id="tx-idioms" rows={3} value={idioms} placeholder="一心一意 = with all your heart" onInput={(e) => setIdioms(e.currentTarget.value)} />
+        </div>
+        <button
+          type="button"
+          class="btn"
+          disabled={!idioms.trim()}
+          onClick={async () => {
+            if (busy.current) return; // a double tap would add them twice
+            busy.current = true;
+            const r = await addSchoolIdioms(db, idioms, now()).finally(() => (busy.current = false));
+            const parts = [`Added ${r.added.length} 成语.`];
+            if (r.tagged.length) parts.push(`${r.tagged.join('、')} already in the app — marked as 成语.`);
+            if (r.rejected.length) parts.push(`Skipped: ${r.rejected.join(', ')} (not four Chinese characters).`);
+            setIdiomMessage(parts.join(' '));
+            setIdioms('');
+            await reload();
+          }}
+        >
+          Add 成语
+        </button>
+        {idiomMessage && <p role="status">{idiomMessage}</p>}
       </section>
       <section class="panel">
         <h2>All words</h2>
