@@ -1,0 +1,76 @@
+name: Audio audition
+on: workflow_dispatch
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  items:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx tsx scripts/audio/audition.ts build/audio/audition-jobs.json
+      - uses: actions/upload-artifact@v4
+        with: { name: audition-jobs, path: build/audio/audition-jobs.json }
+
+  synth:
+    needs: items
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: kokoro
+            voices: "v1.1/zf_001 v1.1/zf_002 v1.1/zm_010 v1.0/zf_xiaoxiao v1.0/zf_xiaobei v1.0/zm_yunxi"
+          - engine: melo
+            voices: "ZH"
+          - engine: cosyvoice
+            voices: "default"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.10' }
+      - uses: actions/download-artifact@v4
+        with: { name: audition-jobs, path: build/audio }
+      - run: bash scripts/audio/tts/setup.sh ${{ matrix.engine }}
+      - name: Say the 20 items in each voice
+        run: |
+          for v in ${{ matrix.voices }}; do
+            dir="out/${{ matrix.engine }}-${v//\//-}"
+            python scripts/audio/tts/synth.py --jobs build/audio/audition-jobs.json --out "$dir" \
+              --engine ${{ matrix.engine }} --voice "$v" || echo "::warning::${{ matrix.engine }} $v failed to start"
+          done
+      - uses: actions/upload-artifact@v4
+        with: { name: 'audition-${{ matrix.engine }}', path: out, if-no-files-found: ignore }
+
+  publish:
+    needs: synth
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with: { pattern: 'audition-*', path: art }
+      - name: Previous store
+        run: |
+          mkdir -p prev
+          if gh release download audio-store -p audio.tar.gz -D "$RUNNER_TEMP/a"; then tar -xzf "$RUNNER_TEMP/a/audio.tar.gz" -C prev; fi
+          mkdir -p prev/audio
+      - run: rm -rf art/audition-jobs && npx tsx scripts/audio/pack-audition.ts art prev/audio out
+      - name: Upload the store and redeploy
+        run: |
+          tar -czf audio.tar.gz -C out audio
+          gh release view audio-store >/dev/null 2>&1 || gh release create audio-store --title "Audio clips" --notes "ZiJi's generated audio (scripts/audio). Not a code release." --target main
+          gh release upload audio-store audio.tar.gz --clobber
+          gh workflow run deploy.yml --ref main

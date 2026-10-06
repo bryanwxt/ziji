@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- The voice audition (spec 2026-10-06 §4). Listen on the iPad, pick one voice. -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZiJi voice audition</title>
+<style>
+  :root { --bg: #fbf6ea; --ink: #2b2620; --line: #e2d8c3; --accent: #c0612b; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 -apple-system, system-ui, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; vertical-align: middle; }
+  th { position: sticky; top: 0; background: var(--bg); font-size: 13px; }
+  .zh { font-size: 22px; }
+  .py { color: #7a6f5f; font-size: 13px; }
+  button { min-width: 46px; min-height: 46px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font-size: 20px; }
+  button.on { background: var(--accent); color: #fff; }
+  .fail { color: #a33; font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Which voice is clearest for him?</h1>
+  <p>Tap ▶ to listen. Rows are the hard cases: 多音字, tone changes, 儿化, a question, a story. Tell Claude the column you like best, and whether its pace should be slower or faster.</p>
+  <div class="wrap"><table id="t"></table></div>
+</main>
+<script>
+  const audio = new Audio();
+  fetch('audio/audition/manifest.json', { cache: 'no-store' }).then((r) => r.json()).then(({ items, voices }) => {
+    const t = document.getElementById('t');
+    t.innerHTML = '<tr><th>Item</th>' + voices.map((v) => `<th>${v.name}</th>`).join('') + '</tr>' + items.map((it) =>
+      `<tr><td><div class="zh">${it.text}</div><div class="py">${it.expected} · ${it.label}</div></td>` +
+      voices.map((v) => v.ok.includes(it.id)
+        ? `<td><button data-src="audio/audition/${v.dir}/${it.id}.m4a" aria-label="${v.name} ${it.text}">▶</button></td>`
+        : `<td class="fail">${v.failed[it.id] ? 'failed' : '—'}</td>`).join('') + '</tr>').join('');
+    t.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      document.querySelectorAll('button.on').forEach((x) => x.classList.remove('on'));
+      b.classList.add('on'); audio.src = b.dataset.src; audio.play();
+    });
+    audio.onended = () => document.querySelectorAll('button.on').forEach((x) => x.classList.remove('on'));
+  }).catch(() => { document.getElementById('t').innerHTML = '<tr><td>No audition yet: the workflow is still running.</td></tr>'; });
+</script>
+</body>
+</html>
