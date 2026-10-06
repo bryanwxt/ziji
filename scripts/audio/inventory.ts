@@ -8,6 +8,7 @@ import { builtinWords, schoolTerm } from '../../src/content';
 import { CHENGYU, chengyuPinyin } from '../../src/content/chengyu';
 import { DAPEI } from '../../src/content/dapei';
 import { BLANK, fillGap, SENTENCE_BANK } from '../../src/content/sentenceBank';
+import { inScopeWords, SENTENCE_TERMS, sentencesFor } from '../../src/content/understand';
 import { clipId, engineText, type ClipJob, type ClipKind } from './inventory-lib';
 
 /** Lines said as they are (Settings' voice tests, 朗读's warm-up). */
@@ -73,6 +74,8 @@ export function buildInventory(voice: string): ClipJob[] {
       if (at >= 0) { sentence(s.slice(0, at), 'fragment'); sentence(s.slice(at + c.text.length), 'fragment'); }
     }
   }
+  // the Understand rung's sentences (plan 2b)
+  for (const term of SENTENCE_TERMS) for (const w of inScopeWords(term)) for (const s of sentencesFor(w.text)) sentence(s.zh);
   for (const d of DAPEI) {
     if (!ours(d.verb + d.noun)) continue;
     add(d.verb, pinyin(d.verb), 'word');

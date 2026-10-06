@@ -12,5 +12,6 @@ describe('the Progress tab (spec 2026-10-06 §3.4)', () => {
     expect(screen.getByText(/1 of 746/)).toBeTruthy();
     expect(screen.getByText(/Heard/)).toBeTruthy();
     expect(screen.getByText(/Owned/)).toBeTruthy();
+    expect(screen.getByText('Understood in a sentence')).toBeTruthy(); // plan 2b
   });
 });

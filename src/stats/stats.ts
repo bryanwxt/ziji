@@ -14,6 +14,7 @@ export interface Knowledge {
   knownChars: Set<string>; // characters recognised: in any word whose Read has passed (spec 2026-10-06 §3.3)
   known: number; // = knownChars.size
   heard: number;
+  understood: number; // understood in a sentence he heard (plan 2b)
   read: number;
   used: number;
   owned: number;
@@ -38,7 +39,7 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
     words, cards, wordsById, ladderById,
     cardsById: new Map(cards.map((c) => [c.id, c])),
     knownWordIds, knownChars, known: knownChars.size,
-    heard: count('hear'), read: count('read'), used: count('use'),
+    heard: count('hear'), understood: count('understand'), read: count('read'), used: count('use'),
     owned: [...passedRungs].filter(([id, s]) => isOwned(word(id)!, s)).length,
     written: cards.filter((c) => c.kind === 'write' && c.passed).length,
   };
