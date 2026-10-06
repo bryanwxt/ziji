@@ -12,7 +12,8 @@ export type Route =
   | { name: 'wardrobe' }
   | { name: 'setupPin' }
   | { name: 'petSetup' }
-  | { name: 'langdu' };
+  | { name: 'langdu' }
+  | { name: 'story'; part: 'setup' | 'payoff'; chapter: number; then: Route }; // the Word Thief chapter around a lesson (3c)
 
 export interface AppData {
   db: AppDb;

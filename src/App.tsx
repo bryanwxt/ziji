@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'preact/hooks';
+import { StoryScreen } from './story/StoryScreen';
 import { AppContext, type AppData, type Route } from './app/AppContext';
 import { CrashGuard } from './app/CrashGuard';
 import { ErrorScreen } from './app/ErrorScreen';
@@ -80,6 +81,8 @@ function Screen({ route }: { route: Route }) {
       return <Wardrobe />;
     case 'langdu':
       return <LangduScreen />;
+    case 'story':
+      return <StoryScreen key={`${route.part}:${route.chapter}`} part={route.part} chapter={route.chapter} then={route.then} />;
     case 'home':
       return <HomeScreen />;
   }
