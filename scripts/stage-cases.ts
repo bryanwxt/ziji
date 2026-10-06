@@ -156,6 +156,15 @@ for (const size of SIZES) {
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'fit-shots/stage-cases/granny.png', fullPage: true });
   if ((await page.$$('svg.granny')).length !== 7) problems.push('granny: not every pose drew');
+  // talking: exactly one of her two mouths shows at any moment (final review I1: a mouthless dragon)
+  for (const t of [100, 380]) {
+    const shown = await page.evaluate((at) => {
+      const g = document.querySelector('.granny__mouth--talking')!;
+      for (const a of g.getAnimations({ subtree: true })) { a.pause(); a.currentTime = at; }
+      return [...g.querySelectorAll('path')].filter((p) => parseFloat(getComputedStyle(p).opacity) > 0.5).length;
+    }, t);
+    if (shown !== 1) problems.push(`granny talking at ${t} ms: ${shown} mouths showing (want exactly 1)`);
+  }
   // the picture-book test page (spec 3b §8) at three sizes: the painting if the parent's is in, else a placeholder
   const bg = existsSync('public/story/bg/hdb-voiddeck.webp');
   if (bg) { mkdirSync(join(dir, 'bg'), { recursive: true }); copyFileSync('public/story/bg/hdb-voiddeck.webp', join(dir, 'bg/hdb-voiddeck.webp')); }

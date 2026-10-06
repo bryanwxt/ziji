@@ -1350,7 +1350,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* Granny Dragon (spec 2026-10-07 3b §6): mirrored she faces the other way; talking opens and closes her mouth. Reduced motion: still. */
 .granny--mirror { transform: scaleX(-1); }
 .granny__mouth-open { opacity: 0; }
-.granny__mouth--talking .granny__mouth-open { animation: granny-talk 0.28s steps(1, end) infinite alternate; }
-.granny__mouth--talking .granny__mouth-shut { animation: granny-talk 0.28s steps(1, end) infinite alternate-reverse; }
-@keyframes granny-talk { from { opacity: 0; } to { opacity: 1; } }
+.granny__mouth--talking .granny__mouth-open { animation: granny-talk-open 0.56s linear infinite; }
+.granny__mouth--talking .granny__mouth-shut { animation: granny-talk-shut 0.56s linear infinite; }
+/* one mouth at a time: shut for the first half, open for the second (steps + alternate showed neither: final review I1) */
+@keyframes granny-talk-open { 0%, 50% { opacity: 0; } 50.01%, 100% { opacity: 1; } }
+@keyframes granny-talk-shut { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .granny__mouth--talking .granny__mouth-open { animation: none; } .granny__mouth--talking .granny__mouth-shut { animation: none; opacity: 1; } }
