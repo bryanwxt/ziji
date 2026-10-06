@@ -45,3 +45,17 @@ describe('lessons and the Understand rung (plan 2b)', () => {
     expect(planPractice(rec, new Map(), byId, [cat, fish], true, mulberry32(2)).some((i) => i.ask === 'understand' && i.grades === 'understand')).toBe(true);
   });
 });
+
+describe('final review (plan 2b)', () => {
+  it('I2: no voice — a word due only for Understand is left out, never asked a reading question that opens Use', () => {
+    const plan = { steps: ['practice' as const], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0, understandReviewIds: [cat.id] };
+    const rec = createSessionRecord(plan, '2026-10-06', now.getTime());
+    const items = planPractice(rec, new Map(), new Map([[cat.id, cat]]), [cat, fish], false, mulberry32(2));
+    expect(items.filter((i) => i.wordId === cat.id)).toEqual([]);
+  });
+  it('I3: when a word has another card due today, that card is graded first; Understand waits', () => {
+    const items = buildRound([{ wordId: 'x', isNew: false, from: 1, appearances: 2, gradesRecognise: true, gradesMeaning: false, gradesUnderstand: true }], () => true, mulberry32(1));
+    expect(items[0]!.grades).toBe('recognise');
+    expect(items.some((i) => i.grades === 'understand')).toBe(false);
+  });
+});

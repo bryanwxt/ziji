@@ -22,6 +22,8 @@ interface Props {
 
 /** If the voice never says it has finished, the choices open anyway after this long. */
 export const UNDERSTAND_WAIT_MS = 5000;
+/** A stop in speech counts as the end only if nothing starts again within this long (a replay restarts it at once). */
+const SETTLE_MS = 250;
 
 /**
  * The Understand rung (spec 2026-10-06 §3.2): he hears a sentence with the word (no characters) and picks what it means from
@@ -32,20 +34,26 @@ export function UnderstandQuestion({ item, kid, resting, onDone }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ item.zh.codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [item]);
   const [ready, setReady] = useState(false);
   const [choice, setChoice] = useState<string | null>(null);
-  const readyAt = useRef(0);
-  const tookMs = useRef(0); // from the moment the choices opened to his pick
+  const shownAt = useRef(performance.now());
+  const tookMs = useRef(0); // from when the question appeared (the sentence included) to his pick (final review I4)
   useEffect(() => {
     speak(item.zh);
-    const open = () => setReady((was) => { if (!was) readyAt.current = performance.now(); return true; });
-    const off = onSpeaking((on) => { if (!on) open(); });
+    // the choices open when the sentence has ended: a replay's cancel says "stopped" and then starts again at once, so a
+    // stop counts only if nothing starts again within a moment (final review: a replay mid-sentence opened them)
+    let settle: ReturnType<typeof setTimeout> | undefined;
+    const open = () => setReady(true);
+    const off = onSpeaking((on) => {
+      clearTimeout(settle);
+      if (!on) settle = setTimeout(open, SETTLE_MS);
+    });
     const t = setTimeout(open, UNDERSTAND_WAIT_MS);
-    return () => { off(); clearTimeout(t); };
+    return () => { off(); clearTimeout(t); clearTimeout(settle); };
   }, [item]);
   const done = choice !== null;
   const correct = choice === item.en;
   const pick = (c: string) => {
     if (done || !ready) return;
-    tookMs.current = Math.round(performance.now() - readyAt.current);
+    tookMs.current = Math.round(performance.now() - shownAt.current);
     setChoice(c);
     playSfx(c === item.en ? 'correct' : 'wrong');
   };

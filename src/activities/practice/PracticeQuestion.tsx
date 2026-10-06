@@ -59,7 +59,8 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     return item.ask === 'pair' ? zuciBoard(word, rng, knownChars) : null;
   }, [item, word.id]);
-  const understand = useMemo(() => (item.ask === 'understand' ? understandItem(word, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
+  // no voice today (a saved queue resumed): never asked in silence — skipped (final review I1)
+  const understand = useMemo(() => (item.ask === 'understand' && voice ? understandItem(word, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
   const fish = useMemo(() => (item.ask === 'fish' ? fishItem(word, confused ?? [], knownChars ?? new Set(), mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
   // 成语 (rung 5): one that uses the word at his level; a school 成语's own completion at rung 2; a retry asks the same one again
   const idiom = useMemo(() => {

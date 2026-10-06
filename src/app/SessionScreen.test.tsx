@@ -37,7 +37,7 @@ async function playThrough(max = 150, seen: string[] = []) {
     if (screen.queryByText('太棒了！')) break;
     seen.push(document.querySelector('[data-stage]')?.getAttribute('data-stage') ?? '');
     if (!nextButton() && document.querySelector('.understand__choice[disabled]')) { // an Understand question opens once its sentence has been said
-      await act(async () => { await new Promise((r) => setTimeout(r, 30)); setSpeaking(true); setSpeaking(false); }); // let it start listening first
+      await act(async () => { await new Promise((r) => setTimeout(r, 30)); setSpeaking(true); setSpeaking(false); await new Promise((r) => setTimeout(r, 300)); }); // let it start listening, then settle
       continue;
     }
     if (screen.queryByText('我记住了！')) {

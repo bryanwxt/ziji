@@ -82,13 +82,15 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
     const order = [...started, ...fresh, ...waiting, ...left()];
     // a due Read card is graded by reading: its first appearance is never asked by ear (final review I2)
     const noEar = (id: string, a: Ask) => a !== 'hear' && canAsk(id, a);
-    const plans = order.map((s) => (s.next === 0 && s.w.gradesUnderstand && canAsk(s.w.wordId, 'understand') ? { s, rung: 3 as Rung, ask: 'understand' as Ask } : s.next === 0 && s.w.gradesHear && canAsk(s.w.wordId, 'hear') ? { s, rung: 1 as Rung, ask: 'hear' as Ask } : { s, ...askFor(s.w.wordId, s.rungs[s.next]!, s.next === 0 && s.w.gradesRecognise && !s.w.gradesHear ? noEar : canAsk, lastAsk, rng) }));
+    // Understand takes a word's first appearance only when nothing else of it is due today: a due Read or Hear is graded first (final review I3)
+    const understandFirst = (w: RoundWord) => !!w.gradesUnderstand && !w.gradesRecognise && !w.gradesHear;
+    const plans = order.map((s) => (s.next === 0 && understandFirst(s.w) && canAsk(s.w.wordId, 'understand') ? { s, rung: 3 as Rung, ask: 'understand' as Ask } : s.next === 0 && s.w.gradesHear && canAsk(s.w.wordId, 'hear') ? { s, rung: 1 as Rung, ask: 'hear' as Ask } : { s, ...askFor(s.w.wordId, s.rungs[s.next]!, s.next === 0 && s.w.gradesRecognise && !s.w.gradesHear ? noEar : canAsk, lastAsk, rng) }));
     // a different word always wins over a different question type; the type changes whenever another word allows it
     const notSame = plans.filter((x) => x.s.w.wordId !== lastWord);
     const pick = notSame.find((x) => x.ask !== lastAsk) ?? notSame[0] ?? plans[0]!;
     const { s, rung, ask } = pick;
     let grades: Grades = null;
-    if (s.next === 0 && s.w.gradesUnderstand && ask === 'understand') grades = 'understand';
+    if (s.next === 0 && understandFirst(s.w) && ask === 'understand') grades = 'understand';
     else if (s.next === 0 && s.w.gradesHear && ask === 'hear') grades = 'hear';
     else if (s.next === 0 && s.w.gradesRecognise) grades = 'recognise';
     else if (ask === 'idiomBuild') grades = 'use'; // a 组句 is a use question on any rung

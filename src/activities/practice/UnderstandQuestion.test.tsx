@@ -12,7 +12,7 @@ import { speak } from '../../audio/speech';
 const item = { zh: '我家有一只猫。', en: 'We have a cat at home.', choices: ['The puppy runs fast.', 'We have a cat at home.', 'The cat sleeps by the door.'] };
 const props = { item, kid: DEFAULT_KID, resting: 'sulk' as const };
 const choice = (en: string) => screen.getByRole('button', { name: en }) as HTMLButtonElement;
-const finish = () => act(() => { for (const l of listeners) l(false); });
+const finish = () => { vi.useFakeTimers(); act(() => { for (const l of listeners) l(false); }); act(() => { vi.advanceTimersByTime(300); }); vi.useRealTimers(); };
 
 describe('the Understand question (plan 2b)', () => {
   it('plays the sentence and shows no Chinese before the answer', () => {
@@ -53,5 +53,28 @@ describe('the Understand question (plan 2b)', () => {
     expect(document.querySelector('.sheet')!.textContent).toContain(item.en);
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
+  });
+  it('final review: a replay mid-sentence (speech cancelled, then started again) does not open the choices', () => {
+    vi.useFakeTimers();
+    render(<UnderstandQuestion {...props} onDone={vi.fn()} />);
+    act(() => { for (const l of listeners) { l(true); l(false); l(true); } });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(choice(item.en).disabled).toBe(true);
+    act(() => { for (const l of listeners) l(false); });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(choice(item.en).disabled).toBe(false);
+    vi.useRealTimers();
+  });
+  it('final review I4: the time counts from when the question appears (listening included)', () => {
+    vi.useFakeTimers();
+    const onDone = vi.fn();
+    render(<UnderstandQuestion {...props} onDone={onDone} />);
+    act(() => { vi.advanceTimersByTime(3000); });
+    act(() => { for (const l of listeners) l(false); });
+    act(() => { vi.advanceTimersByTime(300); });
+    fireEvent.click(choice(item.en));
+    fireEvent.click(screen.getByText('继续'));
+    vi.useRealTimers();
+    expect(onDone.mock.calls[0]![0].responseMs).toBeGreaterThanOrEqual(3000);
   });
 });

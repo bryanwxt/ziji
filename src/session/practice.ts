@@ -106,7 +106,9 @@ export function withFish(items: PracticeItem[], fishIds: string[]): PracticeItem
 }
 
 export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map(), level = 1): PracticeItem[] {
-  const words = practiceWords(rec, rungs).filter((w) => { const can = askable(wordsById.get(w.wordId), pool, voice, level); return can('read') || can('meaningRead'); });
+  // no voice: a word due only for Understand is left for another day — a reading question would grade Use before Read (final review I2)
+  const listenOnly = (w: RoundWord) => !!w.gradesUnderstand && !w.gradesRecognise && !w.gradesHear && !w.gradesMeaning;
+  const words = practiceWords(rec, rungs).filter((w) => (voice || !listenOnly(w)) && (() => { const can = askable(wordsById.get(w.wordId), pool, voice, level); return can('read') || can('meaningRead'); })());
   const round = buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice, level)(ask), rng);
   const fish = [...confusions.keys()].filter((id) => {
     const w = wordsById.get(id);
