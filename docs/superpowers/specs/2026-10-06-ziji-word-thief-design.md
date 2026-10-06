@@ -248,6 +248,27 @@ The magic never solves a problem with a rule the reader hasn't been shown.
   - the content hash is pinned
 - The repo is public. The story is original fiction, so it can be public. (Separately, the MOE lists are still public; that decision is still open.)
 
+### 5.9 Setting: a Singapore neighbourhood (parent, 2026-10-06)
+
+His textbook 《欢乐伙伴》 is set in Singapore, so the story is too: it reuses the places and words he meets at school.
+
+- **字己镇 is a Singapore neighbourhood**, painted in the Ghibli-inspired style (§5.7). Hush strikes these places:
+  - an HDB block and its void deck
+  - the hawker centre
+  - the wet market (巴刹)
+  - the MRT station
+  - his school and its canteen (食阁)
+  - the playground
+  - the community garden
+  - the park by the sea
+  - Chinatown at festival time
+
+  The weather and light are tropical: thunderstorms, rain trees, the glow after rain, laundry on bamboo poles. Truffle lives in an HDB flat.
+- **Singapore Mandarin:** word slots and Granny Dragon's lines use the everyday Singapore words he hears and reads, such as 组屋, 巴刹, 小贩中心, 食阁, 德士, 巴士, 红毛丹, 榴梿, 咖椰吐司 and 鸡饭. Granny Dragon runs the kopitiam, and her lines are everyday talk: ordering kopi, asking about school.
+- **Seasons follow the Singapore year:** each season's finale falls on a festival in its school term. Chinese New Year (the zodiac crew's big moment), Hari Raya, National Day, Mid-Autumn lanterns and Deepavali. This covers the MOE culture-and-values outcomes as story, not lessons.
+- **A multiracial town:** Malay, Indian and Eurasian neighbours and classmates (the drinks-stall uncle, the vegetable auntie, friends at school), as in his school and textbook.
+- **Generic places only:** an MRT station, supertree-like gardens. No real brand names, logos or businesses.
+
 ## 6. The daily session (sub-project 4)
 
 **Lesson length = active practice time** (parent, 2026-10-06): the default is **20 minutes**, and the parent can change it. Story pages, Truffle's reactions, restoration animations and celebrations don't count towards it.
