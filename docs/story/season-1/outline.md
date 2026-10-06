@@ -24,7 +24,7 @@
 | Ch | Place | Problem | Rule / gag | Slots | Hint |
 |---|---|---|---|---|---|
 | 1 | hdb | Hush's machine sucks the words out of Truffle's block: the door won't open, the lift is stuck, his bed is just a grey shape. Truffle notices someone can still see words — the Word-Keeper. | Truffle: "That was my plan." Hush's first entrance. | 门, 电梯, 家, 床, 太阳, 早上, 衣服, 房间 | — |
-| 2 | hdb | Everything in Truffle's flat is word-less. Truffle reads a word aloud but nothing happens; when the Word-Keeper says what it *means*, the thing works again. | Rule 1 shown | 毛巾, 牙刷, 水, 鞋, 袜子, 被子, 洗, 桌子 | — |
+| 2 | hdb | Everything in Truffle's flat is word-less. Truffle can't see words, so he asks the Word-Keeper only how to *say* them, and shouts the sounds at the tap and the towel. Nothing happens. When the Word-Keeper says what they *mean*, they work again. | Rule 1 shown | 毛巾, 牙刷, 水, 鞋, 袜子, 被子, 洗, 桌子 | — |
 | 3 | hdb | Hungry and stuck, they go down to the void deck. Granny Dragon's kopitiam still smells right. She feeds them, speaks only Mandarin, and points them at the playground, where she saw "a big brass thing". | Granny Dragon introduced | 奶奶, 饭, 鸡蛋, 汤, 包子, 面包, 牛奶, 椅子 | — |
 | 4 | playground | The playground has gone grey. Inside the locked gate, a puppy in a red cape is shouting about Heracles. | Dog introduced; myth gag | 狗, 球, 草地, 花, 鸟, 书, 跑步, 尾巴 | — |
 | 5 | playground | The gate has forgotten it's a gate. Opening and closing words get mixed up; Dog's myth advice makes it worse. Freed, Dog joins. | Dog joins | 开, 关, 门口, 朋友, 故事, 马, 石头, 下雨 | — |
@@ -35,7 +35,7 @@
 | 10 | school | The bell won't ring; the library is silent. Ms Pereira helps; Dog meets his hero after Heracles. | First 为什么 question | 铃声, 地图, 图画, 笔, 作业, 听写, 教室, 认真 | — |
 | 11 | market | Back at the market, colours have drained away and the queue has forgotten how to queue. Auntie Mei helps. | Pig's nose finds the machine's trail | 黄瓜, 冰, 排队, 阿姨, 顾客, 等, 找, 颜色 | — |
 | 12 | school | The school garden won't grow: the 木 there is just one lonely stick. | Rule 3 set up (木) | 树, 种子, 叶子, 草, 虫子, 蜜蜂, 土, 木 | — |
-| 13 | school | 木 + 木 makes 林; 木 + 木 + 木 makes 森林. The garden becomes a forest — too big! | Rule 3 shown | 林, 森林, 果树, 树枝, 青蛙, 池子, 窝, 绿色 | — |
+| 13 | school | 木 + 木 makes 林; 木 + 木 + 木 makes 森; 森 + 林 makes 森林. The garden becomes a forest — too big! | Rule 3 shown | 林, 森林, 果树, 树枝, 青蛙, 池子, 窝, 绿色 | — |
 | 14 | hawker | The kopitiam crowd at the hawker centre. Truffle asks for 汤 and gets 糖 — a mountain of sweets. Hush appears; when Granny Dragon speaks to him, he flinches and runs. | Rule 2 callback (汤/糖) | 咖啡, 奶茶, 炒饭, 碗, 杯子, 糖, 热, 冷 | Hint 1: Hush flinches at Granny Dragon's voice |
 | 15 | hdb | The trail leads under the void deck: a dark stairway, a door with a doorbell, the machine's hum. | Pig smells it; Dog: "Like the Minotaur's maze! With… cats?" | 楼梯, 灯, 亮, 黑色, 声音, 怕, 躲, 门铃 | — |
 | 16 | hdb | Hush's word-store: shelves of jars full of stolen words. A lock says "Pull hard" — Ox pulls the whole wall off. On a shelf, an old photo. | Ox literal gag opens the lock | 照片, 外婆, 记得, 忘记, 打开, 拉开, 手, 力 | Hint 2: the photo of a boy and his grandmother |

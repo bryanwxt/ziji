@@ -51,6 +51,12 @@ describe('chapter rules (spec 3a §7)', () => {
   it('exactly one [rescued], in the payoff', () => {
     expect(chapterProblems(make({ payoff: 'The words fly home.' })).join()).toMatch(/\[rescued\]/);
   });
+  it('a broken slot or Chinese outside a slot is flagged (final review I2)', () => {
+    expect(chapterProblems(make({ payoff: '[rescued] Home. The {太阳|sun warmed him.' })).join()).toMatch(/stray/);
+    expect(chapterProblems(make({ payoff: '[rescued] Home. The 太阳 warmed him.' })).join()).toMatch(/Chinese outside a slot/);
+    expect(chapterProblems(make({ payoff: '[rescued] Home.\n> Truffle: 哼！' })).join()).toMatch(/Chinese outside a slot/);
+    expect(chapterProblems(make({ setup: 'The {门|door|gate}, the {车|car}, the {鱼|fish}, the {书|book}, the {猫|cat} and the {狗|dog}.' })).join()).toMatch(/stray|\|/);
+  });
   it('no real brand names', () => {
     expect(chapterProblems(make({ payoff: '[rescued] They went to McDonald\'s.' })).join()).toMatch(/brand/);
   });

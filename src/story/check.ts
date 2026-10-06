@@ -23,6 +23,14 @@ function pageProblems(where: string, p: Page): string[] {
   const english = p.lines.flatMap((l) => (l.kind === 'scene' ? [] : [plainText(l.text)])).join(' ').replace(/\p{Script=Han}+/gu, ' ');
   const count = english.split(/\s+/).filter((w) => /[A-Za-z]/.test(w)).length;
   if (count > MAX_PAGE_WORDS) out.push(`${where}: ${count} English words (at most ${MAX_PAGE_WORDS})`);
+  // the English must be clean once the slots are taken out: no broken braces, no Chinese without a slot (final review I2)
+  for (const l of p.lines) {
+    if (l.kind === 'scene') continue;
+    for (const sl of slotsIn(l.text)) if (sl.en.includes('|')) out.push(`${where}: slot {${sl.zh}|${sl.en}} has a stray | in its English`);
+    const rest = l.text.replace(/\{([^|{}]+)\|([^{}]+)\}/g, ' ');
+    if (/[{}]/.test(rest)) out.push(`${where}: a stray { or } in "${l.text}"`);
+    if (/\p{Script=Han}/u.test(rest)) out.push(`${where}: Chinese outside a slot in "${l.text}"`);
+  }
   const speech = p.lines.filter((l) => l.kind === 'speech').length;
   if (speech > MAX_SPEECH) out.push(`${where}: ${speech} speech lines (at most ${MAX_SPEECH})`);
   return out;

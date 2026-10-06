@@ -61,8 +61,8 @@
 - **Running gag:** he claims every plan was his idea, especially the ones that weren't.
   - "As I was *just* about to say…"
   - "Obviously. That was my plan. I was testing you."
-  - "哼！ I knew that."
-- **How he talks:** short, dry and a little grand. He says 哼！ when he's annoyed or embarrassed. When he's really pleased, he purrs and pretends he didn't.
+  - "Hmph! I knew that."
+- **How he talks:** short, dry and a little grand. He says "Hmph!" when he's annoyed or embarrassed. (The English pages never carry Chinese outside a word slot, so it's always "Hmph", not 哼.) When he's really pleased, he purrs and pretends he didn't.
 - **For 3b:** grey tabby, green eyes, a white chest, his tail held up when proud. Same face as the app's Truffle, redrawn soft and painted.
 
 ### Dog (小狗) — joins in chapters 4–5
@@ -158,12 +158,12 @@
 Hard rules, stated in the story, never broken. Each is first *shown* by a scene and never lectured.
 
 1. **A word works only if it is understood.** Seeing it is not enough.
-   - First shown in chapter 2. Truffle reads the 门's word aloud, but he doesn't know what it means, so nothing happens. When the Word-Keeper says what it means, the door swings open.
+   - First shown in chapter 2. Truffle can't see words, so he asks the Word-Keeper how to *say* the tap's and the towel's words. He's told only the sound. He shouts the sounds again and again, and nothing happens. When the Word-Keeper tells him what they *mean*, the water flows and the towel turns blue again.
 2. **Tones change the spell.** 买/卖, 猫/毛 and 汤/糖 cause comic misfires.
    - First shown in chapter 8. Ox means to *buy* (买) a fish and says *sell* (卖), and the whole stall is suddenly his.
    - Later: Truffle asks for 汤 (soup) and gets a mountain of 糖 (sweets).
-3. **Parts combine.** 木+木 → 林, 日+月 → 明.
-   - First shown in chapters 12–13. The school garden needs a forest, and putting 木 next to 木 next to 木 grows one.
+3. **Parts combine.** 木+木 → 林, 木+木+木 → 森, 森+林 → 森林, 日+月 → 明.
+   - First shown in chapters 12–13. The school garden needs a forest. 木 next to 木 makes 林, three 木 make 森, and 森 next to 林 grows a whole 森林.
    - The crew discover more combinations over the seasons.
 
 **The rule above the rules:** the magic never solves a problem with a rule the reader hasn't already been shown.
