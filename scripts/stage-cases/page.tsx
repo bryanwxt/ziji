@@ -1,6 +1,7 @@
 // Feedback states the walking sweep can't reach on its own (review I1/I2): a wrong 选一选 answer with a long bank clue,
 // and the stage card's size with a neutral vs a feedback sheet. Bundled by stage-cases.ts and opened in WebKit.
 import { render } from 'preact';
+import { GRANNY_POSES, GrannyDragon } from '../../src/ui/story/GrannyDragon';
 import { useState } from 'preact/hooks';
 import '../../src/styles.css';
 import { UseQuestion } from '../../src/activities/choose/UseQuestion';
@@ -121,6 +122,16 @@ else if (which === 'costumes') {
   render(
     <div style="display:grid;grid-template-columns:repeat(8,150px);gap:6px;padding:8px;background:#fbf6ea;font:600 13px sans-serif;text-align:center">
       {COSTUMES.map((c) => <div key={c.id}><Truffle mood="cheer" outfit={c.id} size={140} /><div>{c.zh}</div></div>)}
+    </div>,
+    app,
+  );
+}
+else if (which === 'granny') {
+  // Granny Dragon's poses for the parent (spec 3b §6), then mirrored and talking
+  render(
+    <div style="display:flex;gap:10px;padding:12px;background:#f6ecd6;font:600 13px sans-serif;text-align:center;align-items:flex-end">
+      {GRANNY_POSES.map((p) => <div key={p}><GrannyDragon pose={p} size={190} /><div>{p}</div></div>)}
+      <div><GrannyDragon pose="smile" size={190} mirror talking /><div>mirror + talking</div></div>
     </div>,
     app,
   );

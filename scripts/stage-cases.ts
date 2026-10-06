@@ -151,6 +151,11 @@ for (const size of SIZES) {
   await page.goto(`file://${dir}/index.html?case=costumes`);
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'fit-shots/stage-cases/costumes.png', fullPage: true });
+  await page.setViewportSize({ width: 1400, height: 300 });
+  await page.goto(`file://${dir}/index.html?case=granny`);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'fit-shots/stage-cases/granny.png', fullPage: true });
+  if ((await page.$$('svg.granny')).length !== 7) problems.push('granny: not every pose drew');
   await page.close();
   const m = await browser.newPage({ viewport: { width: 1024, height: 768 } });
   for (const world of ['yard', 'grass', 'race', 'blocks', 'dino', 'sea', 'space', 'pirate']) {
