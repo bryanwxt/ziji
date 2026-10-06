@@ -44,7 +44,7 @@ describe('placement walk (spec §19 part 6)', () => {
     let s = run(startWalk(30), [false, false, false]);
     for (let i = 0; i < 10 && !s.done; i++) s = run(s, [false, false, false, false]);
     expect(s.done).toBe(true);
-    expect(placementLevels(s.answers)).toEqual({ reading: -1, understanding: -1 });
+    expect(placementLevels(s.answers)).toEqual({ reading: -1, understanding: -1, listening: -1 });
   });
   it('passing the top band ends the check', () => {
     let s = warm(8); // a short content set: band 7 of 8 is the start
@@ -59,22 +59,22 @@ describe('placementLevels: reading and understanding', () => {
   const at = (band: number, style: Style, correct: boolean) => ({ band, style, wordId: `${band}${style}`, correct });
   it('reading = the highest band whose reading questions hold; understanding = the same for 选一选, never above reading', () => {
     const answers = [
-      at(6, 'read', true), at(6, 'listen', true), at(6, 'fill', true), at(6, 'fit', true),
-      at(7, 'read', true), at(7, 'listen', true), at(7, 'fill', false), at(7, 'fit', false),
-      at(8, 'read', false), at(8, 'listen', false), at(8, 'fill', false), at(8, 'fit', true),
+      at(6, 'read', true), at(6, 'read', true), at(6, 'fill', true), at(6, 'fit', true),
+      at(7, 'read', true), at(7, 'read', true), at(7, 'fill', false), at(7, 'fit', false),
+      at(8, 'read', false), at(8, 'read', false), at(8, 'fill', false), at(8, 'fit', true),
     ];
-    expect(placementLevels(answers)).toEqual({ reading: 7, understanding: 6 });
+    expect(placementLevels(answers)).toEqual({ reading: 7, understanding: 6, listening: -1 });
   });
   it('bands below the first one visited count as held', () => {
-    expect(placementLevels([at(6, 'read', true), at(6, 'read', true), at(6, 'fill', true), at(6, 'fit', true)])).toEqual({ reading: 6, understanding: 6 });
+    expect(placementLevels([at(6, 'read', true), at(6, 'read', true), at(6, 'fill', true), at(6, 'fit', true)])).toEqual({ reading: 6, understanding: 6, listening: -1 });
   });
   it('nothing held at the first band visited: everything below it', () => {
-    expect(placementLevels([at(3, 'read', false), at(3, 'listen', false), at(3, 'fill', false), at(3, 'fit', false)])).toEqual({ reading: 2, understanding: 2 });
+    expect(placementLevels([at(3, 'read', false), at(3, 'read', false), at(3, 'fill', false), at(3, 'fit', false)])).toEqual({ reading: 2, understanding: 2, listening: -1 });
   });
 });
 
 describe('children who guess (review of plan 14)', () => {
-  const CHANCE: Record<Style, number> = { read: 0.25, listen: 0.25, fill: 0.25, fit: 0.25 };
+  const CHANCE: Record<Style, number> = { read: 0.25, hear: 0.25, fill: 0.25, fit: 0.25 };
   /** Walks a simulated child: right with probability `p(band, style)`. */
   const simulate = (seed: number, p: (band: number, style: Style, warm: boolean) => number) => {
     const rng = mulberry32(seed);
@@ -133,5 +133,26 @@ describe('不知道 (parent, 2026-10-05: tapping it over and over took 15 taps t
     expect(taps(warm(), [true, 'dk', true, true]).band).toBe(7);
     expect(taps(warm(), ['dk', 'dk', true, 'dk']).visit.length).toBe(0); // a right answer breaks the run: the visit runs its 4
     expect(taps(warm(), ['dk', 'dk', true, 'dk']).band).toBe(5);
+  });
+});
+
+describe('the listening level (spec 2026-10-06 §3.5)', () => {
+  let n = 0;
+  const at = (band: number, style: Style, correct: boolean) => ({ band, style, wordId: `b:${band}${style}${n++}`, correct });
+  it('is the highest band where half his 听一听 answers are right', () => {
+    const r = placementLevels([at(5, 'hear', true), at(5, 'read', true), at(6, 'hear', true), at(6, 'hear', false), at(7, 'hear', false), at(7, 'read', false)]);
+    expect(r.listening).toBe(6);
+  });
+  it('can be above his reading: he hears more than he reads', () => {
+    const r = placementLevels([at(6, 'read', false), at(6, 'fill', false), at(6, 'hear', true), at(7, 'read', false), at(7, 'hear', true)]);
+    expect(r.reading).toBe(5);
+    expect(r.listening).toBe(7);
+  });
+  it('a 听一听 answer says nothing about reading', () => {
+    const r = placementLevels([at(6, 'hear', true), at(6, 'hear', true), at(6, 'read', false)]);
+    expect(r.reading).toBe(5);
+  });
+  it('is -1 with no 听一听 answers at all (no voice)', () => {
+    expect(placementLevels([at(6, 'read', true), at(6, 'fill', true)]).listening).toBe(-1);
   });
 });

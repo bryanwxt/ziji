@@ -10,8 +10,8 @@ export const LOW_START = 2; // band 3 (一上/一下 in school order): where the
 /** 不知道 this many times in a row ends the visit as a miss; each further one steps down at once (parent, 2026-10-05). */
 export const DONT_KNOW_RUN = 3;
 
-export type Style = 'read' | 'listen' | 'fill' | 'fit'; // 读一读 听一听 补一补 选一选 (真的假的 was dropped: a 50/50 guess, and odd to the parent)
-export const READING_STYLES: Style[] = ['read', 'listen', 'fill'];
+export type Style = 'read' | 'hear' | 'fill' | 'fit'; // 读一读 听一听 补一补 选一选; 听一听 = hear a word, pick its meaning (spec 2026-10-06 §3.5) (真的假的 was dropped: a 50/50 guess, and odd to the parent)
+export const READING_STYLES: Style[] = ['read', 'fill'];
 
 export interface WalkAnswer { band: number; style: Style; wordId: string; correct: boolean; dontKnow?: boolean } // dontKnow: he tapped 不知道 (a miss, said honestly)
 
@@ -77,22 +77,27 @@ export function walkStep(s: WalkState, a: Omit<WalkAnswer, 'band'>, bandCount: n
 }
 
 /**
- * The two results (spec §19 part 6). Reading holds in a band when 2/3 of its reading-style answers are right; understanding
- * (选一选) when half are. Each level is the highest band that holds; bands below the first one visited count as held.
- * Understanding is never above reading. -1 = none.
+ * The three results (spec §19 part 6; 2026-10-06 §3.5). Reading holds in a band when 2/3 of its 读一读/补一补 answers are right;
+ * understanding (选一选) when half are, never above reading; listening (听一听) when half are, on its own — he may hear more than he
+ * reads. Each level is the highest band that holds; bands below the first one visited count as held. -1 = none (no 听一听: -1).
  */
-export function placementLevels(answers: WalkAnswer[]): { reading: number; understanding: number } {
+export function placementLevels(answers: WalkAnswer[]): { reading: number; understanding: number; listening: number } {
   const bands = [...new Set(answers.map((a) => a.band))].sort((x, y) => x - y);
-  if (!bands.length) return { reading: -1, understanding: -1 };
-  const holds = (band: number, fit: boolean, need: number) => {
-    const xs = answers.filter((a) => a.band === band && (a.style === 'fit') === fit);
+  if (!bands.length) return { reading: -1, understanding: -1, listening: -1 };
+  const holds = (band: number, g: StyleGroup, need: number) => {
+    const xs = answers.filter((a) => a.band === band && styleGroup(a.style) === g);
     return xs.length > 0 && share(xs) >= need;
   };
-  const top = (fit: boolean, share: number, cap: number) => {
-    const held = bands.filter((b) => b <= cap && holds(b, fit, share));
+  const top = (g: StyleGroup, need: number, cap: number) => {
+    const held = bands.filter((b) => b <= cap && holds(b, g, need));
     return held.length ? Math.max(...held) : Math.min(cap, bands[0]! - 1);
   };
-  const reading = top(false, 2 / 3, Infinity);
+  const reading = top('read', 2 / 3, Infinity);
+  const listening = answers.some((a) => a.style === 'hear') ? top('hear', 0.5, Infinity) : -1;
   // a lucky 选一选 in a band he can't read says nothing: understanding looks only at bands he reads
-  return { reading, understanding: top(true, 0.5, reading) };
+  return { reading, understanding: top('fit', 0.5, reading), listening };
 }
+
+export type StyleGroup = 'read' | 'fit' | 'hear';
+/** What an answer measures: reading (读一读, 补一补), understanding (选一选) or listening (听一听). */
+export const styleGroup = (s: Style): StyleGroup => (s === 'fit' ? 'fit' : s === 'hear' ? 'hear' : 'read');
