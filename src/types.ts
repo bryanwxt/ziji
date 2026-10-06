@@ -243,6 +243,7 @@ export interface Settings {
   zodiac: ZodiacId | null; // the child's 生肖, the first chest's gift
   oral: OralInfo;
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
+  ladderMigrated?: boolean; // his cards moved onto the word ladder (spec 2026-10-06 §3.6)
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
   langdu: boolean; // 朗读 is parked too (parent, 2026-10-05: "not very useful at the moment"): off by default, no parent switch yet
   course?: 'cl' | 'hcl'; // 华文 or 高级华文: which 识写字 he practises writing (both read the same characters); absent: 'cl'

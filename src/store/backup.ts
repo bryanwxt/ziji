@@ -2,6 +2,7 @@ import { openDB } from 'idb';
 import type { KidState, Settings } from '../types';
 import { DB_NAME, DB_VERSION, LIST_STORES, type AppDb, type ListStore } from './db';
 import { applySettingsMigration } from './settings';
+import { migrateToLadder } from '../ladder/migrate';
 
 export const BACKUP_FORMAT = 'hanzi-buddy-backup';
 export const BACKUP_FORMAT_VERSION = 1;
@@ -162,6 +163,7 @@ export async function applyBackup(db: AppDb, preview: BackupPreview): Promise<vo
   if (kid) ops.push(tx.objectStore('kid').put(kid, 'main'));
   await Promise.all([...ops, tx.done]);
   await applySettingsMigration(db); // an older backup's settings move to today's at once, not on the next launch (sweep)
+  await migrateToLadder(db, new Date()); // a backup from before the ladder moves over too (it checks its own flag)
 }
 
 /** Emergency dump of whatever is on disk, for when the app cannot open its database normally. */
