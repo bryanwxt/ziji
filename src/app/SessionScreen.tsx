@@ -32,14 +32,14 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { cheer, requestGreeting } from '../ui/truffle/greeting';
-import { bringForward, markWriteSkipped, recordHear, recordMeaning, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { beginNewWord, bringForward, markWriteSkipped, recordHear, recordMeaning, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import { starsOf } from '../stats/stats';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice, wordMisses,
 } from '../session/runner';
 import { addAnswer, clearConfusion, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
-import { ladderWords } from '../content/ladder';
+import { ladderWordsBesides } from '../content/ladder';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -55,7 +55,7 @@ import { InkIcon } from '../ui/icons/InkIcon';
 const pools = new WeakMap<Knowledge, Word[]>();
 function meaningPool(know: Knowledge): Word[] {
   let p = pools.get(know);
-  if (!p) pools.set(know, (p = [...know.words, ...ladderWords()]));
+  if (!p) pools.set(know, (p = [...know.words, ...ladderWordsBesides(know.words)]));
   return p;
 }
 
@@ -104,7 +104,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       // a lesson just begun: the first Truffle he sees waves and says hello (spec 2026-10-04 §4.6); never on coming back to it
       if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex && rec.plan.steps[0] === 'newwords' && rec.flashQueue.length > 0) requestGreeting('你好！我们开始吧！'); // it opens on a new word's card, never on a question (spec §4.3)
       // the lesson's clips (neural voice): fetched now, so they play at once and offline
-      for (const w of ladderWords()) if (!know.wordsById.has(w.id)) know.wordsById.set(w.id, w); // the ladder's 词语 aren't stored
+      for (const w of ladderWordsBesides(know.words)) if (!know.wordsById.has(w.id)) know.wordsById.set(w.id, w); // the ladder's 词语 aren't stored
       const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds, ...(rec.plan.hearReviewIds ?? [])]);
       prefetchWords([...want].map((id) => know.wordsById.get(id)).filter((w): w is Word => !!w));
       latest.current = rec;
@@ -246,8 +246,13 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       if (!item.retry && !rec.free) {
         const outcome = { correct: r.correct, responseMs: r.responseMs };
         // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing
-        if (r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
-        else if (!item.isNew) {
+        const fresh = item.isNew ? know.wordsById.get(item.wordId) : undefined;
+        if (fresh) {
+          // a word met today is begun whatever he could be asked (final review C1)
+          const card = await beginNewWord(db, fresh, r.asked, outcome, now());
+          know.cardsById.set(card.id, card);
+        } else if (r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
+        else {
           const card = r.asked === 'meaning' ? await recordMeaning(db, item.wordId, outcome, now()) : await recordRecognition(db, item.wordId, outcome, now());
           know.cardsById.set(card.id, card);
         }

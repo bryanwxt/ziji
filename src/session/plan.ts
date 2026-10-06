@@ -4,6 +4,7 @@ import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
 import { learnerLevel } from '../content/chengyu';
 import { isLadderId } from '../content/ladder';
+import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
 
@@ -91,7 +92,8 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     writeItems,
     writeCount: writeItems.length,
     // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
-    hearReviewIds: dueOf(hear).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
+    // only words that can be asked by ear: a card that can't be asked would stay due and hold a slot forever (final review I1)
+    hearReviewIds: dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
     meaningReviewIds: dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
     newMeaningIds: active
       .filter((w) => readPassed.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)

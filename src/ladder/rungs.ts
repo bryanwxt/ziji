@@ -2,6 +2,7 @@
 // already had, so nothing he has learned is lost; Hear is new. A rung passes on two different days' right first answers.
 import { meaningCue } from '../activities/flashcards/meaning';
 import { localDateKey } from '../lib/date';
+import { cardMeaning } from '../content/glossary';
 import type { CardKind, ReviewLog, Word } from '../types';
 
 export type RungKind = 'hear' | 'read' | 'use';
@@ -38,8 +39,9 @@ export function passedAt(logs: ReviewLog[], cardId: string, fastMs: number): num
   return null;
 }
 
-/** Whether a rung can be asked of this word: hearing and reading always; using needs a question to use it in. */
+/** Whether a rung can be asked of this word: hearing needs its English (he picks the meaning), using a question to use it in; reading always. */
 export function canAskRung(word: Word, rung: RungKind): boolean {
+  if (rung === 'hear') return !!cardMeaning(word);
   return rung !== 'use' || meaningCue(word) !== null;
 }
 

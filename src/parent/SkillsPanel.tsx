@@ -1,6 +1,7 @@
 import { schoolTerm } from '../content';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
+import { ladderWords } from '../content/ladder';
 import { addDays } from '../lib/date';
 import { bandLevel, rankBands } from '../placement/walk';
 import { bringForward } from '../session/record';
@@ -47,7 +48,7 @@ export function SkillsPanel() {
   if (!d) return <p>Loading…</p>;
 
   const acc = skillAccuracy(d.logs, d.answers);
-  const byId = new Map(d.words.map((w) => [w.id, w]));
+  const byId = new Map([...ladderWords(), ...d.words].map((w) => [w.id, w])); // ladder 词语 by their text, not their id (final review I8)
   const bands = rankBands(d.words);
   // where a band sits: his school term (P2 term 2, 二下) while it's within his textbook's lists, else its HSK level
   const hsk = (band: number) => {

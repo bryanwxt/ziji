@@ -6,6 +6,7 @@ import { isEarned, newCard } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
 import { allCards, allWords, getSettings, putCards, updateSettings } from '../store/repo';
 import type { CardRecord } from '../types';
+import { canAskRung } from './rungs';
 
 export const HEAR_CHECKS_PER_DAY = 15;
 
@@ -13,10 +14,12 @@ export const HEAR_CHECKS_PER_DAY = 15;
 export async function queueHearChecks(db: AppDb, now: Date): Promise<number> {
   const [cards, words] = await Promise.all([allCards(db), allWords(db)]);
   const rank = new Map(words.map((w) => [w.id, w.rank ?? 1e9]));
+  const byId = new Map(words.map((w) => [w.id, w]));
+  const hearable = (id: string) => { const w = byId.get(id) ?? ladderWord(id); return !!w && canAskRung(w, 'hear'); }; // final review I1
   const rankOf = (id: string) => rank.get(id) ?? ladderWord(id)?.rank ?? 1e9;
   const hasHear = new Set(cards.filter((c) => c.kind === 'hear').map((c) => c.wordId));
   const reads = cards
-    .filter((c) => c.kind === 'recognise' && !hasHear.has(c.wordId) && (rank.has(c.wordId) || ladderWord(c.wordId)))
+    .filter((c) => c.kind === 'recognise' && !hasHear.has(c.wordId) && hearable(c.wordId))
     .sort((a, b) => rankOf(a.wordId) - rankOf(b.wordId));
   const made: CardRecord[] = reads.map((c, i) => ({
     id: `${c.wordId}:hear`, wordId: c.wordId, kind: 'hear',

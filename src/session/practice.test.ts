@@ -21,7 +21,7 @@ describe('who is in 练一练 (spec 2026-10-05 §3.1)', () => {
     const rec = { ...createSessionRecord(plan({ newWordIds: [id('河'), id('他')] }), '2026-10-06', 0), flashIndex: 2, recalls: { [id('他')]: { right: 0, inContext: 0, missed: true } } };
     const ws = practiceWords(rec, new Map());
     expect(ws.map((w) => [w.wordId, w.isNew, w.from, w.appearances, !!w.early])).toEqual([[id('河'), true, 1, 3, false], [id('他'), true, 1, 3, true]]);
-    expect(ws.every((w) => !w.gradesRecognise && w.gradesMeaning)).toBe(true); // reading was graded in 认新字
+    expect(ws.every((w) => !w.gradesRecognise && !w.gradesMeaning)).toBe(true); // heard in 认新字; reading and use open later (spec 2026-10-06 §3.2)
   });
   it('a new word 认新字 never reached (its time ran out) is not in the round', () => {
     const rec = { ...createSessionRecord(plan({ newWordIds: [id('河'), id('他')] }), '2026-10-06', 0), flashIndex: 1 };

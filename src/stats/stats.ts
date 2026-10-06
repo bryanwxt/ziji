@@ -44,6 +44,9 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
   };
 }
 
+/** A word by id: one he has, or a ladder 词语 (the parent's lists name both: final review I8). */
+export const wordOf = (know: Pick<Knowledge, 'wordsById' | 'ladderById'>, id: string): Word | undefined => know.wordsById.get(id) ?? know.ladderById.get(id);
+
 /** Consecutive completed days ending today (or yesterday, while today is still to do). */
 export function streak(sessions: SessionRecord[], today: string): number {
   const done = new Set(sessions.filter((s) => s.completed && !s.free).map((s) => s.date));

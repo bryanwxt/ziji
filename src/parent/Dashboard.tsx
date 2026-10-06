@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
 import { addDays, localDateKey } from '../lib/date';
-import { dueTomorrow, minutesPerDay, streak, troubleWords, weeklyAccuracy } from '../stats/stats';
+import { dueTomorrow, minutesPerDay, streak, troubleWords, weeklyAccuracy, wordOf } from '../stats/stats';
 import { allSessions, countRecordings, logsSince } from '../store/repo';
 import type { ReviewLog, SessionRecord } from '../types';
 import { MinutesChart } from './MinutesChart';
@@ -111,7 +111,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (tab: ParentTab) => void
             <thead><tr><th>Word</th><th>Pinyin</th><th>Times missed</th></tr></thead>
             <tbody>
               {trouble.map((tw) => {
-                const w = d.know.wordsById.get(tw.wordId);
+                const w = wordOf(d.know, tw.wordId); // a ladder 词语 too (final review I8)
                 return (
                   <tr key={tw.wordId}>
                     <td class="hanzi" style={{ fontSize: '24px' }}>{w?.text ?? '?'}</td>

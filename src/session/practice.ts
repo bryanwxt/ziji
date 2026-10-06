@@ -32,7 +32,7 @@ export const FREE_PLAY_WORDS = 10;
 export function practiceWords(rec: SessionRecord, rungs: ReadonlyMap<string, number>): RoundWord[] {
   const introduced = introducedNewWords(rec);
   const fresh: RoundWord[] = introduced.map((wordId) => ({
-    wordId, isNew: true, from: 1, appearances: 3, gradesRecognise: false, gradesMeaning: true, early: rec.recalls?.[wordId]?.missed ?? false,
+    wordId, isNew: true, from: 1, appearances: 3, gradesRecognise: false, gradesMeaning: false, early: rec.recalls?.[wordId]?.missed ?? false, // Use waits for Read (final review I3)
   }));
   const reading = new Set(rec.plan.reviewWordIds);
   const hearing = new Set(rec.plan.hearReviewIds ?? []); // a lesson planned before the ladder has none

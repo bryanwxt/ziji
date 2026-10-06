@@ -1,11 +1,11 @@
 import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/date';
-import { fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
+import { canAskRung, fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
 import { findWord } from '../ladder/words';
-import { ladderWords } from '../content/ladder';
+import { ladderWordsBesides } from '../content/ladder';
 import { newCard, review, toRating } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
-import { addReviewLog, logsForCard, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
-import type { CardKind, CardRecord, Grade, SessionRecord, Settings } from '../types';
+import { addReviewLog, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
+import type { CardKind, CardRecord, Grade, SessionRecord, Settings, Word } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
@@ -58,9 +58,9 @@ export async function recordWriting(db: AppDb, wordId: string, totalMisses: numb
 export async function settleRung(db: AppDb, wordId: string, kind: CardKind, now: Date): Promise<CardRecord | undefined> {
   const card = await getCard(db, `${wordId}:${kind}`);
   if (!card || card.passed) return card;
-  const logs = await logsForCard(db, card.id);
+  // one read of the last 60 days serves both: a rung not passed in 60 days can lose its oldest right day (final review I6)
   const recent = (await logsSince(db, now.getTime() - 60 * 86_400_000)).filter((l) => l.kind === kind);
-  const at = passedAt(logs, card.id, fastLimit(recent, kind));
+  const at = passedAt(recent, card.id, fastLimit(recent, kind));
   if (at === null) return card;
   const passed = { ...card, passed: at };
   await putCards(db, [passed]);
@@ -72,6 +72,41 @@ export async function settleRung(db: AppDb, wordId: string, kind: CardKind, now:
     if (!(await getCard(db, id))) await putCards(db, [{ id, wordId, kind: RUNG_CARD[next], fsrs: { ...newCard(now), due: addDays(startOfLocalDay(now), 1) } }]);
   }
   return passed;
+}
+
+/**
+ * A word met in 认新字 is begun, whatever he could be asked (final review C1): heard, its hear card is graded; read instead (no
+ * voice today), a word that can be heard gets its hear card for tomorrow, ungraded; a word with no English (a school list word)
+ * starts on its Read rung, graded by that reading.
+ */
+export async function beginNewWord(db: AppDb, word: Word, asked: 'hear' | 'read' | 'meaning', outcome: { correct: boolean; responseMs: number }, now: Date): Promise<CardRecord> {
+  if (asked === 'hear') return recordHear(db, word.id, outcome, now);
+  if (!canAskRung(word, 'hear')) return recordRecognition(db, word.id, outcome, now);
+  const id = `${word.id}:hear`;
+  const have = await getCard(db, id);
+  if (have) return have;
+  const card: CardRecord = { id, wordId: word.id, kind: 'hear', fsrs: { ...newCard(now), due: addDays(startOfLocalDay(now), 1) } };
+  await putCards(db, [card]);
+  return card;
+}
+
+/** Any passed rung whose next rung has no card gets one (a placement re-run or a lost card can't strand a word: final review I5). */
+export async function openMissingRungs(db: AppDb, now: Date): Promise<number> {
+  const cards = await allCards(db);
+  const have = new Set(cards.map((c) => c.id));
+  const made: CardRecord[] = [];
+  for (const c of cards) {
+    const rung = rungOf(c.kind);
+    if (!rung || !c.passed) continue;
+    const word = await findWord(db, c.wordId);
+    const next = word ? nextRung(word, rung) : null;
+    const id = next ? `${c.wordId}:${RUNG_CARD[next]}` : null;
+    if (!next || !id || have.has(id)) continue;
+    have.add(id);
+    made.push({ id, wordId: c.wordId, kind: RUNG_CARD[next], fsrs: { ...newCard(now), due: addDays(startOfLocalDay(now), 1) } });
+  }
+  await putCards(db, made);
+  return made.length;
 }
 
 /** He heard the word and picked its meaning (the Hear rung, spec 2026-10-06 §3.2). */
@@ -134,8 +169,9 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
 }
 
 async function planNow(db: AppDb, now: Date) {
+  await openMissingRungs(db, now);
   const [cards, words, settings, practised] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db)]);
-  return buildSessionPlan({ cards, words: [...words, ...ladderWords()], settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
+  return buildSessionPlan({ cards, words: [...words, ...ladderWordsBesides(words)], settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
 }
 
 /**

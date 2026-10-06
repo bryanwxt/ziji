@@ -14,7 +14,7 @@ const learning = (wordId: string, kind: CardRecord['kind']): CardRecord => ({ id
 
 async function setup(n = 20) {
   const db = await freshDb();
-  const words = Array.from({ length: n }, (_, i) => makeWord(`字${i}`, { rank: i }));
+  const words = Array.from({ length: n }, (_, i) => makeWord(`字${i}`, { rank: i, meaning: `meaning ${i}` }));
   await putWords(db, words);
   await putCards(db, [...words.map((w) => earned(w.id, 'recognise')), earned('b:字0', 'meaning'), learning('b:字1', 'write')]);
   return db;

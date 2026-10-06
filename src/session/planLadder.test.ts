@@ -46,7 +46,7 @@ describe('planning on the word ladder (spec 2026-10-06 §3)', () => {
     expect(plan.hearReviewIds).toEqual([]);
   });
   it('at most HEAR_REVIEW_CAP hear reviews a lesson', () => {
-    const ws = Array.from({ length: HEAR_REVIEW_CAP + 5 }, (_, i) => makeWord(`字${i}`));
+    const ws = Array.from({ length: HEAR_REVIEW_CAP + 5 }, (_, i) => makeWord(`字${i}`, { meaning: `meaning ${i}` }));
     const cards = ws.map((w) => makeCard(w.id, 'hear', new Date('2026-10-01')));
     expect(buildSessionPlan({ cards, words: ws, settings, now }).hearReviewIds).toHaveLength(HEAR_REVIEW_CAP);
   });

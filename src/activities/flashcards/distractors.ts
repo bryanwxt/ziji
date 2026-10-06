@@ -88,7 +88,10 @@ export function pickPinyinDistractors(target: Word, pool: Word[], rng: Rng, n = 
 
 /** A meaning's first sense: what a P2 child reads on a choice (never the whole dictionary entry). */
 export const firstSense = (m: string): string => m.split(';')[0]!.trim();
-const sense = (m: string) => firstSense(m).split(',')[0]!.trim().toLowerCase();
+/** A sense compared loosely: no brackets, no leading to/a/an/the, no punctuation ("to teach (at a school)" = "teach"). */
+const sense = (m: string) => firstSense(m).split(',')[0]!.replace(/\([^)]*\)/g, ' ').toLowerCase().replace(/^\s*(to|a|an|the)\s+/, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+/** Two meanings that would both be right: the same sense, or one inside the other ("guide" / "tour guide"). */
+const alike = (a: string, b: string) => a === b || ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `);
 
 /** Hear / read-for-meaning (spec 2026-10-06 §3.2): its English meaning and three others whose first sense differs, near its place in his order. */
 export function meaningChoices(word: Word, pool: Word[], rng: Rng): string[] | null {
@@ -103,7 +106,7 @@ export function meaningChoices(word: Word, pool: Word[], rng: Rng): string[] | n
   const others: string[] = [];
   for (const w of shuffle(near, rng)) {
     const m = cardMeaning(w);
-    if (!m || seen.has(sense(m))) continue;
+    if (!m || [...seen].some((x) => alike(x, sense(m)))) continue;
     seen.add(sense(m));
     others.push(firstSense(m));
     if (others.length === 3) break;

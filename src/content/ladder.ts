@@ -52,3 +52,9 @@ export function ladderWord(id: string): Word | undefined {
   if (!cache) ladderWords();
   return cache!.byId.get(id);
 }
+
+/** The ladder's 词语 he doesn't already have as one of his words (a list word 朋友 is learned once, as his: final review I7). */
+export function ladderWordsBesides(words: readonly Word[]): Word[] {
+  const have = new Set(words.map((w) => w.text));
+  return ladderWords().filter((w) => !have.has(w.text));
+}
