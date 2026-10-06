@@ -1,13 +1,14 @@
-// The word ladder's rungs (spec 2026-10-06 §3.2): heard, read, used. Read and Use are the reading and meaning cards he
+// The word ladder's rungs (spec 2026-10-06 §3.2): heard, understood in a sentence, read, used. Read and Use are the reading and meaning cards he
 // already had, so nothing he has learned is lost; Hear is new. A rung passes on two different days' right first answers.
 import { meaningCue } from '../activities/flashcards/meaning';
 import { localDateKey } from '../lib/date';
 import { cardMeaning } from '../content/glossary';
+import { sentencesFor } from '../content/understand';
 import type { CardKind, ReviewLog, Word } from '../types';
 
-export type RungKind = 'hear' | 'read' | 'use';
-export const RUNGS: RungKind[] = ['hear', 'read', 'use'];
-export const RUNG_CARD: Record<RungKind, CardKind> = { hear: 'hear', read: 'recognise', use: 'meaning' };
+export type RungKind = 'hear' | 'understand' | 'read' | 'use';
+export const RUNGS: RungKind[] = ['hear', 'understand', 'read', 'use'];
+export const RUNG_CARD: Record<RungKind, CardKind> = { hear: 'hear', understand: 'understand', read: 'recognise', use: 'meaning' };
 export const rungOf = (kind: CardKind): RungKind | null => RUNGS.find((r) => RUNG_CARD[r] === kind) ?? null;
 
 export const PASS_DAYS = 2;
@@ -42,6 +43,7 @@ export function passedAt(logs: ReviewLog[], cardId: string, fastMs: number): num
 /** Whether a rung can be asked of this word: hearing needs its English (he picks the meaning), using a question to use it in; reading always. */
 export function canAskRung(word: Word, rung: RungKind): boolean {
   if (rung === 'hear') return !!cardMeaning(word);
+  if (rung === 'understand') return !!cardMeaning(word) && sentencesFor(word.text).length >= 2; // a sentence he hears (plan 2b)
   return rung !== 'use' || meaningCue(word) !== null;
 }
 

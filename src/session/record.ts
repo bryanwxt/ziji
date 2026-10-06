@@ -97,8 +97,10 @@ export async function openMissingRungs(db: AppDb, now: Date): Promise<number> {
   const made: CardRecord[] = [];
   for (const c of cards) {
     const rung = rungOf(c.kind);
-    if (!rung || !c.passed) continue;
+    if (!rung) continue;
     const word = await findWord(db, c.wordId);
+    // a rung that can no longer be asked (its sentences were removed) never strands the word: the next rung opens (plan 2b)
+    if (!c.passed && !(word && !canAskRung(word, rung))) continue;
     const next = word ? nextRung(word, rung) : null;
     const id = next ? `${c.wordId}:${RUNG_CARD[next]}` : null;
     if (!next || !id || have.has(id)) continue;
@@ -107,6 +109,17 @@ export async function openMissingRungs(db: AppDb, now: Date): Promise<number> {
   }
   await putCards(db, made);
   return made.length;
+}
+
+/** Listening to a sentence takes time before he can answer: it isn't slowness (the log keeps the real time). */
+export const LISTEN_MS = 4000;
+
+/** He heard a sentence with the word and picked its English (the Understand rung, spec 2026-10-06 §3.2). */
+export async function recordUnderstand(db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date): Promise<CardRecord> {
+  const rating = toRating({ kind: 'recognise', correct: outcome.correct, responseMs: Math.max(0, outcome.responseMs - LISTEN_MS) });
+  const card = await reviewCard(db, wordId, 'understand', rating, now);
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'understand', at: now.getTime(), rating, ...outcome });
+  return (await settleRung(db, wordId, 'understand', now)) ?? card;
 }
 
 /** He heard the word and picked its meaning (the Hear rung, spec 2026-10-06 §3.2). */

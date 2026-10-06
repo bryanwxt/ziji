@@ -5,7 +5,7 @@ export const SKILLS: Skill[] = ['listening', 'reading', 'meaning', 'use', 'zibia
 /** The card a skill's practice lives on: "practise more" brings it forward. */
 export const SKILL_CARD: Record<Skill, CardKind> = { listening: 'hear', reading: 'recognise', meaning: 'meaning', use: 'meaning', zibian: 'write', writing: 'write' };
 
-const LOG_SKILL: Record<CardKind, Skill> = { hear: 'listening', recognise: 'reading', meaning: 'meaning', write: 'writing' };
+const LOG_SKILL: Record<CardKind, Skill> = { hear: 'listening', understand: 'listening', recognise: 'reading', meaning: 'meaning', write: 'writing' };
 
 /** Each answer as (skill, word, right?): review logs for reading, meaning and writing; the answer log for 选一选/用一用 and 字辨. */
 function outcomes(logs: ReviewLog[], answers: AnswerLog[]): { skill: Skill; wordId: string; correct: boolean }[] {
