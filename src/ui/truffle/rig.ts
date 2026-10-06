@@ -11,7 +11,7 @@ export interface Face {
 export const EYE_L = 118;
 export const EYE_R = 202;
 export const EYE_Y = 118;
-export const FUR = '#b8b3b6';
+export const FUR = '#a9a4ab'; // flat fur, for art that can't use his gradient (costumes' bare arms)
 
 const base: Face = { lidTop: 0, lidBottom: 0, lidArc: 0, pupil: 1, browY: 0, browAngle: 0, browShow: 0, browAsym: 0, smile: 0.25, mouthOpen: 0, earL: 0, earR: 0, blush: 0.45, tilt: 0 };
 export const PRESETS: Record<Expression, Face> = {
@@ -30,7 +30,7 @@ export const PRESETS: Record<Expression, Face> = {
 /** The moods every screen already passes, as presets (spec §4.1). */
 export const MOOD_EXPRESSION: Record<TruffleMood, Expression> = { sulk: 'grumpy', neutral: 'neutral', pleased: 'happy', side: 'curious', content: 'content', wow: 'surprised', cheer: 'joy', sleepy: 'sleepy' };
 
-const INK = '#2a2630';
+const INK = '#4a4250'; // a soft dark, never black ink (spec 3b §2)
 /** Small marks that come with some expressions (faded in and out with them). Drawn, never emoji. */
 export const EXTRAS: Partial<Record<Expression, string>> = {
   curious: `<g transform="translate(236 40)"><rect width="34" height="34" rx="12" fill="#fffdf7" stroke="${INK}" stroke-width="2.4"/><text x="17" y="26" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="24" fill="${INK}">?</text></g>`,

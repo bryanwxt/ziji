@@ -1,6 +1,8 @@
 import { render } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
-import { TRUFFLE_MOODS } from './parts';
+import { BODY, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, TRUFFLE_MOODS } from './parts';
+import { COSTUMES } from '../../fun/costumes';
+import { costumeLayer } from './costumes';
 import { Truffle } from './Truffle';
 
 const svg = (c: Element) => c.querySelector('svg.truffle')!;
@@ -60,7 +62,7 @@ describe('Truffle', () => {
     const { COSTUMES } = await import('../../fun/costumes');
     for (const c of COSTUMES) {
       const { container, unmount } = render(<Truffle outfit={c.id} />);
-      expect(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('fill'), c.id).toBe('#b8b3b6');
+      expect(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('fill'), c.id).toMatch(/^url\(#truffle-.*-tf-fur\)$/); // his painted fur (3b)
       unmount();
     }
   });
@@ -245,3 +247,31 @@ describe('paws (spec 2026-10-04 §4.6, phase E)', () => {
   });
 });
 
+
+describe('Truffle repainted (spec 3b §5)', () => {
+  const RIG = ['shadow', 'rig', 'tail', 'body', 'headpos', 'headrot', 'ear-l', 'ear-r', 'ear-in-l', 'ear-in-r', 'blush-l', 'blush-r', 'eye-l', 'eye-r',
+    'iris-l', 'iris-r', 'pupil-l', 'pupil-r', 'lid-top-l', 'lid-top-r', 'lid-bottom-l', 'lid-bottom-r', 'brow-l', 'brow-r', 'mouth', 'paw-l', 'paw-r'];
+  it('keeps every part of his rig and his frame', () => {
+    const { container } = render(<Truffle />);
+    const s = svg(container);
+    expect(s.getAttribute('viewBox')).toBe('30 20 260 270');
+    for (const p of RIG) expect(s.querySelector(`[data-part="${p}"]`), p).toBeTruthy();
+  });
+  it('no hard black outline on his fur, chest or paws', () => {
+    for (const art of [TORSO, BODY, PAW_L, PAW_R, TAIL, EAR_L, EAR_R, HEAD_SHAPE]) expect(art).not.toContain('#2a2630');
+  });
+  it('two Truffles never share a gradient id, and each url(#…) resolves inside its own svg', () => {
+    const { container } = render(<div><Truffle /><div style="display:none"><Truffle outfit="tiger" /></div></div>);
+    const svgs = [...container.querySelectorAll('svg.truffle')];
+    const ids = svgs.map((x) => [...x.querySelectorAll('linearGradient, radialGradient')].map((g) => g.id));
+    expect(ids[0]!.length).toBeGreaterThan(0);
+    expect(ids[0]!.some((i) => ids[1]!.includes(i))).toBe(false);
+    for (const x of svgs) for (const m of x.outerHTML.matchAll(/url\(#([^)]+)\)/g)) expect(x.querySelector(`[id="${m[1]}"]`), m[1]).toBeTruthy();
+  });
+  it('with an ear-hiding hood and a costume tail, every url(#…) still resolves', () => {
+    const hood = COSTUMES.find((c) => costumeLayer(c.id)?.hidesEars && costumeLayer(c.id)?.tail)!;
+    const { container } = render(<Truffle outfit={hood.id} />);
+    const x = svg(container);
+    for (const m of x.outerHTML.matchAll(/url\(#([^)]+)\)/g)) expect(x.querySelector(`[id="${m[1]}"]`), m[1]).toBeTruthy();
+  });
+});
