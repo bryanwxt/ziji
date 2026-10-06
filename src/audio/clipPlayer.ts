@@ -13,6 +13,14 @@ export interface ClipPlayer {
 /** Decoded clips kept in memory: a lesson's words and their 组词. */
 const KEEP = 150;
 const WAKE_MS = 300;
+/** A clip slower than this to arrive (a weak connection): the iPad voice says the line instead of a long silence. */
+export const LOAD_MS = 1500;
+
+const inTime = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('clip too slow')), ms);
+    p.then((v) => { clearTimeout(timer); resolve(v); }, (e) => { clearTimeout(timer); reject(e); });
+  });
 
 export function createClipPlayer(backend: ClipBackend): ClipPlayer {
   const buffers = new Map<string, Promise<AudioBuffer>>();
@@ -24,7 +32,7 @@ export function createClipPlayer(backend: ClipBackend): ClipPlayer {
     let p = buffers.get(id);
     if (p) buffers.delete(id); // most recently used goes last
     else {
-      p = backend.load(id).then((b) => ac.decodeAudioData(b));
+      p = inTime(backend.load(id), LOAD_MS).then((b) => ac.decodeAudioData(b));
       p.catch(() => buffers.delete(id));
     }
     buffers.set(id, p);

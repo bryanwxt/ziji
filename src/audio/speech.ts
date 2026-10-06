@@ -114,7 +114,13 @@ export function speak(text: string, { queue = false, reading }: { queue?: boolea
     return;
   }
   const steps = clipPlan(text, reading);
-  if (!steps) { ttsSpeak(text, { queue, reading }); return; }
+  if (!steps) {
+    // the iPad voice: a tap still cuts off a clip and what was queued behind it (final review). Not the whole stopSpeaking(),
+    // so ttsSpeak still sees the voice busy and waits its moment after the cancel
+    if (!queue) { after = []; clipBusy = false; setClipActive(false); player.stop(); }
+    ttsSpeak(text, { queue, reading });
+    return;
+  }
   if (!queue) stopSpeaking();
   playClip(steps, { text, reading });
 }
@@ -195,7 +201,7 @@ function say(text: string, retry = true): void {
   const u = new SpeechSynthesisUtterance(text);
   let started = false;
   const done = () => {
-    live.delete(u);
+    if (!live.delete(u)) return; // a line already cancelled ending late: it says nothing about what is playing now
     setSpeaking(false);
     if (live.size === 0 && !waiting) drain(); // a line queued behind the iPad voice
   };

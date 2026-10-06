@@ -43,3 +43,11 @@ describe('packIndex', () => {
     expect(packIndex('v', jobs, new Set(['i1', 'i2']), [{ id: 'i2', ok: true, heard: '门口', flagged: false }], prev).report.flagged).toHaveLength(0);
   });
 });
+
+describe('packIndex, a character said without its reading (final review I3)', () => {
+  it('the bare character is the taught character clip, even when a word or piece with the same text comes later', () => {
+    const jobs = [job('教|jiāo', 'c1', 'char'), job('教', 'w1', 'word')];
+    const { index } = packIndex('v', jobs, new Set(['c1', 'w1']), []);
+    expect(index.clips['教']).toBe('c1');
+  });
+});

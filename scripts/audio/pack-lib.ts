@@ -23,11 +23,10 @@ export function planShards(jobs: ClipJob[], present: Set<string>, n: number): Cl
 
 export function packIndex(voice: string, jobs: ClipJob[], present: Set<string>, results: SynthResult[], prev?: Report): { index: ClipIndex; report: Report } {
   const clips: Record<string, string> = {};
-  for (const j of jobs) {
-    if (!present.has(j.id)) continue;
-    clips[j.key] = j.id;
-    if (j.kind === 'char') clips[j.text] ??= j.id; // a lone character said without its reading (a 听写 cue) is the taught one
-  }
+  for (const j of jobs) if (present.has(j.id)) clips[j.key] = j.id;
+  // a lone character said without its reading (a 听写 cue, the collection) is the taught character, over a one-character
+  // word or sentence piece with the same text (final review: 教 played as jiào)
+  for (const j of jobs) if (j.kind === 'char' && present.has(j.id)) clips[j.text] = j.id;
   const byId = new Map(results.map((r) => [r.id, r]));
   const jobById = new Map(jobs.map((j) => [j.id, j]));
   const remade = new Set(results.map((r) => r.id));

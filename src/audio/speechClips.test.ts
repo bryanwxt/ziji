@@ -76,3 +76,32 @@ describe('speak, with clips', () => {
     expect(player.prefetch).toHaveBeenCalledWith(['t', 'd']);
   });
 });
+
+describe('speak, clips and the iPad voice mixed (final review)', () => {
+  it('a tap on a line with no clip stops the clip playing and drops what was queued behind it (C1)', async () => {
+    const utterances: { text: string; onend: (() => void) | null }[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: { text: string; onend: (() => void) | null }) => utterances.push(u), getVoices: () => [], speaking: false, pending: false });
+    speak('门');
+    speak('大门', { queue: true });
+    player.stop.mockClear();
+    speak('小猫'); // no clip: the iPad voice
+    expect(player.stop).toHaveBeenCalled();
+    await new Promise((r) => setTimeout(r, 200)); // the iPad voice waits a moment after a cancel
+    expect(utterances.map((u) => u.text)).toEqual(['小猫']);
+    utterances[0]!.onend!();
+    await tick();
+    expect(calls).toHaveLength(1); // 大门 is never said
+  });
+  it('a cancelled iPad-voice line ending late does not close Truffle\'s mouth during a clip (I1)', () => {
+    const utterances: { text: string; onend: (() => void) | null }[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: { text: string; onend: (() => void) | null }) => utterances.push(u), getVoices: () => [], speaking: false, pending: false });
+    const states: boolean[] = [];
+    const off = onSpeaking((on) => states.push(on));
+    speak('小猫'); // the iPad voice
+    speak('门'); // a clip: cancels it
+    calls[0]!.onStart!();
+    utterances[0]!.onend!(); // Safari reports the cancelled line's end, late
+    expect(states[states.length - 1]).toBe(true);
+    off();
+  });
+});

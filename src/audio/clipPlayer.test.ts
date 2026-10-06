@@ -66,3 +66,17 @@ describe('clip player', () => {
     expect(ac.sources).toHaveLength(0);
   });
 });
+
+describe('clip player, slow network (final review I2)', () => {
+  it('a clip that takes too long to arrive: failed, so the iPad voice says it', async () => {
+    vi.useFakeTimers();
+    try {
+      const { player } = setup(vi.fn(() => new Promise<ArrayBuffer>(() => {})));
+      const done = player.play([{ id: 'a' }]);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(await done).toBe('failed');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
