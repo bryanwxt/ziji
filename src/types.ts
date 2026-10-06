@@ -255,6 +255,7 @@ export interface Settings {
   contentCourse?: 'cl' | 'hcl'; // the course the stored built-in words were written for
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
   placementResult?: PlacementResult;
+  storyProgress?: { chapter: number; readOn?: string; setupDone?: boolean; payoffDone?: boolean }; // the Word Thief chapters (spec 2026-10-07 3c §3)
   baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
   pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)
   contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION)
