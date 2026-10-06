@@ -1,1 +1,4890 @@
-[]
+[
+{
+"word": "纸",
+"s": [
+{
+"zh": "请给我一张纸。",
+"en": "Please give me a piece of paper."
+},
+{
+"zh": "我在白纸上画了一只猫。",
+"en": "I drew a cat on white paper."
+}
+]
+},
+{
+"word": "图纸",
+"s": [
+{
+"zh": "爸爸在看房子的图纸。",
+"en": "Dad is looking at the plans for the house."
+},
+{
+"zh": "工人看着图纸做事。",
+"en": "The workers follow the drawings to do their work."
+}
+]
+},
+{
+"word": "机",
+"s": [
+{
+"zh": "洗衣机坏了。",
+"en": "The washing machine is broken."
+},
+{
+"zh": "妈妈把衣服放进洗衣机。",
+"en": "Mum puts the clothes into the washing machine."
+}
+]
+},
+{
+"word": "手机",
+"s": [
+{
+"zh": "爸爸的手机响了。",
+"en": "Dad's phone is ringing."
+},
+{
+"zh": "我不能玩手机太久。",
+"en": "I can't play on the phone for too long."
+}
+]
+},
+{
+"word": "机场",
+"s": [
+{
+"zh": "我们去机场接奶奶。",
+"en": "We go to the airport to pick up Grandma."
+},
+{
+"zh": "机场里有很多人。",
+"en": "There are many people at the airport."
+}
+]
+},
+{
+"word": "飞机",
+"s": [
+{
+"zh": "天上有一架飞机。",
+"en": "There is a plane in the sky."
+},
+{
+"zh": "我们坐飞机去看外公。",
+"en": "We take a plane to visit Grandpa."
+}
+]
+},
+{
+"word": "关机",
+"s": [
+{
+"zh": "上课前请关机。",
+"en": "Please turn off your phone before class."
+},
+{
+"zh": "我的手机没电，关机了。",
+"en": "My phone ran out of battery and switched off."
+}
+]
+},
+{
+"word": "机会",
+"s": [
+{
+"zh": "老师给我一个机会。",
+"en": "The teacher gave me a chance."
+},
+{
+"zh": "这是一个好机会。",
+"en": "This is a good opportunity."
+}
+]
+},
+{
+"word": "相机",
+"s": [
+{
+"zh": "爸爸用相机给我们照相。",
+"en": "Dad takes photos of us with the camera."
+},
+{
+"zh": "我的相机是新的。",
+"en": "My camera is new."
+}
+]
+},
+{
+"word": "耳机",
+"s": [
+{
+"zh": "哥哥用耳机听歌。",
+"en": "My brother listens to songs with earphones."
+},
+{
+"zh": "我的耳机不见了。",
+"en": "My earphones are missing."
+}
+]
+},
+{
+"word": "块",
+"s": [
+{
+"zh": "我吃了一块蛋糕。",
+"en": "I ate a piece of cake."
+},
+{
+"zh": "地上有一块石头。",
+"en": "There is a stone on the ground."
+}
+]
+},
+{
+"word": "一块儿",
+"s": [
+{
+"zh": "我们一块儿去玩吧！",
+"en": "Let's go and play together!"
+},
+{
+"zh": "我和弟弟一块儿上学。",
+"en": "My little brother and I go to school together."
+}
+]
+},
+{
+"word": "一块",
+"s": [
+{
+"zh": "妈妈给了我一块饼。",
+"en": "Mum gave me a biscuit."
+},
+{
+"zh": "我找到一块小石头。",
+"en": "I found a small stone."
+}
+]
+},
+{
+"word": "冰块",
+"s": [
+{
+"zh": "请给我加冰块。",
+"en": "Please add ice to my drink."
+},
+{
+"zh": "杯子里有很多冰块。",
+"en": "There are many ice cubes in the cup."
+}
+]
+},
+{
+"word": "跟",
+"s": [
+{
+"zh": "小狗跟着我。",
+"en": "The puppy follows me."
+},
+{
+"zh": "你跟着我走。",
+"en": "Walk behind me."
+}
+]
+},
+{
+"word": "跟前",
+"s": [
+{
+"zh": "他走到我跟前。",
+"en": "He walked up to me."
+},
+{
+"zh": "奶奶把我叫到跟前。",
+"en": "Grandma called me over to her."
+}
+]
+},
+{
+"word": "跟上",
+"s": [
+{
+"zh": "弟弟，快跟上我们！",
+"en": "Little brother, keep up with us!"
+},
+{
+"zh": "小鸭子跟上了鸭妈妈。",
+"en": "The duckling caught up with the mother duck."
+}
+]
+},
+{
+"word": "棋",
+"s": [
+{
+"zh": "我会玩跳棋。",
+"en": "I can play Chinese checkers."
+},
+{
+"zh": "这盒棋是新的。",
+"en": "This chess set is new."
+}
+]
+},
+{
+"word": "下棋",
+"s": [
+{
+"zh": "爷爷和我下棋。",
+"en": "Grandpa and I play chess."
+},
+{
+"zh": "爸爸教我下棋。",
+"en": "Dad teaches me to play chess."
+}
+]
+},
+{
+"word": "棋子",
+"s": [
+{
+"zh": "棋子掉在地上了。",
+"en": "A chess piece fell on the floor."
+},
+{
+"zh": "我的棋子是红色的。",
+"en": "My chess pieces are red."
+}
+]
+},
+{
+"word": "搭",
+"s": [
+{
+"zh": "我们用积木搭房子。",
+"en": "We build a house with blocks."
+},
+{
+"zh": "弟弟搭了一座桥。",
+"en": "My little brother built a bridge."
+}
+]
+},
+{
+"word": "积",
+"s": [
+{
+"zh": "地上积了很多水。",
+"en": "A lot of water has collected on the ground."
+},
+{
+"zh": "我喜欢玩积木。",
+"en": "I like playing with building blocks."
+}
+]
+},
+{
+"word": "积极",
+"s": [
+{
+"zh": "他上课很积极。",
+"en": "He is very active in class."
+},
+{
+"zh": "姐姐积极帮老师做事。",
+"en": "My sister eagerly helps the teacher."
+}
+]
+},
+{
+"word": "面积",
+"s": [
+{
+"zh": "这个公园的面积很大。",
+"en": "This park covers a big area."
+},
+{
+"zh": "我们在学面积。",
+"en": "We are learning about area."
+}
+]
+},
+{
+"word": "布",
+"s": [
+{
+"zh": "这块布很漂亮。",
+"en": "This piece of cloth is pretty."
+},
+{
+"zh": "妈妈用布做了一个包。",
+"en": "Mum made a bag out of cloth."
+}
+]
+},
+{
+"word": "公布",
+"s": [
+{
+"zh": "老师公布了谁是班长。",
+"en": "The teacher announced who the class monitor is."
+},
+{
+"zh": "老师公布了考试的日子。",
+"en": "The teacher announced the exam date."
+}
+]
+},
+{
+"word": "娃娃",
+"s": [
+{
+"zh": "妹妹有一个布娃娃。",
+"en": "My little sister has a rag doll."
+},
+{
+"zh": "那个小娃娃在哭。",
+"en": "That little baby is crying."
+}
+]
+},
+{
+"word": "吧",
+"s": [
+{
+"zh": "我们一起去公园吧！",
+"en": "Let's go to the park together!"
+},
+{
+"zh": "你是新来的同学吧？",
+"en": "You are the new classmate, right?"
+}
+]
+},
+{
+"word": "机器",
+"s": [
+{
+"zh": "这个机器会做面包。",
+"en": "This machine can make bread."
+},
+{
+"zh": "工厂里有很多机器。",
+"en": "There are many machines in the factory."
+}
+]
+},
+{
+"word": "许",
+"s": [
+{
+"zh": "妈妈不许我吃糖。",
+"en": "Mum doesn't allow me to eat sweets."
+},
+{
+"zh": "老师不许我们在课室里跑。",
+"en": "The teacher doesn't let us run in the classroom."
+}
+]
+},
+{
+"word": "也许",
+"s": [
+{
+"zh": "明天也许会下雨。",
+"en": "Maybe it will rain tomorrow."
+},
+{
+"zh": "他也许不来了。",
+"en": "Perhaps he won't come."
+}
+]
+},
+{
+"word": "许多",
+"s": [
+{
+"zh": "公园里有许多花。",
+"en": "There are many flowers in the park."
+},
+{
+"zh": "我有许多好朋友。",
+"en": "I have many good friends."
+}
+]
+},
+{
+"word": "绳",
+"s": [
+{
+"zh": "我们在玩跳绳。",
+"en": "We are skipping rope."
+},
+{
+"zh": "我每天跳绳。",
+"en": "I skip rope every day."
+}
+]
+},
+{
+"word": "绳子",
+"s": [
+{
+"zh": "这条绳子断了。",
+"en": "This rope broke."
+},
+{
+"zh": "我们用绳子玩拔河。",
+"en": "We play tug-of-war with a rope."
+}
+]
+},
+{
+"word": "捏",
+"s": [
+{
+"zh": "妹妹捏了一个泥人。",
+"en": "My little sister shaped a clay figure."
+},
+{
+"zh": "他捏了捏我的脸。",
+"en": "He pinched my cheek."
+}
+]
+},
+{
+"word": "拼",
+"s": [
+{
+"zh": "我们一起拼图。",
+"en": "We do a jigsaw puzzle together."
+},
+{
+"zh": "弟弟在拼积木。",
+"en": "My little brother is putting blocks together."
+}
+]
+},
+{
+"word": "船",
+"s": [
+{
+"zh": "河上有一条船。",
+"en": "There is a boat on the river."
+},
+{
+"zh": "我们坐船去小岛。",
+"en": "We take a boat to the island."
+}
+]
+},
+{
+"word": "船员",
+"s": [
+{
+"zh": "船员们在船上工作。",
+"en": "The crew are working on the ship."
+},
+{
+"zh": "船员给我们送水。",
+"en": "The crew brought us water."
+}
+]
+},
+{
+"word": "船长",
+"s": [
+{
+"zh": "船长站在船上。",
+"en": "The captain stands on the boat."
+},
+{
+"zh": "船长说船要开了。",
+"en": "The captain says the boat is about to leave."
+}
+]
+},
+{
+"word": "更",
+"s": [
+{
+"zh": "今天比昨天更热。",
+"en": "Today is hotter than yesterday."
+},
+{
+"zh": "我想跑得更快。",
+"en": "I want to run faster."
+}
+]
+},
+{
+"word": "更加",
+"s": [
+{
+"zh": "下雨后，天气更加凉了。",
+"en": "After the rain, it became even cooler."
+},
+{
+"zh": "听了老师的话，他更加认真了。",
+"en": "After hearing the teacher, he worked even harder."
+}
+]
+},
+{
+"word": "鹰",
+"s": [
+{
+"zh": "天上有一只鹰。",
+"en": "There is an eagle in the sky."
+},
+{
+"zh": "我们在玩老鹰抓小鸡。",
+"en": "We are playing the eagle-and-chicks game."
+}
+]
+},
+{
+"word": "追",
+"s": [
+{
+"zh": "小狗在追球。",
+"en": "The puppy is chasing the ball."
+},
+{
+"zh": "我追不上哥哥。",
+"en": "I can't catch up with my brother."
+}
+]
+},
+{
+"word": "永远",
+"s": [
+{
+"zh": "我们永远是好朋友。",
+"en": "We will always be good friends."
+},
+{
+"zh": "我永远爱你，妈妈。",
+"en": "I will love you forever, Mum."
+}
+]
+},
+{
+"word": "轻",
+"s": [
+{
+"zh": "这个包很轻。",
+"en": "This bag is very light."
+},
+{
+"zh": "请轻一点关门。",
+"en": "Please close the door gently."
+}
+]
+},
+{
+"word": "年轻",
+"s": [
+{
+"zh": "我的妈妈很年轻。",
+"en": "My mum is very young."
+},
+{
+"zh": "年轻的老师在教我们唱歌。",
+"en": "The young teacher is teaching us to sing."
+}
+]
+},
+{
+"word": "生命",
+"s": [
+{
+"zh": "小树也有生命。",
+"en": "Little trees are alive too."
+},
+{
+"zh": "我们要爱护小动物的生命。",
+"en": "We must protect the lives of little animals."
+}
+]
+},
+{
+"word": "拼命",
+"s": [
+{
+"zh": "他拼命地跑。",
+"en": "He ran with all his might."
+},
+{
+"zh": "小狗拼命摇尾巴。",
+"en": "The puppy is wagging its tail like crazy."
+}
+]
+},
+{
+"word": "百",
+"s": [
+{
+"zh": "这本书有一百页。",
+"en": "This book has a hundred pages."
+},
+{
+"zh": "我跑了一百米。",
+"en": "I ran a hundred metres."
+}
+]
+},
+{
+"word": "百合",
+"s": [
+{
+"zh": "妈妈买了几朵百合花。",
+"en": "Mum bought some lilies."
+},
+{
+"zh": "百合花很香。",
+"en": "Lilies smell very nice."
+}
+]
+},
+{
+"word": "健",
+"s": [
+{
+"zh": "多吃菜，身体才健康。",
+"en": "Eat more vegetables to stay healthy."
+},
+{
+"zh": "爷爷身体很健康。",
+"en": "Grandpa is very healthy."
+}
+]
+},
+{
+"word": "健身",
+"s": [
+{
+"zh": "爸爸每天去健身。",
+"en": "Dad goes to work out every day."
+},
+{
+"zh": "楼下有一个健身房。",
+"en": "There is a gym downstairs."
+}
+]
+},
+{
+"word": "健康",
+"s": [
+{
+"zh": "多吃菜，身体健康。",
+"en": "Eat more vegetables to stay healthy."
+},
+{
+"zh": "祝爷爷身体健康！",
+"en": "I wish Grandpa good health!"
+}
+]
+},
+{
+"word": "幸福",
+"s": [
+{
+"zh": "我们一家人好幸福。",
+"en": "Our family is so happy."
+},
+{
+"zh": "爷爷说他过得很幸福。",
+"en": "Grandpa says his life is very happy."
+}
+]
+},
+{
+"word": "幸运",
+"s": [
+{
+"zh": "我今天真幸运！",
+"en": "I am really lucky today!"
+},
+{
+"zh": "我很幸运有你这个好朋友。",
+"en": "I am lucky to have a good friend like you."
+}
+]
+},
+{
+"word": "祝愿",
+"s": [
+{
+"zh": "我祝愿妈妈天天开心。",
+"en": "I wish Mum happiness every day."
+},
+{
+"zh": "老师祝愿我们新年快乐。",
+"en": "The teacher wished us a happy new year."
+}
+]
+},
+{
+"word": "吹",
+"s": [
+{
+"zh": "风把我的纸吹走了。",
+"en": "The wind blew my paper away."
+},
+{
+"zh": "弟弟在吹气球。",
+"en": "My little brother is blowing up a balloon."
+}
+]
+},
+{
+"word": "吹牛",
+"s": [
+{
+"zh": "他又在吹牛了。",
+"en": "He is bragging again."
+},
+{
+"zh": "不要吹牛，要说实话。",
+"en": "Do not brag, tell the truth."
+}
+]
+},
+{
+"word": "蛋糕",
+"s": [
+{
+"zh": "妈妈给我买了一个蛋糕。",
+"en": "Mum bought me a cake."
+},
+{
+"zh": "我们一起吃生日蛋糕。",
+"en": "We eat birthday cake together."
+}
+]
+},
+{
+"word": "首先",
+"s": [
+{
+"zh": "首先，我们要洗手。",
+"en": "First, we need to wash our hands."
+},
+{
+"zh": "首先，把书打开。",
+"en": "First of all, open your books."
+}
+]
+},
+{
+"word": "首都",
+"s": [
+{
+"zh": "你知道中国的首都在哪里吗？",
+"en": "Do you know where the capital of China is?"
+},
+{
+"zh": "爸爸去了日本的首都。",
+"en": "Dad went to the capital of Japan."
+}
+]
+},
+{
+"word": "张",
+"s": [
+{
+"zh": "妹妹张开手要我抱。",
+"en": "My little sister opened her arms for a hug."
+},
+{
+"zh": "张开眼睛看看。",
+"en": "Open your eyes and take a look."
+}
+]
+},
+{
+"word": "开张",
+"s": [
+{
+"zh": "楼下的新店开张了。",
+"en": "The new shop downstairs has opened."
+},
+{
+"zh": "那家面包店明天开张。",
+"en": "That bakery opens tomorrow."
+}
+]
+},
+{
+"word": "卡",
+"s": [
+{
+"zh": "我给老师写了一张卡。",
+"en": "I wrote a card for the teacher."
+},
+{
+"zh": "妈妈用卡买东西。",
+"en": "Mum pays with a card."
+}
+]
+},
+{
+"word": "卡片",
+"s": [
+{
+"zh": "我做了一张生日卡片。",
+"en": "I made a birthday card."
+},
+{
+"zh": "卡片上有一只小猫。",
+"en": "There is a kitten on the card."
+}
+]
+},
+{
+"word": "卡车",
+"s": [
+{
+"zh": "大卡车开过来了。",
+"en": "A big truck is coming."
+},
+{
+"zh": "弟弟有一个红色的玩具卡车。",
+"en": "My little brother has a red toy truck."
+}
+]
+},
+{
+"word": "电影",
+"s": [
+{
+"zh": "我们去看电影吧！",
+"en": "Let's go and watch a movie!"
+},
+{
+"zh": "这个电影好好看。",
+"en": "This movie is really good."
+}
+]
+},
+{
+"word": "影响",
+"s": [
+{
+"zh": "玩手机太久会影响眼睛。",
+"en": "Playing on the phone too long is bad for your eyes."
+},
+{
+"zh": "不要大声说话，会影响别人。",
+"en": "Do not talk loudly, it will disturb others."
+}
+]
+},
+{
+"word": "影片",
+"s": [
+{
+"zh": "我们在课上看了一个影片。",
+"en": "We watched a film in class."
+},
+{
+"zh": "这个影片讲的是小狗。",
+"en": "This film is about a dog."
+}
+]
+},
+{
+"word": "票",
+"s": [
+{
+"zh": "我买了两张票。",
+"en": "I bought two tickets."
+},
+{
+"zh": "看电影要买票。",
+"en": "You need a ticket to see a movie."
+}
+]
+},
+{
+"word": "机票",
+"s": [
+{
+"zh": "爸爸买了机票。",
+"en": "Dad bought the plane tickets."
+},
+{
+"zh": "我们的机票在哪里？",
+"en": "Where are our plane tickets?"
+}
+]
+},
+{
+"word": "车票",
+"s": [
+{
+"zh": "我丢了我的车票。",
+"en": "I lost my ticket."
+},
+{
+"zh": "妈妈给了我一张车票。",
+"en": "Mum gave me a train ticket."
+}
+]
+},
+{
+"word": "门票",
+"s": [
+{
+"zh": "小朋友不用买门票。",
+"en": "Children do not need to buy tickets."
+},
+{
+"zh": "我拿着门票走进去。",
+"en": "I walked in holding my ticket."
+}
+]
+},
+{
+"word": "礼物",
+"s": [
+{
+"zh": "这是我给你的礼物。",
+"en": "This is my present for you."
+},
+{
+"zh": "生日那天我收到很多礼物。",
+"en": "I got lots of presents on my birthday."
+}
+]
+},
+{
+"word": "礼拜",
+"s": [
+{
+"zh": "下个礼拜我们去动物园。",
+"en": "Next week we are going to the zoo."
+},
+{
+"zh": "礼拜六我不用上学。",
+"en": "I do not have school on Saturday."
+}
+]
+},
+{
+"word": "大厅",
+"s": [
+{
+"zh": "我们在大厅等你。",
+"en": "We will wait for you in the lobby."
+},
+{
+"zh": "学校的大厅好大。",
+"en": "The school hall is very big."
+}
+]
+},
+{
+"word": "客厅",
+"s": [
+{
+"zh": "爸爸在客厅看书。",
+"en": "Dad is reading in the living room."
+},
+{
+"zh": "客厅里有一只猫。",
+"en": "There is a cat in the living room."
+}
+]
+},
+{
+"word": "餐厅",
+"s": [
+{
+"zh": "我们去餐厅吃饭。",
+"en": "We are going to a restaurant to eat."
+},
+{
+"zh": "这家餐厅的鸡饭好吃。",
+"en": "The chicken rice at this restaurant is tasty."
+}
+]
+},
+{
+"word": "好奇",
+"s": [
+{
+"zh": "弟弟对什么都好奇。",
+"en": "My little brother is curious about everything."
+},
+{
+"zh": "小猫好奇地看着我。",
+"en": "The kitten looked at me curiously."
+}
+]
+},
+{
+"word": "怪",
+"s": [
+{
+"zh": "这个味道好怪。",
+"en": "This tastes strange."
+},
+{
+"zh": "这个声音好怪！",
+"en": "This noise is so strange!"
+}
+]
+},
+{
+"word": "奇怪",
+"s": [
+{
+"zh": "真奇怪，我的书不见了。",
+"en": "That's strange, my book is gone."
+},
+{
+"zh": "外面有一个奇怪的声音。",
+"en": "There is a strange sound outside."
+}
+]
+},
+{
+"word": "古怪",
+"s": [
+{
+"zh": "这只猫的样子好古怪。",
+"en": "This cat looks so weird."
+},
+{
+"zh": "爷爷讲了一个古怪的故事。",
+"en": "Grandpa told a weird story."
+}
+]
+},
+{
+"word": "怪物",
+"s": [
+{
+"zh": "我画了一个大怪物。",
+"en": "I drew a big monster."
+},
+{
+"zh": "床下没有怪物。",
+"en": "There is no monster under the bed."
+}
+]
+},
+{
+"word": "活",
+"s": [
+{
+"zh": "这条鱼还活着。",
+"en": "This fish is still alive."
+},
+{
+"zh": "我的小花还活着吗？",
+"en": "Is my little plant still alive?"
+}
+]
+},
+{
+"word": "活动",
+"s": [
+{
+"zh": "我们去外面活动活动。",
+"en": "Let's go outside and move around."
+},
+{
+"zh": "坐久了，起来活动一下。",
+"en": "You have sat too long, get up and stretch."
+}
+]
+},
+{
+"word": "生活",
+"s": [
+{
+"zh": "我喜欢这里的生活。",
+"en": "I like life here."
+},
+{
+"zh": "小鱼在河里生活。",
+"en": "Little fish live in the river."
+}
+]
+},
+{
+"word": "活力",
+"s": [
+{
+"zh": "小朋友们都很有活力。",
+"en": "The children are full of energy."
+},
+{
+"zh": "爷爷每天跑步，很有活力。",
+"en": "Grandpa runs every day and is full of energy."
+}
+]
+},
+{
+"word": "忙活",
+"s": [
+{
+"zh": "妈妈一早就在忙活。",
+"en": "Mum has been busy since early morning."
+},
+{
+"zh": "爸爸忙活了一天，要睡了。",
+"en": "Dad was busy all day and wants to sleep."
+}
+]
+},
+{
+"word": "宝宝",
+"s": [
+{
+"zh": "宝宝在睡觉。",
+"en": "The baby is sleeping."
+},
+{
+"zh": "阿姨的宝宝好可爱。",
+"en": "My aunt's baby is so cute."
+}
+]
+},
+{
+"word": "宝石",
+"s": [
+{
+"zh": "妈妈有一个红宝石。",
+"en": "Mum has a ruby."
+},
+{
+"zh": "宝石好亮啊！",
+"en": "The gem is so shiny!"
+}
+]
+},
+{
+"word": "宝贝",
+"s": [
+{
+"zh": "妈妈叫我小宝贝。",
+"en": "Mum calls me her little treasure."
+},
+{
+"zh": "这本书是我的宝贝。",
+"en": "This book is my treasure."
+}
+]
+},
+{
+"word": "洗澡",
+"s": [
+{
+"zh": "我每天晚上洗澡。",
+"en": "I take a bath every night."
+},
+{
+"zh": "妈妈在给小狗洗澡。",
+"en": "Mum is giving the puppy a bath."
+}
+]
+},
+{
+"word": "睡",
+"s": [
+{
+"zh": "你昨晚睡得好吗？",
+"en": "Did you sleep well last night?"
+},
+{
+"zh": "宝宝还在睡，小声点。",
+"en": "The baby is still sleeping, keep your voice down."
+}
+]
+},
+{
+"word": "午睡",
+"s": [
+{
+"zh": "弟弟每天都要午睡。",
+"en": "My little brother takes a nap every afternoon."
+},
+{
+"zh": "吃完午饭，奶奶去午睡了。",
+"en": "After lunch, Grandma went for a nap."
+}
+]
+},
+{
+"word": "睡着",
+"s": [
+{
+"zh": "小猫在我的床上睡着了。",
+"en": "The kitten fell asleep on my bed."
+},
+{
+"zh": "爸爸看书看到睡着了。",
+"en": "Dad fell asleep while reading."
+}
+]
+},
+{
+"word": "睡觉",
+"s": [
+{
+"zh": "我九点上床睡觉。",
+"en": "I go to bed at nine o'clock."
+},
+{
+"zh": "睡觉前要刷牙。",
+"en": "Brush your teeth before you sleep."
+}
+]
+},
+{
+"word": "觉得",
+"s": [
+{
+"zh": "我觉得这本书很好看。",
+"en": "I think this book is very good."
+},
+{
+"zh": "你觉得冷吗？",
+"en": "Do you feel cold?"
+}
+]
+},
+{
+"word": "羽毛球",
+"s": [
+{
+"zh": "我和爸爸打羽毛球。",
+"en": "I play badminton with Dad."
+},
+{
+"zh": "羽毛球掉到树上了。",
+"en": "The shuttlecock got stuck in the tree."
+}
+]
+},
+{
+"word": "乖",
+"s": [
+{
+"zh": "我家的小狗很乖。",
+"en": "Our puppy is very well-behaved."
+},
+{
+"zh": "弟弟今天很乖，没有哭。",
+"en": "My little brother was good today and did not cry."
+}
+]
+},
+{
+"word": "总是",
+"s": [
+{
+"zh": "哥哥总是第一个起床。",
+"en": "My big brother is always the first to get up."
+},
+{
+"zh": "妹妹总是跟着我。",
+"en": "My little sister always follows me around."
+}
+]
+},
+{
+"word": "总共",
+"s": [
+{
+"zh": "我们班总共有三十个人。",
+"en": "There are thirty people in our class altogether."
+},
+{
+"zh": "我总共有五支笔。",
+"en": "I have five pencils altogether."
+}
+]
+},
+{
+"word": "聪明",
+"s": [
+{
+"zh": "我的小狗很聪明。",
+"en": "My puppy is very clever."
+},
+{
+"zh": "姐姐很聪明，什么都会。",
+"en": "My big sister is clever and can do everything."
+}
+]
+},
+{
+"word": "金鱼",
+"s": [
+{
+"zh": "我家有三条金鱼。",
+"en": "We have three goldfish at home."
+},
+{
+"zh": "金鱼在水里游来游去。",
+"en": "The goldfish swim around in the water."
+}
+]
+},
+{
+"word": "漂亮",
+"s": [
+{
+"zh": "你的新衣服很漂亮。",
+"en": "Your new clothes are pretty."
+},
+{
+"zh": "公园里的花很漂亮。",
+"en": "The flowers in the park are beautiful."
+}
+]
+},
+{
+"word": "吐出",
+"s": [
+{
+"zh": "他把鱼骨吐出来了。",
+"en": "He spat out the fish bone."
+},
+{
+"zh": "宝宝把饭吐出来了。",
+"en": "The baby spat out the rice."
+}
+]
+},
+{
+"word": "吐口水",
+"s": [
+{
+"zh": "不可以吐口水。",
+"en": "You must not spit."
+},
+{
+"zh": "有人在地上吐口水，真不好。",
+"en": "Someone spat on the ground, which is not nice."
+}
+]
+},
+{
+"word": "宠物",
+"s": [
+{
+"zh": "你家有宠物吗？",
+"en": "Do you have a pet at home?"
+},
+{
+"zh": "我的宠物是一只小兔子。",
+"en": "My pet is a little rabbit."
+}
+]
+},
+{
+"word": "宠爱",
+"s": [
+{
+"zh": "奶奶很宠爱我。",
+"en": "Grandma dotes on me."
+},
+{
+"zh": "爷爷最宠爱小妹妹。",
+"en": "Grandpa dotes on my little sister the most."
+}
+]
+},
+{
+"word": "岛",
+"s": [
+{
+"zh": "我们在岛上玩沙子。",
+"en": "We play with sand on the island."
+},
+{
+"zh": "岛上有很多树。",
+"en": "There are lots of trees on the island."
+}
+]
+},
+{
+"word": "欺负",
+"s": [
+{
+"zh": "不可以欺负小动物。",
+"en": "Do not bully small animals."
+},
+{
+"zh": "哥哥从来不欺负我。",
+"en": "My big brother never bullies me."
+}
+]
+},
+{
+"word": "丢",
+"s": [
+{
+"zh": "我的笔丢了。",
+"en": "I lost my pen."
+},
+{
+"zh": "不要把纸丢在地上。",
+"en": "Don't throw paper on the floor."
+}
+]
+},
+{
+"word": "丢掉",
+"s": [
+{
+"zh": "这些坏了的玩具可以丢掉了。",
+"en": "These broken toys can be thrown away."
+},
+{
+"zh": "妈妈把旧衣服丢掉了。",
+"en": "Mum threw away the old clothes."
+}
+]
+},
+{
+"word": "梦",
+"s": [
+{
+"zh": "我的梦很奇怪。",
+"en": "My dream was very strange."
+},
+{
+"zh": "你的梦里有什么？",
+"en": "What was in your dream?"
+}
+]
+},
+{
+"word": "做梦",
+"s": [
+{
+"zh": "弟弟做梦都在笑。",
+"en": "My little brother smiles even in his dreams."
+},
+{
+"zh": "我昨晚做梦了，梦里有很多糖。",
+"en": "I had a dream last night with lots of sweets in it."
+}
+]
+},
+{
+"word": "梦想",
+"s": [
+{
+"zh": "我的梦想是做一个医生。",
+"en": "My dream is to be a doctor."
+},
+{
+"zh": "哥哥的梦想是去月亮上。",
+"en": "My big brother's dream is to go to the moon."
+}
+]
+},
+{
+"word": "梦见",
+"s": [
+{
+"zh": "我梦见了奶奶。",
+"en": "I dreamt about Grandma."
+},
+{
+"zh": "我梦见自己会飞。",
+"en": "I dreamt that I could fly."
+}
+]
+},
+{
+"word": "围",
+"s": [
+{
+"zh": "大家围在一起听故事。",
+"en": "Everyone gathered round to listen to a story."
+},
+{
+"zh": "小朋友围着老师唱歌。",
+"en": "The children sing in a circle around the teacher."
+}
+]
+},
+{
+"word": "周围",
+"s": [
+{
+"zh": "学校周围有很多树。",
+"en": "There are lots of trees around the school."
+},
+{
+"zh": "我看看周围，没有人。",
+"en": "I looked around, and there was nobody."
+}
+]
+},
+{
+"word": "围巾",
+"s": [
+{
+"zh": "天冷了，妈妈给我围上围巾。",
+"en": "It is cold, so Mum put a scarf on me."
+},
+{
+"zh": "奶奶送我一条红围巾。",
+"en": "Grandma gave me a red scarf."
+}
+]
+},
+{
+"word": "欢迎",
+"s": [
+{
+"zh": "欢迎你来我家玩！",
+"en": "Welcome, come and play at my home!"
+},
+{
+"zh": "大家拍手欢迎新同学。",
+"en": "Everyone clapped to welcome the new classmate."
+}
+]
+},
+{
+"word": "迎接",
+"s": [
+{
+"zh": "我们去机场迎接爷爷。",
+"en": "We went to the airport to meet Grandpa."
+},
+{
+"zh": "小狗跑到门口迎接我。",
+"en": "The puppy ran to the door to greet me."
+}
+]
+},
+{
+"word": "认识",
+"s": [
+{
+"zh": "我认识他，他是我的同学。",
+"en": "I know him, he is my classmate."
+},
+{
+"zh": "我认识很多字了。",
+"en": "I know lots of characters now."
+}
+]
+},
+{
+"word": "醒",
+"s": [
+{
+"zh": "我七点就醒了。",
+"en": "I woke up at seven o'clock."
+},
+{
+"zh": "别吵，宝宝还没醒。",
+"en": "Don't make noise, the baby is not awake yet."
+}
+]
+},
+{
+"word": "难",
+"s": [
+{
+"zh": "这个字很难写。",
+"en": "This character is hard to write."
+},
+{
+"zh": "学游泳不难。",
+"en": "Learning to swim is not hard."
+}
+]
+},
+{
+"word": "难看",
+"s": [
+{
+"zh": "这件衣服很难看。",
+"en": "This piece of clothing is ugly."
+},
+{
+"zh": "我画的猫好难看。",
+"en": "The cat I drew looks awful."
+}
+]
+},
+{
+"word": "难过",
+"s": [
+{
+"zh": "小狗病了，我很难过。",
+"en": "My puppy is sick, and I feel sad."
+},
+{
+"zh": "好朋友走了，妹妹很难过。",
+"en": "Her good friend left, and my little sister is sad."
+}
+]
+},
+{
+"word": "难忘",
+"s": [
+{
+"zh": "这是一个难忘的生日。",
+"en": "This was an unforgettable birthday."
+},
+{
+"zh": "去海边玩的那天真难忘。",
+"en": "The day we played at the beach was unforgettable."
+}
+]
+},
+{
+"word": "很难说",
+"s": [
+{
+"zh": "明天会不会下雨，很难说。",
+"en": "It is hard to say whether it will rain tomorrow."
+},
+{
+"zh": "谁会是第一，很难说。",
+"en": "It is hard to say who will come first."
+}
+]
+},
+{
+"word": "粗",
+"s": [
+{
+"zh": "这根树枝很粗。",
+"en": "This branch is thick."
+},
+{
+"zh": "爸爸的手指很粗。",
+"en": "Dad's fingers are thick."
+}
+]
+},
+{
+"word": "粗心",
+"s": [
+{
+"zh": "弟弟很粗心，又丢了笔。",
+"en": "My little brother is careless and lost his pen again."
+},
+{
+"zh": "考试的时候不要粗心。",
+"en": "Don't be careless during a test."
+}
+]
+},
+{
+"word": "细",
+"s": [
+{
+"zh": "这根面很细。",
+"en": "This noodle is very thin."
+},
+{
+"zh": "这条绳子很细。",
+"en": "This rope is very thin."
+}
+]
+},
+{
+"word": "抢",
+"s": [
+{
+"zh": "不要抢弟弟的玩具。",
+"en": "Don't snatch your little brother's toy."
+},
+{
+"zh": "小狗抢了我的球。",
+"en": "The puppy grabbed my ball."
+}
+]
+},
+{
+"word": "推",
+"s": [
+{
+"zh": "我帮奶奶推车。",
+"en": "I help Grandma push the cart."
+},
+{
+"zh": "排队的时候不要推别人。",
+"en": "Don't push others when lining up."
+}
+]
+},
+{
+"word": "讨厌",
+"s": [
+{
+"zh": "我讨厌下雨天。",
+"en": "I hate rainy days."
+},
+{
+"zh": "弟弟讨厌吃青菜。",
+"en": "My little brother hates eating vegetables."
+}
+]
+},
+{
+"word": "争",
+"s": [
+{
+"zh": "两个人在争一个球。",
+"en": "Two people are fighting over a ball."
+},
+{
+"zh": "我们不要争，一起玩吧。",
+"en": "Let's not fight, let's play together."
+}
+]
+},
+{
+"word": "吵",
+"s": [
+{
+"zh": "外面太吵了。",
+"en": "It's too noisy outside."
+},
+{
+"zh": "哥哥和姐姐又吵了。",
+"en": "Big brother and big sister argued again."
+}
+]
+},
+{
+"word": "争吵",
+"s": [
+{
+"zh": "他们为了一个球争吵。",
+"en": "They quarrelled over a ball."
+},
+{
+"zh": "我不喜欢和朋友争吵。",
+"en": "I don't like quarrelling with friends."
+}
+]
+},
+{
+"word": "弄",
+"s": [
+{
+"zh": "你在弄什么？",
+"en": "What are you doing?"
+},
+{
+"zh": "妈妈在弄早饭。",
+"en": "Mum is making breakfast."
+}
+]
+},
+{
+"word": "弄坏",
+"s": [
+{
+"zh": "弟弟弄坏了我的玩具。",
+"en": "My little brother broke my toy."
+},
+{
+"zh": "我不小心弄坏了杯子。",
+"en": "I accidentally broke the cup."
+}
+]
+},
+{
+"word": "破",
+"s": [
+{
+"zh": "我的衣服破了。",
+"en": "My clothes are torn."
+},
+{
+"zh": "我的球破了，不能玩了。",
+"en": "My ball is broken and I can't play with it."
+}
+]
+},
+{
+"word": "打破",
+"s": [
+{
+"zh": "我打破了一个碗。",
+"en": "I broke a bowl."
+},
+{
+"zh": "他的球打破了窗。",
+"en": "His ball broke the window."
+}
+]
+},
+{
+"word": "破坏",
+"s": [
+{
+"zh": "不要破坏公园的花。",
+"en": "Don't damage the flowers in the park."
+},
+{
+"zh": "大风破坏了很多树。",
+"en": "The strong wind damaged many trees."
+}
+]
+},
+{
+"word": "撞",
+"s": [
+{
+"zh": "我撞到了门上。",
+"en": "I bumped into the door."
+},
+{
+"zh": "他跑太快，撞到了我。",
+"en": "He ran too fast and bumped into me."
+}
+]
+},
+{
+"word": "倒",
+"s": [
+{
+"zh": "风太大，树倒了。",
+"en": "The wind was too strong and the tree fell down."
+},
+{
+"zh": "杯子倒了，水流了一地。",
+"en": "The cup fell over and water spilled everywhere."
+}
+]
+},
+{
+"word": "伤",
+"s": [
+{
+"zh": "我的脚伤了。",
+"en": "My foot is hurt."
+},
+{
+"zh": "小鸟伤了，不能飞了。",
+"en": "The little bird is hurt and can't fly."
+}
+]
+},
+{
+"word": "伤心",
+"s": [
+{
+"zh": "小猫不见了，她很伤心。",
+"en": "Her kitten is missing and she is very sad."
+},
+{
+"zh": "不要伤心，我们明天再玩。",
+"en": "Don't be sad, we'll play again tomorrow."
+}
+]
+},
+{
+"word": "伤害",
+"s": [
+{
+"zh": "不要伤害小动物。",
+"en": "Don't hurt small animals."
+},
+{
+"zh": "说坏话会伤害别人。",
+"en": "Saying mean things can hurt others."
+}
+]
+},
+{
+"word": "容易",
+"s": [
+{
+"zh": "这个字很容易写。",
+"en": "This character is easy to write."
+},
+{
+"zh": "吃太多糖容易生病。",
+"en": "Eating too much sugar can easily make you sick."
+}
+]
+},
+{
+"word": "形容",
+"s": [
+{
+"zh": "你能形容一下你的猫吗？",
+"en": "Can you describe your cat?"
+},
+{
+"zh": "我不知道怎么形容。",
+"en": "I don't know how to describe it."
+}
+]
+},
+{
+"word": "能",
+"s": [
+{
+"zh": "我能自己穿衣服。",
+"en": "I can dress myself."
+},
+{
+"zh": "你能帮我一下吗？",
+"en": "Can you help me?"
+}
+]
+},
+{
+"word": "只能",
+"s": [
+{
+"zh": "下雨了，我们只能在家玩。",
+"en": "It's raining, so we can only play at home."
+},
+{
+"zh": "我只能吃一块饼。",
+"en": "I can only eat one biscuit."
+}
+]
+},
+{
+"word": "可能",
+"s": [
+{
+"zh": "明天可能会下雨。",
+"en": "It might rain tomorrow."
+},
+{
+"zh": "他可能还在睡觉。",
+"en": "He might still be sleeping."
+}
+]
+},
+{
+"word": "水晶",
+"s": [
+{
+"zh": "姐姐有一个水晶球。",
+"en": "My big sister has a crystal ball."
+},
+{
+"zh": "这块水晶很漂亮。",
+"en": "This crystal is very pretty."
+}
+]
+},
+{
+"word": "味道",
+"s": [
+{
+"zh": "这个汤的味道很好。",
+"en": "This soup tastes good."
+},
+{
+"zh": "这是什么味道？",
+"en": "What is this smell?"
+}
+]
+},
+{
+"word": "跑道",
+"s": [
+{
+"zh": "我们在跑道上跑步。",
+"en": "We run on the track."
+},
+{
+"zh": "学校的跑道是红色的。",
+"en": "The school's running track is red."
+}
+]
+},
+{
+"word": "彩虹",
+"s": [
+{
+"zh": "雨后天上有彩虹。",
+"en": "After the rain there is a rainbow in the sky."
+},
+{
+"zh": "彩虹有七种颜色。",
+"en": "A rainbow has seven colours."
+}
+]
+},
+{
+"word": "茄子",
+"s": [
+{
+"zh": "我不喜欢吃茄子。",
+"en": "I don't like eating eggplant."
+},
+{
+"zh": "妈妈买了两个茄子。",
+"en": "Mum bought two eggplants."
+}
+]
+},
+{
+"word": "紫色",
+"s": [
+{
+"zh": "我的书包是紫色的。",
+"en": "My schoolbag is purple."
+},
+{
+"zh": "茄子是紫色的。",
+"en": "Eggplants are purple."
+}
+]
+},
+{
+"word": "紫花",
+"s": [
+{
+"zh": "山上有很多紫花。",
+"en": "There are many purple flowers on the hill."
+},
+{
+"zh": "妹妹画了一朵紫花。",
+"en": "My little sister drew a purple flower."
+}
+]
+},
+{
+"word": "番茄",
+"s": [
+{
+"zh": "番茄是红色的。",
+"en": "Tomatoes are red."
+},
+{
+"zh": "妈妈做了番茄炒蛋。",
+"en": "Mum made tomato and scrambled eggs."
+}
+]
+},
+{
+"word": "芽",
+"s": [
+{
+"zh": "种子发芽了。",
+"en": "The seed has sprouted."
+},
+{
+"zh": "豆子长出了小芽。",
+"en": "The beans have grown little sprouts."
+}
+]
+},
+{
+"word": "扁扁的",
+"s": [
+{
+"zh": "这个饼扁扁的。",
+"en": "This pancake is flat."
+},
+{
+"zh": "鱼的身体扁扁的。",
+"en": "The fish's body is flat."
+}
+]
+},
+{
+"word": "玉",
+"s": [
+{
+"zh": "奶奶有一块玉。",
+"en": "Grandma has a piece of jade."
+},
+{
+"zh": "这块玉是绿色的。",
+"en": "This piece of jade is green."
+}
+]
+},
+{
+"word": "玉米",
+"s": [
+{
+"zh": "我喜欢吃玉米。",
+"en": "I like eating corn."
+},
+{
+"zh": "爸爸买了三根玉米。",
+"en": "Dad bought three cobs of corn."
+}
+]
+},
+{
+"word": "比",
+"s": [
+{
+"zh": "我比弟弟高。",
+"en": "I am taller than my little brother."
+},
+{
+"zh": "哥哥跑得比我快。",
+"en": "My big brother runs faster than me."
+}
+]
+},
+{
+"word": "伯伯",
+"s": [
+{
+"zh": "伯伯来我家吃饭。",
+"en": "Uncle comes to our home for dinner."
+},
+{
+"zh": "伯伯给我买了一个球。",
+"en": "Uncle bought me a ball."
+}
+]
+},
+{
+"word": "伯母",
+"s": [
+{
+"zh": "伯母做的菜很好吃。",
+"en": "Auntie's cooking is delicious."
+},
+{
+"zh": "我们去伯母家玩。",
+"en": "We go to Auntie's house to play."
+}
+]
+},
+{
+"word": "伯父",
+"s": [
+{
+"zh": "伯父是一位医生。",
+"en": "My uncle is a doctor."
+},
+{
+"zh": "伯父住在很远的地方。",
+"en": "My uncle lives far away."
+}
+]
+},
+{
+"word": "萝卜",
+"s": [
+{
+"zh": "兔子爱吃萝卜。",
+"en": "Rabbits love eating radishes."
+},
+{
+"zh": "奶奶用萝卜煮汤。",
+"en": "Grandma makes soup with radish."
+}
+]
+},
+{
+"word": "煮",
+"s": [
+{
+"zh": "妈妈在煮汤。",
+"en": "Mum is cooking soup."
+},
+{
+"zh": "我们一起煮鸡蛋吧。",
+"en": "Let's boil some eggs together."
+}
+]
+},
+{
+"word": "煮面",
+"s": [
+{
+"zh": "爸爸给我煮面吃。",
+"en": "Dad cooks noodles for me."
+},
+{
+"zh": "我会自己煮面了。",
+"en": "I can cook noodles by myself now."
+}
+]
+},
+{
+"word": "煮饭",
+"s": [
+{
+"zh": "奶奶每天都煮饭。",
+"en": "Grandma cooks rice every day."
+},
+{
+"zh": "今天我帮妈妈煮饭。",
+"en": "Today I helped Mum cook rice."
+}
+]
+},
+{
+"word": "鼠",
+"s": [
+{
+"zh": "我看见一只小老鼠。",
+"en": "I saw a little mouse."
+},
+{
+"zh": "猫在后面追老鼠。",
+"en": "The cat is chasing the mouse."
+}
+]
+},
+{
+"word": "或许",
+"s": [
+{
+"zh": "明天或许会下雨。",
+"en": "It might rain tomorrow."
+},
+{
+"zh": "他或许在家里。",
+"en": "He might be at home."
+}
+]
+},
+{
+"word": "或者",
+"s": [
+{
+"zh": "我们可以去公园或者去游泳。",
+"en": "We can go to the park or go swimming."
+},
+{
+"zh": "周末我画画或者看书。",
+"en": "On weekends I draw or read."
+}
+]
+},
+{
+"word": "记者",
+"s": [
+{
+"zh": "记者来我们学校了。",
+"en": "A reporter came to our school."
+},
+{
+"zh": "我的姨妈是记者。",
+"en": "My aunt is a reporter."
+}
+]
+},
+{
+"word": "猪",
+"s": [
+{
+"zh": "猪很爱睡觉。",
+"en": "Pigs love to sleep."
+},
+{
+"zh": "我画了一只大猪。",
+"en": "I drew a big pig."
+}
+]
+},
+{
+"word": "小猪",
+"s": [
+{
+"zh": "小猪在泥里玩。",
+"en": "The piglet plays in the mud."
+},
+{
+"zh": "故事里有三只小猪。",
+"en": "There are three little pigs in the story."
+}
+]
+},
+{
+"word": "猪肉",
+"s": [
+{
+"zh": "妈妈买了猪肉。",
+"en": "Mum bought some pork."
+},
+{
+"zh": "我爱吃猪肉面。",
+"en": "I love eating pork noodles."
+}
+]
+},
+{
+"word": "拔",
+"s": [
+{
+"zh": "爷爷在花园里拔草。",
+"en": "Grandpa is pulling weeds in the garden."
+},
+{
+"zh": "医生帮我拔了牙。",
+"en": "The doctor pulled out my tooth."
+}
+]
+},
+{
+"word": "摘",
+"s": [
+{
+"zh": "我们去摘果子。",
+"en": "We go to pick fruit."
+},
+{
+"zh": "别摘公园的花。",
+"en": "Don't pick the flowers in the park."
+}
+]
+},
+{
+"word": "摘下",
+"s": [
+{
+"zh": "她从树上摘下一个果子。",
+"en": "She picked a fruit from the tree."
+},
+{
+"zh": "姐姐摘下一朵花给妈妈。",
+"en": "My older sister picked a flower for Mum."
+}
+]
+},
+{
+"word": "摘花",
+"s": [
+{
+"zh": "公园里不能摘花。",
+"en": "You can't pick flowers in the park."
+},
+{
+"zh": "妹妹在家里的花园摘花。",
+"en": "My younger sister is picking flowers in our garden."
+}
+]
+},
+{
+"word": "挖",
+"s": [
+{
+"zh": "小狗在地上挖土。",
+"en": "The puppy is digging in the soil."
+},
+{
+"zh": "我在沙池里挖沙。",
+"en": "I dig in the sand in the sandpit."
+}
+]
+},
+{
+"word": "考",
+"s": [
+{
+"zh": "明天要考中文。",
+"en": "We have a Chinese test tomorrow."
+},
+{
+"zh": "我这次考得很好。",
+"en": "I did well in this test."
+}
+]
+},
+{
+"word": "考试",
+"s": [
+{
+"zh": "明天有考试。",
+"en": "There is an exam tomorrow."
+},
+{
+"zh": "考试的时候要安静。",
+"en": "You must be quiet during exams."
+}
+]
+},
+{
+"word": "根",
+"s": [
+{
+"zh": "这棵树的根很长。",
+"en": "This tree's roots are very long."
+},
+{
+"zh": "小草的根在土里。",
+"en": "The grass roots are in the soil."
+}
+]
+},
+{
+"word": "结实",
+"s": [
+{
+"zh": "这张桌子很结实。",
+"en": "This table is very sturdy."
+},
+{
+"zh": "哥哥的身体很结实。",
+"en": "My older brother is very strong and healthy."
+}
+]
+},
+{
+"word": "主持",
+"s": [
+{
+"zh": "姐姐主持了学校的晚会。",
+"en": "My older sister hosted the school's evening show."
+},
+{
+"zh": "老师叫我主持班会。",
+"en": "The teacher asked me to lead the class meeting."
+}
+]
+},
+{
+"word": "保持",
+"s": [
+{
+"zh": "我们要保持安静。",
+"en": "We must keep quiet."
+},
+{
+"zh": "请保持教室干净。",
+"en": "Please keep the classroom clean."
+}
+]
+},
+{
+"word": "支持",
+"s": [
+{
+"zh": "爸爸妈妈都支持我。",
+"en": "Mum and Dad both support me."
+},
+{
+"zh": "我支持我们班的球队。",
+"en": "I support our class team."
+}
+]
+},
+{
+"word": "静",
+"s": [
+{
+"zh": "晚上的公园很静。",
+"en": "The park is very quiet at night."
+},
+{
+"zh": "图书馆里很静。",
+"en": "It is quiet in the library."
+}
+]
+},
+{
+"word": "安静",
+"s": [
+{
+"zh": "请大家安静。",
+"en": "Everyone, please be quiet."
+},
+{
+"zh": "小宝宝睡着了，要安静。",
+"en": "The baby is asleep, so be quiet."
+}
+]
+},
+{
+"word": "冷静",
+"s": [
+{
+"zh": "别急，先冷静一下。",
+"en": "Don't panic, calm down first."
+},
+{
+"zh": "他很生气，可是很快冷静下来。",
+"en": "He was angry but calmed down quickly."
+}
+]
+},
+{
+"word": "平静",
+"s": [
+{
+"zh": "河水很平静。",
+"en": "The river is very calm."
+},
+{
+"zh": "听了妈妈的话，我的心平静了。",
+"en": "After hearing Mum's words, I felt calm."
+}
+]
+},
+{
+"word": "绘画",
+"s": [
+{
+"zh": "我喜欢绘画。",
+"en": "I like drawing."
+},
+{
+"zh": "姐姐在学绘画。",
+"en": "My older sister is learning to paint."
+}
+]
+},
+{
+"word": "绘声绘色",
+"s": [
+{
+"zh": "爷爷讲故事讲得绘声绘色。",
+"en": "Grandpa tells stories very vividly."
+},
+{
+"zh": "她把这件事说得绘声绘色。",
+"en": "She described what happened very vividly."
+}
+]
+},
+{
+"word": "乐趣",
+"s": [
+{
+"zh": "画画带给我很多乐趣。",
+"en": "Drawing gives me a lot of joy."
+},
+{
+"zh": "和朋友玩是很大的乐趣。",
+"en": "Playing with friends is great fun."
+}
+]
+},
+{
+"word": "兴趣",
+"s": [
+{
+"zh": "我对画画很有兴趣。",
+"en": "I am very interested in drawing."
+},
+{
+"zh": "弟弟对小虫子有兴趣。",
+"en": "My little brother is interested in insects."
+}
+]
+},
+{
+"word": "有趣",
+"s": [
+{
+"zh": "这个游戏很有趣。",
+"en": "This game is very interesting."
+},
+{
+"zh": "爷爷讲的故事很有趣。",
+"en": "Grandpa's stories are very fun."
+}
+]
+},
+{
+"word": "借",
+"s": [
+{
+"zh": "我可以借你的笔吗？",
+"en": "Can I borrow your pen?"
+},
+{
+"zh": "我从图书馆借了两本书。",
+"en": "I borrowed two books from the library."
+}
+]
+},
+{
+"word": "借口",
+"s": [
+{
+"zh": "别找借口了！",
+"en": "Stop making excuses!"
+},
+{
+"zh": "他总是有借口。",
+"en": "He always has an excuse."
+}
+]
+},
+{
+"word": "次",
+"s": [
+{
+"zh": "我去过两次动物园。",
+"en": "I have been to the zoo twice."
+},
+{
+"zh": "这是我第一次坐船。",
+"en": "This is my first time on a boat."
+}
+]
+},
+{
+"word": "上次",
+"s": [
+{
+"zh": "上次我们去了海边。",
+"en": "Last time we went to the beach."
+},
+{
+"zh": "上次的考试我考得很好。",
+"en": "I did well in the last test."
+}
+]
+},
+{
+"word": "下次",
+"s": [
+{
+"zh": "下次我们再来玩。",
+"en": "Next time we will come and play again."
+},
+{
+"zh": "下次别忘了带伞。",
+"en": "Don't forget your umbrella next time."
+}
+]
+},
+{
+"word": "又一次",
+"s": [
+{
+"zh": "他又一次考了一百分。",
+"en": "He scored a hundred marks once again."
+},
+{
+"zh": "小狗又一次跑出去了。",
+"en": "The puppy ran out once again."
+}
+]
+},
+{
+"word": "英文",
+"s": [
+{
+"zh": "这本书是英文的。",
+"en": "This book is in English."
+},
+{
+"zh": "姐姐英文说得好好。",
+"en": "My older sister speaks English really well."
+}
+]
+},
+{
+"word": "英语",
+"s": [
+{
+"zh": "我们今天有英语课。",
+"en": "We have English class today."
+},
+{
+"zh": "你会说英语吗？",
+"en": "Can you speak English?"
+}
+]
+},
+{
+"word": "遍",
+"s": [
+{
+"zh": "我找遍了家里，都没有。",
+"en": "I searched the whole house but could not find it."
+},
+{
+"zh": "他找遍了公园，找到了小狗。",
+"en": "He searched all over the park and found the puppy."
+}
+]
+},
+{
+"word": "遍地",
+"s": [
+{
+"zh": "遍地都是花。",
+"en": "There are flowers everywhere."
+},
+{
+"zh": "下雨后遍地都是水。",
+"en": "After the rain there is water everywhere."
+}
+]
+},
+{
+"word": "书架",
+"s": [
+{
+"zh": "书架上有好多书。",
+"en": "There are lots of books on the bookshelf."
+},
+{
+"zh": "我把书放回书架。",
+"en": "I put the book back on the bookshelf."
+}
+]
+},
+{
+"word": "吵架",
+"s": [
+{
+"zh": "弟弟和妹妹又吵架了。",
+"en": "My little brother and sister are quarrelling again."
+},
+{
+"zh": "好朋友不要吵架。",
+"en": "Good friends should not quarrel."
+}
+]
+},
+{
+"word": "衣架",
+"s": [
+{
+"zh": "衣架在哪里？",
+"en": "Where is the clothes hanger?"
+},
+{
+"zh": "请你拿几个衣架给我。",
+"en": "Please bring me a few clothes hangers."
+}
+]
+},
+{
+"word": "冰箱",
+"s": [
+{
+"zh": "冰箱里有牛奶。",
+"en": "There is milk in the fridge."
+},
+{
+"zh": "把西瓜放进冰箱吧。",
+"en": "Put the watermelon in the fridge."
+}
+]
+},
+{
+"word": "箱子",
+"s": [
+{
+"zh": "这个箱子好重！",
+"en": "This box is so heavy!"
+},
+{
+"zh": "我们把衣服放进箱子里。",
+"en": "We put the clothes into the suitcase."
+}
+]
+},
+{
+"word": "盒子",
+"s": [
+{
+"zh": "盒子里有什么？",
+"en": "What is in the box?"
+},
+{
+"zh": "这个盒子是送给你的。",
+"en": "This box is a present for you."
+}
+]
+},
+{
+"word": "盒饭",
+"s": [
+{
+"zh": "今天中午我们吃盒饭。",
+"en": "We are having boxed lunches today."
+},
+{
+"zh": "爸爸在车上吃盒饭。",
+"en": "Dad eats a boxed meal in the car."
+}
+]
+},
+{
+"word": "图案",
+"s": [
+{
+"zh": "这件衣服的图案好美。",
+"en": "The pattern on this shirt is beautiful."
+},
+{
+"zh": "我在纸上画了一个图案。",
+"en": "I drew a pattern on the paper."
+}
+]
+},
+{
+"word": "答案",
+"s": [
+{
+"zh": "我想到了答案！",
+"en": "I thought of the answer!"
+},
+{
+"zh": "老师说我的答案对了。",
+"en": "The teacher said my answer was right."
+}
+]
+},
+{
+"word": "近",
+"s": [
+{
+"zh": "我家离学校好近。",
+"en": "My home is very near the school."
+},
+{
+"zh": "别站太近，小心！",
+"en": "Don't stand too close, be careful!"
+}
+]
+},
+{
+"word": "最近",
+"s": [
+{
+"zh": "最近天气好热。",
+"en": "The weather has been very hot recently."
+},
+{
+"zh": "最近我在学游泳。",
+"en": "Recently I have been learning to swim."
+}
+]
+},
+{
+"word": "接近",
+"s": [
+{
+"zh": "小鸟怕人，我不能接近它。",
+"en": "The little bird is scared of people, so I cannot get close to it."
+},
+{
+"zh": "现在接近八点了。",
+"en": "It is almost eight o'clock now."
+}
+]
+},
+{
+"word": "附近",
+"s": [
+{
+"zh": "我家附近有一个公园。",
+"en": "There is a park near my home."
+},
+{
+"zh": "附近有小贩中心吗？",
+"en": "Is there a hawker centre nearby?"
+}
+]
+},
+{
+"word": "满",
+"s": [
+{
+"zh": "杯子里的水满了。",
+"en": "The cup is full of water."
+},
+{
+"zh": "车上坐满了人。",
+"en": "The bus is full of people."
+}
+]
+},
+{
+"word": "开始",
+"s": [
+{
+"zh": "我们开始上课了。",
+"en": "We are starting the lesson."
+},
+{
+"zh": "电影开始了，快坐好。",
+"en": "The movie is starting, sit down quickly."
+}
+]
+},
+{
+"word": "一样",
+"s": [
+{
+"zh": "我和哥哥一样高。",
+"en": "My older brother and I are the same height."
+},
+{
+"zh": "我们的书包一样。",
+"en": "Our school bags are the same."
+}
+]
+},
+{
+"word": "同样",
+"s": [
+{
+"zh": "我想要同样的饼干。",
+"en": "I want the same biscuits."
+},
+{
+"zh": "她和我穿了同样的鞋。",
+"en": "She and I wore the same shoes."
+}
+]
+},
+{
+"word": "怎样",
+"s": [
+{
+"zh": "你怎样去学校？",
+"en": "How do you go to school?"
+},
+{
+"zh": "这个字怎样写？",
+"en": "How do you write this character?"
+}
+]
+},
+{
+"word": "那样",
+"s": [
+{
+"zh": "我想像他那样跑得快。",
+"en": "I want to run as fast as he does."
+},
+{
+"zh": "你不可以那样说话。",
+"en": "You should not talk like that."
+}
+]
+},
+{
+"word": "时候",
+"s": [
+{
+"zh": "你什么时候回来？",
+"en": "When will you come back?"
+},
+{
+"zh": "我小时候好怕狗。",
+"en": "When I was little I was scared of dogs."
+}
+]
+},
+{
+"word": "气候",
+"s": [
+{
+"zh": "新加坡的气候好热。",
+"en": "Singapore's climate is very hot."
+},
+{
+"zh": "那里的气候比这里冷。",
+"en": "The climate there is colder than here."
+}
+]
+},
+{
+"word": "问候",
+"s": [
+{
+"zh": "请帮我问候你的妈妈。",
+"en": "Please say hello to your mom for me."
+},
+{
+"zh": "我们去问候爷爷奶奶。",
+"en": "We go to pay our respects to Grandpa and Grandma."
+}
+]
+},
+{
+"word": "知识",
+"s": [
+{
+"zh": "书里有好多知识。",
+"en": "There is lots of knowledge in books."
+},
+{
+"zh": "老师教给我们好多知识。",
+"en": "The teacher teaches us lots of things."
+}
+]
+},
+{
+"word": "知道",
+"s": [
+{
+"zh": "你知道他在哪里吗？",
+"en": "Do you know where he is?"
+},
+{
+"zh": "妈妈知道我饿了。",
+"en": "Mum knows I am hungry."
+}
+]
+},
+{
+"word": "谁知道",
+"s": [
+{
+"zh": "谁知道这个字怎么读？",
+"en": "Who knows how to read this character?"
+},
+{
+"zh": "谁知道小猫去哪里了？",
+"en": "Who knows where the kitten went?"
+}
+]
+},
+{
+"word": "指",
+"s": [
+{
+"zh": "弟弟指着天上的飞机。",
+"en": "My little brother points at the plane in the sky."
+},
+{
+"zh": "妈妈指了指门口。",
+"en": "Mum pointed at the door."
+}
+]
+},
+{
+"word": "手指",
+"s": [
+{
+"zh": "我有十个手指。",
+"en": "I have ten fingers."
+},
+{
+"zh": "宝宝抓住我的手指。",
+"en": "The baby grabs my finger."
+}
+]
+},
+{
+"word": "指出",
+"s": [
+{
+"zh": "老师指出我写的字不对。",
+"en": "The teacher pointed out that my character was wrong."
+},
+{
+"zh": "同学指出我的书包没关好。",
+"en": "A classmate pointed out that my school bag was not closed."
+}
+]
+},
+{
+"word": "指甲",
+"s": [
+{
+"zh": "我的指甲太长了。",
+"en": "My fingernails are too long."
+},
+{
+"zh": "妈妈帮我剪指甲。",
+"en": "Mum helps me cut my fingernails."
+}
+]
+},
+{
+"word": "逛",
+"s": [
+{
+"zh": "我们去商场逛一逛。",
+"en": "Let's go and look around the mall."
+},
+{
+"zh": "周末我和妈妈去逛街。",
+"en": "On the weekend Mum and I go shopping."
+}
+]
+},
+{
+"word": "逛公园",
+"s": [
+{
+"zh": "我们晚上去逛公园。",
+"en": "We go for a walk in the park in the evening."
+},
+{
+"zh": "爷爷喜欢逛公园。",
+"en": "Grandpa likes strolling in the park."
+}
+]
+},
+{
+"word": "夜",
+"s": [
+{
+"zh": "夜里下了大雨。",
+"en": "It rained heavily during the night."
+},
+{
+"zh": "夜里我听到猫在叫。",
+"en": "At night I heard a cat meowing."
+}
+]
+},
+{
+"word": "半夜",
+"s": [
+{
+"zh": "半夜里，我听到了雷声。",
+"en": "In the middle of the night, I heard thunder."
+},
+{
+"zh": "弟弟半夜醒来哭了。",
+"en": "My little brother woke up at midnight and cried."
+}
+]
+},
+{
+"word": "夜里",
+"s": [
+{
+"zh": "夜里下了一场大雨。",
+"en": "It rained heavily during the night."
+},
+{
+"zh": "夜里外面很静。",
+"en": "It is very quiet outside at night."
+}
+]
+},
+{
+"word": "黑夜",
+"s": [
+{
+"zh": "黑夜里，天上有很多星星。",
+"en": "In the dark night, there are many stars in the sky."
+},
+{
+"zh": "我不怕黑夜。",
+"en": "I am not afraid of the night."
+}
+]
+},
+{
+"word": "菜市场",
+"s": [
+{
+"zh": "我和奶奶去菜市场买菜。",
+"en": "Grandma and I go to the market to buy vegetables."
+},
+{
+"zh": "菜市场里人很多。",
+"en": "There are lots of people at the wet market."
+}
+]
+},
+{
+"word": "烤",
+"s": [
+{
+"zh": "爸爸在烤鸡翅。",
+"en": "Dad is grilling chicken wings."
+},
+{
+"zh": "妈妈在烤蛋糕。",
+"en": "Mum is baking a cake."
+}
+]
+},
+{
+"word": "烤肉",
+"s": [
+{
+"zh": "我们在公园里烤肉。",
+"en": "We are having a barbecue in the park."
+},
+{
+"zh": "烤肉好香啊！",
+"en": "The roast meat smells so good!"
+}
+]
+},
+{
+"word": "烤鸭",
+"s": [
+{
+"zh": "爷爷爱吃烤鸭。",
+"en": "Grandpa loves roast duck."
+},
+{
+"zh": "我们晚上去吃烤鸭。",
+"en": "We are going to eat roast duck tonight."
+}
+]
+},
+{
+"word": "香肠",
+"s": [
+{
+"zh": "我早餐吃了两根香肠。",
+"en": "I ate two sausages for breakfast."
+},
+{
+"zh": "爸爸在烤香肠。",
+"en": "Dad is grilling sausages."
+}
+]
+},
+{
+"word": "心肠",
+"s": [
+{
+"zh": "王阿姨的心肠很好。",
+"en": "Auntie Wang is very kind-hearted."
+},
+{
+"zh": "奶奶是一个好心肠的人。",
+"en": "Grandma is a kind-hearted person."
+}
+]
+},
+{
+"word": "碰",
+"s": [
+{
+"zh": "别碰我的画！",
+"en": "Don't touch my drawing!"
+},
+{
+"zh": "我的手碰了一下热汤。",
+"en": "My hand touched the hot soup."
+}
+]
+},
+{
+"word": "碰到",
+"s": [
+{
+"zh": "我在路上碰到了老师。",
+"en": "I ran into my teacher on the way."
+},
+{
+"zh": "我的头碰到了门。",
+"en": "My head bumped into the door."
+}
+]
+},
+{
+"word": "碰见",
+"s": [
+{
+"zh": "我在商场碰见了同学。",
+"en": "I bumped into a classmate at the mall."
+},
+{
+"zh": "昨天我碰见了王阿姨。",
+"en": "Yesterday I ran into Auntie Wang."
+}
+]
+},
+{
+"word": "饮料",
+"s": [
+{
+"zh": "我想喝一杯饮料。",
+"en": "I want to have a drink."
+},
+{
+"zh": "妈妈说饮料太甜了。",
+"en": "Mum says the drinks are too sweet."
+}
+]
+},
+{
+"word": "踢",
+"s": [
+{
+"zh": "弟弟踢了我一下。",
+"en": "My little brother kicked me."
+},
+{
+"zh": "他把球踢进了门。",
+"en": "He kicked the ball into the goal."
+}
+]
+},
+{
+"word": "踢球",
+"s": [
+{
+"zh": "我们放学后去踢球。",
+"en": "We play football after school."
+},
+{
+"zh": "哥哥踢球踢得很好。",
+"en": "My big brother plays football very well."
+}
+]
+},
+{
+"word": "踢足球",
+"s": [
+{
+"zh": "我和爸爸去踢足球。",
+"en": "Dad and I go to play football."
+},
+{
+"zh": "我最喜欢踢足球。",
+"en": "I like playing football the most."
+}
+]
+},
+{
+"word": "风筝",
+"s": [
+{
+"zh": "我们在公园放风筝。",
+"en": "We fly kites in the park."
+},
+{
+"zh": "我的风筝飞得很高。",
+"en": "My kite flies very high."
+}
+]
+},
+{
+"word": "但",
+"s": [
+{
+"zh": "我很想去，但下雨了。",
+"en": "I really want to go, but it is raining."
+},
+{
+"zh": "他个子小，但跑得很快。",
+"en": "He is small, but he runs very fast."
+}
+]
+},
+{
+"word": "不但",
+"s": [
+{
+"zh": "他不但会唱歌，还会跳舞。",
+"en": "He can not only sing but also dance."
+},
+{
+"zh": "这个西瓜不但大，还很甜。",
+"en": "This watermelon is not only big but also sweet."
+}
+]
+},
+{
+"word": "但是",
+"s": [
+{
+"zh": "我想吃糖，但是妈妈不让。",
+"en": "I want to eat sweets, but Mum won't let me."
+},
+{
+"zh": "天很冷，但是我不怕。",
+"en": "It is very cold, but I am not afraid."
+}
+]
+},
+{
+"word": "但愿",
+"s": [
+{
+"zh": "但愿明天不下雨。",
+"en": "I hope it won't rain tomorrow."
+},
+{
+"zh": "但愿奶奶的病快点好。",
+"en": "I hope Grandma gets well soon."
+}
+]
+},
+{
+"word": "闹",
+"s": [
+{
+"zh": "外面很闹，我睡不着。",
+"en": "It is so noisy outside that I can't sleep."
+},
+{
+"zh": "弟弟又在哭闹了。",
+"en": "My little brother is crying and fussing again."
+}
+]
+},
+{
+"word": "热闹",
+"s": [
+{
+"zh": "过年时家里很热闹。",
+"en": "Our home is very lively at New Year."
+},
+{
+"zh": "夜市里很热闹。",
+"en": "The night market is very busy."
+}
+]
+},
+{
+"word": "摊",
+"s": [
+{
+"zh": "我们去鸡饭摊吃午饭。",
+"en": "We go to the chicken rice stall for lunch."
+},
+{
+"zh": "那个摊卖的面很好吃。",
+"en": "The noodles sold at that stall are very tasty."
+}
+]
+},
+{
+"word": "一阵",
+"s": [
+{
+"zh": "一阵风吹来，好凉快。",
+"en": "A gust of wind blew by, so cool."
+},
+{
+"zh": "外面下了一阵大雨。",
+"en": "There was a burst of heavy rain outside."
+}
+]
+},
+{
+"word": "群",
+"s": [
+{
+"zh": "一群小鸭在河里游。",
+"en": "A group of ducklings swim in the river."
+},
+{
+"zh": "操场上有一群小朋友。",
+"en": "There is a group of children on the field."
+}
+]
+},
+{
+"word": "人群",
+"s": [
+{
+"zh": "人群里有我的妈妈。",
+"en": "My mum is in the crowd."
+},
+{
+"zh": "我在人群里找不到爸爸。",
+"en": "I can't find Dad in the crowd."
+}
+]
+},
+{
+"word": "外套",
+"s": [
+{
+"zh": "天冷了，穿上外套。",
+"en": "It is cold, put on your jacket."
+},
+{
+"zh": "我的外套是蓝色的。",
+"en": "My jacket is blue."
+}
+]
+},
+{
+"word": "套餐",
+"s": [
+{
+"zh": "我要一个鸡饭套餐。",
+"en": "I want a chicken rice set meal."
+},
+{
+"zh": "这个套餐有饭和汤。",
+"en": "This set meal comes with rice and soup."
+}
+]
+},
+{
+"word": "手套",
+"s": [
+{
+"zh": "我的手套不见了。",
+"en": "My gloves are missing."
+},
+{
+"zh": "妈妈给我买了一双手套。",
+"en": "Mum bought me a pair of gloves."
+}
+]
+},
+{
+"word": "圈",
+"s": [
+{
+"zh": "我们围成一个圈。",
+"en": "We stand together in a circle."
+},
+{
+"zh": "小狗在地上转圈。",
+"en": "The puppy is running in circles on the ground."
+}
+]
+},
+{
+"word": "饭馆",
+"s": [
+{
+"zh": "我们去饭馆吃饭。",
+"en": "We go to a restaurant to eat."
+},
+{
+"zh": "这家饭馆的鱼很好吃。",
+"en": "The fish at this restaurant is very tasty."
+}
+]
+},
+{
+"word": "餐馆",
+"s": [
+{
+"zh": "这家餐馆人很多。",
+"en": "This restaurant is very crowded."
+},
+{
+"zh": "爸爸带我们去餐馆吃晚饭。",
+"en": "Dad takes us to a restaurant for dinner."
+}
+]
+},
+{
+"word": "医院",
+"s": [
+{
+"zh": "奶奶生病了，在医院里。",
+"en": "Grandma is sick and in the hospital."
+},
+{
+"zh": "医院就在我家旁边。",
+"en": "The hospital is right next to my home."
+}
+]
+},
+{
+"word": "出院",
+"s": [
+{
+"zh": "奶奶明天出院。",
+"en": "Grandma leaves hospital tomorrow."
+},
+{
+"zh": "爷爷病好了，可以出院了。",
+"en": "Grandpa is better and can leave the hospital."
+}
+]
+},
+{
+"word": "植物",
+"s": [
+{
+"zh": "我家有很多植物。",
+"en": "There are many plants in my home."
+},
+{
+"zh": "植物要喝水才能长大。",
+"en": "Plants need water to grow."
+}
+]
+},
+{
+"word": "海",
+"s": [
+{
+"zh": "海里有很多鱼。",
+"en": "There are many fish in the sea."
+},
+{
+"zh": "我喜欢在海里玩水。",
+"en": "I like playing in the water at the sea."
+}
+]
+},
+{
+"word": "大海",
+"s": [
+{
+"zh": "大海是蓝色的。",
+"en": "The sea is blue."
+},
+{
+"zh": "我第一次看见大海。",
+"en": "It is the first time I have seen the sea."
+}
+]
+},
+{
+"word": "海边",
+"s": [
+{
+"zh": "我们去海边玩沙子。",
+"en": "We go to the beach to play with sand."
+},
+{
+"zh": "海边的风很凉快。",
+"en": "The wind at the seaside is nice and cool."
+}
+]
+},
+{
+"word": "岸",
+"s": [
+{
+"zh": "小船快到岸了。",
+"en": "The little boat is nearly at the shore."
+},
+{
+"zh": "我们坐在岸边看船。",
+"en": "We sit on the bank and watch the boats."
+}
+]
+},
+{
+"word": "两岸",
+"s": [
+{
+"zh": "河的两岸有很多树。",
+"en": "There are many trees on both sides of the river."
+},
+{
+"zh": "小河两岸开满了花。",
+"en": "Flowers bloom all along both banks of the stream."
+}
+]
+},
+{
+"word": "岸上",
+"s": [
+{
+"zh": "小鸭子走到岸上。",
+"en": "The duckling walks onto the bank."
+},
+{
+"zh": "妈妈在岸上等我们。",
+"en": "Mum waits for us on the shore."
+}
+]
+},
+{
+"word": "海岸",
+"s": [
+{
+"zh": "海岸上有很多贝壳。",
+"en": "There are many shells on the coast."
+},
+{
+"zh": "海岸边有很多大石头。",
+"en": "There are many big rocks along the coast."
+}
+]
+},
+{
+"word": "参加",
+"s": [
+{
+"zh": "我参加了学校的歌唱队。",
+"en": "I joined the school choir."
+},
+{
+"zh": "你要参加我的生日会吗？",
+"en": "Will you come to my birthday party?"
+}
+]
+},
+{
+"word": "参观",
+"s": [
+{
+"zh": "我们去参观动物园。",
+"en": "We go to visit the zoo."
+},
+{
+"zh": "老师带我们参观图书馆。",
+"en": "The teacher takes us to visit the library."
+}
+]
+},
+{
+"word": "观众",
+"s": [
+{
+"zh": "观众都在拍手。",
+"en": "The audience are all clapping."
+},
+{
+"zh": "台下有很多观众。",
+"en": "There are many people watching below the stage."
+}
+]
+},
+{
+"word": "野生",
+"s": [
+{
+"zh": "这里有很多野生的鸟。",
+"en": "There are many wild birds here."
+},
+{
+"zh": "野生动物不能摸。",
+"en": "You must not touch wild animals."
+}
+]
+},
+{
+"word": "野餐",
+"s": [
+{
+"zh": "我们去公园野餐。",
+"en": "We go to the park for a picnic."
+},
+{
+"zh": "野餐时我们吃了很多水果。",
+"en": "We ate lots of fruit at the picnic."
+}
+]
+},
+{
+"word": "游泳",
+"s": [
+{
+"zh": "我每天都去游泳。",
+"en": "I go swimming every day."
+},
+{
+"zh": "哥哥在教我游泳。",
+"en": "My big brother is teaching me to swim."
+}
+]
+},
+{
+"word": "游泳池",
+"s": [
+{
+"zh": "游泳池里有很多人。",
+"en": "There are many people in the swimming pool."
+},
+{
+"zh": "我们楼下有一个游泳池。",
+"en": "There is a swimming pool downstairs from our flat."
+}
+]
+},
+{
+"word": "沙",
+"s": [
+{
+"zh": "我的鞋子里有沙。",
+"en": "There is sand in my shoes."
+},
+{
+"zh": "海边有很多白沙。",
+"en": "There is lots of white sand at the beach."
+}
+]
+},
+{
+"word": "沙发",
+"s": [
+{
+"zh": "猫在沙发上睡觉。",
+"en": "The cat is sleeping on the sofa."
+},
+{
+"zh": "我们家有一张新沙发。",
+"en": "Our family has a new sofa."
+}
+]
+},
+{
+"word": "沙子",
+"s": [
+{
+"zh": "弟弟在玩沙子。",
+"en": "My little brother is playing with sand."
+},
+{
+"zh": "沙子进了我的眼睛。",
+"en": "Sand got into my eyes."
+}
+]
+},
+{
+"word": "捡",
+"s": [
+{
+"zh": "我在海边捡贝壳。",
+"en": "I collect shells at the beach."
+},
+{
+"zh": "妹妹捡了一片叶子。",
+"en": "My little sister picked up a leaf."
+}
+]
+},
+{
+"word": "捡到",
+"s": [
+{
+"zh": "我在路上捡到一支笔。",
+"en": "I found a pen on the road."
+},
+{
+"zh": "他捡到了一只小猫。",
+"en": "He found a little kitten."
+}
+]
+},
+{
+"word": "捡起",
+"s": [
+{
+"zh": "请把地上的纸捡起来。",
+"en": "Please pick up the paper on the floor."
+},
+{
+"zh": "他捡起球就跑。",
+"en": "He picked up the ball and ran."
+}
+]
+},
+{
+"word": "壳",
+"s": [
+{
+"zh": "鸡蛋壳很容易破。",
+"en": "Eggshells break very easily."
+},
+{
+"zh": "小鸡从蛋壳里出来了。",
+"en": "The chick came out of the eggshell."
+}
+]
+},
+{
+"word": "贝壳",
+"s": [
+{
+"zh": "这个贝壳真漂亮。",
+"en": "This shell is really pretty."
+},
+{
+"zh": "我有一盒贝壳。",
+"en": "I have a box of shells."
+}
+]
+},
+{
+"word": "区别",
+"s": [
+{
+"zh": "这两只猫有什么区别？",
+"en": "What is the difference between these two cats?"
+},
+{
+"zh": "我看不出它们的区别。",
+"en": "I cannot tell them apart."
+}
+]
+},
+{
+"word": "市区",
+"s": [
+{
+"zh": "我们坐车去市区。",
+"en": "We take a bus to the city."
+},
+{
+"zh": "市区里人很多。",
+"en": "There are many people downtown."
+}
+]
+},
+{
+"word": "到处",
+"s": [
+{
+"zh": "地上到处都是玩具。",
+"en": "There are toys all over the floor."
+},
+{
+"zh": "小狗到处跑。",
+"en": "The puppy runs everywhere."
+}
+]
+},
+{
+"word": "坏处",
+"s": [
+{
+"zh": "吃太多糖有坏处。",
+"en": "Eating too much sugar is bad for you."
+},
+{
+"zh": "晚睡有很多坏处。",
+"en": "Sleeping late does a lot of harm."
+}
+]
+},
+{
+"word": "好处",
+"s": [
+{
+"zh": "多吃菜有好处。",
+"en": "Eating more vegetables is good for you."
+},
+{
+"zh": "运动有很多好处。",
+"en": "Exercise has many benefits."
+}
+]
+},
+{
+"word": "远处",
+"s": [
+{
+"zh": "远处有一座山。",
+"en": "There is a hill in the distance."
+},
+{
+"zh": "我看见远处有一只船。",
+"en": "I see a boat far away."
+}
+]
+},
+{
+"word": "四处",
+"s": [
+{
+"zh": "小狗四处找吃的。",
+"en": "The puppy looks all over for food."
+},
+{
+"zh": "妈妈四处找她的手机。",
+"en": "Mum searches everywhere for her phone."
+}
+]
+},
+{
+"word": "街",
+"s": [
+{
+"zh": "这条街很热闹。",
+"en": "This street is very lively."
+},
+{
+"zh": "我家在这条街上。",
+"en": "My home is on this street."
+}
+]
+},
+{
+"word": "街道",
+"s": [
+{
+"zh": "这里的街道很干净。",
+"en": "The streets here are very clean."
+},
+{
+"zh": "下雨后，街道湿湿的。",
+"en": "After the rain, the streets are wet."
+}
+]
+},
+{
+"word": "大街",
+"s": [
+{
+"zh": "大街上有很多人。",
+"en": "There are many people on the main street."
+},
+{
+"zh": "过大街要小心。",
+"en": "Be careful when crossing the main street."
+}
+]
+},
+{
+"word": "街头",
+"s": [
+{
+"zh": "街头有人在唱歌。",
+"en": "Someone is singing on the street."
+},
+{
+"zh": "我们在街头吃小吃。",
+"en": "We eat snacks on the street."
+}
+]
+},
+{
+"word": "逛街",
+"s": [
+{
+"zh": "妈妈喜欢逛街。",
+"en": "Mum likes to go shopping."
+},
+{
+"zh": "周末我们一起去逛街。",
+"en": "At the weekend we go shopping together."
+}
+]
+},
+{
+"word": "完整",
+"s": [
+{
+"zh": "这个贝壳很完整。",
+"en": "This shell is whole."
+},
+{
+"zh": "请说一个完整的句子。",
+"en": "Please say a complete sentence."
+}
+]
+},
+{
+"word": "整个",
+"s": [
+{
+"zh": "整个下午都在下雨。",
+"en": "It rained the whole afternoon."
+},
+{
+"zh": "他一个人吃了整个蛋糕。",
+"en": "He ate the whole cake by himself."
+}
+]
+},
+{
+"word": "齐",
+"s": [
+{
+"zh": "大家都到齐了。",
+"en": "Everyone is here."
+},
+{
+"zh": "人来齐了，我们走吧。",
+"en": "Everyone has arrived, let's go."
+}
+]
+},
+{
+"word": "整齐",
+"s": [
+{
+"zh": "我的书桌很整齐。",
+"en": "My desk is very neat."
+},
+{
+"zh": "小朋友排得很整齐。",
+"en": "The children line up very neatly."
+}
+]
+},
+{
+"word": "猜想",
+"s": [
+{
+"zh": "我猜想他今天不会来。",
+"en": "I guess he will not come today."
+},
+{
+"zh": "你猜想盒子里有什么？",
+"en": "What do you guess is in the box?"
+}
+]
+},
+{
+"word": "摇",
+"s": [
+{
+"zh": "小狗摇着尾巴。",
+"en": "The puppy is wagging its tail."
+},
+{
+"zh": "风一吹，树就摇来摇去。",
+"en": "When the wind blows, the tree sways back and forth."
+}
+]
+},
+{
+"word": "摇头",
+"s": [
+{
+"zh": "我问他要不要，他摇头。",
+"en": "I asked if he wanted it, and he shook his head."
+},
+{
+"zh": "妹妹摇头说不吃。",
+"en": "My little sister shook her head and said she would not eat."
+}
+]
+},
+{
+"word": "渴",
+"s": [
+{
+"zh": "我好渴，要喝水。",
+"en": "I am so thirsty, I need some water."
+},
+{
+"zh": "跑完步，大家都很渴。",
+"en": "After running, everyone is very thirsty."
+}
+]
+},
+{
+"word": "口渴",
+"s": [
+{
+"zh": "口渴了就喝水。",
+"en": "Drink water when you are thirsty."
+},
+{
+"zh": "天好热，我口渴了。",
+"en": "It is so hot, I am thirsty."
+}
+]
+},
+{
+"word": "渴了",
+"s": [
+{
+"zh": "小狗渴了，要喝水。",
+"en": "The puppy is thirsty and wants water."
+},
+{
+"zh": "妈妈，我渴了！",
+"en": "Mum, I am thirsty!"
+}
+]
+},
+{
+"word": "低",
+"s": [
+{
+"zh": "这张桌子太低了。",
+"en": "This table is too low."
+},
+{
+"zh": "小鸟飞得好低。",
+"en": "The bird is flying very low."
+}
+]
+},
+{
+"word": "低头",
+"s": [
+{
+"zh": "他低头看书。",
+"en": "He looks down at his book."
+},
+{
+"zh": "妹妹低头不说话。",
+"en": "My little sister looked down and said nothing."
+}
+]
+},
+{
+"word": "齐全",
+"s": [
+{
+"zh": "这家店的东西很齐全。",
+"en": "This shop has everything you need."
+},
+{
+"zh": "我的文具都齐全了。",
+"en": "I have all my stationery now."
+}
+]
+},
+{
+"word": "一齐",
+"s": [
+{
+"zh": "同学们一齐说：老师好！",
+"en": "The classmates said together: Hello, teacher!"
+},
+{
+"zh": "大家一齐拍手。",
+"en": "Everyone clapped at the same time."
+}
+]
+},
+{
+"word": "离",
+"s": [
+{
+"zh": "我家离学校很近。",
+"en": "My home is near the school."
+},
+{
+"zh": "公园离这里很远。",
+"en": "The park is far from here."
+}
+]
+},
+{
+"word": "离开",
+"s": [
+{
+"zh": "我们离开了公园。",
+"en": "We left the park."
+},
+{
+"zh": "妈妈离开家去上班。",
+"en": "Mum left home to go to work."
+}
+]
+},
+{
+"word": "城",
+"s": [
+{
+"zh": "城里有很多高楼。",
+"en": "There are many tall buildings in the city."
+},
+{
+"zh": "我们去城里看灯。",
+"en": "We go into the city to see the lights."
+}
+]
+},
+{
+"word": "城市",
+"s": [
+{
+"zh": "新加坡是一个城市。",
+"en": "Singapore is a city."
+},
+{
+"zh": "城市里有很多车。",
+"en": "There are many cars in the city."
+}
+]
+},
+{
+"word": "长城",
+"s": [
+{
+"zh": "爸爸去过长城。",
+"en": "Dad has been to the Great Wall."
+},
+{
+"zh": "长城很长很长。",
+"en": "The Great Wall is very, very long."
+}
+]
+},
+{
+"word": "浇",
+"s": [
+{
+"zh": "我给花浇水。",
+"en": "I water the flowers."
+},
+{
+"zh": "爷爷每天浇菜。",
+"en": "Grandpa waters the vegetables every day."
+}
+]
+},
+{
+"word": "桶",
+"s": [
+{
+"zh": "桶里有很多水。",
+"en": "There is a lot of water in the bucket."
+},
+{
+"zh": "我拿着小桶去海边。",
+"en": "I take a small bucket to the beach."
+}
+]
+},
+{
+"word": "马桶",
+"s": [
+{
+"zh": "我家的马桶坏了。",
+"en": "Our toilet is broken."
+},
+{
+"zh": "用完马桶要冲水。",
+"en": "Flush after using the toilet."
+}
+]
+},
+{
+"word": "厕",
+"s": [
+{
+"zh": "男厕在左边。",
+"en": "The boys' toilet is on the left."
+},
+{
+"zh": "女厕里有很多人。",
+"en": "There are many people in the girls' toilet."
+}
+]
+},
+{
+"word": "所",
+"s": [
+{
+"zh": "下雨了，所以我们不去了。",
+"en": "It is raining, so we are not going."
+},
+{
+"zh": "我生病了，所以没上学。",
+"en": "I was sick, so I didn't go to school."
+}
+]
+},
+{
+"word": "所以",
+"s": [
+{
+"zh": "他饿了，所以吃了两碗饭。",
+"en": "He was hungry, so he ate two bowls of rice."
+},
+{
+"zh": "今天很热，所以我们去游泳。",
+"en": "It is hot today, so we go swimming."
+}
+]
+},
+{
+"word": "所有",
+"s": [
+{
+"zh": "所有的同学都来了。",
+"en": "All the classmates have come."
+},
+{
+"zh": "我把所有的玩具都收好了。",
+"en": "I put all my toys away."
+}
+]
+},
+{
+"word": "场所",
+"s": [
+{
+"zh": "公共场所不要大声说话。",
+"en": "Don't talk loudly in public places."
+},
+{
+"zh": "图书馆是安静的场所。",
+"en": "The library is a quiet place."
+}
+]
+},
+{
+"word": "厕所",
+"s": [
+{
+"zh": "我想上厕所。",
+"en": "I need to go to the toilet."
+},
+{
+"zh": "厕所在哪里？",
+"en": "Where is the toilet?"
+}
+]
+},
+{
+"word": "告",
+"s": [
+{
+"zh": "我去告老师！",
+"en": "I'm going to tell the teacher!"
+},
+{
+"zh": "请你告诉我怎么走。",
+"en": "Please tell me how to get there."
+}
+]
+},
+{
+"word": "广告",
+"s": [
+{
+"zh": "手机上有很多广告。",
+"en": "There are many ads on the phone."
+},
+{
+"zh": "我喜欢这个广告的歌。",
+"en": "I like the song in this ad."
+}
+]
+},
+{
+"word": "转告",
+"s": [
+{
+"zh": "请你转告妈妈，我晚点回家。",
+"en": "Please tell Mum I will be home late."
+},
+{
+"zh": "老师让我转告你明天带书。",
+"en": "The teacher asked me to tell you to bring your book tomorrow."
+}
+]
+},
+{
+"word": "诉",
+"s": [
+{
+"zh": "我告诉了爸爸。",
+"en": "I told Dad."
+},
+{
+"zh": "你不要告诉别人。",
+"en": "Don't tell anyone else."
+}
+]
+},
+{
+"word": "告诉",
+"s": [
+{
+"zh": "妈妈告诉我要早睡。",
+"en": "Mum told me to sleep early."
+},
+{
+"zh": "我有一件事要告诉你。",
+"en": "I have something to tell you."
+}
+]
+},
+{
+"word": "珍惜",
+"s": [
+{
+"zh": "我们要珍惜水。",
+"en": "We must treasure water."
+},
+{
+"zh": "我很珍惜这个礼物。",
+"en": "I treasure this gift."
+}
+]
+},
+{
+"word": "惜",
+"s": [
+{
+"zh": "我们要爱惜书本。",
+"en": "We should take care of our books."
+},
+{
+"zh": "好可惜，下雨了。",
+"en": "What a pity, it is raining."
+}
+]
+},
+{
+"word": "可惜",
+"s": [
+{
+"zh": "可惜他今天没来。",
+"en": "It's a pity he didn't come today."
+},
+{
+"zh": "这个球破了，真可惜。",
+"en": "This ball is torn, what a pity."
+}
+]
+},
+{
+"word": "爱惜",
+"s": [
+{
+"zh": "我们要爱惜每一粒米。",
+"en": "We should value every grain of rice."
+},
+{
+"zh": "要爱惜你的玩具。",
+"en": "Take good care of your toys."
+}
+]
+},
+{
+"word": "滴",
+"s": [
+{
+"zh": "水龙头在滴水。",
+"en": "The tap is dripping."
+},
+{
+"zh": "雨水从窗上滴下来。",
+"en": "Rain is dripping down the window."
+}
+]
+},
+{
+"word": "一滴",
+"s": [
+{
+"zh": "杯子里没有一滴水了。",
+"en": "There isn't a drop of water left in the cup."
+},
+{
+"zh": "一滴雨掉在我的头上。",
+"en": "A drop of rain fell on my head."
+}
+]
+},
+{
+"word": "水滴",
+"s": [
+{
+"zh": "叶子上有水滴。",
+"en": "There are water drops on the leaf."
+},
+{
+"zh": "水滴从屋顶掉下来。",
+"en": "Water drops are falling from the roof."
+}
+]
+},
+{
+"word": "约",
+"s": [
+{
+"zh": "我约了朋友去公园。",
+"en": "I made plans with a friend to go to the park."
+},
+{
+"zh": "小明约我明天去游泳。",
+"en": "Xiao Ming invited me to go swimming tomorrow."
+}
+]
+},
+{
+"word": "大约",
+"s": [
+{
+"zh": "我们大约五点到家。",
+"en": "We will get home at about five."
+},
+{
+"zh": "这里大约有一百人。",
+"en": "There are about a hundred people here."
+}
+]
+},
+{
+"word": "节约",
+"s": [
+{
+"zh": "我们要节约用水。",
+"en": "We must save water."
+},
+{
+"zh": "爸爸说要节约用电。",
+"en": "Dad says we must save electricity."
+}
+]
+},
+{
+"word": "浪",
+"s": [
+{
+"zh": "海上有很大的浪。",
+"en": "There are big waves on the sea."
+},
+{
+"zh": "浪打在石头上。",
+"en": "The waves crash on the rocks."
+}
+]
+},
+{
+"word": "海浪",
+"s": [
+{
+"zh": "海浪很大，不要去游泳。",
+"en": "The waves are big, don't go swimming."
+},
+{
+"zh": "我喜欢听海浪的声音。",
+"en": "I like listening to the sound of the waves."
+}
+]
+},
+{
+"word": "冲浪",
+"s": [
+{
+"zh": "哥哥会冲浪。",
+"en": "My brother can surf."
+},
+{
+"zh": "我想学冲浪。",
+"en": "I want to learn to surf."
+}
+]
+},
+{
+"word": "费",
+"s": [
+{
+"zh": "这样太费水了。",
+"en": "This wastes too much water."
+},
+{
+"zh": "做这个很费时间。",
+"en": "Doing this takes a lot of time."
+}
+]
+},
+{
+"word": "收费",
+"s": [
+{
+"zh": "这个公园不收费。",
+"en": "This park is free to enter."
+},
+{
+"zh": "那里停车要收费。",
+"en": "Parking there costs money."
+}
+]
+},
+{
+"word": "浪费",
+"s": [
+{
+"zh": "不要浪费食物。",
+"en": "Don't waste food."
+},
+{
+"zh": "他把水开着，真浪费！",
+"en": "He left the water running, what a waste!"
+}
+]
+},
+{
+"word": "流",
+"s": [
+{
+"zh": "河水流得很快。",
+"en": "The river flows very fast."
+},
+{
+"zh": "水从桶里流出来了。",
+"en": "Water is flowing out of the bucket."
+}
+]
+},
+{
+"word": "流利",
+"s": [
+{
+"zh": "姐姐的英文说得很流利。",
+"en": "My sister speaks English fluently."
+},
+{
+"zh": "他的华语说得很流利。",
+"en": "He speaks Mandarin fluently."
+}
+]
+},
+{
+"word": "流行",
+"s": [
+{
+"zh": "这首歌很流行。",
+"en": "This song is very popular."
+},
+{
+"zh": "这个玩具在学校里很流行。",
+"en": "This toy is very popular at school."
+}
+]
+},
+{
+"word": "河流",
+"s": [
+{
+"zh": "这条河流很长。",
+"en": "This river is very long."
+},
+{
+"zh": "河流里有很多鱼。",
+"en": "There are many fish in the river."
+}
+]
+},
+{
+"word": "连",
+"s": [
+{
+"zh": "他连饭都没吃。",
+"en": "He didn't even eat."
+},
+{
+"zh": "这两个房间连在一起。",
+"en": "These two rooms are joined together."
+}
+]
+},
+{
+"word": "连忙",
+"s": [
+{
+"zh": "我看到老师，连忙说老师好。",
+"en": "When I saw the teacher, I quickly said hello."
+},
+{
+"zh": "下雨了，我们连忙跑回家。",
+"en": "It started to rain, so we quickly ran home."
+}
+]
+},
+{
+"word": "接连",
+"s": [
+{
+"zh": "他接连吃了三个包子。",
+"en": "He ate three buns in a row."
+},
+{
+"zh": "接连下了三天雨。",
+"en": "It rained for three days in a row."
+}
+]
+},
+{
+"word": "线",
+"s": [
+{
+"zh": "我的风筝线断了。",
+"en": "My kite string broke."
+},
+{
+"zh": "这根线太短了。",
+"en": "This thread is too short."
+}
+]
+},
+{
+"word": "路线",
+"s": [
+{
+"zh": "我们看地图找路线。",
+"en": "We look at the map to find the route."
+},
+{
+"zh": "爸爸走了一条新的路线。",
+"en": "Dad took a new route."
+}
+]
+},
+{
+"word": "光线",
+"s": [
+{
+"zh": "这里的光线太暗了。",
+"en": "The light here is too dim."
+},
+{
+"zh": "看书要有好的光线。",
+"en": "You need good light to read."
+}
+]
+},
+{
+"word": "直线",
+"s": [
+{
+"zh": "我用尺画了一条直线。",
+"en": "I drew a straight line with a ruler."
+},
+{
+"zh": "老师教我们画直线。",
+"en": "The teacher teaches us to draw straight lines."
+}
+]
+},
+{
+"word": "断",
+"s": [
+{
+"zh": "大风把树枝吹断了。",
+"en": "The strong wind broke the branch."
+},
+{
+"zh": "我的笔断了。",
+"en": "My pen broke."
+}
+]
+},
+{
+"word": "不断",
+"s": [
+{
+"zh": "雨不断地下。",
+"en": "The rain keeps falling."
+},
+{
+"zh": "小狗不断地叫。",
+"en": "The puppy keeps barking."
+}
+]
+},
+{
+"word": "中断",
+"s": [
+{
+"zh": "下大雨，我们的游戏中断了。",
+"en": "It rained heavily, so our game had to stop."
+},
+{
+"zh": "我和奶奶的电话中断了。",
+"en": "My call with Grandma got cut off."
+}
+]
+},
+{
+"word": "猜",
+"s": [
+{
+"zh": "你猜我手里有什么？",
+"en": "Guess what is in my hand?"
+},
+{
+"zh": "我猜明天会下雨。",
+"en": "I guess it will rain tomorrow."
+}
+]
+}
+]
