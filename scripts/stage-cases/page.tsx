@@ -1,6 +1,9 @@
 // Feedback states the walking sweep can't reach on its own (review I1/I2): a wrong 选一选 answer with a long bank clue,
 // and the stage card's size with a neutral vs a feedback sheet. Bundled by stage-cases.ts and opened in WebKit.
-import { render } from 'preact';
+import { render, type JSX } from 'preact';
+import ch03 from '../../docs/story/season-1/ch03.md';
+import { parseChapter, slotsIn, type Line } from '../../src/story/format';
+import { SWATCH } from '../../src/ui/truffle/paint';
 import { GRANNY_POSES, GrannyDragon } from '../../src/ui/story/GrannyDragon';
 import { useState } from 'preact/hooks';
 import '../../src/styles.css';
@@ -122,6 +125,66 @@ else if (which === 'costumes') {
   render(
     <div style="display:grid;grid-template-columns:repeat(8,150px);gap:6px;padding:8px;background:#fbf6ea;font:600 13px sans-serif;text-align:center">
       {COSTUMES.map((c) => <div key={c.id}><Truffle mood="cheer" outfit={c.id} size={140} /><div>{c.zh}</div></div>)}
+    </div>,
+    app,
+  );
+}
+else if (which === 'story-page') {
+  // the picture-book test page (spec 3b §8): chapter 3, setup page 2 — a still mock for judging the art, not the 3c reader
+  const page = parseChapter(ch03).setup[1]!;
+  const hasBg = new URLSearchParams(location.search).get('bg') !== '0';
+  const slot = (zh: string, en: string, state: 'new' | 'learning' | 'owned') =>
+    state === 'new' ? <span class="sp-slot">{en}</span>
+    : state === 'owned' ? <span class="sp-slot sp-slot--zh" lang="zh">{zh}</span>
+    : <span class="sp-slot sp-slot--learning"><span lang="zh">{zh}</span><small>{en}</small></span>;
+  const words = (text: string) => {
+    const out: (string | JSX.Element)[] = [];
+    let last = 0;
+    for (const m of text.matchAll(/\{([^|{}]+)\|([^{}]+)\}/g)) {
+      out.push(text.slice(last, m.index));
+      out.push(slot(m[1]!, m[2]!, 'learning'));
+      last = m.index! + m[0].length;
+    }
+    out.push(text.slice(last));
+    return out;
+  };
+  const line = (l: Line, i: number) =>
+    l.kind === 'speech' ? <p key={i} class="sp-bubble"><b>{l.who}</b> {words(l.text)}</p>
+    : l.kind === 'scene' ? null
+    : <p key={i} class="sp-text">{words(l.text)}</p>;
+  const first = slotsIn(page.lines.map((l) => ('text' in l ? l.text : '')).join(' '))[0]!;
+  render(
+    <div class="sp-page">
+      <style>{`
+        .sp-page { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; background: ${SWATCH.cream}; font-family: Nunito, sans-serif; color: #3a3440; }
+        .sp-pic { position: relative; width: min(100%, calc(50dvh * 4 / 3)); aspect-ratio: 4 / 3; background: ${hasBg ? 'url(bg/hdb-voiddeck.webp) center/cover' : 'linear-gradient(#a9d3e8, #f6ecd6 60%, #d9cdb4)'}; border-radius: 0 0 18px 18px; overflow: hidden; }
+        .sp-pending { position: absolute; top: 8px; left: 10px; font-size: 12px; color: #8a8494; }
+        .sp-cast { position: absolute; left: 0; right: 0; bottom: 6%; height: 34%; display: flex; justify-content: center; align-items: flex-end; gap: 6%; }
+        .sp-cast svg { height: 100%; width: auto; }
+        .sp-words { width: min(100%, 720px); padding: 10px 18px 6px; box-sizing: border-box; font-size: clamp(18px, 2.6dvh, 24px); line-height: 1.4; }
+        .sp-text { margin: 0 0 6px; }
+        .sp-bubble { margin: 0 0 6px; background: #fffdf7; border: 2px solid #e2d6bd; border-radius: 14px; padding: 3px 10px; }
+        .sp-bubble b { color: #8a6f3a; margin-right: 4px; }
+        .sp-slot--zh, .sp-slot--learning span { font-family: var(--hanzi, serif); font-size: 1.25em; color: #2f6f55; }
+        .sp-slot--learning { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; vertical-align: -0.35em; margin: 0 2px; }
+        .sp-slot--learning small { font-size: 0.5em; color: #8a8494; margin-top: 2px; }
+        .sp-states { display: flex; gap: 16px; justify-content: center; font-size: 13px; color: #8a8494; padding: 0 0 6px; }
+        .sp-states div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .sp-states span:first-child { font-size: 18px; color: #3a3440; }
+      `}</style>
+      <div class="sp-pic" data-testid="sp-pic">
+        {!hasBg && <span class="sp-pending">painting pending</span>}
+        <div class="sp-cast">
+          <Truffle mood="pleased" label={null} size={160} />
+          <GrannyDragon pose="smile" label={null} size={160} />
+        </div>
+      </div>
+      <div class="sp-words" data-testid="sp-words">{page.lines.map(line)}</div>
+      <div class="sp-states">
+        <div>{slot(first.zh, first.en, 'new')}<span>not met</span></div>
+        <div>{slot(first.zh, first.en, 'learning')}<span>learning</span></div>
+        <div>{slot(first.zh, first.en, 'owned')}<span>owned</span></div>
+      </div>
     </div>,
     app,
   );

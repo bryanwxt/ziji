@@ -24,8 +24,13 @@ describe('backgrounds (spec 3b §4)', () => {
     const r = await prepareBackground(await flat(1800, 2700));
     expect([r.width, r.height]).toEqual([BG_WIDTH, BG_HEIGHT]);
   });
-  it('an original smaller than 1600×1200 is refused', async () => {
-    await expect(prepareBackground(await flat(1200, 900))).rejects.toThrow(/too small/);
+  it("the Gemini app's 1200×896 originals are kept at their own size, never enlarged", async () => {
+    const r = await prepareBackground(await flat(1200, 896));
+    const meta = await sharp(r.webp).metadata();
+    expect([meta.width, meta.height]).toEqual([1195, 896]);
+  });
+  it('an original under 1180 px wide (4:3) is refused', async () => {
+    await expect(prepareBackground(await flat(1000, 750))).rejects.toThrow(/too small/);
   });
   it('steps quality down to fit 300 KB, refuses below 50', async () => {
     await expect(prepareBackground(await noise(1600, 1200))).rejects.toThrow(/300 KB/);

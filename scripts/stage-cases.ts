@@ -1,13 +1,13 @@
 // Runs the stage cases (stage-cases/page.tsx) in WebKit at a phone and an iPad size; exits 1 on any problem.
 import { build } from 'esbuild';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { webkit } from 'playwright-core';
 
 const dir = join(tmpdir(), `ziji-stage-cases-${process.pid}`);
 mkdirSync(dir, { recursive: true });
-await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.png': 'file' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"/"' }, logLevel: 'error' });
+await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"/"' }, logLevel: 'error' });
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
 /** Anything in the lesson card cut off by the card's own box (the same probe as the clue case). */
@@ -156,6 +156,30 @@ for (const size of SIZES) {
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'fit-shots/stage-cases/granny.png', fullPage: true });
   if ((await page.$$('svg.granny')).length !== 7) problems.push('granny: not every pose drew');
+  // the picture-book test page (spec 3b §8) at three sizes: the painting if the parent's is in, else a placeholder
+  const bg = existsSync('public/story/bg/hdb-voiddeck.webp');
+  if (bg) { mkdirSync(join(dir, 'bg'), { recursive: true }); copyFileSync('public/story/bg/hdb-voiddeck.webp', join(dir, 'bg/hdb-voiddeck.webp')); }
+  for (const [name, width, height] of [['ipad-portrait', 768, 1024], ['ipad-landscape', 1024, 768], ['iphone', 390, 664]] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto(`file://${dir}/index.html?case=story-page${bg ? '' : '&bg=0'}`);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `fit-shots/stage-cases/story-page-${name}.png` });
+    problems.push(...(await page.evaluate((n) => {
+      const out: string[] = [];
+      const pic = document.querySelector('[data-testid="sp-pic"]')!.getBoundingClientRect();
+      if (Math.abs(pic.width / pic.height - 4 / 3) > 0.03) out.push(`story-page ${n}: picture is not 4:3 (${Math.round(pic.width)}×${Math.round(pic.height)})`);
+      for (const c of document.querySelectorAll('.sp-cast svg')) {
+        const r = c.getBoundingClientRect();
+        if (r.left < pic.left - 1 || r.right > pic.right + 1 || r.top < pic.top - 1 || r.bottom > pic.bottom + 1) out.push(`story-page ${n}: a character pokes out of the picture`);
+      }
+      // the real page is the picture and the words (the states strip below is only this mock's legend)
+      const bottom = document.querySelector('[data-testid="sp-words"]')!.getBoundingClientRect().bottom;
+      if (bottom > innerHeight + 2) out.push(`story-page ${n}: the words run off the page (${Math.round(bottom)} > ${innerHeight})`);
+      const fs = parseFloat(getComputedStyle(document.querySelector('[data-testid="sp-words"]')!).fontSize);
+      if (fs < 18) out.push(`story-page ${n}: text ${fs}px is under 18px`);
+      return out;
+    }, name)));
+  }
   await page.close();
   const m = await browser.newPage({ viewport: { width: 1024, height: 768 } });
   for (const world of ['yard', 'grass', 'race', 'blocks', 'dino', 'sea', 'space', 'pirate']) {
