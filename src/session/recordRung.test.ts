@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { nextRung, RUNG_CARD } from '../ladder/rungs';
 import { describe, expect, it } from 'vitest';
 import { freshDb, makeWord } from '../test/fixtures';
 import { allCards, getCard, putWords } from '../store/repo';
@@ -24,8 +25,8 @@ describe('recording a rung answer (spec 2026-10-06 §3.2)', () => {
     expect((await getCard(db, 'b:门:hear'))?.passed).toBeUndefined();
     await recordHear(db, 'b:门', right, day('2026-10-02'));
     expect((await getCard(db, 'b:门:hear'))?.passed).toBe(day('2026-10-02').getTime());
-    const read = await getCard(db, 'b:门:recognise');
-    expect(read?.fsrs.due.getTime()).toBe(new Date('2026-10-03T00:00:00').getTime());
+    const next = await getCard(db, `b:门:${RUNG_CARD[nextRung(mén(), 'hear')!]}`); // Understand when 门 has sentences (plan 2b), else Read
+    expect(next?.fsrs.due.getTime()).toBe(new Date('2026-10-03T00:00:00').getTime());
   });
   it('reading passed opens Use only for a word that can be used in a question', async () => {
     const db = await freshDb();
@@ -52,7 +53,7 @@ describe('recording a rung answer (spec 2026-10-06 §3.2)', () => {
     const w = ladderWords()[0]!;
     await recordHear(db, w.id, right, day('2026-10-01'));
     await recordHear(db, w.id, right, day('2026-10-02'));
-    expect(await getCard(db, `${w.id}:recognise`)).toBeDefined();
+    expect(await getCard(db, `${w.id}:${RUNG_CARD[nextRung(w, 'hear')!]}`)).toBeDefined();
   });
   it('a meaning answer passes the Use rung', async () => {
     const db = await freshDb();

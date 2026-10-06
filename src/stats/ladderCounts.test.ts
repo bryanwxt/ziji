@@ -18,7 +18,7 @@ describe('honest counts (spec 2026-10-06 §3.3–3.4)', () => {
   });
   it('heard, read, used and owned words, and characters written', () => {
     const w = makeWord('口', { examples: [] }); // no question to use it in: owned once heard and read
-    const k = summarize([w], [card('b:口', 'hear', 1), card('b:口', 'recognise', 1), card('b:口', 'write', 1)]);
+    const k = summarize([w], [card('b:口', 'hear', 1), card('b:口', 'understand', 1), card('b:口', 'recognise', 1), card('b:口', 'write', 1)]); // 口 has sentences: Understand counts too (plan 2b)
     expect(k).toMatchObject({ heard: 1, read: 1, used: 0, owned: 1, written: 1 });
   });
   it('words understood in a sentence (plan 2b)', () => {

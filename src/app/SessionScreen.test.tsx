@@ -1,4 +1,5 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
+import { act, fireEvent, screen, waitFor } from '@testing-library/preact';
+import { setSpeaking } from '../audio/speaking';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../content';
 import { allCards, answersSince, getConfusions, getRungs, noteConfusion, getSession, getWord, logsSince, noteRung, putCards, putWords, saveKid, saveSession, updateSettings } from '../store/repo';
@@ -32,9 +33,13 @@ const nextButton = () => {
 /** Answers whatever is on screen until the celebration: 我记住了！, else the first open choice (and 继续 once it opens). `seen` gets each screen's stage. */
 async function playThrough(max = 150, seen: string[] = []) {
   for (let i = 0; i < max && !screen.queryByText('太棒了！'); i++) {
-    await waitFor(() => expect(screen.queryByText('太棒了！') ?? screen.queryByText('我记住了！') ?? nextButton() ?? document.querySelector(OPEN)).toBeTruthy(), { timeout: 4000 }); // building 练一练's round reads every word's content
+    await waitFor(() => expect(screen.queryByText('太棒了！') ?? screen.queryByText('我记住了！') ?? nextButton() ?? document.querySelector(OPEN) ?? document.querySelector('.understand__choice[disabled]')).toBeTruthy(), { timeout: 4000 }); // building 练一练's round reads every word's content
     if (screen.queryByText('太棒了！')) break;
     seen.push(document.querySelector('[data-stage]')?.getAttribute('data-stage') ?? '');
+    if (!nextButton() && document.querySelector('.understand__choice[disabled]')) { // an Understand question opens once its sentence has been said
+      await act(async () => { await new Promise((r) => setTimeout(r, 30)); setSpeaking(true); setSpeaking(false); }); // let it start listening first
+      continue;
+    }
     if (screen.queryByText('我记住了！')) {
       // a card shown again after a miss lets him go on only after a short look (a double tap can't skip it): wait it out
       if (document.querySelector('.pet__bubble')?.textContent?.includes('再看一遍')) {

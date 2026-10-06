@@ -14,7 +14,7 @@ import { DEFAULT_SETTINGS } from '../types';
 import { ladderWords, ladderWordsBesides } from '../content/ladder';
 import { summarize, wordOf } from '../stats/stats';
 import { queueHearChecks } from './migrate';
-import { canAskRung } from './rungs';
+import { canAskRung, nextRung, RUNG_CARD } from './rungs';
 
 const now = new Date('2026-10-06T09:00:00');
 const right = { correct: true, responseMs: 2500 };
@@ -95,7 +95,7 @@ describe('I5: a passed rung always has its next rung open', () => {
     await putWords(db, [w]);
     await putCards(db, [{ ...makeCard('b:门', 'hear', now), passed: 1 }]);
     expect(await openMissingRungs(db, now)).toBe(1);
-    expect(await getCard(db, 'b:门:recognise')).toBeDefined();
+    expect(await getCard(db, `b:门:${RUNG_CARD[nextRung(w, 'hear')!]}`)).toBeDefined(); // Understand once 门 has sentences (plan 2b)
     expect(await openMissingRungs(db, now)).toBe(0);
   });
 });
