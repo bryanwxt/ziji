@@ -1,6 +1,12 @@
 // Feedback states the walking sweep can't reach on its own (review I1/I2): a wrong 选一选 answer with a long bank clue,
 // and the stage card's size with a neutral vs a feedback sheet. Bundled by stage-cases.ts and opened in WebKit.
 import { render, type JSX } from 'preact';
+import { AppContext, type AppData } from '../../src/app/AppContext';
+import { setSpeaking } from '../../src/audio/speaking';
+import { openAppDb } from '../../src/store/db';
+import { addReviewLog } from '../../src/store/repo';
+import { StoryScreen } from '../../src/story/StoryScreen';
+import { DEFAULT_SETTINGS, type Grade } from '../../src/types';
 import ch03 from '../../src/content/story/season-1/ch03.md';
 import { parseChapter, slotsIn, type Line } from '../../src/story/format';
 import { SWATCH } from '../../src/ui/truffle/paint';
@@ -128,6 +134,22 @@ else if (which === 'costumes') {
     </div>,
     app,
   );
+}
+else if (which?.startsWith('story-') && which !== 'story-page') {
+  // the 3c reader on its own (spec 2026-10-07 3c §4): setup page, Granny's lines, 听一听, the rescued words
+  void (async () => {
+    const db = await openAppDb(`stage-${Date.now()}`);
+    const voice = which === 'story-listen';
+    if (which === 'story-rescued') {
+      const ids = ['b:门', 'w:电梯', 'b:家', 'b:床', 'w:太阳', 'w:早上', 'w:衣服', 'w:房间', 'b:吃', 'b:饭'];
+      for (const [k, wordId] of ids.entries()) await addReviewLog(db, { cardId: `${wordId}:hear`, wordId, kind: 'hear', at: Date.now() - 60_000 + k, rating: 3 as Grade, correct: true, responseMs: 1500 });
+    }
+    const ctx: AppData = { db, settings: { ...DEFAULT_SETTINGS, placementDone: true }, kid: null, voice, now: () => new Date(), go: () => {}, refresh: async () => {} };
+    const part = which === 'story-setup' || which === 'story-granny' ? 'setup' : 'payoff';
+    const chapter = which === 'story-granny' ? 3 : 1;
+    render(<AppContext.Provider value={ctx}><StoryScreen part={part} chapter={chapter} then={{ name: 'home' }} /></AppContext.Provider>, app);
+    if (voice) { let on = false; const t = setInterval(() => { on = !on; setSpeaking(on); }, 120); setTimeout(() => clearInterval(t), 4000); } // a voice that speaks and stops
+  })();
 }
 else if (which === 'story-page') {
   // the picture-book test page (spec 3b §8): chapter 3, setup page 2 — a still mock for judging the art, not the 3c reader

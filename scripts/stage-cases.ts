@@ -1,13 +1,26 @@
 // Runs the stage cases (stage-cases/page.tsx) in WebKit at a phone and an iPad size; exits 1 on any problem.
 import { build } from 'esbuild';
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { webkit } from 'playwright-core';
 
 const dir = join(tmpdir(), `ziji-stage-cases-${process.pid}`);
 mkdirSync(dir, { recursive: true });
-await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"/"' }, logLevel: 'error' });
+// src/story/chapters.ts bundles the chapters with Vite's import.meta.glob, which esbuild doesn't know: give it the same module from disk
+const chaptersShim = {
+  name: 'story-chapters',
+  setup(b: { onLoad: (o: { filter: RegExp }, f: () => { contents: string; loader: 'ts'; resolveDir: string }) => void }) {
+    b.onLoad({ filter: /src[\\/]story[\\/]chapters\.ts$/ }, () => {
+      const root = 'src/content/story';
+      const md = readdirSync(root).filter((d) => d.startsWith('season-')).flatMap((d) => readdirSync(`${root}/${d}`).filter((f) => /^ch\d+\.md$/.test(f)).map((f) => readFileSync(`${root}/${d}/${f}`, 'utf8')));
+      return { loader: 'ts', resolveDir: join(process.cwd(), 'src/story'), contents: `import { parseChapter } from './format';
+export const CHAPTERS = ${JSON.stringify(md)}.map(parseChapter).sort((a, b) => a.chapter - b.chapter);
+export const chapterNumbered = (n: number) => CHAPTERS.find((c) => c.chapter === n);` };
+    });
+  },
+};
+await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, plugins: [chaptersShim], jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"./"' }, logLevel: 'error' });
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
 /** Anything in the lesson card cut off by the card's own box (the same probe as the clue case). */
@@ -164,6 +177,34 @@ for (const size of SIZES) {
       return [...g.querySelectorAll('path')].filter((p) => parseFloat(getComputedStyle(p).opacity) > 0.5).length;
     }, t);
     if (shown !== 1) problems.push(`granny talking at ${t} ms: ${shown} mouths showing (want exactly 1)`);
+  }
+  // the 3c reader: setup page, Granny's lines, 听一听 and the rescued words, at three sizes (spec 2026-10-07 3c §7)
+  mkdirSync(join(dir, 'story/bg'), { recursive: true });
+  for (const f of readdirSync('public/story/bg').filter((x) => x.endsWith('.webp'))) copyFileSync(`public/story/bg/${f}`, join(dir, 'story/bg', f));
+  for (const c of ['story-setup', 'story-granny', 'story-listen', 'story-rescued']) {
+    for (const [name, width, height] of [['ipad-portrait', 768, 1024], ['ipad-landscape', 1024, 768], ['iphone', 390, 664]] as const) {
+      await page.setViewportSize({ width, height });
+      await page.goto(`file://${dir}/index.html?case=${c}`);
+      await page.waitForSelector('.story', { timeout: 10_000 });
+      if (c === 'story-granny') for (let i = 0; i < 3; i++) { await page.click('.story__nav-btn--next'); await page.waitForTimeout(150); }
+      await page.waitForTimeout(c === 'story-listen' ? 4500 : 900);
+      await page.screenshot({ path: `fit-shots/stage-cases/${c}-${name}.png` });
+      problems.push(...(await page.evaluate((n) => {
+        const out: string[] = [];
+        const pic = document.querySelector('.story__pic')?.getBoundingClientRect();
+        if (!pic) return [`${n}: no picture`];
+        if (Math.abs(pic.width / pic.height - 4 / 3) > 0.03) out.push(`${n}: picture is not 4:3`);
+        for (const x of document.querySelectorAll('.story__cast svg')) {
+          const r = x.getBoundingClientRect();
+          if (r.left < pic.left - 1 || r.right > pic.right + 1 || r.bottom > pic.bottom + 1) out.push(`${n}: a character pokes out of the picture`);
+        }
+        const nav = document.querySelector('.story__nav')!.getBoundingClientRect();
+        if (nav.bottom > innerHeight + 2) out.push(`${n}: the page buttons are off the screen (${Math.round(nav.bottom)} > ${innerHeight})`);
+        const fs = parseFloat(getComputedStyle(document.querySelector('.story__words')!).fontSize);
+        if (fs < 18) out.push(`${n}: text ${fs}px is under 18px`);
+        return out;
+      }, `${c} ${name}`)));
+    }
   }
   // the picture-book test page (spec 3b §8) at three sizes: the painting if the parent's is in, else a placeholder
   const bg = existsSync('public/story/bg/hdb-voiddeck.webp');

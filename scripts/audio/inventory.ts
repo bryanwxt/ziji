@@ -1,6 +1,6 @@
 // Everything in his range that gets a clip (spec 2026-10-06 §4), built from the app's own content so the two never drift.
 // npx tsx scripts/audio/inventory.ts [voiceTag] [out.json]
-import { writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { pinyin } from 'pinyin-pro';
 import { clipKey } from '../../src/audio/clipKey';
@@ -10,6 +10,7 @@ import { DAPEI } from '../../src/content/dapei';
 import { BLANK, fillGap, SENTENCE_BANK } from '../../src/content/sentenceBank';
 import { inScopeWords, SENTENCE_TERMS, sentencesFor } from '../../src/content/understand';
 import { clipId, engineText, type ClipJob, type ClipKind } from './inventory-lib';
+import { parseChapter } from '../../src/story/format';
 
 /** Lines said as they are (Settings' voice tests, 朗读's warm-up). */
 export const FIXED_LINES = ['你好！', '你好，我们一起学汉字！', '你好！我是松露。我们一起学汉字吧！'];
@@ -83,6 +84,18 @@ export function buildInventory(voice: string): ClipJob[] {
     add(d.verb + d.noun, pinyin(d.verb + d.noun), 'word');
   }
   for (const l of FIXED_LINES) sentence(l);
+  // the story's Mandarin (spec 2026-10-07 3c §2): Granny Dragon's lines, each 听一听 scene, its questions and their choices
+  const STORY = 'src/content/story';
+  for (const season of readdirSync(STORY).filter((d) => d.startsWith('season-'))) {
+    for (const f of readdirSync(`${STORY}/${season}`).filter((x) => /^ch\d+\.md$/.test(x))) {
+      const c = parseChapter(readFileSync(`${STORY}/${season}/${f}`, 'utf8'));
+      for (const m of [...c.granny, ...c.listen.lines]) sentence(m.zh);
+      for (const q of c.listen.questions) {
+        sentence(q.zh);
+        for (const choice of [q.answer, ...q.wrong]) add(choice, pinyin(choice), 'word');
+      }
+    }
+  }
   return [...jobs.values()];
 }
 

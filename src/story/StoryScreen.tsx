@@ -32,8 +32,14 @@ function playLine(zh: string, done: () => void): () => void {
   return () => { over = true; off(); clearTimeout(t); };
 }
 
-/** Words with their slots woven in by his ladder state (parent spec §5.5). */
+/** Words with *emphasis* and their slots woven in by his ladder state (parent spec §5.5). */
 function Woven({ text, know }: { text: string; know: Knowledge | null }) {
+  const parts = text.split(/\*([^*]+)\*/);
+  if (parts.length > 1) return <>{parts.map((p, i) => (i % 2 ? <em key={i}><Slots text={p} know={know} /></em> : <Slots key={i} text={p} know={know} />))}</>;
+  return <Slots text={text} know={know} />;
+}
+
+function Slots({ text, know }: { text: string; know: Knowledge | null }) {
   const out: (string | preact.JSX.Element)[] = [];
   let last = 0;
   for (const m of text.matchAll(SLOT)) {
@@ -148,7 +154,7 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
   const [know, setKnow] = useState<Knowledge | null>(null);
   const [rescued, setRescued] = useState<string[]>([]);
   const [at, setAt] = useState(0);
-  const [ready, setReady] = useState(true);
+  const [ready, setReady] = useState<boolean | null>(null); // null: a page is ready at once; Granny's and 听一听's beats say so themselves
   const leaving = useRef(false);
 
   const beats = useMemo((): Beat[] => {
@@ -171,7 +177,6 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
     if (part === 'payoff') void wordsPractisedToday(db, now()).then(setRescued);
     return () => stopSpeaking();
   }, []);
-  useEffect(() => { setReady(beats[at]?.kind === 'page'); }, [at]);
 
   const finish = async () => {
     if (leaving.current) return;
@@ -184,6 +189,7 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
   };
   if (!c || !beats.length) { void finish(); return <div class="screen loading" />; }
 
+  const goTo = (n: number) => { stopSpeaking(); setReady(null); setAt(n); }; // a granny/listen beat says when it's ready
   const beat = beats[at]!;
   const last = at === beats.length - 1;
   const word = (id: string) => know?.wordsById.get(id)?.text ?? know?.ladderById.get(id)?.text ?? id.slice(2);
@@ -230,8 +236,8 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
         </>
       )}
       <nav class="story__nav">
-        <button type="button" class="story__nav-btn" aria-label="上一页" disabled={at === 0} onClick={() => { stopSpeaking(); setAt(at - 1); }}><ChevronLeft size={34} strokeWidth={3} /></button>
-        <button type="button" class="story__nav-btn story__nav-btn--next" aria-label="下一页" disabled={!ready} onClick={() => { stopSpeaking(); if (last) void finish(); else setAt(at + 1); }}><ChevronRight size={34} strokeWidth={3} /></button>
+        <button type="button" class="story__nav-btn" aria-label="上一页" disabled={at === 0} onClick={() => goTo(at - 1)}><ChevronLeft size={34} strokeWidth={3} /></button>
+        <button type="button" class="story__nav-btn story__nav-btn--next" aria-label="下一页" disabled={!(ready ?? beat.kind === 'page')} onClick={() => { if (last) void finish(); else goTo(at + 1); }}><ChevronRight size={34} strokeWidth={3} /></button>
       </nav>
     </div>
   );

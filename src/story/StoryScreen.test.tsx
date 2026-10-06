@@ -44,6 +44,7 @@ describe('the story reader (spec 3c §4)', () => {
     await screen.findByText(/Saturday/);
     for (let i = 0; i < 4; i++) fireEvent.click(next());
     await screen.findByText('Little cat! Where are you?');
+    expect(next().hasAttribute('disabled')).toBe(false); // no voice: nothing to wait for (stage cases showed it stuck)
     const pay = await makeAppData({ voice: false, settings: owed });
     renderWithApp(<StoryScreen part="payoff" chapter={1} then={{ name: 'home' }} />, pay);
     await screen.findByText(/said what they were/); // straight to the payoff pages
@@ -68,5 +69,12 @@ describe('the story reader (spec 3c §4)', () => {
     fireEvent.click(next());
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'home' }));
     expect((await getSettings(app.db)).storyProgress).toMatchObject({ chapter: 1, payoffDone: true });
+  });
+  it('*emphasis* in the text is drawn as emphasis, never raw asterisks', async () => {
+    const app = await makeAppData({ voice: false });
+    renderWithApp(<StoryScreen part="setup" chapter={1} then={{ name: 'home' }} />, app);
+    await screen.findByText(/Saturday/);
+    expect(document.querySelector('.story__words')!.textContent).not.toContain('*');
+    expect(document.querySelector('.story__words em')?.textContent).toBe('SHHHHHHHH.');
   });
 });

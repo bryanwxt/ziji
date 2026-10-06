@@ -309,6 +309,9 @@ async function sweep(browser: Browser, size: Size) {
   // clip-paths made lessons start in ~5 s and every lesson flow checked nothing); a start over 15 s is a problem, not a skip
   const startLesson = async (p: Page) => {
     await p.click('.path__node--current');
+    // a chapter due today opens first (3c): the stage cases check the reader, so the sweep steps past it to the lesson
+    const first = await p.waitForSelector('.lessonbar, .celebrate, .story', { timeout: 15_000 });
+    if (await first.evaluate((e) => e.classList.contains('story'))) await p.click('.story__skip');
     await p.waitForSelector('.lessonbar, .celebrate', { timeout: 15_000 });
   };
 
