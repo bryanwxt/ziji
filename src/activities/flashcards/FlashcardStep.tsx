@@ -19,7 +19,7 @@ import type { TruffleMood } from '../../ui/truffle/Truffle';
 import type { Reaction } from '../../ui/truffle/timelines';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
-import { pickCharacterDistractors, pickPinyinDistractors } from './distractors';
+import { firstSense, meaningChoices, pickCharacterDistractors, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
@@ -31,7 +31,7 @@ export interface FlashResult {
   responseMs: number;
   elapsedMs: number;
   inContext: boolean; // a meaning question on a sentence (spec §20 part 7)
-  asked: 'read' | 'meaning'; // what was really asked: a meaning item with no cue falls back to reading
+  asked: 'read' | 'meaning' | 'hear'; // what was really asked: a meaning item with no cue falls back to reading; a hear item with no voice is read for meaning
   picked?: string; // the option he chose (钓鱼 remembers a look-alike, spec 2026-10-05 §3.4)
 }
 
@@ -47,7 +47,7 @@ interface Props {
   closeupReady: boolean;
   onDone: (result: FlashResult) => void;
   /** what 认新字 or 练一练 asks (spec 2026-10-05 §3.2): read (pinyin), listen (find the character), word (the 组词 gap). Without it the card decides, as before. */
-  ask?: 'read' | 'listen' | 'word';
+  ask?: 'read' | 'listen' | 'word' | 'hear' | 'meaningRead';
   /** 认新字: after a miss the card shows again before moving on (spec 2026-10-05 §2.1) */
   reintroOnMiss?: boolean;
   /** 认新字: a 成语 that uses the word, at his level or one up (spec 2026-10-05 §2.1, §4) */
@@ -59,18 +59,26 @@ interface Props {
 type Phase = 'intro' | 'quiz' | 'feedback';
 
 export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, peek = false }: Props) {
-  const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string } => {
+  const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
     const cue = ask === 'word' ? wordCue(word) : ask ? null : item.mode === 'meaning' ? meaningCue(word) : null;
     if (cue) {
-      return { listen: false, cue, answer: word.text, options: shuffle([word.text, ...(cue.wrong ?? pickSoundAlikes(word, cue, pool, rng))], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
+      return { listen: false, cue, answer: word.text, options: shuffle([word.text, ...(cue.wrong ?? pickSoundAlikes(word, cue, pool, rng))], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null };
+    }
+    // the word ladder (spec 2026-10-06 §3.2): he hears it, or reads it, and picks its meaning in English
+    if (ask === 'hear' || ask === 'meaningRead') {
+      const options = meaningChoices(word, pool, rng);
+      if (options) {
+        const hear = ask === 'hear' && voice; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
+        return { listen: hear, cue: null, answer: firstSense(cardMeaning(word)!), options, cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead' };
+      }
     }
     const lookAlikes = pickCharacterDistractors(word, pool, rng);
     const listen = voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
     const answer = listen ? word.text : word.pinyin;
     const wrong = listen ? lookAlikes.map((w) => w.text) : pickPinyinDistractors(word, pool, rng);
-    return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
+    return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null };
   }, [word.id]);
   const [phase, setPhase] = useState<Phase>(item.isNew && !item.retry ? 'intro' : 'quiz');
   const [choice, setChoice] = useState<string | null>(null);
@@ -135,10 +143,10 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   // his reaction is a beat in the rig (REACTIONS[kind].holdMs), then he rests on his own mood while the answer stays up
   const mood: TruffleMood = phase === 'intro' ? 'neutral' : resting;
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害！', content: '呼噜～' };
-  const bubble = phase === 'intro' ? (again ? '再看一遍！' : '新字来了！') : phase === 'quiz' ? (quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
+  const bubble = phase === 'intro' ? (again ? '再看一遍！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
-    if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : 'read', picked: choice ?? undefined });
+    if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : quiz.mode === 'hear' ? 'hear' : 'read', picked: choice ?? undefined });
   };  // 认新字: a miss shows the card again before he moves on; the word comes first in 练一练 too
   const proceed = () => {
     if (reintroOnMiss && result && !result.correct && !again) {
@@ -158,7 +166,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           title={result.correct ? quiz.cheer : quiz.comfort}
           detail={result.correct ? undefined : (
             <>
-              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : word.pinyin} picked={quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
+              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : word.pinyin} picked={quiz.mode ? null : quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
             </>
           )}
           actionLabel="继续"
@@ -196,12 +204,13 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                 </>
               )}
             </div>
-            <div class={`choices stagger ${quiz.listen || quiz.cue ? 'choices--hanzi' : 'choices--pinyin'}`}>
+            <div class={`choices stagger ${quiz.mode ? 'choices--english' : quiz.listen || quiz.cue ? 'choices--hanzi' : 'choices--pinyin'}`}>
                 {quiz.options.map((o) => (
                   <button
                     key={o}
                     type="button"
                     class={`choice press ${optionState(o)}`}
+                    lang={quiz.mode ? 'en' : undefined}
                     disabled={phase === 'feedback'}
                     onClick={() => choose(o)}
                     ref={(el) => {

@@ -23,7 +23,7 @@ export interface PracticeResult {
   responseMs: number;
   elapsedMs: number;
   inContext: boolean;
-  asked: 'read' | 'meaning' | 'use' | 'zibian';
+  asked: 'read' | 'meaning' | 'use' | 'zibian' | 'hear';
   picked?: string;
   idiom?: string; // the 成语 a rung-5 question asked (a miss brings the same one back)
 }

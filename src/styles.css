@@ -1295,6 +1295,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 @keyframes countdown { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 /* pinyin answers semi-bold, not heavy: beside character answers the weight no longer jumps between questions (parent, 2026-10-05) */
 .choices--pinyin .choice, .placement__choices--pinyin .choice { font-weight: 700; }
+/* the word ladder's meaning choices (spec 2026-10-06 §3.2): English, smaller, balanced over two lines at most */
+.choices--english .choice { font-size: clamp(17px, 2.3vh, 22px); line-height: 1.25; padding: 10px 12px; text-wrap: balance; font-family: var(--font-ui, inherit); }
 @media (max-width: 599px) and (max-height: 720px) { .stage:has(.sheet--oops) .stage__card .choice { min-height: var(--tap-main); } } /* a miss's sheet on the smallest phones: shorter tiles keep them in the card */
 .field .hint { margin: 4px 0; font-size: 14px; color: var(--ink-soft); }
 /* Truffle's bubble never moves the screen (parent, 2026-10-05: tapping him shifted everything on the placement result, the

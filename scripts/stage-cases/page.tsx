@@ -29,6 +29,8 @@ import { FlashcardStep } from '../../src/activities/flashcards/FlashcardStep';
 import { builtinIdiom, chengyuOf } from '../../src/content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../../src/practice/idioms';
 import { builtinWords } from '../../src/content';
+import { ladderWords } from '../../src/content/ladder';
+import { cardMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
 import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
@@ -143,6 +145,16 @@ else if (which === 'moments') {
     );
   }
   render(<Moments />, app);
+}
+else if (which === 'hear' || which === 'hear-long' || which === 'hear-read') {
+  // the word ladder's Hear question (spec 2026-10-06 §3.2): English meanings as the choices; hear-long picks the ladder words
+  // with the longest English, hear-read the same as a read-for-meaning question
+  const lw = ladderWords();
+  const pool = [...builtinWords(0), ...lw];
+  const longest = [...lw].sort((a, b) => (cardMeaning(b)?.length ?? 0) - (cardMeaning(a)?.length ?? 0));
+  const w = which === 'hear' ? builtinWords(0).find((x) => x.text === '门')! : longest[0]!;
+  const near = which === 'hear' ? pool : [w, ...longest.slice(1, 4)];
+  render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'hear-read' ? 'meaningRead' : 'hear'} word={w} pool={near} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
 }
 else if (which === 'intro-school-idiom') {
   // a school 成语's own 认新字 card (final review I3): four characters where the card expects one

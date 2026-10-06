@@ -59,7 +59,7 @@ for (const size of SIZES) {
   if (Math.abs(neutral - good) > 2) problems.push(`${size.name} sheet: the card shrinks ${Math.round(neutral - good)}px when feedback appears`);
   // 练一练's new questions: pairing, 组句 (also with every tile placed, its longest) and 钓鱼
   mkdirSync('fit-shots/stage-cases', { recursive: true });
-  for (const c of ['pair', 'match', 'build', 'fish']) {
+  for (const c of ['pair', 'match', 'build', 'fish', 'hear', 'hear-long', 'hear-read']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(300);
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });

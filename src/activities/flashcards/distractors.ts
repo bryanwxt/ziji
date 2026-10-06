@@ -1,6 +1,7 @@
 import { pinyin } from 'pinyin-pro';
 import { wordComponents } from '../../content';
 import { trapReadings } from './pinyinTraps';
+import { cardMeaning } from '../../content/glossary';
 import { shuffle, type Rng } from '../../lib/random';
 import type { Word } from '../../types';
 
@@ -83,4 +84,29 @@ export function pickPinyinDistractors(target: Word, pool: Word[], rng: Rng, n = 
   traps.forEach(add);
   variants.forEach(add);
   return out;
+}
+
+/** A meaning's first sense: what a P2 child reads on a choice (never the whole dictionary entry). */
+export const firstSense = (m: string): string => m.split(';')[0]!.trim();
+const sense = (m: string) => firstSense(m).split(',')[0]!.trim().toLowerCase();
+
+/** Hear / read-for-meaning (spec 2026-10-06 §3.2): its English meaning and three others whose first sense differs, near its place in his order. */
+export function meaningChoices(word: Word, pool: Word[], rng: Rng): string[] | null {
+  const full = cardMeaning(word);
+  if (!full) return null;
+  const answer = firstSense(full);
+  const seen = new Set([sense(answer)]);
+  const near = pool
+    .filter((w) => w.id !== word.id && !w.paused)
+    .sort((a, b) => Math.abs((a.rank ?? 1e9) - (word.rank ?? 0)) - Math.abs((b.rank ?? 1e9) - (word.rank ?? 0)))
+    .slice(0, 60);
+  const others: string[] = [];
+  for (const w of shuffle(near, rng)) {
+    const m = cardMeaning(w);
+    if (!m || seen.has(sense(m))) continue;
+    seen.add(sense(m));
+    others.push(firstSense(m));
+    if (others.length === 3) break;
+  }
+  return others.length === 3 ? shuffle([answer, ...others], rng) : null;
 }
