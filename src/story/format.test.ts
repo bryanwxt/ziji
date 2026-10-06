@@ -66,4 +66,8 @@ describe('story chapter format (spec 3a §6)', () => {
     const md = `# Season 1\n\n| Ch | Place | Problem | Rule / gag | Slots | Hint |\n|---|---|---|---|---|---|\n| 1 | hdb | The door is stuck | — | 门, 电梯, 信 | — |\n| 2 | hdb | x | y | 家 | — |\n`;
     expect(parseOutline(md)).toEqual([{ chapter: 1, place: 'hdb', slots: ['门', '电梯', '信'] }, { chapter: 2, place: 'hdb', slots: ['家'] }]);
   });
+  it('reads @cast as the characters standing in the scene', () => {
+    const c = parseChapter(CH.replace('@scene hdb-morning', '@scene hdb-morning\n@cast truffle granny'));
+    expect(c.setup[0]!.lines[1]).toEqual({ kind: 'cast', ids: ['truffle', 'granny'] });
+  });
 });

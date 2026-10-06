@@ -20,12 +20,12 @@ const inSeason = (text: string) => (SEASON1_TERMS as readonly string[]).includes
 
 function pageProblems(where: string, p: Page): string[] {
   const out: string[] = [];
-  const english = p.lines.flatMap((l) => (l.kind === 'scene' ? [] : [plainText(l.text)])).join(' ').replace(/\p{Script=Han}+/gu, ' ');
+  const english = p.lines.flatMap((l) => ((l.kind === 'scene' || l.kind === 'cast') ? [] : [plainText(l.text)])).join(' ').replace(/\p{Script=Han}+/gu, ' ');
   const count = english.split(/\s+/).filter((w) => /[A-Za-z]/.test(w)).length;
   if (count > MAX_PAGE_WORDS) out.push(`${where}: ${count} English words (at most ${MAX_PAGE_WORDS})`);
   // the English must be clean once the slots are taken out: no broken braces, no Chinese without a slot (final review I2)
   for (const l of p.lines) {
-    if (l.kind === 'scene') continue;
+    if ((l.kind === 'scene' || l.kind === 'cast')) continue;
     for (const sl of slotsIn(l.text)) if (sl.en.includes('|')) out.push(`${where}: slot {${sl.zh}|${sl.en}} has a stray | in its English`);
     const rest = l.text.replace(/\{([^|{}]+)\|([^{}]+)\}/g, ' ');
     if (/[{}]/.test(rest)) out.push(`${where}: a stray { or } in "${l.text}"`);
@@ -47,7 +47,7 @@ export function chapterProblems(c: Chapter, outline?: OutlineRow): string[] {
     if (bad.length) out.push(`${ch}: "${zh}" uses ${bad.join('')} — not taught by 二上`);
   }
   // slots
-  const texts = [...c.setup, ...c.payoff].flatMap((p) => p.lines.flatMap((l) => (l.kind === 'scene' ? [] : [l.text])));
+  const texts = [...c.setup, ...c.payoff].flatMap((p) => p.lines.flatMap((l) => ((l.kind === 'scene' || l.kind === 'cast') ? [] : [l.text])));
   const used = texts.flatMap((t) => slotsIn(t).map((s) => s.zh));
   const distinct = [...new Set(used)];
   for (const w of distinct) {

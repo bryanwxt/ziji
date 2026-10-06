@@ -1,7 +1,7 @@
 // Feedback states the walking sweep can't reach on its own (review I1/I2): a wrong 选一选 answer with a long bank clue,
 // and the stage card's size with a neutral vs a feedback sheet. Bundled by stage-cases.ts and opened in WebKit.
 import { render, type JSX } from 'preact';
-import ch03 from '../../docs/story/season-1/ch03.md';
+import ch03 from '../../src/content/story/season-1/ch03.md';
 import { parseChapter, slotsIn, type Line } from '../../src/story/format';
 import { SWATCH } from '../../src/ui/truffle/paint';
 import { GRANNY_POSES, GrannyDragon } from '../../src/ui/story/GrannyDragon';
@@ -150,7 +150,7 @@ else if (which === 'story-page') {
   };
   const line = (l: Line, i: number) =>
     l.kind === 'speech' ? <p key={i} class="sp-bubble"><b>{l.who}</b> {words(l.text)}</p>
-    : l.kind === 'scene' ? null
+    : l.kind === 'scene' || l.kind === 'cast' ? null
     : <p key={i} class="sp-text">{words(l.text)}</p>;
   const first = slotsIn(page.lines.map((l) => ('text' in l ? l.text : '')).join(' '))[0]!;
   render(

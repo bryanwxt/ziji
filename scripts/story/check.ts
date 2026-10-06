@@ -3,8 +3,9 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { chapterProblems, outlineProblems, seasonReport } from '../../src/story/check';
 import { parseChapter, parseOutline, type Chapter } from '../../src/story/format';
 
-const dir = 'docs/story/season-1';
-const rows = existsSync(`${dir}/outline.md`) ? parseOutline(readFileSync(`${dir}/outline.md`, 'utf8')) : [];
+const dir = 'src/content/story/season-1'; // the chapters ship with the app (3c §2); the outline stays in docs
+const outline = 'docs/story/season-1/outline.md';
+const rows = existsSync(outline) ? parseOutline(readFileSync(outline, 'utf8')) : [];
 const problems = rows.length ? outlineProblems(rows) : ['no outline yet'];
 const chapters: Chapter[] = [];
 for (const f of existsSync(dir) ? readdirSync(dir).filter((x) => /^ch\d+\.md$/.test(x)).sort() : []) {

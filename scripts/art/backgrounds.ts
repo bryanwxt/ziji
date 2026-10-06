@@ -20,8 +20,9 @@ for (const f of readdirSync(SRC).filter((x) => /\.(png|jpe?g|webp)$/i.test(x))) 
 }
 const have = new Set(readdirSync(OUT).filter((x) => x.endsWith('.webp')).map((x) => x.replace(/\.webp$/, '')));
 const total = [...have].reduce((n, id) => n + statSync(`${OUT}/${id}.webp`).size, 0);
-const chapters = readdirSync('docs/story').filter((d) => d.startsWith('season-')).flatMap((d) =>
-  readdirSync(`docs/story/${d}`).filter((x) => /^ch\d+\.md$/.test(x)).map((x) => parseChapter(readFileSync(`docs/story/${d}/${x}`, 'utf8'))));
+const STORY = 'src/content/story'; // the chapters ship with the app (3c §2)
+const chapters = readdirSync(STORY).filter((d) => d.startsWith('season-')).flatMap((d) =>
+  readdirSync(`${STORY}/${d}`).filter((x) => /^ch\d+\.md$/.test(x)).map((x) => parseChapter(readFileSync(`${STORY}/${d}/${x}`, 'utf8'))));
 const pending = missingScenes(sceneIds(chapters), have);
 console.log(`${have.size} backgrounds, ${Math.round(total / 1000)} KB in all${total > BG_SEASON_MAX_BYTES ? ' — OVER the 2.5 MB budget' : ''}`);
 console.log(pending.length ? `pending (no painting yet): ${pending.join(', ')}` : 'every scene has a painting');

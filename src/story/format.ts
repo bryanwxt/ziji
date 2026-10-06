@@ -5,7 +5,8 @@ export type Line =
   | { kind: 'scene'; id: string }
   | { kind: 'text'; text: string }
   | { kind: 'speech'; who: string; text: string }
-  | { kind: 'rescued'; text: string };
+  | { kind: 'rescued'; text: string }
+  | { kind: 'cast'; ids: string[] }; // who stands in the scene (3c §4); else the page's speakers
 export interface Page { lines: Line[] }
 export interface Mandarin { who: string; zh: string; en: string }
 export interface Question { zh: string; en: string; answer: string; wrong: string[] }
@@ -64,7 +65,8 @@ export function parseChapter(md: string): Chapter {
     if (section === 'granny') { c.granny.push(mandarin(s, n)); continue; }
     if (section === 'listen') { if (s.startsWith('?')) c.listen.questions.push(question(s, n)); else c.listen.lines.push(mandarin(s, n)); continue; }
     if (!page) throw new Error(`line ${n}: text outside a page`);
-    if (s.startsWith('@scene ')) page.lines.push({ kind: 'scene', id: s.slice(7).trim() });
+    if (s.startsWith('@cast ')) page.lines.push({ kind: 'cast', ids: s.slice(6).trim().split(/\s+/) });
+    else if (s.startsWith('@scene ')) page.lines.push({ kind: 'scene', id: s.slice(7).trim() });
     else if (s.startsWith('[rescued]')) page.lines.push({ kind: 'rescued', text: s.slice(9).trim() });
     else if (s.startsWith('>')) {
       const m = /^>\s*([^:]+):\s*(.+)$/.exec(s);
