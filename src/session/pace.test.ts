@@ -54,3 +54,10 @@ describe('today’s number of new words (spec §2.2)', () => {
     expect(nextPace({ ...base, ceiling: 0, kept: { right: 9, total: 10 } })).toEqual({ perDay: 0, reason: 'new words are switched off' });
   });
 });
+
+describe('pace on the ladder (spec 2026-10-06 §3.2)', () => {
+  it('a new word is kept when he hears it right on a later day', () => {
+    const hear = (wordId: string, date: string, correct: boolean): ReviewLog => ({ ...log(wordId, date, correct), cardId: `${wordId}:hear`, kind: 'hear' });
+    expect(keptRecent([lesson('2026-10-03', ['b:a'])], [hear('b:a', '2026-10-04', true)], '2026-10-06')).toEqual({ right: 1, total: 1 });
+  });
+});

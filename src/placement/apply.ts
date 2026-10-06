@@ -6,6 +6,7 @@ import { allCards, allWords, deleteCards, getSettings, practisedByKind, putCards
 import { countKnownReading, startingPoint, unpractisedKnown } from './journey';
 import type { CardRecord, Word } from '../types';
 import { seedPlacementCards } from './placement';
+import { queueHearChecks } from '../ladder/migrate';
 import { placementLevels, type WalkAnswer } from './walk';
 
 /** What a placement check found (spec §19 part 6): the words he reads, the words he understands too, the ones he missed, and both levels (band indexes, -1 = none). */
@@ -42,14 +43,16 @@ export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date):
   const understood = new Set(r.understandingIds.filter((id) => read.has(id) && hasCue(id)));
   const meaningNow = new Set(r.readingIds.filter((id) => !understood.has(id) && hasCue(id)));
   const supported = (c: CardRecord) =>
-    c.kind === 'recognise' ? read.has(c.wordId) : c.kind === 'meaning' ? understood.has(c.wordId) || meaningNow.has(c.wordId) : true;
+    c.kind === 'recognise' || c.kind === 'hear' ? read.has(c.wordId) : c.kind === 'meaning' ? understood.has(c.wordId) || meaningNow.has(c.wordId) : true; // a listening check goes with its reading
   // unpractised meaning cards are always re-seeded from this result (understood → known, read-only → a check due soon)
   const replaced = (c: CardRecord) => c.kind !== 'write' && !practised(c) && (!supported(c) || c.kind === 'meaning');
   await deleteCards(db, cards.filter(replaced).map((c) => c.id));
   const kept = new Set(cards.filter((c) => !replaced(c)).map((c) => c.id));
+  // what placement finds he reads (or understands) counts as passed, as migration counts what he had earned (spec 2026-10-06 §3.6)
+  const passed = (c: CardRecord): CardRecord => ({ ...c, passed: now.getTime() });
   const seeds = [
-    ...seedPlacementCards(words, r.readingIds, now, 'recognise'),
-    ...seedPlacementCards(words, [...understood], now, 'meaning'),
+    ...seedPlacementCards(words, r.readingIds, now, 'recognise').map(passed),
+    ...seedPlacementCards(words, [...understood], now, 'meaning').map(passed),
     // spread out, easiest first, a day's worth at a time: hundreds due at once would push his class words out for weeks
     ...[...meaningNow]
       .sort((a, b) => (byId.get(a)?.rank ?? Infinity) - (byId.get(b)?.rank ?? Infinity))
@@ -59,6 +62,7 @@ export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date):
       }),
   ].filter((c) => !kept.has(c.id));
   await putCards(db, seeds);
+  await queueHearChecks(db, now); // every word he reads gets a listening check, a few a day
   const worldBase = startingPoint(countKnownReading(await allCards(db)), learnedBefore);
   await updateSettings(db, { placementDone: true, placementResult: { at: now.getTime(), reading: r.reading, understanding: r.understanding, missed: r.missed, worldBase } });
   return seeds.filter((c) => c.kind === 'recognise').length;

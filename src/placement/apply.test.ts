@@ -51,7 +51,7 @@ describe('two levels (spec §19 part 6)', () => {
     const db = await freshDb();
     await putWords(db, [makeWord('欺', { id: 'b:q', rank: 1 })]);
     await applyPlacement(db, { readingIds: ['b:q'], understandingIds: [], missed: [], reading: 0, understanding: -1 }, new Date(2026, 9, 5, 9));
-    expect((await allCards(db)).map((c) => c.id)).toEqual(['b:q:recognise']);
+    expect((await allCards(db)).map((c) => c.id).sort()).toEqual(['b:q:hear', 'b:q:recognise']); // its listening check, and no meaning card
   });
   it('a re-run clears placement-only meaning cards the new result does not support; practised words stay', async () => {
     const db = await freshDb();

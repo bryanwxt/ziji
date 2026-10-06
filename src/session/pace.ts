@@ -15,7 +15,7 @@ export const LOOKBACK_DAYS = 5;
 /** Of the new words his lessons introduced in the last few days (not today), how many he recalled the first time each came back on a later day. */
 export function keptRecent(sessions: SessionRecord[], logs: ReviewLog[], today: string): { right: number; total: number } {
   const since = localDateKey(addDays(parseDateKey(today), -LOOKBACK_DAYS));
-  const reads = logs.filter((l) => l.kind === 'recognise').sort((a, b) => a.at - b.at);
+  const reads = logs.filter((l) => l.kind === 'recognise' || l.kind === 'hear').sort((a, b) => a.at - b.at); // a new word is first answered by ear (spec 2026-10-06 §3.2)
   let right = 0;
   let total = 0;
   for (const s of sessions) {

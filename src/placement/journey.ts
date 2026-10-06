@@ -6,7 +6,7 @@ import { allCards, getSettings, practisedByKind, updateSettings } from '../store
 import type { CardKind, CardRecord, KidState } from '../types';
 import { resetWorlds } from '../fun/worlds';
 
-const knownReading = (cards: CardRecord[]) => cards.filter((c) => c.kind === 'recognise' && isEarned(c.fsrs));
+const knownReading = (cards: CardRecord[]) => cards.filter((c) => c.kind === 'recognise' && (c.passed !== undefined || isEarned(c.fsrs))); // passed on the ladder, or earned before it
 
 /** Characters he knows but has never practised: placement's, for an install placed before the starting point was saved. */
 export function unpractisedKnown(cards: CardRecord[], byKind: Map<CardKind, Set<string>>): number {

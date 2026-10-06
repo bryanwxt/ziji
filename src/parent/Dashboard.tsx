@@ -44,7 +44,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (tab: ParentTab) => void
   const t = now();
   const today = localDateKey(t);
   // reading only: meaning, words in use, 字辨 and writing each have their own row in Skills
-  const readingLogs = d.logs.filter((l) => l.kind === 'recognise');
+  const readingLogs = d.logs.filter((l) => l.kind === 'recognise' || l.kind === 'hear'); // words he misses by ear are trouble too
   const trouble = troubleWords(readingLogs.filter((l) => l.at >= addDays(t, -30).getTime()));
   const backupDue = settings.lastBackupAt === null || t.getTime() - settings.lastBackupAt > BACKUP_NUDGE_DAYS * 86_400_000;
   const pct = (n: number, target: number) => `${Math.min(100, Math.round((n / target) * 100))}%`;
