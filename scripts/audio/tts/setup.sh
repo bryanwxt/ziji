@@ -15,6 +15,7 @@ case "$engine" in
     # openai-whisper still builds with pkg_resources, which setuptools 81 dropped: pin it, build environments included
     echo "setuptools<81" > "$RUNNER_TEMP/constraints.txt"; export PIP_CONSTRAINT="$RUNNER_TEMP/constraints.txt"
     python -m pip install -q "setuptools<81" wheel
+    python -m pip install -q --no-build-isolation openai-whisper  # builds with the pinned setuptools, not a fresh one
     git clone -q --recursive --depth 1 https://github.com/FunAudioLLM/CosyVoice.git "$root"
     python -m pip install -q -r "$root/requirements.txt"
     python -c "from modelscope import snapshot_download; snapshot_download('iic/CosyVoice2-0.5B', local_dir='$root/pretrained_models/CosyVoice2-0.5B')" ;;
