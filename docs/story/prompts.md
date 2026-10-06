@@ -1,6 +1,6 @@
 # The Word Thief — background prompts for the Gemini app
 
-*For the parent. Each background is one painting, made in the Gemini app and saved into `art/backgrounds/`. Claude crops, compresses and wires them in.*
+*For the parent. Each background is one painting, made in the Gemini app and saved into `docs/story/paintings/`. Claude crops, compresses and wires them in.*
 *Style rules: `docs/story/style.md`.*
 
 ## Your steps
@@ -11,7 +11,7 @@
    - ask for a **4:3 landscape** image.
 
    Generate a few until one feels right, and use the reject checklist below to throw out bad ones fast.
-2. **Save the one you pick** as `art/backgrounds/hdb-voiddeck.png` (any image format is fine), or just send it to me in chat and I'll save it.
+2. **Save the one you pick** as `docs/story/paintings/hdb-voiddeck.png` (any image format is fine), or just send it to me in chat and I'll save it.
 3. **For every other scene, attach your approved `hdb-voiddeck` image first**, and add this line before the prompt:
 
    > Match the painting style, colours and light of the attached image exactly.

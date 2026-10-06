@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { BG_SEASON_MAX_BYTES, missingScenes, prepareBackground, sceneIds } from '../../src/story/art';
 import { parseChapter } from '../../src/story/format';
 
-const SRC = 'art/backgrounds';
+const SRC = 'docs/story/paintings'; // not art/: the Audio build downloads its clips there
 const OUT = 'public/story/bg';
 mkdirSync(OUT, { recursive: true });
 let failed = 0;
