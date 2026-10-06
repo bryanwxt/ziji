@@ -3,7 +3,10 @@ import { pinyin } from 'pinyin-pro';
 import SAY_AS from '../../src/audio/sayAs.json';
 
 export type ClipKind = 'char' | 'word' | 'sentence' | 'fragment';
-export interface ClipJob { key: string; id: string; text: string; engineText: string; expected: string; kind: ClipKind; sure: boolean }
+export interface ClipJob {
+  key: string; id: string; text: string; engineText: string; expected: string; kind: ClipKind; sure: boolean;
+  method?: 'cut'; // said at the end of a sentence and cut back out (scripts/audio/inventory.ts CUT_FROM_SENTENCE)
+}
 
 /** FNV-1a 64-bit of the UTF-8 bytes, as 16 hex digits. */
 export function fnv64(s: string): string {

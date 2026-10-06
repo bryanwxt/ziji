@@ -16,19 +16,31 @@ export const FIXED_LINES = ['你好！', '你好，我们一起学汉字！', '�
 const isHan = (c: string) => /\p{Script=Han}/u.test(c);
 const sentencePinyin = (t: string) => pinyin(t, { type: 'array', nonZh: 'removed' }).join(' ');
 
+/**
+ * Words the voice gets wrong said alone even ending in 。, so they are cut from a sentence instead (scripts/audio/tts:
+ * Kokoro.synth_cut). Add one whenever the parent hears a word wrong (parent, 2026-10-06: 一起's 一 rose).
+ */
+export const CUT_FROM_SENTENCE = new Set(['一起']);
+
+/** A clip's name: its key, its reading, the voice, and exactly what the voice is given and how, so any change makes a new clip. */
+export const clipIdFor = (j: Pick<ClipJob, 'key' | 'expected' | 'engineText' | 'method'>, voice: string): string =>
+  clipId(j.key, j.expected, `${voice}\u0000${j.method ?? 'say'}\u0000${j.engineText}`);
+
 export function buildInventory(voice: string): ClipJob[] {
   const jobs = new Map<string, ClipJob>();
-  const add = (text: string, expected: string, kind: ClipKind, reading?: string) => {
+  const add = (text: string, expected: string, kind: ClipKind, reading?: string, { piece = false } = {}) => {
     const t = text.trim();
     if (!Array.from(t).some(isHan)) return;
     const key = clipKey(t, reading);
     if (jobs.has(key)) return;
     // words carry checked pinyin (the card's, with the content fixes): an engine is steered to it. Sentences go as written.
     const e = kind === 'char' || kind === 'word' ? engineText(t, expected) : { text: t, sure: true };
-    // A bare word is said like an unfinished phrase, its tones bent (一起 came out yí, 东西's 东 falling: parent, 2026-10-06).
-    // Ended with 。 it is said whole: pitch checks on 60 words, 67 → 86 of 117 tones right.
-    const said = (kind === 'char' || kind === 'word') && !/[。！？]$/.test(e.text) ? `${e.text}。` : e.text;
-    jobs.set(key, { key, id: clipId(key, expected, voice), text: t, engineText: said, expected, kind, sure: e.sure });
+    const cut = CUT_FROM_SENTENCE.has(t);
+    // A bare word is said like an unfinished phrase, its tones bent (东西's 东 falling: parent, 2026-10-06); ended with 。 it
+    // is said whole. Not a 听写 cue's middle piece (长城的): that is said mid-cue, and with 。 its 的 came out stressed.
+    const said = (kind === 'char' || kind === 'word') && !cut && !piece && !/[。！？]$/.test(e.text) ? `${e.text}。` : e.text;
+    const job: ClipJob = { key, id: '', text: t, engineText: said, expected, kind, sure: e.sure, ...(cut ? { method: 'cut' as const } : {}) };
+    jobs.set(key, { ...job, id: clipIdFor(job, voice) });
   };
   const sentence = (t: string, kind: ClipKind = 'sentence') => add(t, sentencePinyin(t), kind);
 
@@ -40,7 +52,7 @@ export function buildInventory(voice: string): ClipJob[] {
     add(w.text, w.pinyin, 'char', w.pinyin);
     for (const e of w.examples ?? []) {
       add(e.text, e.pinyin, 'word');
-      add(`${e.text}的`, `${e.pinyin} de`, 'word'); // 听写's "长，长城的，长"
+      add(`${e.text}的`, `${e.pinyin} de`, 'word', undefined, { piece: true }); // 听写's "长，长城的，长"
     }
   }
   for (const b of SENTENCE_BANK) {

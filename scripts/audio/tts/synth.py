@@ -36,6 +36,15 @@ def tidy(audio, rate):
     return np.concatenate([pad, audio, pad])
 
 
+def render(engine, job, speed):
+    """(audio, rate) for one job: said as given, or (method 'cut') said at the end of a sentence and cut back out."""
+    if job.get('method') == 'cut':
+        if not hasattr(engine, 'synth_cut'):
+            raise ValueError(f"{job['engineText']}: this engine can't cut a word from a sentence")
+        return engine.synth_cut(job['engineText'], speed)
+    return engine.synth(job['engineText'], speed)
+
+
 def to_aac(wav, out):
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', wav, '-ac', '1', '-ar', '24000', '-c:a', 'aac', '-b:a', '40k', out], check=True)
 
@@ -67,7 +76,7 @@ def main():
             speed = args.speed_word if job['kind'] in ('char', 'word') else args.speed_sentence
             t0 = time.time()
             try:
-                audio, rate = engine.synth(job['engineText'], speed)
+                audio, rate = render(engine, job, speed)
                 sf.write(wav, tidy(audio, rate), rate)
                 to_aac(wav, os.path.join(args.out, f"{job['id']}.m4a"))
                 r = {'id': job['id'], 'ok': True, 'seconds': round(time.time() - t0, 2)}
