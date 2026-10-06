@@ -37,7 +37,7 @@ Each sub-project gets its own plan, build and deploy. This spec covers all five 
 |---|---|---|---|
 | 1 | Audio pipeline | Neural TTS clips for every word, 组词, sentence and story line in range, each checked automatically | — |
 | 2 | Word ladder | Words as the unit, five rungs, honest progress, word-level placement, migration, an early plain town map | 1 |
-| 3 | Story engine + Season 1 | Chapter format, line-art cast, word weave, Granny Dragon, town map, Season 1 | 2 |
+| 3 | Story engine + Season 1 | Chapter format, the cast and painted town, word weave, Granny Dragon, town map, Season 1 | 2 |
 | 4 | Session rebuild | The chapter-wrapped lesson (20 minutes of active practice); old rewards and home replaced | 2, 3 |
 | 5 | Speaking | The Say rung (record and replay), and 看图说话 inside the story | 3, 4 |
 
@@ -218,7 +218,7 @@ The magic never solves a problem with a rule the reader hasn't been shown.
 
 ### 5.6 Town map (Home)
 
-- 字己镇 is drawn in line art.
+- 字己镇 is a painted scene (§5.7).
 - Restored places are in colour; places still missing words are grey and blank-signed.
 - The crew stand in the square.
 - The next chapter's location pulses.
@@ -226,8 +226,11 @@ The magic never solves a problem with a rule the reader hasn't been shown.
 
 ### 5.7 Art
 
-- Bold line-art SVG in a single style: black line, flat colour, as in *The Bad Guys* and *The 13-Storey Treehouse*.
-- **Cast:** Truffle (redrawn in this style), Granny Dragon, Hush, 2–3 townsfolk, and the zodiac crew drawn season by season. Each has 6–8 poses or expressions.
+**Direction (parent, 2026-10-06): Ghibli-inspired.** The look, not their characters.
+- **Backgrounds:** hand-painted-looking watercolour scenes (soft light, big skies, lived-in streets) for 字己镇 and its 8–10 locations. They are generated once per location as images, checked by the parent, and shipped as files.
+- **Characters:** drawn as SVG in a soft, painted style that matches the backgrounds (gentle shading, rounded shapes, no hard black outline). Characters stay in code because 14 characters across hundreds of poses can't be kept consistent with generated images, and SVG keeps them animatable and light.
+- Sub-project 3's spec settles how the images are generated, their size budget, and a style sheet both layers follow.
+- **Cast:** Truffle (redrawn in the painted style), Granny Dragon, Hush, 2–3 townsfolk, and the zodiac crew drawn season by season. Each has 6–8 poses or expressions.
 - **Locations:** 8–10 town locations as scene backgrounds.
 - Pages are portrait chapter-book layouts with large English text, speech bubbles and sound effects.
 - Pages are checked in WebKit at iPad and iPhone sizes, using the fit sweep and stage cases.

@@ -6,3 +6,4 @@ scripts/.cache/
 *.local
 .superpowers/
 fit-shots/
+__pycache__/
