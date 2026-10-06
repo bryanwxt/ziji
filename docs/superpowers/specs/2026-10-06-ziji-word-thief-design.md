@@ -38,7 +38,7 @@ Each sub-project gets its own plan, build and deploy. This spec covers all five 
 | 1 | Audio pipeline | Neural TTS clips for every word, 组词, sentence and story line in range, each checked automatically | — |
 | 2 | Word ladder | Words as the unit, five rungs, honest progress, word-level placement, migration, an early plain town map | 1 |
 | 3 | Story engine + Season 1 | Chapter format, line-art cast, word weave, Granny Dragon, town map, Season 1 | 2 |
-| 4 | Session rebuild | The 30-minute chapter-wrapped lesson; old rewards and home replaced | 2, 3 |
+| 4 | Session rebuild | The chapter-wrapped lesson (20 minutes of active practice); old rewards and home replaced | 2, 3 |
 | 5 | Speaking | The Say rung (record and replay), and 看图说话 inside the story | 3, 4 |
 
 **Why this order:** the story renders words by their ladder state, and its Mandarin needs good audio. Building the story first would tie it to character counts that are about to go.
@@ -247,16 +247,21 @@ The magic never solves a problem with a rule the reader hasn't been shown.
 
 ## 6. The daily session (sub-project 4)
 
-The default length stays at 30 minutes, and the parent can change it. The block lengths scale with the setting.
+**Lesson length = active practice time** (parent, 2026-10-06): the default is **20 minutes**, and the parent can change it. Story pages, Truffle's reactions, restoration animations and celebrations don't count towards it.
+
+- Only time spent on practice counts: from a question appearing until it is answered, plus intros and writing.
+- The time-box counts this practice time and nothing else.
+- The four practice blocks scale with the setting.
+- **Migration:** a saved length of 30 (the old default) becomes 20. Any other value the parent set is kept, and from now on means practice time.
 
 | # | Block | About | What happens |
 |---|---|---|---|
-| 1 | Chapter setup | 1 min | Story pages |
-| 2 | New words | 5 min | Each word escapes Hush's machine and Truffle catches it. He sees sound, characters and meaning together, then recalls the word straight away |
-| 3 | Ladder practice | 14 min | Reviews due across all rungs, interleaved; Hear and Understand are weighted up. Correct answers restore the scene |
-| 4 | Writing | 5 min | Trace → recall on due characters, framed as repainting a sign |
-| 5 | 听一听 | 3 min | Granny Dragon's Mandarin scene, then 1–2 questions (谁/什么 → 为什么) |
-| 6 | Payoff and cliffhanger | 1 min | Story pages |
+| 1 | Chapter setup | ~1 min, not counted | Story pages |
+| 2 | New words | 4 min | Each word escapes Hush's machine and Truffle catches it. He sees sound, characters and meaning together, then recalls the word straight away |
+| 3 | Ladder practice | 10 min | Reviews due across all rungs, interleaved; Hear and Understand are weighted up. Correct answers restore the scene |
+| 4 | Writing | 4 min | Trace → recall on due characters, framed as repainting a sign |
+| 5 | 听一听 | 2 min | Granny Dragon's Mandarin scene, then 1–2 questions (谁/什么 → 为什么) |
+| 6 | Payoff and cliffhanger | ~1 min, not counted | Story pages |
 
 - Unfinished reviews carry over to the next day.
 - The backlog pause that stops new words stays.
@@ -280,7 +285,7 @@ The default length stays at 30 minutes, and the parent can change it. The block 
   - owning a word
   - character recognised and written rules
   - every migration case
-- **Session:** block timing, carry-over, chapter versus patrol, and missed days.
+- **Session:** block timing (only practice time counts towards the length; story and animation time don't), carry-over, chapter versus patrol, and missed days.
 - **Content:** the rules in §5.8, plus the existing reading and level checks.
 - **Audio:** every clip present, and the ASR check passing.
 - **Layout:** the WebKit fit sweep and stage cases, for story pages, the town and every new practice format.
@@ -290,7 +295,7 @@ The default length stays at 30 minutes, and the parent can change it. The block 
 
 | Risk | Mitigation |
 |---|---|
-| The story pulls time away from practice | About 2 of 30 minutes is story; the mission *is* the lesson |
+| The story pulls time away from practice | Story time sits outside the 20 practice minutes and is capped at about 2–3 minutes; the mission *is* the lesson |
 | Racing through answers to see the plot | Fast answers don't pass rungs; one chapter a day |
 | Granny Dragon is too hard to follow | Only taught characters and met words; audio first; English on tap |
 | Writing seasons is slow | Story bible first; seasons drafted a term ahead |
