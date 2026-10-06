@@ -17,6 +17,9 @@ import { ComponentsStep } from '../../src/activities/components/ComponentsStep';
 import { fishItem } from '../../src/activities/components/zibian';
 import { dapeiQuestion, zuciBoard } from '../../src/practice/pairs';
 import { MatchQuestion } from '../../src/activities/practice/MatchQuestion';
+import { UnderstandQuestion } from '../../src/activities/practice/UnderstandQuestion';
+import { understandItem, type UnderstandItem } from '../../src/practice/understand';
+import { inScopeWords, SENTENCE_TERMS } from '../../src/content/understand';
 import { WorldScene } from '../../src/ui/worlds/WorldScene';
 import { WorldProps } from '../../src/ui/worlds/WorldProps';
 import { sceneFor } from '../../src/ui/worlds/scenes';
@@ -101,6 +104,12 @@ else if (which === 'pair' || which === 'match' || which === 'build' || which ===
     : which === 'build' ? <BuildSentence item={{ full: '我和哥哥都喜欢打球。', tiles: ['我', '和', '哥哥', '都', '喜欢', '打球。'], orders: [['我', '和', '哥哥', '都', '喜欢', '打球。']] }} word={w('和')} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
     : <ComponentsStep items={[fishItem(w('根'), ['跟'], new Set(), rng)!]} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onDone={() => {}} />;
   render(screen(body), app);
+}
+else if (which === 'understand') {
+  // the Understand question (plan 2b), with the longest English among the written sentences: the tightest card
+  const items = SENTENCE_TERMS.flatMap((t) => inScopeWords(t)).map((w) => understandItem(w, mulberry32(1))).filter((x): x is UnderstandItem => !!x);
+  const item = items.sort((a, b) => Math.max(...b.choices.map((c) => c.length)) - Math.max(...a.choices.map((c) => c.length)))[0]!;
+  render(screen(<UnderstandQuestion item={item} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />), app);
 }
 else if (which === 'worlds') {
   // every world by day and by evening, for the parent to look over (spec 2026-10-04 §2)

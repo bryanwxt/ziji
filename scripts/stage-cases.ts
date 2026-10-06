@@ -80,6 +80,19 @@ for (const size of SIZES) {
       problems.push(...(await cardClipped(page, `${size.name} pair done`)));
     }
   }
+  // the Understand question (plan 2b): the choices open after the sentence (5 s here: no voice ends it), then a miss's sheet
+  {
+    await page.goto(`file://${dir}/index.html?case=understand`);
+    await page.waitForTimeout(5300);
+    await page.screenshot({ path: `fit-shots/stage-cases/understand-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} understand`)));
+    const wrong = await page.$$('.understand__choice');
+    if (wrong.length !== 3) problems.push(`${size.name} understand: ${wrong.length} choices`);
+    await page.click('.understand__choice >> nth=0');
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `fit-shots/stage-cases/understand-picked-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} understand picked`)));
+  }
   // 成语 (phase C): each question, then with the sheet open after a miss; the 认新字 card with a 成语
   for (const c of ['idiom', 'idiom-fit', 'idiom-build', 'intro-idiom', 'intro-idiom-word', 'intro-school-idiom']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
