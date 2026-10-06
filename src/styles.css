@@ -791,7 +791,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__cards .wotd__grid { width: 70px; height: 70px; font-size: 58px; }
 .home__cards .wotd__example { margin-top: 0; font-size: 20px; }
 .home__cards .langdu-btn { flex-direction: column; min-height: 64px; padding: 6px 14px; gap: 2px; font-size: 18px; }
-.home__cards .town { position: relative; margin-top: 8px; padding: 14px 10px 4px; } /* 字己镇 (spec 2026-10-06 §3.7): a plain skyline; nothing moves */
+.home__cards .town { position: relative; margin-top: 8px; padding: 8px 10px 4px; } /* 字己镇 (spec 2026-10-06 §3.7): a plain skyline; nothing moves */
 .town__tag { position: absolute; top: -12px; left: 12px; }
 .town__row { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; align-items: end; }
 .town__place { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
