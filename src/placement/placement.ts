@@ -8,7 +8,7 @@ export const MAX_FIRST_CHECKS_PER_DAY = 30;
  * Known cards for the placed words. First rechecks are spread evenly from day 7 (over days 7–28, longer for a big placement, at most 30 a day) — the hardest
  * (rarest) words first — so a big placement never lands on one day and pauses new words.
  */
-export function seedPlacementCards(words: Word[], knownIds: string[], now: Date, kind: 'recognise' | 'meaning' = 'recognise'): CardRecord[] {
+export function seedPlacementCards(words: Word[], knownIds: string[], now: Date, kind: 'recognise' | 'meaning' | 'hear' = 'recognise'): CardRecord[] {
   const ids = new Set(knownIds);
   const placed = words.filter((w) => ids.has(w.id));
   const hardestFirst = [...placed].sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));

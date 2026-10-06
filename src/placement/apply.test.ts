@@ -74,11 +74,11 @@ describe('placementIds', () => {
   it('everything up to each level, plus right answers above it', () => {
     const bands = [[makeWord('一', { id: 'b:1' })], [makeWord('二', { id: 'b:2' })], [makeWord('三', { id: 'b:3' })]];
     const answers = [
-      { band: 1, style: 'read' as const, wordId: 'b:2', correct: true }, { band: 1, style: 'listen' as const, wordId: 'b:2', correct: true },
+      { band: 1, style: 'read' as const, wordId: 'b:2', correct: true }, { band: 1, style: 'read' as const, wordId: 'b:2', correct: true },
       { band: 1, style: 'fill' as const, wordId: 'b:2', correct: true }, { band: 1, style: 'fit' as const, wordId: 'b:2', correct: false },
-      { band: 2, style: 'read' as const, wordId: 'b:3', correct: true }, { band: 2, style: 'listen' as const, wordId: 'b:3', correct: false }, { band: 2, style: 'fill' as const, wordId: 'b:3x', correct: false },
+      { band: 2, style: 'read' as const, wordId: 'b:3', correct: true }, { band: 2, style: 'read' as const, wordId: 'b:3', correct: false }, { band: 2, style: 'fill' as const, wordId: 'b:3x', correct: false },
     ];
-    expect(placementIds(bands, answers)).toEqual({ readingIds: ['b:1', 'b:2', 'b:3'], understandingIds: ['b:1'], missed: ['b:2', 'b:3', 'b:3x'] });
+    expect(placementIds(bands, answers)).toEqual({ readingIds: ['b:1', 'b:2', 'b:3'], understandingIds: ['b:1'], heardIds: [], missed: ['b:2', 'b:3', 'b:3x'] });
   });
 
   it('meaning checks for words he only reads are spread out, easiest first, 12 a day — never all due at once', async () => {

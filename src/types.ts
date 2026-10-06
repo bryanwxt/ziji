@@ -107,6 +107,7 @@ export interface PlacementResult {
   at: number;
   reading: number;
   understanding: number;
+  listening?: number; // band index of his listening level, -1 none (spec 2026-10-06 §3.5); absent before 2c
   missed: string[];
   /** known characters the journey starts from: what placement found (worlds count what he learns after it). Missing on older saves. */
   worldBase?: number;
