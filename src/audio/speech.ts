@@ -1,5 +1,8 @@
 import SAY_AS from './sayAs.json';
-import { setSpeaking } from './speaking';
+import { audioContext } from './context';
+import { clipPlan, clipUrl } from './clips';
+import { createClipPlayer, type ClipPlayer } from './clipPlayer';
+import { setClipActive, setSpeaking } from './speaking';
 
 let voice: SpeechSynthesisVoice | null = null;
 let rate = 0.8;
@@ -85,11 +88,73 @@ export function spokenAs(text: string, reading?: string): string {
   return sayAs[text] ?? text;
 }
 
+let player: ClipPlayer = createClipPlayer({
+  context: audioContext,
+  load: (id) => fetch(clipUrl(id)).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`clip ${id}: ${r.status}`)))),
+});
+/** For tests: a stand-in player. */
+export function setClipPlayer(p: ClipPlayer): void {
+  player = p;
+}
+
+type Line = { text: string; reading?: string };
+/** Lines queued behind a clip (or behind the iPad voice while a clip waits): said in order, one at a time. */
+let after: Line[] = [];
+let clipBusy = false;
+const ttsBusy = () => available() && (live.size > 0 || waiting !== null);
+
 /**
- * Say Chinese text. It cuts off whatever is playing, unless `queue` (then it waits its turn: the character, then its usage line).
- * `reading` is the pinyin a lone character is taught with, when the screen knows it.
+ * Say Chinese text: the neural voice's clip when there is one (spec 2026-10-06 §4), else the iPad voice. It cuts off whatever
+ * is playing, unless `queue` (then it waits its turn: the character, then its usage line). `reading` is the pinyin a lone
+ * character is taught with, when the screen knows it.
  */
 export function speak(text: string, { queue = false, reading }: { queue?: boolean; reading?: string } = {}): void {
+  if (queue && (clipBusy || after.length > 0 || (ttsBusy() && clipPlan(text, reading)))) {
+    after.push({ text, reading });
+    return;
+  }
+  const steps = clipPlan(text, reading);
+  if (!steps) { ttsSpeak(text, { queue, reading }); return; }
+  if (!queue) stopSpeaking();
+  playClip(steps, { text, reading });
+}
+
+function playClip(steps: NonNullable<ReturnType<typeof clipPlan>>, line: Line): void {
+  clipBusy = true;
+  setClipActive(true);
+  void player.play(steps, () => setSpeaking(true)).then((r) => {
+    if (r === 'stopped') return; // whoever stopped it has reset everything
+    clipBusy = false;
+    setClipActive(false);
+    if (r === 'failed') { ttsSpeak(line.text, { queue: true, reading: line.reading }); return; } // never silent
+    setSpeaking(false);
+    drain();
+  });
+}
+
+/** The next queued line, once nothing is playing. */
+function drain(): void {
+  if (clipBusy || ttsBusy()) return;
+  const next = after.shift();
+  if (!next) return;
+  const steps = clipPlan(next.text, next.reading);
+  if (steps) playClip(steps, next);
+  else ttsSpeak(next.text, { queue: true, reading: next.reading });
+}
+
+/** Fetch a lesson's clips ahead, so they play at once and offline (the service worker keeps them). */
+export function prefetchWords(words: { text: string; pinyin?: string; examples?: { text: string }[] }[]): void {
+  const ids = new Set<string>();
+  const add = (text: string, reading?: string) => { for (const s of clipPlan(text, reading) ?? []) if ('id' in s) ids.add(s.id); };
+  for (const w of words) {
+    add(w.text, w.pinyin);
+    for (const e of w.examples ?? []) add(e.text);
+  }
+  if (ids.size) player.prefetch([...ids]);
+}
+
+/** The iPad's own voice (speechSynthesis): lines with no clip, and the fallback when a clip fails. */
+function ttsSpeak(text: string, { queue = false, reading }: { queue?: boolean; reading?: string } = {}): void {
   if (!available()) return;
   text = spokenAs(text, reading);
   if (waiting) {
@@ -132,6 +197,7 @@ function say(text: string, retry = true): void {
   const done = () => {
     live.delete(u);
     setSpeaking(false);
+    if (live.size === 0 && !waiting) drain(); // a line queued behind the iPad voice
   };
   u.onstart = () => {
     started = true;
@@ -155,8 +221,12 @@ function say(text: string, retry = true): void {
   }, START_CHECK_MS);
 }
 
-/** Silence any speech in progress (before recording him, and when leaving a screen). */
+/** Silence any speech in progress, clip or voice, and drop what was queued (before recording him, and when leaving a screen). */
 export function stopSpeaking(): void {
+  after = [];
+  clipBusy = false;
+  setClipActive(false);
+  player.stop();
   epoch++;
   if (waiting) clearTimeout(waiting.timer);
   waiting = null;
@@ -167,6 +237,7 @@ export function stopSpeaking(): void {
 
 /** iOS only allows speech after a user gesture; call this from the first tap. */
 export function primeSpeech(): void {
+  audioContext(); // inside his tap: the clips' audio may start
   if (!available()) return;
   const u = new SpeechSynthesisUtterance(' ');
   u.volume = 0;

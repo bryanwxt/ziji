@@ -15,11 +15,17 @@ export function onSpeaking(fn: (on: boolean) => void): () => void {
   return () => listeners.delete(fn);
 }
 
+/** A clip is playing (Web Audio): the iPad voice being idle then says nothing about whether he is talking. */
+let clipActive = false;
+export function setClipActive(on: boolean): void {
+  clipActive = on;
+}
+
 /**
  * A check while talking: if the iPad has quietly stopped (backgrounded mid-sentence, an utterance that never says it ended),
  * talking turns off, so his mouth never keeps going (final review).
  */
 export function settleIfSilent(): void {
-  if (!speakingNow || typeof speechSynthesis === 'undefined' || !speechSynthesis) return;
+  if (!speakingNow || clipActive || typeof speechSynthesis === 'undefined' || !speechSynthesis) return;
   if (!speechSynthesis.speaking && !speechSynthesis.pending) setSpeaking(false);
 }

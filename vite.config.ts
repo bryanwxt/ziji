@@ -38,6 +38,16 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            urlPattern: ({ url }) => url.pathname.includes('/audio/clips/'),
+            handler: 'CacheFirst', // a clip never changes: its name is its content
+            options: { cacheName: 'clips', expiration: { maxEntries: 6000, maxAgeSeconds: 60 * 60 * 24 * 180 }, cacheableResponse: { statuses: [200] } },
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.endsWith('/audio/index.json'),
+            handler: 'NetworkFirst',
+            options: { cacheName: 'clip-index', networkTimeoutSeconds: 3, cacheableResponse: { statuses: [200] } },
+          },
         ],
       },
     }),

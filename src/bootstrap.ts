@@ -1,5 +1,6 @@
 import type { Route } from './app/AppContext';
 import { setSfxEnabled } from './audio/sfx';
+import { loadClipIndex } from './audio/clips';
 import { loadChineseVoice, setSpeechRate } from './audio/speech';
 import { builtinWords, CONTENT_VERSION } from './content';
 import { openAppDb, type AppDb } from './store/db';
@@ -25,6 +26,7 @@ export async function bootstrap(dbName: string): Promise<Booted> {
   if (stale) await updateSettings(db, { contentVersion: CONTENT_VERSION, contentCourse: course });
   await applySettingsMigration(db);
   const [settings, kid] = await Promise.all([getSettings(db), getKid(db)]);
+  void loadClipIndex(); // the neural voice's clips; until it loads (or with none), the iPad voice speaks
   const voice = await loadChineseVoice(1500, settings.voiceURI ?? null);
   setSpeechRate(settings.speechRate);
   setSfxEnabled(settings.soundEffects);

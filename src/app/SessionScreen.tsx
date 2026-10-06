@@ -21,6 +21,7 @@ import { earnsBonus } from '../langdu/stars';
 import { burst } from '../ui/motion';
 import { WritingStep, type WriteResult } from '../activities/writing/WritingStep';
 import { playSfx } from '../audio/sfx';
+import { prefetchWords } from '../audio/speech';
 import { PASSAGES } from '../content';
 import { CLOSEUP_EVERY, closeupAllowed, isHardWrite, restingMood } from '../fun/mood';
 import { comboMilestone, comboPraise } from '../fun/pet';
@@ -93,6 +94,9 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         : extra ? await startExtraLesson(db, today) : await startOrResumeSession(db, today);
       // a lesson just begun: the first Truffle he sees waves and says hello (spec 2026-10-04 §4.6); never on coming back to it
       if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex && rec.plan.steps[0] === 'newwords' && rec.flashQueue.length > 0) requestGreeting('你好！我们开始吧！'); // it opens on a new word's card, never on a question (spec §4.3)
+      // the lesson's clips (neural voice): fetched now, so they play at once and offline
+      const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds]);
+      prefetchWords(know.words.filter((w) => want.has(w.id)));
       latest.current = rec;
       setState({
         rec,
