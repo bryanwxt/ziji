@@ -5,7 +5,7 @@ import { createSessionRecord } from '../session/runner';
 import { getKid, putCards, putWords, saveKid, saveReward, saveSession } from '../store/repo';
 import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
-import { DEFAULT_KID, type SessionPlan } from '../types';
+import { DEFAULT_KID, DEFAULT_SETTINGS, type SessionPlan } from '../types';
 import { HomeScreen } from './HomeScreen';
 import { CollectionScreen } from './CollectionScreen';
 import { powerFamilies } from '../fun/powers';
@@ -46,7 +46,7 @@ describe('HomeScreen', () => {
     expect(document.querySelector('.home__main > .home__cards')).toBeTruthy();
   });
   it("shows streak and stars and starts today's path", async () => {
-    const app = await makeAppData();
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, placementDone: true, storyProgress: { chapter: 99 } } }); // no chapter due (3c)
     await saveSession(app.db, done('2026-10-01', ['flashcards', 'writing']));
     renderWithApp(<HomeScreen />, app);
     expect(await screen.findByLabelText('连续 1 天')).toBeTruthy();
@@ -54,6 +54,21 @@ describe('HomeScreen', () => {
     expect([...document.querySelectorAll('.home__week .seal > span')].map((s) => s.textContent)).toEqual(['字', '己']);
     fireEvent.click(screen.getByRole('button', { name: '开始：认新字' }));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false });
+  });
+
+  it('with a chapter due, 开始 opens its setup first, then the lesson (spec 3c §5)', async () => {
+    const app = await makeAppData();
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    fireEvent.click(screen.getByRole('button', { name: '开始：认新字' }));
+    await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'story', part: 'setup', chapter: 1, then: { name: 'session', free: false } }));
+  });
+  it('a chapter already read today: 开始 goes straight to the lesson', async () => {
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, placementDone: true, storyProgress: { chapter: 1, readOn: '2026-10-02', setupDone: true, payoffDone: true } } });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    fireEvent.click(screen.getByRole('button', { name: '开始：认新字' }));
+    await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false }));
   });
 
   it('offers free play once today is done and shows the next reward goal', async () => {

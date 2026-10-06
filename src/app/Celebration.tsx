@@ -6,7 +6,10 @@ import { canOpenChest, costumeById, openChest, visibleAccessory, type ChestResul
 import { newTiers, powerDef, powerFamilies, powerProgress, type PowerId } from '../fun/powers';
 import { newBadges, stickerFamilies } from '../fun/stickers';
 import { totalStars, starsOf } from '../stats/stats';
-import { allSessions, getKid, saveKid } from '../store/repo';
+import { allSessions, getKid, getSettings, saveKid } from '../store/repo';
+import { localDateKey } from '../lib/date';
+import { CHAPTERS } from '../story/chapters';
+import { storyStep } from '../story/progress';
 import { DEFAULT_KID, type KidState, type SessionRecord } from '../types';
 import { Chest } from '../ui/Chest';
 import { HoldButton } from '../ui/HoldButton';
@@ -121,7 +124,9 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     const nextPhase = seq.order[seq.order.indexOf(phase) + 1];
     if (!nextPhase) {
       await refresh();
-      go({ name: 'home' });
+      // the chapter's payoff after the lesson, when one is owed (spec 2026-10-07 3c §5)
+      const owed = storyStep((await getSettings(db)).storyProgress, CHAPTERS.length, localDateKey(new Date(`${rec.date}T12:00:00`))); // an owed payoff is owed on any day
+      go(owed?.part === 'payoff' ? { name: 'story', part: 'payoff', chapter: owed.chapter, then: { name: 'home' } } : { name: 'home' });
       return;
     }
     if (nextPhase === 'badges') {

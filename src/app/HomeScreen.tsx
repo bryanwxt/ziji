@@ -31,6 +31,8 @@ import { TabBar } from '../ui/TabBar';
 import { useApp } from './AppContext';
 import { loadKnowledge, type Knowledge } from './knowledge';
 import { TodayPath } from './TodayPath';
+import { CHAPTERS } from '../story/chapters';
+import { storyStep } from '../story/progress';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { TownMap } from '../town/TownMap';
 
@@ -161,7 +163,11 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const wotdExample = wotdWord ? pickExample(wotdWord)?.example ?? null : null;
   const play = (free: boolean) => {
     primeSpeech();
-    go({ name: 'session', free });
+    // a chapter due today opens before the lesson (spec 2026-10-07 3c §5); free play never starts one
+    // …and only before today's lesson has begun: reopening a finished one to claim its chest goes straight back in
+    const owed = free || todaySession ? null : storyStep(settings.storyProgress, CHAPTERS.length, localDateKey(now()));
+    if (owed?.part === 'setup') go({ name: 'story', part: 'setup', chapter: owed.chapter, then: { name: 'session', free } });
+    else go({ name: 'session', free });
   };
 
   return (

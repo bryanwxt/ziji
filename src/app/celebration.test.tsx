@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createSessionRecord } from '../session/runner';
 import { BUILTIN, builtinWords } from '../content';
 import { powerFamilies } from '../fun/powers';
-import { getKid, putCards, putWords, saveKid } from '../store/repo';
+import { getKid, putCards, putWords, saveKid, updateSettings } from '../store/repo';
 import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, type SessionPlan, type StepKind } from '../types';
@@ -197,5 +197,35 @@ describe('Truffle in the celebration (spec 2026-10-04 §4.4)', () => {
     const prize = document.querySelector('.prize svg.truffle')!;
     expect(prize.getAttribute('data-alive')).toBe('true');
     expect(prize.getAttribute('data-expression')).toBe('joy');
+  });
+});
+
+describe('the story after the celebration (spec 3c §5)', () => {
+  const toEnd = async () => {
+    for (let i = 0; i < 6; i++) {
+      const b = screen.queryByText('回家') ?? screen.queryByText('继续');
+      if (!b) break;
+      const home = b.textContent === '回家';
+      fireEvent.click(b);
+      if (home) return;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  };
+  it('an owed payoff plays after the celebration, then home', async () => {
+    const app = await makeAppData();
+    await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
+    await updateSettings(app.db, { storyProgress: { chapter: 0, readOn: '2026-10-02', setupDone: true, payoffDone: false } });
+    renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
+    await screen.findByText('太棒了！');
+    await toEnd();
+    await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'story', part: 'payoff', chapter: 1, then: { name: 'home' } }));
+  });
+  it('nothing owed: home as before', async () => {
+    const app = await makeAppData();
+    await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
+    renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
+    await screen.findByText('太棒了！');
+    await toEnd();
+    await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'home' }));
   });
 });
