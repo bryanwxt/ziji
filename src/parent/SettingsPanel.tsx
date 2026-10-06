@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
+import { schoolYear } from './progress';
 import { SetupPin } from '../app/SetupPin';
 import { setSfxEnabled } from '../audio/sfx';
 import { chineseVoices, currentVoice, setPreferredVoice, setSpeechRate, speak, voiceQuality } from '../audio/speech';
@@ -28,7 +29,7 @@ const introPreview = (oral: OralInfo) => {
 };
 
 export function SettingsPanel() {
-  const { db, settings, refresh, go } = useApp();
+  const { db, settings, refresh, go, now } = useApp();
   const [s, setS] = useState(settings);
   const [changingPin, setChangingPin] = useState(false);
 
@@ -79,7 +80,7 @@ export function SettingsPanel() {
       </div>
       <div class="field">
         <label for="st-grade">School year</label>
-        <select id="st-grade" value={String(s.grade ?? 2)} onChange={(e) => void save({ grade: Number(e.currentTarget.value) })}>
+        <select id="st-grade" value={String(schoolYear(s, now()))} onChange={(e) => void save({ grade: Number(e.currentTarget.value), gradeYear: now().getFullYear() })}>
           {[1, 2, 3, 4, 5, 6].map((g) => <option key={g} value={String(g)}>P{g}</option>)}
         </select>
         <p class="hint">Progress compares him with the MOE lists for his term (lists go up to P3).</p>

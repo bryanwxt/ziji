@@ -5,10 +5,10 @@ import { loadKnowledge } from '../app/knowledge';
 import { moeTargets } from '../content';
 import type { Knowledge } from '../stats/stats';
 import type { Settings } from '../types';
-import { currentTerm, weeklyTrend } from './progress';
+import { currentTerm, schoolYear, weeklyTrend } from './progress';
 
 export function ProgressPanel({ know, settings, now }: { know: Knowledge; settings: Settings; now: Date }) {
-  const term = currentTerm(settings.grade ?? 2, now);
+  const term = currentTerm(schoolYear(settings, now), now);
   const target = term ? moeTargets(term, settings.course ?? 'cl') : null;
   const trend = weeklyTrend(know.cards, 'recognise', now);
   return (

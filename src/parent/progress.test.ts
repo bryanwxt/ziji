@@ -15,3 +15,14 @@ describe('progress (spec 2026-10-06 §3.4)', () => {
     expect(t.map((x) => x.count)).toEqual([1, 2, 3]);
   });
 });
+
+describe('his school year follows the calendar (parent, 2026-10-06: a yardstick that moves each January)', () => {
+  it('goes up one each January from the year it was set, and stops at P6', async () => {
+    const { schoolYear } = await import('./progress');
+    expect(schoolYear({ grade: 2, gradeYear: 2026 }, new Date(2026, 11, 31))).toBe(2);
+    expect(schoolYear({ grade: 2, gradeYear: 2026 }, new Date(2027, 0, 2))).toBe(3);
+    expect(schoolYear({ grade: 5, gradeYear: 2026 }, new Date(2029, 5, 1))).toBe(6);
+    expect(schoolYear({}, new Date(2027, 2, 1))).toBe(3); // the default, P2 in 2026, moves too
+    expect(schoolYear({ grade: 2 }, new Date(2026, 9, 6))).toBe(2); // set before the year was remembered: counted from 2026
+  });
+});
