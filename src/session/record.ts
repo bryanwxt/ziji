@@ -1,7 +1,9 @@
-import { addDays, endOfLocalDay, localDateKey } from '../lib/date';
+import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/date';
+import { fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
+import { findWord } from '../ladder/words';
 import { newCard, review, toRating } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
-import { addReviewLog, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
+import { addReviewLog, logsForCard, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
 import type { CardKind, CardRecord, Grade, SessionRecord, Settings } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
@@ -10,7 +12,7 @@ import { createSessionRecord } from './runner';
 async function reviewCard(db: AppDb, wordId: string, kind: CardKind, rating: Grade, now: Date): Promise<CardRecord> {
   const id = `${wordId}:${kind}`;
   const existing = await getCard(db, id);
-  const rec: CardRecord = { id, wordId, kind, fsrs: review(existing?.fsrs ?? newCard(now), rating, now) };
+  const rec: CardRecord = { ...(existing ?? {}), id, wordId, kind, fsrs: review(existing?.fsrs ?? newCard(now), rating, now) }; // keeps its pass
   await putCards(db, [rec]);
   return rec;
 }
@@ -21,7 +23,7 @@ export async function recordRecognition(
   const rating = toRating({ kind: 'recognise', ...outcome });
   const card = await reviewCard(db, wordId, 'recognise', rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind: 'recognise', at: now.getTime(), rating, ...outcome });
-  return card;
+  return (await settleRung(db, wordId, 'recognise', now)) ?? card;
 }
 
 export async function recordMeaning(
@@ -31,7 +33,7 @@ export async function recordMeaning(
   const rating = toRating({ kind: 'meaning', correct, responseMs: ratedMs });
   const card = await reviewCard(db, wordId, 'meaning', rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, correct, responseMs, ...(source ? { source } : {}) });
-  return card;
+  return (await settleRung(db, wordId, 'meaning', now)) ?? card;
 }
 
 export async function recordWriting(db: AppDb, wordId: string, totalMisses: number, now: Date): Promise<CardRecord> {
@@ -44,7 +46,39 @@ export async function recordWriting(db: AppDb, wordId: string, totalMisses: numb
     const { writeSkippedAt: _gone, ...rest } = word;
     await putWords(db, [rest]);
   }
-  return card;
+  await settleRung(db, wordId, 'write', now); // not a rung: it passes, and opens nothing
+  return (await getCard(db, card.id))!;
+}
+
+/**
+ * After a rung's answer (spec 2026-10-06 §3.2): if this card has now had two days of right first answers, it passes, and the
+ * word's next rung opens (due the next morning). A card already passed stays passed; an opened card never replaces one he has.
+ */
+export async function settleRung(db: AppDb, wordId: string, kind: CardKind, now: Date): Promise<CardRecord | undefined> {
+  const card = await getCard(db, `${wordId}:${kind}`);
+  if (!card || card.passed) return card;
+  const logs = await logsForCard(db, card.id);
+  const recent = (await logsSince(db, now.getTime() - 60 * 86_400_000)).filter((l) => l.kind === kind);
+  const at = passedAt(logs, card.id, fastLimit(recent, kind));
+  if (at === null) return card;
+  const passed = { ...card, passed: at };
+  await putCards(db, [passed]);
+  const rung = rungOf(kind);
+  const word = rung ? await findWord(db, wordId) : undefined;
+  const next = rung && word ? nextRung(word, rung) : null;
+  if (next) {
+    const id = `${wordId}:${RUNG_CARD[next]}`;
+    if (!(await getCard(db, id))) await putCards(db, [{ id, wordId, kind: RUNG_CARD[next], fsrs: { ...newCard(now), due: addDays(startOfLocalDay(now), 1) } }]);
+  }
+  return passed;
+}
+
+/** He heard the word and picked its meaning (the Hear rung, spec 2026-10-06 §3.2). */
+export async function recordHear(db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date): Promise<CardRecord> {
+  const rating = toRating({ kind: 'recognise', ...outcome }); // same rule: wrong Again, slow Hard, else Good
+  const card = await reviewCard(db, wordId, 'hear', rating, now);
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'hear', at: now.getTime(), rating, ...outcome });
+  return (await settleRung(db, wordId, 'hear', now)) ?? card;
 }
 
 const ratedToday = (c: CardRecord | undefined, now: Date) => !!c?.fsrs.last_review && localDateKey(c.fsrs.last_review) === localDateKey(now);

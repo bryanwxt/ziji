@@ -20,3 +20,8 @@ export function parseDateKey(key: string): Date {
   const [y, m, d] = key.split('-').map(Number);
   return new Date(y!, m! - 1, d!);
 }
+
+/** Midnight at the start of the local day. */
+export function startOfLocalDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
