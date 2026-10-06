@@ -127,7 +127,7 @@ Sub-project 2 ships a plain map of 字己镇 on Home. A building lights partly w
 - Granny Dragon may get a second voice from the same engine.
 
 **Generation:**
-- Done offline on the Mac, by a script in `scripts/`.
+- Done once, outside the app, in GitHub Actions (the Mac has too little disk and memory for CosyVoice 2, and the parent is often away from it). Scripts live in `scripts/audio/`. Clips are kept in a GitHub release asset, not in git.
 - The input is pinyin-annotated text, so 多音字 are read as the card teaches. It reuses the reading fixes and the say-as table.
 - Output is mono AAC (`.m4a`), about 4 KB per word.
 - Clips are keyed by a hash of text plus reading, so a fixed reading gets a new clip.
@@ -135,7 +135,7 @@ Sub-project 2 ships a plain map of 字己镇 on Home. A building lights partly w
 **Checking:**
 - Each clip is transcribed back by ASR and compared with the expected pinyin.
 - Mismatches are regenerated once, then listed for the parent to spot-listen.
-- A test fails the build if any word, sentence or story line in range has no clip.
+- Every word, sentence or story line in range without a clip is listed on the parent's report page. The iPad voice says it meanwhile, so a content push never waits for audio (clips for new content are generated automatically after the push).
 
 **Size and serving:**
 - Roughly 60–80 MB for school order plus HSK 1–3, plus each season's lines.
