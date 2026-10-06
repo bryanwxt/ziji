@@ -791,6 +791,27 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__cards .wotd__grid { width: 70px; height: 70px; font-size: 58px; }
 .home__cards .wotd__example { margin-top: 0; font-size: 20px; }
 .home__cards .langdu-btn { flex-direction: column; min-height: 64px; padding: 6px 14px; gap: 2px; font-size: 18px; }
+.home__cards .town { position: relative; margin-top: 8px; padding: 14px 10px 4px; } /* 字己镇 (spec 2026-10-06 §3.7): a plain skyline; nothing moves */
+.town__tag { position: absolute; top: -12px; left: 12px; }
+.town__row { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; align-items: end; }
+.town__place { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.town__house { width: 100%; max-width: 30px; height: auto; }
+.town__roof { fill: var(--line-strong); }
+.town__wall { fill: var(--page); stroke: var(--line-strong); stroke-width: 1.5; }
+.town__place--part .town__roof, .town__place--full .town__roof { fill: var(--orange); }
+.town__place--full .town__wall { fill: var(--gold-soft); }
+.town__win--0 { fill: var(--muted); }
+.town__win--1 { fill: var(--gold-soft); stroke: var(--gold-edge); stroke-width: 1; }
+.town__win--2 { fill: var(--gold); }
+.town__name { display: none; } /* Home has no room for nine names: each place's label names it (fit sweep, 2c) */
+.home__strip .town--bar { display: none; } /* one 字己镇 on screen: the card, or on a landscape iPad the top bar's strip */
+@media (orientation: landscape) and (min-height: 600px) {
+  .home__cards .town--card { display: none; }
+  .home .home__strip { flex-wrap: nowrap; }
+  .home__strip .town--bar { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; flex: none; }
+  .town--bar .town__tag { position: static; }
+  .town--bar .town__row { grid-template-columns: repeat(9, 20px); gap: 3px; }
+}
 .home__path { flex: 1; min-height: 0; width: min(100%, var(--band)); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; }
 .home__title { margin: 0; font-size: 20px; }
 .path { flex: none; width: 100%; padding: 38px 0 0; gap: 34px 0; flex-direction: row; flex-wrap: nowrap; justify-content: space-evenly; align-items: flex-start; --node: clamp(var(--tap-main), 7vw, 80px); } /* one row: 6 stops since 选一选 (spec §20) */

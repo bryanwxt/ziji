@@ -19,6 +19,12 @@ const emptyPlan: SessionPlan = { steps: [], reviewWordIds: [], newWordIds: [], f
 const done = (date: string, steps: SessionPlan['steps']) => ({ ...createSessionRecord(emptyPlan, date, 0), completed: true, completedSteps: steps });
 
 describe('HomeScreen', () => {
+  it('shows 字己镇 on Home (spec 2026-10-06 §3.7)', async () => {
+    const app = await makeAppData();
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    await waitFor(() => expect(document.querySelectorAll('.home__cards .town .town__place')).toHaveLength(9));
+  });
   it('Truffle stands on the ground beside the path, not inside it (he never moves with the list)', async () => {
     const app = await makeAppData();
     renderWithApp(<HomeScreen />, app);
