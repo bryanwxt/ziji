@@ -77,6 +77,13 @@ export function SettingsPanel() {
         </select>
         <p class="hint">Both read the same characters in the same order. 高级华文 writes more (435 by the end of P2, to 350), so 写一写 and 听写 practise its list.</p>
       </div>
+      <div class="field">
+        <label for="st-grade">School year</label>
+        <select id="st-grade" value={String(s.grade ?? 2)} onChange={(e) => void save({ grade: Number(e.currentTarget.value) })}>
+          {[1, 2, 3, 4, 5, 6].map((g) => <option key={g} value={String(g)}>P{g}</option>)}
+        </select>
+        <p class="hint">Progress compares him with the MOE lists for his term (lists go up to P3).</p>
+      </div>
       <VoiceField value={s.voiceURI ?? null} onChange={(uri) => { setPreferredVoice(uri); void save({ voiceURI: uri }); }} />
       <fieldset class="field">
         <legend>Activities</legend>

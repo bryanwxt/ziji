@@ -52,6 +52,17 @@ const MOE_WRITE: Record<Course, Set<string>> = {
   cl: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.write))),
   hcl: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.writeHcl))),
 };
+/** His textbook's terms in order (P1 上 … P3 下). */
+export const MOE_TERMS = ['一上', '一下', '二上', '二下', '三上', '三下'];
+/** The MOE lists to date: characters to recognise and to write by the end of a term (spec 2026-10-06 §3.4); null past the lists. */
+export function moeTargets(term: string, course: Course): { read: number; write: number } | null {
+  const upTo = MOE_TERMS.indexOf(term);
+  if (upTo < 0) return null;
+  const lessons = MOE_LESSONS.filter((l) => MOE_TERMS.indexOf(l.term) <= upTo);
+  const read = new Set(lessons.flatMap((l) => Array.from(l.read)));
+  const write = new Set(lessons.flatMap((l) => Array.from(course === 'hcl' ? l.writeHcl : l.write)));
+  return { read: read.size, write: write.size };
+}
 const schoolRank = (c: BuiltinChar): number => MOE_ORDER.get(c.char) ?? MOE_ORDER.size + c.rank;
 /** The textbook term that teaches a character (二上), if it's one of his school characters. */
 export const schoolTerm = (char: string): string | undefined => MOE_TERM.get(char);
