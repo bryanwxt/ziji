@@ -100,6 +100,7 @@ export async function deleteWord(db: AppDb, id: string): Promise<void> {
     tx.objectStore('cards').delete(`${id}:recognise`),
     tx.objectStore('cards').delete(`${id}:write`),
     tx.objectStore('cards').delete(`${id}:meaning`),
+    tx.objectStore('cards').delete(`${id}:hear`),
     tx.done,
   ]);
 }
@@ -123,6 +124,11 @@ export async function deleteCards(db: AppDb, ids: string[]): Promise<void> {
 }
 
 /** The words he has answered in lessons, by card kind: practising a word's meaning doesn't make its reading practised. */
+/** Every answer on one card, oldest first (a rung's pass is worked out from them). */
+export async function logsForCard(db: AppDb, cardId: string): Promise<ReviewLog[]> {
+  return (await db.getAll('reviewLogs')).filter((l) => l.cardId === cardId).sort((a, b) => a.at - b.at);
+}
+
 export async function practisedByKind(db: AppDb): Promise<Map<CardKind, Set<string>>> {
   const out = new Map<CardKind, Set<string>>();
   for (const l of await db.getAll('reviewLogs')) (out.get(l.kind) ?? out.set(l.kind, new Set()).get(l.kind)!).add(l.wordId);

@@ -82,7 +82,7 @@ export interface ReviewLog {
 }
 
 /** Skills the parent's Skills panel follows (spec §19 part 7). */
-export type Skill = 'reading' | 'meaning' | 'use' | 'zibian' | 'writing';
+export type Skill = 'listening' | 'reading' | 'meaning' | 'use' | 'zibian' | 'writing';
 
 /** One 选一选/用一用 or 字辨 answer, every one of them (review logs keep only the first rating a day). */
 export interface AnswerLog {

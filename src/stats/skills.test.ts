@@ -10,7 +10,7 @@ describe('skills (spec §19 part 7)', () => {
       [{ at: 1, wordId: 'a', skill: 'use', correct: true }, { at: 1, wordId: 'b', skill: 'zibian', correct: false }],
     );
     expect(acc).toEqual({
-      reading: { right: 1, total: 2 }, meaning: { right: 1, total: 1 }, use: { right: 1, total: 1 }, zibian: { right: 0, total: 1 }, writing: { right: 0, total: 1 },
+      listening: { right: 0, total: 0 }, reading: { right: 1, total: 2 }, meaning: { right: 1, total: 1 }, use: { right: 1, total: 1 }, zibian: { right: 0, total: 1 }, writing: { right: 0, total: 1 },
     });
   });
   it('the most-missed words of one skill, worst first', () => {
@@ -30,5 +30,12 @@ describe('no double counting (deferred minor, plan 14)', () => {
     const acc = skillAccuracy([{ ...log('meaning', 'a', true), source: 'use' as const }, log('meaning', 'b', false)], [{ at: 1, wordId: 'a', skill: 'use', correct: true }]);
     expect(acc.meaning).toEqual({ right: 0, total: 1 });
     expect(acc.use).toEqual({ right: 1, total: 1 });
+  });
+});
+
+describe('listening (spec 2026-10-06 §3.2)', () => {
+  it('hear answers are counted as listening', () => {
+    const logs = [{ cardId: 'b:门:hear', wordId: 'b:门', kind: 'hear' as const, at: 1, rating: 3 as const, correct: true }];
+    expect(skillAccuracy(logs, []).listening).toEqual({ right: 1, total: 1 });
   });
 });

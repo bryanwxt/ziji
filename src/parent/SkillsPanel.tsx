@@ -9,6 +9,7 @@ import { allCards, allWords, answersSince, getSettings, listRecordings, logsSinc
 import type { AnswerLog, CardRecord, Recording, ReviewLog, Settings, Skill, Word } from '../types';
 
 const LABEL: Record<Skill, string> = {
+  listening: 'Listening (understands the word when he hears it)',
   reading: 'Reading (认一认)',
   meaning: 'Meaning (认一认)',
   use: 'Words in use (选一选/用一用)',

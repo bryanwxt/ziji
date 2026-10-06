@@ -6,7 +6,7 @@ import { DEFAULT_SETTINGS, DEFAULT_KID } from '../types';
 import {
   addAnswer, answersSince,
   addRecording, addReviewLog, allCards, allWords, deleteWord, getKid, getSettings, listRecordings,
-  deleteParentPassage, listParentPassages, logsSince, normalizeKid, putCards, putWords, saveKid, saveParentPassage, seedBuiltinWords, updateSettings,
+  deleteParentPassage, listParentPassages, logsForCard, logsSince, normalizeKid, putCards, putWords, saveKid, saveParentPassage, seedBuiltinWords, updateSettings,
 } from './repo';
 
 describe('repo', () => {
@@ -204,5 +204,21 @@ describe('updateKid (sweep: two saves of his state at the same moment)', () => {
     expect(await getKid(db)).toBeNull();
     await saveKid(db, { ...DEFAULT_KID });
     expect(await updateKid(db, () => null)).toBeNull();
+  });
+});
+
+describe('hear cards', () => {
+  it('deleting a word deletes its hear card too', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('门')]);
+    await putCards(db, [makeCard('b:门', 'hear', new Date())]);
+    await deleteWord(db, 'b:门');
+    expect(await allCards(db)).toEqual([]);
+  });
+  it("a card's own answers", async () => {
+    const db = await freshDb();
+    await addReviewLog(db, { cardId: 'b:门:hear', wordId: 'b:门', kind: 'hear', at: 1, rating: 3, correct: true });
+    await addReviewLog(db, { cardId: 'b:大:hear', wordId: 'b:大', kind: 'hear', at: 2, rating: 3, correct: true });
+    expect((await logsForCard(db, 'b:门:hear')).map((l) => l.wordId)).toEqual(['b:门']);
   });
 });
