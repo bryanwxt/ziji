@@ -2311,3 +2311,39 @@ Update `hanzi-buddy-project.md` in the auto-memory directory with:
 - which voice was picked
 - the store location (release `audio-store`)
 - that clips regenerate automatically on content pushes through `audio-build.yml`
+
+
+## Build record (2026-10-06)
+
+All 12 tasks were built and deployed. These are the rulings made, review fixes and deferred minors, copied from the build ledger:
+
+- Ruling: Push cadence — pushes to main as the plan's steps say (parent's standing "deploy when done" rule); branch feat/audio is rebased onto origin/main before each push.
+- Task 1: Ruling: TWINS filter "one pinyin-pro reading" dropped — pinyin-pro lists rare readings even for 条/车, so it removed 162 of 1017 twins; use gen-say-as's plain table (already steers the iPad voice) minus 一/不 — cost if wrong: a twin with a rare second reading misread by an engine (caught by the spot-listen list).
+- Task 1: Ruling: lone 多音字 with no twin is sure when pinyin(ch) equals the taught reading (大 dà, 说 shuō: their common reading) — the plan's 0.8 bar failed at 0.72 for exactly these — cost if wrong: a common-reading lone char read otherwise by a voice, unflagged.
+- Task 2: Ruling: CLI creates the output's folder (mkdirSync) — the workflow already mkdirs, but a local run shouldn't fail — cost if wrong: none.
+- Task 5: Ruling: items job drops 'mkdir -p build/audio &&' — audition.ts CLI creates its folder (Task 2 ruling) — cost if wrong: none.
+- Task 6: Ruling: (w.level ?? 99) <= 3 — Word.level is nullable; the plan's code didn't type-check — cost if wrong: none.
+- Task 8: Ruling: stopPurr reads the time from its own node (gain.context) — the plan missed that stopPurr used the module's ctx — cost if wrong: none (same context).
+- Task 5: Ruling: audition publish failed — audition.ts's CLI guard endsWith('audition.ts') matched pack-audition.ts, so importing it wrote to 'art' (EISDIR). Guards now compare basename exactly (audition, inventory, pack-audition) — test "runs only as itself" RED→GREEN — cost if wrong: none.
+- Task 5: Ruling: CosyVoice install failed (openai-whisper needs pkg_resources; setuptools 81 dropped it) — setup.sh pins setuptools<81 via PIP_CONSTRAINT (covers build isolation) — cost if wrong: CosyVoice still fails and is dropped from the audition after one more try (plan: two failed fixes → drop).
+- Task 11: Ruling: prefetch uses the lesson's already-loaded know.words instead of a second allWords(db) query — same words, one fewer read — cost if wrong: none. Four app tests' speech mocks gain prefetchWords: vi.fn().
+- Task 5: Ruling: CosyVoice second failure (PIP_CONSTRAINT didn't reach the isolated build) — last try: pre-install openai-whisper with --no-build-isolation; if it fails, CosyVoice is dropped (plan: two failed fixes) — cost if wrong: one more ~15 min run.
+- Task 5: Ruling: third CosyVoice attempt, past the plan's two-fix limit — root cause now exact (requirements pin openai-whisper==20231117; the pre-install took the latest, so pip rebuilt the pin in isolation); one-line fix, runs while the parent listens — cost if wrong: one ~15 min CI run, then CosyVoice is dropped.
+- Task 6 (amended): Ruling: char/word engine text ends in 。 — measured on 60 words with an F0 tone check: 67 → 86/117 tones right; zf_002 is the best voice by the same check (85 vs 49–61) — cost if wrong: words sound slightly final/declarative (they are said alone anyway).
+- Task 5: Ruling: cancelled the third CosyVoice audition run — the parent had already picked zf_002; avoids two workflows uploading the store at once — cost if wrong: CosyVoice stays unheard (can be re-run any time).
+- Amend: Ruling: no automatic best-of-two pick — a pitch tone check (built, tested on synthetic tones) disagreed with the parent's ear on real clips (scored 一起。 right; 空调/门/条 wrong), so it was removed rather than shipped — cost if wrong: words like 一起 are found by ear, not automatically.
+- Amend: Ruling (parent approved): words end in 。, except CUT_FROM_SENTENCE (一起: said in 就是一起。 and cut out) and 听写 cue pieces (长城的: no 。, its 的 came out stressed — 52 ASR flags were mostly these). Clip ids now include what the voice is given and how (clipIdFor), so any such change regenerates exactly the clips it touches; this change regenerates all 8,266 once.
+- Final: fixed C1 (a no-clip tap left the clip playing and its queue alive) — test "a tap on a line with no clip stops the clip…" RED→GREEN, suite 1453/1453
+- Final: fixed I1 (a late end from a cancelled iPad-voice line shut Truffle's mouth mid-clip) — test "a cancelled iPad-voice line ending late…" RED→GREEN, suite 1453/1453
+- Final: fixed I2 (no timeout on clip fetch) — LOAD_MS 1500 then the iPad voice — test "a clip that takes too long to arrive" RED→GREEN, suite 1453/1453
+- Final: fixed I3 (bare-character key shadowed: 教 played jiào in 听写 cues) — test "the bare character is the taught character clip…" RED→GREEN, suite 1453/1453
+- Final: Ruling: WritingStep not changed to pass reading — with the index fix a bare character always maps to its taught clip, so the reading adds nothing — cost if wrong: none for built-ins.
+- Final: minor (deferred): M1 an iPad-voice line that never ends stalls clip lines queued behind it until the next tap
+- Final: minor (deferred): M2 a clip cut off by backgrounding never reports its end (mouth open until the next tap)
+- Final: minor (deferred): M3 meaning cues whose halves contain ， fall back to the iPad voice (138 clips unreachable)
+- Final: minor (deferred): M4 a half-written .m4a (failed ffmpeg / shard timeout) is kept and never remade
+- Final: minor (deferred): M5 audition and build workflows share no concurrency group; deploy hides a failed store download
+- Final: minor (deferred): M6 audio-build paths miss src/audio/clipKey.ts; pack runs when todo=0
+- Final: minor (deferred): M7 first-wins dedup: 6 "…的" words get the cue-piece treatment or vice versa
+- Final: minor (deferred): M8 prefetch skips 听写 pieces/sentences; first visit before the SW controls the page caches nothing
+- Final: minor (deferred): M9 synth_cut doesn't assert pred_dur aligns with the phonemes
