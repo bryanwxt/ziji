@@ -7,6 +7,8 @@ import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS } from '../types';
 import { SessionScreen } from './SessionScreen';
+import { cardMeaning } from '../content/glossary';
+import { firstSense } from '../activities/flashcards/distractors';
 
 vi.mock('../audio/speech', () => ({ prefetchWords: vi.fn(), stopSpeaking: vi.fn(), speak: vi.fn(), primeSpeech: vi.fn() }));
 vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
@@ -51,8 +53,8 @@ async function playThrough(max = 150, seen: string[] = []) {
   }
 }
 
-async function setup() {
-  const app = await makeAppData();
+async function setup(voice = false) {
+  const app = await makeAppData({ voice });
   await putWords(app.db, words);
   await updateSettings(app.db, { newPerDay: 2, activities: lessonOnly });
   return app;
@@ -63,7 +65,7 @@ const introWord = () => document.querySelector('.intro .hanzi--xl')?.textContent
 async function learnCurrentWord() {
   fireEvent.click(await screen.findByText('我记住了！'));
   const shown = document.querySelector('[data-q]')!.textContent!;
-  fireEvent.click(screen.getByRole('button', { name: byText.get(shown)!.pinyin }));
+  fireEvent.click(screen.getByText(firstSense(cardMeaning(byText.get(shown)!)!))); // a new word is read for meaning with no voice (spec 2026-10-06 §3.2)
   fireEvent.click(screen.getByText('继续'));
 }
 
@@ -77,7 +79,7 @@ describe('SessionScreen', () => {
   });
 
   it('runs 认新字 then 练一练 to the celebration (spec 2026-10-05 §2)', async () => {
-    const app = await setup();
+    const app = await setup(true);
     renderWithApp(<SessionScreen free={false} />, app);
     const stages: string[] = [];
     await playThrough(150, stages); // wrong first picks add retries: 37–47 screens locally, more on a bad draw
@@ -86,7 +88,9 @@ describe('SessionScreen', () => {
     expect(rec.completed).toBe(true);
     expect(rec.completedSteps).toEqual(['newwords', 'practice']);
     expect(rec.practiceQueue!.filter((x) => !x.retry).length).toBeGreaterThanOrEqual(6); // two new words, three climbs each
-    expect((await allCards(app.db)).filter((c) => c.kind === 'recognise')).toHaveLength(2);
+    // new words are graded by ear; reading opens only once hearing has passed on two days (spec 2026-10-06 §3.2)
+    expect((await allCards(app.db)).filter((c) => c.kind === 'hear')).toHaveLength(2);
+    expect((await allCards(app.db)).filter((c) => c.kind === 'recognise')).toHaveLength(0);
     expect((await getRungs(app.db)).size).toBe(2);
   });
 
@@ -160,7 +164,7 @@ describe('meaning practice in the lesson', () => {
     const app = await makeAppData();
     await putWords(app.db, words);
     await updateSettings(app.db, { newPerDay: 0, activities: lessonOnly });
-    await putCards(app.db, [makeCard('b:惜', 'recognise', new Date(2026, 9, 1), true)]);
+    await putCards(app.db, [{ ...makeCard('b:惜', 'recognise', new Date(2026, 9, 1), true), passed: 1 }]); // Use starts once Read has passed
     renderWithApp(<SessionScreen free={false} />, app);
     await playThrough();
     await waitFor(async () => expect((await allCards(app.db)).map((c) => c.id)).toContain('b:惜:meaning'));

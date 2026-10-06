@@ -9,6 +9,7 @@ import type { CardRecord, SessionRecord, Word } from '../types';
 import { startRung } from './ladder';
 import { buildRound, type Ask, type PracticeItem, type RoundWord } from './round';
 import { fishItem } from '../activities/components/zibian';
+import { meaningChoices } from '../activities/flashcards/distractors';
 import { introducedNewWords } from './runner';
 import { idiomOf, idiomsFor, isIdiomWord, type Idiom } from '../content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../practice/idioms';
@@ -34,15 +35,16 @@ export function practiceWords(rec: SessionRecord, rungs: ReadonlyMap<string, num
     wordId, isNew: true, from: 1, appearances: 3, gradesRecognise: false, gradesMeaning: true, early: rec.recalls?.[wordId]?.missed ?? false,
   }));
   const reading = new Set(rec.plan.reviewWordIds);
+  const hearing = new Set(rec.plan.hearReviewIds ?? []); // a lesson planned before the ladder has none
   const meaning = new Set([...(rec.plan.meaningReviewIds ?? []), ...(rec.plan.newMeaningIds ?? [])]);
   const meaningDue = new Set(rec.plan.meaningReviewIds ?? []);
   const seen = new Set(introduced);
   const revision: RoundWord[] = [];
-  for (const wordId of [...rec.plan.reviewWordIds, ...(rec.plan.meaningReviewIds ?? []), ...(rec.plan.newMeaningIds ?? [])]) {
+  for (const wordId of [...(rec.plan.hearReviewIds ?? []), ...rec.plan.reviewWordIds, ...(rec.plan.meaningReviewIds ?? []), ...(rec.plan.newMeaningIds ?? [])]) {
     if (seen.has(wordId)) continue;
     seen.add(wordId);
     const from = startRung(rungs.get(wordId) ?? 0);
-    revision.push({ wordId, isNew: false, from, appearances: from === 1 ? 2 : 1, gradesRecognise: reading.has(wordId), gradesMeaning: meaning.has(wordId), due: reading.has(wordId) || meaningDue.has(wordId) });
+    revision.push({ wordId, isNew: false, from, appearances: from === 1 ? 2 : 1, gradesRecognise: reading.has(wordId), gradesMeaning: meaning.has(wordId), gradesHear: hearing.has(wordId), due: reading.has(wordId) || meaningDue.has(wordId) || hearing.has(wordId) });
   }
   return [...fresh, ...revision];
 }
@@ -66,8 +68,10 @@ export function askable(word: Word | undefined, pool: Word[], voice: boolean, le
 
 function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: Ask): boolean {
   switch (ask) {
-    case 'read': return true;
-    case 'listen': return voice;
+    case 'read': return Array.from(word.text).length === 1 || word.source === 'parent'; // reading aloud: characters and his own lists; ladder 词语 are read for meaning
+    case 'listen': return voice && Array.from(word.text).length === 1;
+    case 'hear': return voice && meaningChoices(word, pool, mulberry32(1)) !== null;
+    case 'meaningRead': return meaningChoices(word, pool, mulberry32(1)) !== null;
     case 'word': return wordCue(word) !== null;
     case 'fit': return meaningCue(word)?.kind === 'sentence' && fitItem(word, pool, mulberry32(1)) !== null;
     case 'usage': return !!bankFor(word.text);
@@ -98,7 +102,7 @@ export function withFish(items: PracticeItem[], fishIds: string[]): PracticeItem
 }
 
 export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map(), level = 1): PracticeItem[] {
-  const words = practiceWords(rec, rungs).filter((w) => askable(wordsById.get(w.wordId), pool, voice, level)('read'));
+  const words = practiceWords(rec, rungs).filter((w) => { const can = askable(wordsById.get(w.wordId), pool, voice, level); return can('read') || can('meaningRead'); });
   const round = buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice, level)(ask), rng);
   const fish = [...confusions.keys()].filter((id) => {
     const w = wordsById.get(id);

@@ -32,13 +32,14 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { cheer, requestGreeting } from '../ui/truffle/greeting';
-import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { bringForward, markWriteSkipped, recordHear, recordMeaning, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import { starsOf } from '../stats/stats';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice, wordMisses,
 } from '../session/runner';
 import { addAnswer, clearConfusion, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
+import { ladderWords } from '../content/ladder';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -49,6 +50,14 @@ import { newId } from '../lib/id';
 import { WorldScene } from '../ui/worlds/WorldScene';
 import { currentWorld, timeOfDay } from '../fun/worlds';
 import { InkIcon } from '../ui/icons/InkIcon';
+
+/** The words a meaning question picks its English choices from: his words and the ladder's 词语 (spec 2026-10-06 §3.2). */
+const pools = new WeakMap<Knowledge, Word[]>();
+function meaningPool(know: Knowledge): Word[] {
+  let p = pools.get(know);
+  if (!p) pools.set(know, (p = [...know.words, ...ladderWords()]));
+  return p;
+}
 
 /** His level for the 成语 window (spec 2026-10-05 §4): the level of the next built-in word he hasn't started. */
 const levels = new WeakMap<Knowledge, number>();
@@ -95,8 +104,9 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       // a lesson just begun: the first Truffle he sees waves and says hello (spec 2026-10-04 §4.6); never on coming back to it
       if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex && rec.plan.steps[0] === 'newwords' && rec.flashQueue.length > 0) requestGreeting('你好！我们开始吧！'); // it opens on a new word's card, never on a question (spec §4.3)
       // the lesson's clips (neural voice): fetched now, so they play at once and offline
-      const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds]);
-      prefetchWords(know.words.filter((w) => want.has(w.id)));
+      for (const w of ladderWords()) if (!know.wordsById.has(w.id)) know.wordsById.set(w.id, w); // the ladder's 词语 aren't stored
+      const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds, ...(rec.plan.hearReviewIds ?? [])]);
+      prefetchWords([...want].map((id) => know.wordsById.get(id)).filter((w): w is Word => !!w));
       latest.current = rec;
       setState({
         rec,
@@ -190,7 +200,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           // the look-alikes as they are now: a mix-up in today's 认新字 is fished today, not a lesson later (sweep)
           const confusions = await getConfusions(db);
           setState((st) => (st ? { ...st, confusions } : st));
-          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, state.know.words, voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know));
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know));
           planning.current = false;
           await commit(startPractice(latest.current ?? cur, queue));
         })();
@@ -235,8 +245,12 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const item = flashItem!;
       if (!item.retry && !rec.free) {
         const outcome = { correct: r.correct, responseMs: r.responseMs };
-        const card = r.asked === 'meaning' ? await recordMeaning(db, item.wordId, outcome, now()) : await recordRecognition(db, item.wordId, outcome, now());
-        know.cardsById.set(card.id, card);
+        // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing
+        if (r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
+        else if (!item.isNew) {
+          const card = r.asked === 'meaning' ? await recordMeaning(db, item.wordId, outcome, now()) : await recordRecognition(db, item.wordId, outcome, now());
+          know.cardsById.set(card.id, card);
+        }
       }
       if (!r.correct) await rememberConfusion(item.wordId, r.picked);
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
@@ -262,7 +276,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       if (!rec.free && !item.retry) {
         // a sentence takes reading time first: that doesn't make a right answer slow (as in 选一选)
         const outcome = { correct: r.correct, responseMs: r.asked === 'use' || r.inContext ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs };
-        if (item.grades === 'recognise') know.cardsById.set(`${item.wordId}:recognise`, await recordRecognition(db, item.wordId, outcome, now()));
+        if (item.grades === 'hear' && r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
+        else if (item.grades === 'recognise') know.cardsById.set(`${item.wordId}:recognise`, await recordRecognition(db, item.wordId, outcome, now()));
         else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
@@ -385,12 +400,12 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <FlashcardStep
           key={rec.flashIndex}
           item={flashItem}
-          ask={step === 'newwords' ? 'listen' : undefined}
+          ask={step === 'newwords' ? 'hear' : undefined} // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2)
           reintroOnMiss={step === 'newwords'}
           peek={step === 'flashcards' && flashItem.retry} // an older lesson's retries are words he missed
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
           word={flashWord}
-          pool={know.words}
+          pool={meaningPool(know)}
           card={know.cardsById.get(`${flashWord.id}:recognise`)}
           voice={voice}
           kid={kid}
@@ -405,7 +420,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           key={`p${rec.practiceIndex}`}
           item={practiceItem}
           word={practiceWord}
-          pool={know.words}
+          pool={meaningPool(know)}
           card={know.cardsById.get(`${practiceWord.id}:recognise`)}
           voice={voice}
           kid={kid}

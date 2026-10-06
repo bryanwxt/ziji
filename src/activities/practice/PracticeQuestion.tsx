@@ -181,7 +181,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     return (
       <FlashcardStep
         item={{ wordId: word.id, isNew: false, retry: item.retry, mode: item.ask === 'word' ? 'meaning' : 'read' }}
-        ask={item.ask === 'listen' ? 'listen' : item.ask === 'word' ? 'word' : 'read'}
+        ask={item.ask === 'listen' || item.ask === 'word' || item.ask === 'hear' || item.ask === 'meaningRead' ? item.ask : 'read'}
         peek={!!item.missed}
         word={word} pool={pool} card={card} voice={voice} kid={kid} resting={resting} combo={combo} closeupReady={closeupReady}
         onDone={(r) => onDone(r)}

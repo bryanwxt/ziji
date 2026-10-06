@@ -7,16 +7,16 @@ import { TOP_RUNG, type Rung } from './ladder';
  *  whole: complete a school 成语 itself (its 词语 rung) · fit: the sentence gap · usage: 用对了吗 · build: 组句 tiles ·
  *  idiom: complete a 成语 that uses the word · idiomFit: pick that 成语 for a sentence · idiomBuild: 组句 with it ·
  *  fish: 钓鱼 for a look-alike he confused (not a rung). */
-export type Ask = 'read' | 'listen' | 'word' | 'pair' | 'match' | 'whole' | 'fit' | 'usage' | 'build' | 'idiom' | 'idiomFit' | 'idiomBuild' | 'fish';
+export type Ask = 'read' | 'listen' | 'hear' | 'meaningRead' | 'word' | 'pair' | 'match' | 'whole' | 'fit' | 'usage' | 'build' | 'idiom' | 'idiomFit' | 'idiomBuild' | 'fish';
 export const ASKS: Record<Rung, Ask[]> = {
-  1: ['read', 'listen'],
+  1: ['read', 'listen', 'hear', 'meaningRead'], // hear / meaningRead: the word ladder's English meaning (spec 2026-10-06 §3.2)
   2: ['word', 'pair', 'match', 'whole'],
   3: ['fit', 'usage'],
   4: ['build'],
   5: ['idiom', 'idiomFit', 'idiomBuild'],
 };
 /** Which memory card an answer grades (spec §3.5); null = practice only (a retry, or already graded today). */
-export type Grades = 'recognise' | 'meaning' | 'use' | null;
+export type Grades = 'recognise' | 'meaning' | 'use' | 'hear' | null;
 
 /** due: the first appearance of a word whose revision is due today (pacing counts these when time runs out, spec §2.2). */
 export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean; missed?: boolean; idiom?: string } // missed: it came back after a wrong answer (Truffle peeks); idiom: the 成语 a missed rung-5 question asked
@@ -29,6 +29,7 @@ export interface RoundWord {
   gradesRecognise: boolean; // its reading card is due today: its first appearance grades it
   gradesMeaning: boolean; // its meaning card is due (or starts) today: its first 词语 question grades it
   early?: boolean; // missed in 认新字: it comes back first
+  gradesHear?: boolean; // its hear card is due today: its first appearance is asked by ear and grades it (spec 2026-10-06 §3.2)
   due?: boolean; // its reading or meaning card is due today (not a meaning start): it starts before words that only start meaning practice
 }
 
@@ -78,13 +79,14 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
     const fresh = firsts.filter((s) => s.next === 0 && s.w.wordId !== lastWord);
     const waiting = others.filter((s) => s.next > 0 && s.readyAt > p).sort((a, b) => a.readyAt - b.readyAt);
     const order = [...started, ...fresh, ...waiting, ...left()];
-    const plans = order.map((s) => ({ s, ...askFor(s.w.wordId, s.rungs[s.next]!, canAsk, lastAsk, rng) }));
+    const plans = order.map((s) => (s.next === 0 && s.w.gradesHear && canAsk(s.w.wordId, 'hear') ? { s, rung: 1 as Rung, ask: 'hear' as Ask } : { s, ...askFor(s.w.wordId, s.rungs[s.next]!, canAsk, lastAsk, rng) }));
     // a different word always wins over a different question type; the type changes whenever another word allows it
     const notSame = plans.filter((x) => x.s.w.wordId !== lastWord);
     const pick = notSame.find((x) => x.ask !== lastAsk) ?? notSame[0] ?? plans[0]!;
     const { s, rung, ask } = pick;
     let grades: Grades = null;
-    if (s.next === 0 && s.w.gradesRecognise) grades = 'recognise';
+    if (s.next === 0 && s.w.gradesHear && ask === 'hear') grades = 'hear';
+    else if (s.next === 0 && s.w.gradesRecognise) grades = 'recognise';
     else if (ask === 'idiomBuild') grades = 'use'; // a 组句 is a use question on any rung
     else if ((rung === 2 || rung === 5) && s.w.gradesMeaning && !s.meaningDone) {
       grades = 'meaning'; // 词语 and 成语 grade meaning (spec §3.5)
