@@ -245,3 +245,9 @@ describe('sweep: the current path stop', () => {
     expect(css).toMatch(/\.home \.path__row > \.path__name--current \{ pointer-events: auto;/);
   });
 });
+
+describe('the Understand question (plan 2b)', () => {
+  it('its English answer buttons are at least 64px tall on an iPad (the main-action tap target)', () => {
+    expect(css).toMatch(/@media \(min-width: 600px\) \{ \.understand__choice \{ min-height: 64px; \} \}/);
+  });
+});
