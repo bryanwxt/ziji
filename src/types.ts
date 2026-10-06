@@ -66,6 +66,7 @@ export interface CardRecord {
   kind: CardKind;
   fsrs: FsrsCard;
   passed?: number; // when its rung passed: two days' right first answers (spec 2026-10-06 §3.2), or earned before the ladder
+  guess?: true; // a placement guess (spec 2026-10-06 §3.5): its next rung waits for a real answer to confirm it (final review I1)
 }
 
 export interface ReviewLog {

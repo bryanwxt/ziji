@@ -5,6 +5,7 @@ import { buildSessionPlan } from '../session/plan';
 import { freshDb, makeCard, makeWord } from '../test/fixtures';
 import { addReviewLog, allCards, getSettings, putCards, putWords } from '../store/repo';
 import { DEFAULT_SETTINGS } from '../types';
+import { openMissingRungs } from '../session/record';
 import { applyPlacement, placementIds } from './apply';
 
 const now = new Date('2026-10-06T09:00:00');
@@ -77,5 +78,25 @@ describe('placing the Hear rung (spec 2026-10-06 §3.5)', () => {
     await applyPlacement(db, { readingIds: [], understandingIds: [], heardIds: ['b:门'], missed: [], reading: -1, understanding: -1, listening: 0 }, now);
     const plan = buildSessionPlan({ cards: await allCards(db), words: ws, settings: { ...DEFAULT_SETTINGS, newPerDay: 5 }, now });
     expect(plan.newWordIds).toEqual(['b:大']);
+  });
+});
+
+describe('a Hear guess opens its next rung only once a real answer confirms it (final review I1)', () => {
+  it('a big hear placement opens nothing the next day; a real 听 answer opens that word\'s next rung', async () => {
+    const db = await freshDb();
+    const ws = [makeWord('门', { rank: 0 }), makeWord('大', { rank: 1 })];
+    await putWords(db, ws);
+    await applyPlacement(db, { readingIds: [], understandingIds: [], heardIds: ws.map((w) => w.id), missed: [], reading: -1, understanding: -1, listening: 0 }, now);
+    expect(await openMissingRungs(db, new Date(now.getTime() + 86_400_000))).toBe(0); // no flood of Understand / never-taught Read cards
+    await addReviewLog(db, { cardId: 'b:门:hear', wordId: 'b:门', kind: 'hear', at: now.getTime() + 7 * 86_400_000, rating: 3, correct: true, responseMs: 1500 });
+    expect(await openMissingRungs(db, new Date(now.getTime() + 7 * 86_400_000))).toBe(1);
+    expect((await allCards(db)).filter((c) => c.wordId === 'b:门').map((c) => c.kind).sort()).toEqual(['hear', 'understand']);
+  });
+  it('a wrong answer does not confirm the guess: its next rung still waits', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('门', { rank: 0 })]);
+    await applyPlacement(db, { readingIds: [], understandingIds: [], heardIds: ['b:门'], missed: [], reading: -1, understanding: -1, listening: 0 }, now);
+    await addReviewLog(db, { cardId: 'b:门:hear', wordId: 'b:门', kind: 'hear', at: now.getTime() + 7 * 86_400_000, rating: 1, correct: false, responseMs: 1500 });
+    expect(await openMissingRungs(db, new Date(now.getTime() + 7 * 86_400_000))).toBe(0);
   });
 });

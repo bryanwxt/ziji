@@ -95,9 +95,12 @@ export async function openMissingRungs(db: AppDb, now: Date): Promise<number> {
   const cards = await allCards(db);
   const have = new Set(cards.map((c) => c.id));
   const made: CardRecord[] = [];
+  const confirmed = new Set((await db.getAll('reviewLogs')).filter((l) => l.kind === 'hear' && l.correct).map((l) => l.wordId)); // heard right, for real
   for (const c of cards) {
     const rung = rungOf(c.kind);
     if (!rung) continue;
+    // a Hear placement guess waits for a real right answer: hundreds placed at once would open hundreds of rungs tomorrow (final review I1)
+    if (c.guess && !confirmed.has(c.wordId)) continue;
     const word = await findWord(db, c.wordId);
     // a rung that can no longer be asked (its sentences were removed) never strands the word: the next rung opens (plan 2b)
     if (!c.passed && !(word && !canAskRung(word, rung))) continue;

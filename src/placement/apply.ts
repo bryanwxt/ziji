@@ -64,7 +64,8 @@ export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date):
   const seeds = [
     ...seedPlacementCards(words, r.readingIds, now, 'recognise').map(passed),
     ...seedPlacementCards(words, [...understood], now, 'meaning').map(passed),
-    ...seedPlacementCards(all, [...heard], now, 'hear').map(passed), // a placement guess its first recheck confirms (§3.5)
+    // a placement guess its first recheck confirms (§3.5); its next rung opens only then (final review I1: no flood of Understand cards)
+    ...seedPlacementCards(all, [...heard], now, 'hear').map((c): CardRecord => ({ ...passed(c), guess: true })),
     // spread out, easiest first, a day's worth at a time: hundreds due at once would push his class words out for weeks
     ...[...meaningNow]
       .sort((a, b) => (byId.get(a)?.rank ?? Infinity) - (byId.get(b)?.rank ?? Infinity))
