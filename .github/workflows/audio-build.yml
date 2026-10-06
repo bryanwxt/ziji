@@ -1,0 +1,98 @@
+name: Audio build
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['src/content/**', 'src/audio/sayAs.json', 'scripts/audio/**']
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: audio-build
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      todo: ${{ steps.plan.outputs.todo }}
+      ready: ${{ steps.voice.outputs.ready }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: voice
+        run: if [ -f scripts/audio/voice.json ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "ready=false" >> "$GITHUB_OUTPUT"; echo "No voice picked yet"; fi
+      - if: steps.voice.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - if: steps.voice.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.voice.outputs.ready == 'true'
+        name: Previous store
+        run: |
+          mkdir -p prev
+          if gh release download audio-store -p audio.tar.gz -D "$RUNNER_TEMP/a"; then tar -xzf "$RUNNER_TEMP/a/audio.tar.gz" -C prev; fi
+          mkdir -p prev/audio
+      - if: steps.voice.outputs.ready == 'true'
+        id: plan
+        run: npx tsx scripts/audio/plan.ts --prev prev/audio --out build/plan --shards 6
+      - if: steps.voice.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with: { name: plan, path: build/plan }
+
+  synth:
+    needs: plan
+    if: needs.plan.outputs.ready == 'true' && needs.plan.outputs.todo != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.10' }
+      - uses: actions/download-artifact@v4
+        with: { name: plan, path: build/plan }
+      - name: Install the picked engine and the checker
+        run: bash scripts/audio/tts/setup.sh "$(jq -r .engine scripts/audio/voice.json)" --check
+      - name: Synthesise this shard
+        run: |
+          python scripts/audio/tts/synth.py --jobs build/plan/shard-${{ matrix.shard }}.json --out out/shard \
+            --engine "$(jq -r .engine scripts/audio/voice.json)" --voice "$(jq -r .voice scripts/audio/voice.json)" \
+            --speed-word "$(jq -r .speed.word scripts/audio/voice.json)" --speed-sentence "$(jq -r .speed.sentence scripts/audio/voice.json)" --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: 'clips-${{ matrix.shard }}', path: out, if-no-files-found: ignore }
+
+  pack:
+    needs: [plan, synth]
+    if: always() && needs.plan.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with: { name: plan, path: build/plan }
+      - uses: actions/download-artifact@v4
+        with: { pattern: 'clips-*', path: art }
+      - name: Previous store
+        run: |
+          mkdir -p prev
+          if gh release download audio-store -p audio.tar.gz -D "$RUNNER_TEMP/a"; then tar -xzf "$RUNNER_TEMP/a/audio.tar.gz" -C prev; fi
+          mkdir -p prev/audio art
+      - run: npx tsx scripts/audio/pack.ts --prev prev/audio --clips art --plan build/plan --out out
+      - name: Upload the store and redeploy
+        run: |
+          tar -czf audio.tar.gz -C out audio
+          gh release view audio-store >/dev/null 2>&1 || gh release create audio-store --title "Audio clips" --notes "ZiJi's generated audio (scripts/audio). Not a code release." --target main
+          gh release upload audio-store audio.tar.gz --clobber
+          gh workflow run deploy.yml --ref main

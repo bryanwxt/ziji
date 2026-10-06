@@ -1,0 +1,38 @@
+<!doctype html>
+<!-- Clips to spot-listen (spec 2026-10-06 §4): flagged by the ASR check, or unsure of a 多音字. -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZiJi audio check</title>
+<style>
+  :root { --bg: #fbf6ea; --ink: #2b2620; --line: #e2d8c3; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 -apple-system, system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  li { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); list-style: none; }
+  ul { padding: 0; }
+  .zh { font-size: 22px; } .py { color: #7a6f5f; font-size: 13px; }
+  button { min-width: 46px; min-height: 46px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font-size: 20px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Audio check</h1>
+  <p id="sum">Loading…</p>
+  <h2>Heard differently by the checker</h2><ul id="flagged"></ul>
+  <h2>多音字 the voice may read otherwise</h2><ul id="unsure"></ul>
+  <h2>Failed (the iPad voice says these)</h2><ul id="failed"></ul>
+</main>
+<script>
+  const audio = new Audio();
+  const row = (x, note) => `<li>${x.id ? `<button data-id="${x.id}" aria-label="${x.text}">▶</button>` : ''}<div><div class="zh">${x.text}</div><div class="py">${note}</div></div></li>`;
+  fetch('audio/report.json', { cache: 'no-store' }).then((r) => r.json()).then((r) => {
+    document.getElementById('sum').textContent = `${r.present} of ${r.total} clips made · voice ${r.voice}. Tap ▶ and tell Claude any that sound wrong.`;
+    document.getElementById('flagged').innerHTML = r.flagged.map((x) => row(x, `${x.expected} · heard “${x.heard}”`)).join('') || '<li>None</li>';
+    document.getElementById('unsure').innerHTML = r.unsure.map((x) => row(x, x.expected)).join('') || '<li>None</li>';
+    document.getElementById('failed').innerHTML = r.failed.map((x) => row(x, x.error)).join('') || '<li>None</li>';
+    document.body.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { audio.src = `audio/clips/${b.dataset.id}.m4a`; audio.play(); } });
+  }).catch(() => { document.getElementById('sum').textContent = 'No audio built yet.'; });
+</script>
+</body>
+</html>
