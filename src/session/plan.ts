@@ -36,6 +36,8 @@ export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) sta
 export const MEANING_REVIEW_CAP = 30;
 /** Hear cards reviewed in one lesson at most (spec 2026-10-06 §3.2). */
 export const HEAR_REVIEW_CAP = 40;
+/** Understand cards reviewed in one lesson at most (plan 2b). */
+export const UNDERSTAND_REVIEW_CAP = 30;
 
 export function buildSessionPlan({ cards, words, settings, now, practised = new Map(), newPerDay }: PlanInput): SessionPlan {
   const active = words.filter((w) => !w.paused);
@@ -50,6 +52,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
 
   const recognise = ofKind('recognise');
   const hear = ofKind('hear');
+  const understand = ofKind('understand');
   // begun: heard or read (spec 2026-10-06 §3.2: a new word starts on its Hear rung)
   const started = new Set([...recognise, ...hear].map((c) => c.wordId));
   // Use (meaning practice) starts once Read has passed: two days' right first answers (spec 2026-10-06 §3.2)
@@ -94,6 +97,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
     // only words that can be asked by ear: a card that can't be asked would stay due and hold a slot forever (final review I1)
     hearReviewIds: dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
+    understandReviewIds: dueOf(understand).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'understand'); }).slice(0, UNDERSTAND_REVIEW_CAP).map((c) => c.wordId),
     meaningReviewIds: dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
     newMeaningIds: active
       .filter((w) => readPassed.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)

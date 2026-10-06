@@ -10,6 +10,7 @@ import { startRung } from './ladder';
 import { buildRound, type Ask, type PracticeItem, type RoundWord } from './round';
 import { fishItem } from '../activities/components/zibian';
 import { meaningChoices } from '../activities/flashcards/distractors';
+import { understandItem } from '../practice/understand';
 import { introducedNewWords } from './runner';
 import { idiomOf, idiomsFor, isIdiomWord, type Idiom } from '../content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../practice/idioms';
@@ -36,15 +37,17 @@ export function practiceWords(rec: SessionRecord, rungs: ReadonlyMap<string, num
   }));
   const reading = new Set(rec.plan.reviewWordIds);
   const hearing = new Set(rec.plan.hearReviewIds ?? []); // a lesson planned before the ladder has none
+  const understanding = new Set(rec.plan.understandReviewIds ?? []); // nor one planned before 2b
   const meaning = new Set([...(rec.plan.meaningReviewIds ?? []), ...(rec.plan.newMeaningIds ?? [])]);
   const meaningDue = new Set(rec.plan.meaningReviewIds ?? []);
   const seen = new Set(introduced);
   const revision: RoundWord[] = [];
-  for (const wordId of [...(rec.plan.hearReviewIds ?? []), ...rec.plan.reviewWordIds, ...(rec.plan.meaningReviewIds ?? []), ...(rec.plan.newMeaningIds ?? [])]) {
+  for (const wordId of [...(rec.plan.hearReviewIds ?? []), ...(rec.plan.understandReviewIds ?? []), ...rec.plan.reviewWordIds, ...(rec.plan.meaningReviewIds ?? []), ...(rec.plan.newMeaningIds ?? [])]) {
     if (seen.has(wordId)) continue;
     seen.add(wordId);
-    const from = startRung(rungs.get(wordId) ?? 0);
-    revision.push({ wordId, isNew: false, from, appearances: from === 1 ? 2 : 1, gradesRecognise: reading.has(wordId), gradesMeaning: meaning.has(wordId), gradesHear: hearing.has(wordId), due: reading.has(wordId) || meaningDue.has(wordId) || hearing.has(wordId) });
+    const listenOnly = understanding.has(wordId) && !reading.has(wordId) && !hearing.has(wordId) && !meaning.has(wordId);
+    const from = listenOnly ? 3 : startRung(rungs.get(wordId) ?? 0);
+    revision.push({ wordId, isNew: false, from, appearances: from === 1 ? 2 : 1, gradesRecognise: reading.has(wordId), gradesMeaning: meaning.has(wordId), gradesHear: hearing.has(wordId), gradesUnderstand: understanding.has(wordId), due: reading.has(wordId) || meaningDue.has(wordId) || hearing.has(wordId) || understanding.has(wordId) });
   }
   return [...fresh, ...revision];
 }
@@ -71,6 +74,7 @@ function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: As
     case 'read': return Array.from(word.text).length === 1 || word.source === 'parent'; // reading aloud: characters and his own lists; ladder 词语 are read for meaning
     case 'listen': return voice && Array.from(word.text).length === 1;
     case 'hear': return voice && meaningChoices(word, pool, mulberry32(1)) !== null;
+    case 'understand': return voice && understandItem(word, mulberry32(1)) !== null;
     case 'meaningRead': return meaningChoices(word, pool, mulberry32(1)) !== null;
     case 'word': return wordCue(word) !== null;
     case 'fit': return meaningCue(word)?.kind === 'sentence' && fitItem(word, pool, mulberry32(1)) !== null;
