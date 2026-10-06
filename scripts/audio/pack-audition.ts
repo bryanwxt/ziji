@@ -1,7 +1,7 @@
 // Puts the audition's clips into the audio store under audio/audition/, with a manifest for public/audition.html.
 // npx tsx scripts/audio/pack-audition.ts <artifactsDir> <prevAudioDir|-> <outDir>
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { AUDITION } from './audition';
 
 interface Result { id: string; ok: boolean; error?: string }
@@ -24,7 +24,7 @@ export function auditionManifest(items: AuditionManifest['items'], voices: { dir
   };
 }
 
-if (process.argv[1]?.endsWith('pack-audition.ts')) {
+if (basename(process.argv[1] ?? '') === 'pack-audition.ts') { // run as itself, never when imported (pack-audition.ts also ends in audition.ts)
   const [artifacts, prev, out] = process.argv.slice(2) as [string, string, string];
   const store = join(out, 'audio');
   mkdirSync(store, { recursive: true });

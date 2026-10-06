@@ -1,6 +1,6 @@
 // The voice audition (spec 2026-10-06 §4): the same 20 hard items from each engine, for the parent to listen to on the iPad.
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { basename, dirname } from 'node:path';
 import { pinyin } from 'pinyin-pro';
 import { engineText, type ClipJob, type ClipKind } from './inventory-lib';
 
@@ -39,7 +39,7 @@ export function auditionJobs(): (ClipJob & { label: string })[] {
   });
 }
 
-if (process.argv[1]?.endsWith('audition.ts')) {
+if (basename(process.argv[1] ?? '') === 'audition.ts') { // run as itself, never when imported (pack-audition.ts also ends in audition.ts)
   const out = process.argv[2] ?? 'build/audio/audition-jobs.json';
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(auditionJobs(), null, 1));

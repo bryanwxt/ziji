@@ -1,6 +1,7 @@
 // Everything in his range that gets a clip (spec 2026-10-06 §4), built from the app's own content so the two never drift.
 // npx tsx scripts/audio/inventory.ts [voiceTag] [out.json]
 import { writeFileSync } from 'node:fs';
+import { basename } from 'node:path';
 import { pinyin } from 'pinyin-pro';
 import { clipKey } from '../../src/audio/clipKey';
 import { builtinWords, schoolTerm } from '../../src/content';
@@ -67,7 +68,7 @@ export function buildInventory(voice: string): ClipJob[] {
   return [...jobs.values()];
 }
 
-if (process.argv[1]?.endsWith('inventory.ts')) {
+if (basename(process.argv[1] ?? '') === 'inventory.ts') { // run as itself, never when imported (pack-audition.ts also ends in audition.ts)
   const jobs = buildInventory(process.argv[2] ?? 'preview');
   const kinds = jobs.reduce<Record<string, number>>((n, j) => ({ ...n, [j.kind]: (n[j.kind] ?? 0) + 1 }), {});
   console.log(`inventory: ${jobs.length} clips`, kinds, `unsure ${jobs.filter((j) => !j.sure).length}`);
