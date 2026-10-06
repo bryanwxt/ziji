@@ -1,3 +1,5 @@
+import { audioAsleep, audioContext } from './context';
+
 export type Sfx = 'correct' | 'wrong' | 'combo' | 'star' | 'chest' | 'levelUp' | 'munch';
 
 type Note = [freq: number, offset: number, duration: number, type?: OscillatorType];
@@ -14,19 +16,12 @@ const NOTES: Record<Sfx, Note[]> = {
 };
 
 let enabled = true;
-let ctx: AudioContext | null = null;
-
 export function setSfxEnabled(on: boolean): void {
   enabled = on;
 }
 
 function audio(): AudioContext | null {
-  if (!enabled || typeof window === 'undefined') return null;
-  const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AC) return null;
-  ctx ??= new AC();
-  if (ctx.state === 'suspended' || (ctx.state as string) === 'interrupted') void ctx.resume(); // iPad Safari interrupts it in the background
-  return ctx;
+  return enabled ? audioContext() : null;
 }
 
 /**
@@ -37,9 +32,9 @@ export function armAudioWake(): void {
   if (typeof document === 'undefined') return;
   const events = ['touchend', 'pointerup', 'keydown'] as const;
   let armed = false;
-  const asleep = () => !ctx || ctx.state === 'suspended' || (ctx.state as string) === 'interrupted';
+  const asleep = audioAsleep;
   const wake = () => {
-    if (asleep()) audio(); // (resume is async: still asleep, the next touch tries again)
+    if (asleep()) audioContext(); // clips need waking even with sound effects off (resume is async: still asleep, the next touch tries again)
     if (!asleep()) disarm();
   };
   const arm = () => { if (!armed) { armed = true; events.forEach((e) => document.addEventListener(e, wake, true)); } };
@@ -94,10 +89,10 @@ export function startPurr(): void {
 }
 
 export function stopPurr(): void {
-  if (!purr || !ctx) return;
+  if (!purr) return;
   const { osc, lfo, gain } = purr;
   purr = null;
-  const t = ctx.currentTime;
+  const t = gain.context.currentTime;
   gain.gain.cancelScheduledValues(t);
   gain.gain.setTargetAtTime(0, t, 0.08);
   osc.stop(t + 0.5);
