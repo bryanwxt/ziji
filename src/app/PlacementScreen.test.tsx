@@ -154,3 +154,32 @@ describe('skipping placement (parent, 2026-10-05: an option to start at the star
     expect((await allCards(app.db)).filter((c) => c.kind === 'recognise')).toHaveLength(0);
   });
 });
+
+describe('听一听 in placement (spec 2026-10-06 §3.5)', () => {
+  it('with a voice he hears words and picks their English meaning; the result shows 听', async () => {
+    const { speak } = await import('../audio/speech');
+    const app = await setup();
+    renderWithApp(<PlacementScreen tapGuardMs={0} voice seed={SEED} />, app);
+    let heardQs = 0;
+    await walkThrough(() => document.querySelector<HTMLElement>('[data-answer="true"]')!, () => {
+      if (document.querySelector('.placement[data-style="hear"]')) {
+        heardQs++;
+        expect(document.querySelectorAll('.placement__choices--meaning .choice')).toHaveLength(4);
+        expect(bubble()).toBe('听一听，是什么意思？');
+      }
+    });
+    expect(heardQs).toBeGreaterThan(3);
+    expect(vi.mocked(speak)).toHaveBeenCalled();
+    expect(screen.getByText(/听：/)).toBeTruthy();
+    const s = await getSettings(app.db);
+    expect(s.placementResult!.listening).toBeGreaterThan(5);
+    expect((await allCards(app.db)).some((c) => c.kind === 'hear' && c.passed)).toBe(true);
+  }, 30_000);
+  it('with no voice the result shows no 听', async () => {
+    const app = await setup();
+    renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={SEED} />, app);
+    await walkThrough(dontKnow, () => expect(document.querySelector('.placement[data-style="hear"]')).toBeNull());
+    expect(screen.queryByText(/听：/)).toBeNull();
+    expect((await getSettings(app.db)).placementResult!.listening).toBe(-1);
+  });
+});

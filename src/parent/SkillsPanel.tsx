@@ -91,7 +91,7 @@ export function SkillsPanel() {
       <h2>Skills</h2>
       <p>
         {p
-          ? `Placement (${new Date(p.at).toLocaleDateString()}) — Reading: ${hsk(p.reading)} · Understanding: ${hsk(p.understanding)}`
+          ? `Placement (${new Date(p.at).toLocaleDateString()}) — ${p.listening !== undefined && p.listening >= 0 ? `Listening: ${hsk(p.listening)} · ` : ''}Reading: ${hsk(p.reading)} · Understanding: ${hsk(p.understanding)}`
           : 'Placement: not done yet'}
       </p>
       {d.settings.pace && <p>New words: {Math.min(d.settings.pace.perDay, d.settings.newPerDay)} a day — {d.settings.pace.reason} (most {d.settings.newPerDay})</p>}
