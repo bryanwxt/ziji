@@ -12,7 +12,7 @@ const log = (wordId: string, rating: ReviewLog['rating'], at: number): ReviewLog
 });
 
 describe('summarize', () => {
-  it('counts known recognise and write cards and collects known single characters', () => {
+  it('counts the characters in words whose reading passed, and written cards', () => {
     const now = new Date(2026, 9, 2);
     const words = [makeWord('大'), makeWord('朋友', { id: 'p:1' }), makeWord('人')];
     const cards = [
@@ -22,8 +22,9 @@ describe('summarize', () => {
       makeCard('b:大', 'write', now, true),
     ];
     const k = summarize(words, cards);
-    expect([k.known, k.written]).toEqual([2, 1]);
-    expect([...k.knownChars]).toEqual(['大']);
+    // a character is recognised when any word with it has passed Read: 朋友 brings 朋 and 友 (spec 2026-10-06 §3.3)
+    expect([k.known, k.written]).toEqual([3, 1]);
+    expect([...k.knownChars].sort()).toEqual(['大', '朋', '友'].sort());
     expect(k.knownWordIds.has('p:1')).toBe(true);
   });
 });

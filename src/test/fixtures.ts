@@ -16,5 +16,7 @@ export function makeCard(wordId: string, kind: CardKind, due: Date, known = fals
     wordId,
     kind,
     fsrs: { ...createEmptyCard(due), due, reps: 1, state: known ? State.Review : State.Learning },
+    // a known card has passed its rung: on a device the ladder migration marks every earned card passed (spec 2026-10-06 §3.6)
+    ...(known ? { passed: due.getTime() } : {}),
   };
 }

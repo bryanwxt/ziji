@@ -1,6 +1,7 @@
 import { Rating } from 'ts-fsrs';
 import { addDays, endOfLocalDay, localDateKey, parseDateKey } from '../lib/date';
-import { isEarned } from '../srs/scheduler';
+import { ladderWords } from '../content/ladder';
+import { isOwned, rungOf, type RungKind } from '../ladder/rungs';
 import type { CardRecord, ReviewLog, SessionRecord, Word } from '../types';
 
 export interface Knowledge {
@@ -8,29 +9,38 @@ export interface Knowledge {
   cards: CardRecord[];
   wordsById: Map<string, Word>;
   cardsById: Map<string, CardRecord>;
-  knownWordIds: Set<string>;
-  knownChars: Set<string>; // single-character words the child knows
-  known: number;
-  written: number;
+  ladderById: Map<string, Word>;
+  knownWordIds: Set<string>; // words whose Read rung has passed
+  knownChars: Set<string>; // characters recognised: in any word whose Read has passed (spec 2026-10-06 §3.3)
+  known: number; // = knownChars.size
+  heard: number;
+  read: number;
+  used: number;
+  owned: number;
+  written: number; // characters whose writing has passed
 }
 
 export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
   const wordsById = new Map(words.map((w) => [w.id, w]));
-  const knownWordIds = new Set(cards.filter((c) => c.kind === 'recognise' && isEarned(c.fsrs)).map((c) => c.wordId));
-  const knownChars = new Set<string>();
-  for (const id of knownWordIds) {
-    const text = wordsById.get(id)?.text;
-    if (text && Array.from(text).length === 1) knownChars.add(text);
+  const ladderById = new Map(ladderWords().map((w) => [w.id, w]));
+  const word = (id: string) => wordsById.get(id) ?? ladderById.get(id);
+  const passedRungs = new Map<string, Set<RungKind>>();
+  for (const c of cards) {
+    const r = rungOf(c.kind);
+    if (!r || !c.passed || !word(c.wordId)) continue;
+    (passedRungs.get(c.wordId) ?? passedRungs.set(c.wordId, new Set()).get(c.wordId)!).add(r);
   }
+  const count = (r: RungKind) => [...passedRungs.values()].filter((s) => s.has(r)).length;
+  const knownWordIds = new Set([...passedRungs].filter(([, s]) => s.has('read')).map(([id]) => id));
+  const knownChars = new Set<string>();
+  for (const id of knownWordIds) for (const ch of Array.from(word(id)!.text)) if (/\p{Script=Han}/u.test(ch)) knownChars.add(ch);
   return {
-    words,
-    cards,
-    wordsById,
+    words, cards, wordsById, ladderById,
     cardsById: new Map(cards.map((c) => [c.id, c])),
-    knownWordIds,
-    knownChars,
-    known: knownWordIds.size,
-    written: cards.filter((c) => c.kind === 'write' && isEarned(c.fsrs)).length,
+    knownWordIds, knownChars, known: knownChars.size,
+    heard: count('hear'), read: count('read'), used: count('use'),
+    owned: [...passedRungs].filter(([id, s]) => isOwned(word(id)!, s)).length,
+    written: cards.filter((c) => c.kind === 'write' && c.passed).length,
   };
 }
 
