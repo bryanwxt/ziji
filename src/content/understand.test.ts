@@ -51,3 +51,12 @@ describe('the written sentences (every file in src/content/sentences)', () => {
     expect(problems).toEqual([]);
   });
 });
+
+describe('coverage (plan 2b): most of each term\'s words have two sentences', () => {
+  // the writers skip words with no natural sentence from the taught characters, or that don't suit a 7-year-old (老婆, 丑闻,
+  // 活该): those words skip the Understand rung. 65%, not the plan's 90% (ruling, 2026-10-06: 68–77% came out clean)
+  it.each(['一上', '一下', '二上', '二下'])('%s: at least 65% of its words have two sentences', (term) => {
+    const ws = inScopeWords(term);
+    expect(ws.filter((w) => sentencesFor(w.text).length === 2).length).toBeGreaterThanOrEqual(Math.floor(ws.length * 0.65));
+  });
+});
