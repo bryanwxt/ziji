@@ -22,11 +22,11 @@ import { castFor, slotState, type CastId } from './weave';
 type Beat = { kind: 'page'; page: Page; scene: string | null } | { kind: 'granny' } | { kind: 'listen' };
 const SLOT = /\{([^|{}]+)\|([^{}]+)\}/g;
 /** A line seen through to its end: speak it, and call done when the voice stops (or after a while if it never starts). */
-function playLine(zh: string, done: () => void): () => void {
+function playLine(zh: string, done: () => void, onStart?: () => void): () => void {
   let started = false;
   let over = false;
   const finish = () => { if (!over) { over = true; off(); clearTimeout(t); done(); } };
-  const off = onSpeaking((on) => { if (on) started = true; else if (started) finish(); });
+  const off = onSpeaking((on) => { if (on) { if (!started) onStart?.(); started = true; } else if (started) finish(); });
   const t = setTimeout(finish, 9000); // a voice that never starts mustn't trap him on the page
   speak(zh);
   return () => { over = true; off(); clearTimeout(t); };
@@ -80,10 +80,11 @@ function GrannyLines({ lines, voice, onReady }: { lines: Mandarin[]; voice: bool
   useEffect(() => onReady(heard.every(Boolean)), [heard]);
   useEffect(() => {
     if (playing < 0 || playing >= lines.length) return;
+    const mark = () => setHeard((h) => h.map((x, i) => x || i === playing)); // heard once it starts: a tap on another line's 听 mid-line can't leave → stuck
     return playLine(lines[playing]!.zh, () => {
-      setHeard((h) => h.map((x, i) => x || i === playing));
+      mark();
       setPlaying((p) => (p + 1 < lines.length ? p + 1 : -1));
-    });
+    }, mark);
   }, [playing]);
   return (
     <div class="story__granny">
@@ -182,10 +183,15 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
     if (leaving.current) return;
     leaving.current = true;
     stopSpeaking();
-    const p = (await getSettings(db)).storyProgress;
-    await updateSettings(db, { storyProgress: part === 'setup' ? markSetup(p, chapter, localDateKey(now())) : markPayoff(p, chapter) });
-    await refresh();
-    go(then);
+    try {
+      const p = (await getSettings(db)).storyProgress;
+      await updateSettings(db, { storyProgress: part === 'setup' ? markSetup(p, chapter, localDateKey(now())) : markPayoff(p, chapter) });
+      await refresh();
+    } catch (e) {
+      console.error('story: could not save the chapter', e); // he moves on regardless: a stuck screen is worse than a re-shown chapter
+    } finally {
+      go(then);
+    }
   };
   if (!c || !beats.length) { void finish(); return <div class="screen loading" />; }
 

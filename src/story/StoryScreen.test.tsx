@@ -77,4 +77,18 @@ describe('the story reader (spec 3c §4)', () => {
     expect(document.querySelector('.story__words')!.textContent).not.toContain('*');
     expect(document.querySelector('.story__words em')?.textContent).toBe('SHHHHHHHH.');
   });
+  it("tapping 听 on another line while Granny talks never leaves → stuck (final review I1)", async () => {
+    const app = await makeAppData({ voice: true });
+    renderWithApp(<StoryScreen part="setup" chapter={3} then={{ name: 'home' }} />, app);
+    await screen.findByText(/stairs/);
+    for (let i = 0; i < 3; i++) fireEvent.click(next());
+    await waitFor(() => expect(document.querySelector('.story__granny')).toBeTruthy());
+    const { setSpeaking } = await import('../audio/speaking');
+    await new Promise((r) => setTimeout(r, 30));
+    setSpeaking(true); // line 0 starts…
+    fireEvent.click(screen.getAllByRole('button', { name: '听' })[1]!); // …and he taps line 1's 听 mid-line
+    await new Promise((r) => setTimeout(r, 30));
+    setSpeaking(false); setSpeaking(true); setSpeaking(false); // line 1 plays to its end
+    await waitFor(() => expect(next().hasAttribute('disabled')).toBe(false));
+  });
 });
