@@ -1,6 +1,7 @@
 import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/date';
 import { fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
 import { findWord } from '../ladder/words';
+import { ladderWords } from '../content/ladder';
 import { newCard, review, toRating } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
 import { addReviewLog, logsForCard, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
@@ -134,7 +135,7 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
 
 async function planNow(db: AppDb, now: Date) {
   const [cards, words, settings, practised] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db)]);
-  return buildSessionPlan({ cards, words, settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
+  return buildSessionPlan({ cards, words: [...words, ...ladderWords()], settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
 }
 
 /**

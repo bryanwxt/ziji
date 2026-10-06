@@ -116,12 +116,12 @@ describe('写一写 after placement', () => {
 describe('meaning practice', () => {
   const later = new Date(2026, 9, 20);
   const withCue = (i: number) => makeWord(`字${i}`, { id: `b:${i}`, rank: i, pinyin: 'zì líng', examples: [{ text: `字${i}书`, pinyin: 'zì líng shū' }] });
-  it('adds due meaning reviews, and starts meaning practice for words he has begun, never for words without a cue', () => {
+  it('adds due meaning reviews, and starts meaning practice for words whose reading has passed, never for words without a cue', () => {
     const ws = [withCue(0), withCue(1), makeWord('欺负', { id: 'p:1', rank: null, examples: [] }), withCue(3)];
     const cards = [
       makeCard('b:0', 'recognise', later), makeCard('b:0', 'meaning', hoursAgo(2)), // due meaning review
-      makeCard('b:1', 'recognise', later), // begun, no meaning card yet → new meaning
-      makeCard('p:1', 'recognise', later), // begun, but no cue → nothing
+      { ...makeCard('b:1', 'recognise', later), passed: 1 }, // reading passed, no meaning card yet → new meaning (spec 2026-10-06 §3.2)
+      { ...makeCard('p:1', 'recognise', later), passed: 1 }, // reading passed, but no cue → nothing
     ];
     const plan = buildSessionPlan({ cards, words: ws, settings: settings(), now });
     expect(plan.meaningReviewIds).toEqual(['b:0']);
@@ -137,9 +137,9 @@ describe('new words meet their meaning in the same lesson (spec §20 part 2)', (
 });
 
 describe('meaning checks for words he already knows (parent: more volume, 2026-10-04)', () => {
-  it('starts meaning practice for up to 12 begun words a day', () => {
+  it('starts meaning practice for up to 12 words a day whose reading has passed', () => {
     const ws = Array.from({ length: 20 }, (_, i) => makeWord(String.fromCodePoint(0x4e00 + i), { id: `b:${i}`, rank: i, examples: [{ text: `${String.fromCodePoint(0x4e00 + i)}书`, pinyin: 'x shū' }] }));
-    const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
+    const cards = ws.map((w) => ({ ...makeCard(w.id, 'recognise', new Date(2026, 9, 20), true), passed: 1 }));
     const plan = buildSessionPlan({ cards, words: ws, settings: settings(), now });
     expect(plan.newMeaningIds).toHaveLength(12);
   });

@@ -36,7 +36,7 @@ describe('startOrResumeSession', () => {
     const db = await freshDb();
     await putWords(db, [makeWord('大', { id: 'b:大' })]);
     const first = await startOrResumeSession(db, now);
-    expect(first.plan.newWordIds).toEqual(['b:大']);
+    expect(first.plan.newWordIds[0]).toBe('b:大'); // then its ladder 词语 (大大) may follow in the same lesson (spec 2026-10-06 §3.1)
     await saveSession(db, { ...first, flashIndex: 1 });
     expect((await startOrResumeSession(db, new Date(2026, 9, 2, 18))).flashIndex).toBe(1);
     const tomorrow = await startOrResumeSession(db, new Date(2026, 9, 3, 9));

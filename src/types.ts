@@ -126,6 +126,7 @@ export interface SessionPlan {
   writeCandidates: { wordId: string; isNew: boolean }[];
   writeCount: number;
   writeItems?: WriteItem[]; // spec 2026-10-05 §5: one character and pass each; lessons saved before it have none
+  hearReviewIds?: string[]; // due Hear cards (spec 2026-10-06 §3.2); a plan made before the ladder has none
   meaningReviewIds?: string[]; // due meaning cards (optional: sessions saved before plan 11 have none)
   newMeaningIds?: string[]; // begun words starting meaning practice
   practiceTimeBoxMs?: number; // 练一练's time box (spec 2026-10-05 §2)

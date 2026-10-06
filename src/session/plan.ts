@@ -3,6 +3,7 @@ import { shuffle, type Rng } from '../lib/random';
 import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
 import { learnerLevel } from '../content/chengyu';
+import { isLadderId } from '../content/ladder';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
 
@@ -32,6 +33,8 @@ export interface PlanInput {
 export const PRACTICE_SHARE = 12 / 30; // 练一练's share of the lesson (spec 2026-10-05 §2)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
+/** Hear cards reviewed in one lesson at most (spec 2026-10-06 §3.2). */
+export const HEAR_REVIEW_CAP = 40;
 
 export function buildSessionPlan({ cards, words, settings, now, practised = new Map(), newPerDay }: PlanInput): SessionPlan {
   const active = words.filter((w) => !w.paused);
@@ -45,7 +48,11 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
       .sort((a, b) => a.fsrs.due.getTime() - b.fsrs.due.getTime());
 
   const recognise = ofKind('recognise');
-  const started = new Set(recognise.map((c) => c.wordId));
+  const hear = ofKind('hear');
+  // begun: heard or read (spec 2026-10-06 §3.2: a new word starts on its Hear rung)
+  const started = new Set([...recognise, ...hear].map((c) => c.wordId));
+  // Use (meaning practice) starts once Read has passed: two days' right first answers (spec 2026-10-06 §3.2)
+  const readPassed = new Set(recognise.filter((c) => c.passed).map((c) => c.wordId));
   const dueRecognise = dueOf(recognise);
   // a real backlog pauses new words; first rechecks of placement guesses (never practised) don't
   const backlog = dueRecognise.filter((c) => practised.has(c.wordId)).length;
@@ -57,7 +64,15 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const hasMeaning = new Set(meaning.map((c) => c.wordId));
   const meaningOrder = (a: Word, b: Word) => (practised.get(b.id) ?? -1) - (practised.get(a.id) ?? -1) || newWordOrder(a, b);
 
-  const newWords = active.filter((w) => !started.has(w.id)).sort(newWordOrder).slice(0, newLimit);
+  // A ladder 词语 comes only once every character in it is begun, or comes earlier in today's new words (spec 2026-10-06 §3.1)
+  const begunChars = new Set(active.filter((w) => started.has(w.id) && Array.from(w.text).length === 1).map((w) => w.text));
+  const newWords: Word[] = [];
+  for (const w of active.filter((x) => !started.has(x.id)).sort(newWordOrder)) {
+    if (newWords.length >= newLimit) break;
+    if (isLadderId(w.id) && !Array.from(w.text).every((c) => begunChars.has(c))) continue;
+    newWords.push(w);
+    if (Array.from(w.text).length === 1) begunChars.add(w.text);
+  }
   // spec 2026-10-05 §2: no separate 用一用; a day with no new words starts at 练一练 (no empty 认新字 stop, no star for it)
   const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0);
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
@@ -76,9 +91,10 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     writeItems,
     writeCount: writeItems.length,
     // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
+    hearReviewIds: dueOf(hear).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
     meaningReviewIds: dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
     newMeaningIds: active
-      .filter((w) => started.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)
+      .filter((w) => readPassed.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)
       .sort(meaningOrder)
       .slice(0, NEW_MEANING_PER_DAY)
       .map((w) => w.id),
