@@ -78,8 +78,8 @@ export function walkStep(s: WalkState, a: Omit<WalkAnswer, 'band'>, bandCount: n
 
 /**
  * The three results (spec §19 part 6; 2026-10-06 §3.5). Reading holds in a band when 2/3 of its 读一读/补一补 answers are right;
- * understanding (选一选) when half are, never above reading; listening (听一听) when half are, on its own — he may hear more than he
- * reads. Each level is the highest band that holds; bands below the first one visited count as held. -1 = none (no 听一听: -1).
+ * understanding (选一选) when half are, never above reading; each is the highest band that holds, and bands below the first one visited
+ * count as held. Listening (听一听) is on its own — he may hear more than he reads — and stricter (listeningLevel). -1 = none.
  */
 export function placementLevels(answers: WalkAnswer[]): { reading: number; understanding: number; listening: number } {
   const bands = [...new Set(answers.map((a) => a.band))].sort((x, y) => x - y);
@@ -93,9 +93,26 @@ export function placementLevels(answers: WalkAnswer[]): { reading: number; under
     return held.length ? Math.max(...held) : Math.min(cap, bands[0]! - 1);
   };
   const reading = top('read', 2 / 3, Infinity);
-  const listening = answers.some((a) => a.style === 'hear') ? top('hear', 0.5, Infinity) : -1;
+  const listening = listeningLevel(answers);
   // a lucky 选一选 in a band he can't read says nothing: understanding looks only at bands he reads
   return { reading, understanding: top('fit', 0.5, reading), listening };
+}
+
+export const LISTEN_SHARE = 0.75;
+export const LISTEN_MIN = 3;
+/**
+ * His listening level (final review I2): the highest band where at least 3/4 of every 听一听 answer at or below it is right, over at
+ * least 3 answers; else -1. A visit asks one 听一听, so one band's single answer is a 1-in-4 guess, and a placed level marks hundreds of
+ * words heard: guessing must not place him (a silent iPad), while missing a listener only queues his listening checks as before.
+ */
+export function listeningLevel(answers: WalkAnswer[]): number {
+  const heard = answers.filter((a) => a.style === 'hear');
+  let best = -1;
+  for (const b of [...new Set(heard.map((a) => a.band))]) {
+    const xs = heard.filter((a) => a.band <= b);
+    if (b > best && xs.length >= LISTEN_MIN && share(xs) >= LISTEN_SHARE) best = b;
+  }
+  return best;
 }
 
 export type StyleGroup = 'read' | 'fit' | 'hear';

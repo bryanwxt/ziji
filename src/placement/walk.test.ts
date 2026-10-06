@@ -139,14 +139,18 @@ describe('不知道 (parent, 2026-10-05: tapping it over and over took 15 taps t
 describe('the listening level (spec 2026-10-06 §3.5)', () => {
   let n = 0;
   const at = (band: number, style: Style, correct: boolean) => ({ band, style, wordId: `b:${band}${style}${n++}`, correct });
-  it('is the highest band where half his 听一听 answers are right', () => {
-    const r = placementLevels([at(5, 'hear', true), at(5, 'read', true), at(6, 'hear', true), at(6, 'hear', false), at(7, 'hear', false), at(7, 'read', false)]);
-    expect(r.listening).toBe(6);
+  it('is the highest band where 3/4 of his 听一听 answers at or below it are right, over 3 or more', () => {
+    const r = placementLevels([at(4, 'hear', true), at(5, 'hear', true), at(5, 'read', true), at(6, 'hear', true), at(7, 'hear', false), at(7, 'read', false)]);
+    expect(r.listening).toBe(7); // 3/3 up to 6, and 3/4 up to 7 still holds…
+    expect(placementLevels([at(4, 'hear', true), at(5, 'hear', true), at(6, 'hear', true), at(7, 'hear', false), at(7, 'hear', false)]).listening).toBe(6); // …but 3/5 up to 7 doesn't
+  });
+  it('one or two lucky answers place nothing', () => {
+    expect(placementLevels([at(6, 'hear', true), at(7, 'hear', true)]).listening).toBe(-1);
   });
   it('can be above his reading: he hears more than he reads', () => {
-    const r = placementLevels([at(6, 'read', false), at(6, 'fill', false), at(6, 'hear', true), at(7, 'read', false), at(7, 'hear', true)]);
+    const r = placementLevels([at(6, 'read', false), at(6, 'fill', false), at(6, 'hear', true), at(7, 'read', false), at(7, 'hear', true), at(8, 'hear', true)]);
     expect(r.reading).toBe(5);
-    expect(r.listening).toBe(7);
+    expect(r.listening).toBe(8);
   });
   it('a 听一听 answer says nothing about reading', () => {
     const r = placementLevels([at(6, 'hear', true), at(6, 'hear', true), at(6, 'read', false)]);
@@ -154,5 +158,32 @@ describe('the listening level (spec 2026-10-06 §3.5)', () => {
   });
   it('is -1 with no 听一听 answers at all (no voice)', () => {
     expect(placementLevels([at(6, 'read', true), at(6, 'fill', true)]).listening).toBe(-1);
+  });
+});
+
+describe('the listening level holds up (final review I2)', () => {
+  /** A voiced walk: right with 95% at or below his level for that skill, 25% (a guess) above it. */
+  const walk = (seed: number, readTop: number, hearTop: number) => {
+    const rng = mulberry32(seed);
+    let s = startWalk(30);
+    let prev: Style | null = null;
+    let queue: Style[] = [];
+    for (let i = 0; i < WARMUP; i++) s = walkStep(s, { style: 'read', wordId: 'x', correct: true }, 30);
+    while (!s.done) {
+      if (!queue.length) queue = visitStyles(prev, true, rng);
+      const st = queue.shift()!;
+      prev = st;
+      const top = st === 'hear' ? hearTop : readTop;
+      s = walkStep(s, { style: st, wordId: `${s.band}${st}${rng()}`, correct: rng() < (s.band <= top ? 0.95 : 0.25) }, 30);
+    }
+    return placementLevels(s.answers);
+  };
+  it('a child who hears nothing (a silent iPad, only guesses) is almost never placed as hearing', () => {
+    const placed = Array.from({ length: 400 }, (_, i) => walk(i + 1, 6, -1)).filter((l) => l.listening >= 0).length;
+    expect(placed).toBeLessThanOrEqual(20); // ≤5%: a wrong guess marks hundreds of words heard
+  });
+  it('a strong listener is still placed at or near his level', () => {
+    const near = Array.from({ length: 400 }, (_, i) => walk(i + 1, 8, 8)).filter((l) => l.listening >= 7).length;
+    expect(near).toBeGreaterThanOrEqual(360);
   });
 });
