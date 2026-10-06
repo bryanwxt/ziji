@@ -27,6 +27,16 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /ziji/
+      - name: Add the audio clips (the iPad voice speaks until there are any)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release download audio-store -p audio.tar.gz -D "$RUNNER_TEMP/audio" 2>/dev/null; then
+            tar -xzf "$RUNNER_TEMP/audio/audio.tar.gz" -C dist
+            echo "audio: $(ls dist/audio/clips 2>/dev/null | wc -l) clips"
+          else
+            echo "audio: no store yet"
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
