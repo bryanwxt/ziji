@@ -257,6 +257,9 @@ describe('Truffle repainted (spec 3b §5)', () => {
     expect(s.getAttribute('viewBox')).toBe('30 20 260 270');
     for (const p of RIG) expect(s.querySelector(`[data-part="${p}"]`), p).toBeTruthy();
   });
+  it('no clip-paths in his body art: WebKit repaints them every frame (lesson start went 1 s → 5 s)', () => {
+    for (const art of [TORSO, PAW_L, PAW_R, TAIL, EAR_L, EAR_R, HEAD_SHAPE]) expect(art).not.toContain('clip-path');
+  });
   it('no hard black outline on his fur, chest or paws', () => {
     for (const art of [TORSO, BODY, PAW_L, PAW_R, TAIL, EAR_L, EAR_R, HEAD_SHAPE]) expect(art).not.toContain('#2a2630');
   });

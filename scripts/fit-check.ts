@@ -305,7 +305,12 @@ async function sweep(browser: Browser, size: Size) {
     await page?.context().close();
   };
   const tabTo = (p: Page, label: string) => p.click(`.tabbar__item:has-text("${label}")`);
-  const startLesson = async (p: Page) => { await p.click('.path__node--current'); };
+  // wait for the lesson to load: a slow start used to look like "back home" and skip the whole flow silently (3b review: Truffle's
+  // clip-paths made lessons start in ~5 s and every lesson flow checked nothing); a start over 15 s is a problem, not a skip
+  const startLesson = async (p: Page) => {
+    await p.click('.path__node--current');
+    await p.waitForSelector('.lessonbar, .celebrate', { timeout: 15_000 });
+  };
 
   // Home: not started, and done-for-today with every optional card; world taps in every world
   await run('home', AFTERNOON, {}, (p) => check(p, size, 'home', 0));
