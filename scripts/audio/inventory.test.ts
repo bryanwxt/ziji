@@ -30,3 +30,15 @@ describe('the clip inventory', () => {
     expect(jobs.every((j) => other.get(j.key) !== j.id)).toBe(true);
   });
 });
+
+describe('how a word is given to the voice', () => {
+  it('a word or a lone character ends in 。, so the voice says it as a whole utterance (parent, 2026-10-06: 一起 came out yí, 东 in 东西 falling)', () => {
+    const byKey = new Map(jobs.map((j) => [j.key, j]));
+    expect(byKey.get('一起')?.engineText).toBe('一起。');
+    expect(byKey.get('东西')?.engineText).toBe('东西。');
+    for (const j of jobs) if (j.kind === 'char' || j.kind === 'word') expect(j.engineText, j.key).toMatch(/[。！？]$/);
+  });
+  it('sentences keep their own punctuation, and nothing is doubled', () => {
+    for (const j of jobs) expect(j.engineText, j.key).not.toMatch(/[。！？]。$/);
+  });
+});

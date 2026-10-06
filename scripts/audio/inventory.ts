@@ -25,7 +25,10 @@ export function buildInventory(voice: string): ClipJob[] {
     if (jobs.has(key)) return;
     // words carry checked pinyin (the card's, with the content fixes): an engine is steered to it. Sentences go as written.
     const e = kind === 'char' || kind === 'word' ? engineText(t, expected) : { text: t, sure: true };
-    jobs.set(key, { key, id: clipId(key, expected, voice), text: t, engineText: e.text, expected, kind, sure: e.sure });
+    // A bare word is said like an unfinished phrase, its tones bent (一起 came out yí, 东西's 东 falling: parent, 2026-10-06).
+    // Ended with 。 it is said whole: pitch checks on 60 words, 67 → 86 of 117 tones right.
+    const said = (kind === 'char' || kind === 'word') && !/[。！？]$/.test(e.text) ? `${e.text}。` : e.text;
+    jobs.set(key, { key, id: clipId(key, expected, voice), text: t, engineText: said, expected, kind, sure: e.sure });
   };
   const sentence = (t: string, kind: ClipKind = 'sentence') => add(t, sentencePinyin(t), kind);
 
