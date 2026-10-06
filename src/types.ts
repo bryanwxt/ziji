@@ -58,13 +58,14 @@ export interface Word {
   tags?: string[]; // e.g. '成语'
 }
 
-export type CardKind = 'recognise' | 'write' | 'meaning'; // meaning: what the word means and how it's used (spec §19)
+export type CardKind = 'recognise' | 'write' | 'meaning' | 'hear'; // meaning: what the word means and how it's used (spec §19)
 
 export interface CardRecord {
   id: string; // `${wordId}:${kind}`
   wordId: string;
   kind: CardKind;
   fsrs: FsrsCard;
+  passed?: number; // when its rung passed: two days' right first answers (spec 2026-10-06 §3.2), or earned before the ladder
 }
 
 export interface ReviewLog {

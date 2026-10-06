@@ -276,7 +276,7 @@ describe('passing (spec 2026-10-06 §3.2)', () => {
 });
 
 describe('opening and owning', () => {
-  const withCue = makeWord('门', { examples: [{ text: '门口', pinyin: 'mén kǒu' }] });
+  const withCue = makeWord('门', { pinyin: 'mén', examples: [{ text: '门口', pinyin: 'mén kǒu' }] });
   const noCue = makeWord('口', { examples: [] });
   it('Hear → Read → Use; Use only when the word can be used in a question', () => {
     expect(nextRung(withCue, 'hear')).toBe('read');
@@ -505,7 +505,7 @@ const right = { correct: true, responseMs: 2500 };
 describe('recording a rung answer (spec 2026-10-06 §3.2)', () => {
   it('a hear card passes on its second right day and opens the reading card, due the next morning', async () => {
     const db = await freshDb();
-    await putWords(db, [makeWord('门', { examples: [{ text: '门口', pinyin: 'mén kǒu' }] })]);
+    await putWords(db, [makeWord('门', { pinyin: 'mén', examples: [{ text: '门口', pinyin: 'mén kǒu' }] })]);
     await recordHear(db, 'b:门', right, day('2026-10-01'));
     expect((await getCard(db, 'b:门:hear'))?.passed).toBeUndefined();
     await recordHear(db, 'b:门', right, day('2026-10-02'));
@@ -515,7 +515,7 @@ describe('recording a rung answer (spec 2026-10-06 §3.2)', () => {
   });
   it('reading passed opens Use only for a word that can be used in a question', async () => {
     const db = await freshDb();
-    await putWords(db, [makeWord('门', { examples: [{ text: '门口', pinyin: 'mén kǒu' }] }), makeWord('口', { examples: [] })]);
+    await putWords(db, [makeWord('门', { pinyin: 'mén', examples: [{ text: '门口', pinyin: 'mén kǒu' }] }), makeWord('口', { examples: [] })]);
     for (const id of ['b:门', 'b:口']) {
       await recordRecognition(db, id, right, day('2026-10-01'));
       await recordRecognition(db, id, right, day('2026-10-02'));
@@ -526,7 +526,7 @@ describe('recording a rung answer (spec 2026-10-06 §3.2)', () => {
   });
   it('an opened card never replaces one he already has', async () => {
     const db = await freshDb();
-    await putWords(db, [makeWord('门', { examples: [{ text: '门口', pinyin: 'mén kǒu' }] })]);
+    await putWords(db, [makeWord('门', { pinyin: 'mén', examples: [{ text: '门口', pinyin: 'mén kǒu' }] })]);
     await recordRecognition(db, 'b:门', right, day('2026-09-20')); // a reading card from before the ladder
     const before = (await getCard(db, 'b:门:recognise'))!.fsrs;
     await recordHear(db, 'b:门', right, day('2026-10-01'));
@@ -542,7 +542,7 @@ describe('recording a rung answer (spec 2026-10-06 §3.2)', () => {
   });
   it('a meaning answer passes the Use rung', async () => {
     const db = await freshDb();
-    await putWords(db, [makeWord('门', { examples: [{ text: '门口', pinyin: 'mén kǒu' }] })]);
+    await putWords(db, [makeWord('门', { pinyin: 'mén', examples: [{ text: '门口', pinyin: 'mén kǒu' }] })]);
     await recordMeaning(db, 'b:门', right, day('2026-10-01'));
     await recordMeaning(db, 'b:门', right, day('2026-10-02'));
     expect((await getCard(db, 'b:门:meaning'))?.passed).toBe(day('2026-10-02').getTime());
@@ -869,8 +869,8 @@ describe('planning on the word ladder (spec 2026-10-06 §3)', () => {
     expect(plan.newWordIds).toEqual([]);
   });
   it('Use (meaning practice) starts only once Read has passed', () => {
-    const a = makeWord('门', { examples: [{ text: '门口', pinyin: 'mén kǒu' }] });
-    const b = makeWord('口', { examples: [{ text: '口水', pinyin: 'kǒu shuǐ' }] });
+    const a = makeWord('门', { pinyin: 'mén', examples: [{ text: '门口', pinyin: 'mén kǒu' }] });
+    const b = makeWord('口', { pinyin: 'kǒu', examples: [{ text: '口水', pinyin: 'kǒu shuǐ' }] });
     const cards = [{ ...makeCard('b:门', 'recognise', new Date('2026-10-20')), passed: 1 }, makeCard('b:口', 'recognise', new Date('2026-10-20'))];
     const plan = buildSessionPlan({ cards, words: [a, b], settings, now });
     expect(plan.newMeaningIds).toEqual(['b:门']);
