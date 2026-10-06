@@ -10,6 +10,7 @@ export interface Knowledge {
   wordsById: Map<string, Word>;
   cardsById: Map<string, CardRecord>;
   ladderById: Map<string, Word>;
+  passedRungs: Map<string, Set<RungKind>>; // each word's passed rungs (the town lights from these: spec 2026-10-06 §3.7)
   knownWordIds: Set<string>; // words whose Read rung has passed
   knownChars: Set<string>; // characters recognised: in any word whose Read has passed (spec 2026-10-06 §3.3)
   known: number; // = knownChars.size
@@ -36,7 +37,7 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
   const knownChars = new Set<string>();
   for (const id of knownWordIds) for (const ch of Array.from(word(id)!.text)) if (/\p{Script=Han}/u.test(ch)) knownChars.add(ch);
   return {
-    words, cards, wordsById, ladderById,
+    words, cards, wordsById, ladderById, passedRungs,
     cardsById: new Map(cards.map((c) => [c.id, c])),
     knownWordIds, knownChars, known: knownChars.size,
     heard: count('hear'), understood: count('understand'), read: count('read'), used: count('use'),
