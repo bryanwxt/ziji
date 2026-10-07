@@ -220,3 +220,19 @@ describe('Course: 华文 or 高级华文 (parent, 2026-10-06)', () => {
     expect((await getSettings(app.db)).contentCourse).toBe('hcl');
   });
 });
+
+describe('Recorded voice switch (parent, 2026-10-08: the clips sounded worse than the iPhone voice)', () => {
+  it('is off unless the parent turns it on; on, the clips are used again; off, they are dropped at once', async () => {
+    const clips = await import('../audio/clips');
+    const app = await makeAppData();
+    renderWithApp(<SettingsPanel />, app);
+    const box = screen.getByLabelText(/Recorded voice/) as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    fireEvent.click(box);
+    await waitFor(async () => expect((await getSettings(app.db)).recordedVoice).toBe(true));
+    clips.setClipIndex({ v: 1, voice: 'k', clips: { 你: 'x' } });
+    fireEvent.click(box);
+    await waitFor(async () => expect((await getSettings(app.db)).recordedVoice).toBe(false));
+    expect(clips.clipPlan('你')).toBeNull(); // the iPad voice speaks
+  });
+});

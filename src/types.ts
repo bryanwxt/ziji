@@ -254,6 +254,7 @@ export interface Settings {
   course?: 'cl' | 'hcl'; // 华文 or 高级华文: which 识写字 he practises writing (both read the same characters); absent: 'cl'
   contentCourse?: 'cl' | 'hcl'; // the course the stored built-in words were written for
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
+  recordedVoice?: boolean; // speak with the generated clips (Kokoro); absent/false: the iPad/iPhone voice (parent 2026-10-08: the clips sounded worse)
   placementResult?: PlacementResult;
   storyProgress?: { chapter: number; readOn?: string; setupDone?: boolean; payoffDone?: boolean }; // the Word Thief chapters (spec 2026-10-07 3c §3)
   baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)

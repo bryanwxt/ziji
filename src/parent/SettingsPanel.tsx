@@ -1,3 +1,4 @@
+import { loadClipIndex, setClipIndex } from '../audio/clips';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { schoolYear } from './progress';
@@ -84,6 +85,17 @@ export function SettingsPanel() {
           {[1, 2, 3, 4, 5, 6].map((g) => <option key={g} value={String(g)}>P{g}</option>)}
         </select>
         <p class="hint">Progress compares him with the MOE lists for his term (lists go up to P3).</p>
+      </div>
+      <div class="field">
+        <label>
+          <input type="checkbox" checked={!!s.recordedVoice} onChange={(e) => {
+            const on = e.currentTarget.checked;
+            if (on) void loadClipIndex(); else setClipIndex(null);
+            void save({ recordedVoice: on });
+          }} />{' '}
+          Recorded voice (generated clips)
+        </label>
+        <p class="hint">Off: the iPad's own Mandarin voice below says everything (the silent switch mutes it). On: the generated clips, which play even on silent.</p>
       </div>
       <VoiceField value={s.voiceURI ?? null} onChange={(uri) => { setPreferredVoice(uri); void save({ voiceURI: uri }); }} />
       <fieldset class="field">

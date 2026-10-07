@@ -28,7 +28,8 @@ export async function bootstrap(dbName: string): Promise<Booted> {
   await applySettingsMigration(db);
   await migrateToLadder(db, new Date()); // once: earned cards pass, words he reads get listening checks (spec 2026-10-06 §3.6)
   const [settings, kid] = await Promise.all([getSettings(db), getKid(db)]);
-  void loadClipIndex(); // the neural voice's clips; until it loads (or with none), the iPad voice speaks
+  // the recorded clips only when the parent switches them on (2026-10-08: the iPhone voice sounded better than Kokoro's); else the iPad voice
+  if (settings.recordedVoice) void loadClipIndex();
   const voice = await loadChineseVoice(1500, settings.voiceURI ?? null);
   setSpeechRate(settings.speechRate);
   setSfxEnabled(settings.soundEffects);
