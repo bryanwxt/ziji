@@ -13,6 +13,12 @@ export interface Question { zh: string; en: string; answer: string; wrong: strin
 export interface Chapter {
   chapter: number; title: string; place: string; slots: string[];
   setup: Page[]; granny: Mandarin[]; listen: { lines: Mandarin[]; questions: Question[] }; payoff: Page[];
+  /** Granny's beat (and 听一听): `offstage` = a voice from elsewhere, Truffle stays in the picture; else she stands beside him. */
+  grannyOffstage: boolean;
+  /** English narration before her lines ("Far below, a voice floated up…"). */
+  grannyIntro: string[];
+  /** The setup's last page, after Granny: hands over to the lesson (2026-10-07: the lesson came out of nowhere). */
+  go: Page | null;
 }
 export interface OutlineRow { chapter: number; place: string; slots: string[] }
 
@@ -46,7 +52,7 @@ export function parseChapter(md: string): Chapter {
   const slots = (meta.get('slots') ?? '').replace(/^\[|\]$/g, '').split(',').map((x) => x.trim()).filter(Boolean);
   const c: Chapter = {
     chapter: Number(meta.get('chapter')), title: meta.get('title') ?? '', place: meta.get('place') ?? '', slots,
-    setup: [], granny: [], listen: { lines: [], questions: [] }, payoff: [],
+    setup: [], granny: [], listen: { lines: [], questions: [] }, payoff: [], grannyOffstage: false, grannyIntro: [], go: null,
   };
   if (!Number.isInteger(c.chapter) || c.chapter < 1) throw new Error('line 2: chapter must be a whole number from 1');
   let section = '';
@@ -55,14 +61,25 @@ export function parseChapter(md: string): Chapter {
     const n = i + 1;
     const s = lines[i]!.trim();
     if (!s) continue;
-    if (s.startsWith('## ')) { section = s.slice(3).trim().toLowerCase(); page = null; continue; }
+    if (s.startsWith('## ')) {
+      section = s.slice(3).trim().toLowerCase();
+      page = null;
+      if (section === 'go') { if (c.go) throw new Error(`line ${n}: only one Go section`); page = c.go = { lines: [] }; }
+      continue;
+    }
     if (s.startsWith('### ')) {
       if (section !== 'setup' && section !== 'payoff') throw new Error(`line ${n}: pages belong in Setup or Payoff`);
       page = { lines: [] };
       c[section].push(page);
       continue;
     }
-    if (section === 'granny') { c.granny.push(mandarin(s, n)); continue; }
+    if (section === 'granny') {
+      if (s === '@offstage') c.grannyOffstage = true;
+      else if (s.includes('|') || /\p{Script=Han}/u.test(s)) c.granny.push(mandarin(s, n)); // Chinese without " | English" is a broken line
+      else if (c.granny.length) throw new Error(`line ${n}: Granny's narration comes before her lines`);
+      else c.grannyIntro.push(s);
+      continue;
+    }
     if (section === 'listen') { if (s.startsWith('?')) c.listen.questions.push(question(s, n)); else c.listen.lines.push(mandarin(s, n)); continue; }
     if (!page) throw new Error(`line ${n}: text outside a page`);
     if (s.startsWith('@cast ')) page.lines.push({ kind: 'cast', ids: s.slice(6).trim().split(/\s+/) });

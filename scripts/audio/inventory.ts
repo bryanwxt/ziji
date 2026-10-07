@@ -22,7 +22,7 @@ const sentencePinyin = (t: string) => pinyin(t, { type: 'array', nonZh: 'removed
  * Words the voice gets wrong said alone even ending in 。, so they are cut from a sentence instead (scripts/audio/tts:
  * Kokoro.synth_cut). Add one whenever the parent hears a word wrong (parent, 2026-10-06: 一起's 一 rose).
  */
-export const CUT_FROM_SENTENCE = new Set(['一起']);
+export const CUT_FROM_SENTENCE = new Set(['一起', '鱼']); // 鱼: parent heard it wrong on its own (2026-10-07)
 
 /** A clip's name: its key, its reading, the voice, and exactly what the voice is given and how, so any change makes a new clip. */
 export const clipIdFor = (j: Pick<ClipJob, 'key' | 'expected' | 'engineText' | 'method'>, voice: string): string =>

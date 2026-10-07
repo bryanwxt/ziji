@@ -4,7 +4,7 @@ import { chapterProblems, outlineProblems, seasonReport, storyWords } from './ch
 import { parseChapter, type OutlineRow } from './format';
 
 const page = (body: string) => `### Page 1\n${body}\n`;
-const make = (o: { slots?: string; setup?: string; granny?: string; listen?: string; payoff?: string; chapter?: number } = {}) => parseChapter(`---
+const make = (o: { slots?: string; setup?: string; granny?: string; go?: string | null; listen?: string; payoff?: string; chapter?: number } = {}) => parseChapter(`---
 chapter: ${o.chapter ?? 1}
 title: T
 place: hdb
@@ -14,6 +14,7 @@ slots: [${o.slots ?? '门, 车, 鱼, 书, 猫, 狗'}]
 ${page(o.setup ?? 'The {门|door}, the {车|car}, the {鱼|fish}, the {书|book}, the {猫|cat} and the {狗|dog}.')}
 ## Granny
 ${o.granny ?? '龙奶奶: 你好！ | Hello!'}
+${o.go === null ? '' : `## Go\n${o.go ?? '> Truffle: Words first, Word-Keeper.'}`}
 ## Listen
 ${o.listen ?? '龙奶奶: 小猫在门口。 | The kitten is at the door.\n龙奶奶: 门不开。 | The door won\'t open.\n龙奶奶: 小猫很饿。 | The kitten is hungry.\n? 谁在门口？ | Who is at the door? = 小猫 | 小狗 | 小鸟'}
 ## Payoff
@@ -23,6 +24,11 @@ ${page(o.payoff ?? '[rescued] The words fly home.')}
 describe('chapter rules (spec 3a §7)', () => {
   it('a good chapter has no problems', () => {
     expect(chapterProblems(make())).toEqual([]);
+  });
+  it('the setup hands over to the lesson with a Go page; Granny\'s narration is plain English', () => {
+    expect(chapterProblems(make({ go: null })).join()).toMatch(/no ## Go page/);
+    expect(chapterProblems(make({ granny: '@offstage\nFar below, a voice.\n龙奶奶: 你好！ | Hello!' }))).toEqual([]);
+    expect(chapterProblems(make({ go: '[rescued] Too soon.' })).join()).toMatch(/exactly one \[rescued\]/);
   });
   it('Granny and 听一听 use only characters taught by 二上', () => {
     expect(chapterProblems(make({ granny: '龙奶奶: 我们去旅游吧。 | Let us travel.' })).join()).toMatch(/not taught by 二上/);

@@ -4,22 +4,11 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { webkit } from 'playwright-core';
+import { chaptersShim } from './stage-cases/shim';
+import { storyWalk } from './story-walk';
 
 const dir = join(tmpdir(), `ziji-stage-cases-${process.pid}`);
 mkdirSync(dir, { recursive: true });
-// src/story/chapters.ts bundles the chapters with Vite's import.meta.glob, which esbuild doesn't know: give it the same module from disk
-const chaptersShim = {
-  name: 'story-chapters',
-  setup(b: { onLoad: (o: { filter: RegExp }, f: () => { contents: string; loader: 'ts'; resolveDir: string }) => void }) {
-    b.onLoad({ filter: /src[\\/]story[\\/]chapters\.ts$/ }, () => {
-      const root = 'src/content/story';
-      const md = readdirSync(root).filter((d) => d.startsWith('season-')).flatMap((d) => readdirSync(`${root}/${d}`).filter((f) => /^ch\d+\.md$/.test(f)).map((f) => readFileSync(`${root}/${d}/${f}`, 'utf8')));
-      return { loader: 'ts', resolveDir: join(process.cwd(), 'src/story'), contents: `import { parseChapter } from './format';
-export const CHAPTERS = ${JSON.stringify(md)}.map(parseChapter).sort((a, b) => a.chapter - b.chapter);
-export const chapterNumbered = (n: number) => CHAPTERS.find((c) => c.chapter === n);` };
-    });
-  },
-};
 await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, plugins: [chaptersShim], jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.woff': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"./"' }, logLevel: 'error' });
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
@@ -186,8 +175,11 @@ for (const size of SIZES) {
       await page.setViewportSize({ width, height });
       await page.goto(`file://${dir}/index.html?case=${c}`);
       await page.waitForSelector('.story', { timeout: 10_000 });
-      if (c === 'story-granny') for (let i = 0; i < 3; i++) { await page.click('.story__nav-btn--next'); await page.waitForTimeout(150); }
+      // long pages split into more screens on a small one: page on until Granny's lines are up
+      if (c === 'story-granny') for (let i = 0; i < 12 && !(await page.$('.story__granny')); i++) { await page.click('.story__nav-btn--next:not(.story__nav-btn--go)', { timeout: 5_000 }); await page.waitForTimeout(150); }
+      if (c === 'story-granny' && !(await page.$('.story__granny'))) problems.push(`${c} ${name}: never reached Granny's lines`);
       await page.waitForTimeout(c === 'story-listen' ? 4500 : 900);
+      if (c === 'story-listen' && !(await page.$('.story__question'))) problems.push(`${c} ${name}: the question never came up`);
       await page.screenshot({ path: `fit-shots/stage-cases/${c}-${name}.png` });
       problems.push(...(await page.evaluate((n) => {
         const out: string[] = [];
@@ -197,6 +189,8 @@ for (const size of SIZES) {
         if (pic.left > 1 || pic.top > 1 || (pic.width < innerWidth - 1 && pic.height < innerHeight - 1)) out.push(`${n}: the picture isn't edge to edge`);
         const words = document.querySelector('.story__words')!.getBoundingClientRect();
         if (words.width < 260) out.push(`${n}: the page is too narrow (${Math.round(words.width)}px)`);
+        const w = document.querySelector('.story__words:not(.story__measure)')!;
+        if (w.scrollHeight > w.clientHeight + 2) out.push(`${n}: the words scroll ${w.scrollHeight - w.clientHeight}px`);
         for (const x of document.querySelectorAll('.story__cast svg')) {
           const r = x.getBoundingClientRect();
           if (r.left < pic.left - 1 || r.right > pic.right + 1 || r.bottom > pic.bottom + 1) out.push(`${n}: a character pokes out of the picture`);

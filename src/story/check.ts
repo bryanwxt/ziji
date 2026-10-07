@@ -47,7 +47,7 @@ export function chapterProblems(c: Chapter, outline?: OutlineRow): string[] {
     if (bad.length) out.push(`${ch}: "${zh}" uses ${bad.join('')} — not taught by 二上`);
   }
   // slots
-  const texts = [...c.setup, ...c.payoff].flatMap((p) => p.lines.flatMap((l) => ((l.kind === 'scene' || l.kind === 'cast') ? [] : [l.text])));
+  const texts = [...c.setup, ...(c.go ? [c.go] : []), ...c.payoff].flatMap((p) => p.lines.flatMap((l) => ((l.kind === 'scene' || l.kind === 'cast') ? [] : [l.text])));
   const used = texts.flatMap((t) => slotsIn(t).map((s) => s.zh));
   const distinct = [...new Set(used)];
   for (const w of distinct) {
@@ -62,6 +62,9 @@ export function chapterProblems(c: Chapter, outline?: OutlineRow): string[] {
   // pages
   c.setup.forEach((p, i) => out.push(...pageProblems(`${ch} setup page ${i + 1}`, p)));
   c.payoff.forEach((p, i) => out.push(...pageProblems(`${ch} payoff page ${i + 1}`, p)));
+  if (!c.go) out.push(`${ch}: no ## Go page — the setup must hand over to the lesson`);
+  else out.push(...pageProblems(`${ch} Go page`, c.go));
+  for (const l of c.grannyIntro) if (/\p{Script=Han}|[{}]/u.test(l)) out.push(`${ch}: Granny's narration is plain English: "${l}"`);
   // Granny and 听一听
   if (c.granny.length < 1 || c.granny.length > 3) out.push(`${ch}: ${c.granny.length} Granny lines (1–3)`);
   const scene = c.listen.lines.map((m) => m.zh).join('');
@@ -74,9 +77,9 @@ export function chapterProblems(c: Chapter, outline?: OutlineRow): string[] {
   }
   // [rescued]
   const rescuedIn = (ps: Page[]) => ps.flatMap((p) => p.lines).filter((l) => l.kind === 'rescued').length;
-  if (rescuedIn(c.setup) > 0 || rescuedIn(c.payoff) !== 1) out.push(`${ch}: exactly one [rescued] line, in the payoff`);
+  if (rescuedIn(c.setup) + (c.go ? rescuedIn([c.go]) : 0) > 0 || rescuedIn(c.payoff) !== 1) out.push(`${ch}: exactly one [rescued] line, in the payoff`);
   // brands
-  const all = [...texts.map(plainText), ...c.granny.map((m) => m.en), ...c.listen.lines.map((m) => m.en)].join('\n');
+  const all = [...texts.map(plainText), ...c.grannyIntro, ...c.granny.map((m) => m.en), ...c.listen.lines.map((m) => m.en)].join('\n');
   const brand = BRANDS.exec(all);
   if (brand) out.push(`${ch}: a real brand name (${brand[0]})`);
   return out;

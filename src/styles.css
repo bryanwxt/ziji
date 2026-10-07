@@ -1364,7 +1364,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .story::after { content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: multiply; opacity: 0.4;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0.62 0 0 0 0 0.58 0 0 0 0 0.52 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 /* the painting covers its box, anchored at the bottom so the floor (and the cast on it) never crops away; --img-w/-h = the painting's drawn size */
-.story__pic { position: relative; flex: none; width: 100%; height: min(75vw, 56dvh); overflow: hidden; container-type: size; background: #e9dfc8; cursor: pointer;
+.story__pic { position: relative; flex: none; width: 100%; height: min(75vw, 50dvh); overflow: hidden; container-type: size; background: #e9dfc8; cursor: pointer;
   --img-w: max(100cqw, 133.333cqh); --img-h: max(100cqh, 75cqw); }
 .story__bg { position: absolute; inset: 0; background: center bottom / cover no-repeat; transform-origin: 50% 90%; animation: story-drift 28s ease-in-out infinite alternate; }
 .story__bg--in { animation: story-fade 0.8s ease both, story-drift 28s ease-in-out infinite alternate; }
@@ -1386,6 +1386,10 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .story__skip-zh { font-family: var(--hanzi); font-size: 17px; font-weight: 400; }
 .story__words { width: min(100%, 680px); padding: 6px 26px 18px; font-family: 'Literata', Georgia, serif; font-weight: 400; font-size: clamp(19px, 2.5dvh, 24px); line-height: 1.55; flex: 1; min-height: 0; overflow-y: auto;
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); } /* a long page scrolls; the page buttons always stay on screen */
+/* a hidden copy of every page at the same width and type, measured to split long pages so the words never scroll */
+.story__measure { position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: auto; flex: none; overflow: visible; visibility: hidden; pointer-events: none; -webkit-mask-image: none; mask-image: none; }
+.story__measure > div { display: flow-root; }
+.story__measure * { animation: none !important; }
 .story__words > * { animation: story-line 0.5s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 120ms + 80ms); }
 .story__words--back > * { animation-name: story-line-back; }
 @keyframes story-line { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
@@ -1419,10 +1423,22 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .story__nav-btn--back:disabled { visibility: hidden; }
 .story__nav-btn--next { background: linear-gradient(#7cc6a0, #5aa984); color: #fff; box-shadow: 0 4px 0 #3f8a66, 0 9px 18px rgba(63, 138, 102, 0.28); }
 .story__nav-btn--next:disabled { opacity: 0.35; box-shadow: 0 4px 0 #3f8a66; }
-.story__dots { display: flex; align-items: center; gap: 7px; list-style: none; margin: 0; padding: 0; }
+.story__nav-btn--go { width: auto; padding: 0 14px 0 22px; border-radius: 29px; gap: 2px; font-size: 22px; animation: story-go-in 0.5s var(--spring) both; }
+@keyframes story-go-in { from { transform: scale(0.6); opacity: 0; } }
+/* the way out: the words sink, the camera pushes into the painting and it fades to paper; the next screen then fades in */
+.story--leaving { pointer-events: none; }
+.story--leaving .story__panel { opacity: 0; translate: 0 24px; transition: opacity 0.35s ease-in, translate 0.35s ease-in; }
+.story--leaving .story__bg { scale: 1.14; transition: scale 0.7s cubic-bezier(0.5, 0, 0.75, 0); }
+.story--leaving .story__actor { translate: 0 -6%; scale: 1.08; transition: translate 0.5s ease-in, scale 0.5s ease-in; }
+.story--leaving .story__pic { opacity: 0; transition: opacity 0.45s ease-in 0.25s; }
+/* the way in: the page rises under the painting as it fades up from paper */
+.story__panel { animation: story-rise 0.6s var(--ease-out) 0.15s both; }
+@keyframes story-rise { from { opacity: 0; translate: 0 22px; } }
+.story__dots { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 7px; list-style: none; margin: 0; padding: 0; }
 .story__dots li { width: 7px; height: 7px; border-radius: 4px; background: #e2d4b8; transition: width var(--dur-base) var(--ease-out), background var(--dur-base) ease; }
 .story__dots li.is-past { background: #b7d6c4; }
 .story__dots li.is-on { width: 22px; background: #5aa984; }
+@media (orientation: portrait) and (max-height: 760px) { .story__pic { height: min(75vw, 40dvh); } .story__rescued { gap: 6px; } .story__chip { font-size: 21px; padding: 2px 10px; } .story__granny { gap: 6px; } .story__say { width: 42px; height: 42px; } }
 @media (orientation: landscape) and (min-width: 700px) {
   .story { flex-direction: row; }
   .story__pic { flex: 1; width: auto; height: 100dvh; }
@@ -1432,6 +1448,11 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 }
 /* Granny's lines and 听一听 */
 .story__granny, .story__listen { display: flex; flex-direction: column; gap: 10px; }
+.story__granny .story__text { margin: 0; }
+.story__voice { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.story__voice .story__face { margin-top: 0; }
+.story__voice .story__who { font-size: 13px; }
+.story__face--voice { background: #efe4cc; color: #7a6548; }
 .story__line { display: flex; gap: 10px; align-items: flex-start; }
 .story__say { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--surface); color: #2f6f55; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1.5px #e6d6b6, 0 3px 8px rgba(80, 60, 30, 0.14); }
 .story__zh { font: inherit; text-align: left; background: none; border: 0; padding: 0; color: inherit; display: flex; flex-direction: column; gap: 2px; }
@@ -1440,6 +1461,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .story__heard { margin: 0; opacity: 0.6; transition: opacity var(--dur-base) ease, color var(--dur-base) ease; }
 .story__heard.is-playing { opacity: 1; color: #2f6f55; }
 .story__replay { align-self: flex-start; }
+.story .btn.story__replay { min-height: 46px; padding: 2px 18px 4px 14px; border: 0; border-radius: 23px; background: var(--surface); color: #2f6f55; box-shadow: 0 0 0 1.5px #e6d6b6, 0 3px 8px rgba(80, 60, 30, 0.14); font-size: 18px; }
 .story__question { display: flex; flex-direction: column; gap: 8px; }
 .story__choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .story__choice { min-height: 64px; border-radius: 16px; border: 0; background: var(--surface); font: inherit; box-shadow: 0 0 0 1.5px #e6d6b6, 0 3px 8px rgba(80, 60, 30, 0.12); }
@@ -1447,5 +1469,5 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .story__choice.is-missed { opacity: 0.5; }
 .story__cheer { margin: 0; color: #2f6f55; }
 @media (prefers-reduced-motion: reduce) {
-  .story__bg, .story__bg--in, .story__actor, .story__words > *, .story__sfx span, .story__chip--fly { animation: none; }
+  .story__bg, .story__bg--in, .story__actor, .story__words > *, .story__sfx span, .story__chip--fly, .story__panel, .story__nav-btn--go { animation: none; }
 }

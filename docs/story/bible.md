@@ -29,6 +29,10 @@
   - listed in the chapter's frontmatter and in the outline.
 - **Pages:** at most 60 English words and at most 4 speech lines.
 - **Granny Dragon:** 1–3 lines a chapter.
+  - Her lines come after the setup's last page. Say where she is: `@offstage` when she's a voice from somewhere else (Truffle stays in the picture and turns to it); otherwise she stands beside the cast.
+  - Plain English lines before her Mandarin set her up ("Far below, a voice floated up from the void deck.").
+- **Go page:** every chapter has a `## Go` section after `## Granny`: one page that hands over to the lesson, so the lesson is what the Word-Keeper *does* next ("Show me what these grey things are, Word-Keeper."). Its button says 出发！
+- **Page length on screen:** a page too long for the screen is split between paragraphs by the reader (it never scrolls). `npm run story-walk` checks every page at the phone and iPad sizes.
 - **听一听:**
   - 3–5 lines and 1–2 questions;
   - the right answer is said in the scene;
@@ -110,7 +114,7 @@
   - Her audio plays first.
   - The English appears only when he taps, after he has heard it.
   - She's the character he understands more of as he learns. That's the point of her.
-- **What she talks about:** food (你们饿了吗？, 吃饭了！, 小心，很热), school (今天学了什么？), the weather (下雨了！), and gentle questions (你们去哪儿？, 你看见了吗？). She uses short sentences and words he has met.
+- **What she talks about:** food (你们饿了吗？, 吃饭了！, 小心，汤很热 — hot food is 烫 once he has it; never the colloquial 很烧), school (今天学了什么？), the weather (下雨了！), and gentle questions (你们去哪儿？, 你看见了吗？). She uses short sentences and words he has met.
 - **Her secret:** she knew Hush when he was a boy. She doesn't say it until a later season.
 - **For 3b:** a small, round, jade-green dragon with white whiskers, round glasses, a flowered apron and a kopi pot.
 

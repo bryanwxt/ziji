@@ -1,7 +1,7 @@
 // The story reader (spec 2026-10-07 3c §4): a chapter's setup before the lesson or its payoff after it, as picture-book pages — the
 // painted scene on top with the cast standing in it, the words below. Slots follow his ladder; Granny Dragon speaks only Mandarin.
 import { ChevronLeft, ChevronRight, FastForward, Volume2 } from 'lucide-preact';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { speak, stopSpeaking } from '../audio/speech';
 import { onSpeaking } from '../audio/speaking';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
@@ -14,13 +14,34 @@ import { reducedMotion } from '../ui/motion';
 import { GrannyDragon } from '../ui/story/GrannyDragon';
 import { Truffle } from '../ui/truffle/Truffle';
 import { chapterNumbered } from './chapters';
-import type { Mandarin, Page, Question } from './format';
+import type { Line, Mandarin, Page, Question } from './format';
 import { markPayoff, markSetup } from './progress';
 import { wordsPractisedToday } from './today';
 import { markFor } from './stage';
 import { castFor, slotState, speakerOf, type CastId } from './weave';
 
 type Beat = { kind: 'page'; page: Page; scene: string | null } | { kind: 'granny' } | { kind: 'listen' };
+/** What one screen shows: a beat, or — when a page's words don't fit the screen — a run of its lines (the page split between paragraphs). */
+type View = { beat: number; lines?: number[] };
+type Shown = Exclude<Line, { kind: 'scene' | 'cast' }>;
+const shownLines = (page: Page): Shown[] => page.lines.filter((l): l is Shown => l.kind !== 'scene' && l.kind !== 'cast');
+/** Element.animate is how a browser that animates is told from the test DOM; reduced motion never waits for an exit. */
+const animates = () => typeof document !== 'undefined' && typeof document.body?.animate === 'function' && !reducedMotion();
+const EXIT_MS = 700;
+/** Pages are split by measuring laid-out lines; a DOM with no layout (the test DOM, which also lacks ResizeObserver) keeps them whole. */
+const canMeasure = typeof ResizeObserver === 'function';
+
+/** Greedy split of a page's measured lines into runs that fit `room` px tall (a line taller than the room gets a screen of its own). */
+export function splitToFit(lines: { top: number; bottom: number }[], room: number): number[][] {
+  const out: number[][] = [];
+  let start = 0;
+  lines.forEach((l, i) => {
+    const run = out[out.length - 1];
+    if (run && l.bottom - start <= room) run.push(i);
+    else { out.push([i]); start = l.top; }
+  });
+  return out;
+}
 const SLOT = /\{([^|{}]+)\|([^{}]+)\}/g;
 /** A line seen through to its end: speak it, and call done when the voice stops (or after a while if it never starts). */
 function playLine(zh: string, done: () => void, onStart?: () => void): () => void {
@@ -65,7 +86,7 @@ function Slots({ text, know }: { text: string; know: Knowledge | null }) {
 }
 
 /** The cast standing on the scene's floor (stage.ts), each with a shadow under their feet; they hop in on each new page. */
-function Cast({ ids, scene, talking, page }: { ids: CastId[]; scene: string | null; talking?: boolean; page: number }) {
+function Cast({ ids, scene, talking, page, look }: { ids: CastId[]; scene: string | null; talking?: boolean; page: number; look?: number }) {
   const m = markFor(scene);
   const both = ids.length > 1;
   return (
@@ -73,7 +94,7 @@ function Cast({ ids, scene, talking, page }: { ids: CastId[]; scene: string | nu
       {ids.map((id, k) => (
         <span key={`${id}-${page}`} class="story__actor" style={{ '--k': k }}>
           {id === 'truffle'
-            ? <Truffle mood="pleased" label={null} size={150} alive lookAt={both ? (k === 0 ? 0.7 : -0.7) : 0} />
+            ? <Truffle mood="pleased" label={null} size={150} alive lookAt={look ?? (both ? (k === 0 ? 0.7 : -0.7) : 0)} />
             : <GrannyDragon pose="smile" label={null} size={150} talking={talking} />}
         </span>
       ))}
@@ -99,12 +120,12 @@ function Picture({ scene, onTap, children }: { scene: string | null; onTap: () =
 }
 
 /** Who's talking: their face in a little round frame (or their initial), their name, then the line. */
-function Speech({ who, text, know, style }: { who: string; text: string; know: Knowledge | null; style?: Record<string, number> }) {
+function Speech({ who, text, know, style, still }: { who: string; text: string; know: Knowledge | null; style?: Record<string, number>; still?: boolean }) {
   const id = speakerOf(who);
   return (
     <div class="story__speech" style={style}>
       <span class={`story__face story__face--${id ?? 'other'}`} aria-hidden="true">
-        {id === 'truffle' ? <Truffle mood="pleased" label={null} size={84} />
+        {still ? null : id === 'truffle' ? <Truffle mood="pleased" label={null} size={84} />
           : id === 'granny' ? <GrannyDragon pose="smile" label={null} size={84} />
           : who.slice(0, 1)}
       </span>
@@ -114,7 +135,7 @@ function Speech({ who, text, know, style }: { who: string; text: string; know: K
 }
 
 /** Granny Dragon's lines: her voice first, the English only on a tap once heard (with no voice, shown at once). */
-function GrannyLines({ lines, voice, onReady }: { lines: Mandarin[]; voice: boolean; onReady: (ready: boolean) => void }) {
+function GrannyLines({ lines, intro, offstage, voice, onReady }: { lines: Mandarin[]; intro: string[]; offstage: boolean; voice: boolean; onReady: (ready: boolean) => void }) {
   const [heard, setHeard] = useState<boolean[]>(() => lines.map(() => !voice));
   const [shown, setShown] = useState<boolean[]>(() => lines.map(() => !voice));
   const [playing, setPlaying] = useState(voice ? 0 : -1);
@@ -129,6 +150,14 @@ function GrannyLines({ lines, voice, onReady }: { lines: Mandarin[]; voice: bool
   }, [playing]);
   return (
     <div class="story__granny">
+      {intro.map((t, i) => <p key={`n${i}`} class="story__text" style={{ '--i': i }}>{t}</p>)}
+      {/* offstage she's a voice he hasn't met yet (chapters 1–2), so the voice is named; standing in the picture she needs no label */}
+      {offstage && (
+        <div class="story__voice">
+          <span class="story__face story__face--voice" aria-hidden="true"><Volume2 size={22} strokeWidth={2.5} /></span>
+          <b class="story__who">A voice</b>
+        </div>
+      )}
       {lines.map((l, i) => (
         <div key={i} class="story__line">
           <button type="button" class="story__say" aria-label="听" onClick={() => setPlaying(i)}><Volume2 size={26} strokeWidth={2.5} /></button>
@@ -161,7 +190,8 @@ function ListenScene({ lines, questions, chapter, onReady }: { lines: Mandarin[]
   return (
     <div class="story__listen">
       <p class="story__listen-title"><Label zh="听一听！" /></p>
-      {lines.map((l, i) => (
+      {/* once heard through, her lines fold away behind 再听一次 so the question fits the screen (he's listening, not reading) */}
+      {(!heardAll || playing >= 0) && lines.map((l, i) => (
         <p key={i} class={`story__heard${i === playing ? ' is-playing' : ''}`}><Label zh={l.zh} /></p>
       ))}
       <button type="button" class="btn btn--secondary story__replay" onClick={() => setPlaying(0)}><Volume2 size={22} /> <Label zh="再听一次" /></button>
@@ -195,7 +225,11 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
   const c = chapterNumbered(chapter);
   const [know, setKnow] = useState<Knowledge | null>(null);
   const [rescued, setRescued] = useState<string[]>([]);
-  const [at, setAt] = useState(0);
+  const [at, setAt] = useState(0); // which view (screen) is up
+  const [split, setSplit] = useState<Map<number, number[][]>>(() => new Map());
+  const [exiting, setExiting] = useState(false);
+  const wordsRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState<boolean | null>(null); // null: a page is ready at once; Granny's and 听一听's beats say so themselves
   const leaving = useRef(false);
   const [back, setBack] = useState(false); // the last turn went back a page: the words slide in from the left
@@ -211,7 +245,7 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
       for (const l of page.lines) if (l.kind === 'scene') scene = l.id;
       out.push({ kind: 'page', page, scene });
     });
-    if (part === 'setup') { pages(c.setup); if (c.granny.length) out.push({ kind: 'granny' }); }
+    if (part === 'setup') { pages(c.setup); if (c.granny.length) out.push({ kind: 'granny' }); if (c.go) pages([c.go]); }
     else { if (voice && c.listen.lines.length) out.push({ kind: 'listen' }); pages(c.payoff); }
     return out;
   }, [c, part, voice]);
@@ -222,16 +256,64 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
     return () => stopSpeaking();
   }, []);
 
+  const views = useMemo((): View[] => beats.flatMap((b, i) => split.get(i)?.map((lines) => ({ beat: i, lines })) ?? [{ beat: i }]), [beats, split]);
+  const viewRef = useRef<View | null>(null);
+  viewRef.current = views[at] ?? null;
+
+  // Split each page so its words never need scrolling: measure every page's lines once laid out (hidden, same width and type), then
+  // again when the screen changes size or the book face arrives; he stays on the same page across a re-split.
+  useLayoutEffect(() => {
+    const measure = measureRef.current;
+    if (!measure) return;
+    const run = () => {
+      const words = wordsRef.current; // the words box is new on every turn of the page: read it each time
+      if (!words) return;
+      const cs = getComputedStyle(words);
+      const room = words.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 6; // a little slack for rounding
+      if (!(room > 0)) return;
+      const next = new Map<number, number[][]>();
+      for (const pageEl of measure.querySelectorAll<HTMLElement>('[data-measure]')) {
+        const items = [...pageEl.children].map((el) => {
+          const e = el as HTMLElement;
+          return { top: e.offsetTop, bottom: e.offsetTop + e.offsetHeight + parseFloat(getComputedStyle(e).marginBottom) };
+        });
+        if (!items.length || items[items.length - 1]!.bottom - items[0]!.top <= room) continue;
+        next.set(Number(pageEl.dataset.measure), splitToFit(items, room));
+      }
+      setSplit((old) => {
+        if (JSON.stringify([...old]) === JSON.stringify([...next])) return old;
+        const was = viewRef.current;
+        const nv: View[] = beats.flatMap((_, i) => next.get(i)?.map((lines) => ({ beat: i, lines })) ?? [{ beat: i }]);
+        if (was) {
+          const first = was.lines?.[0] ?? 0;
+          const k = nv.findIndex((v) => v.beat === was.beat && (!v.lines || v.lines.includes(first)));
+          if (k >= 0) setAt(k);
+        }
+        return next;
+      });
+    };
+    run();
+    const ro = new ResizeObserver(run);
+    ro.observe(measure.parentElement!); // the page panel: it lives as long as the reader
+    void document.fonts?.ready.then(run);
+    return () => ro.disconnect();
+  }, [beats, know, rescued, exiting]);
+
   const finish = async () => {
     if (leaving.current) return;
     leaving.current = true;
     stopSpeaking();
+    const out = animates();
+    if (out) setExiting(true); // the words sink, the camera pushes into the painting and it fades to paper; then the next screen
     try {
       const p = (await getSettings(db)).storyProgress;
-      await updateSettings(db, { storyProgress: part === 'setup' ? markSetup(p, chapter, localDateKey(now())) : markPayoff(p, chapter) });
-      await refresh();
+      await Promise.all([
+        updateSettings(db, { storyProgress: part === 'setup' ? markSetup(p, chapter, localDateKey(now())) : markPayoff(p, chapter) }).then(refresh),
+        out ? new Promise((r) => setTimeout(r, EXIT_MS)) : null,
+      ]);
     } catch (e) {
       console.error('story: could not save the chapter', e); // he moves on regardless: a stuck screen is worse than a re-shown chapter
+      if (out) await new Promise((r) => setTimeout(r, EXIT_MS));
     } finally {
       go(then);
     }
@@ -239,17 +321,23 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
   if (!c || !beats.length) { void finish(); return <div class="screen loading" />; }
 
   const goTo = (n: number) => { stopSpeaking(); setReady(null); setBack(n < at); setAt(n); }; // a granny/listen beat says when it's ready
-  const beat = beats[at]!;
-  const last = at === beats.length - 1;
+  const view = views[Math.min(at, views.length - 1)]!;
+  const beat = beats[view.beat]!;
+  const last = at >= views.length - 1;
   const canNext = ready ?? beat.kind === 'page';
-  const forward = () => { if (!canNext) return; if (last) void finish(); else goTo(at + 1); };
+  const forward = () => { if (!canNext || exiting) return; if (last) void finish(); else goTo(at + 1); };
   const word = (id: string) => know?.wordsById.get(id)?.text ?? know?.ladderById.get(id)?.text ?? id.slice(2);
   const fly = !reducedMotion();
   // the scene stays put across pages; Granny's and 听一听's beats stand in the last scene he saw (听一听: the payoff's first)
   const scene = beat.kind === 'page' ? beat.scene
-    : beat.kind === 'granny' ? (beats.slice(0, at).reverse().find((b) => b.kind === 'page') as Extract<Beat, { kind: 'page' }> | undefined)?.scene ?? null
+    : beat.kind === 'granny' ? (beats.slice(0, view.beat).reverse().find((b) => b.kind === 'page') as Extract<Beat, { kind: 'page' }> | undefined)?.scene ?? null
     : beats.find((b): b is Extract<Beat, { kind: 'page' }> => b.kind === 'page')?.scene ?? null;
-  const cast: CastId[] = beat.kind === 'page' ? castFor(beat.page) : ['granny'];
+  // Granny's beats keep whoever was in the picture: offstage she's only a voice (Truffle turns to it); else she joins him
+  const nearPage = beat.kind === 'granny' ? (beats.slice(0, view.beat).reverse().find((b) => b.kind === 'page') as Extract<Beat, { kind: 'page' }> | undefined)
+    : beats.find((b): b is Extract<Beat, { kind: 'page' }> => b.kind === 'page');
+  const around = (nearPage ? castFor(nearPage.page) : ['truffle' as const]).filter((x) => x !== 'granny');
+  const cast: CastId[] = beat.kind === 'page' ? castFor(beat.page) : c.grannyOffstage ? around : [...around, 'granny'];
+  const heed = beat.kind !== 'page' && c.grannyOffstage ? 0.8 : undefined;
   // a sideways swipe turns the page (a tap on the picture too); a swipe ends in no click
   const onDown = (e: PointerEvent) => { swipe.current = { x: e.clientX, y: e.clientY, moved: false }; };
   const onUp = (e: PointerEvent) => {
@@ -262,11 +350,36 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
     else if (at > 0) goTo(at - 1);
   };
   const tapPicture = () => { if (!swipe.current?.moved) forward(); };
-  let firstText = part === 'setup' && at === 0;
+  /** A page's lines (or one run of them): the opening paragraph of the chapter gets the drop cap; `still` = for measuring. */
+  const lines = (b: number, page: Page, only: number[] | undefined, still: boolean) => {
+    const all = shownLines(page);
+    const opening = part === 'setup' && b === 0 ? all.findIndex((l) => l.kind === 'text') : -1;
+    return (only ?? all.map((_, i) => i)).map((i, n) => {
+      const l = all[i]!;
+      const style = { '--i': n };
+      if (l.kind === 'speech') return <Speech key={i} who={l.who} text={l.text} know={know} style={style} still={still} />;
+      if (l.kind === 'rescued') {
+        const anim = fly && !still;
+        return (
+          <div key={i} class="story__rescued-line" style={style}>
+            <p class="story__text"><Woven text={l.text} know={know} /></p>
+            {rescued.length > 0 && (
+              <div class="story__rescued">
+                {rescued.map((id, k) => (
+                  <button key={id} type="button" tabIndex={still ? -1 : undefined} class={`story__chip${anim ? ' story__chip--fly' : ''}`} style={anim ? { animationDelay: `${300 + k * 90}ms` } : undefined} lang="zh" onClick={() => speak(word(id))}>{word(id)}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+      return <p key={i} class={`story__text${i === opening ? ' story__text--opening' : ''}`} style={style}><Woven text={l.text} know={know} /></p>;
+    });
+  };
   return (
-    <div class="screen story" data-beat={at} data-part={part} onPointerDown={onDown} onPointerUp={onUp}>
+    <div class={`screen story${exiting ? ' story--leaving' : ''}`} data-beat={at} data-part={part} onPointerDown={onDown} onPointerUp={onUp}>
       <Picture scene={scene} onTap={tapPicture}>
-        <Cast ids={cast} scene={scene} talking={beat.kind === 'listen' || (beat.kind === 'granny' && voice)} page={at} />
+        <Cast ids={cast} scene={scene} talking={beat.kind === 'listen' || (beat.kind === 'granny' && voice)} page={view.beat} look={heed} />
       </Picture>
       <section class="story__panel">
         <header class="story__head">
@@ -275,37 +388,24 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
             <FastForward size={18} strokeWidth={2.5} /><span class="story__skip-zh" lang="zh">跳过</span>
           </button>
         </header>
-        <div key={at} class={`story__words${back ? ' story__words--back' : ''}`}>
-          {beat.kind === 'page' && beat.page.lines.filter((l) => l.kind !== 'scene' && l.kind !== 'cast').map((l, i) => {
-            const style = { '--i': i };
-            if (l.kind === 'speech') return <Speech key={i} who={l.who} text={l.text} know={know} style={style} />;
-            if (l.kind === 'rescued') {
-              return (
-                <div key={i} class="story__rescued-line" style={style}>
-                  <p class="story__text"><Woven text={l.text} know={know} /></p>
-                  {rescued.length > 0 && (
-                    <div class="story__rescued">
-                      {rescued.map((id, k) => (
-                        <button key={id} type="button" class={`story__chip${fly ? ' story__chip--fly' : ''}`} style={fly ? { animationDelay: `${300 + k * 90}ms` } : undefined} lang="zh" onClick={() => speak(word(id))}>{word(id)}</button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            const opening = firstText && l.kind === 'text';
-            if (opening) firstText = false;
-            return <p key={i} class={`story__text${opening ? ' story__text--opening' : ''}`} style={style}><Woven text={l.text} know={know} /></p>;
-          })}
-          {beat.kind === 'granny' && <GrannyLines lines={c.granny} voice={voice} onReady={setReady} />}
+        <div key={at} ref={wordsRef} class={`story__words${back ? ' story__words--back' : ''}`}>
+          {beat.kind === 'page' && lines(view.beat, beat.page, view.lines, false)}
+          {beat.kind === 'granny' && <GrannyLines lines={c.granny} intro={c.grannyIntro} offstage={c.grannyOffstage} voice={voice} onReady={setReady} />}
           {beat.kind === 'listen' && <ListenScene lines={c.listen.lines} questions={c.listen.questions} chapter={chapter} onReady={setReady} />}
         </div>
+        {canMeasure && (
+          <div ref={measureRef} class="story__words story__measure" aria-hidden="true">
+            {beats.map((b, i) => (b.kind === 'page' ? <div key={i} data-measure={i}>{lines(i, b.page, undefined, true)}</div> : null))}
+          </div>
+        )}
         <nav class="story__nav">
           <button type="button" class="story__nav-btn story__nav-btn--back" aria-label="上一页" disabled={at === 0} onClick={() => goTo(at - 1)}><ChevronLeft size={30} strokeWidth={3} /></button>
           <ol class="story__dots" aria-hidden="true">
-            {beats.map((_, i) => <li key={i} class={i === at ? 'is-on' : i < at ? 'is-past' : undefined} />)}
+            {views.map((_, i) => <li key={i} class={i === at ? 'is-on' : i < at ? 'is-past' : undefined} />)}
           </ol>
-          <button type="button" class="story__nav-btn story__nav-btn--next" aria-label="下一页" disabled={!canNext} onClick={forward}><ChevronRight size={30} strokeWidth={3} /></button>
+          <button type="button" class={`story__nav-btn story__nav-btn--next${last ? ' story__nav-btn--go' : ''}`} aria-label="下一页" disabled={!canNext} onClick={forward}>
+            {last ? <><Label zh={part === 'setup' ? '出发！' : '完成！'} /><ChevronRight size={26} strokeWidth={3} /></> : <ChevronRight size={30} strokeWidth={3} />}
+          </button>
         </nav>
       </section>
     </div>

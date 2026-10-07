@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "content": "tsx scripts/build-content.ts",
     "font": "tsx scripts/build-font.ts",
-    "fit": "vite build && tsx scripts/fit-check.ts && tsx scripts/stage-cases.ts"
+    "fit": "vite build && tsx scripts/fit-check.ts && tsx scripts/stage-cases.ts && tsx scripts/story-walk.ts",
+    "story-walk": "tsx scripts/story-walk.ts"
   },
   "dependencies": {
     "@fontsource/literata": "^5.3.0",

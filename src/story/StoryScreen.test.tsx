@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { getSettings, putCards } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { makeCard } from '../test/fixtures';
-import { StoryScreen } from './StoryScreen';
+import { splitToFit, StoryScreen } from './StoryScreen';
 import { DEFAULT_SETTINGS } from '../types';
 
 const owed = { ...DEFAULT_SETTINGS, placementDone: true, storyProgress: { chapter: 0, readOn: '2026-10-02', setupDone: true, payoffDone: false } };
@@ -24,6 +24,11 @@ describe('the story reader (spec 3c §4)', () => {
     await waitFor(() => expect(beat()).toBe(0));
     for (let i = 0; i < 4; i++) fireEvent.click(next()); // 4 setup pages → Granny
     await waitFor(() => expect(document.querySelector('.story__granny')).toBeTruthy());
+    expect(document.querySelector('.story__face--voice')).toBeTruthy(); // chapter 1: she's a voice from the void deck, not in the picture
+    expect(document.querySelectorAll('.story__cast svg.granny')).toHaveLength(0);
+    fireEvent.click(next());
+    await screen.findByText(/Words first/); // the Go page hands over to the lesson
+    expect(screen.getByText('出发！')).toBeTruthy();
     fireEvent.click(next());
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false }));
     expect((await getSettings(app.db)).storyProgress).toMatchObject({ setupDone: true, payoffDone: false, chapter: 0 });
@@ -56,6 +61,12 @@ describe('the story reader (spec 3c §4)', () => {
     expect(document.querySelector('.story__sfx')?.textContent).toBe('SHHHHHHHH.');
     expect(document.querySelector('.story__face--truffle svg')).toBeTruthy();
     expect(document.querySelector('.story__said')!.textContent).toMatch(/^Truffle“Perfect\..*”$/);
+  });
+  it('splitToFit: a page too tall for the screen splits between lines; a line taller than the room gets a screen of its own', () => {
+    const at = (top: number, h: number) => ({ top, bottom: top + h });
+    expect(splitToFit([at(0, 40), at(40, 40), at(80, 40)], 200)).toEqual([[0, 1, 2]]);
+    expect(splitToFit([at(0, 40), at(40, 40), at(80, 40)], 85)).toEqual([[0, 1], [2]]);
+    expect(splitToFit([at(0, 300), at(300, 40), at(340, 40)], 100)).toEqual([[0], [1, 2]]);
   });
   it("a slot shows English until he's heard the word, then Chinese with English", async () => {
     const app = await makeAppData({ voice: false });
