@@ -28,6 +28,35 @@ describe('the story reader (spec 3c §4)', () => {
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false }));
     expect((await getSettings(app.db)).storyProgress).toMatchObject({ setupDone: true, payoffDone: false, chapter: 0 });
   });
+  it('a sideways swipe turns the page (a short or mostly-down drag doesn\'t); a tap on the picture turns it too', async () => {
+    const app = await makeAppData({ voice: false });
+    renderWithApp(<StoryScreen part="setup" chapter={1} then={{ name: 'home' }} />, app);
+    await screen.findByText(/Saturday/);
+    const story = document.querySelector('.story')!;
+    const drag = (x0: number, y0: number, x1: number, y1: number) => {
+      fireEvent.pointerDown(story, { clientX: x0, clientY: y0 });
+      fireEvent.pointerUp(story, { clientX: x1, clientY: y1 });
+    };
+    drag(300, 400, 260, 400); // too short
+    drag(300, 400, 200, 600); // mostly down: he's scrolling the words
+    expect(beat()).toBe(0);
+    drag(300, 400, 120, 410);
+    await waitFor(() => expect(beat()).toBe(1));
+    drag(120, 400, 300, 400);
+    await waitFor(() => expect(beat()).toBe(0));
+    fireEvent.pointerDown(story, { clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(story, { clientX: 100, clientY: 100 });
+    fireEvent.click(document.querySelector('.story__pic')!);
+    await waitFor(() => expect(beat()).toBe(1));
+  });
+  it('a sound in capitals is lettered big; a speaker gets a face and quotes', async () => {
+    const app = await makeAppData({ voice: false });
+    renderWithApp(<StoryScreen part="setup" chapter={1} then={{ name: 'home' }} />, app);
+    await screen.findByText(/Saturday/);
+    expect(document.querySelector('.story__sfx')?.textContent).toBe('SHHHHHHHH.');
+    expect(document.querySelector('.story__face--truffle svg')).toBeTruthy();
+    expect(document.querySelector('.story__said')!.textContent).toMatch(/^Truffle“Perfect\..*”$/);
+  });
   it("a slot shows English until he's heard the word, then Chinese with English", async () => {
     const app = await makeAppData({ voice: false });
     renderWithApp(<StoryScreen part="setup" chapter={1} then={{ name: 'home' }} />, app);

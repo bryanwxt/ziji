@@ -20,7 +20,7 @@ export const chapterNumbered = (n: number) => CHAPTERS.find((c) => c.chapter ===
     });
   },
 };
-await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, plugins: [chaptersShim], jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"./"' }, logLevel: 'error' });
+await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, plugins: [chaptersShim], jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.woff': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"./"' }, logLevel: 'error' });
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
 /** Anything in the lesson card cut off by the card's own box (the same probe as the clue case). */
@@ -193,7 +193,10 @@ for (const size of SIZES) {
         const out: string[] = [];
         const pic = document.querySelector('.story__pic')?.getBoundingClientRect();
         if (!pic) return [`${n}: no picture`];
-        if (Math.abs(pic.width / pic.height - 4 / 3) > 0.03) out.push(`${n}: picture is not 4:3`);
+        // edge to edge: the whole width on a portrait page, the whole height beside the page on a landscape one
+        if (pic.left > 1 || pic.top > 1 || (pic.width < innerWidth - 1 && pic.height < innerHeight - 1)) out.push(`${n}: the picture isn't edge to edge`);
+        const words = document.querySelector('.story__words')!.getBoundingClientRect();
+        if (words.width < 260) out.push(`${n}: the page is too narrow (${Math.round(words.width)}px)`);
         for (const x of document.querySelectorAll('.story__cast svg')) {
           const r = x.getBoundingClientRect();
           if (r.left < pic.left - 1 || r.right > pic.right + 1 || r.bottom > pic.bottom + 1) out.push(`${n}: a character pokes out of the picture`);

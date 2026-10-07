@@ -19,10 +19,13 @@ export type CastId = 'truffle' | 'granny';
 export const DRAWN: ReadonlySet<CastId> = new Set<CastId>(['truffle', 'granny']);
 const SPEAKER: Record<string, CastId> = { truffle: 'truffle', granny: 'granny', 'granny dragon': 'granny', 龙奶奶: 'granny' };
 
+/** The drawn character who says a line, if any ("Hush" isn't drawn yet). */
+export const speakerOf = (who: string): CastId | undefined => SPEAKER[who.toLowerCase()];
+
 export function castFor(page: Page): CastId[] {
   const given = page.lines.find((l) => l.kind === 'cast');
   if (given && given.kind === 'cast') return given.ids.filter((x): x is CastId => DRAWN.has(x as CastId));
-  const speakers = page.lines.flatMap((l) => (l.kind === 'speech' ? [SPEAKER[l.who.toLowerCase()]] : [])).filter((x): x is CastId => !!x);
+  const speakers = page.lines.flatMap((l) => (l.kind === 'speech' ? [speakerOf(l.who)] : [])).filter((x): x is CastId => !!x);
   const out = [...new Set(speakers)];
   return out.length ? out : ['truffle'];
 }

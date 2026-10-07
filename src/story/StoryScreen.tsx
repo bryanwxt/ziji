@@ -1,6 +1,6 @@
 // The story reader (spec 2026-10-07 3c §4): a chapter's setup before the lesson or its payoff after it, as picture-book pages — the
 // painted scene on top with the cast standing in it, the words below. Slots follow his ladder; Granny Dragon speaks only Mandarin.
-import { ChevronLeft, ChevronRight, Volume2 } from 'lucide-preact';
+import { ChevronLeft, ChevronRight, FastForward, Volume2 } from 'lucide-preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { speak, stopSpeaking } from '../audio/speech';
 import { onSpeaking } from '../audio/speaking';
@@ -17,7 +17,8 @@ import { chapterNumbered } from './chapters';
 import type { Mandarin, Page, Question } from './format';
 import { markPayoff, markSetup } from './progress';
 import { wordsPractisedToday } from './today';
-import { castFor, slotState, type CastId } from './weave';
+import { markFor } from './stage';
+import { castFor, slotState, speakerOf, type CastId } from './weave';
 
 type Beat = { kind: 'page'; page: Page; scene: string | null } | { kind: 'granny' } | { kind: 'listen' };
 const SLOT = /\{([^|{}]+)\|([^{}]+)\}/g;
@@ -35,8 +36,14 @@ function playLine(zh: string, done: () => void, onStart?: () => void): () => voi
 /** Words with *emphasis* and their slots woven in by his ladder state (parent spec §5.5). */
 function Woven({ text, know }: { text: string; know: Knowledge | null }) {
   const parts = text.split(/\*([^*]+)\*/);
-  if (parts.length > 1) return <>{parts.map((p, i) => (i % 2 ? <em key={i}><Slots text={p} know={know} /></em> : <Slots key={i} text={p} know={know} />))}</>;
+  if (parts.length > 1) return <>{parts.map((p, i) => (i % 2 ? (SFX.test(p) ? <Sfx key={i} text={p} /> : <em key={i}><Slots text={p} know={know} /></em>) : <Slots key={i} text={p} know={know} />))}</>;
   return <Slots text={text} know={know} />;
+}
+
+/** A sound in capitals (*SHHHHHHHH.*): lettered big, each letter wobbling after the one before. */
+const SFX = /^[A-Z][A-Z!?.…'\s-]{2,}$/;
+function Sfx({ text }: { text: string }) {
+  return <em class="story__sfx">{Array.from(text).map((ch, k) => <span key={k} style={{ '--k': k }}>{ch}</span>)}</em>;
 }
 
 function Slots({ text, know }: { text: string; know: Knowledge | null }) {
@@ -57,19 +64,53 @@ function Slots({ text, know }: { text: string; know: Knowledge | null }) {
   return <>{out}</>;
 }
 
-function Cast({ ids, talking }: { ids: CastId[]; talking?: boolean }) {
+/** The cast standing on the scene's floor (stage.ts), each with a shadow under their feet; they hop in on each new page. */
+function Cast({ ids, scene, talking, page }: { ids: CastId[]; scene: string | null; talking?: boolean; page: number }) {
+  const m = markFor(scene);
+  const both = ids.length > 1;
   return (
-    <div class="story__cast">
-      {ids.map((id) => (id === 'truffle'
-        ? <Truffle key={id} mood="pleased" label={null} size={150} />
-        : <span key={id} class="story__granny-wrap"><GrannyDragon pose="smile" label={null} size={150} talking={talking} /></span>))}
+    <div class="story__cast" style={{ '--x': m.x, '--y': m.y, '--h': m.h }}>
+      {ids.map((id, k) => (
+        <span key={`${id}-${page}`} class="story__actor" style={{ '--k': k }}>
+          {id === 'truffle'
+            ? <Truffle mood="pleased" label={null} size={150} alive lookAt={both ? (k === 0 ? 0.7 : -0.7) : 0} />
+            : <GrannyDragon pose="smile" label={null} size={150} talking={talking} />}
+        </span>
+      ))}
     </div>
   );
 }
 
-function Picture({ scene, children }: { scene: string | null; children: preact.ComponentChildren }) {
-  const bg = scene ? `url(${import.meta.env.BASE_URL}story/bg/${scene}.webp)` : undefined;
-  return <div class="story__pic" data-scene={scene ?? undefined} style={bg ? { backgroundImage: bg } : undefined}>{children}</div>;
+const bgUrl = (scene: string) => `url(${import.meta.env.BASE_URL}story/bg/${scene}.webp)`;
+/** The painting, edge to edge: a new scene fades in over the old one; the paint drifts very slowly while he reads. */
+function Picture({ scene, onTap, children }: { scene: string | null; onTap: () => void; children: preact.ComponentChildren }) {
+  const [under, setUnder] = useState(scene);
+  useEffect(() => {
+    const t = setTimeout(() => setUnder(scene), 800);
+    return () => clearTimeout(t);
+  }, [scene]);
+  return (
+    <div class="story__pic" data-scene={scene ?? undefined} onClick={onTap}>
+      {under && under !== scene && <div class="story__bg" style={{ backgroundImage: bgUrl(under) }} />}
+      {scene && <div key={scene} class="story__bg story__bg--in" style={{ backgroundImage: bgUrl(scene) }} />}
+      {children}
+    </div>
+  );
+}
+
+/** Who's talking: their face in a little round frame (or their initial), their name, then the line. */
+function Speech({ who, text, know, style }: { who: string; text: string; know: Knowledge | null; style?: Record<string, number> }) {
+  const id = speakerOf(who);
+  return (
+    <div class="story__speech" style={style}>
+      <span class={`story__face story__face--${id ?? 'other'}`} aria-hidden="true">
+        {id === 'truffle' ? <Truffle mood="pleased" label={null} size={84} />
+          : id === 'granny' ? <GrannyDragon pose="smile" label={null} size={84} />
+          : who.slice(0, 1)}
+      </span>
+      <p class="story__said"><b class="story__who">{who}</b>“<Woven text={text} know={know} />”</p>
+    </div>
+  );
 }
 
 /** Granny Dragon's lines: her voice first, the English only on a tap once heard (with no voice, shown at once). */
@@ -157,6 +198,8 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
   const [at, setAt] = useState(0);
   const [ready, setReady] = useState<boolean | null>(null); // null: a page is ready at once; Granny's and 听一听's beats say so themselves
   const leaving = useRef(false);
+  const [back, setBack] = useState(false); // the last turn went back a page: the words slide in from the left
+  const swipe = useRef<{ x: number; y: number; moved: boolean } | null>(null);
 
   const beats = useMemo((): Beat[] => {
     if (!c) return [];
@@ -195,56 +238,76 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
   };
   if (!c || !beats.length) { void finish(); return <div class="screen loading" />; }
 
-  const goTo = (n: number) => { stopSpeaking(); setReady(null); setAt(n); }; // a granny/listen beat says when it's ready
+  const goTo = (n: number) => { stopSpeaking(); setReady(null); setBack(n < at); setAt(n); }; // a granny/listen beat says when it's ready
   const beat = beats[at]!;
   const last = at === beats.length - 1;
+  const canNext = ready ?? beat.kind === 'page';
+  const forward = () => { if (!canNext) return; if (last) void finish(); else goTo(at + 1); };
   const word = (id: string) => know?.wordsById.get(id)?.text ?? know?.ladderById.get(id)?.text ?? id.slice(2);
   const fly = !reducedMotion();
+  // the scene stays put across pages; Granny's and 听一听's beats stand in the last scene he saw (听一听: the payoff's first)
+  const scene = beat.kind === 'page' ? beat.scene
+    : beat.kind === 'granny' ? (beats.slice(0, at).reverse().find((b) => b.kind === 'page') as Extract<Beat, { kind: 'page' }> | undefined)?.scene ?? null
+    : beats.find((b): b is Extract<Beat, { kind: 'page' }> => b.kind === 'page')?.scene ?? null;
+  const cast: CastId[] = beat.kind === 'page' ? castFor(beat.page) : ['granny'];
+  // a sideways swipe turns the page (a tap on the picture too); a swipe ends in no click
+  const onDown = (e: PointerEvent) => { swipe.current = { x: e.clientX, y: e.clientY, moved: false }; };
+  const onUp = (e: PointerEvent) => {
+    const s = swipe.current;
+    if (!s) return;
+    const dx = e.clientX - s.x;
+    if (Math.abs(dx) < 60 || Math.abs(e.clientY - s.y) > Math.abs(dx)) return;
+    s.moved = true;
+    if (dx < 0) forward();
+    else if (at > 0) goTo(at - 1);
+  };
+  const tapPicture = () => { if (!swipe.current?.moved) forward(); };
+  let firstText = part === 'setup' && at === 0;
   return (
-    <div class="screen story" data-beat={at} data-part={part}>
-      <button type="button" class="story__skip" onClick={() => void finish()}><Label zh="跳过" /></button>
-      {beat.kind === 'page' && (
-        <>
-          <Picture scene={beat.scene}><Cast ids={castFor(beat.page)} /></Picture>
-          <div class="story__words">
-            {beat.page.lines.map((l, i) => {
-              if (l.kind === 'scene' || l.kind === 'cast') return null;
-              if (l.kind === 'speech') return <p key={i} class="story__bubble"><b>{l.who}</b> <Woven text={l.text} know={know} /></p>;
-              if (l.kind === 'rescued') {
-                return (
-                  <div key={i} class="story__rescued-line">
-                    <p class="story__text"><Woven text={l.text} know={know} /></p>
-                    {rescued.length > 0 && (
-                      <div class="story__rescued">
-                        {rescued.map((id, k) => (
-                          <button key={id} type="button" class={`story__chip${fly ? ' story__chip--fly' : ''}`} style={fly ? { animationDelay: `${k * 90}ms` } : undefined} lang="zh" onClick={() => speak(word(id))}>{word(id)}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-              return <p key={i} class="story__text"><Woven text={l.text} know={know} /></p>;
-            })}
-          </div>
-        </>
-      )}
-      {beat.kind === 'granny' && (
-        <>
-          <Picture scene={(beats.slice(0, at).reverse().find((b) => b.kind === 'page') as Extract<Beat, { kind: 'page' }> | undefined)?.scene ?? null}><Cast ids={['granny']} talking={voice} /></Picture>
-          <div class="story__words"><GrannyLines lines={c.granny} voice={voice} onReady={setReady} /></div>
-        </>
-      )}
-      {beat.kind === 'listen' && (
-        <>
-          <Picture scene={beats.find((b): b is Extract<Beat, { kind: 'page' }> => b.kind === 'page')?.scene ?? null}><Cast ids={['granny']} talking /></Picture>
-          <div class="story__words"><ListenScene lines={c.listen.lines} questions={c.listen.questions} chapter={chapter} onReady={setReady} /></div>
-        </>
-      )}
-      <nav class="story__nav">
-        <button type="button" class="story__nav-btn" aria-label="上一页" disabled={at === 0} onClick={() => goTo(at - 1)}><ChevronLeft size={34} strokeWidth={3} /></button>
-        <button type="button" class="story__nav-btn story__nav-btn--next" aria-label="下一页" disabled={!(ready ?? beat.kind === 'page')} onClick={() => { if (last) void finish(); else goTo(at + 1); }}><ChevronRight size={34} strokeWidth={3} /></button>
-      </nav>
+    <div class="screen story" data-beat={at} data-part={part} onPointerDown={onDown} onPointerUp={onUp}>
+      <Picture scene={scene} onTap={tapPicture}>
+        <Cast ids={cast} scene={scene} talking={beat.kind === 'listen' || (beat.kind === 'granny' && voice)} page={at} />
+      </Picture>
+      <section class="story__panel">
+        <header class="story__head">
+          <span class="story__chapter">Chapter {chapter} · {c.title}</span>
+          <button type="button" class="story__skip" aria-label="跳过" onClick={() => void finish()}>
+            <FastForward size={18} strokeWidth={2.5} /><span class="story__skip-zh" lang="zh">跳过</span>
+          </button>
+        </header>
+        <div key={at} class={`story__words${back ? ' story__words--back' : ''}`}>
+          {beat.kind === 'page' && beat.page.lines.filter((l) => l.kind !== 'scene' && l.kind !== 'cast').map((l, i) => {
+            const style = { '--i': i };
+            if (l.kind === 'speech') return <Speech key={i} who={l.who} text={l.text} know={know} style={style} />;
+            if (l.kind === 'rescued') {
+              return (
+                <div key={i} class="story__rescued-line" style={style}>
+                  <p class="story__text"><Woven text={l.text} know={know} /></p>
+                  {rescued.length > 0 && (
+                    <div class="story__rescued">
+                      {rescued.map((id, k) => (
+                        <button key={id} type="button" class={`story__chip${fly ? ' story__chip--fly' : ''}`} style={fly ? { animationDelay: `${300 + k * 90}ms` } : undefined} lang="zh" onClick={() => speak(word(id))}>{word(id)}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            const opening = firstText && l.kind === 'text';
+            if (opening) firstText = false;
+            return <p key={i} class={`story__text${opening ? ' story__text--opening' : ''}`} style={style}><Woven text={l.text} know={know} /></p>;
+          })}
+          {beat.kind === 'granny' && <GrannyLines lines={c.granny} voice={voice} onReady={setReady} />}
+          {beat.kind === 'listen' && <ListenScene lines={c.listen.lines} questions={c.listen.questions} chapter={chapter} onReady={setReady} />}
+        </div>
+        <nav class="story__nav">
+          <button type="button" class="story__nav-btn story__nav-btn--back" aria-label="上一页" disabled={at === 0} onClick={() => goTo(at - 1)}><ChevronLeft size={30} strokeWidth={3} /></button>
+          <ol class="story__dots" aria-hidden="true">
+            {beats.map((_, i) => <li key={i} class={i === at ? 'is-on' : i < at ? 'is-past' : undefined} />)}
+          </ol>
+          <button type="button" class="story__nav-btn story__nav-btn--next" aria-label="下一页" disabled={!canNext} onClick={forward}><ChevronRight size={30} strokeWidth={3} /></button>
+        </nav>
+      </section>
     </div>
   );
 }
