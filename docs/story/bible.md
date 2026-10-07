@@ -5,6 +5,53 @@
 
 ---
 
+## 0. Craft rules (parent review, 2026-10-08)
+
+The first three chapters read as checklists: words dropped in to fill a quota, rules that didn't add up, dry jokes for adults, and a hero who watched. These rules come first; everything below serves them. A chapter that breaks one is rewritten, not patched.
+
+### 0.1 How the world works (say it in the story, never break it)
+
+- **Hush's machine takes a thing's word.** The thing goes grey *and stops doing its job*: a 门 with no word won't open, a 电梯 won't move, the 太阳 on a windowsill goes cold. The word flies into the machine's glass belly.
+- **Where the word was, a ghost word is left behind:** faint letters, like breath on a window. **Only the Word-Keeper can see ghost words.** To everyone else the thing is just grey and its sign is blank.
+- **Truffle is a cat. He can hear and talk, but he can't read,** so he can't see ghost words. That is why he needs the Word-Keeper, and he hates admitting it. (Say this in chapter 1.)
+- **A word comes home when someone reads it and understands it** (rule 1, §4). The lesson is the Word-Keeper doing exactly that; the payoff shows the words flying home and the things working again.
+- No other rescue exists. Nothing comes back by accident, by shouting or by magic nobody was shown.
+
+### 0.2 The shape of a chapter
+
+- **Setup (3–4 pages):** someone wants something small and clear (a nap in the sun, breakfast, to get through a gate) → Hush, or what he left behind, blocks it → the stuck things are named, and they are the chapter's slot words → the **Go page** states the mission in one line ("Read me the door's word first. I want my bed back.").
+- **Payoff (2 pages):** the words fly home → *each restored thing does its job on the page* (the 门 swings open, the 太阳 is warm again) → the want is won → one laugh → a hook for the next chapter.
+- **Every page ends with a pull forward** (a noise, a question, a door that won't open).
+
+### 0.3 The words are the plot
+
+- Every slot word names something that is stuck, needed or in the way. At least half of a chapter's slots are things the mission depends on.
+- No slot is only a list item. Never "the 桌子 was grey, the 被子 was grey". If a thing is in the story, something happens to it or because of it.
+- At most two slots in one sentence.
+
+### 0.4 Funny for a 7-year-old
+
+- **Jokes he gets on the first read:** things fall, bonk, stick, squeak; silly sounds; characters who are obviously wrong. No irony or sarcasm as the joke.
+- **One big laugh per chapter,** set up and paid off, beats three small ones.
+- **Truffle is vain, dramatic and soft.** His vanity shows in what he *does* (poses, then falls off the windowsill). His "That was my plan" gag at most once a chapter, and only when the reader has just seen that it obviously wasn't.
+- **Hush is a clown,** never a threat: he trips on his coat, gets tangled in laundry, his machine hiccups.
+
+### 0.5 The Word-Keeper is the hero
+
+- In every chapter he notices or does something only he can (he sees the ghost word, spots the clue). Characters turn to him and ask him directly.
+- He is never narrated as a bystander ("Then Truffle saw you") without then *doing* something.
+
+### 0.6 The stakes
+
+- Every chapter shows who is stuck or sad because a word is gone, and gives it back to them in the payoff. The season's big stake is Granny Dragon's: a town where nobody can talk to each other.
+
+### 0.7 Review before the parent sees it
+
+- Each chapter is checked by a reviewer (a separate agent) against §0 and §1 before it reaches the parent: does it add up, is every slot load-bearing, would a 7-year-old laugh, does he *do* something, could he say what happened, why, and what happens next.
+- `npx tsx scripts/story/check.ts` must still show 0 problems.
+
+---
+
 ## 1. Voice
 
 **Who reads it:** a confident Year 2 reader, alone, on an iPad. A page takes him about 15 seconds.
@@ -66,7 +113,7 @@
   - "As I was *just* about to say…"
   - "Obviously. That was my plan. I was testing you."
   - "Hmph! I knew that."
-- **How he talks:** short, dry and a little grand. He says "Hmph!" when he's annoyed or embarrassed. (The English pages never carry Chinese outside a word slot, so it's always "Hmph", not 哼.) When he's really pleased, he purrs and pretends he didn't.
+- **How he talks:** grand and dramatic, then sulky when it goes wrong (never dry or sarcastic: §0.4). He says "Hmph!" when he's annoyed or embarrassed. (The English pages never carry Chinese outside a word slot, so it's always "Hmph", not 哼.) When he's really pleased, he purrs and pretends he didn't.
 - **For 3b:** grey tabby, green eyes, a white chest, his tail held up when proud. Same face as the app's Truffle, redrawn soft and painted.
 
 ### Dog (小狗) — joins in chapters 4–5
