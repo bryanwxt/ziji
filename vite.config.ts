@@ -4,6 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
+  // story-trial.html: the animated-page trial for the parent (2026-10-08), outside the app; index.html is the app
+  build: { rollupOptions: { input: { main: 'index.html', trial: 'story-trial.html' } } },
   plugins: [
     preact(),
     VitePWA({
