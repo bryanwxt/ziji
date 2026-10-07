@@ -12,9 +12,16 @@ export interface ClipPlayer {
 
 /** Decoded clips kept in memory: a lesson's words and their 组词. */
 const KEEP = 150;
-const WAKE_MS = 300;
-/** A clip slower than this to arrive (a weak connection): the iPad voice says the line instead of a long silence. */
-export const LOAD_MS = 1500;
+/** How long the audio engine is given to wake (iOS suspends it when the screen sleeps or another app plays sound). */
+const WAKE_MS = 1500;
+/**
+ * A clip slower than this to arrive (no connection at all): the iPad voice says the line instead of a long silence. Generous on
+ * purpose (parent 2026-10-07): the iPad voice sounds different and the silent switch mutes it, so a clip a few seconds late on
+ * mobile data is better than a switch of voice or no sound.
+ */
+export const LOAD_MS = 6000;
+/** The lesson's prefetch fetches this many clips at a time, so a line he asks for isn't stuck behind a hundred downloads. */
+export const PREFETCH_AT_ONCE = 4;
 
 const inTime = <T,>(p: Promise<T>, ms: number): Promise<T> =>
   new Promise<T>((resolve, reject) => {
@@ -24,6 +31,27 @@ const inTime = <T,>(p: Promise<T>, ms: number): Promise<T> =>
 
 export function createClipPlayer(backend: ClipBackend): ClipPlayer {
   const buffers = new Map<string, Promise<AudioBuffer>>();
+  // one download per clip at a time, shared by the prefetch and a line he asks for
+  const inFlight = new Map<string, Promise<ArrayBuffer>>();
+  const fetchOnce = (id: string): Promise<ArrayBuffer> => {
+    let p = inFlight.get(id);
+    if (!p) {
+      p = backend.load(id);
+      inFlight.set(id, p);
+      const done = () => { inFlight.delete(id); };
+      p.then(done, done);
+    }
+    return p;
+  };
+  const queued: string[] = [];
+  let prefetching = 0;
+  const pump = (): void => {
+    while (prefetching < PREFETCH_AT_ONCE && queued.length) {
+      prefetching++;
+      const settle = () => { prefetching--; pump(); };
+      fetchOnce(queued.shift()!).then(settle, settle); // the service worker keeps the file
+    }
+  };
   let sources: AudioBufferSourceNode[] = [];
   let finish: ((r: PlayResult) => void) | null = null;
   let token = 0;
@@ -32,7 +60,9 @@ export function createClipPlayer(backend: ClipBackend): ClipPlayer {
     let p = buffers.get(id);
     if (p) buffers.delete(id); // most recently used goes last
     else {
-      p = inTime(backend.load(id), LOAD_MS).then((b) => ac.decodeAudioData(b));
+      const i = queued.indexOf(id);
+      if (i >= 0) queued.splice(i, 1); // asked for now: out of the prefetch queue, straight to the network
+      p = inTime(fetchOnce(id), LOAD_MS).then((b) => ac.decodeAudioData(b.slice(0))); // decoding detaches the bytes: keep the shared copy whole
       p.catch(() => buffers.delete(id));
     }
     buffers.set(id, p);
@@ -97,7 +127,8 @@ export function createClipPlayer(backend: ClipBackend): ClipPlayer {
   }
 
   function prefetch(ids: string[]): void {
-    for (const id of ids) void backend.load(id).catch(() => {}); // the service worker keeps the file
+    for (const id of ids) if (!queued.includes(id) && !buffers.has(id)) queued.push(id);
+    pump();
   }
 
   return { play, stop, prefetch };

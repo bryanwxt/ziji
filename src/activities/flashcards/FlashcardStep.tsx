@@ -199,7 +199,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                 </div>
               ) : (
                 <>
-                  {quiz.listen ? <SpeakButton text={word.text} big /> : <div class="hanzi hanzi--q" data-q>{word.text}</div>}
+                  {quiz.listen ? <SpeakButton text={word.text} reading={word.pinyin} big /> : <div class="hanzi hanzi--q" data-q>{word.text}</div>}
                   {phase === 'feedback' && <UsageLine word={word} />}
                 </>
               )}

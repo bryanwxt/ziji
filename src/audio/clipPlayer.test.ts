@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createClipPlayer } from './clipPlayer';
+import { createClipPlayer, LOAD_MS, PREFETCH_AT_ONCE } from './clipPlayer';
 
 class FakeSource { buffer: { duration: number } | null = null; onended: (() => void) | null = null; started: number[] = []; stopped = false; connect() {} start(t: number) { this.started.push(t); } stop() { this.stopped = true; } }
 class FakeContext {
@@ -8,7 +8,7 @@ class FakeContext {
   createBufferSource() { const s = new FakeSource(); this.sources.push(s); return s; }
   resume = vi.fn(async () => {});
 }
-const setup = (load = vi.fn(async () => new ArrayBuffer(10))) => {
+const setup = (load: (id: string) => Promise<ArrayBuffer> = vi.fn(async () => new ArrayBuffer(10))) => {
   const ac = new FakeContext();
   const player = createClipPlayer({ context: () => ac as unknown as AudioContext, load });
   return { ac, load, player };
@@ -68,13 +68,69 @@ describe('clip player', () => {
 });
 
 describe('clip player, slow network (final review I2)', () => {
-  it('a clip that takes too long to arrive: failed, so the iPad voice says it', async () => {
+  it('a clip that never arrives: failed, so the iPad voice says it', async () => {
     vi.useFakeTimers();
     try {
       const { player } = setup(vi.fn(() => new Promise<ArrayBuffer>(() => {})));
       const done = player.play([{ id: 'a' }]);
-      await vi.advanceTimersByTimeAsync(2000);
+      await vi.advanceTimersByTimeAsync(LOAD_MS + 100);
       expect(await done).toBe('failed');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+// parent 2026-10-07 (iPhone, mobile data): the sound button was sometimes silent and the voice sometimes changed — a clip that missed
+// its slot went to the iPad voice, which sounds different and is muted by the silent switch
+describe('clip player keeps to the clip voice', () => {
+  it('a clip that takes 2.5 s on mobile data still plays as the clip', async () => {
+    vi.useFakeTimers();
+    try {
+      const { ac, player } = setup(vi.fn(() => new Promise<ArrayBuffer>((r) => setTimeout(() => r(new ArrayBuffer(10)), 2500))));
+      const done = player.play([{ id: 'a' }]);
+      await vi.advanceTimersByTimeAsync(2600);
+      expect(ac.sources).toHaveLength(1);
+      ac.sources[0]!.onended!();
+      expect(await done).toBe('ended');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('a clip already on its way (the lesson prefetch) is not fetched again', async () => {
+    let arrive!: (b: ArrayBuffer) => void;
+    const load = vi.fn(() => new Promise<ArrayBuffer>((r) => { arrive = r; }));
+    const { ac, player } = setup(load);
+    player.prefetch(['a']);
+    const done = player.play([{ id: 'a' }]);
+    arrive(new ArrayBuffer(10));
+    await tick(); await tick();
+    expect(load).toHaveBeenCalledOnce();
+    ac.sources[0]!.onended!();
+    expect(await done).toBe('ended');
+  });
+  it('the prefetch fetches a few at a time, and a line he asks for goes ahead of the queue', async () => {
+    const waits: (() => void)[] = [];
+    const load = vi.fn((id: string) => new Promise<ArrayBuffer>((r) => waits.push(() => r(new ArrayBuffer(id.length)))));
+    const { player } = setup(load);
+    player.prefetch(Array.from({ length: 20 }, (_, i) => `p${i}`));
+    expect(load).toHaveBeenCalledTimes(PREFETCH_AT_ONCE);
+    void player.play([{ id: 'now' }]);
+    expect(load).toHaveBeenLastCalledWith('now');
+    waits[0]!(); await tick(); await tick();
+    expect(load).toHaveBeenCalledTimes(PREFETCH_AT_ONCE + 2); // the next prefetch starts as one finishes
+  });
+  it('an audio engine slow to wake (the phone just unlocked) still plays the clip', async () => {
+    vi.useFakeTimers();
+    try {
+      const { ac, player } = setup();
+      ac.state = 'suspended';
+      ac.resume = vi.fn(() => new Promise<void>((r) => setTimeout(() => { ac.state = 'running'; r(); }, 700)));
+      const done = player.play([{ id: 'a' }]);
+      await vi.advanceTimersByTimeAsync(800);
+      expect(ac.sources).toHaveLength(1);
+      ac.sources[0]!.onended!();
+      expect(await done).toBe('ended');
     } finally {
       vi.useRealTimers();
     }
