@@ -1373,7 +1373,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 @keyframes story-drift { from { transform: scale(1); } to { transform: scale(1.05); } }
 @keyframes story-fade { from { opacity: 0; } to { opacity: 1; } }
 .story__cast { position: absolute; z-index: 2; left: calc(50% + (var(--x) - 0.5) * var(--img-w)); bottom: calc((1 - var(--y)) * var(--img-h)); height: calc(var(--h) * var(--img-h));
-  transform: translateX(-50%); display: flex; align-items: flex-end; gap: calc(0.03 * var(--img-w)); pointer-events: none; }
+  transform: translateX(-50%); display: flex; align-items: flex-end; gap: calc(0.03 * var(--img-w)); pointer-events: none;
+  transition: left 0.6s var(--ease-out), bottom 0.6s var(--ease-out), height 0.6s var(--ease-out); }
 .story__actor { position: relative; height: 100%; display: flex; align-items: flex-end; animation: story-hop 0.6s var(--spring) both; animation-delay: calc(var(--k, 0) * 90ms + 150ms); }
 .story__actor svg { position: relative; z-index: 1; height: 100%; width: auto; }
 .story__actor::before { content: ''; position: absolute; left: 12%; right: 12%; bottom: 0; height: 9%; border-radius: 50%; background: radial-gradient(closest-side, rgba(45, 30, 18, 0.55), rgba(45, 30, 18, 0.22) 60%, rgba(45, 30, 18, 0)); }

@@ -151,7 +151,7 @@ else if (which?.startsWith('story-') && which !== 'story-page') {
     const part = which === 'story-setup' || which === 'story-granny' ? 'setup' : 'payoff';
     const chapter = Number(new URLSearchParams(location.search).get('chapter')) || (which === 'story-granny' ? 3 : 1);
     render(<AppContext.Provider value={ctx}><StoryScreen part={part} chapter={chapter} then={{ name: 'home' }} /></AppContext.Provider>, app);
-    if (voice) { let on = false; const t = setInterval(() => { on = !on; setSpeaking(on); }, 120); setTimeout(() => clearInterval(t), 4000); } // a voice that speaks and stops
+    if (voice) { let on = false; const t = setInterval(() => { on = !on; setSpeaking(on); }, 120); setTimeout(() => clearInterval(t), 12_000); } // a voice that speaks and stops (long enough for a slow machine)
   })();
 }
 else if (which === 'story-page') {

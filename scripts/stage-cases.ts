@@ -175,11 +175,25 @@ for (const size of SIZES) {
       await page.setViewportSize({ width, height });
       await page.goto(`file://${dir}/index.html?case=${c}`);
       await page.waitForSelector('.story', { timeout: 10_000 });
+      // Truffle stays in the picture through a page turn (parent 2026-10-07: he blinked out on every turn)
+      if (c === 'story-setup') {
+        await page.waitForTimeout(900);
+        await page.click('.story__nav-btn--next');
+        for (const t of [30, 120, 400]) {
+          await page.waitForTimeout(t === 30 ? 30 : t === 120 ? 90 : 280);
+          const seen = await page.evaluate(() => {
+            const a = document.querySelector('.story__cast .story__actor');
+            return a ? parseFloat(getComputedStyle(a).opacity) : 0;
+          });
+          if (seen < 0.95) problems.push(`${c} ${name}: Truffle fades out ${t} ms into a page turn (opacity ${seen.toFixed(2)})`);
+        }
+        await page.click('.story__nav-btn--back');
+      }
       // long pages split into more screens on a small one: page on until Granny's lines are up
       if (c === 'story-granny') for (let i = 0; i < 12 && !(await page.$('.story__granny')); i++) { await page.click('.story__nav-btn--next:not(.story__nav-btn--go)', { timeout: 5_000 }); await page.waitForTimeout(150); }
       if (c === 'story-granny' && !(await page.$('.story__granny'))) problems.push(`${c} ${name}: never reached Granny's lines`);
       await page.waitForTimeout(c === 'story-listen' ? 4500 : 900);
-      if (c === 'story-listen' && !(await page.$('.story__question'))) problems.push(`${c} ${name}: the question never came up`);
+      if (c === 'story-listen' && !(await page.waitForSelector('.story__question', { timeout: 12_000 }).catch(() => null))) problems.push(`${c} ${name}: the question never came up`);
       await page.screenshot({ path: `fit-shots/stage-cases/${c}-${name}.png` });
       problems.push(...(await page.evaluate((n) => {
         const out: string[] = [];

@@ -85,14 +85,15 @@ function Slots({ text, know }: { text: string; know: Knowledge | null }) {
   return <>{out}</>;
 }
 
-/** The cast standing on the scene's floor (stage.ts), each with a shadow under their feet; they hop in on each new page. */
-function Cast({ ids, scene, talking, page, look }: { ids: CastId[]; scene: string | null; talking?: boolean; page: number; look?: number }) {
+/** The cast standing on the scene's floor (stage.ts), each with a shadow under their feet. Each stays put across page turns (a
+ *  remount blinked Truffle out on every turn: parent 2026-10-07) and hops in only when they first appear; a new scene's spot is glided to. */
+function Cast({ ids, scene, talking, look }: { ids: CastId[]; scene: string | null; talking?: boolean; look?: number }) {
   const m = markFor(scene);
   const both = ids.length > 1;
   return (
     <div class="story__cast" style={{ '--x': m.x, '--y': m.y, '--h': m.h }}>
       {ids.map((id, k) => (
-        <span key={`${id}-${page}`} class="story__actor" style={{ '--k': k }}>
+        <span key={id} class="story__actor" style={{ '--k': k }}>
           {id === 'truffle'
             ? <Truffle mood="pleased" label={null} size={150} alive lookAt={look ?? (both ? (k === 0 ? 0.7 : -0.7) : 0)} />
             : <GrannyDragon pose="smile" label={null} size={150} talking={talking} />}
@@ -379,7 +380,7 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
   return (
     <div class={`screen story${exiting ? ' story--leaving' : ''}`} data-beat={at} data-part={part} onPointerDown={onDown} onPointerUp={onUp}>
       <Picture scene={scene} onTap={tapPicture}>
-        <Cast ids={cast} scene={scene} talking={beat.kind === 'listen' || (beat.kind === 'granny' && voice)} page={view.beat} look={heed} />
+        <Cast ids={cast} scene={scene} talking={beat.kind === 'listen' || (beat.kind === 'granny' && voice)} look={heed} />
       </Picture>
       <section class="story__panel">
         <header class="story__head">
