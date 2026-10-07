@@ -631,6 +631,10 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .world-scene { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; } /* the screen, not the scrolling page */
 .pet__bubble .label__cells { flex-wrap: nowrap; }
 .world-scene svg { width: 100%; height: 100%; display: block; }
+/* a lesson in the chapter's painted place (2026-10-07): the painting covers the screen, anchored at its floor, a little paler at the top
+   where the lesson bar sits; it fades in over the old world */
+.painted-backdrop { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: center bottom / cover no-repeat; animation: story-fade 0.6s ease both; }
+.painted-backdrop::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(251, 246, 234, 0.55), rgba(251, 246, 234, 0.12) 30%, rgba(251, 246, 234, 0) 60%); }
 .arrival { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(42, 38, 48, 0.35); }
 .arrival__card { background: var(--surface); border: var(--panel-border); box-shadow: var(--panel-shadow); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(420px, 88vw); }
 .arrival__card h2 { margin: 0; font-size: 34px; }

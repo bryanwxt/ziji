@@ -1,3 +1,6 @@
+import { CHAPTERS } from '../story/chapters';
+import { lessonScene } from '../story/lessonScene';
+import { PaintedBackdrop } from '../ui/story/PaintedBackdrop';
 import { Flame, X } from 'lucide-preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ComponentsStep } from '../activities/components/ComponentsStep';
@@ -80,7 +83,8 @@ interface Loaded {
 }
 
 export function SessionScreen({ free, extra = false }: { free: boolean; extra?: boolean }) {
-  const { db, now, go, voice } = useApp();
+  const { db, now, go, voice, settings: appSettings } = useApp();
+  const painted = lessonScene(appSettings.storyProgress, CHAPTERS); // the chapter's place, over the old world
   const [state, setState] = useState<Loaded | null>(null);
   const [combo, setCombo] = useState(0);
   const [correct, setCorrect] = useState(0); // this sitting only: Truffle warms up from sulk
@@ -394,6 +398,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   return (
     <div class="screen">
       <WorldScene world={currentWorld(kid)} time={timeOfDay(now())} />
+      {painted && <PaintedBackdrop scene={painted} />}
       <header class="lessonbar">
         <button type="button" class="icon-btn" aria-label="回家" onClick={() => go({ name: 'home' })}>
           <X size={34} strokeWidth={3} />
