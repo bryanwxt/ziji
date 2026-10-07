@@ -34,10 +34,10 @@ export async function storyWalk(browser: Browser, dir: string): Promise<string[]
             const w = document.querySelector('.story__words')!;
             const nav = document.querySelector('.story__nav')!.getBoundingClientRect();
             const fs = parseFloat(getComputedStyle(w).fontSize);
-            return { over: w.scrollHeight - w.clientHeight, navOff: nav.bottom > innerHeight + 2, fs, beat: document.querySelector('.story')!.getAttribute('data-beat') };
+            return { over: w.scrollHeight - w.clientHeight, navOff: nav.bottom > innerHeight + 2, fs, beat: document.querySelector('.story')!.getAttribute('data-beat'), what: w.querySelector('.story__granny') ? 'Granny' : (w.textContent ?? '').trim().slice(0, 40) };
           });
           const at = `story-walk ${name} ch${chapter} ${c === 'story-setup' ? 'setup' : 'payoff'} beat ${r.beat}`;
-          if (r.over > 2) problems.push(`${at}: the words scroll ${r.over}px`);
+          if (r.over > 2) problems.push(`${at} (${r.what}…): the words scroll ${r.over}px`);
           if (r.navOff) problems.push(`${at}: the page buttons are off the screen`);
           if (r.fs < 17) problems.push(`${at}: text ${r.fs}px is under 17px`);
           const next = await page.$('.story__nav-btn--next:not([disabled]):not(.story__nav-btn--go)'); // 出发/完成 leaves the story

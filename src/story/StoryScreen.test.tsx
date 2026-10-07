@@ -27,7 +27,7 @@ describe('the story reader (spec 3c §4)', () => {
     expect(document.querySelector('.story__face--voice')).toBeTruthy(); // chapter 1: she's a voice from the void deck, not in the picture
     expect(document.querySelectorAll('.story__cast svg.granny')).toHaveLength(0);
     fireEvent.click(next());
-    await screen.findByText(/Words first/); // the Go page hands over to the lesson
+    await screen.findByText(/Breakfast can wait/); // the Go page hands over to the lesson
     expect(screen.getByText('出发！')).toBeTruthy();
     fireEvent.click(next());
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false }));
@@ -60,7 +60,7 @@ describe('the story reader (spec 3c §4)', () => {
     await screen.findByText(/Saturday/);
     expect(document.querySelector('.story__sfx')?.textContent).toBe('SHHHHHHHH.');
     expect(document.querySelector('.story__face--truffle svg')).toBeTruthy();
-    expect(document.querySelector('.story__said')!.textContent).toMatch(/^Truffle“Perfect\..*”$/);
+    expect(document.querySelector('.story__said')!.textContent).toMatch(/^Truffle“Purrrrr\..*”$/);
   });
   it('splitToFit: a page too tall for the screen splits between lines; a line taller than the room gets a screen of its own', () => {
     const at = (top: number, h: number) => ({ top, bottom: top + h });
@@ -87,7 +87,7 @@ describe('the story reader (spec 3c §4)', () => {
     expect(next().hasAttribute('disabled')).toBe(false); // no voice: nothing to wait for (stage cases showed it stuck)
     const pay = await makeAppData({ voice: false, settings: owed });
     renderWithApp(<StoryScreen part="payoff" chapter={1} then={{ name: 'home' }} />, pay);
-    await screen.findByText(/said what they were/); // straight to the payoff pages
+    await screen.findByText(/You read the ghost words/); // straight to the payoff pages
     expect(document.querySelector('.story__listen')).toBeNull();
   });
   it("with a voice, Granny's English needs a tap after hearing; 听一听 asks and shows the answer after a miss", async () => {
@@ -103,7 +103,7 @@ describe('the story reader (spec 3c §4)', () => {
   it('no words today: the rescued line alone; finishing the payoff marks the chapter', async () => {
     const app = await makeAppData({ voice: false, settings: owed });
     renderWithApp(<StoryScreen part="payoff" chapter={1} then={{ name: 'home' }} />, app);
-    await screen.findByText(/Words burst out/);
+    await screen.findByText(/zoomed home/);
     expect(document.querySelectorAll('.story__chip')).toHaveLength(0);
     fireEvent.click(next());
     fireEvent.click(next());
@@ -120,7 +120,7 @@ describe('the story reader (spec 3c §4)', () => {
   it("tapping 听 on another line while Granny talks never leaves → stuck (final review I1)", async () => {
     const app = await makeAppData({ voice: true });
     renderWithApp(<StoryScreen part="setup" chapter={3} then={{ name: 'home' }} />, app);
-    await screen.findByText(/stairs/);
+    await screen.findByText(/void deck/);
     for (let i = 0; i < 3; i++) fireEvent.click(next());
     await waitFor(() => expect(document.querySelector('.story__granny')).toBeTruthy());
     const { setSpeaking } = await import('../audio/speaking');
