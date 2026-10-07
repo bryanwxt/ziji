@@ -163,9 +163,14 @@ class Spark:
             self.prompt_text = line
 
     def synth(self, text, speed):
-        self.torch.manual_seed(0)
-        wav = self.tts.inference(text, prompt_speech_path=self.prompt, prompt_text=self.prompt_text)
-        return np.asarray(wav, dtype=np.float32).reshape(-1), self.tts.sample_rate
+        for seed in range(3):  # its sampling now and then makes no speech tokens (the story paragraph, once): try again
+            self.torch.manual_seed(seed)
+            try:
+                wav = self.tts.inference(text, prompt_speech_path=self.prompt, prompt_text=self.prompt_text)
+                return np.asarray(wav, dtype=np.float32).reshape(-1), self.tts.sample_rate
+            except RuntimeError:
+                if seed == 2:
+                    raise
 
 
 ENGINES = {'kokoro': Kokoro, 'melo': Melo, 'cosyvoice2': CosyVoice, 'cosyvoice3': CosyVoice3,
