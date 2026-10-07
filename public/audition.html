@@ -18,29 +18,61 @@
   button { min-width: 46px; min-height: 46px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font-size: 20px; }
   button.on { background: var(--accent); color: #fff; }
   .fail { color: #a33; font-size: 12px; }
+  .note { background: #fff3cd; border: 1px solid #e8d48a; border-radius: 12px; padding: 10px 12px; }
+  th:not(:first-child) { min-width: 86px; }
+  td:first-child, th:first-child { position: sticky; left: 0; background: var(--bg); z-index: 1; max-width: 42vw; }
+  th:first-child { z-index: 2; }
+  th small { display: block; font-weight: normal; color: #7a6f5f; }
+  @media (max-width: 600px) { main { padding: 12px; } h1 { font-size: 22px; } th, td { padding: 6px 4px; } .zh { font-size: 19px; } }
 </style>
 </head>
 <body>
 <main>
   <h1>Which voice is clearest for him?</h1>
-  <p>Tap ▶ to listen. Rows are the hard cases: 多音字, tone changes, 儿化, a question, a story. Tell Claude the column you like best, and whether its pace should be slower or faster.</p>
+  <p class="note"><b>Turn the ringer ON</b> (silent switch off) before listening: the silent switch mutes the first column, this phone's own voice.</p>
+  <p>Tap ▶ to listen. The first column is this phone's own voice (what the app uses now); the next is the app's old recorded voice (Kokoro); the rest are other free, open-source voices. Rows are the hard cases (多音字, tone changes, 儿化, a question, a story) and lesson words heard said wrong. Scroll sideways for more voices. Tell Claude the column you like best, and whether its pace should be slower or faster.</p>
   <div class="wrap"><table id="t"></table></div>
 </main>
 <script>
+  // The phone's own voice, picked as the app picks it (src/audio/speech.ts voiceQuality / pickVoice): a downloaded Premium or
+  // Enhanced zh-CN voice first; rate 0.8, and a quarter slower for one or two characters.
+  const quality = (v) => { const id = `${v.name} ${v.voiceURI || ''}`; return /premium/i.test(id) ? 2 : /enhanced|增强|高品质|优化/i.test(id) ? 1 : 0; };
+  const pickVoice = () => {
+    const vs = 'speechSynthesis' in window ? speechSynthesis.getVoices() : [];
+    const mainland = vs.filter((v) => /^zh[-_]CN/i.test(v.lang)).sort((a, b) => quality(b) - quality(a) || Number(b.localService) - Number(a.localService));
+    return mainland[0] || vs.find((v) => /^zh/i.test(v.lang) && !/HK|TW/i.test(v.lang)) || null;
+  };
   const audio = new Audio();
+  const clear = () => document.querySelectorAll('button.on').forEach((x) => x.classList.remove('on'));
+  const phoneHead = () => { const v = pickVoice(); return `This phone's voice<small>${v ? v.name + (quality(v) ? (quality(v) === 2 ? ' (Premium)' : ' (Enhanced)') : '') : 'no Chinese voice found'}</small>`; };
+  function speak(text, b) {
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN';
+    const v = pickVoice(); if (v) u.voice = v;
+    const han = Array.from(text).filter((c) => /\p{Script=Han}/u.test(c)).length;
+    u.rate = han > 0 && han <= 2 ? 0.6 : 0.8;
+    u.onend = u.onerror = () => b.classList.remove('on');
+    speechSynthesis.speak(u);
+  }
   fetch('audio/audition/manifest.json', { cache: 'no-store' }).then((r) => r.json()).then(({ items, voices }) => {
     const t = document.getElementById('t');
-    t.innerHTML = '<tr><th>Item</th>' + voices.map((v) => `<th>${v.name}</th>`).join('') + '</tr>' + items.map((it) =>
+    t.innerHTML = `<tr><th>Item</th><th id="phone">${phoneHead()}</th>` + voices.map((v) => `<th>${v.name.replace(/, /, '<small>') + '</small>'}</th>`).join('') + '</tr>' + items.map((it) =>
       `<tr><td><div class="zh">${it.text}</div><div class="py">${it.expected} · ${it.label}</div></td>` +
+      `<td><button data-say="${it.phoneText || it.text}" aria-label="This phone's voice ${it.text}">▶</button></td>` +
       voices.map((v) => v.ok.includes(it.id)
         ? `<td><button data-src="audio/audition/${v.dir}/${it.id}.m4a" aria-label="${v.name} ${it.text}">▶</button></td>`
         : `<td class="fail">${v.failed[it.id] ? 'failed' : '—'}</td>`).join('') + '</tr>').join('');
+    if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { document.getElementById('phone').innerHTML = phoneHead(); };
     t.addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
-      document.querySelectorAll('button.on').forEach((x) => x.classList.remove('on'));
-      b.classList.add('on'); audio.src = b.dataset.src; audio.play();
+      clear(); b.classList.add('on');
+      audio.pause();
+      if ('speechSynthesis' in window && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel();
+      if (b.dataset.say) speak(b.dataset.say, b);
+      else { audio.src = b.dataset.src; audio.play(); }
     });
-    audio.onended = () => document.querySelectorAll('button.on').forEach((x) => x.classList.remove('on'));
+    audio.onended = clear;
   }).catch(() => { document.getElementById('t').innerHTML = '<tr><td>No audition yet: the workflow is still running.</td></tr>'; });
 </script>
 </body>

@@ -1,7 +1,8 @@
-// The voice audition (spec 2026-10-06 §4): the same 20 hard items from each engine, for the parent to listen to on the iPad.
+// The voice audition (spec 2026-10-06 §4): the same hard items from each engine, for the parent to listen to on the iPad.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import { pinyin } from 'pinyin-pro';
+import { CUT_FROM_SENTENCE } from './inventory';
 import { engineText, type ClipJob, type ClipKind } from './inventory-lib';
 
 const sentence = (t: string) => pinyin(t, { type: 'array', nonZh: 'removed' }).join(' ');
@@ -30,12 +31,32 @@ export const AUDITION = [
   S('a18', 'A question (rising, friendly)', '你今天在学校做了什么？'),
   S('a19', '听写 cue: cháng, as a teacher says it', '长，长城的长'),
   S('a20', 'A story paragraph', '小猫看见一条小鱼在水里游来游去。它想：“我要是能抓到它就好了！”可是小鱼太快了，小猫怎么也抓不到。'),
+  // lesson items the parent heard said wrong (2026-10-08)
+  W('b01', 'Lesson: 五 on its own', '五', 'wǔ'),
+  W('b02', 'Lesson: 五星级', '五星级', 'wǔ xīng jí'),
+  W('b03', 'Lesson: 五颜六色', '五颜六色', 'wǔ yán liù sè'),
+  W('b04', 'Lesson: 五花八门', '五花八门', 'wǔ huā bā mén'),
+  W('b05', 'Lesson: 衣 on its own', '衣', 'yī'),
+  W('b06', 'Lesson: 鱼 on its own', '鱼', 'yú'),
+  W('b07', 'Lesson: 金鱼', '金鱼', 'jīn yú'),
+  W('b08', 'Lesson: 小鱼', '小鱼', 'xiǎo yú'),
+  W('b09', 'Lesson: 大衣', '大衣', 'dà yī'),
 ];
 
-export function auditionJobs(): (ClipJob & { label: string })[] {
+/**
+ * Each item given to the engines the way the inventory gives it (scripts/audio/inventory.ts): a word or character ends in 。,
+ * and one in CUT_FROM_SENTENCE is cut from a sentence by an engine that can (Kokoro); any other says it ending in 。
+ * (sayText). phoneText is what the iPad voice is given (the 多音字 swap, no 。).
+ */
+export function auditionJobs(): (ClipJob & { label: string; phoneText: string; sayText?: string })[] {
   return AUDITION.map((a) => {
     const e = a.kind === 'sentence' ? { text: a.text, sure: true } : engineText(a.text, a.expected);
-    return { ...a, key: a.id, engineText: e.text, sure: e.sure };
+    const ended = a.kind === 'sentence' || /[。！？]$/.test(e.text) ? e.text : `${e.text}。`;
+    const cut = a.kind !== 'sentence' && CUT_FROM_SENTENCE.has(a.text);
+    return {
+      ...a, key: a.id, phoneText: e.text, sure: e.sure,
+      ...(cut ? { engineText: e.text, method: 'cut' as const, sayText: ended } : { engineText: ended }),
+    };
   });
 }
 

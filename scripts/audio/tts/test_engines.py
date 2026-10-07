@@ -37,6 +37,18 @@ class EnginesTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             render(SayOnly(), {'engineText': '一起', 'kind': 'word', 'method': 'cut'}, 1.0)
 
+    def test_render_cut_falls_back_to_say_text(self):
+        class SayOnly:
+            def __init__(self):
+                self.said = []
+
+            def synth(self, text, speed):
+                self.said.append(text)
+                return [0.0], 24000
+        e = SayOnly()
+        render(e, {'engineText': '鱼', 'sayText': '鱼。', 'kind': 'char', 'method': 'cut'}, 1.0)
+        self.assertEqual(e.said, ['鱼。'])
+
 
 if __name__ == '__main__':
     unittest.main()

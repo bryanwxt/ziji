@@ -20,7 +20,7 @@ import soundfile as sf
 
 sys.path.insert(0, os.path.dirname(__file__))
 from check import flag, han_count  # noqa: E402
-from engines import make_engine  # noqa: E402
+from engines import ENGINES, make_engine  # noqa: E402
 
 
 def tidy(audio, rate):
@@ -37,8 +37,11 @@ def tidy(audio, rate):
 
 
 def render(engine, job, speed):
-    """(audio, rate) for one job: said as given, or (method 'cut') said at the end of a sentence and cut back out."""
+    """(audio, rate) for one job: said as given, or (method 'cut') said at the end of a sentence and cut back out. An
+    engine that can't cut says the job's sayText instead, when it has one (the audition's)."""
     if job.get('method') == 'cut':
+        if not hasattr(engine, 'synth_cut') and job.get('sayText'):
+            return engine.synth(job['sayText'], speed)
         if not hasattr(engine, 'synth_cut'):
             raise ValueError(f"{job['engineText']}: this engine can't cut a word from a sentence")
         return engine.synth_cut(job['engineText'], speed)
@@ -49,11 +52,16 @@ def to_aac(wav, out):
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', wav, '-ac', '1', '-ar', '24000', '-c:a', 'aac', '-b:a', '40k', out], check=True)
 
 
+def save(out, results):
+    with open(os.path.join(out, 'results.json'), 'w', encoding='utf-8') as f:
+        json.dump(results, f, ensure_ascii=False)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--jobs', required=True)
     ap.add_argument('--out', required=True)
-    ap.add_argument('--engine', required=True, choices=['kokoro', 'melo', 'cosyvoice'])
+    ap.add_argument('--engine', required=True, choices=sorted(ENGINES))
     ap.add_argument('--voice', required=True)
     ap.add_argument('--speed-word', type=float, default=1.0)
     ap.add_argument('--speed-sentence', type=float, default=1.0)
@@ -87,11 +95,11 @@ def main():
             except Exception as e:  # one bad line never stops the run
                 r = {'id': job['id'], 'ok': False, 'error': f'{type(e).__name__}: {e}'[:300]}
             results.append(r)
-            if i % 100 == 0:
-                print(f'{i}/{len(jobs)}', flush=True)
+            if i % 100 == 0 or len(jobs) < 100:
+                print(f"{i}/{len(jobs)} {r['id']} {'ok' if r['ok'] else r['error']} {r.get('seconds', '')}", flush=True)
+                save(args.out, results)  # a run cut short (a slow engine timing out) keeps what it made
 
-    with open(os.path.join(args.out, 'results.json'), 'w', encoding='utf-8') as f:
-        json.dump(results, f, ensure_ascii=False)
+    save(args.out, results)
     print(f"done: {sum(r['ok'] for r in results)}/{len(results)} ok", flush=True)
 
 

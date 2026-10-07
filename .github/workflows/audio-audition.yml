@@ -1,5 +1,10 @@
 name: Audio audition
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      engines:
+        description: Engines to (re)make; the others keep their clips from the last audition
+        default: kokoro cosyvoice2 cosyvoice3 indextts2 indextts25 spark
 
 permissions:
   contents: write
@@ -8,7 +13,17 @@ permissions:
 jobs:
   items:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
+      - id: matrix
+        env:
+          ENGINES: ${{ inputs.engines }}
+        run: |
+          # each engine and its voices (Spark: a copy of the shared prompt voice, and its own made-up woman's voice)
+          all='[{"engine":"kokoro","voices":"v1.1/zf_002"},{"engine":"cosyvoice2","voices":"ref"},{"engine":"cosyvoice3","voices":"ref"},
+            {"engine":"indextts2","voices":"ref"},{"engine":"indextts25","voices":"ref"},{"engine":"spark","voices":"ref female"}]'
+          echo "matrix=$(jq -c --arg e "$ENGINES" '{include: [.[] | select(.engine as $x | $e | split(" ") | index($x))]}' <<<"$all")" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
@@ -20,33 +35,35 @@ jobs:
   synth:
     needs: items
     runs-on: ubuntu-latest
-    timeout-minutes: 120
-    continue-on-error: true
+    timeout-minutes: 200
+    continue-on-error: true  # one engine failing never blocks the page
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - engine: kokoro
-            voices: "v1.1/zf_001 v1.1/zf_002 v1.1/zm_010 v1.0/zf_xiaoxiao v1.0/zf_xiaobei v1.0/zm_yunxi"
-          - engine: melo
-            voices: "ZH"
-          - engine: cosyvoice
-            voices: "default"
+      matrix: ${{ fromJSON(needs.items.outputs.matrix) }}  # kokoro is the app's current voice, for reference
     steps:
       - uses: actions/checkout@v4
+      - name: Room for the big models
+        if: matrix.engine != 'kokoro'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost &
+          wait; df -h /
       - uses: actions/setup-python@v5
         with: { python-version: '3.10' }
       - uses: actions/download-artifact@v4
         with: { name: audition-jobs, path: build/audio }
       - run: bash scripts/audio/tts/setup.sh ${{ matrix.engine }}
-      - name: Say the 20 items in each voice
+        timeout-minutes: 60
+      - name: Say the items in each voice
+        timeout-minutes: 120  # a slow engine stops here and keeps the clips it made (results.json is saved as it goes)
         run: |
+          df -h / && free -g
           for v in ${{ matrix.voices }}; do
             dir="out/${{ matrix.engine }}-${v//\//-}"
             python scripts/audio/tts/synth.py --jobs build/audio/audition-jobs.json --out "$dir" \
               --engine ${{ matrix.engine }} --voice "$v" || echo "::warning::${{ matrix.engine }} $v failed to start"
           done
       - uses: actions/upload-artifact@v4
+        if: always()
         with: { name: 'audition-${{ matrix.engine }}', path: out, if-no-files-found: ignore }
 
   publish:
