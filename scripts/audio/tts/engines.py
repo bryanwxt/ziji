@@ -1,5 +1,6 @@
 """Open TTS engines behind one call: synth(text, speed) -> (float32 mono samples, sample rate)."""
 import os
+import re
 import sys
 
 import numpy as np
@@ -163,11 +164,21 @@ class Spark:
             self.prompt_text = line
 
     def synth(self, text, speed):
+        """A long passage is said a sentence at a time (its own voice made no speech for the whole story paragraph)."""
+        parts = [p for p in re.findall(r'[^。！？]+[。！？”]*', text) if p.strip()] if len(text) > 30 else [text]
+        rate = self.tts.sample_rate
+        gap = np.zeros(int(0.25 * rate), dtype=np.float32)
+        out = []
+        for p in parts:
+            out += [self._say(p), gap]
+        return np.concatenate(out[:-1]), rate
+
+    def _say(self, text):
         for seed in range(3):  # its sampling now and then makes no speech tokens (the story paragraph, once): try again
             self.torch.manual_seed(seed)
             try:
                 wav = self.tts.inference(text, prompt_speech_path=self.prompt, prompt_text=self.prompt_text)
-                return np.asarray(wav, dtype=np.float32).reshape(-1), self.tts.sample_rate
+                return np.asarray(wav, dtype=np.float32).reshape(-1)
             except RuntimeError:
                 if seed == 2:
                     raise
