@@ -260,3 +260,19 @@ describe('cards that teach (spec 2026-10-12 §3)', () => {
     expect(reducedBlocks.some((b) => /\*, \*::before, \*::after \{ animation: none !important;/.test(b))).toBe(true);
   });
 });
+
+describe('the why-line never outranks the right answer (review, 2026-10-12)', () => {
+  const px = (re: RegExp, from = 0) => Number(re.exec(css.slice(from))![1]);
+  it('its characters and syllables are no bigger than the answer line, normally and compact', () => {
+    const answer = px(/\n\.sheet__en-zh \{[^}]*font-size: (\d+)px/);
+    expect(px(/\.sheet__detail \.why \.hanzi \{ font-size: (\d+)px/)).toBeLessThanOrEqual(answer);
+    expect(px(/\n\.why__syl \{ font-size: (\d+)px/)).toBeLessThanOrEqual(answer);
+    const compactAt = css.indexOf('\n  .sheet__en-zh { font-size:');
+    const compactAnswer = px(/\.sheet__en-zh \{ font-size: (\d+)px/, compactAt);
+    expect(px(/\.sheet__detail \.why \.hanzi, \.why__syl \{ font-size: (\d+)px/, compactAt)).toBeLessThanOrEqual(compactAnswer);
+  });
+  it('the fade ends at the pinyin\'s resting opacity, not 1', () => {
+    expect(css).toMatch(/@keyframes later-in \{ from \{ opacity: 0; \} to \{ opacity: var\(--rest, 1\); \} \}/);
+    expect(css).toMatch(/\.label__py \{ --rest: \.75; \}/);
+  });
+});
