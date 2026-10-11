@@ -162,6 +162,22 @@ describe('SessionScreen', () => {
     await waitFor(() => expect(introWord()).toBeTruthy());
     expect(introWord()).not.toBe(paused);
   });
+  it('认新字 says which lesson a new word is from: 补 for catch-up (spec 2026-10-11 §9)', async () => {
+    const app = await setup(); // 2026-10-02: his class is on 二下·16, so today brings 衣 (一上·1) and 茄 (二下·15)
+    renderWithApp(<SessionScreen free={false} />, app);
+    await waitFor(() => expect(introWord()).toBe('衣'));
+    expect(document.querySelector('.intro__tag')?.textContent).toBe('补 一上·1');
+    expect((await getSession(app.db, '2026-10-02'))!.plan.newWordLanes).toEqual({ 'b:衣': 'catchup', 'b:茄': 'school' });
+  });
+  it('a lesson saved before lanes resumes with no label (review focus 3)', async () => {
+    const app = await setup();
+    const he = byText.get('河')!;
+    const saved = { ...createSessionRecord({ steps: ['newwords'], reviewWordIds: [], newWordIds: [he.id], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 }, '2026-10-02', 0), activeMs: 1 };
+    await saveSession(app.db, saved);
+    renderWithApp(<SessionScreen free={false} />, app);
+    await waitFor(() => expect(introWord()).toBe('河'));
+    expect(document.querySelector('.intro__tag')).toBeNull();
+  });
 });
 
 describe('meaning practice in the lesson', () => {

@@ -558,3 +558,13 @@ describe('the new-word card reads every row (parent, 2026-10-05: only the first 
     expect(vi.mocked(speak).mock.calls.slice(1).every(([, o]) => (o as { queue?: boolean })?.queue)).toBe(true);
   });
 });
+
+describe('the lesson label on the 认新字 card (spec 2026-10-11 §9)', () => {
+  it('shows the label it is given, and none without one', () => {
+    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} lessonTag="课本 二下·17" />);
+    expect(document.querySelector('.intro__card .intro__tag')?.textContent).toBe('课本 二下·17');
+    cleanup();
+    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.intro__tag')).toBeNull();
+  });
+});

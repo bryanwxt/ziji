@@ -217,6 +217,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius-lg); box-shadow: 0 6px 0 var(--line);
   padding: 22px 44px; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: rise-in var(--dur-slow) var(--spring) backwards;
 }
+/* 认新字's lesson label (spec 2026-10-11 §9): small and quiet, above the character; 16px, the smallest Chinese the fit check allows */
+.intro__tag { margin: 0 0 -4px; align-self: flex-start; font-family: var(--hanzi); font-size: 16px; line-height: 1.2; color: var(--ink-soft); }
 .parts { font-size: 28px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-family: var(--hanzi); }
 .part--radical { color: var(--blue); }
 /* English on the 认字 card (parent, 2026-10-04): small, quiet, one line each */
