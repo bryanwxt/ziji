@@ -1492,3 +1492,5 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 /* six options (spec 2026-10-11 §3): three across, so the two rows take the height four did */
 .choices--six, .stage__card .choices--six { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 720px); max-width: 720px; }
+
+.week__day.is-rest .week__dot { border-style: dashed; background: color-mix(in srgb, var(--gold) 35%, var(--surface)); } /* 休息日: forgiven, not finished (spec 2026-10-11 §5) */

@@ -3,7 +3,7 @@ import { Rating } from 'ts-fsrs';
 import { createSessionRecord } from '../session/runner';
 import { makeCard, makeWord } from '../test/fixtures';
 import type { ReviewLog, SessionPlan, SessionRecord } from '../types';
-import { dueTomorrow, minutesPerDay, starsOf, streak, summarize, totalStars, troubleWords, weekDays, weeklyAccuracy } from './stats';
+import { dueTomorrow, minutesPerDay, starsOf, streak, streakDays, summarize, totalStars, troubleWords, weekDays, weeklyAccuracy } from './stats';
 
 const emptyPlan: SessionPlan = { steps: [], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 };
 const session = (date: string, over: Partial<SessionRecord> = {}): SessionRecord => ({ ...createSessionRecord(emptyPlan, date, 0), completed: true, ...over });
@@ -30,15 +30,37 @@ describe('summarize', () => {
 });
 
 describe('streak', () => {
+  // Mon 09-28 missed: that week's rest day, so Sun 09-27 still counts (spec 2026-10-11 §5)
   const sessions = [session('2026-09-29'), session('2026-09-30'), session('2026-10-01'), session('2026-09-27')];
-  it('counts consecutive completed days up to yesterday while today is not done', () => {
-    expect(streak(sessions, '2026-10-02')).toBe(3);
+  it('counts completed days up to yesterday while today is not done, over one rest day', () => {
+    expect(streakDays(sessions, '2026-10-02')).toEqual({ count: 4, rest: ['2026-09-28'] });
   });
   it('includes today once it is done', () => {
-    expect(streak([...sessions, session('2026-10-02')], '2026-10-02')).toBe(4);
+    expect(streak([...sessions, session('2026-10-02')], '2026-10-02')).toBe(5);
   });
   it('ignores unfinished sessions', () => {
     expect(streak([session('2026-10-01', { completed: false })], '2026-10-02')).toBe(0);
+  });
+});
+
+describe('the rest day (spec 2026-10-11 §5)', () => {
+  const s = (date: string) => session(date);
+  it('one missed day a week is forgiven, and does not add to the count', () => {
+    expect(streakDays([s('2026-09-29'), s('2026-10-01')], '2026-10-02')).toEqual({ count: 2, rest: ['2026-09-30'] });
+  });
+  it('a second missed day in the same week ends the streak', () => {
+    expect(streakDays([s('2026-09-28'), s('2026-10-01')], '2026-10-02')).toEqual({ count: 1, rest: [] });
+  });
+  it('each calendar week has its own: a missed Sunday and Monday are both forgiven', () => {
+    expect(streakDays([s('2026-09-26'), s('2026-09-29')], '2026-09-30')).toEqual({ count: 2, rest: ['2026-09-28', '2026-09-27'] });
+  });
+  it('a missed day with no lesson before it is not a rest day', () => {
+    expect(streakDays([], '2026-10-02')).toEqual({ count: 0, rest: [] });
+    expect(streakDays([s('2026-10-01')], '2026-10-02')).toEqual({ count: 1, rest: [] });
+  });
+  it('the week strip marks the rest day', () => {
+    const days = weekDays([s('2026-09-28'), s('2026-09-30')], '2026-10-01');
+    expect(days.map((d) => d.rest)).toEqual([false, true, false, false, false, false, false]);
   });
 });
 
