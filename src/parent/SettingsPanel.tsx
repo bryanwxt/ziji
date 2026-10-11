@@ -117,6 +117,13 @@ export function SettingsPanel() {
         </label>
         <p class="hint">In 练一练 he reads some words aloud (about one in three, at most 6 a lesson). You confirm his takes under Listen &amp; confirm; a word he can say counts toward his stars and Progress. Off: 练一练 is taps only.</p>
       </div>
+      <div class="field">
+        <label>
+          <input type="checkbox" checked={s.fadePinyin !== false} onChange={(e) => void save({ fadePinyin: e.currentTarget.checked })} />{' '}
+          拼音渐隐 Fade pinyin
+        </label>
+        <p class="hint">Pinyin hides over characters he already reads; he taps one to see it for 3 seconds. New characters, pinyin answer choices and the answer after a miss always show it. Off: pinyin over every character, as before.</p>
+      </div>
       <details class="field">
         <summary>Advanced: test speech recognition (for future auto-hints on misread characters)</summary>
         <AsrTest />
