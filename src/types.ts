@@ -1,4 +1,5 @@
 import type { IconName } from './ui/icons/icons';
+import type { Course } from './content';
 import type { WriteItem } from './session/writing';
 import { DEFAULT_FINDS, type Finds } from './fun/finds';
 import type { Card as FsrsCard, Grade } from 'ts-fsrs';
@@ -232,6 +233,9 @@ export interface ReadingState {
 
 export const DEFAULT_READING: ReadingState = { passageId: null, days: 0, extra: 0, lastDay: null, lastRead: {}, warmups: 0 };
 
+/** The parent's correction of where his class is (spec 2026-10-11 §4): the lesson on the day it was set. */
+export interface ClassLessonSetting { term: string; lesson: number; setAt: number }
+
 export interface Settings {
   pinHash: string | null;
   sessionMinutes: number;
@@ -249,10 +253,11 @@ export interface Settings {
   ladderMigrated?: boolean; // his cards moved onto the word ladder (spec 2026-10-06 §3.6)
   grade?: number; // his school year (P1 = 1): which MOE term's targets apply (spec 2026-10-06 §3.4)
   gradeYear?: number; // the calendar year `grade` was set in: the school year goes up each January from there (a yardstick, never a cap)
+  classLesson?: ClassLessonSetting | null; // the parent's "class is on" (spec 2026-10-11 §4): carries at the calendar's pace, lapses next semester; null/absent: the estimate
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
   langdu: boolean; // 朗读 is parked too (parent, 2026-10-05: "not very useful at the moment"): off by default, no parent switch yet
-  course?: 'cl' | 'hcl'; // 华文 or 高级华文: which 识写字 he practises writing (both read the same characters); absent: 'cl'
-  contentCourse?: 'cl' | 'hcl'; // the course the stored built-in words were written for
+  course?: Course; // 华文, 高级华文 or both lists: which 识写字 he practises writing (both read the same characters); absent: 'cl'
+  contentCourse?: Course; // the course the stored built-in words were written for
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
   recordedVoice?: boolean; // speak with the generated clips (Kokoro); absent/false: the iPad/iPhone voice (parent 2026-10-08: the clips sounded worse)
   placementResult?: PlacementResult;

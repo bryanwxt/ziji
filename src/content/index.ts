@@ -46,11 +46,15 @@ const MOE_LESSONS = (moe as { lessons: { term: string; lesson: number; read: str
 const MOE_ORDER = new Map<string, number>();
 const MOE_TERM = new Map<string, string>();
 for (const l of MOE_LESSONS) for (const ch of Array.from(l.read)) if (!MOE_ORDER.has(ch)) { MOE_ORDER.set(ch, MOE_ORDER.size); MOE_TERM.set(ch, l.term); }
-/** The 识写字 of his course: 华文 (CL) or 高级华文 (HCL, which writes more: 435 by the end of P2 to CL's 350). Both read the same. */
-export type Course = 'cl' | 'hcl';
+/**
+ * The 识写字 of his course: 华文 (CL), 高级华文 (HCL, which writes more: 435 by the end of P2 to CL's 350), or both lists (spec
+ * 2026-10-11 §6: the default). All read the same.
+ */
+export type Course = 'cl' | 'hcl' | 'both';
 const MOE_WRITE: Record<Course, Set<string>> = {
   cl: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.write))),
   hcl: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.writeHcl))),
+  both: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.write + l.writeHcl))),
 };
 /** His textbook's terms in order (P1 上 … P3 下). */
 export const MOE_TERMS = ['一上', '一下', '二上', '二下', '三上', '三下'];
@@ -60,7 +64,7 @@ export function moeTargets(term: string, course: Course): { read: number; write:
   if (upTo < 0) return null;
   const lessons = MOE_LESSONS.filter((l) => MOE_TERMS.indexOf(l.term) <= upTo);
   const read = new Set(lessons.flatMap((l) => Array.from(l.read)));
-  const write = new Set(lessons.flatMap((l) => Array.from(course === 'hcl' ? l.writeHcl : l.write)));
+  const write = new Set(lessons.flatMap((l) => Array.from(course === 'hcl' ? l.writeHcl : course === 'both' ? l.write + l.writeHcl : l.write)));
   return { read: read.size, write: write.size };
 }
 const schoolRank = (c: BuiltinChar): number => MOE_ORDER.get(c.char) ?? MOE_ORDER.size + c.rank;

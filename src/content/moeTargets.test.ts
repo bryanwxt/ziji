@@ -13,4 +13,7 @@ describe('MOE targets to date (spec 2026-10-06 §3.4)', () => {
   it('beyond the lists: none', () => {
     expect(moeTargets('四上', 'cl')).toBeNull();
   });
+  it('both tracks write every character on either list (spec 2026-10-11 §6)', () => {
+    expect(moeTargets('二下', 'both')).toEqual({ read: 746, write: 435 });
+  });
 });
