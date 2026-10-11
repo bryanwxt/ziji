@@ -4,8 +4,9 @@ import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { loadKnowledge } from '../app/knowledge';
 import { classLessonAt, courseOf, gradeTerms, lessonLabel, listedBy, schoolYear, termChars, termLessons } from '../content/curriculum';
-import { hanChars, MOE_TERMS } from '../content';
-import type { Knowledge } from '../stats/stats';
+import { MOE_TERMS } from '../content';
+import { wordOf, type Knowledge } from '../stats/stats';
+import { produceChars } from '../stats/produce';
 import type { Settings } from '../types';
 import { weeklyTrend } from './progress';
 
@@ -33,9 +34,11 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
   const target = end === undefined ? null : listedBy(end, course);
   const classAt = classLessonAt(now, settings);
   const atClass = classAt === null ? null : listedBy(classAt, course);
-  const written = new Set(know.cards.filter((c) => c.kind === 'write' && c.passed).flatMap((c) => hanChars(know.wordsById.get(c.wordId)?.text ?? '')));
+  // can produce (spec 2026-10-11 §3): he writes it (write passed) or says it (Say passed); a 词语 said counts for itself only
+  const { write: written, say: said } = produceChars(know.cards, (id) => wordOf(know, id));
   const read = target ? count(know.knownChars, target.read) : know.known;
   const wrote = target ? count(written, target.write) : know.written;
+  const says = target ? count(said, target.read) : said.size;
   const terms = end === undefined ? [] : MOE_TERMS.slice(0, MOE_TERMS.indexOf(endTerm) + 1);
   const trend = weeklyTrend(know.cards, 'recognise', now);
   return (
@@ -45,6 +48,7 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
       <dl class="progress__counts">
         <dt>Characters recognised</dt><dd>{target ? `${read} of ${target.read.size} by the end of ${endTerm}` : know.known}</dd>
         <dt>Characters written</dt><dd>{target ? `${wrote} of ${target.write.size}` : know.written}</dd>
+        <dt>Characters he can say</dt><dd>{target ? `${says} of ${target.read.size}` : says}</dd>
         <dt>Heard (understands it by ear)</dt><dd>{know.heard}</dd>
         <dt>Understood in a sentence</dt><dd>{know.understood}</dd>
         <dt>Read</dt><dd>{know.read}</dd>
@@ -54,8 +58,9 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
       {target && (
         <div class="progress__bars">
           {classAt !== null && <p class="muted">The mark is where his class is now: {lessonLabel(classAt)}.</p>}
-          <Bar label="认读" have={read} of={target.read.size} mark={atClass ? atClass.read.size : null} />
-          <Bar label="写" have={wrote} of={target.write.size} mark={atClass ? atClass.write.size : null} />
+          <Bar label="认读 reads (taps)" have={read} of={target.read.size} mark={atClass ? atClass.read.size : null} />
+          <Bar label="会写 Can write" have={wrote} of={target.write.size} mark={atClass ? atClass.write.size : null} />
+          <Bar label="会说 Can say" have={says} of={target.read.size} mark={atClass ? atClass.read.size : null} />
         </div>
       )}
       {terms.length > 0 && (

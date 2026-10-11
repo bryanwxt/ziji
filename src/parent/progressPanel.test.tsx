@@ -5,7 +5,7 @@ import { summarize } from '../stats/stats';
 import { DEFAULT_SETTINGS } from '../types';
 import { makeCard, makeWord } from '../test/fixtures';
 
-const passed = (wordId: string, kind: 'recognise' | 'hear' | 'write') => ({ ...makeCard(wordId, kind, new Date()), passed: 1 });
+const passed = (wordId: string, kind: 'recognise' | 'hear' | 'write' | 'say') => ({ ...makeCard(wordId, kind, new Date()), passed: 1 });
 
 describe('the Progress tab (spec 2026-10-06 §3.4)', () => {
   it('shows characters recognised against the MOE target to date, and words heard, read, used, owned', () => {
@@ -34,8 +34,8 @@ describe('the Progress tab against his book (spec 2026-10-11 §8)', () => {
     show();
     expect(screen.getByText(/where his class is now: 二下·17/)).toBeTruthy();
     const marks = [...document.querySelectorAll<HTMLElement>('.pbar__mark')].map((m) => m.style.left);
-    expect(marks).toEqual(['94.8%', '94.9%']);
-    expect(screen.getByRole('img', { name: '认读: 1 of 746; his class is at 707' })).toBeTruthy();
+    expect(marks).toEqual(['94.8%', '94.9%', '94.8%']);
+    expect(screen.getByRole('img', { name: '认读 reads (taps): 1 of 746; his class is at 707' })).toBeTruthy();
   });
   it('a row per term from 一上 to the end of his year: still to read and still to write', () => {
     show();
@@ -48,5 +48,16 @@ describe('the Progress tab against his book (spec 2026-10-11 §8)', () => {
     show({ grade: 4 });
     expect(document.querySelector('.pbar')).toBeNull();
     expect(document.querySelector('.progress__terms')).toBeNull();
+  });
+});
+
+describe('can write and can say (spec 2026-10-11 §6)', () => {
+  it('bars next to reads (taps): characters he writes against the write list, characters he says against the read list', () => {
+    const know = summarize([makeWord('门'), makeWord('介'), makeWord('大'), makeWord('门口', { id: 'w:门口' })], [passed('b:门', 'recognise'), passed('b:门', 'write'), passed('b:门', 'say'), passed('b:大', 'say'), passed('w:门口', 'say')]);
+    render(<ProgressPanel know={know} settings={{ ...DEFAULT_SETTINGS, grade: 2, gradeYear: 2026 }} now={new Date('2026-10-11T09:00:00')} />);
+    expect([...document.querySelectorAll('.pbar__label')].map((l) => l.textContent)).toEqual(['认读 reads (taps)', '会写 Can write', '会说 Can say']);
+    expect(screen.getByRole('img', { name: '会写 Can write: 1 of 435; his class is at 413' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '会说 Can say: 2 of 746; his class is at 707' })).toBeTruthy(); // 门 and 大; 门口 counts for itself, not its characters
+    expect(screen.getByText('2 of 746')).toBeTruthy();
   });
 });
