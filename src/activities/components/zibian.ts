@@ -7,7 +7,7 @@ export interface ZibianItem { wordId: string; word: string; index: number; answe
 
 export const zibianCount = (minutes: number) => (minutes < 25 ? 4 : 6);
 const MIN_ITEMS = 4;
-const TRIVIAL = new Set(['一', '丨', '丶', '丿', '乙', '亅', '二', '十', '口', '人', '亻']); // parts so common that sharing one says nothing
+export const TRIVIAL: ReadonlySet<string> = new Set(['一', '丨', '丶', '丿', '乙', '亅', '二', '十', '口', '人', '亻']); // parts so common that sharing one says nothing
 
 const strokes = new Map(BUILTIN.map((c) => [c.char, c.strokes]));
 const level = new Map(BUILTIN.map((c) => [c.char, c.level]));
