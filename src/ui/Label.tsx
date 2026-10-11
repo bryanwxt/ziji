@@ -1,20 +1,25 @@
 import { pinyin } from 'pinyin-pro';
 import '../content/pinyinFixes';
-import { useMemo } from 'preact/hooks';
+import { useContext, useMemo, useRef } from 'preact/hooks';
+import { speak } from '../audio/speech';
+import { PinyinFadeContext } from './pinyinFade';
 
 interface Cell {
-  py: string;
+  py: string; // its syllable, kept even when hidden (a peek shows it)
   ch: string;
   blank?: boolean;
   zh?: boolean; // a Han character (keeps its slot even when its pinyin is hidden)
+  hidden?: boolean; // its pinyin is faded: he reads it (spec 2026-10-12 §4)
 }
 
 const BLANK = '＿';
 /** The text as a screen reader should say it: a blank is 空格, not "full-width low line". */
 export const spokenBlanks = (zh: string) => zh.replaceAll(BLANK, '空格');
 
+let labels = 0; // each Label's own number: one peek shows at a time across the lesson screen
+
 /** Chinese text with each syllable shown small directly above its own character, for a P2 reader. */
-export function Label({ zh, py: given, pinyinFor, mark }: {
+export function Label({ zh, py: given, pinyinFor, mark, fade = false, peek = true }: {
   zh: string;
   /** Han characters to highlight, as [first, count] counted in Han characters (the word inside a usage line) */
   mark?: [number, number];
@@ -22,7 +27,15 @@ export function Label({ zh, py: given, pinyinFor, mark }: {
   py?: string;
   /** which characters show their pinyin (all when omitted) — for fading pinyin as he learns */
   pinyinFor?: (ch: string) => boolean;
+  /** a line inside a question (spec 2026-10-12 §4): under a <PinyinFade>, characters he reads lose their pinyin, slot kept */
+  fade?: boolean;
+  /** false inside a button (a usage option, a placed 组句 tile): a tap there answers, so it never peeks */
+  peek?: boolean;
 }) {
+  const fader = useContext(PinyinFadeContext);
+  const own = useRef(0);
+  if (!own.current) own.current = ++labels;
+  const showFor = pinyinFor ?? (fade && fader ? fader.show : undefined);
   const { cells, py } = useMemo(() => {
     const out: Cell[] = [];
     const all = pinyin(zh, { type: 'all' });
@@ -35,7 +48,7 @@ export function Label({ zh, py: given, pinyinFor, mark }: {
     for (const d of all) {
       if (d.isZh) {
         const syl = fits || withBlanks ? ctx[k++]! : d.pinyin;
-        out.push({ py: !pinyinFor || pinyinFor(d.origin) ? syl : '', ch: d.origin, zh: true });
+        out.push({ py: syl, ch: d.origin, zh: true, ...(showFor && !showFor(d.origin) ? { hidden: true } : {}) });
         continue;
       }
       // pinyin-pro may hand a run like "＿！" over as one piece; split out each blank. Spaces around a number go: its own
@@ -47,10 +60,13 @@ export function Label({ zh, py: given, pinyinFor, mark }: {
         else out.push({ py: '', ch: part });
       }
     }
-    // data-py: the syllables plus any numbers or Latin text, without punctuation
-    const py = out.map((c) => (c.zh ? c.py : !c.blank && /[\p{L}\p{N}]/u.test(c.ch) ? c.ch.trim() : '')).filter(Boolean).join(' ');
+    // data-py: the syllables shown plus any numbers or Latin text, without punctuation
+    const py = out.map((c) => (c.zh ? (c.hidden ? '' : c.py) : !c.blank && /[\p{L}\p{N}]/u.test(c.ch) ? c.ch.trim() : '')).filter(Boolean).join(' ');
     return { cells: out, py };
-  }, [zh, given, pinyinFor]);
+  }, [zh, given, showFor]);
+  const canPeek = fade && peek && !pinyinFor && !!fader;
+  const open = canPeek ? fader!.peeked : null;
+  const peeked = open && open.label === own.current ? open.cell : -1;
   let han = -1;
   const marked = (c: Cell) => !!mark && !!c.zh && (++han, han >= mark[0] && han < mark[0] + mark[1]);
   return (
@@ -58,12 +74,16 @@ export function Label({ zh, py: given, pinyinFor, mark }: {
       {/* one cell already reads as the whole text; several get a single readable copy so 你好 isn't read 你…好 */}
       {cells.length > 1 && <span class="sr-only">{spokenBlanks(zh)}</span>}
       <span class="label__cells" aria-hidden={cells.length > 1 ? 'true' : undefined}>
-        {cells.map((c, i) => (
-          <span key={i} class={`${c.blank ? 'label__cell label__cell--blank' : c.zh ? 'label__cell label__cell--zh' : 'label__cell'}${marked(c) ? ' label__cell--mark' : ''}`}>
-            <small class="label__py" aria-hidden="true">{c.py}</small>
-            <span class="label__ch">{c.ch}</span>
-          </span>
-        ))}
+        {cells.map((c, i) => {
+          // a faded syllable peeks for 3 s when tapped, and is said (spec 2026-10-12 §4); a peek never grades anything
+          const tap = c.hidden && canPeek ? () => { fader!.peek(own.current, i); speak(c.ch, { reading: c.py }); } : undefined;
+          return (
+            <span key={i} class={`${c.blank ? 'label__cell label__cell--blank' : c.zh ? 'label__cell label__cell--zh' : 'label__cell'}${marked(c) ? ' label__cell--mark' : ''}${c.hidden ? ' label__cell--hidden' : ''}${i === peeked ? ' label__cell--peek' : ''}`} onClick={tap}>
+              <small class="label__py" aria-hidden="true">{c.hidden && i !== peeked ? '' : c.py}</small>
+              <span class="label__ch">{c.ch}</span>
+            </span>
+          );
+        })}
       </span>
     </span>
   );
