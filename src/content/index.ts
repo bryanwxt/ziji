@@ -3,13 +3,13 @@ import hsk from './hskwords.json';
 import passages from './passages.json';
 import type { BuiltinChar, CharInfo, Example, Passage, Word } from '../types';
 import { EXTRA_EXAMPLES } from './extraExamples';
-import moe from './moe2024.json';
+import { LESSONS, listedBy } from './curriculum';
 import { SWEEP_MEANINGS, SWEEP_PINYIN } from './sweepFixes';
 
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.10`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.11`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists; .11: 蚂蚁拇狐狸 and readable 组词
 export const PASSAGES: Passage[] = passages as Passage[];
 
 const infoByChar = new Map<string, CharInfo>(
@@ -42,27 +42,19 @@ export const builtinWordId = (char: string) => `b:${char}`;
  * then the rest in their HSK order. New words, placement bands and writing all follow this, so the app teaches what school
  * teaches when it teaches it. MOE's own lists: 识读字 to recognise, 识写字 to write.
  */
-const MOE_LESSONS = (moe as { lessons: { term: string; lesson: number; read: string; write: string; writeHcl: string }[] }).lessons;
 const MOE_ORDER = new Map<string, number>();
 const MOE_TERM = new Map<string, string>();
-for (const l of MOE_LESSONS) for (const ch of Array.from(l.read)) if (!MOE_ORDER.has(ch)) { MOE_ORDER.set(ch, MOE_ORDER.size); MOE_TERM.set(ch, l.term); }
-/** The 识写字 of his course: 华文 (CL) or 高级华文 (HCL, which writes more: 435 by the end of P2 to CL's 350). Both read the same. */
-export type Course = 'cl' | 'hcl';
-const MOE_WRITE: Record<Course, Set<string>> = {
-  cl: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.write))),
-  hcl: new Set(MOE_LESSONS.flatMap((l) => Array.from(l.writeHcl))),
-};
+for (const l of LESSONS) for (const ch of Array.from(l.read)) if (!MOE_ORDER.has(ch)) { MOE_ORDER.set(ch, MOE_ORDER.size); MOE_TERM.set(ch, l.term); }
+/**
+ * The 识写字 of his course: 华文 (CL), 高级华文 (HCL, which writes more: 435 by the end of P2 to CL's 350), or both lists (spec
+ * 2026-10-11 §6: the default). All read the same.
+ */
+export type Course = 'cl' | 'hcl' | 'both';
+const writtenIn = new Map<Course, Set<string>>();
+/** Every character his course's book has him write, by its last lesson (curriculum's lists). */
+const moeWrite = (course: Course): Set<string> => writtenIn.get(course) ?? writtenIn.set(course, listedBy(LESSONS.length - 1, course).write).get(course)!;
 /** His textbook's terms in order (P1 上 … P3 下). */
 export const MOE_TERMS = ['一上', '一下', '二上', '二下', '三上', '三下'];
-/** The MOE lists to date: characters to recognise and to write by the end of a term (spec 2026-10-06 §3.4); null past the lists. */
-export function moeTargets(term: string, course: Course): { read: number; write: number } | null {
-  const upTo = MOE_TERMS.indexOf(term);
-  if (upTo < 0) return null;
-  const lessons = MOE_LESSONS.filter((l) => MOE_TERMS.indexOf(l.term) <= upTo);
-  const read = new Set(lessons.flatMap((l) => Array.from(l.read)));
-  const write = new Set(lessons.flatMap((l) => Array.from(course === 'hcl' ? l.writeHcl : l.write)));
-  return { read: read.size, write: write.size };
-}
 const schoolRank = (c: BuiltinChar): number => MOE_ORDER.get(c.char) ?? MOE_ORDER.size + c.rank;
 /** The textbook term that teaches a character (二上), if it's one of his school characters. */
 export const schoolTerm = (char: string): string | undefined => MOE_TERM.get(char);
@@ -76,7 +68,7 @@ export function builtinWords(now: number, course: Course = 'cl'): Word[] {
     level: c.level,
     rank: schoolRank(c),
     source: 'builtin' as const,
-    writeable: MOE_ORDER.has(c.char) ? MOE_WRITE[course].has(c.char) : c.writeable, // a school character is written once his course's book asks
+    writeable: MOE_ORDER.has(c.char) ? moeWrite(course).has(c.char) : c.writeable, // a school character is written once his course's book asks
     paused: false,
     createdAt: now,
     examples: examplesFor(c),

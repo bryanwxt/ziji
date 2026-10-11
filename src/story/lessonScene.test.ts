@@ -24,13 +24,17 @@ const chapters = [ch(1, 'hdb-morning', 'hdb-night'), ch(2, 'hdb-voiddeck', 'scho
 
 describe('the painting behind the lesson', () => {
   it("is where today's setup ended while its payoff is owed", () => {
-    expect(lessonScene({ chapter: 1, setupDone: true, payoffDone: false }, chapters)).toBe('hdb-voiddeck');
+    expect(lessonScene({ chapter: 1, setupDone: true, payoffDone: false }, chapters, true)).toBe('hdb-voiddeck');
   });
   it('is where the last finished chapter ended on an extra lesson', () => {
-    expect(lessonScene({ chapter: 1, setupDone: true, payoffDone: true }, chapters)).toBe('hdb-night');
+    expect(lessonScene({ chapter: 1, setupDone: true, payoffDone: true }, chapters, true)).toBe('hdb-night');
   });
   it('is none before any chapter (the old world shows)', () => {
-    expect(lessonScene(undefined, chapters)).toBeNull();
-    expect(lessonScene({ chapter: 0 }, chapters)).toBeNull();
+    expect(lessonScene(undefined, chapters, true)).toBeNull();
+    expect(lessonScene({ chapter: 0 }, chapters, true)).toBeNull();
+  });
+  it('is none while the story is off, the default (spec 2026-10-11 §3)', () => {
+    expect(lessonScene({ chapter: 1, setupDone: true, payoffDone: true }, chapters)).toBeNull();
+    expect(lessonScene({ chapter: 1, setupDone: true, payoffDone: true }, chapters, false)).toBeNull();
   });
 });

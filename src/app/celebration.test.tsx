@@ -214,7 +214,7 @@ describe('the story after the celebration (spec 3c §5)', () => {
   it('an owed payoff plays after the celebration, then home', async () => {
     const app = await makeAppData();
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
-    await updateSettings(app.db, { storyProgress: { chapter: 0, readOn: '2026-10-02', setupDone: true, payoffDone: false } });
+    await updateSettings(app.db, { storyOn: true, storyProgress: { chapter: 0, readOn: '2026-10-02', setupDone: true, payoffDone: false } });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
     await toEnd();
@@ -227,5 +227,15 @@ describe('the story after the celebration (spec 3c §5)', () => {
     await screen.findByText('太棒了！');
     await toEnd();
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'home' }));
+  });
+  it('with the story off (the default), an owed payoff waits and he goes home (spec 2026-10-11 §3)', async () => {
+    const app = await makeAppData();
+    await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
+    await updateSettings(app.db, { storyProgress: { chapter: 0, readOn: '2026-10-02', setupDone: true, payoffDone: false } });
+    renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
+    await screen.findByText('太棒了！');
+    await toEnd();
+    await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'home' }));
+    expect(app.go).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'story' }));
   });
 });

@@ -1,7 +1,8 @@
 import { loadClipIndex, setClipIndex } from '../audio/clips';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
-import { schoolYear } from './progress';
+import { courseOf, schoolYear } from '../content/curriculum';
+import { ClassLessonField } from './ClassLessonField';
 import { SetupPin } from '../app/SetupPin';
 import { setSfxEnabled } from '../audio/sfx';
 import { chineseVoices, currentVoice, setPreferredVoice, setSpeechRate, speak, voiceQuality } from '../audio/speech';
@@ -73,19 +74,21 @@ export function SettingsPanel() {
       </div>
       <div class="field">
         <label for="st-course">Course</label>
-        <select id="st-course" value={s.course ?? 'cl'} onChange={(e) => void setCourse(e.currentTarget.value as Course)}>
+        <select id="st-course" value={courseOf(s)} onChange={(e) => void setCourse(e.currentTarget.value as Course)}>
+          <option value="both">华文 + 高级华文</option>
           <option value="cl">华文 (Chinese)</option>
           <option value="hcl">高级华文 (Higher Chinese)</option>
         </select>
-        <p class="hint">Both read the same characters in the same order. 高级华文 writes more (435 by the end of P2, to 350), so 写一写 and 听写 practise its list.</p>
+        <p class="hint">All three read the same characters in the same order. 写一写 and 听写 practise the course's 识写字: 华文 + 高级华文 writes every character on either list (435 by the end of P2; 华文 alone, 350).</p>
       </div>
       <div class="field">
         <label for="st-grade">School year</label>
-        <select id="st-grade" value={String(schoolYear(s, now()))} onChange={(e) => void save({ grade: Number(e.currentTarget.value), gradeYear: now().getFullYear() })}>
+        <select id="st-grade" value={String(schoolYear(s, now()))} onChange={(e) => void save({ grade: Number(e.currentTarget.value), gradeYear: now().getFullYear(), classLesson: null })}>
           {[1, 2, 3, 4, 5, 6].map((g) => <option key={g} value={String(g)}>P{g}</option>)}
         </select>
-        <p class="hint">Progress compares him with the MOE lists for his term (lists go up to P3).</p>
+        <p class="hint">Progress compares him with the MOE lists to the end of his school year (lists go up to P3).</p>
       </div>
+      <ClassLessonField settings={s} now={now()} onSave={save} />
       <div class="field">
         <label>
           <input type="checkbox" checked={!!s.recordedVoice} onChange={(e) => {

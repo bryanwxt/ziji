@@ -1,29 +1,74 @@
-// What he can really do (spec 2026-10-06 §3.4): words heard, read, used and owned, characters against the MOE target to date.
+// What he can really do (spec 2026-10-06 §3.4), against his book's lists (spec 2026-10-11 §8): the end of his school year as the
+// target, where his class is now, and what each term still asks of him. "Learned" is passed: right first answers on two days.
 import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { loadKnowledge } from '../app/knowledge';
-import { moeTargets } from '../content';
+import { classLessonAt, courseOf, gradeTerms, lessonLabel, listedBy, schoolYear, termChars, termLessons } from '../content/curriculum';
+import { hanChars, MOE_TERMS } from '../content';
 import type { Knowledge } from '../stats/stats';
 import type { Settings } from '../types';
-import { currentTerm, schoolYear, weeklyTrend } from './progress';
+import { weeklyTrend } from './progress';
+
+const pct = (n: number, of: number) => `${((n / of) * 100).toFixed(1)}%`;
+const count = (have: ReadonlySet<string>, list: Iterable<string>) => [...list].filter((ch) => have.has(ch)).length;
+
+/** A bar: how far he is toward his year's target, with a mark where his class is now. */
+function Bar({ label, have, of, mark }: { label: string; have: number; of: number; mark: number | null }) {
+  return (
+    <div class="pbar">
+      <span class="pbar__label">{label}</span>
+      <div class="pbar__track" role="img" aria-label={`${label}: ${have} of ${of}${mark === null ? '' : `; his class is at ${mark}`}`}>
+        <div class="pbar__fill" style={{ width: pct(Math.min(have, of), of) }} />
+        {mark !== null && <div class="pbar__mark" style={{ left: pct(mark, of) }} />}
+      </div>
+      <span class="pbar__nums">{have} / {of}</span>
+    </div>
+  );
+}
 
 export function ProgressPanel({ know, settings, now }: { know: Knowledge; settings: Settings; now: Date }) {
-  const term = currentTerm(schoolYear(settings, now), now);
-  const target = term ? moeTargets(term, settings.course ?? 'cl') : null;
+  const course = courseOf(settings);
+  const endTerm = gradeTerms(schoolYear(settings, now))[1];
+  const end = termLessons(endTerm).at(-1);
+  const target = end === undefined ? null : listedBy(end, course);
+  const classAt = classLessonAt(now, settings);
+  const atClass = classAt === null ? null : listedBy(classAt, course);
+  const written = new Set(know.cards.filter((c) => c.kind === 'write' && c.passed).flatMap((c) => hanChars(know.wordsById.get(c.wordId)?.text ?? '')));
+  const read = target ? count(know.knownChars, target.read) : know.known;
+  const wrote = target ? count(written, target.write) : know.written;
+  const terms = end === undefined ? [] : MOE_TERMS.slice(0, MOE_TERMS.indexOf(endTerm) + 1);
   const trend = weeklyTrend(know.cards, 'recognise', now);
   return (
-    <section class="panel progress">
+    <section class="panel progress-panel">
       <h2>Progress</h2>
       <p class="muted">A step counts only after he gets it right on two different days.</p>
       <dl class="progress__counts">
-        <dt>Characters recognised</dt><dd>{target ? `${know.known} of ${target.read} by the end of ${term}` : know.known}</dd>
-        <dt>Characters written</dt><dd>{target ? `${know.written} of ${target.write}` : know.written}</dd>
+        <dt>Characters recognised</dt><dd>{target ? `${read} of ${target.read.size} by the end of ${endTerm}` : know.known}</dd>
+        <dt>Characters written</dt><dd>{target ? `${wrote} of ${target.write.size}` : know.written}</dd>
         <dt>Heard (understands it by ear)</dt><dd>{know.heard}</dd>
         <dt>Understood in a sentence</dt><dd>{know.understood}</dd>
         <dt>Read</dt><dd>{know.read}</dd>
         <dt>Used in a sentence</dt><dd>{know.used}</dd>
         <dt>Owned (every step passed)</dt><dd>{know.owned}</dd>
       </dl>
+      {target && (
+        <div class="progress__bars">
+          {classAt !== null && <p class="muted">The mark is where his class is now: {lessonLabel(classAt)}.</p>}
+          <Bar label="认读" have={read} of={target.read.size} mark={atClass ? atClass.read.size : null} />
+          <Bar label="写" have={wrote} of={target.write.size} mark={atClass ? atClass.write.size : null} />
+        </div>
+      )}
+      {terms.length > 0 && (
+        <table class="table progress__terms">
+          <thead><tr><th>Term</th><th>Still to read</th><th>Still to write</th></tr></thead>
+          <tbody>
+            {terms.map((t) => {
+              const c = termChars(t, course);
+              return <tr key={t}><th scope="row">{t}</th><td>{c.read.filter((ch) => !know.knownChars.has(ch)).length}</td><td>{c.write.filter((ch) => !written.has(ch)).length}</td></tr>;
+            })}
+          </tbody>
+        </table>
+      )}
       <h3>Words read, week by week</h3>
       <ol class="progress__trend">{trend.map((w) => <li key={w.week}><span>{w.week}</span> <strong>{w.count}</strong></li>)}</ol>
     </section>
@@ -37,5 +82,5 @@ export function ProgressTab() {
   useEffect(() => {
     void loadKnowledge(db).then(setKnow);
   }, [db]);
-  return know ? <ProgressPanel know={know} settings={settings} now={now()} /> : <section class="panel progress"><p class="muted">Loading…</p></section>;
+  return know ? <ProgressPanel know={know} settings={settings} now={now()} /> : <section class="panel progress-panel"><p class="muted">Loading…</p></section>;
 }

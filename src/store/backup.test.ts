@@ -151,7 +151,8 @@ describe('sweep: restoring an older backup', () => {
     const target = await freshDb();
     await applyBackup(target, readBackup(text));
     const s = await getSettings(target);
-    expect(s.lessonVersion).toBe(4);
+    expect(s.lessonVersion).toBe(5);
+    expect(s.course).toBe('both'); // spec 2026-10-11 §6
     expect(s.activities).toMatchObject({ newwords: true, practice: true, writing: true, speaking: true });
     expect(s.newPerDay).toBe(8);
   });

@@ -5,13 +5,48 @@ import { summarize } from '../stats/stats';
 import { DEFAULT_SETTINGS } from '../types';
 import { makeCard, makeWord } from '../test/fixtures';
 
+const passed = (wordId: string, kind: 'recognise' | 'hear' | 'write') => ({ ...makeCard(wordId, kind, new Date()), passed: 1 });
+
 describe('the Progress tab (spec 2026-10-06 §3.4)', () => {
   it('shows characters recognised against the MOE target to date, and words heard, read, used, owned', () => {
-    const know = summarize([makeWord('门')], [{ ...makeCard('b:门', 'recognise', new Date()), passed: 1 }, { ...makeCard('b:门', 'hear', new Date()), passed: 1 }]);
+    const know = summarize([makeWord('门')], [passed('b:门', 'recognise'), passed('b:门', 'hear')]);
     render(<ProgressPanel know={know} settings={{ ...DEFAULT_SETTINGS, grade: 2 }} now={new Date('2026-10-06')} />);
     expect(screen.getByText(/1 of 746/)).toBeTruthy();
     expect(screen.getByText(/Heard/)).toBeTruthy();
     expect(screen.getByText(/Owned/)).toBeTruthy();
     expect(screen.getByText('Understood in a sentence')).toBeTruthy(); // plan 2b
+  });
+});
+
+describe('the Progress tab against his book (spec 2026-10-11 §8)', () => {
+  const know = summarize([makeWord('门'), makeWord('介')], [passed('b:门', 'recognise'), passed('b:门', 'write'), passed('b:介', 'recognise')]);
+  const show = (over = {}) => render(<ProgressPanel know={know} settings={{ ...DEFAULT_SETTINGS, grade: 2, gradeYear: 2026, ...over }} now={new Date('2026-10-11T09:00:00')} />);
+  it("targets are the end of his school year: 746 to read, and both lists' 435 to write; a character outside the book isn't counted", () => {
+    show();
+    expect(screen.getByText('1 of 746 by the end of 二下')).toBeTruthy();
+    expect(screen.getByText('1 of 435')).toBeTruthy();
+  });
+  it("one course's list when the parent chose one", () => {
+    show({ course: 'cl' });
+    expect(screen.getByText('1 of 350')).toBeTruthy();
+  });
+  it('each bar has a mark where his class is now (二下·17: 707 to read, 413 to write)', () => {
+    show();
+    expect(screen.getByText(/where his class is now: 二下·17/)).toBeTruthy();
+    const marks = [...document.querySelectorAll<HTMLElement>('.pbar__mark')].map((m) => m.style.left);
+    expect(marks).toEqual(['94.8%', '94.9%']);
+    expect(screen.getByRole('img', { name: '认读: 1 of 746; his class is at 707' })).toBeTruthy();
+  });
+  it('a row per term from 一上 to the end of his year: still to read and still to write', () => {
+    show();
+    const rows = [...document.querySelectorAll('.progress__terms tbody tr')].map((r) => [...r.children].map((c) => c.textContent));
+    expect(rows.map((r) => r[0])).toEqual(['一上', '一下', '二上', '二下']);
+    expect(rows[0]).toEqual(['一上', '181', '89']); // 门 read and written
+    expect(rows[1]).toEqual(['一下', '182', '112']);
+  });
+  it('past the lists (P4): plain counts, no bars, no table', () => {
+    show({ grade: 4 });
+    expect(document.querySelector('.pbar')).toBeNull();
+    expect(document.querySelector('.progress__terms')).toBeNull();
   });
 });

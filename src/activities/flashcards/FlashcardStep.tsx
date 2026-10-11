@@ -54,11 +54,13 @@ interface Props {
   idiom?: Idiom | null;
   /** a word he missed is back: Truffle covers his eyes and peeks (spec 2026-10-04 §4.6) */
   peek?: boolean;
+  /** 认新字: the word's lesson in his book, 「课本 二下·17」 or 「补 一上·5」 (spec 2026-10-11 §9); none for a listed word */
+  lessonTag?: string | null;
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, peek = false }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, peek = false, lessonTag = null }: Props) {
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
@@ -180,7 +182,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
         truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} calm={phase === 'quiz'} react={react} /></div>}
         sheet={sheet}
       >
-        {phase === 'intro' ? <Intro word={word} idiom={idiom} /> : (
+        {phase === 'intro' ? <Intro word={word} idiom={idiom} tag={lessonTag} /> : (
           <>
             <div class="flash__prompt">
               {quiz.cue ? (
@@ -303,7 +305,7 @@ export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
   return idioms.find((i) => !shown.some((t) => t.includes(i.text))) ?? null;
 }
 
-function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
+function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; tag?: string | null }) {
   const line = usageLine(word);
   const long = Array.from(word.text).length > 1;
   // never the one the usage line already shows; all of them feed the meaning questions
@@ -311,6 +313,7 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
   return (
     <div class="intro">
       <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`}>
+        {tag && <p class="intro__tag" lang="zh">{tag}</p>}
         <div class="intro__head">
           <div class="intro__char">
             <div class="pinyin">{word.pinyin}</div>

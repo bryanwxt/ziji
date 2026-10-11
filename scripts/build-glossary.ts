@@ -11,10 +11,13 @@ const builtin = JSON.parse(await readFile(new URL('../src/content/builtin.json',
 const phrases = [...builtin.chars.map((c) => ({ text: c.char, pinyin: c.pinyin })), ...builtin.chars.flatMap((c) => c.examples)];
 const { glossary, missing } = buildGlossary(phrases, dict);
 
+// every gloss already shipped stays as it is (CC-CEDICT changes daily); only phrases without one are added (spec 2026-10-11 §7)
+const outUrl = new URL('../src/content/glossary.json', import.meta.url);
+const kept = (JSON.parse(await readFile(outUrl, 'utf8')) as { entries: Record<string, string> }).entries;
 const out = {
   source: 'CC-CEDICT (https://www.mdbg.net/chinese/dictionary?page=cc-cedict), MDBG and contributors',
   license: 'CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/) — this glossary is a shortened adaptation and shares that licence',
-  entries: glossary,
+  entries: Object.fromEntries([...Object.entries(kept), ...Object.entries(glossary).filter(([k]) => !(k in kept))]),
 };
-await writeFile(new URL('../src/content/glossary.json', import.meta.url), JSON.stringify(out, null, 0) + '\n');
-console.log(`Wrote ${Object.keys(glossary).length} glosses; ${missing.length} phrases with none (${missing.slice(0, 20).join(' ')}…)`);
+await writeFile(outUrl, JSON.stringify(out, null, 0) + '\n');
+console.log(`Wrote ${Object.keys(out.entries).length} glosses (${Object.keys(out.entries).length - Object.keys(kept).length} new); ${missing.length} phrases with none (${missing.slice(0, 20).join(' ')}…)`);

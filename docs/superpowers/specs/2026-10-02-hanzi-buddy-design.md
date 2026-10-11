@@ -54,7 +54,7 @@ alone:
 | Pinyin for parent words | `pinyin-pro` (bundled) | Offline, takes surrounding characters into account for words with more than one reading |
 | Tests | Vitest + `fake-indexeddb` + `@testing-library/preact` | Fast unit tests for logic, a few flow tests |
 | Hosting | GitHub Pages via a GitHub Actions workflow | Free static hosting. The repo holds no personal data (all child data stays on the iPad), so it can be public. Creating the remote and pushing are confirmed with the parent at deploy time |
-| Location | `/Users/bryantan/apps/hanzi-buddy/` with its own git repo | Separate from the 5/3/1 app |
+| Location | `/Users/bryantan/apps/ziji/` with its own git repo | Separate from the 5/3/1 app |
 
 ## 3. Architecture
 

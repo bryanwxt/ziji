@@ -201,6 +201,18 @@ async function check(page: Page, size: Size, flow: string, step: number) {
   results.push({ size: size.name, flow, step, sig, problems });
 }
 
+/** A screenshot only (spec 2026-10-11 §10): the parent area scrolls and isn't held to the child screens' fit rules. */
+async function snap(page: Page, size: Size, name: string, selector: string) {
+  await page.locator(selector).first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  await page.evaluate(() => Promise.race([ // entrances settled: no shot of a card mid-scale
+    Promise.all(document.getAnimations().filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime ?? Infinity)).map((a) => a.finished.catch(() => {}))),
+    new Promise((r) => setTimeout(r, 1500)),
+  ]));
+  mkdirSync(`${OUT}/${size.name}`, { recursive: true });
+  await page.screenshot({ path: `${OUT}/${size.name}/${name}.png` });
+}
+
 /** The stage on this screen: record its boxes, check its type sizes, and time its frames once per flow (spec 2026-10-04 §3, §6). */
 async function stageChecks(page: Page, size: Size, flow: string, step: number): Promise<string[]> {
   const st = await page.evaluate(() => {
@@ -356,6 +368,17 @@ async function sweep(browser: Browser, size: Size) {
       await p.click('.placement .btn--big');
       await p.waitForTimeout(150);
     }
+  });
+  // the parent's class lesson and Progress against the lists (spec 2026-10-11 §8), in WebKit
+  await run('parent', AFTERNOON, { pinCode: FIT_PIN }, async (p) => {
+    await tabTo(p, '家长');
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.click('.tab:has-text("Settings")');
+    await p.waitForSelector('#st-class-now');
+    await snap(p, size, 'parent-settings', '#st-class-now');
+    await p.click('.tab:has-text("Progress")');
+    await p.waitForSelector('.progress__bars');
+    await snap(p, size, 'parent-progress', '.progress__bars');
   });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });

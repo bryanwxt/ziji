@@ -3,7 +3,8 @@ import { shuffle, type Rng } from '../lib/random';
 import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
 import { learnerLevel } from '../content/chengyu';
-import { isLadderId } from '../content/ladder';
+import { classLessonAt, courseOf } from '../content/curriculum';
+import { pickNewWords } from './lanes';
 import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
@@ -70,18 +71,14 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
 
   // A ladder 词语 comes only once every character in it is begun, or comes earlier in today's new words (spec 2026-10-06 §3.1)
   const begunChars = new Set(active.filter((w) => started.has(w.id) && Array.from(w.text).length === 1).map((w) => w.text));
-  const newWords: Word[] = [];
-  for (const w of active.filter((x) => !started.has(x.id)).sort(newWordOrder)) {
-    if (newWords.length >= newLimit) break;
-    if (isLadderId(w.id) && !Array.from(w.text).every((c) => begunChars.has(c))) continue;
-    newWords.push(w);
-    if (Array.from(w.text).length === 1) begunChars.add(w.text);
-  }
+  // two lanes (spec 2026-10-11 §5): his class's lesson and catch-up from 一上, after the words listed for him
+  const classAt = classLessonAt(now, settings);
+  const { words: newWords, lanes: newWordLanes } = pickNewWords({ candidates: active.filter((x) => !started.has(x.id)).sort(newWordOrder), n: newLimit, classAt, begunChars });
   // spec 2026-10-05 §2: no separate 用一用; a day with no new words starts at 练一练 (no empty 认新字 stop, no star for it)
   const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0);
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
   const writeUnits = settings.activities.writing
-    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), cutoff, target: writeCharTarget(settings.sessionMinutes) })
+    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: writeCharTarget(settings.sessionMinutes) })
     : [];
   const writeItems = orderWriteItems(writeUnits);
 
@@ -89,6 +86,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     steps,
     reviewWordIds: dueRecognise.slice(0, REVIEW_CAP).map((c) => c.wordId),
     newWordIds: newWords.map((w) => w.id),
+    newWordLanes,
     flashTimeBoxMs: 0, // only lessons saved before 2026-10-05 time-boxed 认一认
     practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE),
     writeCandidates: writeUnits.map((u) => ({ wordId: u.wordId, isNew: u.isNew })),

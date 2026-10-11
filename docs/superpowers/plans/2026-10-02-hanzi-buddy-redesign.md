@@ -20,7 +20,7 @@
 
 ## Global Constraints
 
-- **Location:** the project root is `/Users/bryantan/apps/hanzi-buddy`, on branch `build/v1`. Every Global Constraint of the first plan still applies.
+- **Location:** the project root is `/Users/bryantan/apps/ziji`, on branch `build/v1`. Every Global Constraint of the first plan still applies.
 - **Motion tokens:**
   - `--dur-fast` 150ms, `--dur-base` 280ms, `--dur-slow` 520ms
   - `--spring` and `--spring-bouncy` are CSS `linear()` curves, with a `cubic-bezier` fallback under `@supports not`

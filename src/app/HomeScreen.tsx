@@ -165,7 +165,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
     primeSpeech();
     // a chapter due today opens before the lesson (spec 2026-10-07 3c §5); free play never starts one
     // …and only before today's lesson has begun: reopening a finished one to claim its chest goes straight back in
-    const owed = free || todaySession ? null : storyStep(settings.storyProgress, CHAPTERS.length, localDateKey(now()));
+    const owed = free || todaySession ? null : storyStep(settings.storyProgress, CHAPTERS.length, localDateKey(now()), settings.storyOn);
     if (owed?.part === 'setup') go({ name: 'story', part: 'setup', chapter: owed.chapter, then: { name: 'session', free } });
     else go({ name: 'session', free });
   };

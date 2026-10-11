@@ -9,10 +9,11 @@ const run = (s: WalkState, pattern: boolean[], n = 30) => pattern.reduce((st, c)
 const warm = (n = 30) => run(startWalk(n), Array(WARMUP).fill(true), n);
 
 describe('placement walk (spec §19 part 6)', () => {
-  it('30 bands of 100 characters in rank order', () => {
+  it('30 bands of 100 characters in rank order; the 5 school characters HSK lacks join the last band', () => {
     const bands = rankBands(builtinWords(0));
     expect(bands).toHaveLength(30);
-    expect(bands.every((b) => b.length === 100)).toBe(true);
+    expect(bands.slice(0, -1).every((b) => b.length === 100)).toBe(true);
+    expect(bands.at(-1)).toHaveLength(105);
     expect(bands[0]![0]!.rank!).toBeLessThan(bands[1]![0]!.rank!);
   });
   it('starts at band 7 after 3 unscored warm-up questions', () => {
