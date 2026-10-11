@@ -1,7 +1,7 @@
 import { loadClipIndex, setClipIndex } from '../audio/clips';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
-import { schoolYear } from './progress';
+import { courseOf, schoolYear } from '../content/curriculum';
 import { SetupPin } from '../app/SetupPin';
 import { setSfxEnabled } from '../audio/sfx';
 import { chineseVoices, currentVoice, setPreferredVoice, setSpeechRate, speak, voiceQuality } from '../audio/speech';
@@ -73,11 +73,12 @@ export function SettingsPanel() {
       </div>
       <div class="field">
         <label for="st-course">Course</label>
-        <select id="st-course" value={s.course ?? 'cl'} onChange={(e) => void setCourse(e.currentTarget.value as Course)}>
+        <select id="st-course" value={courseOf(s)} onChange={(e) => void setCourse(e.currentTarget.value as Course)}>
+          <option value="both">华文 + 高级华文</option>
           <option value="cl">华文 (Chinese)</option>
           <option value="hcl">高级华文 (Higher Chinese)</option>
         </select>
-        <p class="hint">Both read the same characters in the same order. 高级华文 writes more (435 by the end of P2, to 350), so 写一写 and 听写 practise its list.</p>
+        <p class="hint">All three read the same characters in the same order. 写一写 and 听写 practise the course's 识写字: 华文 + 高级华文 writes every character on either list (435 by the end of P2; 华文 alone, 350).</p>
       </div>
       <div class="field">
         <label for="st-grade">School year</label>

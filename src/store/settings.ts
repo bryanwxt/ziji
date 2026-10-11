@@ -7,18 +7,22 @@ import { getSettings, updateSettings } from './repo';
  * Plan 11 (v2): a 20-minute lesson grows to 30. Plan 13 (v3): 5 new words a day becomes 4 (spec §20 part 2).
  * Lesson redesign (v4, spec 2026-10-05 §7): the activity switches become 新字 / 练一练 / 写一写 / 朗读, and the old default
  * number of new words becomes the ceiling 8 the app paces under (§2.2).
+ * Both tracks (v5, spec 2026-10-11 §6): every install moves to 华文 + 高级华文 once, as the parent asked; a later pick stays.
  */
 export function migrateSettings(s: Settings): Partial<Settings> | null {
   const v = s.lessonVersion ?? 1;
-  if (v >= 4) return null;
+  if (v >= 5) return null;
   const patch: Partial<Settings> = {};
-  if (v < 2) patch.sessionMinutes = s.sessionMinutes === 20 ? 30 : s.sessionMinutes;
-  const perDay = v < 3 && s.newPerDay === 5 ? 4 : s.newPerDay;
-  patch.newPerDay = perDay === 4 ? 8 : perDay;
-  const was = s.activities as unknown as Partial<Record<'flashcards' | 'choose' | 'components' | 'writing' | 'speaking', boolean>>;
-  const on = (k: keyof typeof was) => was[k] ?? true;
-  patch.activities = { newwords: on('flashcards'), practice: on('flashcards') || on('choose') || on('components'), writing: on('writing'), speaking: on('speaking') };
-  patch.lessonVersion = 4;
+  if (v < 4) {
+    if (v < 2) patch.sessionMinutes = s.sessionMinutes === 20 ? 30 : s.sessionMinutes;
+    const perDay = v < 3 && s.newPerDay === 5 ? 4 : s.newPerDay;
+    patch.newPerDay = perDay === 4 ? 8 : perDay;
+    const was = s.activities as unknown as Partial<Record<'flashcards' | 'choose' | 'components' | 'writing' | 'speaking', boolean>>;
+    const on = (k: keyof typeof was) => was[k] ?? true;
+    patch.activities = { newwords: on('flashcards'), practice: on('flashcards') || on('choose') || on('components'), writing: on('writing'), speaking: on('speaking') };
+  }
+  patch.course = 'both';
+  patch.lessonVersion = 5;
   return patch;
 }
 

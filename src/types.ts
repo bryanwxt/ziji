@@ -256,8 +256,8 @@ export interface Settings {
   classLesson?: ClassLessonSetting | null; // the parent's "class is on" (spec 2026-10-11 §4): carries at the calendar's pace, lapses next semester; null/absent: the estimate
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
   langdu: boolean; // 朗读 is parked too (parent, 2026-10-05: "not very useful at the moment"): off by default, no parent switch yet
-  course?: Course; // 华文, 高级华文 or both lists: which 识写字 he practises writing (both read the same characters); absent: 'cl'
-  contentCourse?: Course; // the course the stored built-in words were written for
+  course?: Course; // 华文, 高级华文 or both lists: which 识写字 he practises writing (all read the same characters); absent: 'both' (courseOf, spec 2026-10-11 §6)
+  contentCourse?: Course; // the course the stored built-in words were written for; absent: 'cl' (written before courses)
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
   recordedVoice?: boolean; // speak with the generated clips (Kokoro); absent/false: the iPad/iPhone voice (parent 2026-10-08: the clips sounded worse)
   placementResult?: PlacementResult;
@@ -283,7 +283,7 @@ export const DEFAULT_SETTINGS: Settings = {
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
   langdu: false,
-  lessonVersion: 4,
+  lessonVersion: 5,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';
