@@ -43,9 +43,13 @@ describe('streak', () => {
 });
 
 describe('totals', () => {
-  it('adds completed steps and chest bonus stars', () => {
-    const sessions = [session('a', { completedSteps: ['flashcards', 'writing'] }), session('b', { completedSteps: ['flashcards'] })];
-    expect(totalStars(sessions, 3)).toBe(6);
+  it("adds each lesson's stars and chest bonus stars (spec 2026-10-11 §5)", () => {
+    const sessions = [session('2026-10-12', { completedSteps: ['practice', 'writing'], stars: 4 }), session('2026-10-13', { completedSteps: ['practice'], stars: 1 })];
+    expect(totalStars(sessions, 3)).toBe(8);
+  });
+  it('a lesson from before mastery stars keeps the stars its steps earned; a new lesson not yet finished has none', () => {
+    const { stars: _none, ...old } = session('2026-10-06', { completedSteps: ['newwords', 'practice', 'writing'] });
+    expect(totalStars([old, session('2026-10-12', { completed: false, completedSteps: ['newwords', 'practice'] })], 0)).toBe(4);
   });
   it('lists minutes for each of the last N days, zero-filled', () => {
     expect(minutesPerDay([session('2026-10-01', { activeMs: 12 * 60_000 })], '2026-10-02', 3)).toEqual([

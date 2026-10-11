@@ -93,6 +93,7 @@ describe('SessionScreen', () => {
     expect(rec.completed).toBe(true);
     expect(rec.completedSteps).toEqual(['newwords', 'practice']);
     expect(rec.practiceQueue!.filter((x) => !x.retry).length).toBeGreaterThanOrEqual(6); // two new words, three climbs each
+    expect([rec.stars, rec.produced]).toEqual([1, { write: 0, say: 0 }]); // nothing he can produce yet: the one-star floor (spec 2026-10-11 §5)
     // new words are graded by ear; reading opens only once hearing has passed on two days (spec 2026-10-06 §3.2)
     expect((await allCards(app.db)).filter((c) => c.kind === 'hear')).toHaveLength(2);
     expect((await allCards(app.db)).filter((c) => c.kind === 'recognise')).toHaveLength(0);

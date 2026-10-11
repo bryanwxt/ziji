@@ -16,7 +16,7 @@ vi.mock('../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn(), prime
 vi.mock('../ui/confetti', () => ({ celebrate: vi.fn() }));
 
 const emptyPlan: SessionPlan = { steps: [], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 };
-const done = (date: string, steps: SessionPlan['steps']) => ({ ...createSessionRecord(emptyPlan, date, 0), completed: true, completedSteps: steps });
+const done = (date: string, steps: SessionPlan['steps']) => ({ ...createSessionRecord(emptyPlan, date, 0), completed: true, completedSteps: steps, stars: steps.length });
 
 describe('HomeScreen', () => {
   it('shows 字己镇 on Home (spec 2026-10-06 §3.7)', async () => {

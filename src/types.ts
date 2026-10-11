@@ -173,6 +173,9 @@ export interface SessionRecord {
   practiceIndex?: number;
   practiceElapsedMs?: number;
   practiceLeft?: number; // items the time box left for tomorrow (pacing reads it, spec §2.2)
+  stars?: number; // the lesson's stars (spec 2026-10-11 §5): set when it finishes; absent on lessons from before, which count their steps (starsOf)
+  produced?: { write: number; say: number }; // what newly reached "can produce" by the lesson's end
+  closest?: string[]; // nothing new: the words one more day from it (「还差一天：森、林」)
 }
 
 export type RecordingPrompt =
@@ -314,6 +317,7 @@ export interface KidState {
   story: { next: number; told: number }; // 看图说话: next scene, stories told (drives starter fading)
   finds: Finds; // tap fun in the journey worlds
   greetedOn?: string; // the day Truffle last greeted him on Home with how he feels about it (spec 2026-10-04 §4.6)
+  starredUpTo?: number; // passes up to this time have earned their stars (spec 2026-10-11 §5); absent: none yet
 }
 
 export const DEFAULT_KID: KidState = {

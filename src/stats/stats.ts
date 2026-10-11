@@ -67,8 +67,9 @@ export const starsOf = (steps: readonly string[]) => steps.reduce((n, s) => n + 
 /** Lessons before this day counted 用一用 as a star: they keep it, so his total (and a stars goal) never goes down. */
 export const WRAPUP_NO_STAR_FROM = '2026-10-05';
 
+/** His star total: each lesson's mastery stars (spec 2026-10-11 §5); a lesson from before them keeps the stars its steps earned. */
 export function totalStars(sessions: SessionRecord[], bonusStars: number): number {
-  return sessions.reduce((sum, s) => sum + (s.date < WRAPUP_NO_STAR_FROM ? s.completedSteps.length : starsOf(s.completedSteps)), 0) + bonusStars;
+  return sessions.reduce((sum, s) => sum + (typeof s.stars === 'number' ? s.stars : s.date < WRAPUP_NO_STAR_FROM ? s.completedSteps.length : starsOf(s.completedSteps)), 0) + bonusStars;
 }
 
 export function minutesPerDay(sessions: SessionRecord[], today: string, days = 30): { date: string; minutes: number }[] {

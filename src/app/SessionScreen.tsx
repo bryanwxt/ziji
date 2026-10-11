@@ -38,7 +38,7 @@ import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
 import { beginNewWord, bringForward, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
-import { starsOf } from '../stats/stats';
+import { settleLessonStars } from '../session/stars';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
@@ -145,15 +145,13 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const practiceItem = rec ? currentPracticeItem(rec) : null;
   const practiceWord = practiceItem ? state!.know.wordsById.get(practiceItem.wordId) : undefined;
 
-  const commit = async (next: SessionRecord) => {
+  const commit = async (step: SessionRecord) => {
     const was = latest.current;
+    latest.current = step;
+    // a finished lesson's stars are what he can newly produce (spec 2026-10-11 §5); an extra lesson's go to bonusStars, as before
+    const next = !step.free && step.completed && !was?.completed ? await settleLessonStars(db, step, now(), (id) => state?.know.wordsById.get(id)) : step;
     latest.current = next;
     if (!next.free && !next.extra) await saveSession(db, next); // an extra lesson never replaces the day's record
-    if (next.extra && next.completed && !was?.completed) {
-      // its stars count on top of the day's (they aren't in a saved day): the celebration then shows them landing
-      const fresh = await getKid(db);
-      if (fresh) await saveKid(db, { ...fresh, bonusStars: fresh.bonusStars + starsOf(next.completedSteps) });
-    }
     if (!next.free && !next.extra && next.completed && !was?.completed) {
       // a finished daily lesson hatches a dino egg he tapped in 恐龙谷
       const fresh = await getKid(db);

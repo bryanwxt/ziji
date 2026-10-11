@@ -16,7 +16,7 @@ export function createSessionRecord(plan: SessionPlan, date: string, now: number
   return {
     date, startedAt: now, activeMs: 0, free, plan, stepIndex: 0,
     flashQueue, flashIndex: 0, flashElapsedMs: 0, writeIndex: 0, writeDone: 0,
-    completedSteps: [], completed: plan.steps.length === 0,
+    completedSteps: [], completed: plan.steps.length === 0, stars: 0, // its stars are what he can newly produce when it ends (spec 2026-10-11 §5)
   };
 }
 

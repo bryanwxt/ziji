@@ -89,7 +89,7 @@ describe('Dashboard reading figures (deferred minor, plan 11)', () => {
 describe('RewardsPanel', () => {
   it('adds a goal and marks it given once reached', async () => {
     const app = await makeAppData();
-    await saveSession(app.db, { ...createSessionRecord(emptyPlan, '2026-10-01', 0), completed: true, completedSteps: ['flashcards'] });
+    await saveSession(app.db, { ...createSessionRecord(emptyPlan, '2026-10-01', 0), completed: true, completedSteps: ['flashcards'], stars: 1 });
     renderWithApp(<RewardsPanel />, app);
     fireEvent.input(await screen.findByLabelText('Reward'), { target: { value: 'Ice cream' } });
     fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '冰淇淋' } });
