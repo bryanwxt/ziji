@@ -443,6 +443,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           reintroOnMiss={step === 'newwords'}
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
           lessonTag={step === 'newwords' ? laneTag(rec.plan.newWordLanes?.[flashWord.id], flashWord) : null} // spec 2026-10-11 §9
+          knownChars={know.knownChars}
           word={flashWord}
           pool={meaningPool(know)}
           card={know.cardsById.get(`${flashWord.id}:recognise`)}

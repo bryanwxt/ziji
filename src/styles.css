@@ -1520,3 +1520,10 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .label__cell--peek .label__py { opacity: 1; color: var(--green-ink); }
 
 .pinyin--later { animation: later-in 300ms ease-out 2s both; }
+
+/* 「一家人」 on the 认新字 card (spec 2026-10-12 §5): one compact row of his words of the character's family */
+.family__title { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink-soft); }
+.family__words { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
+.family__word { display: inline-flex; align-items: flex-end; gap: 2px; font-size: 26px; }
+.family__word .hanzi { font-size: 26px; }
+@media (max-height: 700px) { .family__word:nth-child(n+3) { display: none; } } /* a phone: two words, so the card never scrolls */
