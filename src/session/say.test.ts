@@ -67,6 +67,13 @@ describe("the parent's verdict (spec 2026-10-11 §3)", () => {
     expect((await listRecordings(db)).map((r) => r.review)).toEqual(['no', 'ok']);
     expect(await getCard(db, 'p:gone:say')).toBeUndefined();
   });
+  it('two taps at once review once', async () => {
+    const db = await freshDb();
+    await addRecording(db, rec('t1', 'b:森', day(1)));
+    await Promise.all([reviewTake(db, 't1', 'ok', day(2)), reviewTake(db, 't1', 'ok', day(2))]);
+    expect((await getRecording(db, 't1'))!.review).toBe('ok');
+    expect(await logsSince(db, 0)).toHaveLength(1);
+  });
   it('a second tap on a reviewed take changes nothing', async () => {
     const db = await freshDb();
     await addRecording(db, rec('t1', 'b:森', day(1)));

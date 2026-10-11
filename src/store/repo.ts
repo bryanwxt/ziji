@@ -220,6 +220,18 @@ export async function saveParentPassage(db: AppDb, p: ParentPassage): Promise<vo
 
 export const deleteParentPassage = (db: AppDb, id: string) => db.delete('passages', id);
 
+/** Marks a take reviewed and writes its review log in one transaction; false (nothing written) if it is gone or already reviewed. */
+export async function settleTake(db: AppDb, id: string, verdict: 'ok' | 'no', log: Omit<ReviewLog, 'id'>): Promise<boolean> {
+  const tx = db.transaction(['recordings', 'reviewLogs'], 'readwrite');
+  const rec = await tx.objectStore('recordings').get(id);
+  if (!rec || rec.review) {
+    await tx.done;
+    return false;
+  }
+  await Promise.all([tx.objectStore('recordings').put({ ...rec, review: verdict }), tx.objectStore('reviewLogs').add(log as ReviewLog), tx.done]);
+  return true;
+}
+
 export async function updateRecording(db: AppDb, r: Recording): Promise<void> {
   await db.put('recordings', r);
 }

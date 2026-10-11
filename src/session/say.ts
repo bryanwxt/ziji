@@ -7,7 +7,7 @@ import { endOfLocalDay } from '../lib/date';
 import { newId } from '../lib/id';
 import { newCard, review } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
-import { addReviewLog, deleteRecording, getCard, getRecording, keepRecording, listRecordings, logsForCard, putCards, updateRecording } from '../store/repo';
+import { deleteRecording, getCard, getRecording, keepRecording, listRecordings, logsForCard, putCards, settleTake } from '../store/repo';
 import type { CardRecord, Recording } from '../types';
 import { bringForward } from './record';
 
@@ -77,8 +77,8 @@ export async function reviewTake(db: AppDb, recordingId: string, verdict: 'ok' |
   if (!rec || !wordId || rec.review) return;
   const ok = verdict === 'ok';
   const cardId = `${wordId}:say`;
-  await updateRecording(db, { ...rec, review: verdict });
-  await addReviewLog(db, { cardId, wordId, kind: 'say', at: rec.createdAt, rating: ok ? Rating.Good : Rating.Again, correct: ok });
+  // verdict and log commit together, and only once (a double tap finds it reviewed)
+  if (!(await settleTake(db, recordingId, verdict, { cardId, wordId, kind: 'say', at: rec.createdAt, rating: ok ? Rating.Good : Rating.Again, correct: ok }))) return;
   if (!ok) {
     await bringForward(db, wordId, 'say', endOfLocalDay(now));
     return;
