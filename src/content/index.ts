@@ -134,6 +134,18 @@ function saysItAs(e: { text: string; pinyin: string }, char: string, reading: st
   return chars.every((ch, i) => ch !== char || syl[i] === reading || (toneless(syl[i]!) === syl[i] && syl[i] === toneless(reading))
     || (SANDHI[char] ?? []).includes(syl[i]!));
 }
+const builtinByChar = new Map(BUILTIN.map((c) => [c.char, c]));
+/**
+ * May a word with `ch` be shown to the child as its family (spec 2026-10-12 §5)? Not a dropped word, and one that says `ch` at the
+ * reading its card teaches. Stricter than examplesFor: a reading that doesn't line up one syllable per character can't be
+ * checked, so it is left out (a child must not get a wrong reading).
+ */
+export function suitableExample(ch: string, e: { text: string; pinyin: string }): boolean {
+  if (EXAMPLE_DROPS.has(e.text)) return false;
+  if (e.pinyin.trim().split(/\s+/).length !== Array.from(e.text).length) return false;
+  const c = builtinByChar.get(ch);
+  return !c || saysItAs(e, ch, builtinReading(c));
+}
 /** 一 and 不 change tone before another syllable without being another reading. */
 const SANDHI: Record<string, string[]> = { 一: ['yí', 'yì'], 不: ['bú'] };
 

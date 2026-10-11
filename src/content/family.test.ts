@@ -22,4 +22,11 @@ describe('familyOf: words of a character he can read (spec 2026-10-12 §5)', () 
     expect(new Set(around).size).toBe(around.length);
     expect(around.every((t) => Array.from(t).length >= 2 && t.includes('门'))).toBe(true);
   });
+  it('leaves out unsuitable words and other readings of the character', () => {
+    expect(texts('蛋', '笨')).not.toContain('笨蛋');
+    expect(texts('调', '查')).not.toContain('调查'); // the 调 card teaches tiáo
+    expect(wordsAround('调').map((x) => x.text)).not.toContain('调查');
+    expect(texts('脏', '心')).not.toContain('心脏');
+    expect(texts('门', '口')).toContain('门口');
+  });
 });

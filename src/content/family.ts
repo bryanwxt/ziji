@@ -4,7 +4,7 @@ import { pinyin } from 'pinyin-pro';
 import './pinyinFixes';
 import type { Example, Word } from '../types';
 import { glossFor } from './glossary';
-import { builtinWords, EXAMPLE_FIXES, HSK_WORDS, isHan, wordsWithChar } from './index';
+import { builtinWords, EXAMPLE_FIXES, HSK_WORDS, isHan, suitableExample, wordsWithChar } from './index';
 import { ladderWords } from './ladder';
 
 export interface FamilyWord { text: string; pinyin: string; en: string }
@@ -27,7 +27,7 @@ export function wordsAround(ch: string): { text: string; pinyin: string }[] {
   for (const w of ladderWith(ch)) if (!out.has(w.text)) out.set(w.text, w.pinyin);
   for (const t of wordsWithChar(ch)) if (!out.has(t)) out.set(t, EXAMPLE_FIXES[t] ?? pinyin(t));
   return [...out]
-    .filter(([text]) => { const cs = Array.from(text); return cs.length >= 2 && cs.every(isHan) && cs.includes(ch); })
+    .filter(([text, py]) => { const cs = Array.from(text); return cs.length >= 2 && cs.every(isHan) && cs.includes(ch) && suitableExample(ch, { text, pinyin: py }); })
     .map(([text, py]) => ({ text, pinyin: py }));
 }
 
