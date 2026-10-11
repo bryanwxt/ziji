@@ -143,3 +143,24 @@ describe('sweep: which characters', () => {
   });
 });
 
+
+describe('写一写 follows the book (spec 2026-10-11 §6)', () => {
+  const now3 = new Date(2026, 9, 11, 10);
+  const base3 = { newWordIds: [] as string[], practised: new Map<string, number>(), level: 2, cutoff: now3.getTime() + 86_400_000, target: 9 };
+  // 夜 is written at 二下·17 (35), 海 at 二下·18 (36), 门 at 一上·8 (7); 介 is not in his book
+  const words = [makeWord('夜', { level: 5, rank: 30 }), makeWord('海', { level: 1, rank: 40 }), makeWord('门', { level: 1, rank: 10 }), makeWord('介', { level: 1, rank: 2000 })];
+  const cards = words.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
+  it('a book character he reads is written once his class has written it, whatever its HSK level; others by his level', () => {
+    const units = pickWriteUnits({ ...base3, cards, words, writeBy: { course: 'both', classAt: 35 } });
+    expect(units.map((u) => u.wordId)).toEqual(['b:夜', 'b:介', 'b:门']); // not 海: his class writes it next lesson
+  });
+  it('without a class lesson, the HSK level rule for every character', () => {
+    const units = pickWriteUnits({ ...base3, cards, words, writeBy: { course: 'both', classAt: null } });
+    expect(units.map((u) => u.wordId)).toEqual(['b:介', 'b:海', 'b:门']); // 夜 is HSK 5, above his level
+  });
+  it('a character with a write card keeps it after a course change takes its writing away', () => {
+    const w = makeWord('井', { writeable: false });
+    const due = makeCard('b:井', 'write', new Date(now3.getTime() - 3_600_000));
+    expect(pickWriteUnits({ ...base3, cards: [due], words: [w] }).map((u) => u.wordId)).toEqual(['b:井']);
+  });
+});

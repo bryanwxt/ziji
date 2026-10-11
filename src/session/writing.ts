@@ -1,6 +1,8 @@
 // 写一写 (spec 2026-10-05 §5): 8–10 characters from memory, at or below his level, traced only once, never back to back.
 import { hanChars } from '../content';
 import { State } from 'ts-fsrs';
+import { writeAt } from '../content/curriculum';
+import type { Course } from '../content';
 import { isKnown } from '../srs/scheduler';
 import type { CardRecord, Word } from '../types';
 
@@ -18,13 +20,20 @@ export interface WriteItem { wordId: string; at: number; pass: 'trace' | 'recall
 
 /**
  * The words to write (spec §5), up to `target` characters and never half a word: writing due today, then today's new words
- * and recent lesson words he reads, then characters he reads at his level and going down. Never one he can't read.
+ * and recent lesson words he reads, then characters he reads within reach — a book character once his class has written it, others at his level — going down. Never one he can't read.
  */
-export function pickWriteUnits({ cards, words, newWordIds, practised, level, cutoff, target }: {
-  cards: CardRecord[]; words: Word[]; newWordIds: string[]; practised: ReadonlyMap<string, number>; level: number; cutoff: number; target: number;
+export function pickWriteUnits({ cards, words, newWordIds, practised, level, writeBy, cutoff, target }: {
+  cards: CardRecord[]; words: Word[]; newWordIds: string[]; practised: ReadonlyMap<string, number>; level: number;
+  /** the book's write position decides the last fallback for a book character (spec 2026-10-11 §6); null class: the level rule */
+  writeBy?: { course: Course; classAt: number | null }; cutoff: number; target: number;
 }): WriteUnit[] {
-  const byId = new Map(words.filter((w) => !w.paused && w.writeable).map((w) => [w.id, w]));
   const write = new Map(cards.filter((c) => c.kind === 'write').map((c) => [c.wordId, c]));
+  // a character he already writes keeps its write card, even if his course no longer asks for it (writeability only grows)
+  const byId = new Map(words.filter((w) => !w.paused && (w.writeable || write.has(w.id))).map((w) => [w.id, w]));
+  const inReach = (w: Word) => {
+    const at = writeBy && writeBy.classAt !== null && Array.from(w.text).length === 1 ? writeAt(w.text, writeBy.course) : undefined;
+    return at !== undefined ? at <= writeBy!.classAt! : (w.level ?? 0) <= level;
+  };
   const reads = new Map(cards.filter((c) => c.kind === 'recognise').map((c) => [c.wordId, c]));
   const skippedAt = (id: string) => byId.get(id)?.writeSkippedAt ?? 0;
   // due ones by when they came due; one whose strokes failed to load goes behind the rest (sweep)
@@ -36,7 +45,7 @@ export function pickWriteUnits({ cards, words, newWordIds, practised, level, cut
     .filter((w) => unwritten(w) && reads.has(w.id) && practised.has(w.id) && reads.get(w.id)!.fsrs.state !== State.Relearning) // he can read it now (sweep)
     .sort((a, b) => skippedLast(a, b) || practised.get(b.id)! - practised.get(a.id)!);
   const readable = [...byId.values()]
-    .filter((w) => { const r = reads.get(w.id); return unwritten(w) && !practised.has(w.id) && !!r && isKnown(r.fsrs) && (w.level ?? 0) <= level; })
+    .filter((w) => { const r = reads.get(w.id); return unwritten(w) && !practised.has(w.id) && !!r && isKnown(r.fsrs) && inReach(w); })
     .sort((a, b) => skippedLast(a, b) || (b.level ?? 0) - (a.level ?? 0) || (b.rank ?? -1) - (a.rank ?? -1));
   const out: WriteUnit[] = [];
   const seen = new Set<string>();
