@@ -50,6 +50,8 @@ import { cardMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
 import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
+import { ListenRows } from '../../src/parent/ListenPanel';
+import type { Recording } from '../../src/types';
 
 const screen = (body: preact.ComponentChildren) => (
   <div class="screen">
@@ -263,6 +265,20 @@ else if (which === 'hear' || which === 'hear-long' || which === 'hear-read') {
   const w = which === 'hear' ? builtinWords(0).find((x) => x.text === '门')! : longest[0]!;
   const near = which === 'hear' ? pool : [w, ...longest.slice(1, 4)];
   render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'hear-read' ? 'meaningRead' : 'hear'} word={w} pool={near} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
+}
+else if (which === 'listen') {
+  // the parent's review queue (spec 2026-10-11 §6, §8): takes kept in memory — WebKit's test contexts can't store a Blob in IndexedDB
+  const words = builtinWords(0);
+  const said = [...['森', '林', '游', '泳'].map((t) => words.find((x) => x.text === t)!), ladderWords().find((w) => w.text === '森林') ?? ladderWords()[0]!];
+  const takes: Recording[] = said.map((w, i) => ({ id: `t${i}`, createdAt: new Date(2026, 9, 11, 17, i * 3).getTime(), prompt: { kind: 'say', wordId: w.id }, blob: new Blob(['x'], { type: 'audio/mp4' }), mime: 'audio/mp4', durationSec: 2 }));
+  render(
+    <div class="screen screen--scroll parent">
+      <main class="parent__body">
+        <section class="panel listen"><h2>Listen & confirm</h2><ListenRows takes={takes} words={new Map(said.map((w) => [w.id, w]))} onJudge={() => {}} /></section>
+      </main>
+    </div>,
+    app,
+  );
 }
 else if (which === 'intro-school-idiom') {
   // a school 成语's own 认新字 card (final review I3): four characters where the card expects one

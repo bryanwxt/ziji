@@ -112,7 +112,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
 
 function signature(): string {
   const s = document.querySelector('.screen');
-  const marks = ['.home', '.usage-opts', '.intro', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.arrival', '.zika-big', '.rotate-hint'];
+  const marks = ['.home', '.usage-opts', '.intro', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.choices--six', '.say', '.say__after', '.arrival', '.zika-big', '.rotate-hint'];
   const on = marks.filter((m) => s?.matches(m) || s?.querySelector(m) || document.querySelector(`${m}:not(.rotate-hint)`));
   const tone = document.querySelector('.sheet')?.className ?? '';
   const words = (s?.querySelector('.kantu__q, .langdu__step, .pet__bubble, h1, h2')?.textContent ?? '').slice(0, 14);
@@ -399,6 +399,23 @@ async function sweep(browser: Browser, size: Size) {
   await run('pin-gate', AFTERNOON, {}, async (p) => { await tabTo(p, '家长'); await check(p, size, 'pin-gate', 0); });
   // Lessons, one activity at a time
   const only = (...ks: ActivityKind[]): Record<ActivityKind, boolean> => ({ newwords: ks.includes('newwords'), practice: ks.includes('practice'), writing: ks.includes('writing'), speaking: ks.includes('speaking') });
+  // Say cards (spec 2026-10-11 §8): every Say screen at every size, recorded with the pretend microphone in WebKit (MediaRecorder
+  // differs in Safari): the card must reach its 听一听 state and leave a Say card behind. (The take itself isn't stored here:
+  // WebKit's test contexts can't put a Blob in IndexedDB; the review queue is screenshotted by the stage cases instead.)
+  await run('say', AFTERNOON, { activities: only('practice') }, async (p) => {
+    await startLesson(p);
+    await walkLesson(p, size, 'say');
+    const seen = (mark: string) => results.some((r) => r.size === size.name && r.flow === 'say' && r.sig.includes(mark));
+    if (!seen('.say')) results.push({ size: size.name, flow: 'say', step: -1, sig: '', problems: ['no Say card came in 练一练'] });
+    else if (!seen('.say__after')) results.push({ size: size.name, flow: 'say', step: -1, sig: '', problems: ['a Say card never finished recording in WebKit'] });
+    const made = await p.evaluate(async () => {
+      const db: IDBDatabase = await new Promise((ok, no) => { const r = indexedDB.open('hanzi-buddy'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+      const cards: { kind: string }[] = await new Promise((ok, no) => { const q = db.transaction('cards').objectStore('cards').getAll(); q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
+      db.close();
+      return cards.filter((c) => c.kind === 'say').length;
+    });
+    if (!made) results.push({ size: size.name, flow: 'say', step: 98, sig: 'cards', problems: ['no Say card was made from a take'] });
+  });
   await run('newwords', AFTERNOON, { activities: only('newwords') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'newwords'); });
   for (const w of WORLDS) { // each world behind a lesson card (parent, 2026-10-05: scenery showed round the card and buttons)
     await run(`lesson-${w.id}`, AFTERNOON, { world: w.id, activities: only('newwords') }, async (p) => { await startLesson(p); await walkLesson(p, size, `lesson-${w.id}`, { firstOnly: true }); });
