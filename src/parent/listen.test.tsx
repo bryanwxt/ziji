@@ -12,6 +12,7 @@ import { SettingsPanel } from './SettingsPanel';
 
 vi.mock('../audio/speech', async (orig) => ({ ...(await orig<typeof import('../audio/speech')>()), speak: vi.fn() }));
 import { speak } from '../audio/speech';
+import * as say from '../session/say';
 
 beforeEach(() => {
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
@@ -53,6 +54,28 @@ describe('Listen & confirm (spec 2026-10-11 §6)', () => {
     expect(reviews).toEqual({ t0: 'ok', t1: 'ok', t2: 'no' });
     expect((await getCard(app.db, 'b:林:say'))!.fsrs.due.getTime()).toBeLessThan(new Date(2026, 9, 9).getTime());
     expect(onReviewed).toHaveBeenCalledTimes(2);
+  });
+  it('a failed review can be tapped again', async () => {
+    const app = await withTakes();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(say, 'reviewTake').mockRejectedValueOnce(new Error('idb'));
+    renderWithApp(<ListenPanel />, app);
+    const ok = await screen.findByRole('button', { name: 'Said right: 森' });
+    fireEvent.click(ok);
+    await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'Said right: 森' }));
+    await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(1));
+  });
+  it('judging one row leaves the other row\'s audio source alone', async () => {
+    const app = await withTakes();
+    let n = 0;
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => `blob:t${n++}`);
+    renderWithApp(<ListenPanel />, app);
+    await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(2));
+    const before = document.querySelectorAll('.listen__row')[1]!.querySelector('audio')!.getAttribute('src');
+    fireEvent.click(screen.getByRole('button', { name: 'Said right: 森' }));
+    await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(1));
+    expect(document.querySelector('.listen__row audio')!.getAttribute('src')).toBe(before);
   });
   it('the tab shows a badge with the number waiting, and it goes down as he is heard', async () => {
     const app = await withTakes();
