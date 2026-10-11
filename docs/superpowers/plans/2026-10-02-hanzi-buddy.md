@@ -16,7 +16,7 @@
 
 ## Global Constraints
 
-- Project root is `/Users/bryantan/apps/hanzi-buddy`. All paths below are relative to it.
+- Project root is `/Users/bryantan/apps/ziji`. All paths below are relative to it.
 - Node v22.22.0, npm 10.
 - Pinned major versions:
   - `preact@^10`, `vite@^7`, `vitest@^4`, `typescript@~5.9`
@@ -130,7 +130,7 @@ src/test/setup.ts, fixtures.ts, renderWithApp.tsx
 
 Run:
 ```bash
-cd /Users/bryantan/apps/hanzi-buddy
+cd /Users/bryantan/apps/ziji
 npm install preact@^10 idb@^8 ts-fsrs@^5 pinyin-pro@^3 hanzi-writer@^3 canvas-confetti@^1
 npm install -D vite@^7 @preact/preset-vite@^2 vite-plugin-pwa@^1 typescript@~5.9 vitest@^4 jsdom@^26 @testing-library/preact@^3 fake-indexeddb@^6 tsx@^4 hanzi-writer-data@2.0.1 @types/node@^22 @types/canvas-confetti@^1
 ```

@@ -21,7 +21,7 @@ The fishing game is rebuilt for readability.
 
 ## Global Constraints
 
-- Project root: `/Users/bryantan/apps/hanzi-buddy`, branch `build/v1`.
+- Project root: `/Users/bryantan/apps/ziji`, branch `build/v1`.
 - All earlier Global Constraints still apply, including:
   - reduced motion
   - no `hue-rotate`
