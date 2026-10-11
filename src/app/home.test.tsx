@@ -101,6 +101,20 @@ describe('HomeScreen', () => {
     fireEvent.click(screen.getByText('再学一课'));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false, extra: true });
   });
+  it('the second lesson is offered softly: Truffle asks, and the button is the quiet one (spec 2026-10-11 §4)', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02', greetedOn: '2026-10-02' } }); // greeted already: his own line shows
+    await saveSession(app.db, done('2026-10-02', ['newwords', 'practice']));
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天完成了！');
+    await waitFor(() => expect(document.querySelector('.home__pet .pet__bubble')?.textContent).toContain('想再学一课吗？'));
+    expect(screen.getByText('再学一课').closest('button')!.className).toContain('btn--secondary');
+  });
+  it('before the day’s lesson is done he does not ask', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, greetedOn: '2026-10-02' } });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(document.querySelector('.home__pet .pet__bubble')?.textContent ?? '').not.toContain('想再学一课吗？');
+  });
   it('no extra lesson before today\'s is done', async () => {
     renderWithApp(<HomeScreen />, await makeAppData());
     await screen.findByText('今天的练习');

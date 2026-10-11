@@ -44,6 +44,8 @@ interface HomeData {
 }
 
 const SLEEP_AFTER_MS = 20_000;
+/** What Truffle asks once the day's lesson is done (spec 2026-10-11 §4): the second lesson, offered softly. */
+const OFFER = '想再学一课吗？';
 
 export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: number }) {
   const { db, now, go, kid, settings, refresh } = useApp();
@@ -232,8 +234,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           {doneToday && chestOpened && (
             <div class="card done-card">
               <p class="done-today"><Label zh="今天完成了！" /> <InkIcon name="party" size={30} /></p>
-              {/* one lesson a day is the baseline; another is his choice (parent, 2026-10-05): new words and what's due, for stars */}
-              <button type="button" class="btn btn--primary" onClick={() => { primeSpeech(); go({ name: 'session', free: false, extra: true }); }}><Label zh="再学一课" /></button>
+              {/* one ~15-minute lesson is the day's; another is offered softly — Truffle asks, the button is the quiet one — his choice (spec 2026-10-11 §4): never the streak or the chest */}
+              <button type="button" class="btn btn--secondary" onClick={() => { primeSpeech(); go({ name: 'session', free: false, extra: true }); }}><Label zh="再学一课" /></button>
               {hasCards && (
                 <button type="button" class="btn btn--secondary" onClick={() => play(true)}><Label zh="再玩一会儿" /></button>
               )}
@@ -278,7 +280,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       <div class="home__pet">
         {/* a tap here plays with him (spec 2026-10-04 §4.5); his room is the 松露 tab */}
         <div class="home__pet-touch">
-          <Pet kid={k} mood={sleepy ? 'sleepy' : doneToday ? 'pleased' : 'sulk'} size={150} bubble={said ?? (sleepy ? null : worldLine(world, today))} react={propPlay.react} lookAt={propPlay.lookAt} />
+          <Pet kid={k} mood={sleepy ? 'sleepy' : doneToday ? 'pleased' : 'sulk'} size={150} bubble={said ?? (sleepy ? null : doneToday && chestOpened ? OFFER : worldLine(world, today))} react={propPlay.react} lookAt={propPlay.lookAt} />
         </div>
       </div>
       {arrival && (
