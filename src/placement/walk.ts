@@ -35,11 +35,12 @@ export function bandLevel(bands: Word[][], band: number): number {
   return bands[Math.max(0, Math.min(band, bands.length - 1))]?.at(-1)?.level ?? 1;
 }
 
-/** The built-in characters in rank order, in bands of 100. */
+/** The built-in characters in rank order, in bands of 100; a short tail (the 5 school characters HSK lacks) joins the last band. */
 export function rankBands(words: Word[]): Word[][] {
   const ranked = words.filter((w) => w.source === 'builtin' && w.rank !== null).sort((a, b) => a.rank! - b.rank!);
   const bands: Word[][] = [];
   for (let i = 0; i < ranked.length; i += BAND_SIZE) bands.push(ranked.slice(i, i + BAND_SIZE));
+  if (bands.length > 1 && bands.at(-1)!.length < BAND_SIZE / 2) bands.splice(-2, 2, [...bands.at(-2)!, ...bands.at(-1)!]);
   return bands;
 }
 

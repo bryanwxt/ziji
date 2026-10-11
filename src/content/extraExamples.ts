@@ -1,5 +1,5 @@
 // 组词 for characters the HSK word list gave none (parent, 2026-10-05: 一's card had only a 成语; 九, 猫, 鱼… had nothing).
-// Written for the app, HSK 1–6 characters only: everyday words a P2 child meets, at the card's reading, with their English.
+// Written for the app, HSK 1–6 characters and his textbook's own: everyday words a P2 child meets, at the card's reading, with their English.
 // [组词, pinyin as said (一/不 with their tone changes, 轻声 toneless), English]
 
 export type ExtraExample = [text: string, pinyin: string, english: string];
@@ -127,6 +127,12 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
   趟: [['一趟', 'yí tàng', 'one trip'], ['走一趟', 'zǒu yí tàng', 'to make a trip']],
   踢: [['踢球', 'tī qiú', 'to kick a ball; to play football'], ['踢足球', 'tī zú qiú', 'to play football']],
   蹲: [['蹲下', 'dūn xià', 'to squat down'], ['蹲着', 'dūn zhe', 'squatting']],
+  // his textbook's characters that HSK doesn't have (欢乐伙伴2.0 二上 L10, 三下 L12–13; spec 2026-10-11 §7)
+  蚂: [['蚂蚁', 'mǎ yǐ', 'ant']],
+  蚁: [['蚂蚁', 'mǎ yǐ', 'ant'], ['小蚂蚁', 'xiǎo mǎ yǐ', 'little ant']],
+  拇: [['拇指', 'mǔ zhǐ', 'thumb'], ['大拇指', 'dà mǔ zhǐ', 'thumb']],
+  狐: [['狐狸', 'hú li', 'fox']],
+  狸: [['狐狸', 'hú li', 'fox']],
 };
 
 /** English for the 组词 above, for the cards and the sheet (the HSK glossary only covers its own words). */

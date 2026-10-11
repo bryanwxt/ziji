@@ -29,6 +29,7 @@ export interface BuiltinChar {
   strokes: number;
   writeable: boolean;
   examples: Example[];
+  school?: true; // on his textbook's list but not an HSK character (蚂 蚁 拇 狐 狸): added after every HSK character (spec 2026-10-11 §7)
 }
 
 export interface CharInfo {

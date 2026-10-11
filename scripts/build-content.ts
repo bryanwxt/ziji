@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { pinyin } from 'pinyin-pro';
-import { buildBuiltin, buildWordDictionary, parseHskSections, type MmahEntry } from './content-lib';
+import { buildBuiltin, buildWordDictionary, parseHskSections, type MmahEntry, type SchoolLesson } from './content-lib';
+import moe from '../src/content/moe2024.json';
 
 const SOURCES = {
   charlist: 'https://raw.githubusercontent.com/elkmovie/hsk30/main/charlist.txt',
@@ -35,6 +36,7 @@ const chars = buildBuiltin({
   hskWords: parseHskSections(await source('wordlist')),
   dictionary,
   pinyinOf: (text) => pinyin(text, { type: 'array' }).join(' '),
+  school: (moe as { lessons: SchoolLesson[] }).lessons, // spec 2026-10-11 §7: every listed character, and 组词 he can read
 }, skipped);
 
 const body = chars.map((c) => '  ' + JSON.stringify(c)).join(',\n');
@@ -44,4 +46,4 @@ const hskWords = buildWordDictionary(parseHskSections(await source('wordlist')))
 const wordsBody = hskWords.map((w) => JSON.stringify(w)).join(',');
 await writeFile(new URL('../src/content/hskwords.json', import.meta.url), `{"version":1,"words":[${wordsBody}]}\n`);
 const perLevel = [1, 2, 3, 4, 5, 6, 7].map((l) => chars.filter((c) => c.level === l).length).join('/');
-console.log(`Wrote ${chars.length} characters (levels 1–7: ${perLevel}), ${chars.filter((c) => c.writeable).length} writeable, ${skipped.length} skipped (${skipped.join('')}); ${hskWords.length} HSK words`);
+console.log(`Wrote ${chars.length} characters (levels 1–7: ${perLevel}), ${chars.filter((c) => c.school).length} from his textbook only (${chars.filter((c) => c.school).map((c) => c.char).join('')}), ${chars.filter((c) => c.writeable).length} writeable, ${skipped.length} skipped (${skipped.join('')}); ${hskWords.length} HSK words`);

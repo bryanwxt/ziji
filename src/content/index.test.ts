@@ -6,9 +6,16 @@ import hskJson from './hskwords.json';
 import { radicalMeaning } from './radicals';
 
 describe('content module', () => {
+  it('has the 5 listed characters HSK lacks, in school order, with 组词 he can say (spec 2026-10-11 §7)', () => {
+    const byText = new Map(builtinWords(0).map((w) => [w.text, w]));
+    for (const ch of '蚂蚁拇狐狸') expect(byText.get(ch)!.rank).toBeLessThan(1031); // his book's order, not after HSK
+    expect(byText.get('蚂')!.examples!.map((e) => e.text)).toEqual(['蚂蚁']);
+    expect(byText.get('狸')!.examples!.map((e) => e.text)).toEqual(['狐狸']);
+    expect(BUILTIN.filter((c) => c.school).map((c) => c.char).join('')).toBe('蚂蚁拇狐狸');
+  });
   it('maps every built-in character to an active built-in word', () => {
     const words = builtinWords(123);
-    expect(words).toHaveLength(3000);
+    expect(words).toHaveLength(3005); // HSK's 3,000 and the 5 his book lists that HSK lacks (spec 2026-10-11 §7)
     expect(words[0]).toMatchObject({ id: `b:${BUILTIN[0]!.char}`, source: 'builtin', paused: false, createdAt: 123 });
     // school order (MOE 《欢乐伙伴2.0》): 一上 lesson 1 opens with 衣, so it comes first; a character his books don't teach comes after them all
     const byText = new Map(words.map((w) => [w.text, w]));

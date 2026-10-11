@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildBuiltin, buildWordDictionary, cleanHskWord, extractComponents, firstSenses, parseHskSections, type MmahEntry } from './content-lib';
+import { buildBuiltin, buildWordDictionary, cleanHskWord, extractComponents, firstSenses, parseHskSections, type MmahEntry, type SchoolLesson } from './content-lib';
 
 const charlist = '# header\n\n一级汉字表\n1\t大\n2\t河\n3\t人\n\n二级汉字表\n1\t可\n2\t人\n\n初等手写字表\n1\t大\n2\t人\n';
 const wordlist = '# header\n\n一级词汇表\n1 大人\n2 爸爸｜爸\n\n二级词汇表\n1 大河（名）\n\n三级词汇表\n1 可人\n';
@@ -102,5 +102,30 @@ describe('组词 examples a child can use', () => {
     };
     expect(run()).toEqual(['龘']);
     expect(run()).toEqual(['龘']); // a second build doesn't pile onto the first's list
+  });
+});
+
+describe('his textbook in the build (spec 2026-10-11 §7)', () => {
+  const hskChars = parseHskSections('一级汉字表\n1\t大\n2\t人\n3\t天\n');
+  const hskWords = parseHskSections('一级词汇表\n1 大天\n2 大人\n3 大大\n');
+  const dict = new Map(['大', '人', '天', '马'].map((c, i) => [c, entry(c, i + 2, '？', c)]));
+  const school: SchoolLesson[] = [{ term: '一上', read: '大人' }, { term: '二上', read: '天马狸' }];
+  const without = buildBuiltin({ hskChars, hskWords, dictionary: dict, pinyinOf });
+  const skipped: string[] = [];
+  const withBook = buildBuiltin({ hskChars, hskWords, dictionary: dict, pinyinOf, school }, skipped);
+  const bare = (cs: typeof withBook) => cs.map(({ examples: _e, ...c }) => c);
+
+  it('adds the characters his book teaches that HSK lacks, after every HSK character, at their grade; no HSK character moves', () => {
+    expect(withBook.map((c) => [c.char, c.rank, c.level, c.school ?? false, c.writeable])).toEqual([
+      ['大', 0, 1, false, false], ['人', 1, 1, false, false], ['天', 2, 1, false, false], ['马', 3, 2, true, false],
+    ]);
+    expect(bare(withBook.slice(0, 3))).toEqual(bare(without));
+    expect(skipped).toEqual(['狸']); // no dictionary entry: skipped, never a broken card
+  });
+  it('puts 组词 whose other characters the book has already taught first, and keeps every one the card had', () => {
+    expect(without.find((c) => c.char === '大')!.examples.map((e) => e.text)).toEqual(['大天', '大人', '大大']);
+    // 大 is taught in lesson 0 with 人; 天 only later; 大大 has no other character to have learned
+    expect(withBook.find((c) => c.char === '大')!.examples.map((e) => e.text)).toEqual(['大人', '大天', '大大']);
+    expect(withBook.find((c) => c.char === '天')!.examples.map((e) => e.text)).toEqual(['大天']);
   });
 });
