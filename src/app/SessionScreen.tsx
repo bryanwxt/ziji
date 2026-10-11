@@ -39,6 +39,7 @@ import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
 import { beginNewWord, bringForward, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import { settleLessonStars } from '../session/stars';
+import { starsOf } from '../stats/stats';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
@@ -49,6 +50,7 @@ import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type Session
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
 import { useApp } from './AppContext';
+import { logError } from './errorLog';
 import { Celebration } from './Celebration';
 import { loadKnowledge, type Knowledge } from './knowledge';
 import { newId } from '../lib/id';
@@ -111,7 +113,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex && rec.plan.steps[0] === 'newwords' && rec.flashQueue.length > 0) requestGreeting('你好！我们开始吧！'); // it opens on a new word's card, never on a question (spec §4.3)
       // the lesson's clips (neural voice): fetched now, so they play at once and offline
       for (const w of ladderWordsBesides(know.words)) if (!know.wordsById.has(w.id)) know.wordsById.set(w.id, w); // the ladder's 词语 aren't stored
-      const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds, ...(rec.plan.hearReviewIds ?? []), ...(rec.plan.understandReviewIds ?? [])]);
+      const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds, ...(rec.plan.hearReviewIds ?? []), ...(rec.plan.understandReviewIds ?? []), ...(rec.plan.sayIds ?? [])]);
       prefetchWords([...want].map((id) => know.wordsById.get(id)).filter((w): w is Word => !!w));
       latest.current = rec;
       setState({
@@ -145,11 +147,21 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const practiceItem = rec ? currentPracticeItem(rec) : null;
   const practiceWord = practiceItem ? state!.know.wordsById.get(practiceItem.wordId) : undefined;
 
+  /** A finished lesson's stars; if they can't be settled it is still saved and celebrated, with a star at least (final review I3). */
+  const settleOrFloor = async (step: SessionRecord): Promise<SessionRecord> => {
+    try {
+      return await settleLessonStars(db, step, now(), (id) => state?.know.wordsById.get(id));
+    } catch (err) {
+      logError(err);
+      return { ...step, stars: Math.max(1, step.stars === undefined ? starsOf(step.completedSteps) : 0), produced: { write: 0, say: 0 }, closest: [] };
+    }
+  };
+
   const commit = async (step: SessionRecord) => {
     const was = latest.current;
     latest.current = step;
     // a finished lesson's stars are what he can newly produce (spec 2026-10-11 §5); an extra lesson's go to bonusStars, as before
-    const next = !step.free && step.completed && !was?.completed ? await settleLessonStars(db, step, now(), (id) => state?.know.wordsById.get(id)) : step;
+    const next = !step.free && step.completed && !was?.completed ? await settleOrFloor(step) : step;
     latest.current = next;
     if (!next.free && !next.extra) await saveSession(db, next); // an extra lesson never replaces the day's record
     if (!next.free && !next.extra && next.completed && !was?.completed) {
@@ -310,7 +322,17 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         await commit(skipSayItems(latest.current ?? rec));
         return;
       }
-      if (!rec.free) know.cardsById.set(`${item.wordId}:say`, await recordSayTake(db, item.wordId, r.take, now()));
+      if (!rec.free) {
+        try {
+          know.cardsById.set(`${item.wordId}:say`, await recordSayTake(db, item.wordId, r.take, now()));
+        } catch (err) {
+          // the take couldn't be kept (a full disk, a failed put): never leave him stuck on this card — the lesson's Say cards
+          // go, as for a blocked microphone, and 练一练 carries on with taps (final review I1)
+          logError(err);
+          await commit(skipSayItems(latest.current ?? rec));
+          return;
+        }
+      }
       await commit(afterPracticeAnswer(latest.current ?? rec, true, r.elapsedMs));
     })();
 

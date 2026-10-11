@@ -3,8 +3,8 @@ import { useApp } from '../app/AppContext';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
 import { addDays, localDateKey } from '../lib/date';
 import { dueTomorrow, minutesPerDay, streak, troubleWords, weeklyAccuracy, wordOf } from '../stats/stats';
-import { allSessions, countRecordings, listRecordings, logsSince } from '../store/repo';
-import { waitingTakes } from '../session/say';
+import { allSessions, listRecordings, logsSince } from '../store/repo';
+import { takeWord, waitingTakes } from '../session/say';
 import type { ReviewLog, SessionRecord } from '../types';
 import { MinutesChart } from './MinutesChart';
 import type { ParentTab } from './ParentArea';
@@ -28,10 +28,10 @@ export function Dashboard({ onNavigate }: { onNavigate: (tab: ParentTab) => void
   useEffect(() => {
     void (async () => {
       const t = now();
-      const [know, sessions, logs, recordings, all] = await Promise.all([
-        loadKnowledge(db), allSessions(db), logsSince(db, addDays(t, -42).getTime()), countRecordings(db), listRecordings(db),
-      ]);
+      const [know, sessions, logs, all] = await Promise.all([loadKnowledge(db), allSessions(db), logsSince(db, addDays(t, -42).getTime()), listRecordings(db)]);
       const takes = waitingTakes(all).length;
+      // Say takes have their own queue and tidy themselves: they aren't counted toward "Tidy up" (final review I5)
+      const recordings = all.filter((r) => takeWord(r) === null).length;
       let micDenied = false;
       try {
         micDenied = (await navigator.permissions?.query({ name: 'microphone' as PermissionName }))?.state === 'denied';

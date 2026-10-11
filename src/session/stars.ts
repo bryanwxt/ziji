@@ -1,5 +1,6 @@
 // A finished lesson's stars (spec 2026-10-11 §5): what newly reached "can produce" since the last lesson's stars, at least one.
 import { parseDateKey, startOfLocalDay } from '../lib/date';
+import { starsOf } from '../stats/stats';
 import { closestToProduce, lessonStars, producedBetween } from '../stats/produce';
 import type { AppDb } from '../store/db';
 import { allCards, getKid, logsSince, updateKid } from '../store/repo';
@@ -16,7 +17,8 @@ export async function settleLessonStars(db: AppDb, rec: SessionRecord, now: Date
   const since = kid?.starredUpTo ?? startOfLocalDay(parseDateKey(rec.date)).getTime();
   const p = producedBetween(cards, since, at);
   const produced = { write: p.write.length, say: p.say.length };
-  const stars = lessonStars(produced);
+  // a lesson begun before mastery stars (no `stars` on it) counted its steps while in progress: it never ends with fewer (final review I2)
+  const stars = rec.stars === undefined ? Math.max(lessonStars(produced), starsOf(rec.completedSteps)) : lessonStars(produced);
   await updateKid(db, (k) => ({ ...k, starredUpTo: at, ...(rec.extra ? { bonusStars: k.bonusStars + stars } : {}) }));
   return { ...rec, stars, produced, closest: produced.write + produced.say ? [] : closestToProduce(cards, logs, wordOf) };
 }

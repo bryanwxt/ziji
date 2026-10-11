@@ -7,7 +7,7 @@ import { SayCard } from './SayCard';
 vi.mock('../../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 import { recordingSupported, startRecording } from '../../audio/recorder';
-import { speak } from '../../audio/speech';
+import { speak, stopSpeaking } from '../../audio/speech';
 
 const sen = makeWord('森林', { id: 'w:森林', pinyin: 'sēn lín' });
 let n = 0;
@@ -64,6 +64,13 @@ describe('a Say card (spec 2026-10-11 §3)', () => {
     fireEvent.click(screen.getByText('开始录音'));
     await waitFor(() => expect(onDone).toHaveBeenCalledWith(null));
     expect(onDone).toHaveBeenCalledTimes(1);
+    expect(document.body.textContent).not.toContain('麦克风没有打开'); // no note flashes before the skip
+  });
+  it('the model stops when the card goes', async () => {
+    const { unmount } = render(<SayCard word={sen} kid={DEFAULT_KID} onDone={vi.fn()} />);
+    vi.mocked(stopSpeaking).mockClear();
+    unmount();
+    expect(stopSpeaking).toHaveBeenCalledTimes(1);
   });
   it('no microphone at all skips it straight away', async () => {
     vi.mocked(recordingSupported).mockReturnValue(false);

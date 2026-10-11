@@ -159,17 +159,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .progressbar__cp.is-current { filter: none; opacity: 1; border-color: var(--green); }
 .progressbar__cp.is-done { filter: none; opacity: 1; background: var(--gold-soft); border-color: var(--gold); animation: cp-pop var(--dur-slow) var(--spring-bouncy); }
 @keyframes cp-pop { from { transform: scale(0.5); } }
-.combo-banner {
-  position: fixed; top: 18%; left: 50%; z-index: 30; pointer-events: none; background: var(--orange); color: #fff; font-size: 38px; font-weight: 900;
-  padding: 14px 32px; border-radius: 22px; box-shadow: 0 6px 0 var(--orange-edge); animation: banner 1.6s var(--ease-out) forwards;
-}
-@keyframes banner {
-  0% { transform: translateX(-50%) scale(0.3); opacity: 0; }
-  18% { transform: translateX(-50%) scale(1.08); opacity: 1; }
-  28% { transform: translateX(-50%) scale(1); }
-  85% { opacity: 1; }
-  100% { transform: translateX(-50%) translateY(-20px); opacity: 0; }
-}
 
 /* Bottom bar and tab bar */
 .sheet, .tabbar {

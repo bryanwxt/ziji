@@ -37,9 +37,19 @@ describe('a finished lesson’s stars (spec 2026-10-11 §5)', () => {
   it('an extra lesson’s stars go to bonusStars, counting only what passed since the day’s lesson', async () => {
     const db = await freshDb();
     await saveKid(db, { ...DEFAULT_KID, bonusStars: 3, starredUpTo: at(10).getTime() });
-    await putCards(db, [pass('b:森', 'write', at(9)), pass('b:林', 'write', at(11))]);
+    await putCards(db, [pass('b:森', 'write', at(9)), pass('b:林', 'write', at(11)), pass('b:木', 'say', at(11, 2))]);
     const rec = await settleLessonStars(db, done(true), at(12), (id) => words.get(id));
-    expect(rec.stars).toBe(1);
-    expect((await getKid(db))!.bonusStars).toBe(4);
+    expect([rec.stars, rec.produced]).toEqual([2, { write: 1, say: 1 }]); // 森 passed before the day's lesson: not again
+    expect((await getKid(db))!.bonusStars).toBe(5);
+  });
+  it('a lesson begun before mastery stars (no stars on it) never ends with fewer than its steps had (final review I2)', async () => {
+    const db = await freshDb();
+    await saveKid(db, DEFAULT_KID);
+    const { stars: _, ...legacy } = { ...done(), completedSteps: ['newwords' as const, 'practice' as const] };
+    expect((await settleLessonStars(db, legacy, at(10), (id) => words.get(id))).stars).toBe(3); // starsOf: 1 + 2
+    await putCards(db, [pass('b:森', 'write', at(9)), pass('b:林', 'say', at(9)), pass('b:木', 'write', at(9)), pass('b:水', 'write', at(9))]);
+    await saveKid(db, DEFAULT_KID);
+    expect((await settleLessonStars(db, legacy, at(10), (id) => words.get(id))).stars).toBe(4); // more produced: those count
+    expect((await settleLessonStars(db, { ...legacy, stars: 0 }, at(11), (id) => words.get(id))).stars).toBe(1); // a lesson begun after: mastery only
   });
 });

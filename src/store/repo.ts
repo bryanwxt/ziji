@@ -179,7 +179,6 @@ export async function listRecordings(db: AppDb): Promise<Recording[]> {
 
 export const getRecording = (db: AppDb, id: string) => db.get('recordings', id);
 export const deleteRecording = (db: AppDb, id: string) => db.delete('recordings', id);
-export const countRecordings = (db: AppDb) => db.count('recordings');
 
 export async function addPrompt(db: AppDb, p: PicturePrompt): Promise<void> {
   await db.put('prompts', p);

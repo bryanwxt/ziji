@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { Rating } from 'ts-fsrs';
 import { newCard, review } from '../srs/scheduler';
 import { freshDb, makeCard } from '../test/fixtures';
-import { addRecording, getCard, getRecording, listRecordings, logsSince, putCards } from '../store/repo';
+import { builtinWords } from '../content';
+import { DEFAULT_SETTINGS } from '../types';
+import { buildSessionPlan } from './plan';
+import { addRecording, allCards, getCard, getRecording, listRecordings, logsSince, putCards } from '../store/repo';
 import { endOfLocalDay } from '../lib/date';
 import type { Recording } from '../types';
 import { recordSayTake, reviewTake, takesToDrop, waitingTakes } from './say';
@@ -16,12 +19,31 @@ describe('a take (spec 2026-10-11 §3)', () => {
     const db = await freshDb();
     const card = await recordSayTake(db, 'b:森', take, day(1));
     expect(card.id).toBe('b:森:say');
-    expect(card.fsrs.due).toEqual(review(newCard(day(1)), Rating.Good, day(1)).due);
+    expect(card.fsrs.state).toEqual(review(newCard(day(1)), Rating.Good, day(1)).state);
+    expect(card.fsrs.due).toEqual(new Date(2026, 9, 2)); // not again today: the start of tomorrow (FSRS would say +10 min)
     expect(card.passed).toBeUndefined();
     const [saved] = await listRecordings(db);
     expect(saved!.prompt).toEqual({ kind: 'say', wordId: 'b:森' });
     expect(saved!.review).toBeUndefined();
     expect(await logsSince(db, 0)).toEqual([]); // an unreviewed take never counts toward the pass
+  });
+  it('a take is never due again the same day, so a second lesson today does not ask the same Say words (final review I4)', async () => {
+    const db = await freshDb();
+    const words = builtinWords(0);
+    const big = words.find((w) => w.text === '大')!;
+    await putCards(db, [{ ...makeCard(big.id, 'recognise', new Date(2026, 10, 1), true), passed: day(1, 8).getTime() }]);
+    const plan = async (at: Date) => buildSessionPlan({ cards: await allCards(db), words, settings: { ...DEFAULT_SETTINGS, grade: 2, gradeYear: 2026 }, now: at });
+    expect((await plan(day(2, 9))).sayIds).toContain(big.id);
+    await recordSayTake(db, big.id, take, day(2, 9));
+    expect((await plan(day(2, 19))).sayIds).not.toContain(big.id); // 再学一课 the same evening
+    expect((await plan(day(3, 9))).sayIds).toContain(big.id); // due again tomorrow
+  });
+  it('a later take keeps a due further out than tomorrow', async () => {
+    const db = await freshDb();
+    const far = review(review(newCard(day(1)), Rating.Good, day(1)), Rating.Good, day(3));
+    await putCards(db, [{ ...makeCard('b:森', 'say', day(1)), fsrs: far }]);
+    const card = await recordSayTake(db, 'b:森', take, day(4));
+    expect(card.fsrs.due.getTime()).toBeGreaterThan(new Date(2026, 9, 5).getTime());
   });
   it('a take on a card that has passed keeps the pass', async () => {
     const db = await freshDb();
@@ -100,6 +122,19 @@ describe('keeping takes tidy (spec 2026-10-11 §6, §7)', () => {
     expect(drop).toHaveLength(30);
     expect(drop).not.toContain('t30'); // 森's newest
     expect(takesToDrop(recs.slice(0, 60), day(2))).toEqual([]); // 60 waiting: all kept
+  });
+  it('once a word’s Say has passed, its reviewed takes older than 14 days all go, the newest too (final review I5)', () => {
+    const recs = [rec('old', 'b:森', day(1), 'ok'), rec('newest', 'b:森', day(2), 'ok'), rec('lin', 'b:林', day(1), 'ok'), rec('waiting', 'b:森', day(1))];
+    expect(takesToDrop(recs, day(20), new Set(['b:森'])).sort()).toEqual(['newest', 'old']); // 林 has not passed: it keeps its newest
+    expect(takesToDrop(recs, day(14), new Set(['b:森']))).toEqual([]); // not yet 14 days
+  });
+  it('a new take drops a passed word’s old reviewed takes from the store', async () => {
+    const db = await freshDb();
+    await putCards(db, [{ ...makeCard('b:森', 'say', day(1)), passed: day(3).getTime() }]);
+    await addRecording(db, rec('sen', 'b:森', day(1), 'ok'));
+    await addRecording(db, rec('lin', 'b:林', day(1), 'ok'));
+    await recordSayTake(db, 'b:木', take, day(20));
+    expect((await listRecordings(db)).map((r) => r.prompt.kind === 'say' && r.prompt.wordId).sort()).toEqual(['b:木', 'b:林']);
   });
   it('a new take tidies the store', async () => {
     const db = await freshDb();

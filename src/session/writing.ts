@@ -1,4 +1,4 @@
-// 写一写 (spec 2026-10-05 §5): 8–10 characters from memory, at or below his level, traced only once, never back to back.
+// 写一写 (spec 2026-10-05 §5; spec 2026-10-11 §4): 5 characters from memory at the usual 15 minutes (writeCharTarget), at or below his level, traced only once, never back to back.
 import { hanChars } from '../content';
 import { State } from 'ts-fsrs';
 import { writeAt } from '../content/curriculum';

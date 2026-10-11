@@ -95,6 +95,17 @@ describe('Listen & confirm (spec 2026-10-11 §6)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Listen & confirm' }));
     expect(onNavigate).toHaveBeenCalledWith('listen');
   });
+  it('Say takes don’t count toward the Overview’s too-many-recordings warning (final review I5)', async () => {
+    const app = await withTakes();
+    for (let i = 0; i < 101; i++) await addRecording(app.db, take(`s${i}`, 'b:森', 3, 'ok'));
+    renderWithApp(<Dashboard onNavigate={vi.fn()} />, app);
+    await screen.findByText('Takes to review');
+    expect(screen.queryByText('Tidy up')).toBeNull();
+    for (let i = 0; i < 101; i++) await addRecording(app.db, { ...take(`r${i}`, 'b:森', 3), prompt: { kind: 'intro' } });
+    renderWithApp(<Dashboard onNavigate={vi.fn()} />, app);
+    expect(await screen.findByText('Tidy up')).toBeTruthy();
+    expect(screen.getByText(/There are 101 recordings/)).toBeTruthy();
+  });
   it('Settings has a Say cards switch, on by default', async () => {
     const app = await makeAppData();
     renderWithApp(<SettingsPanel />, app);

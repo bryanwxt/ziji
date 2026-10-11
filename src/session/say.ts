@@ -3,7 +3,7 @@
 import { Rating } from 'ts-fsrs';
 import type { FinishedRecording } from '../audio/recorder';
 import { sayPassed } from '../ladder/rungs';
-import { endOfLocalDay } from '../lib/date';
+import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
 import { newId } from '../lib/id';
 import { newCard, review } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
@@ -11,7 +11,7 @@ import { deleteRecording, getCard, getRecording, keepRecording, listRecordings, 
 import type { CardRecord, Recording } from '../types';
 import { bringForward } from './record';
 
-/** Reviewed takes are kept this long (each word's newest take is always kept). */
+/** Reviewed takes are kept this long (each word's newest take too, until his Say has passed). */
 export const REVIEWED_KEEP_DAYS = 14;
 /** Past this many waiting takes, only each word's newest waiting take is kept. */
 export const WAITING_CAP = 60;
@@ -36,14 +36,16 @@ function newestByWord(list: Recording[]): Map<string, Recording> {
 }
 
 /**
- * The takes to delete (spec §6, §7): reviewed takes older than 14 days, except each word's newest take; and when more than 60
- * wait, every waiting take but each word's newest. Other recordings are never touched.
+ * The takes to delete (spec §6, §7): reviewed takes older than 14 days, except each word's newest take while its Say has not
+ * passed (`passed`: the words whose Say card has; final review I5); and when more than 60 wait, every waiting take but each
+ * word's newest. Other recordings are never touched.
  */
-export function takesToDrop(recs: Recording[], now: Date): string[] {
+export function takesToDrop(recs: Recording[], now: Date, passed: ReadonlySet<string> = new Set()): string[] {
   const takes = recs.filter((r) => takeWord(r) !== null);
   const newest = newestByWord(takes);
   const cutoff = now.getTime() - REVIEWED_KEEP_DAYS * 86_400_000;
-  const drop = new Set(takes.filter((r) => r.review && r.createdAt < cutoff && newest.get(takeWord(r)!) !== r).map((r) => r.id));
+  const keepNewest = (r: Recording) => !passed.has(takeWord(r)!) && newest.get(takeWord(r)!) === r;
+  const drop = new Set(takes.filter((r) => r.review && r.createdAt < cutoff && !keepNewest(r)).map((r) => r.id));
   const waiting = takes.filter((r) => !r.review);
   if (waiting.length > WAITING_CAP) {
     const keep = newestByWord(waiting);
@@ -54,15 +56,22 @@ export function takesToDrop(recs: Recording[], now: Date): string[] {
 
 /**
  * He recorded a take: it is kept for the parent, and his Say card (made now if it is his first) is scheduled like a right
- * answer (FSRS Good). Nothing is logged: only the parent's verdict counts toward the pass. Old takes are tidied after.
+ * answer (FSRS Good), but never due again before tomorrow — a second lesson today must not ask the same words (final review
+ * I4). Nothing is logged: only the parent's verdict counts toward the pass. Old takes are tidied after.
  */
 export async function recordSayTake(db: AppDb, wordId: string, take: FinishedRecording, now: Date): Promise<CardRecord> {
   await keepRecording(db, { id: newId(), createdAt: now.getTime(), prompt: { kind: 'say', wordId }, ...take });
   const id = `${wordId}:say`;
   const had = await getCard(db, id);
-  const card: CardRecord = { ...(had ?? {}), id, wordId, kind: 'say', fsrs: review(had?.fsrs ?? newCard(now), Rating.Good, now) }; // keeps its pass
+  const next = review(had?.fsrs ?? newCard(now), Rating.Good, now);
+  const tomorrow = startOfLocalDay(addDays(now, 1));
+  const card: CardRecord = { ...(had ?? {}), id, wordId, kind: 'say', fsrs: next.due < tomorrow ? { ...next, due: tomorrow } : next }; // keeps its pass
   await putCards(db, [card]);
-  for (const gone of takesToDrop(await listRecordings(db), now)) await deleteRecording(db, gone);
+  const recs = await listRecordings(db);
+  const words = [...new Set(recs.map(takeWord).filter((w): w is string => w !== null))];
+  const passed = new Set<string>();
+  for (const w of words) if ((w === wordId ? card : await getCard(db, `${w}:say`))?.passed) passed.add(w);
+  for (const gone of takesToDrop(recs, now, passed)) await deleteRecording(db, gone);
   return card;
 }
 

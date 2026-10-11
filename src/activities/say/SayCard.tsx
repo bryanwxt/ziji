@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { FinishedRecording } from '../../audio/recorder';
-import { speak } from '../../audio/speech';
+import { speak, stopSpeaking } from '../../audio/speech';
 import type { KidState, Word } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
@@ -28,6 +28,7 @@ export function SayCard({ word, kid, onDone }: { word: Word; kid: KidState; onDo
     }
     if (rec.state === 'done') speak(word.text, { reading: word.pinyin }); // the model, right after his take
   }, [rec.state]);
+  useEffect(() => () => stopSpeaking(), []); // the model stops when the card goes
   const next = () => {
     if (finished.current || !rec.result) return; // a double tap on 继续 keeps one take
     finished.current = true;
@@ -46,7 +47,7 @@ export function SayCard({ word, kid, onDone }: { word: Word; kid: KidState; onDo
     >
       <div class="say">
         <div class="hanzi hanzi--q" data-q lang="zh">{word.text}</div>
-        <MicButton rec={rec} withLevel={false} />
+        {rec.state !== 'blocked' && <MicButton rec={rec} withLevel={false} />}{/* blocked: the card is skipped at once, with no note */}
         {said && (
           <div class="say__after">
             <SpeakButton text={word.text} reading={word.pinyin} />

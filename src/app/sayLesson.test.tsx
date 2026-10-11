@@ -11,6 +11,11 @@ vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
 vi.mock('../ui/confetti', () => ({ celebrate: vi.fn() }));
 vi.mock('../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
 import { recordingSupported, startRecording } from '../audio/recorder';
+vi.mock('../session/say', async (orig) => {
+  const real = await orig<typeof import('../session/say')>();
+  return { ...real, recordSayTake: vi.fn(real.recordSayTake) };
+});
+import { recordSayTake } from '../session/say';
 
 const words = builtinWords(0);
 const READ = ['大', '人', '口', '山', '水', '火'];
@@ -68,5 +73,23 @@ describe('Say cards in a lesson (spec 2026-10-11 §3, §4)', () => {
       expect(rec.practiceQueue!.slice(rec.practiceIndex).some((x) => x.ask === 'say')).toBe(false);
     });
     expect(await listRecordings(app.db)).toEqual([]);
+    // 练一练 carries on with taps
+    await waitFor(() => expect(document.querySelector('.say')).toBeNull());
+    await waitFor(() => expect(document.querySelector('.choice:not([disabled])')).toBeTruthy(), { timeout: 4000 });
+  });
+  it('a take that fails to save never leaves him stuck: the rest of the Say cards go and 练一练 carries on (final review I1)', async () => {
+    vi.mocked(recordSayTake).mockRejectedValueOnce(new Error('QuotaExceededError'));
+    const app = await setup();
+    renderWithApp(<SessionScreen free={false} />, app);
+    await untilSay();
+    fireEvent.click(screen.getByText('开始录音'));
+    fireEvent.click(await screen.findByText('停止'));
+    fireEvent.click(await screen.findByText('继续', { selector: '.sheet .btn:not([disabled]) *' }));
+    await waitFor(() => expect(document.querySelector('.choice:not([disabled])')).toBeTruthy(), { timeout: 4000 });
+    expect(document.querySelector('.say')).toBeNull();
+    await waitFor(async () => {
+      const rec = (await getSession(app.db, '2026-10-02'))!;
+      expect(rec.practiceQueue!.slice(rec.practiceIndex).some((x) => x.ask === 'say')).toBe(false);
+    });
   });
 });
