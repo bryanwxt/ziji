@@ -1518,3 +1518,5 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* Pinyin fading (spec 2026-10-12 §4): a faded syllable keeps its slot; a tap shows it for 3 s */
 .label__cell--hidden { cursor: pointer; }
 .label__cell--peek .label__py { opacity: 1; color: var(--green-ink); }
+
+.pinyin--later { animation: later-in 300ms ease-out 2s both; }

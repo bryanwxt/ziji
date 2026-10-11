@@ -70,7 +70,7 @@ export function BuildSentence({ item, word, kid, onDone }: Props) {
         <div class="build__answer hanzi" aria-label="句子">
           {placed.map((i) => (
             <button key={i} type="button" class="build__placed" disabled={done} onClick={() => setPlaced(placed.filter((p) => p !== i))}>
-              <Label zh={item.tiles[i]!} />
+              <Label zh={item.tiles[i]!} fade peek={false} />
             </button>
           ))}
         </div>

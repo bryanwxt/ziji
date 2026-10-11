@@ -89,7 +89,7 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
         <>
           <div class="flash__prompt">
             <div class={`meaning-cue meaning-cue--sentence${short ? ' meaning-cue--short' : ''}`} lang="zh" data-q={short || undefined} style={`--len:${Array.from(item.before + item.word + item.after).length}`}>
-              <Label zh={`${item.before}${done ? item.word : '＿'.repeat(Array.from(item.word).length)}${item.after}`} />
+              <Label zh={`${item.before}${done ? item.word : '＿'.repeat(Array.from(item.word).length)}${item.after}`} fade />
               <SpeakButton text={done ? fullSentence(item) : `${item.before}，，${item.after}`} />
             </div>
           </div>
@@ -106,7 +106,7 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
           {lines.order.map((s) => (
             <div class="usage-row" key={s}>
               <button type="button" class={`choice usage-opt press ${state(s)}`} disabled={done} onClick={(e) => choose(s, e.currentTarget)}>
-                <Label zh={s} />
+                <Label zh={s} fade peek={false} />
               </button>
               <SpeakButton text={s} />
             </div>

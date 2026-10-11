@@ -282,3 +282,9 @@ describe('the why-line never outranks the right answer (review, 2026-10-12)', ()
     expect(css).toMatch(/\.label__py \{ --rest: \.75; \}/);
   });
 });
+
+describe('the new-word card (spec 2026-10-12 §4)', () => {
+  it("its own pinyin comes 2 s after the character", () => {
+    expect(css).toMatch(/\.pinyin--later \{[^}]*animation: later-in 300ms ease-out 2s both/);
+  });
+});

@@ -67,7 +67,7 @@ export function UnderstandQuestion({ item, kid, onDone }: Props) {
           title={correct ? lines.cheer : lines.comfort}
           detail={correct ? undefined : (
             <>
-              <span class="hanzi understand__zh"><Label zh={item.zh} /></span>
+              <span class="hanzi understand__zh"><Label zh={item.zh} fade /></span>
               <SpeakButton text={item.zh} small />
               <p lang="en" class="sheet__en-line">{item.en}</p>
             </>

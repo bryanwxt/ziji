@@ -196,13 +196,13 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                 <div class="meaning-prompt">
                   {quiz.cue.kind === 'sentence' ? (
                     <div class={`meaning-cue meaning-cue--sentence${Array.from(quiz.cue.full).length <= 4 ? ' meaning-cue--short' : ''}`} lang="zh" data-q={Array.from(quiz.cue.full).length <= 4 || undefined} style={`--len:${Array.from(quiz.cue.full).length}`}>
-                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} />
+                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} fade />
                       <SpeakButton text={phase === 'feedback' ? quiz.cue.full : `${quiz.cue.before}，，${quiz.cue.after}`} />
                     </div>
                   ) : (
                     // like every line on the card: each syllable over its character, the gap a dashed box with its sound over it (parent, 2026-10-05)
                     <div class="meaning-cue meaning-cue--sentence meaning-cue--short meaning-cue--word" lang="zh" data-q style={`--len:${Array.from(quiz.cue.full).length}`}>
-                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} py={quiz.cue.pinyin} />
+                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} py={quiz.cue.pinyin} fade />
                     </div>
                   )}
                 </div>
@@ -253,7 +253,7 @@ function WordRow({ zh, py, en, mark, class: cls, textClass }: { zh: string; py?:
   return (
     <div class={`word-row ${cls}`} lang="zh">
       <div class="word-row__line">
-        <span class={`hanzi word-row__zh${textClass ? ` ${textClass}` : ''}`}><Label zh={zh} py={py} mark={mark} /></span>
+        <span class={`hanzi word-row__zh${textClass ? ` ${textClass}` : ''}`}><Label zh={zh} py={py} mark={mark} fade /></span>
         <SpeakButton text={zh} small />
       </div>
       {en && <p class="word-row__en" lang="en">{en}</p>}
@@ -323,7 +323,8 @@ function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; t
         {tag && <p class="intro__tag" lang="zh">{tag}</p>}
         <div class="intro__head">
           <div class="intro__char">
-            <div class="pinyin">{word.pinyin}</div>
+            {/* the character first; its pinyin 2 s later (spec 2026-10-12 §4, Chung 2003) */}
+            <div class="pinyin pinyin--later">{word.pinyin}</div>
             {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
             <div class={`hanzi hanzi--xl${long ? ' hanzi--long' : ''}`} style={long ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
             <SpeakButton text={word.text} />
