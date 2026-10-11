@@ -60,7 +60,7 @@ export interface Word {
   tags?: string[]; // e.g. '成语'
 }
 
-export type CardKind = 'recognise' | 'write' | 'meaning' | 'hear' | 'understand'; // meaning: what the word means and how it's used (spec §19)
+export type CardKind = 'recognise' | 'write' | 'meaning' | 'hear' | 'understand' | 'say'; // meaning: what the word means and how it's used (spec §19); say: he reads it aloud (spec 2026-10-11 §3)
 
 export interface CardRecord {
   id: string; // `${wordId}:${kind}`

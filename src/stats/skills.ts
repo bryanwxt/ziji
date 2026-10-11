@@ -5,12 +5,13 @@ export const SKILLS: Skill[] = ['listening', 'reading', 'meaning', 'use', 'zibia
 /** The card a skill's practice lives on: "practise more" brings it forward. */
 export const SKILL_CARD: Record<Skill, CardKind> = { listening: 'hear', reading: 'recognise', meaning: 'meaning', use: 'meaning', zibian: 'write', writing: 'write' };
 
-const LOG_SKILL: Record<CardKind, Skill> = { hear: 'listening', understand: 'listening', recognise: 'reading', meaning: 'meaning', write: 'writing' };
+/** Say verdicts are the parent's, not his answers: Listen & confirm and Progress show them (spec 2026-10-11 §6). */
+const LOG_SKILL: Record<Exclude<CardKind, 'say'>, Skill> = { hear: 'listening', understand: 'listening', recognise: 'reading', meaning: 'meaning', write: 'writing' };
 
 /** Each answer as (skill, word, right?): review logs for reading, meaning and writing; the answer log for 选一选/用一用 and 字辨. */
 function outcomes(logs: ReviewLog[], answers: AnswerLog[]): { skill: Skill; wordId: string; correct: boolean }[] {
   return [
-    ...logs.filter((l) => l.source !== 'use').map((l) => ({ skill: LOG_SKILL[l.kind], wordId: l.wordId, correct: l.correct })), // a 选一选 rating is in the answer log already
+    ...logs.filter((l) => l.source !== 'use' && l.kind !== 'say').map((l) => ({ skill: LOG_SKILL[l.kind as Exclude<CardKind, 'say'>], wordId: l.wordId, correct: l.correct })), // a 选一选 rating is in the answer log already
     ...answers.map((a) => ({ skill: a.skill, wordId: a.wordId, correct: a.correct })),
   ];
 }
