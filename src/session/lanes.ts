@@ -23,8 +23,9 @@ export function laneTag(lane: Lane | undefined, w: Pick<Word, 'id' | 'text'>): s
 /**
  * Up to n new words from `candidates` (unstarted, in newWordOrder): listed words first; then half of what is left (rounded up)
  * from his class's lesson and the one before it, the rest from the earliest lessons; a lane that runs short gives its share to
- * the other; then lessons past his class, then words outside the book. A ladder 词语 only once its characters are begun or
- * come earlier today. Without a class lesson, only catch-up runs. Returned in candidate order (a 词语 after its characters).
+ * the other; then lessons past his class, then words outside the book. Within a lane its characters come before its 词语. A
+ * ladder 词语 only once its characters are begun or come earlier today. Without a class lesson, only catch-up runs. Returned in
+ * candidate order (a 词语 after its characters).
  */
 export function pickNewWords({ candidates, n, classAt, begunChars }: {
   candidates: Word[]; n: number; classAt: number | null; begunChars: ReadonlySet<string>;
@@ -44,6 +45,12 @@ export function pickNewWords({ candidates, n, classAt, begunChars }: {
     }
     return got;
   };
+  // within a lane, its characters first; its 词语 fill what is left (final review I1: else unlocked 词语 of the lesson before
+  // crowd out his class's characters, and early 词语 crowd out early gaps)
+  const takeLane = (pool: Word[], max: number, lane: Lane): number => {
+    const got = take(pool.filter((w) => Array.from(w.text).length === 1), max, lane);
+    return got + take(pool, max - got, lane);
+  };
   take(candidates.filter((w) => w.listedAt !== undefined), n);
   const rest = candidates.filter((w) => w.listedAt === undefined);
   const at = new Map(rest.map((w) => [w.id, bookLesson(w)]));
@@ -53,10 +60,10 @@ export function pickNewWords({ candidates, n, classAt, begunChars }: {
   const catchup = classAt === null ? book : book.filter((w) => lessonOf(w)! < classAt - 1);
   const ahead = classAt === null ? [] : book.filter((w) => lessonOf(w)! > classAt);
   const left = n - taken.size;
-  const fromSchool = take(school, Math.ceil(left / 2), 'school');
-  take(catchup, left - fromSchool, 'catchup');
-  take(school, n, 'school'); // catch-up ran short: his class's lesson takes the rest
-  take(ahead, n, 'catchup'); // everything up to his class is started: the book onward
+  const fromSchool = takeLane(school, Math.ceil(left / 2), 'school');
+  takeLane(catchup, left - fromSchool, 'catchup');
+  takeLane(school, n, 'school'); // catch-up ran short: his class's lesson takes the rest
+  takeLane(ahead, n, 'catchup'); // everything up to his class is started: the book onward
   take(rest.filter((w) => lessonOf(w) === undefined), n); // then words outside the book, in their order
   return { words: candidates.filter((w) => taken.has(w.id)), lanes };
 }

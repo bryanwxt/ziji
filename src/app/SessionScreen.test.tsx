@@ -169,6 +169,14 @@ describe('SessionScreen', () => {
     expect(document.querySelector('.intro__tag')?.textContent).toBe('补 一上·1');
     expect((await getSession(app.db, '2026-10-02'))!.plan.newWordLanes).toEqual({ 'b:衣': 'catchup', 'b:茄': 'school' });
   });
+  it("认新字 labels his class's lesson 课本 with the lesson (spec 2026-10-11 §9, final review I1)", async () => {
+    const app = await setup(); // the same day: 衣 (catch-up) first, then 茄 from his class's lessons
+    renderWithApp(<SessionScreen free={false} />, app);
+    await waitFor(() => expect(introWord()).toBe('衣'));
+    await learnCurrentWord();
+    await waitFor(() => expect(introWord()).toBe('茄'));
+    expect(document.querySelector('.intro__tag')?.textContent).toBe('课本 二下·15');
+  });
   it('a lesson saved before lanes resumes with no label (review focus 3)', async () => {
     const app = await setup();
     const he = byText.get('河')!;

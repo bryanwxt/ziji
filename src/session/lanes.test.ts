@@ -86,6 +86,22 @@ describe('two lanes (spec 2026-10-11 §5)', () => {
     expect(pick([yeShi], 1, CLASS, new Set(['夜', '市'])).lanes).toEqual({ 'w:夜市': 'school' }); // begun before today
     expect(pick([ladder('木马')], 1, CLASS, new Set(['木', '马'])).lanes).toEqual({ 'w:木马': 'catchup' });
   });
+  it("his class's characters before the lesson before's 词语: a lane takes its characters first, 词语 fill what is left (final review I1)", () => {
+    const begun = new Set(Array.from('持静绘')); // 二下·16 begun: its 词语 are unlocked
+    const pool = [...chars('衣鱼雨木'), ladder('持静'), ladder('静绘'), ladder('绘持'), ...chars('逛夜市')];
+    const r = pick(pool, 4, CLASS, begun);
+    expect(Object.entries(r.lanes).filter(([, l]) => l === 'school').map(([id]) => id)).toEqual(['b:逛', 'b:夜']);
+    const wide = pick(pool, 8, CLASS, begun); // school share 4: three characters, then one 词语
+    expect(Object.entries(wide.lanes).filter(([, l]) => l === 'school').map(([id]) => id).sort()).toEqual(['b:夜', 'b:市', 'b:逛', 'w:持静'].sort());
+    expect(ids(wide)).toEqual(['衣', '鱼', '雨', '木', '持静', '逛', '夜', '市']); // still in book order
+  });
+  it('catch-up takes early gaps (characters) before unlocked early 词语 (final review I1)', () => {
+    const begun = new Set(Array.from('木土马'));
+    const pool = [ladder('木马'), ladder('土木'), ladder('马土'), ...chars('力河禾逛夜')];
+    const r = pick(pool, 4, CLASS, begun);
+    expect(Object.entries(r.lanes).filter(([, l]) => l === 'catchup').map(([id]) => id)).toEqual(['b:力', 'b:河']);
+    expect(ids(pick(pool, 6, CLASS, begun))).toEqual(['木马', '力', '河', '禾', '逛', '夜']); // catch-up gets 4: three gaps, then a 词语
+  });
   it('never the same word twice, and fewer than n when the words run out', () => {
     const r = pick(chars('衣持介'), 8, CLASS);
     expect(ids(r)).toEqual(['衣', '持', '介']);
