@@ -1,7 +1,8 @@
 import { wordCue } from './meaning';
 import { bankFor } from '../../content/sentenceBank';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
-import { glossFor } from '../../content/glossary';
+import { cardMeaning, glossFor } from '../../content/glossary';
+import { firstSense } from './distractors';
 import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../../content';
 import { createEmptyCard, State } from 'ts-fsrs';
@@ -604,5 +605,34 @@ describe('six options where five good wrong ones exist (spec 2026-10-11 §3)', (
     fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true, asked: 'read' }));
+  });
+});
+
+describe('a miss says why (spec 2026-10-12 §3)', () => {
+  it('find the character: the look-alike line, right one first', () => {
+    const near = pool.filter((x) => [...'晴睛静精'].includes(x.text));
+    const qing = near.find((x) => x.text === '晴')!;
+    render(<FlashcardStep {...base} word={qing} pool={near} item={{ wordId: qing.id, isNew: false, retry: false }} ask="listen" voice onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '睛' }));
+    expect(document.querySelector('.sheet .why--look')!.getAttribute('data-text')).toBe('晴 日 sun · 睛 目 eye');
+  });
+  it('read: the sound-part slip, and the right reading plays again', () => {
+    const qing = pool.find((x) => x.text === '请')!;
+    render(<FlashcardStep {...base} word={qing} item={{ wordId: qing.id, isNew: false, retry: false }} ask="read" voice={false} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'qīng' })); // his top trap is always offered
+    expect(document.querySelector('.sheet .why--part')!.getAttribute('data-text')).toBe('青 读 qīng，请 读 qǐng');
+    expect(speak).toHaveBeenLastCalledWith('请', { reading: 'qǐng' });
+  });
+  it('English choices: the radical hint', () => {
+    render(<FlashcardStep {...base} item={review} ask="hear" voice onDone={vi.fn()} />);
+    const answer = firstSense(cardMeaning(he)!); // the choices are English meanings
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choices--english .choice')].find((b) => b.textContent !== answer)!);
+    expect(document.querySelector('.sheet .why--radical')!.getAttribute('data-text')).toBe('氵 → water');
+  });
+  it('the 组词 gap: a look-alike line when the pick shares a part, else the radical hint', () => {
+    const xi = { ...makeWord('惜', { id: 'b:惜', pinyin: 'xī', meaning: 'to cherish' }), examples: [{ text: '珍惜', pinyin: 'zhēn xī' }] };
+    render(<FlashcardStep {...base} word={xi} item={{ wordId: 'b:惜', isNew: false, retry: false, mode: 'meaning' }} voice onDone={vi.fn()} />);
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent !== '惜')!);
+    expect(document.querySelector('.sheet .why--look, .sheet .why--radical')).toBeTruthy(); // 惜's 忄 has a meaning: never nothing
   });
 });

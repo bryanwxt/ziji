@@ -19,6 +19,7 @@ import type { TruffleMood } from '../../ui/truffle/Truffle';
 import type { Reaction } from '../../ui/truffle/timelines';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
+import { LookAlikeWhy, PinyinWhy, RadicalHint } from '../../ui/stage/WhyLine';
 import { firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
@@ -169,6 +170,12 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           detail={result.correct ? undefined : (
             <>
               <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : word.pinyin} picked={quiz.mode ? null : quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
+              {/* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
+                  find the character → the look-alike part; its reading → the kind of pinyin slip */}
+              {quiz.mode ? <RadicalHint text={word.text} />
+                : quiz.cue ? <LookAlikeWhy right={word.text} picked={choice ?? ''} fallback={<RadicalHint text={word.text} />} />
+                : quiz.listen ? <LookAlikeWhy right={word.text} picked={choice ?? ''} />
+                : <PinyinWhy word={word} picked={choice ?? ''} />}
             </>
           )}
           actionLabel="继续"

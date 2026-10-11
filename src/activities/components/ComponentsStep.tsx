@@ -10,6 +10,7 @@ import { InkIcon } from '../../ui/icons/InkIcon';
 import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
+import { LookAlikeWhy } from '../../ui/stage/WhyLine';
 import type { ZibianItem } from './zibian';
 
 interface Props {
@@ -73,11 +74,17 @@ export function ComponentsStep({ items, kid, onAnswer, onDone, onProgress }: Pro
           title={correct ? '钓到了！' : '是这个！'}
           detail={
             <>
-              <span class="zibian__why">
-                <Radical ch={item.answer} />
-                {/* the one he chose, when its radical tells them apart */}
-                {!correct && getCharInfo(picked!)?.radical !== getCharInfo(item.answer)?.radical && <Radical ch={picked!} />}
-              </span>
+              {correct ? (
+                <span class="zibian__why"><Radical ch={item.answer} /></span>
+              ) : (
+                // the part that tells them apart (spec 2026-10-12 §3); nothing to tell: the radical rows as before
+                <LookAlikeWhy right={item.answer} picked={picked!} fallback={
+                  <span class="zibian__why">
+                    <Radical ch={item.answer} />
+                    {getCharInfo(picked!)?.radical !== getCharInfo(item.answer)?.radical && <Radical ch={picked!} />}
+                  </span>
+                } />
+              )}
               {!correct && <MeaningNote right={item.answer} picked={picked} />}
             </>
           }

@@ -55,7 +55,8 @@ export function FeedbackSheet({ tone = 'neutral', title, detail, actionLabel, ac
           </span>
           <div class="sheet__text">
             {title && <div class="sheet__title"><Label zh={title} /></div>}
-            {detail && <div class="sheet__detail">{detail}</div>}
+            {/* character first (spec 2026-10-12 §3): after a miss its pinyin and English fade in a second later (CSS) */}
+            {detail && <div class={`sheet__detail${tone === 'oops' ? ' sheet__detail--later' : ''}`}>{detail}</div>}
           </div>
         </div>
       )}

@@ -251,3 +251,12 @@ describe('the Understand question (plan 2b)', () => {
     expect(css).toMatch(/@media \(min-width: 600px\) \{ \.understand__choice \{ min-height: 64px; \} \}/);
   });
 });
+
+describe('cards that teach (spec 2026-10-12 §3)', () => {
+  it("after a miss the right answer's characters show at once; its pinyin and English 1 s later", () => {
+    expect(css).toMatch(/\.sheet__detail--later \.label__py, \.sheet__detail--later \[lang="en"\], \.sheet__detail--later \.later \{[^}]*animation: later-in 300ms ease-out 1s both/);
+  });
+  it('reduced motion shows them at once: every animation is off', () => {
+    expect(reducedBlocks.some((b) => /\*, \*::before, \*::after \{ animation: none !important;/.test(b))).toBe(true);
+  });
+});

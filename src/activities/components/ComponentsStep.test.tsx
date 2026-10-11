@@ -18,16 +18,13 @@ describe('ComponentsStep — 字辨 in the pond (spec §20 part 8)', () => {
     expect(document.querySelectorAll('.fishtile')).toHaveLength(4);
     expect(screen.getByText('钓鱼啦！')).toBeTruthy();
   });
-  it('a miss: Truffle reads the word, and the radical meanings of the right one and the chosen one show', () => {
+  it('a miss: Truffle reads the word, and the part that tells them apart shows (spec 2026-10-12 §3)', () => {
     const onAnswer = vi.fn();
     render(<ComponentsStep items={[item]} kid={DEFAULT_KID} onAnswer={onAnswer} onDone={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '跟' }));
     expect(onAnswer).toHaveBeenCalledWith(item, false);
     expect(speak).toHaveBeenLastCalledWith('树根');
-    const bar = document.querySelector('.sheet')!.textContent!;
-    expect(bar).toMatch(/根.*木/); // 根's radical meaning
-    expect(bar).toMatch(/跟.*足/); // the one he chose
-    expect(document.querySelectorAll('.sheet .zibian__why > .zibian__radical')).toHaveLength(2); // one row each
+    expect(document.querySelector('.sheet .why--look')!.getAttribute('data-text')).toBe('根 木 tree · 跟 足 foot');
   });
   it('a catch, then 继续 ends the round', () => {
     const onDone = vi.fn();
@@ -38,12 +35,18 @@ describe('ComponentsStep — 字辨 in the pond (spec §20 part 8)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalled();
   });
-  it('a chosen character with the same radical as the answer adds nothing: only the answer\'s radical shows', () => {
+  it('a chosen character with the same radical: its other part is the difference (银 艮 · 铁 失)', () => {
     const same = { wordId: 'p:3', word: '银行', index: 0, answer: '银', options: ['银', '铁', '根', '很'] };
     render(<ComponentsStep items={[same]} kid={DEFAULT_KID} onAnswer={vi.fn()} onDone={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '铁' }));
-    expect(document.querySelectorAll('.sheet .zibian__radical')).toHaveLength(1);
+    expect(document.querySelector('.sheet .why--look')!.getAttribute('data-text')).toBe('银 艮 · 铁 失');
   });
+  it('a catch keeps the answer\'s radical row', () => {
+    render(<ComponentsStep items={[item]} kid={DEFAULT_KID} onAnswer={vi.fn()} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '根' }));
+    expect(document.querySelectorAll('.sheet .zibian__radical')).toHaveLength(1);
+    expect(document.querySelector('.sheet .why')).toBeNull();
+});
 });
 
 describe('progress (deferred minor, plan 13)', () => {
