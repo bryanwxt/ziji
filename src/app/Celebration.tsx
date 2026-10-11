@@ -125,7 +125,8 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     if (!nextPhase) {
       await refresh();
       // the chapter's payoff after the lesson, when one is owed (spec 2026-10-07 3c §5)
-      const owed = storyStep((await getSettings(db)).storyProgress, CHAPTERS.length, localDateKey(new Date(`${rec.date}T12:00:00`))); // an owed payoff is owed on any day
+      const stored = await getSettings(db);
+      const owed = storyStep(stored.storyProgress, CHAPTERS.length, localDateKey(new Date(`${rec.date}T12:00:00`)), stored.storyOn); // an owed payoff is owed on any day
       go(owed?.part === 'payoff' ? { name: 'story', part: 'payoff', chapter: owed.chapter, then: { name: 'home' } } : { name: 'home' });
       return;
     }

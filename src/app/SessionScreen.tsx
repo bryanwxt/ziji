@@ -84,7 +84,7 @@ interface Loaded {
 
 export function SessionScreen({ free, extra = false }: { free: boolean; extra?: boolean }) {
   const { db, now, go, voice, settings: appSettings } = useApp();
-  const painted = lessonScene(appSettings.storyProgress, CHAPTERS); // the chapter's place, over the old world
+  const painted = lessonScene(appSettings.storyProgress, CHAPTERS, appSettings.storyOn); // the chapter's place, over the old world (story on only)
   const [state, setState] = useState<Loaded | null>(null);
   const [combo, setCombo] = useState(0);
   const [correct, setCorrect] = useState(0); // this sitting only: Truffle warms up from sulk

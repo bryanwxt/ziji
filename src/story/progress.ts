@@ -2,7 +2,9 @@
 export interface StoryProgress { chapter: number; readOn?: string; setupDone?: boolean; payoffDone?: boolean }
 export const NO_STORY: StoryProgress = { chapter: 0 };
 
-export function storyStep(p: StoryProgress | undefined, chapterCount: number, today: string): { part: 'setup' | 'payoff'; chapter: number } | null {
+/** The chapter part owed today; none while the story is off (spec 2026-10-11 §3: off by default, his progress kept). */
+export function storyStep(p: StoryProgress | undefined, chapterCount: number, today: string, storyOn = false): { part: 'setup' | 'payoff'; chapter: number } | null {
+  if (!storyOn) return null;
   const s = p ?? NO_STORY;
   const next = s.chapter + 1;
   if (s.setupDone && !s.payoffDone) return next <= chapterCount ? { part: 'payoff', chapter: next } : null;

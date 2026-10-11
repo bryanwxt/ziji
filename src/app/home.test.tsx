@@ -56,12 +56,20 @@ describe('HomeScreen', () => {
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false });
   });
 
-  it('with a chapter due, 开始 opens its setup first, then the lesson (spec 3c §5)', async () => {
-    const app = await makeAppData();
+  it('with the story on and a chapter due, 开始 opens its setup first, then the lesson (spec 3c §5)', async () => {
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, placementDone: true, storyOn: true } });
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
     fireEvent.click(screen.getByRole('button', { name: '开始：认新字' }));
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'story', part: 'setup', chapter: 1, then: { name: 'session', free: false } }));
+  });
+  it('the story is off by default: 开始 goes straight to the lesson (spec 2026-10-11 §3)', async () => {
+    const app = await makeAppData();
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    fireEvent.click(screen.getByRole('button', { name: '开始：认新字' }));
+    await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false }));
+    expect(app.go).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'story' }));
   });
   it('a chapter already read today: 开始 goes straight to the lesson', async () => {
     const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, placementDone: true, storyProgress: { chapter: 1, readOn: '2026-10-02', setupDone: true, payoffDone: true } } });

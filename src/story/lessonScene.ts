@@ -3,7 +3,8 @@
 import type { Chapter, Page } from './format';
 import { NO_STORY, type StoryProgress } from './progress';
 
-export function lessonScene(p: StoryProgress | undefined, chapters: Chapter[]): string | null {
+export function lessonScene(p: StoryProgress | undefined, chapters: Chapter[], storyOn = false): string | null {
+  if (!storyOn) return null; // the story is off (spec 2026-10-11 §3): the old world shows behind the lesson
   const s = p ?? NO_STORY;
   const owed = !!s.setupDone && !s.payoffDone;
   const c = chapters.find((x) => x.chapter === (owed ? s.chapter + 1 : s.chapter));
