@@ -126,6 +126,7 @@ export interface SessionPlan {
   steps: StepKind[];
   reviewWordIds: string[];
   newWordIds: string[];
+  newWordLanes?: Record<string, 'school' | 'catchup'>; // each new word's lane (spec 2026-10-11 §5); listed and non-book words have none; plans saved before it have none
   flashTimeBoxMs: number;
   writeCandidates: { wordId: string; isNew: boolean }[];
   writeCount: number;

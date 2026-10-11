@@ -184,3 +184,24 @@ describe('sweep: plan details', () => {
   });
 });
 
+
+describe("the plan records each new word's lane (spec 2026-10-11 §5)", () => {
+  const oct11 = new Date(2026, 9, 11, 8); // 二下·17 by the calendar
+  const p2 = settings({ grade: 2, gradeYear: 2026 });
+  const ws = [makeWord('衣', { rank: 0 }), makeWord('逛', { rank: 700 }), makeWord('馆', { rank: 720 })];
+  it('one from his class, one from 一上', () => {
+    const plan = buildSessionPlan({ cards: [], words: ws, settings: p2, now: oct11, newPerDay: 2 });
+    expect(plan.newWordIds).toEqual(['b:衣', 'b:逛']);
+    expect(plan.newWordLanes).toEqual({ 'b:衣': 'catchup', 'b:逛': 'school' });
+  });
+  it("the parent's correction moves the school lane", () => {
+    const plan = buildSessionPlan({ cards: [], words: ws, settings: { ...p2, classLesson: { term: '二下', lesson: 19, setAt: oct11.getTime() } }, now: oct11, newPerDay: 2 });
+    expect(plan.newWordIds).toEqual(['b:衣', 'b:馆']);
+    expect(plan.newWordLanes).toEqual({ 'b:衣': 'catchup', 'b:馆': 'school' });
+  });
+  it('past the school calendar (2028) new words keep coming, catch-up only (review focus 1)', () => {
+    const plan = buildSessionPlan({ cards: [], words: ws, settings: p2, now: new Date(2028, 2, 1, 8), newPerDay: 2 });
+    expect(plan.newWordIds).toEqual(['b:衣', 'b:逛']);
+    expect(plan.newWordLanes).toEqual({ 'b:衣': 'catchup', 'b:逛': 'catchup' });
+  });
+});
