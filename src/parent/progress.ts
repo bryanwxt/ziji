@@ -1,17 +1,8 @@
-// The parent's view of his progress against school (spec 2026-10-06 §3.4).
-import { MOE_TERMS } from '../content';
+// The parent's view of his progress against school (spec 2026-10-06 §3.4; the book's positions: src/content/curriculum.ts).
 import type { CardKind, CardRecord } from '../types';
 
-const NUMERAL = ['一', '二', '三', '四', '五', '六'];
-
-/** His school year now (P1 = 1): lives with the book's positions (src/content/curriculum.ts). */
+/** His school year now (P1 = 1): lives with the book's positions. */
 export { schoolYear } from '../content/curriculum';
-
-/** His textbook term now: 上 from January to May, 下 from June; null past the lists (P4 on). */
-export function currentTerm(grade: number, now: Date): string | null {
-  const term = `${NUMERAL[grade - 1] ?? ''}${now.getMonth() < 5 ? '上' : '下'}`;
-  return MOE_TERMS.includes(term) ? term : null;
-}
 
 /** Rungs of one kind passed by the end of each of the last `weeks` weeks, oldest first. */
 export function weeklyTrend(cards: CardRecord[], kind: CardKind, now: Date, weeks = 8): { week: string; count: number }[] {
