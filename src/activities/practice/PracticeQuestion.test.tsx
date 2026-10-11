@@ -146,3 +146,20 @@ describe('sweep: 成语 questions', () => {
   });
 });
 
+
+describe('找一家人 (spec 2026-10-12 §5)', () => {
+  const sheng = pool.find((w) => w.text === '生')!;
+  const item = { wordId: sheng.id, rung: 2 as const, ask: 'family' as const, grades: 'meaning' as const, retry: false };
+  it('the board of words he reads; both family words come back as a meaning answer', () => {
+    const onDone = vi.fn();
+    render(<PracticeQuestion {...base} word={sheng} item={item} knownChars={new Set('男女气先口出学家人')} onDone={onDone} />);
+    for (const b of [...document.querySelectorAll<HTMLButtonElement>('.family-q__tiles .choice')].filter((x) => x.textContent!.includes('生'))) fireEvent.click(b);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true, asked: 'meaning', inContext: false }));
+  });
+  it('a family question that can no longer be built is skipped', () => {
+    const onDone = vi.fn();
+    render(<PracticeQuestion {...base} word={sheng} item={item} knownChars={new Set()} onDone={onDone} />);
+    expect(onDone).toHaveBeenCalledWith(null);
+  });
+});

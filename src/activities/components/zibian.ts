@@ -30,6 +30,11 @@ function lookAlikeGroups(ch: string): { phonetic: string[]; radical: string[] } 
   return { phonetic, radical: sameRadical };
 }
 
+/** The built-in characters that have `ch` as a part (生 → 星 性 胜 牲): the family question's look-alikes (spec 2026-10-12 §5). */
+export function charsContaining(ch: string): string[] {
+  return partIndex().get(ch) ?? [];
+}
+
 /** Characters a child could put for `ch`: the same phonetic part first (跟 根 很 银), then the same radical with about as many strokes (容 室). */
 export function lookAlikeChars(ch: string): string[] {
   const g = lookAlikeGroups(ch);

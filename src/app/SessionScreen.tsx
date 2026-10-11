@@ -220,7 +220,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           const confusions = await getConfusions(db);
           setState((st) => (st ? { ...st, confusions } : st));
           // Say cards only where the iPad can record (spec 2026-10-11 §7)
-          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know), recordingSupported());
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know), recordingSupported(), state.know.knownChars);
           planning.current = false;
           await commit(startPractice(latest.current ?? cur, queue));
         })();

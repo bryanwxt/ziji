@@ -1527,3 +1527,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .family__word { display: inline-flex; align-items: flex-end; gap: 2px; font-size: 26px; }
 .family__word .hanzi { font-size: 26px; }
 @media (max-height: 700px) { .family__word:nth-child(n+3) { display: none; } } /* a phone: two words, so the card never scrolls */
+
+/* 找一家人 (spec 2026-10-12 §5) */
+.family-q { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.family-q__ask { margin: 0; font-size: 22px; font-weight: 800; }
+.family-q__tiles .choice.is-picked { outline: 4px solid var(--blue, #4aa3ff); }
+.family-sum { display: flex; flex-direction: column; gap: 2px; flex-basis: 100%; }
+.family-sum__row { margin: 0; display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0 10px; font-size: 16px; color: var(--ink-soft); }
+.sheet__detail .family-sum__row .hanzi { font-size: 24px; color: var(--ink); }
+.family-sum__row.is-missed .hanzi { color: var(--orange-ink); }

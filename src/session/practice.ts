@@ -15,6 +15,7 @@ import { introducedNewWords } from './runner';
 import { SAY_PER_LESSON } from './plan';
 import { idiomOf, idiomsFor, isIdiomWord, type Idiom } from '../content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../practice/idioms';
+import { familyBoard } from '../practice/family';
 
 const idiomCache = new WeakMap<Word[], Map<string, Idiom[]>>();
 /** The 成语 for a word at his level, worked out once per word list (planning asks each word several times). */
@@ -89,6 +90,7 @@ function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: As
     case 'idiomBuild': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomZuju(i, mulberry32(1)) !== null);
     case 'say': return false; // a Say card is added from the plan's sayIds (withSay), never asked from the ladder
     case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
+    case 'family': return false; // 找一家人 takes over a planned rung-2 item (withFamily), never asked from the ladder
   }
 }
 
@@ -124,12 +126,36 @@ export function withSay(items: PracticeItem[], sayIds: string[]): PracticeItem[]
   return out;
 }
 
+/** At most two 找一家人 a lesson (spec 2026-10-12 §5). */
+export const MAX_FAMILY = 2;
+
+/**
+ * 找一家人 in place of rung-2 word or pair items (spec 2026-10-12 §5): the round's first ones whose word has a board, two words at
+ * most, never right after another; each keeps its place, rung and grading, so the round is no longer.
+ */
+export function withFamily(items: PracticeItem[], canFamily: (wordId: string) => boolean): PracticeItem[] {
+  const out = [...items];
+  const done = new Set<string>();
+  for (let i = 0; i < out.length && done.size < MAX_FAMILY; i++) {
+    const x = out[i]!;
+    if (x.retry || x.rung !== 2 || (x.ask !== 'word' && x.ask !== 'pair') || done.has(x.wordId) || out[i - 1]?.ask === 'family') continue;
+    if (!canFamily(x.wordId)) continue;
+    out[i] = { ...x, ask: 'family' };
+    done.add(x.wordId);
+  }
+  return out;
+}
+
 /** `canSay`: the iPad can record (no microphone or MediaRecorder: no Say cards this lesson, spec 2026-10-11 §7). */
-export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map(), level = 1, canSay = false): PracticeItem[] {
+export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map(), level = 1, canSay = false, known: ReadonlySet<string> = new Set()): PracticeItem[] {
   // no voice: a word due only for Understand is left for another day — a reading question would grade Use before Read (final review I2)
   const listenOnly = (w: RoundWord) => !!w.gradesUnderstand && !w.gradesRecognise && !w.gradesHear && !w.gradesMeaning;
   const words = practiceWords(rec, rungs).filter((w) => (voice || !listenOnly(w)) && (() => { const can = askable(wordsById.get(w.wordId), pool, voice, level); return can('read') || can('meaningRead'); })());
-  const round = buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice, level)(ask), rng);
+  // 找一家人 takes up to two rung-2 items, for words with family he reads (`known`: know.knownChars, spec 2026-10-12 §5)
+  const round = withFamily(buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice, level)(ask), rng), (id) => {
+    const w = wordsById.get(id);
+    return !!w && !w.paused && familyBoard(w, known, mulberry32(1)) !== null;
+  });
   const fish = [...confusions.keys()].filter((id) => {
     const w = wordsById.get(id);
     return w && !w.paused && fishItem(w, confusions.get(id)!, new Set(), mulberry32(1)) !== null;
