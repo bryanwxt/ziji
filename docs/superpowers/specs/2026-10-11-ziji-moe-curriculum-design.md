@@ -1,117 +1,114 @@
-# ZiJi follows the school curriculum (欢乐伙伴2.0) — design
+# ZiJi lessons follow his class (欢乐伙伴2.0), story off — design
 
-Date: 2026-10-11 · Sub-project 1 of 4 in the lesson overhaul (2 production-based mastery, 3 shorter calmer lessons, 4 variety that teaches) · Story feature parked
+Date: 2026-10-11 (revised the same day after re-basing onto main) · Sub-project 1 of 4 in the lesson overhaul (2 production-based mastery, 3 shorter calmer lessons, 4 variety that teaches)
 
 ## 1. Why
 
-The parent reports that lessons are not school-aligned, too tappy, too long and repetitive. This sub-project fixes the first: today new words come in HSK 3.0 order (`builtin.json` rank), so app practice and the school's 听写 rarely meet. The outcomes report (`reports/Primary Chinese outcomes strategy.md`, "What ZiJi should build next") names the bridge to school as the main way an app's narrow gains reach school outcomes. Sub-projects 2–4 build on this one, because they all assume the right words.
+The parent reports that lessons are not school-aligned, too tappy, too long and repetitive. They want to focus on the lesson for now, not the Word Thief story.
 
-**Success:** each day's new words include characters from his class's current 欢乐伙伴2.0 lesson and close his gaps from earlier terms; 写一写 practises exactly what school asks him to write; the parent can see progress against the MOE end-of-level character targets.
+Main already orders new words by the 欢乐伙伴2.0 生字表 (`src/content/moe2024.json`, `schoolRank` in `src/content/index.ts`). It walks the book from 一上 upward, though. A P2 child who is behind therefore never meets this week's class characters. The app also writes either the 华文 list or the 高级华文 list, never both.
 
-## 2. Decisions taken in brainstorming
+**Success:**
+- The Word Thief story is out of the way.
+- Each day's new words include characters from his class's current lesson and close his gaps from 一上 onward.
+- 写一写 practises the write characters of both lists, in step with the class.
+- Every listed character exists in the app.
+- The parent sees progress against the lists, with where his class is and the gaps by term.
+
+## 2. Decisions
 
 | Question | Decision |
 |---|---|
-| Which list | Both 华文 (CL) and 高级华文 (HCL). He recognises every listed character and writes the **union** of both write lists |
-| Ordering for a child who is behind | **Two lanes** each day: this week's school lesson + catch-up from 一上 onward |
+| Base | main. Keep its lesson parts: school order, Hear/Understand rungs, two-day "passed", and the opt-in recorded voice. Switch the story off |
+| Tracks | Both 华文 and 高级华文. He recognises every listed character and writes the **union** of both write lists |
+| Ordering for a child who is behind | **Two lanes** each day: his class's lesson, plus catch-up from 一上 |
 | Knowing the class lesson | **Calendar estimate + parent correction** |
-| Integration | **Approach A, a curriculum layer.** Rejected: B (MOE lessons as auto-imported parent lists, which can't express lanes or the calendar) and C (rebuilding the content MOE-only, which is churn; `builtin.json` already covers 744/746 P1–P2 characters) |
+| Data | **Reuse main's `moe2024.json`** (`{term, lesson, read, write, writeHcl}`, 55 lessons, 一上–三下). No PDF parser and no rename. The committed PDFs in `scripts/moe/sources/` stay as provenance |
+| Settings | Reuse main's `settings.grade` / `gradeYear` and `settings.course`. Add a course value for both tracks, and add `classLesson` |
+| "Learned" | Main's `passed` (right first answers on two separate days), which is the same meaning as before |
 
-## 3. Data: `src/content/moe.json`
+## 3. Story off
 
-**Sources.** The MOE 《欢乐伙伴2.0》 生字表 PDFs for 华文 and 高级华文, P1–P3 (一上 to 三下, 1,031 characters), supplied by the parent. They are committed under `scripts/moe/sources/` as `2024-cl.pdf` and `2024-hcl.pdf`, matching MOE's published [P1–P2 CL](https://www.moe.gov.sg/api/media/6c0f68ed-a8bf-471c-9f32-b5ea75831910/2024-Character-List-Primary-One-to-Two-Chinese.pdf) and [P1–P2 HCL](https://www.moe.gov.sg/api/media/394e06b1-f4f3-4e90-adb4-a33efd9e1c5e/2024-Character-List-Primary-One-to-Two-Higher-Chinese.pdf) for those terms. The 2015 lists (P1–P6, old edition) are kept out of this release. They are the candidate stand-in for P4–P6 until 2.0 lists exist.
+- Add `Settings.storyOn?: boolean`, default `false`. `settings.story` is unrelated: it means the 看图说话 activity.
+- When the flag is off:
+  - no story setup before a lesson;
+  - no payoff after the celebration;
+  - no Word Thief painting behind the lesson.
+- Put the guard in the story module's own entry points (`storyStep`, `lessonScene`), so the callers stay unchanged.
+- Truffle, stars, chest, streak, the town map and the worlds don't depend on the story and stay.
+- Story progress is kept, so turning the flag back on resumes where he was.
+- No parent switch in this release (parked, like 朗读).
 
-**Generator.** `scripts/build-moe.ts` (TypeScript run by tsx, like `build-content.ts`; `npm run moe`) reads the PDFs with `pdfjs-dist` (dev dependency only, never shipped) and keeps each text item's position. It extracts the text and writes `moe.json`. The extracted text wraps the 识写字 column across lines. The generator must therefore split each lesson's characters into recognise and write by x-position, not by line. Its checks (§11) prove the split. Where text extraction is ambiguous, a small hand-written override table in the script fixes the lesson. Each override has a comment naming the PDF page.
+## 4. Curriculum positions and the class lesson
 
-**Shape.**
-```ts
-interface MoeLesson { term: '1A'|'1B'|'2A'|'2B'|'3A'|'3B'; lesson: number; recognise: string[]; writeCL: string[]; writeHCL: string[] }
-interface MoeData { version: 1; lessons: MoeLesson[]; calendar: SchoolYear[] }
-interface SchoolYear { year: number; terms: [string, string][] } // four [start, end] ISO dates
-```
-Lesson numbers run as in the book: 1A L1–10, 1B L11–19, and the same pattern each year.
+Add a pure module `src/content/curriculum.ts` over `moe2024.json`:
 
-**Derived per character** (a `curriculum.ts` module, pure functions over `moe.json`):
-- `taughtAt(char)` is the first lesson where it is on the recognise list. It is the character's curriculum position and replaces the HSK `rank` for ordering new built-in words.
-- `writeAt(char)` is the first lesson where it is on **either** write list, or null.
-- `lessonLabel(pos)` returns e.g. 「二下·17」.
-
-**Calendar.** The 2026 and 2027 MOE term dates go into `calendar`:
-- 2026: T1 2 Jan–13 Mar, T2 23 Mar–29 May, T3 29 Jun–4 Sep, T4 14 Sep–20 Nov.
-- 2027: T1 4 Jan–12 Mar, T2 22 Mar–28 May, T3 28 Jun–3 Sep, T4 13 Sep–19 Nov.
-
-Adding a year is a data edit.
-
-## 4. Content fixes
-
-1. **Add 蚂 and 蚁** to `builtin.json`, plus any other 3A/3B character the generator finds missing. Each gets pinyin, meaning (CC-CEDICT), radical, components and strokes (Make Me a Hanzi), following the existing build. The `moe.json` check fails if any listed character is missing from `builtin.json`.
-2. **Example words he can read.** When choosing a built-in character's 组词 examples, prefer words whose other characters have `taughtAt` at or before this character's, and fall back to the current HSK-derived examples otherwise. The same rule fills the ~40 MOE characters that have no examples today, drawing on `hskwords.json` and `extraExamples.ts`. This is done at build time in the content pipeline, so the runtime is unchanged.
+- **Book positions.** A lesson index is a position in the file's lesson order (0 = 一上 L1).
+  - `taughtAt(ch)` is the first lesson whose `read` has the character.
+  - `writeAt(ch, course)` is the first lesson whose write list has it. For the both-tracks course that means `write` or `writeHcl`.
+- **Labels.** `lessonLabel(i)` returns 「二下·17」, and `lessonName(i)` returns 「二下 第十七课」.
+- **Calendar.** `src/content/schoolCalendar.ts` holds the MOE term dates:
+  - 2026: T1 2026-01-02–03-13, T2 03-23–05-29, T3 06-29–09-04, T4 09-14–11-20.
+  - 2027: T1 2027-01-04–03-12, T2 03-22–05-28, T3 06-28–09-03, T4 09-13–11-19.
+- **Semesters.** 上 terms are Semester I (T1–T2) and 下 terms are Semester II (T3–T4). The grade comes from main's `grade`/`gradeYear`, using main's existing rule for the current grade.
+- **Estimate.** Spread the semester's lessons evenly over its teaching days, skipping the breaks. In holidays, use the last lesson of the semester just ended. Before T1, use the year's first lesson. For years or grades without data, the result is `null`.
+- **Correction.** `settings.classLesson = { term, lesson, setAt } | null`. It carries forward at the calendar's pace and lapses at the next semester. `correctionApplies(now, settings)` reports whether it is in force.
+- Main's crude `currentTerm()` (上 for Jan–May) is replaced by the curriculum's term wherever the Progress tab uses it.
 
 ## 5. Daily new words: two lanes
 
-Changes are confined to `newWordOrder` and new-word selection in `src/session/plan.ts`. A new pure module `src/session/lanes.ts` holds the lane logic.
+The day's count `n` is unchanged: adaptive pace 3–8, paused by the backlog.
 
-The day's count `n` still comes from the adaptive pace (3–8) and is still paused by `BACKLOG_PAUSE`.
+1. **Front of the queue (unchanged):** words with `listedAt` (parent lists, 听写 marks, 朗读 misreads, school 成语) come first and use up `n`.
+2. **School lane:** `ceil(remaining / 2)`, which is at least 1 whenever anything remains. It takes unstarted words from **the class lesson and the one before it**, in book order.
+3. **Catch-up lane:** the rest, taken from the earliest unstarted lesson onward. Placement-known and begun words are already skipped, because they count as started.
+4. **Spill-over:** if a lane runs short, the other lane takes the rest. When everything up to the class lesson is started, words come from later lessons in book order, then from non-book words in main's current order.
+5. **Ladder 词语** (`w:` ids) keep main's gate: they come only once every one of their characters is begun. A ladder word's lesson is the latest lesson among its characters, and it rides the lane that lesson belongs to.
+6. Nothing ahead of the class lesson is taken except by spill-over. Without a class lesson (`null`), only catch-up runs.
+7. The plan records each new word's lane in `SessionPlan.newWordLanes?: Record<wordId, 'school' | 'catchup'>`. It is optional, so saved sessions still load.
 
-1. **Front of the queue (unchanged):** parent-list words, 听写 mistakes, 朗读 misreads and school 成语 (negative or set `listedAt`) come first, oldest first, and use up `n` before the lanes do.
-2. **School lane:** `ceil(remaining / 2)`, at least 1 when `remaining ≥ 1`. It takes unstarted built-in characters whose `taughtAt` is the **current class lesson or the one before it**, in book order.
-3. **Catch-up lane:** whatever remains. It takes unstarted built-in characters with the **earliest** `taughtAt`, from 1A L1 forward. "Unstarted" means no `recognise` card, so characters placement seeded as known are skipped automatically.
-4. **Spill-over:** if one lane runs short, the other takes the rest. When every listed character up to the class lesson is started, the catch-up lane moves on to **later** lessons in book order, then to non-MOE built-in characters by HSK rank.
+## 6. Both tracks and writing
 
-Characters ahead of the class lesson are taken only by spill-over, never by the school lane.
+- Add a course value for both tracks, labelled 「华文 + 高级华文」. A book character is writeable when it is on either write list.
+- Make it the default.
+- Move existing installs to it once, through main's one-off settings migration (`lessonVersion`), since the parent asked for both. The parent can still choose a single track in Settings.
+- 写一写's last fallback ("characters he reads at his level") uses the book for book characters: `writeAt ≤ class lesson`. Other characters keep the HSK level rule.
+- Writeability only grows. Characters with write cards keep them.
 
-The plan records each new word's lane (`newWordLanes?: Record<wordId, 'school' | 'catchup'>` on `SessionPlan`, optional so saved sessions still load).
+## 7. Content fixes
 
-## 6. Writing eligibility
-
-For built-in words, a character is writeable when `writeAt(char)` is at or before the current class lesson, or when the catch-up lane has started it and it has a `writeAt`. This **adds to** the existing writeable flag and never removes it. Characters that already have write cards keep them. Parent words keep their own `writeable`. `pickWriteUnits`' "known characters at or below his level" fallback uses MOE position (`writeAt` ≤ class lesson) instead of HSK level.
-
-## 7. Class lesson
-
-`currentLesson(now, settings)` in `curriculum.ts` works like this:
-- **Estimate:** find the semester holding `now`. Semester I covers lessons 1–10 of the year's 上 term, Semester II lessons 11–19 of the 下 term. The grade comes from `settings.school = { grade, year }` (default `{ grade: 2, year: 2026 }`). It is grade + (current school year − year), so it rolls over each January. Spread the semester's lessons evenly over its teaching weeks, excluding the holiday weeks between terms. In holidays, it returns the last lesson of the semester just ended.
-- **Correction:** `settings.classLesson?: { term, lesson, setAt }`. When set, the estimate moves forward from the corrected lesson at the same weekly rate, and the correction lapses at the next semester start.
-- At the end of the year it holds at the year's last lesson. If the grade has no lists (P4+), the school lane is empty and spill-over covers.
+1. **Add the missing characters.** 蚂 蚁 拇 狐 狸 are on the list but missing from `builtin.json`, so the app never shows them. Add them through the content build, using the same sources as the rest. Add a check that fails if any listed character is missing from the built-in content.
+2. **Example words he can read.** When choosing a built-in character's 组词, prefer words whose other characters are taught at or before it. Fall back to the current choice otherwise. Hand-written examples (`extraExamples.ts`) still come first. Bump `CONTENT_VERSION` and update its pinned hash.
 
 ## 8. Parent area
 
-**Settings → 学校 (School):**
-- Track is shown read-only as 「华文 + 高级华文」, with one line explaining: recognise all listed characters, write both lists' write characters.
-- Grade (P1–P3), default P2 in 2026. Saving it stores `{ grade, year }`.
-- Class lesson: shown as 「二下 第十七课 (估计)」, or 「(你在10月11日设定)」 after a correction, with a term + lesson picker.
-
-**Overview → Progress vs MOE:**
-- Two bars: **认读 Recognise n / 746** and **书写 Write n / W**. Both targets are end of the current grade. W is the union write total, computed from `moe.json`. Each bar has a tick for where the class is now.
-- A per-term table (一上 … current grade's 下) gives, for each term, the counts not yet learned, separately for recognising and for writing.
-- **"Learned" in this release** means answered correctly on two or more separate local days (recognise card for 认读, write card for 书写), from `ReviewLog`. Sub-project 2 will tighten this to production-only.
+- **Settings:** next to Grade and Course, show 「Class is on: 二下 第十七课 (估计)」, or 「(你在10月11日设定)」 when a correction applies. Add a lesson picker covering the grade's two terms, a Set button and "Use the estimate".
+- **Progress tab:**
+  - Targets become the end of his grade, for both 认读 and the course's write list (the union for both tracks).
+  - Add a marker on each bar for where his class is now.
+  - Add a per-term table, 一上 … the grade's 下: still to read and still to write.
+  - "Learned" stays main's `passed`.
 
 ## 9. Child-facing
 
-The 认新字 card shows a small label under the character: 「课本 二下·17」 for the school lane, or 「补 一上·5」 for catch-up and spill-over. Nothing else on his side changes in this release.
+The 认新字 card shows a small label: 「课本 二下·17」 for the school lane, 「补 一上·5」 for catch-up and spill-over. Words at the front of the queue, ladder words without a book lesson, and saved sessions without lanes show none.
 
-## 10. Existing data
+## 10. Testing
 
-No migration of cards or logs. Started words keep their cards and schedules. Only the order of unstarted built-in words changes, and writeability only grows. Saved sessions without `newWordLanes` show no label. `settings.school` defaults to `{ grade: 2, year: 2026 }`, and `classLesson` to unset.
-
-## 11. Testing
-
-- **`moe.json` checks** (in `scripts/check-content.ts`): distinct recognise characters reach 746 at the end of 2B and 1,031 at the end of 3B. Every lesson has recognise characters. Every write character is on the recognise list at or before that lesson. The CL and HCL recognise lists match lesson by lesson. Spot-checks against known lessons pass (1A L1 recognise = 衣鱼雨一二五耳牙口人, write = 一二五口人). Every listed character exists in `builtin.json`.
-- **`lanes.ts`:**
-  - the lane split for n = 1…8;
-  - the front-of-queue lists use up `n` first;
+- **Curriculum:** positions, labels, both-track write positions, and estimates on dates in each term and in holidays. Also: 2026-10-11 gives 二下·17, 2027-01-06 gives 三上·1, the correction carries and lapses, and years outside the calendar give `null`.
+- **Lanes:**
+  - the split for n = 1–8;
+  - the front of the queue first;
   - spill-over both ways;
-  - placement-known characters are skipped;
-  - nothing ahead of the class lesson is taken except by spill-over;
-  - the order past the lists falls back to HSK rank.
-- **`curriculum.ts`:**
-  - estimates on dates in each term and in holidays;
-  - the correction carries forward and lapses at the next semester;
-  - the year rollover;
-  - `writeAt` and `taughtAt` for sample characters.
-- **Writing eligibility:** only adds, and parent words are untouched.
-- **Example-word preference** in the content build.
-- **UI:** the Settings 学校 panel, the Overview progress view and the 认新字 label, rendered in **WebKit** (playwright-core) as well as Chromium.
+  - nothing ahead of the class;
+  - `null` class means catch-up only;
+  - ladder-word gating and lanes;
+  - no duplicates, and fewer than `n` when the pool runs out.
+- **Plan:** integration with main's existing plan tests. Update expectations only where book or lane order legitimately changes them.
+- **Story off:** no setup, no payoff and no painting by default; the flag on restores them.
+- **Content:** every listed character is in `builtin.json`; the readable-组词 preference holds.
+- **Settings, Progress and the card label:** rendered tests, plus screenshots in **WebKit** (playwright-core), not only Chromium.
 
-## 12. Out of scope
+## 11. Out of scope
 
-Production-only mastery (sub-project 2), lesson length and reward changes (3), 朗读, word families, feedback and pinyin fading (4), P4–P6 lists, and lesson vocabulary (词语表) beyond characters.
+Production-only mastery and lesson length or reward changes (sub-projects 2 and 3). 朗读, word families, feedback and pinyin fading (4). P4–P6 lists. A parent switch for the story. Recorded-voice clips for the 5 new characters (the recorded voice is opt-in, and lines without a clip use the iPad voice).
