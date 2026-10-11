@@ -103,13 +103,25 @@ describe('成语 questions (spec 2026-10-05 §3.2 rung 5, phase C)', () => {
   });
 });
 
-describe('final review I2: Truffle peeks only at a word he missed', () => {
-  it('a retry after a miss peeks; a free-play question (also marked retry) does not', () => {
+describe('Truffle stays quiet while a question is open (spec 2026-10-11 §5)', () => {
+  it('a retry after a miss shows no peek; every kind of question opens with him neutral', () => {
     const missed = render(<PracticeQuestion {...base} word={he} item={{ wordId: he.id, rung: 1, ask: 'read', grades: null, retry: true, missed: true }} onDone={vi.fn()} />);
-    expect(missed.container.querySelector('svg.truffle')?.getAttribute('data-react')).toBe('peek');
+    expect(missed.container.querySelector('svg.truffle')?.getAttribute('data-react')).toBeNull();
     missed.unmount();
-    const free = render(<PracticeQuestion {...base} word={he} item={{ wordId: he.id, rung: 1, ask: 'read', grades: null, retry: true }} onDone={vi.fn()} />);
-    expect(free.container.querySelector('svg.truffle')?.getAttribute('data-react')).not.toBe('peek');
+    const chuan = pool.find((w) => w.text === '穿')!;
+    const hen = pool.find((w) => w.text === '很')!;
+    const asks = [
+      { word: he, item: { wordId: he.id, rung: 1 as const, ask: 'read' as const, grades: null, retry: false } },
+      { word: chuan, item: { wordId: chuan.id, rung: 2 as const, ask: 'match' as const, grades: null, retry: false } },
+      { word: hen, item: { wordId: hen.id, rung: 4 as const, ask: 'build' as const, grades: null, retry: false } },
+      { word: bankWord, item: { wordId: bankWord.id, rung: 3 as const, ask: 'usage' as const, grades: null, retry: false } },
+    ];
+    for (const a of asks) {
+      const { container, unmount } = render(<PracticeQuestion {...base} word={a.word} item={a.item} onDone={vi.fn()} />);
+      expect(container.querySelector('svg.truffle')!.getAttribute('data-mood'), a.item.ask).toBe('neutral');
+      expect(container.querySelector('svg.truffle')!.getAttribute('data-react'), a.item.ask).toBeNull();
+      unmount();
+    }
   });
 });
 

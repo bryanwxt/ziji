@@ -9,7 +9,7 @@ vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 import { speak } from '../../audio/speech';
 
 const item = { full: '我和哥哥都喜欢打球。', tiles: ['我', '和', '哥哥', '都', '喜欢', '打球。'], orders: [['我', '和', '哥哥', '都', '喜欢', '打球。']] };
-const props = { item, word: makeWord('和'), kid: DEFAULT_KID, resting: 'sulk' as const };
+const props = { item, word: makeWord('和'), kid: DEFAULT_KID };
 const tap = (text: string) => fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.build__bank .choice')].find((b) => b.textContent === text)!);
 
 describe('组句 (spec 2026-10-05 §3.2 rung 4)', () => {

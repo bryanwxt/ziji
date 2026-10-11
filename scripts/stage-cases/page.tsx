@@ -50,6 +50,8 @@ import { cardMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
 import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
+import { ListenRows } from '../../src/parent/ListenPanel';
+import type { Recording } from '../../src/types';
 
 const screen = (body: preact.ComponentChildren) => (
   <div class="screen">
@@ -105,24 +107,24 @@ if (which === 'faces') {
     app,
   );
 } else if (which === 'alive' || which === 'alive-calm') render(<Alive calm={which === 'alive-calm'} />, app);
-else if (which === 'clue') render(screen(<UseQuestion item={clue} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onNext={() => {}} />), app);
+else if (which === 'clue') render(screen(<UseQuestion item={clue} kid={DEFAULT_KID} onAnswer={() => {}} onNext={() => {}} />), app);
 else if (which === 'pair' || which === 'match' || which === 'build' || which === 'fish') {
   // 练一练's new questions (spec 2026-10-05 §3.2, §3.4): pairing, 组句 and 钓鱼 for a look-alike he confused
   const words = builtinWords(0);
   const w = (t: string) => words.find((x) => x.text === t)!;
   const rng = mulberry32(3);
   const body =
-    which === 'pair' ? <PairGame board={zuciBoard(w('火'), rng)!} kind="pair" kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
-    : which === 'match' ? <MatchQuestion question={dapeiQuestion(w('穿'), rng)!} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
-    : which === 'build' ? <BuildSentence item={{ full: '我和哥哥都喜欢打球。', tiles: ['我', '和', '哥哥', '都', '喜欢', '打球。'], orders: [['我', '和', '哥哥', '都', '喜欢', '打球。']] }} word={w('和')} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
-    : <ComponentsStep items={[fishItem(w('根'), ['跟'], new Set(), rng)!]} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onDone={() => {}} />;
+    which === 'pair' ? <PairGame board={zuciBoard(w('火'), rng)!} kind="pair" kid={DEFAULT_KID} onDone={() => {}} />
+    : which === 'match' ? <MatchQuestion question={dapeiQuestion(w('穿'), rng)!} kid={DEFAULT_KID} onDone={() => {}} />
+    : which === 'build' ? <BuildSentence item={{ full: '我和哥哥都喜欢打球。', tiles: ['我', '和', '哥哥', '都', '喜欢', '打球。'], orders: [['我', '和', '哥哥', '都', '喜欢', '打球。']] }} word={w('和')} kid={DEFAULT_KID} onDone={() => {}} />
+    : <ComponentsStep items={[fishItem(w('根'), ['跟'], new Set(), rng)!]} kid={DEFAULT_KID} onAnswer={() => {}} onDone={() => {}} />;
   render(screen(body), app);
 }
 else if (which === 'understand') {
   // the Understand question (plan 2b), with the longest English among the written sentences: the tightest card
   const items = SENTENCE_TERMS.flatMap((t) => inScopeWords(t)).map((w) => understandItem(w, mulberry32(1))).filter((x): x is UnderstandItem => !!x);
   const item = items.sort((a, b) => Math.max(...b.choices.map((c) => c.length)) - Math.max(...a.choices.map((c) => c.length)))[0]!;
-  render(screen(<UnderstandQuestion item={item} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />), app);
+  render(screen(<UnderstandQuestion item={item} kid={DEFAULT_KID} onDone={() => {}} />), app);
 }
 else if (which === 'worlds') {
   // every world by day and by evening, for the parent to look over (spec 2026-10-04 §2)
@@ -264,6 +266,20 @@ else if (which === 'hear' || which === 'hear-long' || which === 'hear-read') {
   const near = which === 'hear' ? pool : [w, ...longest.slice(1, 4)];
   render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'hear-read' ? 'meaningRead' : 'hear'} word={w} pool={near} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
 }
+else if (which === 'listen') {
+  // the parent's review queue (spec 2026-10-11 §6, §8): takes kept in memory — WebKit's test contexts can't store a Blob in IndexedDB
+  const words = builtinWords(0);
+  const said = [...['森', '林', '游', '泳'].map((t) => words.find((x) => x.text === t)!), ladderWords().find((w) => w.text === '森林') ?? ladderWords()[0]!];
+  const takes: Recording[] = said.map((w, i) => ({ id: `t${i}`, createdAt: new Date(2026, 9, 11, 17, i * 3).getTime(), prompt: { kind: 'say', wordId: w.id }, blob: new Blob(['x'], { type: 'audio/mp4' }), mime: 'audio/mp4', durationSec: 2 }));
+  render(
+    <div class="screen screen--scroll parent">
+      <main class="parent__body">
+        <section class="panel listen"><h2>Listen & confirm</h2><ListenRows takes={takes} words={new Map(said.map((w) => [w.id, w]))} onJudge={() => {}} /></section>
+      </main>
+    </div>,
+    app,
+  );
+}
 else if (which === 'intro-school-idiom') {
   // a school 成语's own 认新字 card (final review I3): four characters where the card expects one
   const words = builtinWords(0);
@@ -278,9 +294,9 @@ else if (which === 'idiom' || which === 'idiom-fit' || which === 'idiom-build' |
   const yan = words.find((x) => x.text === '足')!;
   const cheng = words.find((x) => x.text === '成')!;
   const body =
-    which === 'idiom' ? <IdiomQuestion gap={idiomGap(idiom, '足', rng)!} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
-    : which === 'idiom-fit' ? <UseQuestion item={idiomFitItem(idiom, null, rng)!} kid={DEFAULT_KID} resting="sulk" onAnswer={() => {}} onNext={() => {}} />
-    : which === 'idiom-build' ? <BuildSentence item={idiomZuju(idiom, rng)!} word={{ ...yan, text: idiom.text }} kid={DEFAULT_KID} resting="sulk" onDone={() => {}} />
+    which === 'idiom' ? <IdiomQuestion gap={idiomGap(idiom, '足', rng)!} kid={DEFAULT_KID} onDone={() => {}} />
+    : which === 'idiom-fit' ? <UseQuestion item={idiomFitItem(idiom, null, rng)!} kid={DEFAULT_KID} onAnswer={() => {}} onNext={() => {}} />
+    : which === 'idiom-build' ? <BuildSentence item={idiomZuju(idiom, rng)!} word={{ ...yan, text: idiom.text }} kid={DEFAULT_KID} onDone={() => {}} />
     : which === 'intro-idiom-word' ? (() => { // a card with no usage line: a 组词 with its English before the 成语 (parent, 2026-10-05: 一)
       const yi = words.find((x) => x.text === '一')!;
       return <FlashcardStep item={{ wordId: yi.id, isNew: true, retry: false }} ask="listen" word={yi} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={builtinIdiom('一心一意')!} onDone={() => {}} />;

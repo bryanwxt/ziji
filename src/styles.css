@@ -159,18 +159,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .progressbar__cp.is-current { filter: none; opacity: 1; border-color: var(--green); }
 .progressbar__cp.is-done { filter: none; opacity: 1; background: var(--gold-soft); border-color: var(--gold); animation: cp-pop var(--dur-slow) var(--spring-bouncy); }
 @keyframes cp-pop { from { transform: scale(0.5); } }
-.combo { display: inline-flex; align-items: center; gap: 4px; font-weight: 900; color: var(--orange-ink); background: var(--orange-soft); border: 2px solid #ffd7b0; border-radius: 999px; padding: 4px 12px; }
-.combo-banner {
-  position: fixed; top: 18%; left: 50%; z-index: 30; pointer-events: none; background: var(--orange); color: #fff; font-size: 38px; font-weight: 900;
-  padding: 14px 32px; border-radius: 22px; box-shadow: 0 6px 0 var(--orange-edge); animation: banner 1.6s var(--ease-out) forwards;
-}
-@keyframes banner {
-  0% { transform: translateX(-50%) scale(0.3); opacity: 0; }
-  18% { transform: translateX(-50%) scale(1.08); opacity: 1; }
-  28% { transform: translateX(-50%) scale(1); }
-  85% { opacity: 1; }
-  100% { transform: translateX(-50%) translateY(-20px); opacity: 0; }
-}
 
 /* Bottom bar and tab bar */
 .sheet, .tabbar {
@@ -499,7 +487,6 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .tabbar__item.is-active { background: var(--green); border: 2.5px solid var(--ink); }
 .progressbar__track, .progress { background: var(--surface); border: 2.5px solid var(--ink); }
 .progressbar__fill, .progress__fill { background: var(--marigold); }
-.combo { background: var(--surface); border: 2.5px solid var(--ink); color: var(--ink); }
 
 /* Path */
 .path__node { background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); color: var(--ink); }
@@ -1349,8 +1336,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .progress__trend li { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
 /* his year's lists as bars, with a mark where his class is (spec 2026-10-11 §8) */
 .progress__bars { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
-.pbar { display: grid; grid-template-columns: 3em 1fr 6.5em; align-items: center; gap: 10px; }
-.pbar__label { font-family: var(--hanzi); font-size: 16px; }
+.pbar { display: grid; grid-template-columns: 9em 1fr 6.5em; align-items: center; gap: 10px; } /* 认读 reads (taps), 会写 Can write, 会说 Can say */
+.pbar__label { font-family: var(--hanzi); font-size: 16px; line-height: 1.2; }
 .pbar__track { position: relative; height: 14px; border-radius: 999px; background: var(--line); }
 .pbar__fill { height: 100%; border-radius: 999px; background: var(--green); }
 .pbar__mark { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--ink); }
@@ -1486,4 +1473,28 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .story__cheer { margin: 0; color: #2f6f55; }
 @media (prefers-reduced-motion: reduce) {
   .story__bg, .story__bg--in, .story__actor, .story__words > *, .story__sfx span, .story__chip--fly, .story__panel, .story__nav-btn--go { animation: none; }
+}
+
+/* a Say card (spec 2026-10-11 §3): the word, the microphone, then the model and one re-record */
+.say { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(12px, 2.4dvh, 24px); height: 100%; }
+.say__after { display: flex; align-items: center; gap: 16px; }
+
+/* six options (spec 2026-10-11 §3): three across, so the two rows take the height four did */
+.choices--six, .stage__card .choices--six { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 720px); max-width: 720px; }
+
+.week__day.is-rest .week__dot { border-style: dashed; background: color-mix(in srgb, var(--gold) 35%, var(--surface)); } /* 休息日: forgiven, not finished (spec 2026-10-11 §5) */
+
+/* Listen & confirm (spec 2026-10-11 §6) */
+.tab__badge { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--red); color: #fff; font-size: 13px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; }
+.listen__word { font-size: 32px; }
+.listen__py { color: var(--ink-soft); }
+.listen__verdict .small-btn { min-width: 52px; min-height: 44px; font-size: 22px; }
+@media (max-width: 600px) { /* a phone: the row wraps (word, then his take on its own line, then model and ✓ ✗) instead of running off the card */
+  .listen__row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .listen__row { border-bottom: 1px solid var(--line, #e6dcc3); padding: 4px 0; }
+  .listen__row > td { padding: 4px 0; border: 0; }
+  .listen__row > td:first-child { flex: 1 1 100%; }
+  .listen__row > td:nth-child(2) { flex: 1 1 130px; min-width: 0; }
+  .listen__row audio { width: 100%; }
+  .listen__row .listen__verdict { margin-left: auto; white-space: nowrap; }
 }

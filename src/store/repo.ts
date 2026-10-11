@@ -101,6 +101,7 @@ export async function deleteWord(db: AppDb, id: string): Promise<void> {
     tx.objectStore('cards').delete(`${id}:write`),
     tx.objectStore('cards').delete(`${id}:meaning`),
     tx.objectStore('cards').delete(`${id}:hear`),
+    tx.objectStore('cards').delete(`${id}:say`),
     tx.done,
   ]);
 }
@@ -176,8 +177,8 @@ export async function listRecordings(db: AppDb): Promise<Recording[]> {
   return (await db.getAllFromIndex('recordings', 'byCreatedAt')).reverse();
 }
 
+export const getRecording = (db: AppDb, id: string) => db.get('recordings', id);
 export const deleteRecording = (db: AppDb, id: string) => db.delete('recordings', id);
-export const countRecordings = (db: AppDb) => db.count('recordings');
 
 export async function addPrompt(db: AppDb, p: PicturePrompt): Promise<void> {
   await db.put('prompts', p);
@@ -217,6 +218,18 @@ export async function saveParentPassage(db: AppDb, p: ParentPassage): Promise<vo
 }
 
 export const deleteParentPassage = (db: AppDb, id: string) => db.delete('passages', id);
+
+/** Marks a take reviewed and writes its review log in one transaction; false (nothing written) if it is gone or already reviewed. */
+export async function settleTake(db: AppDb, id: string, verdict: 'ok' | 'no', log: Omit<ReviewLog, 'id'>): Promise<boolean> {
+  const tx = db.transaction(['recordings', 'reviewLogs'], 'readwrite');
+  const rec = await tx.objectStore('recordings').get(id);
+  if (!rec || rec.review) {
+    await tx.done;
+    return false;
+  }
+  await Promise.all([tx.objectStore('recordings').put({ ...rec, review: verdict }), tx.objectStore('reviewLogs').add(log as ReviewLog), tx.done]);
+  return true;
+}
 
 export async function updateRecording(db: AppDb, r: Recording): Promise<void> {
   await db.put('recordings', r);

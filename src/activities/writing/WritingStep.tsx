@@ -14,7 +14,6 @@ import { isHardWrite } from '../../fun/mood';
 import { Closeup } from '../../app/Closeup';
 import { Pet } from '../../ui/Pet';
 import type { Reaction } from '../../ui/truffle/timelines';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { Label, spokenBlanks } from '../../ui/Label';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { writingCue } from './cue';
@@ -30,7 +29,6 @@ export interface WriteResult {
 interface Props {
   word: Word;
   kid: KidState;
-  resting: TruffleMood;
   isNew: boolean;
   pass: WritePass;
   onDone: (result: WriteResult | null) => void;
@@ -69,7 +67,7 @@ export function gapPinyin(blanked: string, others: string | null, pinyin: string
   return out.every(Boolean) ? out.join(' ') : others ?? undefined;
 }
 
-export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupReady = false, at }: Props) {
+export function WritingStep({ word, kid, isNew, pass, onDone, closeupReady = false, at }: Props) {
   const chars = useMemo(() => (at === undefined ? hanChars(word.text) : hanChars(word.text).slice(at, at + 1)), [word.id, at]);
   const cue = useMemo(() => writingCue(word, at), [word.id, at]);
   const [index, setIndex] = useState(0);
@@ -169,7 +167,7 @@ export function WritingStep({ word, kid, resting, isNew, pass, onDone, closeupRe
           <Pet
             kid={kid}
             size={180}
-            mood={charMisses === null ? resting : charMisses > 3 ? 'neutral' : last && isHardWrite(isNew, misses) ? 'wow' : 'pleased'}
+            mood={charMisses === null ? 'neutral' : charMisses > 3 ? 'neutral' : last && isHardWrite(isNew, misses) ? 'wow' : 'pleased'}
             bubble={charMisses === null ? PASS_BUBBLE[pass] : null}
             calm={charMisses === null}
             react={react}

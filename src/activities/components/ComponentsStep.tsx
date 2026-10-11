@@ -10,13 +10,11 @@ import { InkIcon } from '../../ui/icons/InkIcon';
 import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 import type { ZibianItem } from './zibian';
 
 interface Props {
   items: ZibianItem[];
   kid: KidState;
-  resting: TruffleMood;
   onAnswer: (item: ZibianItem, correct: boolean) => void;
   onDone: () => void;
   onProgress?: (fraction: number) => void;
@@ -35,7 +33,7 @@ function Radical({ ch }: { ch: string }) {
 }
 
 /** 钓鱼 as 字辨 (spec §20 part 8): fish out the right character for the gap in a word. */
-export function ComponentsStep({ items, kid, resting, onAnswer, onDone, onProgress }: Props) {
+export function ComponentsStep({ items, kid, onAnswer, onDone, onProgress }: Props) {
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const item = items[index]!;
@@ -66,7 +64,7 @@ export function ComponentsStep({ items, kid, resting, onAnswer, onDone, onProgre
   return (
     <Stage
       activity="zibian"
-      truffle={<Pet kid={kid} size={180} mood={!done ? resting : correct ? 'pleased' : 'side'} bubble={!done ? '钓鱼啦！' : null} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: index + 1 } : null} />}
+      truffle={<Pet kid={kid} size={180} mood={!done ? 'neutral' : correct ? 'pleased' : 'side'} bubble={!done ? '钓鱼啦！' : null} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: index + 1 } : null} />}
       sheet={!done ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (

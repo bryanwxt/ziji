@@ -1,7 +1,7 @@
 import { CHAPTERS } from '../story/chapters';
 import { lessonScene } from '../story/lessonScene';
 import { PaintedBackdrop } from '../ui/story/PaintedBackdrop';
-import { Flame, X } from 'lucide-preact';
+import { X } from 'lucide-preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ComponentsStep } from '../activities/components/ComponentsStep';
 import { buildZibianRound, lookAlikeChars, zibianCount, type ZibianItem } from '../activities/components/zibian';
@@ -19,7 +19,9 @@ import { StoryStep, type StoryResult } from '../activities/kantu/StoryStep';
 import { afterStory, nextSpeaking, sceneFor } from '../kantu/flow';
 import { hatchAfterLesson } from '../fun/finds';
 import { STORY_PARTS, type Scene } from '../kantu/scenes';
-import type { FinishedRecording } from '../audio/recorder';
+import { recordingSupported, type FinishedRecording } from '../audio/recorder';
+import { SayCard, type SayResult } from '../activities/say/SayCard';
+import { recordSayTake } from '../session/say';
 import { pickPassage, readingPool, finishDay, type ReadingPassage } from '../langdu/cycle';
 import { earnsBonus } from '../langdu/stars';
 import { burst } from '../ui/motion';
@@ -28,19 +30,19 @@ import { playSfx } from '../audio/sfx';
 import { prefetchWords } from '../audio/speech';
 import { PASSAGES } from '../content';
 import { CLOSEUP_EVERY, closeupAllowed, isHardWrite, restingMood } from '../fun/mood';
-import { comboMilestone, comboPraise } from '../fun/pet';
 import { reducedMotion } from '../ui/motion';
 import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
 import { PracticeQuestion, type PracticeResult } from '../activities/practice/PracticeQuestion';
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
-import { cheer, requestGreeting } from '../ui/truffle/greeting';
+import { requestGreeting } from '../ui/truffle/greeting';
 import { beginNewWord, bringForward, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { settleLessonStars } from '../session/stars';
 import { starsOf } from '../stats/stats';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
-  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice, wordMisses,
+  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
 import { addAnswer, clearConfusion, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
@@ -48,6 +50,7 @@ import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type Session
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
 import { useApp } from './AppContext';
+import { logError } from './errorLog';
 import { Celebration } from './Celebration';
 import { loadKnowledge, type Knowledge } from './knowledge';
 import { newId } from '../lib/id';
@@ -110,7 +113,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex && rec.plan.steps[0] === 'newwords' && rec.flashQueue.length > 0) requestGreeting('你好！我们开始吧！'); // it opens on a new word's card, never on a question (spec §4.3)
       // the lesson's clips (neural voice): fetched now, so they play at once and offline
       for (const w of ladderWordsBesides(know.words)) if (!know.wordsById.has(w.id)) know.wordsById.set(w.id, w); // the ladder's 词语 aren't stored
-      const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds, ...(rec.plan.hearReviewIds ?? []), ...(rec.plan.understandReviewIds ?? [])]);
+      const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds, ...(rec.plan.hearReviewIds ?? []), ...(rec.plan.understandReviewIds ?? []), ...(rec.plan.sayIds ?? [])]);
       prefetchWords([...want].map((id) => know.wordsById.get(id)).filter((w): w is Word => !!w));
       latest.current = rec;
       setState({
@@ -144,15 +147,23 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const practiceItem = rec ? currentPracticeItem(rec) : null;
   const practiceWord = practiceItem ? state!.know.wordsById.get(practiceItem.wordId) : undefined;
 
-  const commit = async (next: SessionRecord) => {
+  /** A finished lesson's stars; if they can't be settled it is still saved and celebrated, with a star at least (final review I3). */
+  const settleOrFloor = async (step: SessionRecord): Promise<SessionRecord> => {
+    try {
+      return await settleLessonStars(db, step, now(), (id) => state?.know.wordsById.get(id));
+    } catch (err) {
+      logError(err);
+      return { ...step, stars: Math.max(1, step.stars === undefined ? starsOf(step.completedSteps) : 0), produced: { write: 0, say: 0 }, closest: [] };
+    }
+  };
+
+  const commit = async (step: SessionRecord) => {
     const was = latest.current;
+    latest.current = step;
+    // a finished lesson's stars are what he can newly produce (spec 2026-10-11 §5); an extra lesson's go to bonusStars, as before
+    const next = !step.free && step.completed && !was?.completed ? await settleOrFloor(step) : step;
     latest.current = next;
     if (!next.free && !next.extra) await saveSession(db, next); // an extra lesson never replaces the day's record
-    if (next.extra && next.completed && !was?.completed) {
-      // its stars count on top of the day's (they aren't in a saved day): the celebration then shows them landing
-      const fresh = await getKid(db);
-      if (fresh) await saveKid(db, { ...fresh, bonusStars: fresh.bonusStars + starsOf(next.completedSteps) });
-    }
     if (!next.free && !next.extra && next.completed && !was?.completed) {
       // a finished daily lesson hatches a dino egg he tapped in 恐龙谷
       const fresh = await getKid(db);
@@ -205,7 +216,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           // the look-alikes as they are now: a mix-up in today's 认新字 is fished today, not a lesson later (sweep)
           const confusions = await getConfusions(db);
           setState((st) => (st ? { ...st, confusions } : st));
-          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know));
+          // Say cards only where the iPad can record (spec 2026-10-11 §7)
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know), recordingSupported());
           planning.current = false;
           await commit(startPractice(latest.current ?? cur, queue));
         })();
@@ -266,12 +278,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
-      const nextCombo = r.correct ? combo + 1 : 0;
-      setCombo(nextCombo);
-      if (comboMilestone(nextCombo)) {
-        playSfx('combo');
-        cheer(comboPraise(nextCombo)); // Truffle praises him (parent, 2026-10-05: not a reddish banner)
-      }
+      setCombo(r.correct ? combo + 1 : 0); // his hearts at three right in a row; no counter, no spoken 连对 (spec 2026-10-11 §5)
       await commit(afterFlashAnswer(rec, r.correct, r.elapsedMs, r.inContext));
     })();
 
@@ -303,13 +310,30 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
-      const nextCombo = r.correct ? combo + 1 : 0;
-      setCombo(nextCombo);
-      if (comboMilestone(nextCombo)) {
-        playSfx('combo');
-        cheer(comboPraise(nextCombo)); // Truffle praises him (parent, 2026-10-05: not a reddish banner)
-      }
+      setCombo(r.correct ? combo + 1 : 0);
       await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom));
+    })();
+
+  /** A Say card (spec 2026-10-11 §3): keep the take for the parent and schedule his Say card; a blocked microphone drops the lesson's Say cards (§7). */
+  const onSayDone = (r: SayResult | null) =>
+    once(async () => {
+      const item = practiceItem!;
+      if (!r) {
+        await commit(skipSayItems(latest.current ?? rec));
+        return;
+      }
+      if (!rec.free) {
+        try {
+          know.cardsById.set(`${item.wordId}:say`, await recordSayTake(db, item.wordId, r.take, now()));
+        } catch (err) {
+          // the take couldn't be kept (a full disk, a failed put): never leave him stuck on this card — the lesson's Say cards
+          // go, as for a blocked microphone, and 练一练 carries on with taps (final review I1)
+          logError(err);
+          await commit(skipSayItems(latest.current ?? rec));
+          return;
+        }
+      }
+      await commit(afterPracticeAnswer(latest.current ?? rec, true, r.elapsedMs));
     })();
 
   const onWriteDone = (r: WriteResult | null) =>
@@ -405,7 +429,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           <X size={34} strokeWidth={3} />
         </button>
         <ProgressBar steps={rec.plan.steps} stepIndex={rec.stepIndex} fraction={sessionProgress(rec, stepFraction)} />
-        {combo >= 3 && <span class="combo"><Flame size={20} strokeWidth={2.75} /> {combo}</span>}
       </header>
 
       {(step === 'flashcards' || step === 'newwords') && flashItem && flashWord && !flashWord.paused && (
@@ -414,7 +437,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           item={flashItem}
           ask={step === 'newwords' ? 'hear' : undefined} // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2)
           reintroOnMiss={step === 'newwords'}
-          peek={step === 'flashcards' && flashItem.retry} // an older lesson's retries are words he missed
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
           lessonTag={step === 'newwords' ? laneTag(rec.plan.newWordLanes?.[flashWord.id], flashWord) : null} // spec 2026-10-11 §9
           word={flashWord}
@@ -428,7 +450,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           onDone={(r) => void onFlashDone(r)}
         />
       )}
-      {step === 'practice' && practiceItem && practiceWord && !practiceWord.paused && (
+      {step === 'practice' && practiceItem?.ask === 'say' && practiceWord && !practiceWord.paused && (
+        <SayCard key={`p${rec.practiceIndex}`} word={practiceWord} kid={kid} onDone={(r) => void onSayDone(r)} />
+      )}
+      {step === 'practice' && practiceItem && practiceItem.ask !== 'say' && practiceWord && !practiceWord.paused && (
         <PracticeQuestion
           key={`p${rec.practiceIndex}`}
           item={practiceItem}
@@ -451,7 +476,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           key={`${rec.writeIndex}-${rec.writePass ?? 0}-${rec.writeRedoIndex ?? 0}`}
           word={writeWord}
           kid={kid}
-          resting={resting}
           isNew={!!writeCandidate?.isNew}
           pass={writeCandidate!.pass}
           at={writeCandidate!.at}
@@ -460,14 +484,13 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         />
       )}
       {step === 'choose' && state.choose && state.choose.length > 0 && (
-        <ChooseStep key="choose" items={state.choose} kid={kid} resting={resting} onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)} onDone={() => void finishTimedStep('choose')} onProgress={setStepFraction} />
+        <ChooseStep key="choose" items={state.choose} kid={kid} onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)} onDone={() => void finishTimedStep('choose')} onProgress={setStepFraction} />
       )}
       {step === 'wrapup' && state.wrapup && state.wrapup.length > 0 && (
         <WrapupStep
           key="wrapup"
           items={state.wrapup}
           kid={kid}
-          resting={resting}
           onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)}
           onGiveUp={onGiveUp}
           onDone={() => void finishTimedStep('wrapup')}
@@ -482,7 +505,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         />
       )}
       {step === 'components' && state.round && (
-        <ComponentsStep key="components" items={state.round} kid={kid} resting={resting} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
+        <ComponentsStep key="components" items={state.round} kid={kid} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
         <LangduStep

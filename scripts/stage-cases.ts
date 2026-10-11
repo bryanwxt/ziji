@@ -116,6 +116,14 @@ for (const size of SIZES) {
   await page.waitForTimeout(300);
   await page.screenshot({ path: `fit-shots/stage-cases/build-done-${size.name}.png` });
   problems.push(...(await cardClipped(page, `${size.name} build done`)));
+  // the parent's Listen & confirm queue (spec 2026-10-11 §6, §8): looked at on every size, ✓ and ✗ big enough to tap
+  await page.goto(`file://${dir}/index.html?case=listen`);
+  await page.waitForSelector('.listen__row');
+  await page.screenshot({ path: `fit-shots/stage-cases/listen-${size.name}.png`, fullPage: true });
+  for (const b of await page.$$('.listen__verdict button')) {
+    const box = await b.boundingBox();
+    if (!box || Math.min(box.width, box.height) < 43.5) problems.push(`${size.name} listen: ✓/✗ under 44px (${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'hidden'})`);
+  }
   await page.close();
 }
 // every expression × looks: nothing of him pokes out of his box (a seam, an ear, a mark), and a sheet to read by eye

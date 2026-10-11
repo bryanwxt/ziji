@@ -60,7 +60,7 @@ export interface Word {
   tags?: string[]; // e.g. '成语'
 }
 
-export type CardKind = 'recognise' | 'write' | 'meaning' | 'hear' | 'understand'; // meaning: what the word means and how it's used (spec §19)
+export type CardKind = 'recognise' | 'write' | 'meaning' | 'hear' | 'understand' | 'say'; // meaning: what the word means and how it's used (spec §19); say: he reads it aloud (spec 2026-10-11 §3)
 
 export interface CardRecord {
   id: string; // `${wordId}:${kind}`
@@ -137,6 +137,7 @@ export interface SessionPlan {
   newMeaningIds?: string[]; // begun words starting meaning practice
   practiceTimeBoxMs?: number; // 练一练's time box (spec 2026-10-05 §2)
   newWordMeaningIds?: string[]; // today's new words that have a cue: their meaning question comes in the same lesson (spec §20 part 2)
+  sayIds?: string[]; // words to say aloud in 练一练, best first (spec 2026-10-11 §4); plans saved before it have none
 }
 
 export interface FlashItem {
@@ -172,6 +173,9 @@ export interface SessionRecord {
   practiceIndex?: number;
   practiceElapsedMs?: number;
   practiceLeft?: number; // items the time box left for tomorrow (pacing reads it, spec §2.2)
+  stars?: number; // the lesson's stars (spec 2026-10-11 §5): set when it finishes; absent on lessons from before, which count their steps (starsOf)
+  produced?: { write: number; say: number }; // what newly reached "can produce" by the lesson's end
+  closest?: string[]; // nothing new: the words one more day from it (「还差一天：森、林」)
 }
 
 export type RecordingPrompt =
@@ -179,7 +183,8 @@ export type RecordingPrompt =
   | { kind: 'passage'; passageId: string }
   | { kind: 'intro' } // the exam-etiquette self-introduction
   | { kind: 'story'; sceneId: string; part: 'opening' | 'setting' | 'events' | 'ending' | 'opinion' | 'whole' } // 看图说话
-  | { kind: 'answer'; sceneId: string; question: number }; // Truffle asks
+  | { kind: 'answer'; sceneId: string; question: number } // Truffle asks
+  | { kind: 'say'; wordId: string }; // a Say card take: he read the word aloud (spec 2026-10-11 §3)
 
 export interface Recording {
   id: string;
@@ -191,6 +196,7 @@ export interface Recording {
   level?: number; // average loudness (RMS 0..1) while reading; older recordings have none
   misread?: string[]; // characters the parent confirmed he misread
   extraDayGiven?: boolean; // its marks have given the passage its one extra day (never a second, however often re-marked)
+  review?: 'ok' | 'no'; // a Say take the parent confirmed (✓) or rejected (✗); absent: waiting (spec 2026-10-11 §6)
 }
 
 export interface PicturePrompt {
@@ -265,6 +271,7 @@ export interface Settings {
   placementResult?: PlacementResult;
   storyProgress?: { chapter: number; readOn?: string; setupDone?: boolean; payoffDone?: boolean }; // the Word Thief chapters (spec 2026-10-07 3c §3)
   storyOn?: boolean; // the Word Thief story around lessons (spec 2026-10-11 §3): off unless true; no parent switch yet. Not `story` (看图说话)
+  sayCards?: boolean; // Say cards in 练一练 (spec 2026-10-11 §4): on unless false
   baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
   pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)
   contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION)
@@ -272,7 +279,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   pinHash: null,
-  sessionMinutes: 30,
+  sessionMinutes: 15, // one ~15-minute lesson (spec 2026-10-11 §4)
   newPerDay: 8, // the ceiling the app paces under (spec 2026-10-05 §2.2)
   activities: { newwords: true, practice: true, writing: true, speaking: true },
   speechRate: 0.8,
@@ -285,7 +292,7 @@ export const DEFAULT_SETTINGS: Settings = {
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
   langdu: false,
-  lessonVersion: 5,
+  lessonVersion: 6,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';
@@ -310,6 +317,7 @@ export interface KidState {
   story: { next: number; told: number }; // 看图说话: next scene, stories told (drives starter fading)
   finds: Finds; // tap fun in the journey worlds
   greetedOn?: string; // the day Truffle last greeted him on Home with how he feels about it (spec 2026-10-04 §4.6)
+  starredUpTo?: number; // passes up to this time have earned their stars (spec 2026-10-11 §5); absent: none yet
 }
 
 export const DEFAULT_KID: KidState = {

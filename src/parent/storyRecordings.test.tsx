@@ -61,3 +61,17 @@ describe('RecordingsPanel stories', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('Say takes in Recordings (spec 2026-10-11 §7)', () => {
+  it('shows the word and whether the parent has listened yet', async () => {
+    const app = await makeAppData();
+    const { putWords } = await import('../store/repo');
+    const { makeWord } = await import('../test/fixtures');
+    await putWords(app.db, [makeWord('森')]);
+    await addRecording(app.db, r('s1', base, { kind: 'say', wordId: 'b:森' }));
+    await addRecording(app.db, { ...r('s2', base + 1, { kind: 'say', wordId: 'b:森' }), review: 'ok' });
+    renderWithApp(<RecordingsPanel />, app);
+    expect(await screen.findByText('🗣️ Say: 森 (waiting)')).toBeTruthy();
+    expect(screen.getByText('🗣️ Say: 森 ✓')).toBeTruthy();
+  });
+});

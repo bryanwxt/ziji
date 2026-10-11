@@ -13,14 +13,14 @@ const b = { ...a, wordId: 'b' };
 
 describe('WrapupStep (spec §20 part 7)', () => {
   it('opens with 用一用！', () => {
-    render(<WrapupStep items={[a]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onGiveUp={vi.fn()} onDone={vi.fn()} />);
+    render(<WrapupStep items={[a]} kid={DEFAULT_KID} onAnswer={vi.fn()} onGiveUp={vi.fn()} onDone={vi.fn()} />);
     expect(screen.getByText('用一用！')).toBeTruthy();
   });
   it('three misses: a missed item returns after the others; the third miss closes the word kindly, and the round still ends', () => {
     const onGiveUp = vi.fn();
     const onDone = vi.fn();
     const onAnswer = vi.fn();
-    render(<WrapupStep items={[a, b]} kid={DEFAULT_KID} resting="sulk" onAnswer={onAnswer} onGiveUp={onGiveUp} onDone={onDone} />);
+    render(<WrapupStep items={[a, b]} kid={DEFAULT_KID} onAnswer={onAnswer} onGiveUp={onGiveUp} onDone={onDone} />);
     const pick = (s: string) => { fireEvent.click(screen.getByRole('button', { name: s })); };
     pick('我很一个书包。'); fireEvent.click(screen.getByText('继续')); // a, try 1
     pick('这个书包很大。'); fireEvent.click(screen.getByText('继续')); // b
@@ -37,7 +37,7 @@ describe('WrapupStep (spec §20 part 7)', () => {
     const a2 = { ...a, right: '这只狗很大。' };
     const onGiveUp = vi.fn();
     const onDone = vi.fn();
-    render(<WrapupStep items={[a, b, a2]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onGiveUp={onGiveUp} onDone={onDone} />);
+    render(<WrapupStep items={[a, b, a2]} kid={DEFAULT_KID} onAnswer={vi.fn()} onGiveUp={onGiveUp} onDone={onDone} />);
     const wrong = () => { fireEvent.click(screen.getByRole('button', { name: '我很一个书包。' })); fireEvent.click(screen.getByText('继续')); };
     wrong(); // a, try 1
     fireEvent.click(screen.getByRole('button', { name: '这个书包很大。' })); fireEvent.click(screen.getByText('继续')); // b
@@ -48,7 +48,7 @@ describe('WrapupStep (spec §20 part 7)', () => {
   });
   it('a retry asks the word another way when one is given, not the same question again', () => {
     const other = { ...a, right: '这只狗很大。' };
-    render(<WrapupStep items={[a]} kid={DEFAULT_KID} resting="sulk" onAnswer={vi.fn()} onGiveUp={vi.fn()} onDone={vi.fn()} makeRetry={() => other} />);
+    render(<WrapupStep items={[a]} kid={DEFAULT_KID} onAnswer={vi.fn()} onGiveUp={vi.fn()} onDone={vi.fn()} makeRetry={() => other} />);
     fireEvent.click(screen.getByRole('button', { name: '我很一个书包。' }));
     fireEvent.click(screen.getByText('继续'));
     expect(screen.getByRole('button', { name: '这只狗很大。' })).toBeTruthy();

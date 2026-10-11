@@ -3,7 +3,8 @@ import { useApp } from '../app/AppContext';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
 import { addDays, localDateKey } from '../lib/date';
 import { dueTomorrow, minutesPerDay, streak, troubleWords, weeklyAccuracy, wordOf } from '../stats/stats';
-import { allSessions, countRecordings, logsSince } from '../store/repo';
+import { allSessions, listRecordings, logsSince } from '../store/repo';
+import { takeWord, waitingTakes } from '../session/say';
 import type { ReviewLog, SessionRecord } from '../types';
 import { MinutesChart } from './MinutesChart';
 import type { ParentTab } from './ParentArea';
@@ -16,6 +17,7 @@ interface Data {
   sessions: SessionRecord[];
   logs: ReviewLog[];
   recordings: number;
+  takes: number; // Say takes waiting for the parent (spec 2026-10-11 §6)
   micDenied: boolean;
 }
 
@@ -26,16 +28,17 @@ export function Dashboard({ onNavigate }: { onNavigate: (tab: ParentTab) => void
   useEffect(() => {
     void (async () => {
       const t = now();
-      const [know, sessions, logs, recordings] = await Promise.all([
-        loadKnowledge(db), allSessions(db), logsSince(db, addDays(t, -42).getTime()), countRecordings(db),
-      ]);
+      const [know, sessions, logs, all] = await Promise.all([loadKnowledge(db), allSessions(db), logsSince(db, addDays(t, -42).getTime()), listRecordings(db)]);
+      const takes = waitingTakes(all).length;
+      // Say takes have their own queue and tidy themselves: they aren't counted toward "Tidy up" (final review I5)
+      const recordings = all.filter((r) => takeWord(r) === null).length;
       let micDenied = false;
       try {
         micDenied = (await navigator.permissions?.query({ name: 'microphone' as PermissionName }))?.state === 'denied';
       } catch {
         micDenied = false; // Safari versions without the microphone permission query
       }
-      setD({ know, sessions, logs, recordings, micDenied });
+      setD({ know, sessions, logs, recordings, takes, micDenied });
     })();
   }, []);
 
@@ -88,6 +91,11 @@ export function Dashboard({ onNavigate }: { onNavigate: (tab: ParentTab) => void
           <div class="progress"><div class="progress__fill" style={{ width: pct(d.know.written, settings.targetWrite) }} /></div>
         </div>
         <div class="tile"><span class="tile__value">{dueTomorrow(d.know.cards, d.know.words, t)}</span><span class="tile__label">Cards due tomorrow</span></div>
+        <div class="tile">
+          <span class="tile__value">{d.takes}</span>
+          <span class="tile__label">Takes to review</span>
+          {d.takes > 0 && <button type="button" class="small-btn" onClick={() => onNavigate('listen')}>Listen & confirm</button>}
+        </div>
       </div>
       <section class="panel"><MinutesChart data={minutesPerDay(d.sessions, today)} /></section>
       <section class="panel">

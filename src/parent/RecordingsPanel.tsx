@@ -5,6 +5,8 @@ import { PASSAGES } from '../content';
 import { applyMisreads } from '../langdu/misreads';
 import { SCENES_KT } from '../kantu/scenes';
 import { displayText } from '../langdu/phrases';
+import { findWord } from '../ladder/words';
+import { takeWord } from '../session/say';
 import { deleteRecording, listParentPassages, listRecordings } from '../store/repo';
 import type { ParentPassage, Recording } from '../types';
 
@@ -41,7 +43,10 @@ const partLabel = (r: Recording) => {
   return '';
 };
 
-const describe = ({ prompt }: Recording, texts: Texts) => {
+const VERDICT = { ok: ' ✓', no: ' ✗' } as const;
+
+const describe = ({ prompt, review }: Recording, texts: Texts, said: Map<string, string>) => {
+  if (prompt.kind === 'say') return `🗣️ Say: ${said.get(prompt.wordId) ?? '(deleted word)'}${review ? VERDICT[review] : ' (waiting)'}`;
   if (prompt.kind === 'picture') return '📷 Picture talk';
   if (prompt.kind === 'intro') return '🙋 Self-introduction';
   if (prompt.kind === 'story' || prompt.kind === 'answer') return '🖼️ Picture story';
@@ -98,10 +103,14 @@ export function RecordingsPanel() {
   const { db } = useApp();
   const [recs, setRecs] = useState<Recording[]>([]);
   const [parent, setParent] = useState<ParentPassage[]>([]);
+  const [said, setSaid] = useState<Map<string, string>>(new Map()); // the word each Say take is of
   const [open, setOpen] = useState<string | null>(null);
   const [openStory, setOpenStory] = useState<string | null>(null);
   const reload = async () => {
     const [r, p] = await Promise.all([listRecordings(db), listParentPassages(db)]);
+    const ids = [...new Set(r.map(takeWord).filter((id): id is string => id !== null))];
+    const found = await Promise.all(ids.map(async (id) => [id, (await findWord(db, id))?.text] as const));
+    setSaid(new Map(found.filter((x): x is readonly [string, string] => !!x[1])));
     setRecs(r);
     setParent(p);
   };
@@ -181,7 +190,7 @@ export function RecordingsPanel() {
               <tr class="rec-row">
                 <td>{new Date(r.createdAt).toLocaleString()}</td>
                 <td>
-                  {describe(r, texts)}
+                  {describe(r, texts, said)}
                   {r.misread?.length ? <small> · misread: {r.misread.join(' ')}</small> : null}
                   {text && <> <button type="button" class="small-btn" onClick={() => setOpen(open === r.id ? null : r.id)}>Mark misreads</button></>}
                 </td>

@@ -39,3 +39,12 @@ describe('listening (spec 2026-10-06 §3.2)', () => {
     expect(skillAccuracy(logs, []).listening).toEqual({ right: 1, total: 1 });
   });
 });
+
+describe('the parent’s Say verdicts are not his answers (spec 2026-10-11 §6)', () => {
+  it('a ✓ or ✗ on a take is in no skill row', () => {
+    const say = (correct: boolean) => ({ cardId: 'a:say', wordId: 'a', kind: 'say' as const, at: 1, rating: 3 as const, correct });
+    const acc = skillAccuracy([say(true), say(false), log('recognise', 'a', true)], []);
+    expect(acc.reading).toEqual({ right: 1, total: 1 });
+    expect(Object.values(acc).reduce((n, s) => n + s.total, 0)).toBe(1);
+  });
+});

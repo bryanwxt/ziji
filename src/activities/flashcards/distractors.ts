@@ -15,6 +15,35 @@ function sharesComponent(a: Word, b: Word): boolean {
   return wordComponents(b.text).some((p) => parts.has(p));
 }
 
+/** Six options where five good wrong ones exist, otherwise four (spec 2026-10-11 §3: more honest taps). */
+export const MANY_WRONG = 5;
+export const FEW_WRONG = 3;
+/** Five wrong options when the picker found five, else three of them. */
+export const fiveOrThree = <T>(wrong: T[]): T[] => wrong.slice(0, wrong.length >= MANY_WRONG ? MANY_WRONG : FEW_WRONG);
+
+/** Different in sound, near his level (within two levels up): the look-alikes worth showing. */
+function nearOf(target: Word, pool: Word[]): Word[] {
+  const sound = toneless(target.pinyin);
+  const eligible = pool.filter((w) => lengthOf(w) === lengthOf(target) && w.text !== target.text && toneless(w.pinyin) !== sound);
+  return target.level === null ? eligible : eligible.filter((w) => (w.level ?? 9) <= target.level! + 2);
+}
+
+/**
+ * Five look-alikes for a six-option "find the character" (spec 2026-10-11 §3): each shares a part with it, near his level, and
+ * sounds different. Fewer than five: none, and the question keeps four options.
+ */
+export function pickLookAlikes(target: Word, pool: Word[], rng: Rng): Word[] {
+  const seen = new Set([target.text]);
+  const out: Word[] = [];
+  for (const w of shuffle(nearOf(target, pool).filter((x) => sharesComponent(target, x)), rng)) {
+    if (seen.has(w.text)) continue;
+    seen.add(w.text);
+    out.push(w);
+    if (out.length === MANY_WRONG) return out;
+  }
+  return [];
+}
+
 export function pickCharacterDistractors(target: Word, pool: Word[], rng: Rng, n = 3): Word[] {
   const sound = toneless(target.pinyin);
   const eligible = pool.filter((w) => lengthOf(w) === lengthOf(target) && w.text !== target.text && toneless(w.pinyin) !== sound);
@@ -93,8 +122,8 @@ const sense = (m: string) => firstSense(m).split(',')[0]!.replace(/\([^)]*\)/g, 
 /** Two meanings that would both be right: the same sense, or one inside the other ("guide" / "tour guide"). */
 const alike = (a: string, b: string) => a === b || ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `);
 
-/** Hear / read-for-meaning (spec 2026-10-06 §3.2): its English meaning and three others whose first sense differs, near its place in his order. */
-export function meaningChoices(word: Word, pool: Word[], rng: Rng): string[] | null {
+/** Hear / read-for-meaning (spec 2026-10-06 §3.2): its English meaning and three others (or `others`) whose first sense differs, near its place in his order. */
+export function meaningChoices(word: Word, pool: Word[], rng: Rng, others = FEW_WRONG): string[] | null {
   const full = cardMeaning(word);
   if (!full) return null;
   const answer = firstSense(full);
@@ -103,13 +132,13 @@ export function meaningChoices(word: Word, pool: Word[], rng: Rng): string[] | n
     .filter((w) => w.id !== word.id && !w.paused)
     .sort((a, b) => Math.abs((a.rank ?? 1e9) - (word.rank ?? 0)) - Math.abs((b.rank ?? 1e9) - (word.rank ?? 0)))
     .slice(0, 60);
-  const others: string[] = [];
+  const wrong: string[] = [];
   for (const w of shuffle(near, rng)) {
     const m = cardMeaning(w);
     if (!m || [...seen].some((x) => alike(x, sense(m)))) continue;
     seen.add(sense(m));
-    others.push(firstSense(m));
-    if (others.length === 3) break;
+    wrong.push(firstSense(m));
+    if (wrong.length === others) break;
   }
-  return others.length === 3 ? shuffle([answer, ...others], rng) : null;
+  return wrong.length === others ? shuffle([answer, ...wrong], rng) : null;
 }

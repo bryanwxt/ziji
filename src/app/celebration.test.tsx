@@ -239,3 +239,28 @@ describe('the story after the celebration (spec 3c §5)', () => {
     expect(app.go).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'story' }));
   });
 });
+
+describe('stars for what he can now do (spec 2026-10-11 §5)', () => {
+  it("shows the lesson's stars and the line naming what he can now write and say", async () => {
+    const app = await makeAppData();
+    renderWithApp(<Celebration rec={{ ...finished('2026-10-02', ['practice']), stars: 5, produced: { write: 3, say: 2 }, closest: [] }} />, app);
+    await screen.findByText('太棒了！');
+    expect(document.querySelectorAll('.stars > span')).toHaveLength(5);
+    expect(document.querySelector('.celebrate__line [data-zh]')?.getAttribute('data-zh')).toBe('今天你会写 3 个新字，会说 2 个！');
+  });
+  it('one star and the closest words when nothing passed today', async () => {
+    const app = await makeAppData();
+    renderWithApp(<Celebration rec={{ ...finished('2026-10-02', ['practice']), stars: 1, produced: { write: 0, say: 0 }, closest: ['森', '林'] }} />, app);
+    await screen.findByText('太棒了！');
+    expect(document.querySelectorAll('.stars > span')).toHaveLength(1);
+    expect(document.querySelector('.celebrate__line [data-zh]')?.getAttribute('data-zh')).toBe('还差一天：森、林');
+  });
+  it('a lesson finished before mastery stars shows the stars its steps earned, and no line', async () => {
+    const app = await makeAppData();
+    const { stars: _none, ...old } = finished('2026-10-02', ['newwords', 'practice']);
+    renderWithApp(<Celebration rec={old} />, app);
+    await screen.findByText('太棒了！');
+    expect(document.querySelectorAll('.stars > span')).toHaveLength(3);
+    expect(document.querySelector('.celebrate__line')).toBeNull();
+  });
+});

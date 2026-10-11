@@ -6,6 +6,7 @@ import { canOpenChest, costumeById, openChest, visibleAccessory, type ChestResul
 import { newTiers, powerDef, powerFamilies, powerProgress, type PowerId } from '../fun/powers';
 import { newBadges, stickerFamilies } from '../fun/stickers';
 import { totalStars, starsOf } from '../stats/stats';
+import { producedLine } from '../stats/produce';
 import { allSessions, getKid, getSettings, saveKid } from '../store/repo';
 import { localDateKey } from '../lib/date';
 import { CHAPTERS } from '../story/chapters';
@@ -67,7 +68,9 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   };
   const [wiggle, setWiggle] = useState(1); // the key of his next excited wiggle at the chest
   const still = reducedMotion();
-  const stars = rec.free ? 0 : starsOf(rec.completedSteps);
+  // mastery stars (spec 2026-10-11 §5); a lesson finished before them shows the stars its steps earned
+  const stars = rec.free ? 0 : rec.stars ?? starsOf(rec.completedSteps);
+  const line = rec.free ? null : producedLine(rec.produced, rec.closest);
 
   useEffect(() => {
     celebrate();
@@ -186,6 +189,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
                   ))}
                 </div>
                 <p><Label zh={`你得到了 ${stars} 颗星`} /></p>
+                {line && <p class="celebrate__line"><Label zh={line} /></p>}
               </>
             )}
           </>

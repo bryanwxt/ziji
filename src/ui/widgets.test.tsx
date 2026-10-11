@@ -98,19 +98,14 @@ describe('Pet costume', () => {
   });
 });
 
-describe('Truffle cheers a run of right answers (parent, 2026-10-05: not a reddish banner)', () => {
-  it('a live Truffle says the praise in his bubble', async () => {
+describe('a line for Truffle to say (greeting.cheer)', () => {
+  it('a live Truffle says it in his bubble', async () => {
     const { cheer } = await import('./truffle/greeting');
-    const { comboPraise } = await import('../fun/pet');
     const { act } = await import('@testing-library/preact');
     const { Pet } = await import('./Pet');
     const { DEFAULT_KID } = await import('../types');
     const { container } = render(<Pet kid={DEFAULT_KID} mood="content" size={120} />);
-    act(() => cheer(comboPraise(5)));
-    expect(container.querySelector('.pet__bubble')?.textContent).toContain('连对5个');
-  });
-  it('praise grows with the run', async () => {
-    const { comboPraise } = await import('../fun/pet');
-    expect([comboPraise(3), comboPraise(5), comboPraise(10)]).toEqual(['连对3个，真棒！', '连对5个，真了不起！', '连对10个，你太厉害了！']);
+    act(() => cheer('真棒！'));
+    expect(container.querySelector('.pet__bubble')?.textContent).toContain('真棒！');
   });
 });

@@ -24,7 +24,7 @@ describe('FlashcardStep', () => {
   it('introduces a new word before quizzing it', () => {
     render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
     fireEvent.click(screen.getByText('我记住了！'));
-    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    expect(document.querySelectorAll('.choice')).toHaveLength(6); // five good wrong readings exist (spec 2026-10-11 §3)
   });
 
   it('read mode: a correct pinyin answer reports correct with timings', () => {
@@ -56,7 +56,7 @@ describe('FlashcardStep', () => {
     const target = { ...he, id: 'p:x', text: '河马河', pinyin: 'hé mǎ hé' };
     render(<FlashcardStep {...base} word={target} item={{ ...review, wordId: 'p:x' }} voice onDone={vi.fn()} />);
     expect(document.querySelector('[data-q]')?.textContent).toBe('河马河');
-    expect(new Set([...document.querySelectorAll('.choice')].map((b) => b.textContent)).size).toBe(4);
+    expect(new Set([...document.querySelectorAll('.choice')].map((b) => b.textContent)).size).toBe(6);
   });
 });
 
@@ -145,9 +145,9 @@ describe('Truffle reactions', () => {
   const relearn = () => ({ id: `${he.id}:recognise`, wordId: he.id, kind: 'recognise' as const, fsrs: { ...createEmptyCard(new Date()), state: State.Relearning } });
   // the reaction lives in the rig now (stage spec §4.4): data-expression holds it, data-mood stays his resting mood
   const expression = () => document.querySelector('svg.truffle')!.getAttribute('data-expression');
-  it('rests during the quiz, is curious at a wrong answer and overjoyed at a hard one', () => {
+  it('rests neutral during the quiz, is curious at a wrong answer and overjoyed at a hard one', () => {
     const { unmount } = render(<FlashcardStep {...base} card={relearn()} item={review} voice={false} onDone={vi.fn()} />);
-    expect(mood()).toBe('sulk');
+    expect(mood()).toBe('neutral'); // spec 2026-10-11 §5
     fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
     expect(expression()).toBe('joy');
     expect(mood()).toBe('sulk');
@@ -239,7 +239,7 @@ describe('认一认 meaning questions (spec §19)', () => {
     expect(document.querySelector('.meaning-cue .label__cell--zh .label__py')!.textContent).toBe('zhēn');
     expect(speak).toHaveBeenCalledWith('珍惜');
     expect(document.body.textContent).not.toContain('cherish');
-    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    expect(document.querySelectorAll('.choice')).toHaveLength(6);
     fireEvent.click(screen.getByRole('button', { name: '惜' }));
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
@@ -481,14 +481,18 @@ describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () =
   });
 });
 
-describe('a hard question (spec 2026-10-04 §4.6, phase E)', () => {
-  it('a word he missed comes back: Truffle covers his eyes and peeks', () => {
-    render(<FlashcardStep {...base} item={{ wordId: he.id, isNew: false, retry: true }} peek ask="read" voice={false} onDone={vi.fn()} />);
-    expect(document.querySelector('svg.truffle')?.getAttribute('data-react')).toBe('peek');
-  });
-  it('a first try does not, nor a practice-only question (free play marks every item retry)', () => {
+describe('Truffle stays quiet while a question is open (spec 2026-10-11 §5)', () => {
+  const truffle = () => document.querySelector('svg.truffle')!;
+  it('a word he missed comes back: no peek, no mood, just his neutral pose until he answers', () => {
     render(<FlashcardStep {...base} item={{ wordId: he.id, isNew: false, retry: true }} ask="read" voice={false} onDone={vi.fn()} />);
-    expect(document.querySelector('svg.truffle')?.getAttribute('data-react')).not.toBe('peek');
+    expect(truffle().getAttribute('data-react')).toBeNull();
+    expect(truffle().getAttribute('data-mood')).toBe('neutral');
+  });
+  it('his reaction comes with the answer: the cheer and his resting mood', () => {
+    render(<FlashcardStep {...base} item={review} ask="read" voice={false} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
+    expect(truffle().getAttribute('data-react')).toBe('right');
+    expect(truffle().getAttribute('data-mood')).toBe('sulk');
   });
 });
 
@@ -566,5 +570,39 @@ describe('the lesson label on the 认新字 card (spec 2026-10-11 §9)', () => {
     cleanup();
     render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
     expect(document.querySelector('.intro__tag')).toBeNull();
+  });
+});
+
+describe('six options where five good wrong ones exist (spec 2026-10-11 §3)', () => {
+  const pick = (t: string) => pool.find((w) => w.text === t)!;
+  it('find the character: five look-alikes that share a part with it, three across', () => {
+    render(<FlashcardStep {...base} item={review} ask="listen" voice onDone={vi.fn()} />);
+    const options = [...document.querySelectorAll('.choice')].map((b) => b.textContent ?? '');
+    expect(options).toHaveLength(6);
+    expect(options).toContain('河');
+    expect(document.querySelector('.choices--six')).toBeTruthy();
+  });
+  it('a character with fewer than five look-alikes keeps four options', () => {
+    const fei = pick('飞');
+    render(<FlashcardStep {...base} word={fei} item={{ wordId: fei.id, isNew: false, retry: false }} ask="listen" voice onDone={vi.fn()} />);
+    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    expect(document.querySelector('.choices--six')).toBeNull();
+  });
+  it('its meaning in English: six when five other meanings differ, else four', () => {
+    render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} onDone={vi.fn()} />);
+    expect(document.querySelectorAll('.choice')).toHaveLength(6);
+    cleanup();
+    const w = (text: string, meaning: string) => makeWord(text, { meaning, source: 'parent' });
+    const small = [w('看', 'to look'), w('大', 'big'), w('小', 'small'), w('门', 'door'), w('水', 'water')];
+    render(<FlashcardStep {...base} word={small[0]!} pool={small} item={{ wordId: small[0]!.id, isNew: false, retry: false }} ask="meaningRead" voice={false} onDone={vi.fn()} />);
+    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+  });
+  it('the right answer is still among them, and a pick still reports right or wrong', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} item={review} voice={false} onDone={onDone} />);
+    expect([...document.querySelectorAll('.choice')].map((b) => b.textContent)).toContain(he.pinyin);
+    fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true, asked: 'read' }));
   });
 });

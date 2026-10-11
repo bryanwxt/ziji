@@ -49,26 +49,49 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
 /** A word by id: one he has, or a ladder 词语 (the parent's lists name both: final review I8). */
 export const wordOf = (know: Pick<Knowledge, 'wordsById' | 'ladderById'>, id: string): Word | undefined => know.wordsById.get(id) ?? know.ladderById.get(id);
 
-/** Consecutive completed days ending today (or yesterday, while today is still to do). */
-export function streak(sessions: SessionRecord[], today: string): number {
+/** Monday of the calendar week (Mon–Sun) a day is in. */
+const weekOf = (d: Date): string => localDateKey(addDays(d, -((d.getDay() + 6) % 7)));
+
+/**
+ * The streak (spec 2026-10-11 §5): days with a finished lesson, back from today (or yesterday, while today is still to do). One
+ * missed day in a calendar week (Mon–Sun) is forgiven as a rest day — it doesn't add to the count — and a second missed day in
+ * the same week ends the streak. `rest`: the forgiven days, only those with a finished day before them (newest first).
+ */
+export function streakDays(sessions: SessionRecord[], today: string): { count: number; rest: string[] } {
   const done = new Set(sessions.filter((s) => s.completed && !s.free).map((s) => s.date));
   let day = parseDateKey(today);
   if (!done.has(today)) day = addDays(day, -1);
-  let n = 0;
-  while (done.has(localDateKey(day))) {
-    n++;
+  const used = new Set<string>(); // weeks whose rest day is taken
+  const rest: string[] = [];
+  let pending: string[] = []; // missed days forgiven so far, kept once a finished day comes before them
+  let count = 0;
+  for (;;) {
+    const key = localDateKey(day);
+    if (done.has(key)) {
+      count++;
+      rest.push(...pending);
+      pending = [];
+    } else {
+      const week = weekOf(day);
+      if (used.has(week)) break;
+      used.add(week);
+      pending.push(key);
+    }
     day = addDays(day, -1);
   }
-  return n;
+  return { count, rest };
 }
+
+export const streak = (sessions: SessionRecord[], today: string): number => streakDays(sessions, today).count;
 
 /** One star per finished activity; 用一用 closes the lesson but isn't a star of its own; 练一练 counts two (it replaces 选一选, 钓鱼 and 用一用, spec 2026-10-05). */
 export const starsOf = (steps: readonly string[]) => steps.reduce((n, s) => n + (s === 'wrapup' ? 0 : s === 'practice' ? 2 : 1), 0);
 /** Lessons before this day counted 用一用 as a star: they keep it, so his total (and a stars goal) never goes down. */
 export const WRAPUP_NO_STAR_FROM = '2026-10-05';
 
+/** His star total: each lesson's mastery stars (spec 2026-10-11 §5); a lesson from before them keeps the stars its steps earned. */
 export function totalStars(sessions: SessionRecord[], bonusStars: number): number {
-  return sessions.reduce((sum, s) => sum + (s.date < WRAPUP_NO_STAR_FROM ? s.completedSteps.length : starsOf(s.completedSteps)), 0) + bonusStars;
+  return sessions.reduce((sum, s) => sum + (typeof s.stars === 'number' ? s.stars : s.date < WRAPUP_NO_STAR_FROM ? s.completedSteps.length : starsOf(s.completedSteps)), 0) + bonusStars;
 }
 
 export function minutesPerDay(sessions: SessionRecord[], today: string, days = 30): { date: string; minutes: number }[] {
@@ -109,15 +132,16 @@ export function dueTomorrow(cards: CardRecord[], words: Word[], now: Date): numb
   return cards.filter((c) => active.has(c.wordId) && c.fsrs.due.getTime() > from && c.fsrs.due.getTime() <= to).length;
 }
 
-export interface WeekDay { label: string; date: string; done: boolean; today: boolean }
+export interface WeekDay { label: string; date: string; done: boolean; today: boolean; rest: boolean }
 
-/** This week, Monday first: which days a (non-free) lesson was finished. */
+/** This week, Monday first: which days a (non-free) lesson was finished, and the streak's rest day (休息日, spec 2026-10-11 §5). */
 export function weekDays(sessions: SessionRecord[], today: string): WeekDay[] {
   const done = new Set(sessions.filter((s) => s.completed && !s.free).map((s) => s.date));
+  const rest = new Set(streakDays(sessions, today).rest);
   const day = parseDateKey(today);
   const monday = addDays(day, -((day.getDay() + 6) % 7));
   return [...'一二三四五六日'].map((label, i) => {
     const date = localDateKey(addDays(monday, i));
-    return { label, date, done: done.has(date), today: date === today };
+    return { label, date, done: done.has(date), today: date === today, rest: rest.has(date) };
   });
 }

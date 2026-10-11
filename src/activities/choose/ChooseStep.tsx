@@ -1,20 +1,18 @@
 import { useState } from 'preact/hooks';
 import type { UseItem } from '../../practice/useItems';
 import type { KidState } from '../../types';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { UseQuestion } from './UseQuestion';
 
 interface Props {
   items: UseItem[];
   kid: KidState;
-  resting: TruffleMood;
   onAnswer: (item: UseItem, correct: boolean, responseMs: number) => void;
   onDone: () => void;
   onProgress?: (fraction: number) => void; // how far through the items he is, for the lesson's progress bar
 }
 
 /** 选一选 (spec §20 part 4): which word fits, and 用对了吗, in turn. */
-export function ChooseStep({ items, kid, resting, onAnswer, onDone, onProgress }: Props) {
+export function ChooseStep({ items, kid, onAnswer, onDone, onProgress }: Props) {
   const [index, setIndex] = useState(0);
   const item = items[index]!;
   return (
@@ -22,7 +20,6 @@ export function ChooseStep({ items, kid, resting, onAnswer, onDone, onProgress }
       key={index}
       item={item}
       kid={kid}
-      resting={resting}
       onAnswer={(c, ms) => onAnswer(item, c, ms)}
       onNext={() => {
         onProgress?.((index + 1) / items.length);

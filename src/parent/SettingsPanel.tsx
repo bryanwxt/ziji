@@ -110,6 +110,13 @@ export function SettingsPanel() {
           </label>
         ))}
       </fieldset>
+      <div class="field">
+        <label>
+          <input type="checkbox" checked={s.sayCards !== false} onChange={(e) => void save({ sayCards: e.currentTarget.checked })} />{' '}
+          Say cards
+        </label>
+        <p class="hint">In 练一练 he reads some words aloud (about one in three, at most 6 a lesson). You confirm his takes under Listen &amp; confirm; a word he can say counts toward his stars and Progress. Off: 练一练 is taps only.</p>
+      </div>
       <details class="field">
         <summary>Advanced: test speech recognition (for future auto-hints on misread characters)</summary>
         <AsrTest />

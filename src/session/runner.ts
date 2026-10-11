@@ -16,7 +16,7 @@ export function createSessionRecord(plan: SessionPlan, date: string, now: number
   return {
     date, startedAt: now, activeMs: 0, free, plan, stepIndex: 0,
     flashQueue, flashIndex: 0, flashElapsedMs: 0, writeIndex: 0, writeDone: 0,
-    completedSteps: [], completed: plan.steps.length === 0,
+    completedSteps: [], completed: plan.steps.length === 0, stars: 0, // its stars are what he can newly produce when it ends (spec 2026-10-11 §5)
   };
 }
 
@@ -159,6 +159,15 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   // what time left for tomorrow: only due revision never reached counts (new words' later rungs, retries and meaning starts don't)
   if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) return finishStep({ ...next, practiceLeft: queue.slice(next.practiceIndex!).filter((x) => x.due).length });
   return next;
+}
+
+/** The microphone is blocked: this Say card and every later one are dropped for the rest of the lesson (spec 2026-10-11 §7). */
+export function skipSayItems(rec: SessionRecord): SessionRecord {
+  if (currentStep(rec) !== 'practice') return rec;
+  const index = rec.practiceIndex ?? 0;
+  const queue = rec.practiceQueue ?? [];
+  const next: SessionRecord = { ...rec, practiceQueue: [...queue.slice(0, index), ...queue.slice(index).filter((x) => x.ask !== 'say')] };
+  return index >= next.practiceQueue!.length ? finishStep(next) : next;
 }
 
 export function skipPracticeItem(rec: SessionRecord): SessionRecord {

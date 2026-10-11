@@ -11,12 +11,10 @@ import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Pet } from '../../ui/Pet';
 import { SpeakButton } from '../../ui/SpeakButton';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 
 interface Props {
   item: UnderstandItem;
   kid: KidState;
-  resting: TruffleMood;
   onDone: (r: { correct: boolean; responseMs: number }) => void;
 }
 
@@ -30,7 +28,7 @@ const SETTLE_MS = 250;
  * three English sentences. The choices open once the sentence has played, so a tap can't come before listening; after a miss,
  * the sheet shows the sentence and its English.
  */
-export function UnderstandQuestion({ item, kid, resting, onDone }: Props) {
+export function UnderstandQuestion({ item, kid, onDone }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ item.zh.codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [item]);
   const [ready, setReady] = useState(false);
   const [choice, setChoice] = useState<string | null>(null);
@@ -60,7 +58,7 @@ export function UnderstandQuestion({ item, kid, resting, onDone }: Props) {
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : resting} bubble={done ? null : '听一听，是什么意思？'} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
+      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? null : '听一听，是什么意思？'} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
       sheet={!done ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (

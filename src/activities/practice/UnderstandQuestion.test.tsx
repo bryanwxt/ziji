@@ -10,7 +10,7 @@ vi.mock('../../audio/speaking', () => ({ onSpeaking: (fn: (on: boolean) => void)
 import { speak } from '../../audio/speech';
 
 const item = { zh: '我家有一只猫。', en: 'We have a cat at home.', choices: ['The puppy runs fast.', 'We have a cat at home.', 'The cat sleeps by the door.'] };
-const props = { item, kid: DEFAULT_KID, resting: 'sulk' as const };
+const props = { item, kid: DEFAULT_KID };
 const choice = (en: string) => screen.getByRole('button', { name: en }) as HTMLButtonElement;
 const finish = () => { vi.useFakeTimers(); act(() => { for (const l of listeners) l(false); }); act(() => { vi.advanceTimersByTime(300); }); vi.useRealTimers(); };
 

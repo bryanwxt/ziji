@@ -8,10 +8,11 @@ import { getSettings, updateSettings } from './repo';
  * Lesson redesign (v4, spec 2026-10-05 §7): the activity switches become 新字 / 练一练 / 写一写 / 朗读, and the old default
  * number of new words becomes the ceiling 8 the app paces under (§2.2).
  * Both tracks (v5, spec 2026-10-11 §6): every install moves to 华文 + 高级华文 once, as the parent asked; a later pick stays.
+ * The 15-minute lesson (v6, spec 2026-10-11 §4): a lesson on the old default of exactly 30 minutes becomes 15; any other length stays.
  */
 export function migrateSettings(s: Settings): Partial<Settings> | null {
   const v = s.lessonVersion ?? 1;
-  if (v >= 5) return null;
+  if (v >= 6) return null;
   const patch: Partial<Settings> = {};
   if (v < 4) {
     if (v < 2) patch.sessionMinutes = s.sessionMinutes === 20 ? 30 : s.sessionMinutes;
@@ -21,8 +22,9 @@ export function migrateSettings(s: Settings): Partial<Settings> | null {
     const on = (k: keyof typeof was) => was[k] ?? true;
     patch.activities = { newwords: on('flashcards'), practice: on('flashcards') || on('choose') || on('components'), writing: on('writing'), speaking: on('speaking') };
   }
-  patch.course = 'both';
-  patch.lessonVersion = 5;
+  if (v < 5) patch.course = 'both';
+  if ((patch.sessionMinutes ?? s.sessionMinutes) === 30) patch.sessionMinutes = 15; // an install moved to 30 by v2 was on the default too
+  patch.lessonVersion = 6;
   return patch;
 }
 

@@ -1,4 +1,4 @@
-// 写一写 (spec 2026-10-05 §5): 8–10 characters from memory, at or below his level, traced only once, never back to back.
+// 写一写 (spec 2026-10-05 §5; spec 2026-10-11 §4): 5 characters from memory at the usual 15 minutes (writeCharTarget), at or below his level, traced only once, never back to back.
 import { hanChars } from '../content';
 import { State } from 'ts-fsrs';
 import { writeAt } from '../content/curriculum';
@@ -7,8 +7,8 @@ import { isKnown } from '../srs/scheduler';
 import type { CardRecord, Word } from '../types';
 
 export const MAX_WRITE_CHARS = 10;
-/** Characters a lesson: 6 at 20 minutes, 8–10 from 25 (9 at the usual 30). */
-export const writeCharTarget = (minutes: number): number => Math.min(MAX_WRITE_CHARS, minutes < 25 ? 6 : minutes < 30 ? 8 : minutes < 40 ? 9 : 10);
+/** Characters a lesson: 5 under 20 minutes (the usual 15, spec 2026-10-11 §4), 6 at 20, 8–10 from 25 (9 at 30). */
+export const writeCharTarget = (minutes: number): number => Math.min(MAX_WRITE_CHARS, minutes < 20 ? 5 : minutes < 25 ? 6 : minutes < 30 ? 8 : minutes < 40 ? 9 : 10);
 
 /**
  * A word to write this lesson: the characters to write (each once — 妈妈 is one; one another word already brings is left out),

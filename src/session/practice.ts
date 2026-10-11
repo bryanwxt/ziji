@@ -12,6 +12,7 @@ import { fishItem } from '../activities/components/zibian';
 import { meaningChoices } from '../activities/flashcards/distractors';
 import { understandItem } from '../practice/understand';
 import { introducedNewWords } from './runner';
+import { SAY_PER_LESSON } from './plan';
 import { idiomOf, idiomsFor, isIdiomWord, type Idiom } from '../content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../practice/idioms';
 
@@ -86,6 +87,7 @@ function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: As
     case 'idiom': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomGap(i, word.text, mulberry32(1)) !== null);
     case 'idiomFit': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomFitItem(i, null, mulberry32(1)) !== null);
     case 'idiomBuild': return !isIdiomWord(word) && idiomsOf(word, level, pool).some((i) => idiomZuju(i, mulberry32(1)) !== null);
+    case 'say': return false; // a Say card is added from the plan's sayIds (withSay), never asked from the ladder
     case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
   }
 }
@@ -105,7 +107,25 @@ export function withFish(items: PracticeItem[], fishIds: string[]): PracticeItem
   return out;
 }
 
-export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map(), level = 1): PracticeItem[] {
+/**
+ * Puts the Say cards into the round (spec 2026-10-11 §4): about one in three of all its items, at most 6, spread out (a k-th of
+ * the way in, like 钓鱼), never beside the same word or another Say card. A Say card grades nothing in the lesson: the parent
+ * confirms the take.
+ */
+export function withSay(items: PracticeItem[], sayIds: string[]): PracticeItem[] {
+  const k = Math.min(SAY_PER_LESSON, sayIds.length, Math.floor(items.length / 2));
+  const out = [...items];
+  sayIds.slice(0, k).forEach((wordId, j) => {
+    let at = Math.round((out.length * (j + 1)) / (k + 1));
+    const crowded = (x: PracticeItem | undefined) => !!x && (x.wordId === wordId || x.ask === 'say');
+    while (at < out.length && (crowded(out[at - 1]) || crowded(out[at]))) at++;
+    out.splice(at, 0, { wordId, rung: 1, ask: 'say', grades: 'say', retry: false });
+  });
+  return out;
+}
+
+/** `canSay`: the iPad can record (no microphone or MediaRecorder: no Say cards this lesson, spec 2026-10-11 §7). */
+export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map(), level = 1, canSay = false): PracticeItem[] {
   // no voice: a word due only for Understand is left for another day — a reading question would grade Use before Read (final review I2)
   const listenOnly = (w: RoundWord) => !!w.gradesUnderstand && !w.gradesRecognise && !w.gradesHear && !w.gradesMeaning;
   const words = practiceWords(rec, rungs).filter((w) => (voice || !listenOnly(w)) && (() => { const can = askable(wordsById.get(w.wordId), pool, voice, level); return can('read') || can('meaningRead'); })());
@@ -114,7 +134,10 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
     const w = wordsById.get(id);
     return w && !w.paused && fishItem(w, confusions.get(id)!, new Set(), mulberry32(1)) !== null;
   });
-  return withFish(round, fish);
+  // never a word met today: it is said on another day (spec 2026-10-11 §4)
+  const today = new Set([...rec.plan.newWordIds, ...introducedNewWords(rec)]);
+  const say = canSay ? (rec.plan.sayIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id); }) : [];
+  return withSay(withFish(round, fish), say);
 }
 
 /** 再玩一会儿: a round of words he has begun, from their own rungs, twice each; practice only. */

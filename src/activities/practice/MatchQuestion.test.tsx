@@ -8,7 +8,7 @@ vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 import { speak } from '../../audio/speech';
 
 const question = { verb: '穿', noun: '衣服', options: ['牙', '衣服', '饭', '歌'] };
-const props = { question, kid: DEFAULT_KID, resting: 'sulk' as const };
+const props = { question, kid: DEFAULT_KID };
 
 describe('搭配 (spec 2026-10-05 §3.2 rung 2, final review C2)', () => {
   it('the right partner joins the word, said aloud', () => {
