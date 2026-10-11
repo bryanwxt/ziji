@@ -45,7 +45,7 @@ describe('Settings: where his class is (spec 2026-10-11 §8)', () => {
   it('past the school calendar (2028) it says the dates are missing, not the list (review focus 1)', async () => {
     const app = await appOn({ grade: 2, gradeYear: 2028 }, () => new Date(2028, 2, 1, 9, 0));
     renderWithApp(<SettingsPanel />, app);
-    await waitFor(() => expect(shown()).toMatch(/^No school calendar for 2028 yet/));
+    await waitFor(() => expect(shown()).toBe('No school calendar for 2028 yet — new words keep coming from catch-up.'));
     expect(screen.queryByLabelText('Class lesson')).toBeNull();
   });
 });

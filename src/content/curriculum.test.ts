@@ -45,6 +45,15 @@ describe('book positions (spec 2026-10-11 §4)', () => {
     expect(listedBy(35, 'both').read.size).toBe(707);
     expect(listedBy(35, 'both').write.size).toBe(413);
   });
+  it('end of 二下 by course (was moeTargets): CL writes 350, HCL 435, both the union of the two; each term only adds', () => {
+    const end = Math.max(...termLessons('二下'));
+    const [cl, hcl, both] = (['cl', 'hcl', 'both'] as const).map((c) => listedBy(end, c));
+    expect([cl!.read.size, cl!.write.size, hcl!.write.size]).toEqual([746, 350, 435]);
+    expect(both!.write).toEqual(new Set([...cl!.write, ...hcl!.write]));
+    expect(both!.read).toEqual(cl!.read);
+    const reads = ['一上', '一下', '二上', '二下', '三上', '三下'].map((t) => listedBy(Math.max(...termLessons(t)), 'cl').read.size);
+    expect(reads).toEqual([...reads].sort((a, b) => a - b));
+  });
   it("a term's own characters: first read, and first written, in it", () => {
     const t = termChars('一上', 'both');
     expect([t.read.length, t.write.length]).toEqual([182, 90]);

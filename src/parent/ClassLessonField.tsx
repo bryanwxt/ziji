@@ -8,8 +8,8 @@ export function ClassLessonField({ settings, now, onSave }: { settings: Settings
   const options = gradeTerms(schoolYear(settings, now)).flatMap(termLessons);
   const [pick, setPick] = useState<number | null>(null);
   if (at === null || !options.length) {
-    const why = options.length ? `No school calendar for ${now.getFullYear()} yet (src/content/schoolCalendar.ts)` : 'No MOE list for his school year';
-    return <div class="field"><p class="hint" id="st-class-now">{why}: new words follow the book from 一上.</p></div>;
+    const why = options.length ? `No school calendar for ${now.getFullYear()} yet — new words keep coming from catch-up.` : 'No MOE list for his school year: new words follow the book from 一上.';
+    return <div class="field"><p class="hint" id="st-class-now">{why}</p></div>;
   }
   const setOn = correctionApplies(now, settings) ? new Date(settings.classLesson!.setAt) : null;
   const chosen = pick ?? (options.includes(at) ? at : options[0]!);
