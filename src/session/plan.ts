@@ -4,7 +4,7 @@ import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
 import { learnerLevel } from '../content/chengyu';
 import { classLessonAt, courseOf } from '../content/curriculum';
-import { pickNewWords } from './lanes';
+import { bookLesson, pickNewWords } from './lanes';
 import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
@@ -39,6 +39,8 @@ export const MEANING_REVIEW_CAP = 30;
 export const HEAR_REVIEW_CAP = 40;
 /** Understand cards reviewed in one lesson at most (plan 2b). */
 export const UNDERSTAND_REVIEW_CAP = 30;
+/** Say cards in one lesson at most (spec 2026-10-11 §4). */
+export const SAY_PER_LESSON = 6;
 
 export function buildSessionPlan({ cards, words, settings, now, practised = new Map(), newPerDay }: PlanInput): SessionPlan {
   const active = words.filter((w) => !w.paused);
@@ -81,6 +83,20 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: writeCharTarget(settings.sessionMinutes) })
     : [];
   const writeItems = orderWriteItems(writeUnits);
+  // Say (spec 2026-10-11 §4): due Say cards first, then words whose Read has passed and that have no Say card yet — his class's
+  // lesson (and the one before it) first, then the newest Read pass. Never a word introduced today. Off with settings.sayCards.
+  const say = ofKind('say');
+  const hasSay = new Set(say.map((c) => c.wordId));
+  const readAt = new Map(recognise.filter((c) => c.passed).map((c) => [c.wordId, c.passed!]));
+  const today = new Set(newWords.map((w) => w.id));
+  const inClass = (w: Word) => { const at = classAt === null ? undefined : bookLesson(w); return at !== undefined && (at === classAt || at === classAt! - 1); };
+  const sayIds = settings.sayCards === false ? [] : [
+    ...dueOf(say).map((c) => c.wordId),
+    ...active
+      .filter((w) => readPassed.has(w.id) && !hasSay.has(w.id) && !today.has(w.id))
+      .sort((a, b) => Number(inClass(b)) - Number(inClass(a)) || readAt.get(b.id)! - readAt.get(a.id)! || newWordOrder(a, b))
+      .map((w) => w.id),
+  ].slice(0, SAY_PER_LESSON);
 
   return {
     steps,
@@ -102,5 +118,6 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
       .sort(meaningOrder)
       .slice(0, NEW_MEANING_PER_DAY)
       .map((w) => w.id),
+    sayIds,
   };
 }

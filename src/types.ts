@@ -137,6 +137,7 @@ export interface SessionPlan {
   newMeaningIds?: string[]; // begun words starting meaning practice
   practiceTimeBoxMs?: number; // 练一练's time box (spec 2026-10-05 §2)
   newWordMeaningIds?: string[]; // today's new words that have a cue: their meaning question comes in the same lesson (spec §20 part 2)
+  sayIds?: string[]; // words to say aloud in 练一练, best first (spec 2026-10-11 §4); plans saved before it have none
 }
 
 export interface FlashItem {
@@ -267,6 +268,7 @@ export interface Settings {
   placementResult?: PlacementResult;
   storyProgress?: { chapter: number; readOn?: string; setupDone?: boolean; payoffDone?: boolean }; // the Word Thief chapters (spec 2026-10-07 3c §3)
   storyOn?: boolean; // the Word Thief story around lessons (spec 2026-10-11 §3): off unless true; no parent switch yet. Not `story` (看图说话)
+  sayCards?: boolean; // Say cards in 练一练 (spec 2026-10-11 §4): on unless false
   baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
   pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)
   contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION)
