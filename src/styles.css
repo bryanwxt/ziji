@@ -1487,3 +1487,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 @media (prefers-reduced-motion: reduce) {
   .story__bg, .story__bg--in, .story__actor, .story__words > *, .story__sfx span, .story__chip--fly, .story__panel, .story__nav-btn--go { animation: none; }
 }
+
+/* a Say card (spec 2026-10-11 §3): the word, the microphone, then the model and one re-record */
+.say { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(12px, 2.4dvh, 24px); height: 100%; }
+.say__after { display: flex; align-items: center; gap: 16px; }

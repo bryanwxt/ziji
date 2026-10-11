@@ -19,7 +19,9 @@ import { StoryStep, type StoryResult } from '../activities/kantu/StoryStep';
 import { afterStory, nextSpeaking, sceneFor } from '../kantu/flow';
 import { hatchAfterLesson } from '../fun/finds';
 import { STORY_PARTS, type Scene } from '../kantu/scenes';
-import type { FinishedRecording } from '../audio/recorder';
+import { recordingSupported, type FinishedRecording } from '../audio/recorder';
+import { SayCard, type SayResult } from '../activities/say/SayCard';
+import { recordSayTake } from '../session/say';
 import { pickPassage, readingPool, finishDay, type ReadingPassage } from '../langdu/cycle';
 import { earnsBonus } from '../langdu/stars';
 import { burst } from '../ui/motion';
@@ -40,7 +42,7 @@ import { beginNewWord, bringForward, markWriteSkipped, recordHear, recordMeaning
 import { starsOf } from '../stats/stats';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
-  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, startPractice, wordMisses,
+  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
 import { addAnswer, clearConfusion, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
@@ -205,7 +207,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           // the look-alikes as they are now: a mix-up in today's 认新字 is fished today, not a lesson later (sweep)
           const confusions = await getConfusions(db);
           setState((st) => (st ? { ...st, confusions } : st));
-          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know));
+          // Say cards only where the iPad can record (spec 2026-10-11 §7)
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know), recordingSupported());
           planning.current = false;
           await commit(startPractice(latest.current ?? cur, queue));
         })();
@@ -310,6 +313,18 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         cheer(comboPraise(nextCombo)); // Truffle praises him (parent, 2026-10-05: not a reddish banner)
       }
       await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom));
+    })();
+
+  /** A Say card (spec 2026-10-11 §3): keep the take for the parent and schedule his Say card; a blocked microphone drops the lesson's Say cards (§7). */
+  const onSayDone = (r: SayResult | null) =>
+    once(async () => {
+      const item = practiceItem!;
+      if (!r) {
+        await commit(skipSayItems(latest.current ?? rec));
+        return;
+      }
+      if (!rec.free) know.cardsById.set(`${item.wordId}:say`, await recordSayTake(db, item.wordId, r.take, now()));
+      await commit(afterPracticeAnswer(latest.current ?? rec, true, r.elapsedMs));
     })();
 
   const onWriteDone = (r: WriteResult | null) =>
@@ -428,7 +443,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           onDone={(r) => void onFlashDone(r)}
         />
       )}
-      {step === 'practice' && practiceItem && practiceWord && !practiceWord.paused && (
+      {step === 'practice' && practiceItem?.ask === 'say' && practiceWord && !practiceWord.paused && (
+        <SayCard key={`p${rec.practiceIndex}`} word={practiceWord} kid={kid} onDone={(r) => void onSayDone(r)} />
+      )}
+      {step === 'practice' && practiceItem && practiceItem.ask !== 'say' && practiceWord && !practiceWord.paused && (
         <PracticeQuestion
           key={`p${rec.practiceIndex}`}
           item={practiceItem}
