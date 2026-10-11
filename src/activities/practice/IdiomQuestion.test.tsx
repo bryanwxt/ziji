@@ -11,7 +11,7 @@ vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 import { speak } from '../../audio/speech';
 
 const gap = idiomGap(builtinIdiom('五颜六色')!, '颜', mulberry32(1))!;
-const props = { gap, kid: DEFAULT_KID, resting: 'sulk' as const };
+const props = { gap, kid: DEFAULT_KID };
 
 describe('complete the 成语 (spec 2026-10-05 §3.2 rung 5)', () => {
   it('shows the 成语 with a gap and four characters, all Chinese', () => {

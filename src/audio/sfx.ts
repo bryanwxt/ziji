@@ -1,6 +1,6 @@
 import { audioAsleep, audioContext } from './context';
 
-export type Sfx = 'correct' | 'wrong' | 'combo' | 'star' | 'chest' | 'levelUp' | 'munch';
+export type Sfx = 'correct' | 'wrong' | 'star' | 'chest' | 'levelUp' | 'munch';
 
 type Note = [freq: number, offset: number, duration: number, type?: OscillatorType];
 
@@ -8,7 +8,6 @@ type Note = [freq: number, offset: number, duration: number, type?: OscillatorTy
 const NOTES: Record<Sfx, Note[]> = {
   correct: [[660, 0, 0.12], [880, 0.1, 0.18]],
   wrong: [[330, 0, 0.2, 'triangle']],
-  combo: [[523, 0, 0.1], [659, 0.08, 0.1], [784, 0.16, 0.1], [1047, 0.24, 0.2]],
   star: [[1319, 0, 0.08], [1760, 0.06, 0.12]],
   chest: [[392, 0, 0.15], [523, 0.12, 0.15], [659, 0.24, 0.15], [784, 0.36, 0.3]],
   levelUp: [[523, 0, 0.15], [523, 0.15, 0.15], [784, 0.3, 0.15], [1047, 0.45, 0.4]],

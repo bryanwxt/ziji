@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { comboMilestone } from './pet';
+import { mulberry32 } from '../lib/random';
+import { CHEERS, pickLine } from './pet';
 
 describe('pet', () => {
-  it('celebrates combos at 3, 5, 10 and every 10 after', () => {
-    expect([1, 2, 3, 4, 5, 6, 9, 10, 11, 20, 30].map(comboMilestone)).toEqual([false, false, true, false, true, false, false, true, false, true, true]);
+  it('picks one of his lines', () => {
+    expect(CHEERS).toContain(pickLine(CHEERS, mulberry32(1)));
+  });
+  it('no run-of-right-answers praise any more (spec 2026-10-11 §5)', async () => {
+    const pet = await import('./pet');
+    expect('comboPraise' in pet || 'comboMilestone' in pet).toBe(false);
   });
 });

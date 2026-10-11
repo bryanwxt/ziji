@@ -42,7 +42,7 @@ interface Props {
   card?: CardRecord;
   voice: boolean;
   kid: KidState;
-  resting: TruffleMood;
+  resting: TruffleMood; // his mood once the answer is settled; while the question is open he rests neutral (spec 2026-10-11 §5)
   combo: number; // run of right answers before this card
   closeupReady: boolean;
   onDone: (result: FlashResult) => void;
@@ -52,15 +52,13 @@ interface Props {
   reintroOnMiss?: boolean;
   /** 认新字: a 成语 that uses the word, at his level or one up (spec 2026-10-05 §2.1, §4) */
   idiom?: Idiom | null;
-  /** a word he missed is back: Truffle covers his eyes and peeks (spec 2026-10-04 §4.6) */
-  peek?: boolean;
   /** 认新字: the word's lesson in his book, 「课本 二下·17」 or 「补 一上·5」 (spec 2026-10-11 §9); none for a listed word */
   lessonTag?: string | null;
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, peek = false, lessonTag = null }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null }: Props) {
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
@@ -92,8 +90,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const shownAt = useRef(performance.now());
   // what he reacts to (spec 2026-10-04 §4.4): a new word when it is shown, then each answer
   const reactN = useRef(0);
-  // a new word surprises him; a word he missed coming back makes him cover his eyes and peek (spec 2026-10-04 §4.6)
-  const [react, setReact] = useState<Reaction | null>(() => (item.isNew && !item.retry ? { kind: 'newWord', key: ++reactN.current } : peek ? { kind: 'peek', key: ++reactN.current } : null));
+  // a new word surprises him; nothing else moves him until an answer is settled (spec 2026-10-11 §5: no peek at a question)
+  const [react, setReact] = useState<Reaction | null>(() => (item.isNew && !item.retry ? { kind: 'newWord', key: ++reactN.current } : null));
   const quizAt = useRef(performance.now());
   const petRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -145,7 +143,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
 
   const reaction = phase === 'feedback' && result ? reactionMood({ correct: result.correct, hard: result.hard, combo: result.correct ? combo + 1 : 0 }) : null;
   // his reaction is a beat in the rig (REACTIONS[kind].holdMs), then he rests on his own mood while the answer stays up
-  const mood: TruffleMood = phase === 'intro' ? 'neutral' : resting;
+  const mood: TruffleMood = phase === 'feedback' ? resting : 'neutral'; // still while he answers (spec 2026-10-11 §5)
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害！', content: '呼噜～' };
   const bubble = phase === 'intro' ? (again ? '再看一遍！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;

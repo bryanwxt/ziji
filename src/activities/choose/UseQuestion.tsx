@@ -13,12 +13,10 @@ import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { CLUE_EN } from '../../content/bank/clueEn';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 
 interface Props {
   item: UseItem;
   kid: KidState;
-  resting: TruffleMood;
   bubble?: string; // the step's own opener (用一用！) instead of the question
   closing?: boolean; // the last try at this word missed: Truffle closes it kindly
   onAnswer: (correct: boolean, responseMs: number) => void;
@@ -26,7 +24,7 @@ interface Props {
 }
 
 /** One word-in-use question (spec §20 part 4): which word fits the sentence, or which sentence uses the word right. */
-export function UseQuestion({ item, kid, resting, bubble, closing, onAnswer, onNext }: Props) {
+export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Props) {
   const [choice, setChoice] = useState<string | null>(null);
   const shownAt = useRef(performance.now());
   const lines = useMemo(() => {
@@ -61,7 +59,7 @@ export function UseQuestion({ item, kid, resting, bubble, closing, onAnswer, onN
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : resting} bubble={done ? (closing ? '明天再来！' : null) : (bubble ?? ask)} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
+      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? (closing ? '明天再来！' : null) : (bubble ?? ask)} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
       sheet={!done ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (

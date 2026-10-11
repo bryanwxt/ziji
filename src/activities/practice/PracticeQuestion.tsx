@@ -94,7 +94,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
         <IdiomQuestion
           gap={idiom.gap}
           kid={kid}
-          resting={resting}
           onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning', picked: r.picked, idiom: idiom.gap!.idiom.text })}
         />
       );
@@ -104,7 +103,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
         <UseQuestion
           item={idiom.fit}
           kid={kid}
-          resting={resting}
           onAnswer={(correct, ms) => {
             answer.current = { correct, ms };
           }}
@@ -121,7 +119,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
           item={idiom.build.zuju}
           word={{ ...word, text: idiom.build.idiom.text }}
           kid={kid}
-          resting={resting}
           onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: true, asked: 'use', idiom: idiom.build!.idiom.text })}
         />
       );
@@ -131,7 +128,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
 
   if (item.ask === 'understand') {
     if (!understand) return null;
-    return <UnderstandQuestion item={understand} kid={kid} resting={resting} onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'understand' })} />;
+    return <UnderstandQuestion item={understand} kid={kid} onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'understand' })} />;
   }
   if (item.ask === 'fish') {
     if (!fish) return null;
@@ -139,7 +136,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
       <ComponentsStep
         items={[fish]}
         kid={kid}
-        resting={resting}
         onAnswer={(_, correct) => {
           answer.current = { correct, ms: Math.round(performance.now() - shownAt.current) };
         }}
@@ -156,7 +152,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
       <MatchQuestion
         question={match}
         kid={kid}
-        resting={resting}
         onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning' })}
       />
     );
@@ -168,7 +163,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
         board={board}
         kind="pair"
         kid={kid}
-        resting={resting}
         onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning' })}
       />
     );
@@ -180,7 +174,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
         item={zuju}
         word={word}
         kid={kid}
-        resting={resting}
         onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: true, asked: 'use' })}
       />
     );
@@ -190,7 +183,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
       <FlashcardStep
         item={{ wordId: word.id, isNew: false, retry: item.retry, mode: item.ask === 'word' ? 'meaning' : 'read' }}
         ask={item.ask === 'listen' || item.ask === 'word' || item.ask === 'hear' || item.ask === 'meaningRead' ? item.ask : 'read'}
-        peek={!!item.missed}
         word={word} pool={pool} card={card} voice={voice} kid={kid} resting={resting} combo={combo} closeupReady={closeupReady}
         onDone={(r) => onDone(r)}
       />
@@ -201,7 +193,6 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     <UseQuestion
       item={use}
       kid={kid}
-      resting={resting}
       onAnswer={(correct, ms) => {
         answer.current = { correct, ms };
       }}

@@ -2,13 +2,11 @@ import { useRef, useState } from 'preact/hooks';
 import type { UseItem } from '../../practice/useItems';
 import { WRAPUP_TRIES } from '../../session/wrapup';
 import type { KidState } from '../../types';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 import { UseQuestion } from './UseQuestion';
 
 interface Props {
   items: UseItem[];
   kid: KidState;
-  resting: TruffleMood;
   onAnswer: (item: UseItem, correct: boolean, responseMs: number) => void;
   onGiveUp: (item: UseItem) => void; // missed 3 times: closed kindly, its meaning comes back tomorrow
   onDone: () => void;
@@ -19,7 +17,7 @@ interface Props {
 const keyOf = (i: UseItem) => i.wordId ?? i.word;
 
 /** 用一用 (spec §20 part 7): every target word used right once more before the chest. A miss comes back after the others, up to 3 tries. */
-export function WrapupStep({ items, kid, resting, onAnswer, onGiveUp, onDone, makeRetry, onProgress }: Props) {
+export function WrapupStep({ items, kid, onAnswer, onGiveUp, onDone, makeRetry, onProgress }: Props) {
   const [queue, setQueue] = useState(items);
   const [index, setIndex] = useState(0);
   const [closing, setClosing] = useState(false);
@@ -47,6 +45,6 @@ export function WrapupStep({ items, kid, resting, onAnswer, onGiveUp, onDone, ma
     else setIndex(index + 1);
   };
   return (
-    <UseQuestion key={index} item={item} kid={kid} resting={resting} bubble={index === 0 ? '用一用！' : undefined} closing={closing} onAnswer={answer} onNext={next} />
+    <UseQuestion key={index} item={item} kid={kid} bubble={index === 0 ? '用一用！' : undefined} closing={closing} onAnswer={answer} onNext={next} />
   );
 }

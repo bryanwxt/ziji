@@ -10,17 +10,15 @@ import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Pet } from '../../ui/Pet';
 import { SpeakButton } from '../../ui/SpeakButton';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 
 interface Props {
   question: DapeiQuestion;
   kid: KidState;
-  resting: TruffleMood;
   onDone: (r: { correct: boolean; responseMs: number }) => void;
 }
 
 /** 搭配 (spec 2026-10-05 §3.2 rung 2): the word and four partners — which one goes with it? The right one joins it. */
-export function MatchQuestion({ question, kid, resting, onDone }: Props) {
+export function MatchQuestion({ question, kid, onDone }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ question.verb.codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [question]);
   const [choice, setChoice] = useState<string | null>(null);
   const shownAt = useRef(performance.now());
@@ -36,7 +34,7 @@ export function MatchQuestion({ question, kid, resting, onDone }: Props) {
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : resting} bubble={done ? null : '哪个一起用？'} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
+      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? null : '哪个一起用？'} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
       sheet={!done ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (

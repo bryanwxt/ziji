@@ -1,7 +1,7 @@
 import { CHAPTERS } from '../story/chapters';
 import { lessonScene } from '../story/lessonScene';
 import { PaintedBackdrop } from '../ui/story/PaintedBackdrop';
-import { Flame, X } from 'lucide-preact';
+import { X } from 'lucide-preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ComponentsStep } from '../activities/components/ComponentsStep';
 import { buildZibianRound, lookAlikeChars, zibianCount, type ZibianItem } from '../activities/components/zibian';
@@ -30,14 +30,13 @@ import { playSfx } from '../audio/sfx';
 import { prefetchWords } from '../audio/speech';
 import { PASSAGES } from '../content';
 import { CLOSEUP_EVERY, closeupAllowed, isHardWrite, restingMood } from '../fun/mood';
-import { comboMilestone, comboPraise } from '../fun/pet';
 import { reducedMotion } from '../ui/motion';
 import { localDateKey } from '../lib/date';
 import { mulberry32 } from '../lib/random';
 import { PracticeQuestion, type PracticeResult } from '../activities/practice/PracticeQuestion';
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
-import { cheer, requestGreeting } from '../ui/truffle/greeting';
+import { requestGreeting } from '../ui/truffle/greeting';
 import { beginNewWord, bringForward, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import { starsOf } from '../stats/stats';
 import {
@@ -269,12 +268,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
-      const nextCombo = r.correct ? combo + 1 : 0;
-      setCombo(nextCombo);
-      if (comboMilestone(nextCombo)) {
-        playSfx('combo');
-        cheer(comboPraise(nextCombo)); // Truffle praises him (parent, 2026-10-05: not a reddish banner)
-      }
+      setCombo(r.correct ? combo + 1 : 0); // his hearts at three right in a row; no counter, no spoken 连对 (spec 2026-10-11 §5)
       await commit(afterFlashAnswer(rec, r.correct, r.elapsedMs, r.inContext));
     })();
 
@@ -306,12 +300,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
-      const nextCombo = r.correct ? combo + 1 : 0;
-      setCombo(nextCombo);
-      if (comboMilestone(nextCombo)) {
-        playSfx('combo');
-        cheer(comboPraise(nextCombo)); // Truffle praises him (parent, 2026-10-05: not a reddish banner)
-      }
+      setCombo(r.correct ? combo + 1 : 0);
       await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom));
     })();
 
@@ -420,7 +409,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           <X size={34} strokeWidth={3} />
         </button>
         <ProgressBar steps={rec.plan.steps} stepIndex={rec.stepIndex} fraction={sessionProgress(rec, stepFraction)} />
-        {combo >= 3 && <span class="combo"><Flame size={20} strokeWidth={2.75} /> {combo}</span>}
       </header>
 
       {(step === 'flashcards' || step === 'newwords') && flashItem && flashWord && !flashWord.paused && (
@@ -429,7 +417,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           item={flashItem}
           ask={step === 'newwords' ? 'hear' : undefined} // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2)
           reintroOnMiss={step === 'newwords'}
-          peek={step === 'flashcards' && flashItem.retry} // an older lesson's retries are words he missed
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
           lessonTag={step === 'newwords' ? laneTag(rec.plan.newWordLanes?.[flashWord.id], flashWord) : null} // spec 2026-10-11 §9
           word={flashWord}
@@ -469,7 +456,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           key={`${rec.writeIndex}-${rec.writePass ?? 0}-${rec.writeRedoIndex ?? 0}`}
           word={writeWord}
           kid={kid}
-          resting={resting}
           isNew={!!writeCandidate?.isNew}
           pass={writeCandidate!.pass}
           at={writeCandidate!.at}
@@ -478,14 +464,13 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         />
       )}
       {step === 'choose' && state.choose && state.choose.length > 0 && (
-        <ChooseStep key="choose" items={state.choose} kid={kid} resting={resting} onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)} onDone={() => void finishTimedStep('choose')} onProgress={setStepFraction} />
+        <ChooseStep key="choose" items={state.choose} kid={kid} onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)} onDone={() => void finishTimedStep('choose')} onProgress={setStepFraction} />
       )}
       {step === 'wrapup' && state.wrapup && state.wrapup.length > 0 && (
         <WrapupStep
           key="wrapup"
           items={state.wrapup}
           kid={kid}
-          resting={resting}
           onAnswer={(item, c, ms) => void onUseAnswer(item, c, ms)}
           onGiveUp={onGiveUp}
           onDone={() => void finishTimedStep('wrapup')}
@@ -500,7 +485,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         />
       )}
       {step === 'components' && state.round && (
-        <ComponentsStep key="components" items={state.round} kid={kid} resting={resting} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
+        <ComponentsStep key="components" items={state.round} kid={kid} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
         <LangduStep

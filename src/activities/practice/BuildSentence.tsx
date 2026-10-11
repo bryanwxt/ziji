@@ -11,18 +11,16 @@ import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Pet } from '../../ui/Pet';
 import { SpeakButton } from '../../ui/SpeakButton';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 
 interface Props {
   item: ZujuItem;
   word: Word;
   kid: KidState;
-  resting: TruffleMood;
   onDone: (r: { correct: boolean; responseMs: number }) => void;
 }
 
 /** 组句 (spec 2026-10-05 §3.2 rung 4): tap the word tiles into the sentence; tap a placed tile to take it back. */
-export function BuildSentence({ item, word, kid, resting, onDone }: Props) {
+export function BuildSentence({ item, word, kid, onDone }: Props) {
   const setup = useMemo(() => {
     const rng = mulberry32((Date.now() ^ item.full.codePointAt(0)!) >>> 0);
     let order = shuffle(item.tiles.map((_, i) => i), rng);
@@ -48,7 +46,7 @@ export function BuildSentence({ item, word, kid, resting, onDone }: Props) {
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (result.correct ? 'pleased' : 'side') : resting} bubble={done ? null : '排一排！'} size={180} calm={!done} react={done ? { kind: result.correct ? 'right' : 'wrong', key: 1 } : null} />}
+      truffle={<Pet kid={kid} mood={done ? (result.correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? null : '排一排！'} size={180} calm={!done} react={done ? { kind: result.correct ? 'right' : 'wrong', key: 1 } : null} />}
       sheet={!done ? (
         <FeedbackSheet actionLabel="好了！" disabled={placed.length < item.tiles.length} onAction={check} />
       ) : (

@@ -8,7 +8,7 @@ vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }))
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 
 const board: PairBoard = { left: ['穿', '刷', '踢'], right: ['足球', '衣服', '牙'], pairs: [['穿', '衣服'], ['刷', '牙'], ['踢', '足球']], target: ['穿', '衣服'] };
-const props = { board, kind: 'match' as const, kid: DEFAULT_KID, resting: 'sulk' as const };
+const props = { board, kind: 'match' as const, kid: DEFAULT_KID };
 const tile = (t: string) => [...document.querySelectorAll<HTMLButtonElement>('.pair__tile')].find((b) => b.textContent === t)!;
 const join = (l: string, r: string) => { fireEvent.click(tile(l)); fireEvent.click(tile(r)); };
 

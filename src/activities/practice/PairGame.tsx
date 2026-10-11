@@ -10,13 +10,11 @@ import { Label } from '../../ui/Label';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Pet } from '../../ui/Pet';
-import type { TruffleMood } from '../../ui/truffle/Truffle';
 
 interface Props {
   board: PairBoard;
   kind: 'pair' | 'match'; // 组词 or 搭配
   kid: KidState;
-  resting: TruffleMood;
   onDone: (r: { correct: boolean; responseMs: number }) => void;
 }
 
@@ -30,7 +28,7 @@ const SHOW_AFTER = 3; // misses on one tile before its match is shown (review fo
 /** A colour per matched pair: green, blue, gold, purple (palette inks dark enough for a ✓ on paper). */
 const PAIR_COLOURS = ['#2a9d5c', '#2f7fd8', '#c98a12', '#8a5cd6'];
 
-export function PairGame({ board, kind, kid, resting, onDone }: Props) {
+export function PairGame({ board, kind, kid, onDone }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ board.target[0].codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [board]);
   const [picked, setPicked] = useState<number | null>(null); // a left index
   const [joined, setJoined] = useState<Set<string>>(new Set()); // 'L0', 'R2'… joined, right or shown
@@ -84,7 +82,7 @@ export function PairGame({ board, kind, kid, resting, onDone }: Props) {
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (result.correct ? 'pleased' : 'side') : resting} bubble={done ? null : kind === 'pair' ? '连一连，组成词！' : '连一连，哪两个一起用？'} size={180} calm={!done} react={done ? { kind: result.correct ? 'right' : 'wrong', key: 1 } : null} />}
+      truffle={<Pet kid={kid} mood={done ? (result.correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? null : kind === 'pair' ? '连一连，组成词！' : '连一连，哪两个一起用？'} size={180} calm={!done} react={done ? { kind: result.correct ? 'right' : 'wrong', key: 1 } : null} />}
       sheet={!done ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (

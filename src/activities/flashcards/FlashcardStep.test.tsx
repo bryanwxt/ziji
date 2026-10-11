@@ -145,9 +145,9 @@ describe('Truffle reactions', () => {
   const relearn = () => ({ id: `${he.id}:recognise`, wordId: he.id, kind: 'recognise' as const, fsrs: { ...createEmptyCard(new Date()), state: State.Relearning } });
   // the reaction lives in the rig now (stage spec §4.4): data-expression holds it, data-mood stays his resting mood
   const expression = () => document.querySelector('svg.truffle')!.getAttribute('data-expression');
-  it('rests during the quiz, is curious at a wrong answer and overjoyed at a hard one', () => {
+  it('rests neutral during the quiz, is curious at a wrong answer and overjoyed at a hard one', () => {
     const { unmount } = render(<FlashcardStep {...base} card={relearn()} item={review} voice={false} onDone={vi.fn()} />);
-    expect(mood()).toBe('sulk');
+    expect(mood()).toBe('neutral'); // spec 2026-10-11 §5
     fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
     expect(expression()).toBe('joy');
     expect(mood()).toBe('sulk');
@@ -481,14 +481,18 @@ describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () =
   });
 });
 
-describe('a hard question (spec 2026-10-04 §4.6, phase E)', () => {
-  it('a word he missed comes back: Truffle covers his eyes and peeks', () => {
-    render(<FlashcardStep {...base} item={{ wordId: he.id, isNew: false, retry: true }} peek ask="read" voice={false} onDone={vi.fn()} />);
-    expect(document.querySelector('svg.truffle')?.getAttribute('data-react')).toBe('peek');
-  });
-  it('a first try does not, nor a practice-only question (free play marks every item retry)', () => {
+describe('Truffle stays quiet while a question is open (spec 2026-10-11 §5)', () => {
+  const truffle = () => document.querySelector('svg.truffle')!;
+  it('a word he missed comes back: no peek, no mood, just his neutral pose until he answers', () => {
     render(<FlashcardStep {...base} item={{ wordId: he.id, isNew: false, retry: true }} ask="read" voice={false} onDone={vi.fn()} />);
-    expect(document.querySelector('svg.truffle')?.getAttribute('data-react')).not.toBe('peek');
+    expect(truffle().getAttribute('data-react')).toBeNull();
+    expect(truffle().getAttribute('data-mood')).toBe('neutral');
+  });
+  it('his reaction comes with the answer: the cheer and his resting mood', () => {
+    render(<FlashcardStep {...base} item={review} ask="read" voice={false} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
+    expect(truffle().getAttribute('data-react')).toBe('right');
+    expect(truffle().getAttribute('data-mood')).toBe('sulk');
   });
 });
 
