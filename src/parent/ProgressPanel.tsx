@@ -39,7 +39,7 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
   const terms = end === undefined ? [] : MOE_TERMS.slice(0, MOE_TERMS.indexOf(endTerm) + 1);
   const trend = weeklyTrend(know.cards, 'recognise', now);
   return (
-    <section class="panel progress">
+    <section class="panel progress-panel">
       <h2>Progress</h2>
       <p class="muted">A step counts only after he gets it right on two different days.</p>
       <dl class="progress__counts">
@@ -82,5 +82,5 @@ export function ProgressTab() {
   useEffect(() => {
     void loadKnowledge(db).then(setKnow);
   }, [db]);
-  return know ? <ProgressPanel know={know} settings={settings} now={now()} /> : <section class="panel progress"><p class="muted">Loading…</p></section>;
+  return know ? <ProgressPanel know={know} settings={settings} now={now()} /> : <section class="panel progress-panel"><p class="muted">Loading…</p></section>;
 }

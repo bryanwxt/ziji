@@ -1349,12 +1349,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .progress__trend li { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
 /* his year's lists as bars, with a mark where his class is (spec 2026-10-11 §8) */
 .progress__bars { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
-.pbar { display: grid; grid-template-columns: 3em 1fr auto; align-items: center; gap: 10px; }
+.pbar { display: grid; grid-template-columns: 3em 1fr 6.5em; align-items: center; gap: 10px; }
 .pbar__label { font-family: var(--hanzi); font-size: 16px; }
 .pbar__track { position: relative; height: 14px; border-radius: 999px; background: var(--line); }
 .pbar__fill { height: 100%; border-radius: 999px; background: var(--green); }
 .pbar__mark { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--ink); }
-.pbar__nums { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pbar__nums { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .progress__terms { margin: 8px 0 12px; }
 /* the Understand question: English sentences as choices, one per row (spec 2026-10-06 §3.2) */
 .understand__choices { grid-template-columns: 1fr; }
