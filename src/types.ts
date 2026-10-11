@@ -276,7 +276,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   pinHash: null,
-  sessionMinutes: 30,
+  sessionMinutes: 15, // one ~15-minute lesson (spec 2026-10-11 §4)
   newPerDay: 8, // the ceiling the app paces under (spec 2026-10-05 §2.2)
   activities: { newwords: true, practice: true, writing: true, speaking: true },
   speechRate: 0.8,
@@ -289,7 +289,7 @@ export const DEFAULT_SETTINGS: Settings = {
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
   langdu: false,
-  lessonVersion: 5,
+  lessonVersion: 6,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';

@@ -11,6 +11,9 @@ const base = { newWordIds: [] as string[], practised: new Map<string, number>(),
 
 describe('how many characters (spec 2026-10-05 §5)', () => {
   it('8–10 a lesson, 6 at 20 minutes', () => {
+    expect(writeCharTarget(15)).toBe(5); // the usual lesson (spec 2026-10-11 §4)
+    expect(writeCharTarget(10)).toBe(5);
+    expect(writeCharTarget(19)).toBe(5);
     expect(writeCharTarget(20)).toBe(6);
     expect(writeCharTarget(25)).toBe(8);
     expect(writeCharTarget(30)).toBe(9);
