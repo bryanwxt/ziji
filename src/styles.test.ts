@@ -267,9 +267,15 @@ describe('the why-line never outranks the right answer (review, 2026-10-12)', ()
     const answer = px(/\n\.sheet__en-zh \{[^}]*font-size: (\d+)px/);
     expect(px(/\.sheet__detail \.why \.hanzi \{ font-size: (\d+)px/)).toBeLessThanOrEqual(answer);
     expect(px(/\n\.why__syl \{ font-size: (\d+)px/)).toBeLessThanOrEqual(answer);
-    const compactAt = css.indexOf('\n  .sheet__en-zh { font-size:');
-    const compactAnswer = px(/\.sheet__en-zh \{ font-size: (\d+)px/, compactAt);
-    expect(px(/\.sheet__detail \.why \.hanzi, \.why__syl \{ font-size: (\d+)px/, compactAt)).toBeLessThanOrEqual(compactAnswer);
+    const compactAnswer = px(/\.sheet__en-zh \{ font-size: (\d+)px/, css.indexOf('\n  .sheet__en-zh { font-size:'));
+    const compact = /@media \(max-width: 599px\) \{ \.sheet__detail \.why \.hanzi, \.why__syl \{ font-size: (\d+)px/.exec(css)!;
+    expect(Number(compact[1])).toBeLessThanOrEqual(compactAnswer);
+  });
+  it('the compact rule comes after the base rules, so it wins the cascade on phones', () => {
+    const compactAt = css.indexOf('@media (max-width: 599px) { .sheet__detail .why .hanzi, .why__syl');
+    expect(compactAt).toBeGreaterThan(css.indexOf('\n.sheet__detail .why .hanzi {'));
+    expect(compactAt).toBeGreaterThan(css.indexOf('\n.why__syl {'));
+    expect(css.indexOf('.why__syl', css.indexOf('\n', compactAt))).toBe(-1); // and there is no later rule to undo it
   });
   it('the fade ends at the pinyin\'s resting opacity, not 1', () => {
     expect(css).toMatch(/@keyframes later-in \{ from \{ opacity: 0; \} to \{ opacity: var\(--rest, 1\); \} \}/);

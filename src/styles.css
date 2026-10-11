@@ -887,7 +887,6 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .sheet__en { font-size: 15px; line-height: 1.2; gap: 0; }
   .sheet__en-zh { font-size: 18px; }
   .sheet__en-zh .label__py { font-size: 10px; min-height: 1em; }
-  .sheet__detail .why .hanzi, .why__syl { font-size: 16px; } /* and under the compact answer (18px) */
   .sheet__en-line { gap: 6px; }
 }
 @media (max-width: 599px) and (max-height: 720px) { /* the smallest phones: the answer and its English, not the long hint, so the card keeps its tiles */
@@ -1514,3 +1513,4 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .why__syl { font-size: 20px; font-weight: 700; }
 .why__syl--right { color: var(--green-ink); }
 .why mark { background: var(--gold-soft); color: inherit; border-radius: 4px; padding: 0 2px; }
+@media (max-width: 599px) { .sheet__detail .why .hanzi, .why__syl { font-size: 16px; } } /* phones: under the compact answer (18px); after the base rules so it wins */
