@@ -24,7 +24,7 @@ describe('FlashcardStep', () => {
   it('introduces a new word before quizzing it', () => {
     render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
     fireEvent.click(screen.getByText('我记住了！'));
-    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    expect(document.querySelectorAll('.choice')).toHaveLength(6); // five good wrong readings exist (spec 2026-10-11 §3)
   });
 
   it('read mode: a correct pinyin answer reports correct with timings', () => {
@@ -56,7 +56,7 @@ describe('FlashcardStep', () => {
     const target = { ...he, id: 'p:x', text: '河马河', pinyin: 'hé mǎ hé' };
     render(<FlashcardStep {...base} word={target} item={{ ...review, wordId: 'p:x' }} voice onDone={vi.fn()} />);
     expect(document.querySelector('[data-q]')?.textContent).toBe('河马河');
-    expect(new Set([...document.querySelectorAll('.choice')].map((b) => b.textContent)).size).toBe(4);
+    expect(new Set([...document.querySelectorAll('.choice')].map((b) => b.textContent)).size).toBe(6);
   });
 });
 
@@ -239,7 +239,7 @@ describe('认一认 meaning questions (spec §19)', () => {
     expect(document.querySelector('.meaning-cue .label__cell--zh .label__py')!.textContent).toBe('zhēn');
     expect(speak).toHaveBeenCalledWith('珍惜');
     expect(document.body.textContent).not.toContain('cherish');
-    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    expect(document.querySelectorAll('.choice')).toHaveLength(6);
     fireEvent.click(screen.getByRole('button', { name: '惜' }));
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
@@ -566,5 +566,39 @@ describe('the lesson label on the 认新字 card (spec 2026-10-11 §9)', () => {
     cleanup();
     render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
     expect(document.querySelector('.intro__tag')).toBeNull();
+  });
+});
+
+describe('six options where five good wrong ones exist (spec 2026-10-11 §3)', () => {
+  const pick = (t: string) => pool.find((w) => w.text === t)!;
+  it('find the character: five look-alikes that share a part with it, three across', () => {
+    render(<FlashcardStep {...base} item={review} ask="listen" voice onDone={vi.fn()} />);
+    const options = [...document.querySelectorAll('.choice')].map((b) => b.textContent ?? '');
+    expect(options).toHaveLength(6);
+    expect(options).toContain('河');
+    expect(document.querySelector('.choices--six')).toBeTruthy();
+  });
+  it('a character with fewer than five look-alikes keeps four options', () => {
+    const fei = pick('飞');
+    render(<FlashcardStep {...base} word={fei} item={{ wordId: fei.id, isNew: false, retry: false }} ask="listen" voice onDone={vi.fn()} />);
+    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    expect(document.querySelector('.choices--six')).toBeNull();
+  });
+  it('its meaning in English: six when five other meanings differ, else four', () => {
+    render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} onDone={vi.fn()} />);
+    expect(document.querySelectorAll('.choice')).toHaveLength(6);
+    cleanup();
+    const w = (text: string, meaning: string) => makeWord(text, { meaning, source: 'parent' });
+    const small = [w('看', 'to look'), w('大', 'big'), w('小', 'small'), w('门', 'door'), w('水', 'water')];
+    render(<FlashcardStep {...base} word={small[0]!} pool={small} item={{ wordId: small[0]!.id, isNew: false, retry: false }} ask="meaningRead" voice={false} onDone={vi.fn()} />);
+    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+  });
+  it('the right answer is still among them, and a pick still reports right or wrong', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} item={review} voice={false} onDone={onDone} />);
+    expect([...document.querySelectorAll('.choice')].map((b) => b.textContent)).toContain(he.pinyin);
+    fireEvent.click(screen.getByRole('button', { name: he.pinyin }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true, asked: 'read' }));
   });
 });

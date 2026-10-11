@@ -19,7 +19,7 @@ import type { TruffleMood } from '../../ui/truffle/Truffle';
 import type { Reaction } from '../../ui/truffle/timelines';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
-import { firstSense, meaningChoices, pickCharacterDistractors, pickPinyinDistractors } from './distractors';
+import { firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
@@ -65,21 +65,23 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
     const cue = ask === 'word' ? wordCue(word) : ask ? null : item.mode === 'meaning' ? meaningCue(word) : null;
+    // six options where five good wrong ones exist, else four (spec 2026-10-11 §3); a class sentence's own wrong ones stay as they are
     if (cue) {
-      return { listen: false, cue, answer: word.text, options: shuffle([word.text, ...(cue.wrong ?? pickSoundAlikes(word, cue, pool, rng))], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null };
+      return { listen: false, cue, answer: word.text, options: shuffle([word.text, ...(cue.wrong ?? fiveOrThree(pickSoundAlikes(word, cue, pool, rng, MANY_WRONG)))], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null };
     }
     // the word ladder (spec 2026-10-06 §3.2): he hears it, or reads it, and picks its meaning in English
     if (ask === 'hear' || ask === 'meaningRead') {
-      const options = meaningChoices(word, pool, rng);
+      const options = meaningChoices(word, pool, rng, MANY_WRONG) ?? meaningChoices(word, pool, rng);
       if (options) {
         const hear = ask === 'hear' && voice; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
         return { listen: hear, cue: null, answer: firstSense(cardMeaning(word)!), options, cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead' };
       }
     }
-    const lookAlikes = pickCharacterDistractors(word, pool, rng);
+    const five = pickLookAlikes(word, pool, rng);
+    const lookAlikes = five.length ? five : pickCharacterDistractors(word, pool, rng);
     const listen = voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
     const answer = listen ? word.text : word.pinyin;
-    const wrong = listen ? lookAlikes.map((w) => w.text) : pickPinyinDistractors(word, pool, rng);
+    const wrong = listen ? lookAlikes.map((w) => w.text) : fiveOrThree(pickPinyinDistractors(word, pool, rng, MANY_WRONG));
     return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null };
   }, [word.id]);
   const [phase, setPhase] = useState<Phase>(item.isNew && !item.retry ? 'intro' : 'quiz');
@@ -206,7 +208,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                 </>
               )}
             </div>
-            <div class={`choices stagger ${quiz.mode ? 'choices--english' : quiz.listen || quiz.cue ? 'choices--hanzi' : 'choices--pinyin'}`}>
+            <div class={`choices stagger ${quiz.mode ? 'choices--english' : quiz.listen || quiz.cue ? 'choices--hanzi' : 'choices--pinyin'}${quiz.options.length > 4 ? ' choices--six' : ''}`}>
                 {quiz.options.map((o) => (
                   <button
                     key={o}

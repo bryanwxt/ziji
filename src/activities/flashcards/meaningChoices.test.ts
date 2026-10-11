@@ -22,6 +22,12 @@ describe('meaning choices (the Hear rung)', () => {
   it('each choice is one short sense', () => {
     expect(meaningChoices(w('后天', 'the day after tomorrow; life after birth'), [w('后天', 'the day after tomorrow; life after birth'), ...pool], mulberry32(3))).toContain('the day after tomorrow');
   });
+  it('five others when asked for six options (spec 2026-10-11 §3), null when there are not five', () => {
+    const c = meaningChoices(target, pool, mulberry32(1), 5)!;
+    expect(c).toHaveLength(6);
+    expect(new Set(c.map(firstSense)).size).toBe(6);
+    expect(meaningChoices(target, pool.slice(0, 6), mulberry32(1), 5)).toBeNull();
+  });
   it('null when there are not three other meanings to choose from', () => {
     expect(meaningChoices(target, [target, w('大', 'big')], mulberry32(1))).toBeNull();
   });

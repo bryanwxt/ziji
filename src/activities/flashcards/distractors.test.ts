@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../../content';
 import { mulberry32 } from '../../lib/random';
 import { makeWord } from '../../test/fixtures';
-import { pickCharacterDistractors, pickPinyinDistractors, syllableTone, toneless, withTone } from './distractors';
+import { fiveOrThree, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors, syllableTone, toneless, withTone } from './distractors';
 
 const all = builtinWords(0);
 const w = (t: string) => all.find((x) => x.text === t)!;
@@ -99,3 +99,22 @@ describe('sweep: hear-and-find choices near his level', () => {
   });
 });
 
+
+describe('six options or four (spec 2026-10-11 §3)', () => {
+  it('five look-alikes that share a part, near his level, and sound different', () => {
+    const picked = pickLookAlikes(w('河'), all, mulberry32(1));
+    expect(picked).toHaveLength(5);
+    expect(picked.every((x) => x.text !== '河' && toneless(x.pinyin) !== 'he' && (x.level ?? 9) <= w('河').level! + 2)).toBe(true);
+  });
+  it('none when fewer than five exist (飞 shares a part with too few)', () => {
+    expect(pickLookAlikes(w('飞'), all, mulberry32(1))).toEqual([]);
+  });
+  it('five wrong options when five were found, else three', () => {
+    expect(fiveOrThree([1, 2, 3, 4, 5, 6])).toEqual([1, 2, 3, 4, 5]);
+    expect(fiveOrThree([1, 2, 3, 4])).toEqual([1, 2, 3]);
+    expect(fiveOrThree([1, 2])).toEqual([1, 2]);
+  });
+  it('five wrong readings for a character on the built-in list', () => {
+    expect(pickPinyinDistractors(w('河'), all, mulberry32(5), 5)).toHaveLength(5);
+  });
+});
