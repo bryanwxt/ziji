@@ -101,6 +101,7 @@ export async function deleteWord(db: AppDb, id: string): Promise<void> {
     tx.objectStore('cards').delete(`${id}:write`),
     tx.objectStore('cards').delete(`${id}:meaning`),
     tx.objectStore('cards').delete(`${id}:hear`),
+    tx.objectStore('cards').delete(`${id}:say`),
     tx.done,
   ]);
 }
@@ -176,6 +177,7 @@ export async function listRecordings(db: AppDb): Promise<Recording[]> {
   return (await db.getAllFromIndex('recordings', 'byCreatedAt')).reverse();
 }
 
+export const getRecording = (db: AppDb, id: string) => db.get('recordings', id);
 export const deleteRecording = (db: AppDb, id: string) => db.delete('recordings', id);
 export const countRecordings = (db: AppDb) => db.count('recordings');
 
