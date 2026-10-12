@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../../content';
 import { makeWord } from '../../test/fixtures';
-import { trapReadings } from './pinyinTraps';
+import { soundParts, trapReadings } from './pinyinTraps';
 
 const w = (t: string) => builtinWords(0).find((x) => x.text === t)!;
 
@@ -31,5 +31,12 @@ describe('trapReadings (his worksheet mistakes)', () => {
     // the reviewer's examples: a stroke or enclosure's dictionary name is never offered
     const stroke: [string, string][] = [['儿', 'piě'], ['几', 'piě'], ['九', 'piě'], ['口', 'jiōng'], ['见', 'jiōng'], ['书', 'gǔn'], ['小', 'jué'], ['门', 'zhǔ']];
     for (const [ch, name] of stroke) expect(trapReadings(w(ch)), `${ch}`).not.toContain(name);
+  });
+});
+
+describe('soundParts (spec 2026-10-12 §3: the sound-part slip)', () => {
+  it("the parts he might read instead, with their readings, never a side form or stroke", () => {
+    expect(soundParts('静')).toEqual([{ part: '青', reading: 'qīng' }, { part: '争', reading: 'zhēng' }]);
+    expect(soundParts('捡')).toEqual([{ part: '佥', reading: 'qiān' }]);
   });
 });

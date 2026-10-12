@@ -99,7 +99,7 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
                 const wrong = (missed[board.left.indexOf(l)] ?? 0) > 0;
                 return (
                   <p key={i} class={`pair-summary__row${wrong ? ' is-missed' : ''}`}>
-                    <span class="hanzi"><Label zh={word} /></span>
+                    <span class="hanzi"><Label zh={word} fade /></span>
                     {glossFor(word) && <span lang="en">{glossFor(word)}</span>}
                   </p>
                 );

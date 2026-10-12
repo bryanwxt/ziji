@@ -57,6 +57,7 @@ import { newId } from '../lib/id';
 import { WorldScene } from '../ui/worlds/WorldScene';
 import { currentWorld, timeOfDay } from '../fun/worlds';
 import { InkIcon } from '../ui/icons/InkIcon';
+import { PinyinFade } from '../ui/pinyinFade';
 
 /** The words a meaning question picks its English choices from: his words and the ladder's 词语 (spec 2026-10-06 §3.2). */
 const pools = new WeakMap<Knowledge, Word[]>();
@@ -80,6 +81,7 @@ interface Loaded {
   kid: KidState;
   round: ZibianItem[] | null; // 钓鱼 as 字辨 (spec §20 part 8)
   minutes: number;
+  fadePinyin: boolean; // settings.fadePinyin as the lesson loaded (spec 2026-10-12 §4): absent = on
   choose: UseItem[] | null; // built when 选一选 starts, so it knows what he missed earlier in the lesson
   wrapup: UseItem[] | null; // built when 用一用 starts, from today's recalls
   speaking: { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo } | { kind: 'story'; scene: Scene } | null;
@@ -122,6 +124,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         kid: kid ?? DEFAULT_KID,
         round: buildZibianRound({ words: know.words, knownChars: know.knownChars, practised, rng, count: zibianCount(settings.sessionMinutes) }),
         minutes: settings.sessionMinutes,
+        fadePinyin: settings.fadePinyin !== false,
         choose: null,
         wrapup: null,
         confusions,
@@ -217,7 +220,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           const confusions = await getConfusions(db);
           setState((st) => (st ? { ...st, confusions } : st));
           // Say cards only where the iPad can record (spec 2026-10-11 §7)
-          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know), recordingSupported());
+          const queue = planPractice(cur, await getRungs(db), state.know.wordsById, meaningPool(state.know), voice, mulberry32(Date.now() >>> 0), confusions, levelOf(state.know), recordingSupported(), state.know.knownChars);
           planning.current = false;
           await commit(startPractice(latest.current ?? cur, queue));
         })();
@@ -421,6 +424,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     })();
 
   return (
+    <PinyinFade known={know.knownChars} readings={know.knownReadings} on={state.fadePinyin}>
     <div class="screen">
       <WorldScene world={currentWorld(kid)} time={timeOfDay(now())} />
       {painted && <PaintedBackdrop scene={painted} />}
@@ -439,6 +443,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           reintroOnMiss={step === 'newwords'}
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
           lessonTag={step === 'newwords' ? laneTag(rec.plan.newWordLanes?.[flashWord.id], flashWord) : null} // spec 2026-10-11 §9
+          knownChars={know.knownChars}
           word={flashWord}
           pool={meaningPool(know)}
           card={know.cardsById.get(`${flashWord.id}:recognise`)}
@@ -522,5 +527,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <StoryStep scene={state.speaking.scene} told={kid.story.told} kid={kid} onDone={(r) => void onStoryDone(r)} />
       )}
     </div>
+    </PinyinFade>
   );
 }

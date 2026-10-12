@@ -7,7 +7,7 @@ export interface ZibianItem { wordId: string; word: string; index: number; answe
 
 export const zibianCount = (minutes: number) => (minutes < 25 ? 4 : 6);
 const MIN_ITEMS = 4;
-const TRIVIAL = new Set(['一', '丨', '丶', '丿', '乙', '亅', '二', '十', '口', '人', '亻']); // parts so common that sharing one says nothing
+export const TRIVIAL: ReadonlySet<string> = new Set(['一', '丨', '丶', '丿', '乙', '亅', '二', '十', '口', '人', '亻']); // parts so common that sharing one says nothing
 
 const strokes = new Map(BUILTIN.map((c) => [c.char, c.strokes]));
 const level = new Map(BUILTIN.map((c) => [c.char, c.level]));
@@ -28,6 +28,11 @@ function lookAlikeGroups(ch: string): { phonetic: string[]; radical: string[] } 
   const phonetic = [...new Set(info.components.filter((p) => p !== info.radical && p !== ch && !TRIVIAL.has(p)).flatMap((p) => idx.get(p) ?? []))].filter((c) => c !== ch);
   const sameRadical = TRIVIAL.has(info.radical) ? [] : (idx.get(info.radical) ?? []).filter((c) => c !== ch && !phonetic.includes(c) && Math.abs((strokes.get(c) ?? 0) - (strokes.get(ch) ?? 0)) <= 2);
   return { phonetic, radical: sameRadical };
+}
+
+/** The built-in characters that have `ch` as a part (生 → 星 性 胜 牲): the family question's look-alikes (spec 2026-10-12 §5). */
+export function charsContaining(ch: string): string[] {
+  return partIndex().get(ch) ?? [];
 }
 
 /** Characters a child could put for `ch`: the same phonetic part first (跟 根 很 银), then the same radical with about as many strokes (容 室). */

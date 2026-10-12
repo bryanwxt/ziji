@@ -18,6 +18,8 @@ import { understandItem } from '../../practice/understand';
 import { IdiomQuestion } from './IdiomQuestion';
 import { idiomFitItem, idiomGap, idiomZuju, pickIdiom } from '../../practice/idioms';
 import { builtinIdiom, idiomOf, idiomsFor, type Idiom } from '../../content/chengyu';
+import { FamilyQuestion } from './FamilyQuestion';
+import { familyBoard } from '../../practice/family';
 
 export interface PracticeResult {
   correct: boolean;
@@ -62,6 +64,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
   // no voice today (a saved queue resumed): never asked in silence — skipped (final review I1)
   const understand = useMemo(() => (item.ask === 'understand' && voice ? understandItem(word, mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
   const fish = useMemo(() => (item.ask === 'fish' ? fishItem(word, confused ?? [], knownChars ?? new Set(), mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
+  const family = useMemo(() => (item.ask === 'family' ? familyBoard(word, knownChars ?? new Set(), mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0)) : null), [item, word.id]);
   // 成语 (rung 5): one that uses the word at his level; a school 成语's own completion at rung 2; a retry asks the same one again
   const idiom = useMemo(() => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
@@ -84,7 +87,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
   const answer = useRef<{ correct: boolean; ms: number } | null>(null);
   const shownAt = useRef(performance.now());
   useEffect(() => {
-    if ((sentence && !use) || (item.ask === 'build' && !zuju) || (item.ask === 'pair' && !board) || (item.ask === 'match' && !match) || (item.ask === 'fish' && !fish) || (item.ask === 'understand' && !understand)) onDone(null);
+    if ((sentence && !use) || (item.ask === 'build' && !zuju) || (item.ask === 'pair' && !board) || (item.ask === 'match' && !match) || (item.ask === 'fish' && !fish) || (item.ask === 'understand' && !understand) || (item.ask === 'family' && !family)) onDone(null);
     else if (idiom && !idiom.gap && !idiom.fit && !idiom.build?.zuju) onDone(null);
   }, []);
 
@@ -167,6 +170,17 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
       />
     );
   }
+  if (item.ask === 'family') {
+    if (!family) return null;
+    return (
+      <FamilyQuestion
+        board={family}
+        kid={kid}
+        onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning' })}
+      />
+    );
+  }
+
   if (item.ask === 'build') {
     if (!zuju) return null;
     return (

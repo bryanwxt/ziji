@@ -183,7 +183,7 @@ export function WritingStep({ word, kid, isNew, pass, onDone, closeupReady = fal
           {/* centred like every line on a card, the speak button hanging to the right; with a 组词 its gap carries the sound he
               writes, so the pinyin isn't said twice (parent, 2026-10-05) */}
           {cue.blanked ? (
-            <div class="word-row__line write__blank"><Label zh={cue.blanked} py={gapPinyin(cue.blanked, cue.blankedPy, word.pinyin, index)} /><SpeakButton text={cue.speech} small /></div>
+            <div class="word-row__line write__blank"><Label zh={cue.blanked} py={gapPinyin(cue.blanked, cue.blankedPy, word.pinyin, index)} fade /><SpeakButton text={cue.speech} small /></div>
           ) : (
             <div class="word-row__line write__prompt"><span class="pinyin">{at === undefined ? word.pinyin : charReading(word, at)}</span><SpeakButton text={cue.speech} small /></div>
           )}

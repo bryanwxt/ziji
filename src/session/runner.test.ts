@@ -338,3 +338,10 @@ describe('sweep: a 成语 missed comes back as the same 成语', () => {
   });
 });
 
+
+describe('a missed 找一家人 (spec 2026-10-12 §5: at most two a lesson)', () => {
+  it('is not asked again', () => {
+    const rec = startPractice(finishStep(createSessionRecord(planOf({ newWordIds: [] }), '2026-10-06', 0)), ['b:a', 'b:b', 'b:c'].map((x) => p(x, { rung: 2, ask: 'family', grades: 'meaning' })));
+    expect(afterPracticeAnswer(rec, false, 2000).practiceQueue).toHaveLength(3);
+  });
+});

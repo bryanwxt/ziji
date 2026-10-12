@@ -272,6 +272,7 @@ export interface Settings {
   storyProgress?: { chapter: number; readOn?: string; setupDone?: boolean; payoffDone?: boolean }; // the Word Thief chapters (spec 2026-10-07 3c §3)
   storyOn?: boolean; // the Word Thief story around lessons (spec 2026-10-11 §3): off unless true; no parent switch yet. Not `story` (看图说话)
   sayCards?: boolean; // Say cards in 练一练 (spec 2026-10-11 §4): on unless false
+  fadePinyin?: boolean; // pinyin hides over characters he reads, tap to peek (spec 2026-10-12 §4): on unless false
   baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
   pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)
   contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION)

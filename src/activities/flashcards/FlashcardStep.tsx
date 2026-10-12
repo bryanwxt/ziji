@@ -19,11 +19,13 @@ import type { TruffleMood } from '../../ui/truffle/Truffle';
 import type { Reaction } from '../../ui/truffle/timelines';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
+import { LookAlikeWhy, PinyinWhy, RadicalHint } from '../../ui/stage/WhyLine';
 import { firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 import type { Idiom } from '../../content/chengyu';
+import { familyOf, type FamilyWord } from '../../content/family';
 
 export interface FlashResult {
   correct: boolean;
@@ -54,11 +56,15 @@ interface Props {
   idiom?: Idiom | null;
   /** 认新字: the word's lesson in his book, 「课本 二下·17」 or 「补 一上·5」 (spec 2026-10-11 §9); none for a listed word */
   lessonTag?: string | null;
+  /** the characters he reads (know.knownChars): the 认新字 card's 「一家人」 row (spec 2026-10-12 §5) */
+  knownChars?: ReadonlySet<string>;
 }
+
+const NO_CHARS: ReadonlySet<string> = new Set();
 
 type Phase = 'intro' | 'quiz' | 'feedback';
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null, knownChars = NO_CHARS }: Props) {
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
@@ -169,6 +175,12 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           detail={result.correct ? undefined : (
             <>
               <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : word.pinyin} picked={quiz.mode ? null : quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
+              {/* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
+                  find the character → the look-alike part; its reading → the kind of pinyin slip */}
+              {quiz.mode ? <RadicalHint text={word.text} />
+                : quiz.cue ? <LookAlikeWhy right={word.text} picked={choice ?? ''} fallback={<RadicalHint text={word.text} />} />
+                : quiz.listen ? <LookAlikeWhy right={word.text} picked={choice ?? ''} />
+                : <PinyinWhy word={word} picked={choice ?? ''} />}
             </>
           )}
           actionLabel="继续"
@@ -182,20 +194,20 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
         truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} calm={phase === 'quiz'} react={react} /></div>}
         sheet={sheet}
       >
-        {phase === 'intro' ? <Intro word={word} idiom={idiom} tag={lessonTag} /> : (
+        {phase === 'intro' ? <Intro word={word} idiom={idiom} tag={lessonTag} known={knownChars} /> : (
           <>
             <div class="flash__prompt">
               {quiz.cue ? (
                 <div class="meaning-prompt">
                   {quiz.cue.kind === 'sentence' ? (
                     <div class={`meaning-cue meaning-cue--sentence${Array.from(quiz.cue.full).length <= 4 ? ' meaning-cue--short' : ''}`} lang="zh" data-q={Array.from(quiz.cue.full).length <= 4 || undefined} style={`--len:${Array.from(quiz.cue.full).length}`}>
-                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} />
+                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} fade />
                       <SpeakButton text={phase === 'feedback' ? quiz.cue.full : `${quiz.cue.before}，，${quiz.cue.after}`} />
                     </div>
                   ) : (
                     // like every line on the card: each syllable over its character, the gap a dashed box with its sound over it (parent, 2026-10-05)
                     <div class="meaning-cue meaning-cue--sentence meaning-cue--short meaning-cue--word" lang="zh" data-q style={`--len:${Array.from(quiz.cue.full).length}`}>
-                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} py={quiz.cue.pinyin} />
+                      <Label zh={`${quiz.cue.before}${phase === 'feedback' ? word.text : '＿'.repeat(Array.from(word.text).length)}${quiz.cue.after}`} py={quiz.cue.pinyin} fade />
                     </div>
                   )}
                 </div>
@@ -246,7 +258,7 @@ function WordRow({ zh, py, en, mark, class: cls, textClass }: { zh: string; py?:
   return (
     <div class={`word-row ${cls}`} lang="zh">
       <div class="word-row__line">
-        <span class={`hanzi word-row__zh${textClass ? ` ${textClass}` : ''}`}><Label zh={zh} py={py} mark={mark} /></span>
+        <span class={`hanzi word-row__zh${textClass ? ` ${textClass}` : ''}`}><Label zh={zh} py={py} mark={mark} fade /></span>
         <SpeakButton text={zh} small />
       </div>
       {en && <p class="word-row__en" lang="en">{en}</p>}
@@ -305,7 +317,21 @@ export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
   return idioms.find((i) => !shown.some((t) => t.includes(i.text))) ?? null;
 }
 
-function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; tag?: string | null }) {
+/**
+ * The 认新字 card's 「一家人」 row (spec 2026-10-12 §5): up to four of the character's family he can read, ones the card doesn't
+ * already show first; none when fewer than two qualify, or for a 词语.
+ */
+export function familyRow(word: Word, known: ReadonlySet<string>): FamilyWord[] {
+  if (Array.from(word.text).length !== 1) return [];
+  const all = familyOf(word.text, known, word.pinyin);
+  if (all.length < 2) return [];
+  const shown = shownOnCard(word);
+  const onCard = (f: FamilyWord) => shown.some((t) => t.includes(f.text));
+  return [...all.filter((f) => !onCard(f)), ...all.filter(onCard)].slice(0, 4);
+}
+
+function Intro({ word, idiom, tag = null, known }: { word: Word; idiom: Idiom | null; tag?: string | null; known: ReadonlySet<string> }) {
+  const family = familyRow(word, known);
   const line = usageLine(word);
   const long = Array.from(word.text).length > 1;
   // never the one the usage line already shows; all of them feed the meaning questions
@@ -316,7 +342,8 @@ function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; t
         {tag && <p class="intro__tag" lang="zh">{tag}</p>}
         <div class="intro__head">
           <div class="intro__char">
-            <div class="pinyin">{word.pinyin}</div>
+            {/* the character first; its pinyin 2 s later (spec 2026-10-12 §4, Chung 2003) */}
+            <div class="pinyin pinyin--later">{word.pinyin}</div>
             {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
             <div class={`hanzi hanzi--xl${long ? ' hanzi--long' : ''}`} style={long ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
             <SpeakButton text={word.text} />
@@ -349,6 +376,19 @@ function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; t
           <div class="intro__group">
             {line && <UsageLine word={word} en={glossFor(line.full)} />}
             {listed.map((e) => <WordRow key={e.text} class="example" zh={e.text} py={e.pinyin} en={glossFor(e.text)} mark={markOf(e.text, word.text)} />)}
+          </div>
+        )}
+        {family.length > 0 && ( // his words of its family, after the 词语 and before the 成语 (spec 2026-10-12 §5)
+          <div class="intro__group family" lang="zh">
+            <p class="family__title"><Label zh="一家人" /></p>
+            <div class="family__words">
+              {family.map((f) => (
+                <span key={f.text} class="family__word">
+                  <span class="hanzi"><Label zh={f.text} py={f.pinyin} mark={markOf(f.text, word.text)} fade /></span>
+                  <SpeakButton text={f.text} small />
+                </span>
+              ))}
+            </div>
           </div>
         )}
         {idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows

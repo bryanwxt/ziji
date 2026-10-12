@@ -5,7 +5,7 @@ import { bankFor } from '../content/sentenceBank';
 import { mulberry32 } from '../lib/random';
 import { makeCard, makeWord } from '../test/fixtures';
 import type { SessionPlan, Word } from '../types';
-import { askable, planFreePlay, planPractice, practiceWords, withFish } from './practice';
+import { askable, planFreePlay, planPractice, practiceWords, withFamily, withFish } from './practice';
 import { fishItem } from '../activities/components/zibian';
 import type { PracticeItem } from './round';
 import { createSessionRecord } from './runner';
@@ -111,3 +111,29 @@ describe('成语 (spec 2026-10-05 §3.2 rung 5, §4)', () => {
   });
 });
 
+
+describe('找一家人 in the round (spec 2026-10-12 §5)', () => {
+  const p = (wordId: string, rung: 1 | 2, ask: PracticeItem['ask'], over: Partial<PracticeItem> = {}): PracticeItem => ({ wordId, rung, ask, grades: rung === 2 ? 'meaning' : 'recognise', retry: false, ...over });
+  it('replaces at most two rung-2 word or pair items, keeping their place and grading; never two in a row', () => {
+    const items = [p('a', 2, 'word'), p('b', 2, 'pair'), p('c', 1, 'read'), p('d', 2, 'word'), p('e', 2, 'pair')];
+    const out = withFamily(items, () => true);
+    expect(out.map((x) => x.ask)).toEqual(['family', 'pair', 'read', 'family', 'pair']);
+    expect(out[0]).toEqual({ ...items[0], ask: 'family' });
+    expect(out).toHaveLength(items.length);
+  });
+  it('one per word; not a retry, a match, another rung, or a word with no board', () => {
+    const items = [p('a', 2, 'word'), p('x', 1, 'read'), p('a', 2, 'pair'), p('b', 2, 'word', { retry: true, grades: null }), p('c', 2, 'match'), p('d', 1, 'read'), p('e', 2, 'word')];
+    expect(withFamily(items, (id) => id !== 'e').map((x) => x.ask)).toEqual(['family', 'read', 'pair', 'word', 'match', 'read', 'word']);
+  });
+  it('a planned round: same words, same length, two family questions graded on meaning', () => {
+    const ids = ['生', '门', '大', '木', '火'].map(id);
+    const rec = createSessionRecord(plan({ meaningReviewIds: ids }), '2026-10-12', 0);
+    const rungs = new Map(ids.map((x) => [x, 1]));
+    const without = planPractice(rec, rungs, byId, words, false, mulberry32(2));
+    const withKnown = planPractice(rec, rungs, byId, words, false, mulberry32(2), new Map(), 1, false, new Set('男女气先口出学家人'));
+    expect(withKnown.map((x) => x.wordId)).toEqual(without.map((x) => x.wordId));
+    expect(withKnown.map((x) => x.ask)).toEqual(['family', 'word', 'family', 'word', 'pair']);
+    expect(withKnown.filter((x) => x.ask === 'family').every((x) => x.rung === 2 && x.grades === 'meaning')).toBe(true);
+    expect(without.some((x) => x.ask === 'family')).toBe(false);
+  });
+});

@@ -251,3 +251,40 @@ describe('the Understand question (plan 2b)', () => {
     expect(css).toMatch(/@media \(min-width: 600px\) \{ \.understand__choice \{ min-height: 64px; \} \}/);
   });
 });
+
+describe('cards that teach (spec 2026-10-12 §3)', () => {
+  it("after a miss the right answer's characters show at once; its pinyin and English 1 s later", () => {
+    expect(css).toMatch(/\.sheet__detail--later \.label__py, \.sheet__detail--later \[lang="en"\], \.sheet__detail--later \.later \{[^}]*animation: later-in 300ms ease-out 1s both/);
+  });
+  it('reduced motion shows them at once: every animation is off', () => {
+    expect(reducedBlocks.some((b) => /\*, \*::before, \*::after \{ animation: none !important;/.test(b))).toBe(true);
+  });
+});
+
+describe('the why-line never outranks the right answer (review, 2026-10-12)', () => {
+  const px = (re: RegExp, from = 0) => Number(re.exec(css.slice(from))![1]);
+  it('its characters and syllables are no bigger than the answer line, normally and compact', () => {
+    const answer = px(/\n\.sheet__en-zh \{[^}]*font-size: (\d+)px/);
+    expect(px(/\.sheet__detail \.why \.hanzi \{ font-size: (\d+)px/)).toBeLessThanOrEqual(answer);
+    expect(px(/\n\.why__syl \{ font-size: (\d+)px/)).toBeLessThanOrEqual(answer);
+    const compactAnswer = px(/\.sheet__en-zh \{ font-size: (\d+)px/, css.indexOf('\n  .sheet__en-zh { font-size:'));
+    const compact = /@media \(max-width: 599px\) \{ \.sheet__detail \.why \.hanzi, \.why__syl \{ font-size: (\d+)px/.exec(css)!;
+    expect(Number(compact[1])).toBeLessThanOrEqual(compactAnswer);
+  });
+  it('the compact rule comes after the base rules, so it wins the cascade on phones', () => {
+    const compactAt = css.indexOf('@media (max-width: 599px) { .sheet__detail .why .hanzi, .why__syl');
+    expect(compactAt).toBeGreaterThan(css.indexOf('\n.sheet__detail .why .hanzi {'));
+    expect(compactAt).toBeGreaterThan(css.indexOf('\n.why__syl {'));
+    expect(css.indexOf('.why__syl', css.indexOf('\n', compactAt))).toBe(-1); // and there is no later rule to undo it
+  });
+  it('the fade ends at the pinyin\'s resting opacity, not 1', () => {
+    expect(css).toMatch(/@keyframes later-in \{ from \{ opacity: 0; \} to \{ opacity: var\(--rest, 1\); \} \}/);
+    expect(css).toMatch(/\.label__py \{ --rest: \.75; \}/);
+  });
+});
+
+describe('the new-word card (spec 2026-10-12 §4)', () => {
+  it("its own pinyin comes 2 s after the character", () => {
+    expect(css).toMatch(/\.pinyin--later \{[^}]*animation: later-in 300ms ease-out 2s both/);
+  });
+});

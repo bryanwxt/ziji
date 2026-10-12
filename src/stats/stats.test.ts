@@ -27,6 +27,18 @@ describe('summarize', () => {
     expect([...k.knownChars].sort()).toEqual(['大', '朋', '友'].sort());
     expect(k.knownWordIds.has('p:1')).toBe(true);
   });
+  it("records each known character's reading from words whose pinyin lines up one syllable per character (final review I1)", () => {
+    const now = new Date(2026, 9, 2);
+    const words = [
+      makeWord('一只', { id: 'p:1', pinyin: 'yì zhī' }),
+      makeWord('杯子', { id: 'p:2', pinyin: 'bēi zi' }),
+      makeWord('哪儿', { id: 'p:3', pinyin: 'nǎr' }),
+      makeWord('只有', { id: 'p:4', pinyin: 'zhǐ yǒu' }),
+    ];
+    const k = summarize(words, ['p:1', 'p:2', 'p:3'].map((id) => makeCard(id, 'recognise', now, true)));
+    expect(Object.fromEntries([...k.knownReadings].map(([ch, s]) => [ch, [...s]]))).toEqual({ 一: ['yì'], 只: ['zhī'], 杯: ['bēi'], 子: ['zi'] });
+    expect(k.knownChars.has('哪')).toBe(true); // 哪儿 nǎr: known, no reading on record
+  });
 });
 
 describe('streak', () => {

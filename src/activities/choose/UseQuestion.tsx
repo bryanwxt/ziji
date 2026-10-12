@@ -12,6 +12,7 @@ import { SpeakButton } from '../../ui/SpeakButton';
 import { burst } from '../../ui/motion';
 import { Pet } from '../../ui/Pet';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
+import { LookAlikeWhy } from '../../ui/stage/WhyLine';
 import { CLUE_EN } from '../../content/bank/clueEn';
 
 interface Props {
@@ -72,6 +73,8 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
                 {!correct && item.kind !== 'fit' && <span class="hanzi">{fullSentence(item)}</span>} {/* a 选一选 card already shows its sentence filled in */}
                 {item.pair && <span class="pair hanzi">{`${item.word} + ${item.pair}`}</span>}
                 {!correct && <MeaningNote right={item.word} picked={item.kind === 'fit' ? choice : null} rightMeaning={item.kind === 'fit' ? item.meaning : undefined} />}
+                {/* single characters: the part that tells them apart (spec 2026-10-12 §3) */}
+                {!correct && item.kind === 'fit' && choice && Array.from(item.word).length === 1 && Array.from(choice).length === 1 && <LookAlikeWhy right={item.word} picked={choice} />}
                 {!correct && item.kind === 'fit' && item.clue && <span class="clue hanzi">{item.clue}</span>}
                 {!correct && item.kind === 'fit' && item.clue && CLUE_EN[item.word] && <span class="clue__en" lang="en">{CLUE_EN[item.word]}</span>}
               </>
@@ -86,7 +89,7 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
         <>
           <div class="flash__prompt">
             <div class={`meaning-cue meaning-cue--sentence${short ? ' meaning-cue--short' : ''}`} lang="zh" data-q={short || undefined} style={`--len:${Array.from(item.before + item.word + item.after).length}`}>
-              <Label zh={`${item.before}${done ? item.word : '＿'.repeat(Array.from(item.word).length)}${item.after}`} />
+              <Label zh={`${item.before}${done ? item.word : '＿'.repeat(Array.from(item.word).length)}${item.after}`} fade />
               <SpeakButton text={done ? fullSentence(item) : `${item.before}，，${item.after}`} />
             </div>
           </div>
@@ -103,7 +106,7 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
           {lines.order.map((s) => (
             <div class="usage-row" key={s}>
               <button type="button" class={`choice usage-opt press ${state(s)}`} disabled={done} onClick={(e) => choose(s, e.currentTarget)}>
-                <Label zh={s} />
+                <Label zh={s} fade peek={false} />
               </button>
               <SpeakButton text={s} />
             </div>

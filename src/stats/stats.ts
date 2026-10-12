@@ -13,6 +13,8 @@ export interface Knowledge {
   passedRungs: Map<string, Set<RungKind>>; // each word's passed rungs (the town lights from these: spec 2026-10-06 §3.7)
   knownWordIds: Set<string>; // words whose Read rung has passed
   knownChars: Set<string>; // characters recognised: in any word whose Read has passed (spec 2026-10-06 §3.3)
+  /** each known character's syllables in those words, tone-marked and lowercased (只 → {zhī} from 一只): pinyin fades per reading (final review I1) */
+  knownReadings: ReadonlyMap<string, ReadonlySet<string>>;
   known: number; // = knownChars.size
   heard: number;
   understood: number; // understood in a sentence he heard (plan 2b)
@@ -35,11 +37,19 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
   const count = (r: RungKind) => [...passedRungs.values()].filter((s) => s.has(r)).length;
   const knownWordIds = new Set([...passedRungs].filter(([, s]) => s.has('read')).map(([id]) => id));
   const knownChars = new Set<string>();
-  for (const id of knownWordIds) for (const ch of Array.from(word(id)!.text)) if (/\p{Script=Han}/u.test(ch)) knownChars.add(ch);
+  const knownReadings = new Map<string, Set<string>>();
+  for (const id of knownWordIds) {
+    const w = word(id)!;
+    const han = Array.from(w.text).filter((ch) => /\p{Script=Han}/u.test(ch));
+    for (const ch of han) knownChars.add(ch);
+    // only a word whose pinyin lines up one syllable per character says which reading each one has
+    const syl = w.pinyin.trim().toLowerCase().normalize('NFC').split(/\s+/);
+    if (syl.length === han.length) han.forEach((ch, i) => (knownReadings.get(ch) ?? knownReadings.set(ch, new Set()).get(ch)!).add(syl[i]!));
+  }
   return {
     words, cards, wordsById, ladderById, passedRungs,
     cardsById: new Map(cards.map((c) => [c.id, c])),
-    knownWordIds, knownChars, known: knownChars.size,
+    knownWordIds, knownChars, knownReadings, known: knownChars.size,
     heard: count('hear'), understood: count('understand'), read: count('read'), used: count('use'),
     owned: [...passedRungs].filter(([id, s]) => isOwned(word(id)!, s)).length,
     written: cards.filter((c) => c.kind === 'write' && c.passed).length,
