@@ -17,11 +17,19 @@ describe('说一句 patterns (production practice spec §4)', () => {
     expect(sentencePattern('计划好了。', '计划')).toBe('计划…');
     expect(sentencePattern('今天很热。', '门')).toBe('门');
   });
+  it('never the whole model: a short lead with nothing after the word is blanked but its first character', () => {
+    expect(sentenceExample('一会儿')).toBe('请等一会儿。');
+    expect(sentencePattern('请等一会儿。', '一会儿')).toBe('请…一会儿');
+    expect(sentencePattern('我高。', '高')).toBe('我…高');
+    expect(sentencePattern('高。', '高')).toBe('高…');
+  });
   it('every bank word has a frame that holds the word and is short', () => {
     for (const b of SENTENCE_BANK) {
       const frame = sentencePattern(sentenceExample(b.word)!, b.word);
       expect(frame).toContain(b.word);
       expect(Array.from(frame).length).toBeLessThanOrEqual(Array.from(b.word).length + 5);
+      expect(frame).toContain('…'); // something is always left for him to say
+      expect(frame).not.toBe(sentenceExample(b.word)!.replace(/[。！？!?.，,、；;：:]/gu, ''));
     }
   });
 });
