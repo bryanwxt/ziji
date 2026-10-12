@@ -1527,22 +1527,29 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .family__words { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
 .family__word { display: inline-flex; align-items: flex-end; gap: 2px; font-size: 26px; }
 .family__word .hanzi { font-size: 26px; }
-/* a short phone (iPhone SE / Safari with bars, 667 px) has no room for the row under two 词语 rows: the iPad is where he learns, so the phone drops it
-   rather than cut its words off at the card's edge (WebKit). With a 成语 on the card too a short iPad shows three words, a smaller character and no 成语 sentence. */
-@media (max-height: 700px) { .family { display: none; } }
-@media (min-height: 701px) and (max-height: 820px) {
-  .intro__card--idiom:has(.family) .hanzi--xl { font-size: min(var(--hanzi-xl), 56px); }
-  .intro__card--idiom:has(.family) .intro__idiom-sentence { display: none; }
-  .intro__card--idiom:has(.family) { gap: 6px; }
-  .intro__card--idiom .family__word:nth-child(n+4) { display: none; }
+/* One line: the title sits before the words. The new character never shrinks for this row; the optional rows give way instead (WebKit, 2026-10-12):
+   a short iPad shows three words and, on the fullest card (a 成语 too), drops the 成语's example sentence;
+   a short phone (<=700px tall) drops the row. */
+.intro__group.family { flex-direction: row; flex-wrap: nowrap; justify-content: center; align-items: flex-end; gap: 10px; }
+.family__title { flex: none; padding-bottom: 6px; }
+.family__words { flex-wrap: nowrap; gap: 4px 10px; }
+@media (max-width: 599px) { /* a phone keeps the title above and lets the words wrap */
+  .intro__group.family { flex-direction: column; align-items: center; gap: 6px; }
+  .family__title { padding-bottom: 0; }
+  .family__words { flex-wrap: wrap; gap: 4px 14px; }
+  .family__word:nth-child(n+3) { display: none; } /* two words: one row, never cut at the card edge */
 }
-@media (min-height: 821px) { .intro__card--idiom:has(.family) .hanzi--xl { font-size: min(var(--hanzi-xl), 96px); } }
+@media (min-width: 600px) {
+  .intro__card--idiom:has(.family) .intro__idiom-sentence { display: none; }
+}
+@media (min-width: 600px) and (max-height: 820px) { .intro__card--idiom:has(.family) { gap: 6px; } .intro__card--idiom:has(.family) .family__word:nth-child(n+4) { display: none; } }
+@media (max-width: 599px) and (max-height: 700px) { .intro__card .family { display: none; } } /* measured: ~60px short on every card here, even two words on one line; the character keeps its size, so the row goes */
 
 /* 找一家人 (spec 2026-10-12 §5) */
 /* a short phone: when the sheet explains why (look-alike, sound-part) or lists the two family words it needs the room Truffle's bubble
    took, so he sits this one out; the sheet's own lines are what he reads (WebKit, iPhone SE 375x667) */
 @media (max-width: 599px) and (max-height: 700px) {
-  .stage:has(.sheet .why, .sheet .family-sum) .stage__truffle { display: none; }
+  .stage:has(.sheet .why, .sheet .family-sum__row.is-missed) .stage__truffle { display: none; }
   .stage__sheet .sheet__detail:has(.family-sum) { max-height: 38dvh; }
   .family-sum { min-width: 0; max-width: 100%; }
   .family-sum__row { flex-wrap: nowrap; }

@@ -148,7 +148,11 @@ for (const size of SIZES) {
     await page.goto(`file://${dir}/index.html?case=intro-family`);
     await page.waitForTimeout(2400); // its pinyin comes 2 s after the character
     await page.screenshot({ path: `fit-shots/stage-cases/intro-family-${size.name}.png` });
-    if ((await page.$$('.family__word')).length < 2) problems.push(`${size.name} intro-family: no 一家人 row`);
+    // this is the fullest card (a 成语 too): a short phone drops the 一家人 row on purpose, every iPad shows at least two words
+    const shown = await page.$$eval('.family__word', (ws) => ws.filter((w) => { const r = w.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length);
+    const phone = size.width < 600;
+    if (phone ? shown !== 0 && shown < 2 : shown < 2) problems.push(`${size.name} intro-family: ${shown} 一家人 words showing`);
+    if (!phone && (await page.$$('.family__word')).length < 2) problems.push(`${size.name} intro-family: no 一家人 row`);
     problems.push(...(await cardClipped(page, `${size.name} intro-family`)));
   }
   {
