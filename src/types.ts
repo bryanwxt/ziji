@@ -61,7 +61,7 @@ export interface Word {
   tags?: string[]; // e.g. '成语'
 }
 
-export type CardKind = 'recognise' | 'write' | 'meaning' | 'hear' | 'understand' | 'say'; // meaning: what the word means and how it's used (spec §19); say: he reads it aloud (spec 2026-10-11 §3)
+export type CardKind = 'recognise' | 'write' | 'meaning' | 'hear' | 'understand' | 'say' | 'sentence'; // meaning: what the word means and how it's used (spec §19); say: he reads it aloud (spec 2026-10-11 §3); sentence: he says a sentence with it (production practice spec §4)
 
 export interface CardRecord {
   id: string; // `${wordId}:${kind}`
@@ -187,7 +187,8 @@ export type RecordingPrompt =
   | { kind: 'intro' } // the exam-etiquette self-introduction
   | { kind: 'story'; sceneId: string; part: 'opening' | 'setting' | 'events' | 'ending' | 'opinion' | 'whole' } // 看图说话
   | { kind: 'answer'; sceneId: string; question: number } // Truffle asks
-  | { kind: 'say'; wordId: string }; // a Say card take: he read the word aloud (spec 2026-10-11 §3)
+  | { kind: 'say'; wordId: string } // a Say card take: he read the word aloud (spec 2026-10-11 §3)
+  | { kind: 'sentence'; wordId: string }; // a 说一句 take: he said a sentence with the word (production practice spec §4)
 
 export interface Recording {
   id: string;
@@ -199,7 +200,7 @@ export interface Recording {
   level?: number; // average loudness (RMS 0..1) while reading; older recordings have none
   misread?: string[]; // characters the parent confirmed he misread
   extraDayGiven?: boolean; // its marks have given the passage its one extra day (never a second, however often re-marked)
-  review?: 'ok' | 'no'; // a Say take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
+  review?: 'ok' | 'no'; // a Say or 说一句 take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
   meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
 }
 

@@ -10,7 +10,7 @@ const log = (date: string, hour: number, correct: boolean, responseMs = 2000, ca
 
 describe('rungs', () => {
   it('Read is the reading card and Use the meaning card, so his progress carries over', () => {
-    expect(RUNG_CARD).toEqual({ hear: 'hear', understand: 'understand', read: 'recognise', use: 'meaning', say: 'say' });
+    expect(RUNG_CARD).toEqual({ hear: 'hear', understand: 'understand', read: 'recognise', use: 'meaning', say: 'say', sentence: 'sentence' });
     expect(rungOf('recognise')).toBe('read');
     expect(rungOf('write')).toBeNull();
   });
@@ -59,8 +59,8 @@ describe('opening and owning', () => {
 describe('Understand (plan 2b): between Hear and Read', () => {
   const cat = makeWord('猫', { meaning: 'cat' });
   const dog = makeWord('狗', { meaning: 'dog' });
-  it('the rungs go hear, understand, read, use, then say (spec 2026-10-11 §3)', () => {
-    expect(RUNGS).toEqual(['hear', 'understand', 'read', 'use', 'say']);
+  it('the rungs go hear, understand, read, use, then say and sentence (spec 2026-10-11 §3; production practice spec §4)', () => {
+    expect(RUNGS).toEqual(['hear', 'understand', 'read', 'use', 'say', 'sentence']);
   });
   it('a word with two sentences goes from Hear to Understand; one with none goes straight to Read', () => {
     expect(nextRung(cat, 'hear')).toBe('understand');
@@ -102,6 +102,25 @@ describe('the Say rung (spec 2026-10-11 §3)', () => {
   it('owning a word is still its reading rungs: the town never dims for a word he has not said', () => {
     const w = makeWord('门', { pinyin: 'mén', examples: [{ text: '门口', pinyin: 'mén kǒu' }] });
     expect(isOwned(w, new Set(['hear', 'read', 'use']))).toBe(true);
+  });
+});
+
+describe('the Sentence rung: can use (production practice spec §4)', () => {
+  const take = (date: string, ok: boolean, kind: 'say' | 'sentence' = 'sentence', cardId = `b:很:${kind}`): ReviewLog =>
+    ({ cardId, wordId: 'b:很', kind, at: new Date(`${date}T18:00:00`).getTime(), rating: ok ? 3 : 1, correct: ok });
+  it('passes on two separate days with a confirmed 说一句 take; Say verdicts are not Sentence verdicts', () => {
+    expect(sayPassed([take('2026-10-01', true), take('2026-10-02', true)], 'b:很:sentence', 'sentence')).toBe(true);
+    expect(sayPassed([take('2026-10-01', true), take('2026-10-01', true)], 'b:很:sentence', 'sentence')).toBe(false);
+    expect(sayPassed([take('2026-10-01', true, 'say', 'b:很:sentence'), take('2026-10-02', true, 'say', 'b:很:sentence')], 'b:很:sentence', 'sentence')).toBe(false);
+  });
+  it('opens nothing and is opened by nothing; asked only of a word with a sentence-bank example; owning a word is unchanged', () => {
+    const hen = makeWord('很', { pinyin: 'hěn', examples: [{ text: '很多', pinyin: 'hěn duō' }] });
+    expect(nextRung(hen, 'sentence')).toBeNull();
+    expect(nextRung(hen, 'use')).toBeNull();
+    expect(rungOf('sentence')).toBe('sentence');
+    expect(canAskRung(hen, 'sentence')).toBe(true);
+    expect(canAskRung(makeWord('门'), 'sentence')).toBe(false);
+    expect(isOwned(hen, new Set(['hear', 'read', 'use']))).toBe(true);
   });
 });
 
