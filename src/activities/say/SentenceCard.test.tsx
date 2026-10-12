@@ -38,10 +38,13 @@ describe('说一句 (production practice spec §4)', () => {
     expect(document.querySelector('.say-sentence__model')).toBeNull();
     expect(screen.getByText('继续').closest('button')!.disabled).toBe(true);
   });
-  it('he records; then the model sentence shows and plays; 继续 hands over the take once', async () => {
+  it('he records; the model waits for 听一听例句; 继续 hands over the take once', async () => {
     const onDone = vi.fn();
     render(<SentenceCard word={hen} kid={DEFAULT_KID} onDone={onDone} />);
     await record();
+    expect(document.querySelector('.say-sentence__model')).toBeNull();
+    expect(speak).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('听一听例句'));
     expect(text('.say-sentence__model')).toBe('今天很热。');
     await waitFor(() => expect(speak).toHaveBeenCalledWith('今天很热。'));
     fireEvent.click(screen.getByText('继续'));
@@ -49,29 +52,41 @@ describe('说一句 (production practice spec §4)', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
     expect(onDone.mock.calls[0]![0].take.durationSec).toBe(1);
   });
-  it('the model never plays before or while he records', async () => {
-    render(<SentenceCard word={hen} kid={DEFAULT_KID} onDone={vi.fn()} />);
-    expect(speak).not.toHaveBeenCalled();
+  it('the model is neither shown nor spoken before 听一听例句 or the re-record; 继续 works without it', async () => {
+    const onDone = vi.fn();
+    render(<SentenceCard word={hen} kid={DEFAULT_KID} onDone={onDone} />);
     fireEvent.click(screen.getByText('开始录音'));
     await screen.findByText('停止');
     expect(speak).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText('停止'));
     await screen.findByText('听一听！');
-    await waitFor(() => expect(speak).toHaveBeenCalledWith('今天很热。'));
+    expect(speak).not.toHaveBeenCalled();
+    expect(document.querySelector('.say-sentence__model')).toBeNull();
+    expect(screen.getByText('再录一次')).toBeTruthy();
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
-  it('one re-record, and the last take is the one kept', async () => {
+  it('there is no 再录一次 once the model is shown', async () => {
+    render(<SentenceCard word={hen} kid={DEFAULT_KID} onDone={vi.fn()} />);
+    await record();
+    fireEvent.click(screen.getByText('听一听例句'));
+    expect(screen.queryByText('再录一次')).toBeNull();
+    expect(screen.queryByText('听一听例句')).toBeNull();
+  });
+  it('one re-record, the last take is kept, and after it the model appears and plays', async () => {
     const onDone = vi.fn();
     render(<SentenceCard word={hen} kid={DEFAULT_KID} onDone={onDone} />);
     await record();
-    await waitFor(() => expect(speak).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByText('再录一次'));
+    expect(document.querySelector('.say-sentence__model')).toBeNull();
     fireEvent.click(screen.getByText('开始录音'));
     await screen.findByText('停止');
-    expect(speak).toHaveBeenCalledTimes(1); // not again while the second take is recording
+    expect(speak).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText('停止'));
     await screen.findByText('听一听！');
-    await waitFor(() => expect(speak).toHaveBeenCalledTimes(2)); // the model plays again after the second take
+    await waitFor(() => expect(speak).toHaveBeenCalledTimes(1));
     expect(speak).toHaveBeenLastCalledWith('今天很热。');
+    expect(text('.say-sentence__model')).toBe('今天很热。');
     expect(screen.queryByText('再录一次')).toBeNull();
     fireEvent.click(screen.getByText('继续'));
     expect(onDone.mock.calls[0]![0].take.durationSec).toBe(2);

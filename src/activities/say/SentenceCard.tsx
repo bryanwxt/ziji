@@ -12,8 +12,8 @@ import type { SayResult } from './SayCard';
 
 /**
  * 说一句 (production practice spec §4): 「用『计划』说一句话」 over a pattern from the word's sentence-bank example (「我们…计划…」,
- * its pinyin fading like every line). He records once, with one optional re-record (the last take is kept); the model sentence
- * then shows and plays. A blocked or missing microphone skips the card (null), and the lesson skips the rest, as for Say cards.
+ * its pinyin fading like every line). He records, with one optional re-record (the last take is kept). The model sentence is the answer he is meant to produce
+ * himself, so it shows and plays only when he taps 听一听例句 or once the re-record is used; after that there is no more re-recording. A blocked or missing microphone skips the card (null), and the lesson skips the rest, as for Say cards.
  */
 export function SentenceCard({ word, kid, onDone }: { word: Word; kid: KidState; onDone: (r: SayResult | null) => void }) {
   const model = sentenceExample(word.text) ?? word.text;
@@ -22,6 +22,7 @@ export function SentenceCard({ word, kid, onDone }: { word: Word; kid: KidState;
   const short = Array.from(frame).length <= 4;
   const rec = useRecorder();
   const [again, setAgain] = useState(false); // his one re-record is used
+  const [shown, setShown] = useState(false); // the model sentence is on show (and spoken)
   const shownAt = useRef(performance.now());
   const finished = useRef(false);
   useEffect(() => {
@@ -29,8 +30,11 @@ export function SentenceCard({ word, kid, onDone }: { word: Word; kid: KidState;
       finished.current = true;
       onDone(null);
     }
-    if (rec.state === 'done') speak(model); // the model sentence, right after his take
+    if (rec.state === 'done' && again) setShown(true); // the re-record is used: now the model
   }, [rec.state]);
+  useEffect(() => {
+    if (shown) speak(model);
+  }, [shown]);
   useEffect(() => () => stopSpeaking(), []); // the model stops when the card goes
   const next = () => {
     if (finished.current || !rec.result) return; // a double tap on 继续 keeps one take
@@ -52,14 +56,17 @@ export function SentenceCard({ word, kid, onDone }: { word: Word; kid: KidState;
         <p class="say-sentence__prompt" lang="zh"><Label zh={`用『${word.text}』说一句话`} fade /></p>
         <div class={`say-sentence__pattern hanzi${short ? ' say-sentence__pattern--short' : ''}`} lang="zh" data-q={short || undefined}><Label zh={frame} fade /></div>
         {rec.state !== 'blocked' && <MicButton rec={rec} withLevel={false} />}{/* blocked: the card is skipped at once, with no note */}
-        {said && (
+        {said && shown && (
           <>
             <div class="say-sentence__model hanzi" lang="zh"><Label zh={model} fade /></div>
-            <div class="say__after">
-              <SpeakButton text={model} />
-              {!again && <button type="button" class="btn btn--secondary" onClick={redo}><Label zh="再录一次" /></button>}
-            </div>
+            <div class="say__after"><SpeakButton text={model} /></div>
           </>
+        )}
+        {said && !shown && (
+          <div class="say__after">
+            {!again && <button type="button" class="btn btn--secondary" onClick={redo}><Label zh="再录一次" /></button>}
+            <button type="button" class="btn btn--secondary" onClick={() => setShown(true)}><Label zh="听一听例句" /></button>
+          </div>
         )}
       </div>
     </Stage>

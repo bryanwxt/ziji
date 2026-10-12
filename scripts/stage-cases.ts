@@ -115,7 +115,7 @@ for (const size of SIZES) {
     if ((await page.$$('.tianzige svg path')).length === 0) problems.push(`${size.name} trace: no outline in the 田字格`);
     problems.push(...(await cardClipped(page, `${size.name} trace`)));
   }
-  // 说一句 (production practice spec §4): the ask and its pattern, then after a take the model sentence and 再录一次
+  // 说一句 (production practice spec §4): the ask and its pattern, then after a take 再录一次 and 听一听例句, and the model sentence once he taps it
   {
     await page.goto(`file://${dir}/index.html?case=sentence`);
     await page.waitForTimeout(300);
@@ -124,6 +124,10 @@ for (const size of SIZES) {
     await page.click('.mic-btn');
     await page.waitForSelector('.mic-btn.is-recording', { timeout: 5000 }).catch(() => null);
     await page.click('.mic-btn.is-recording').catch(() => null);
+    await page.waitForSelector('text=听一听例句', { timeout: 5000 }).catch(() => null);
+    await page.screenshot({ path: `fit-shots/stage-cases/sentence-took-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} sentence took`)));
+    await page.click('text=听一听例句').catch(() => null); // the model shows only on this tap (or after the re-record)
     const said = await page.waitForSelector('.say-sentence__model', { timeout: 5000 }).catch(() => null);
     await page.waitForTimeout(300);
     await page.screenshot({ path: `fit-shots/stage-cases/sentence-said-${size.name}.png` });
