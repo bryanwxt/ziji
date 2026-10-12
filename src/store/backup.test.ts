@@ -151,7 +151,7 @@ describe('sweep: restoring an older backup', () => {
     const target = await freshDb();
     await applyBackup(target, readBackup(text));
     const s = await getSettings(target);
-    expect(s.lessonVersion).toBe(6);
+    expect(s.lessonVersion).toBe(7);
     expect(s.course).toBe('both'); // spec 2026-10-11 §6
     expect(s.sessionMinutes).toBe(15); // the old default 30 becomes 15 (spec 2026-10-11 §4)
     expect(s.activities).toMatchObject({ newwords: true, practice: true, writing: true, speaking: true });

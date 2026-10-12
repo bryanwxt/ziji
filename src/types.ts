@@ -273,7 +273,7 @@ export interface Settings {
   gradeYear?: number; // the calendar year `grade` was set in: the school year goes up each January from there (a yardstick, never a cap)
   classLesson?: ClassLessonSetting | null; // the parent's "class is on" (spec 2026-10-11 §4): carries at the calendar's pace, lapses next semester; null/absent: the estimate
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
-  langdu: boolean; // 朗读 is parked too (parent, 2026-10-05: "not very useful at the moment"): off by default, no parent switch yet
+  langdu: boolean; // 朗读, the lesson's last step (spec 2026-10-12): on by default; Settings → 「朗读 Read aloud」
   course?: Course; // 华文, 高级华文 or both lists: which 识写字 he practises writing (all read the same characters); absent: 'both' (courseOf, spec 2026-10-11 §6)
   contentCourse?: Course; // the course the stored built-in words were written for; absent: 'cl' (written before courses)
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
@@ -302,8 +302,8 @@ export const DEFAULT_SETTINGS: Settings = {
   zodiac: null,
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
-  langdu: false,
-  lessonVersion: 6,
+  langdu: true,
+  lessonVersion: 7,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';

@@ -31,7 +31,7 @@ describe('launch (deferred minor, plan 11)', () => {
     expect((await getWord(first.db, 'b:井'))!.writeable).toBe(false); // 华文 only reads 井
     first.db.close();
     const second = await bootstrap(name);
-    expect(await getSettings(second.db)).toMatchObject({ course: 'both', contentCourse: 'both', lessonVersion: 6 });
+    expect(await getSettings(second.db)).toMatchObject({ course: 'both', contentCourse: 'both', lessonVersion: 7 });
     expect((await getWord(second.db, 'b:井'))!.writeable).toBe(true); // 高级华文 writes it
     await updateSettings(second.db, { course: 'cl' }); // the parent picks 华文 again
     second.db.close();
