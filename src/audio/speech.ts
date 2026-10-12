@@ -2,7 +2,7 @@ import SAY_AS from './sayAs.json';
 import { audioContext } from './context';
 import { clipPlan, clipUrl } from './clips';
 import { createClipPlayer, type ClipPlayer } from './clipPlayer';
-import { setClipActive, setSpeaking } from './speaking';
+import { recordingNow, setClipActive, setSpeaking } from './speaking';
 import { noteVoice, voiceQuality } from './voiceTier';
 
 let voice: SpeechSynthesisVoice | null = null;
@@ -107,9 +107,11 @@ const ttsBusy = () => available() && (live.size > 0 || waiting !== null);
 /**
  * Say Chinese text: the neural voice's clip when there is one (spec 2026-10-06 §4), else the iPad voice. It cuts off whatever
  * is playing, unless `queue` (then it waits its turn: the character, then its usage line). `reading` is the pinyin a lone
- * character is taught with, when the screen knows it.
+ * character is taught with, when the screen knows it. While he is being recorded it says nothing (final review C1): a peek or
+ * a line on screen must never end up in his take.
  */
 export function speak(text: string, { queue = false, reading }: { queue?: boolean; reading?: string } = {}): void {
+  if (recordingNow()) return;
   if (queue && (clipBusy || after.length > 0 || (ttsBusy() && clipPlan(text, reading)))) {
     after.push({ text, reading });
     return;

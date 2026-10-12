@@ -2,6 +2,7 @@ import { Mic } from 'lucide-preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { recordingSupported, startRecording, type ActiveRecording, type FinishedRecording } from '../../audio/recorder';
 import { quietFor } from '../../langdu/loudness';
+import { setRecordingNow } from '../../audio/speaking';
 import { stopSpeaking } from '../../audio/speech';
 import { Label } from '../../ui/Label';
 import { LoudnessMeter } from '../langdu/LoudnessMeter';
@@ -25,6 +26,7 @@ export function useRecorder(startBlocked = false) {
   const series = useRef<{ at: number; level: number }[]>([]);
   useEffect(() => () => {
     mounted.current = false;
+    if (active.current) setRecordingNow(false);
     active.current?.cancel();
   }, []);
 
@@ -32,8 +34,15 @@ export function useRecorder(startBlocked = false) {
     const rec = active.current;
     if (!rec) return;
     active.current = null;
-    setResult(await rec.stop());
-    setState('done');
+    setRecordingNow(false); // the app may speak again
+    try {
+      const done = await rec.stop();
+      if (!mounted.current) return;
+      setResult(done);
+      setState('done');
+    } catch {
+      if (mounted.current) setState('ready'); // nothing was kept: he can record again
+    }
   };
   const start = async (withLevel: boolean) => {
     if (starting.current || active.current) return;
@@ -55,6 +64,7 @@ export function useRecorder(startBlocked = false) {
       );
       if (!mounted.current) return rec.cancel(); // he left while the mic was opening: never leave it on
       active.current = rec;
+      setRecordingNow(true); // speak() is silent until it stops (final review C1)
       setState('recording');
     } catch {
       if (mounted.current) setState('blocked');

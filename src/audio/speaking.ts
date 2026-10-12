@@ -29,3 +29,13 @@ export function settleIfSilent(): void {
   if (!speakingNow || clipActive || typeof speechSynthesis === 'undefined' || !speechSynthesis) return;
   if (!speechSynthesis.speaking && !speechSynthesis.pending) setSpeaking(false);
 }
+
+/**
+ * He is being recorded (useRecorder sets it while a recording runs): nothing the app says may end up in his take, so speak()
+ * is silent until it clears (final review C1). Kept here, apart from speech.ts, so a screen that mocks speech still sets it.
+ */
+let recording = false;
+export function setRecordingNow(on: boolean): void {
+  recording = on;
+}
+export const recordingNow = (): boolean => recording;

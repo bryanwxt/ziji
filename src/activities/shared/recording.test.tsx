@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/preact';
+import { fireEvent, render, screen, waitFor } from '@testing-library/preact';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BLOCKED_NOTE, MicButton, useRecorder } from './recording';
 
 vi.mock('../../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn() }));
 import { stopSpeaking } from '../../audio/speech';
+import { recordingNow } from '../../audio/speaking';
 import { recordingSupported, startRecording } from '../../audio/recorder';
 
 function Harness() {
@@ -48,5 +49,34 @@ describe('shared recorder', () => {
     fireEvent.click(screen.getByText('开始录音'));
     await screen.findByText('停止');
     expect(stopSpeaking).toHaveBeenCalled();
+  });
+});
+
+describe('the recording flag (final review C1): speech is silent only while he is recorded', () => {
+  it('set while recording, cleared on stop', async () => {
+    render(<Harness />);
+    expect(recordingNow()).toBe(false);
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('停止');
+    expect(recordingNow()).toBe(true);
+    fireEvent.click(screen.getByText('停止'));
+    await screen.findByText('done');
+    expect(recordingNow()).toBe(false);
+  });
+  it('cleared when he leaves mid-recording', async () => {
+    const { unmount } = render(<Harness />);
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('停止');
+    expect(recordingNow()).toBe(true);
+    unmount();
+    expect(recordingNow()).toBe(false);
+  });
+  it('cleared when stopping fails', async () => {
+    vi.mocked(startRecording).mockResolvedValue({ stop: async () => { throw new Error('no data'); }, cancel: vi.fn() });
+    render(<Harness />);
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('停止');
+    fireEvent.click(screen.getByText('停止'));
+    await waitFor(() => expect(recordingNow()).toBe(false));
   });
 });
