@@ -271,3 +271,25 @@ describe('while he is recorded (final review C1): speak() says nothing', () => {
     expect(spoken).toEqual(['我爱妈妈。']);
   });
 });
+
+describe('a replaced voice ending late (final review I3)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it("a cut-off utterance's late end says nothing about the one playing now, so a model reader never advances on it", () => {
+    const spoken: (SpeechSynthesisUtterance & { onstart?: () => void; onend?: () => void; onerror?: () => void })[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: never) => spoken.push(u), getVoices: () => [], speaking: false, pending: false });
+    vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; volume = 1; voice = null; constructor(t: string) { this.text = t; } });
+    const seen: boolean[] = [];
+    const off = onSpeaking((on) => seen.push(on));
+    speak('我爱爸爸。');
+    spoken[0]!.onstart!();
+    speak('我爱妈妈。'); // a tap: the first is cancelled
+    spoken[1]!.onstart!();
+    seen.length = 0;
+    spoken[0]!.onend!(); // Safari's late end of the cancelled one
+    spoken[0]!.onerror!();
+    expect(seen).toEqual([]);
+    spoken[1]!.onend!();
+    expect(seen).toEqual([false]);
+    off();
+  });
+});

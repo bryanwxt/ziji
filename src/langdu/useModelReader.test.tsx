@@ -1,18 +1,18 @@
 import { act, fireEvent, render, screen } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setSpeaking } from '../audio/speaking';
-import { START_WAIT_MS, useModelReader } from './useModelReader';
+import { SENTENCE_MAX_MS, START_WAIT_MS, useModelReader } from './useModelReader';
 
 vi.mock('../audio/speech', () => ({ speak: vi.fn(), stopSpeaking: vi.fn() }));
 import { speak, stopSpeaking } from '../audio/speech';
 
-function Probe({ sentences }: { sentences: string[] }) {
+function Probe({ sentences, name = '' }: { sentences: string[]; name?: string }) {
   const m = useModelReader(sentences);
   return (
     <div>
-      <span data-testid="cur">{m.current ?? '-'}</span>
-      <span data-testid="all">{String(m.heardAll)}</span>
-      <button type="button" onClick={() => m.read(0)}>all</button>
+      <span data-testid={`cur${name}`}>{m.current ?? '-'}</span>
+      <span data-testid={`all${name}`}>{String(m.heardAll)}</span>
+      <button type="button" onClick={() => m.read(0)}>{`all${name}`}</button>
       <button type="button" onClick={() => m.read(1, true)}>one</button>
       <button type="button" onClick={() => m.stop()}>stop</button>
     </div>
@@ -85,5 +85,34 @@ describe('useModelReader (spec 2026-10-12 §3)', () => {
     expect(stopSpeaking).toHaveBeenCalled();
     act(() => setSpeaking(false));
     expect(speak).toHaveBeenCalledTimes(1);
+  });
+  it('a voice that starts and never says it ended: the next sentence after SENTENCE_MAX_MS (final review M4)', () => {
+    vi.useFakeTimers();
+    render(<Probe sentences={S} />);
+    fireEvent.click(screen.getByText('all'));
+    act(() => setSpeaking(true));
+    expect(cur()).toBe('0');
+    act(() => { vi.advanceTimersByTime(SENTENCE_MAX_MS - 1); });
+    expect(speak).toHaveBeenCalledTimes(1); // still waiting: a long sentence is not cut short
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(speak).toHaveBeenLastCalledWith('乙。');
+    expect(cur()).toBe('-');
+  });
+  it('one reader at a time (final review I7): starting B stops A, and A never speaks again', () => {
+    render(<div><Probe sentences={S} name="A" /><Probe sentences={['子。', '丑。']} name="B" /></div>);
+    fireEvent.click(screen.getByText('allA'));
+    act(() => setSpeaking(true));
+    expect(screen.getByTestId('curA').textContent).toBe('0');
+    fireEvent.click(screen.getByText('allB'));
+    expect(speak).toHaveBeenLastCalledWith('子。');
+    expect(screen.getByTestId('curA').textContent).toBe('-');
+    act(() => setSpeaking(false)); // A's cut-off voice says it ended
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    expect(vi.mocked(speak).mock.calls.map((c) => c[0])).toEqual(['甲。', '子。', '丑。']);
+    expect(screen.getByTestId('allB').textContent).toBe('true');
+    expect(screen.getByTestId('allA').textContent).toBe('false');
   });
 });

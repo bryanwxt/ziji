@@ -20,6 +20,13 @@ export interface ModelReader {
   stop: () => void;
 }
 
+/**
+ * One model reads at a time across the screen (final review I7: two passage rows in Listen & confirm). A new read() takes the
+ * token and stops whoever had it; a reader whose token isn't current stops at its sentence's end instead of reading on.
+ */
+let token = 0;
+let release: (() => void) | null = null;
+
 export function useModelReader(sentences: string[]): ModelReader {
   const [current, setCurrent] = useState<number | null>(null);
   const [heardAll, setHeardAll] = useState(false);
@@ -27,6 +34,7 @@ export function useModelReader(sentences: string[]): ModelReader {
   const live = useRef<(() => void) | null>(null); // the sentence in progress: stops listening for it
   const list = useRef(sentences);
   list.current = sentences;
+  const own = useRef(0); // the token this reader's read took
 
   const halt = () => {
     run.current++;
@@ -49,6 +57,7 @@ export function useModelReader(sentences: string[]): ModelReader {
       clearTimeout(timer);
       if (run.current !== mine) return;
       setCurrent(null);
+      if (token !== own.current) { halt(); return; } // another reader has started: this one is done
       say(i + 1, last, mine);
     };
     const off = onSpeaking((on) => {
@@ -67,7 +76,16 @@ export function useModelReader(sentences: string[]): ModelReader {
     speak(list.current[i]!);
   };
 
+  // one function for this reader's whole life (it uses only refs and a state setter), so the token's holder can be compared
+  const quiet = useRef(() => {
+    halt();
+    setCurrent(null);
+  }).current;
   const read = (from: number, only = false) => {
+    const before = release;
+    own.current = ++token;
+    release = quiet;
+    if (before && before !== quiet) before(); // the other reader stops (its voice is cut off by this read's own)
     halt();
     say(from, only ? from : list.current.length - 1, run.current);
   };
@@ -78,6 +96,7 @@ export function useModelReader(sentences: string[]): ModelReader {
     stopSpeaking();
   };
   useEffect(() => () => {
+    if (release === quiet) release = null;
     if (!live.current) return;
     halt();
     stopSpeaking();

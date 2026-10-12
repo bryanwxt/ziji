@@ -11,6 +11,10 @@ if (typeof document !== 'undefined') {
   // jsdom has no object URLs.
   URL.createObjectURL ??= () => 'blob:test';
   URL.revokeObjectURL ??= () => {};
+  // jsdom has no media playback: play/pause/load print "Not implemented" errors; quiet stand-ins (tests may still spy on them)
+  for (const [name, value] of [['play', () => Promise.resolve()], ['pause', () => {}], ['load', () => {}]] as const) {
+    Object.defineProperty(HTMLMediaElement.prototype, name, { value, writable: true, configurable: true });
+  }
   // jsdom lacks on* pointer handlers, so Preact would listen for "PointerDown" instead of the
   // real lowercase event; browsers (incl. iPad Safari) have them.
   for (const name of ['onpointerdown', 'onpointerup', 'onpointercancel', 'onpointerleave', 'onpointermove']) {

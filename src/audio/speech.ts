@@ -175,6 +175,7 @@ function ttsSpeak(text: string, { queue = false, reading }: { queue?: boolean; r
     const busy = speechSynthesis.speaking || speechSynthesis.pending;
     epoch++;
     speechSynthesis.cancel();
+    live.clear(); // as stopSpeaking: a cancelled utterance ending late says nothing about this one (final review I3)
     setSpeaking(false); // a cancelled utterance may never say it ended
     if (busy) {
       // Safari drops or clips a voice started straight after cancelling one that was playing (parent, 2026-10-05: a sound
