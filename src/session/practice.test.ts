@@ -137,3 +137,21 @@ describe('找一家人 in the round (spec 2026-10-12 §5)', () => {
     expect(without.some((x) => x.ask === 'family')).toBe(false);
   });
 });
+
+describe('写一写 does the 组词 work (production practice spec §3)', () => {
+  const zuci = words.filter((w) => wordCue(w) && askable(w, words, false)('pair')).slice(0, 4).map((w) => w.id);
+  const rec = (writeWordIds?: string[]) => ({ ...createSessionRecord(plan({ newWordIds: zuci, writeWordIds }), '2026-10-12', 0), flashIndex: zuci.length });
+  it('no 组词 gap or pairing for a word 写一写 covers today, and the round keeps its length', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const before = planPractice(rec(), new Map(), byId, words, false, mulberry32(seed));
+      const after = planPractice(rec(zuci.slice(0, 2)), new Map(), byId, words, false, mulberry32(seed));
+      expect(after.filter((x) => zuci.slice(0, 2).includes(x.wordId) && (x.ask === 'word' || x.ask === 'pair'))).toEqual([]);
+      expect(after).toHaveLength(before.length);
+    }
+  });
+  it('the other words keep theirs, and a plan saved before (no writeWordIds) is built as before', () => {
+    const asks = (r: ReturnType<typeof rec>) => Array.from({ length: 20 }, (_, s) => planPractice(r, new Map(), byId, words, false, mulberry32(s + 1))).flat();
+    expect(asks(rec(zuci.slice(0, 2))).some((x) => zuci.slice(2).includes(x.wordId) && (x.ask === 'word' || x.ask === 'pair'))).toBe(true);
+    expect(planPractice(rec(undefined), new Map(), byId, words, false, mulberry32(3))).toEqual(planPractice(rec([]), new Map(), byId, words, false, mulberry32(3)));
+  });
+});

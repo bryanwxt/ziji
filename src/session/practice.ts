@@ -151,8 +151,12 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
   // no voice: a word due only for Understand is left for another day — a reading question would grade Use before Read (final review I2)
   const listenOnly = (w: RoundWord) => !!w.gradesUnderstand && !w.gradesRecognise && !w.gradesHear && !w.gradesMeaning;
   const words = practiceWords(rec, rungs).filter((w) => (voice || !listenOnly(w)) && (() => { const can = askable(wordsById.get(w.wordId), pool, voice, level); return can('read') || can('meaningRead'); })());
+  // 写一写 does today's 组词 work for the words it covers (production practice spec §3): no 组词 gap or pairing for them here; the
+  // ladder asks another rung-2 question, or the nearest rung below, so the round keeps its length (plans saved before have none)
+  const written = new Set(rec.plan.writeWordIds ?? []);
+  const can = (id: string, ask: Ask) => !(written.has(id) && (ask === 'word' || ask === 'pair')) && askable(wordsById.get(id), pool, voice, level)(ask);
   // 找一家人 takes up to two rung-2 items, for words with family he reads (`known`: know.knownChars, spec 2026-10-12 §5)
-  const round = withFamily(buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice, level)(ask), rng), (id) => {
+  const round = withFamily(buildRound(words, can, rng), (id) => {
     const w = wordsById.get(id);
     return !!w && !w.paused && familyBoard(w, known, mulberry32(1)) !== null;
   });
