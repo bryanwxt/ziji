@@ -1488,6 +1488,12 @@ button.langdu__sentence { cursor: pointer; }
 /* a Say card (spec 2026-10-11 §3): the word, the microphone, then the model and one re-record */
 .say { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(12px, 2.4dvh, 24px); height: 100%; }
 .say__after { display: flex; align-items: center; gap: 16px; }
+/* 说一句 (production practice spec §4): the ask, his pattern, the mic, then the model sentence */
+.say-sentence { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.8dvh, 20px); height: 100%; text-align: center; }
+.say-sentence__prompt { margin: 0; font-size: var(--sentence, 22px); }
+.say-sentence__pattern { font-size: clamp(32px, 6dvh, 56px); line-height: 1.2; }
+.say-sentence__pattern--short { font-size: var(--q-hanzi); }
+.say-sentence__model { font-size: var(--sentence, 22px); line-height: 1.3; max-width: 100%; }
 
 /* six options (spec 2026-10-11 §3): three across, so the two rows take the height four did */
 .choices--six, .stage__card .choices--six { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 720px); max-width: 720px; }

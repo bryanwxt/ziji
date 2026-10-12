@@ -162,12 +162,12 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   return next;
 }
 
-/** The microphone is blocked: this Say card and every later one are dropped for the rest of the lesson (spec 2026-10-11 §7). */
+/** The microphone is blocked: this card and every later Say and 说一句 card are dropped for the rest of the lesson (spec 2026-10-11 §7; production practice spec §4). */
 export function skipSayItems(rec: SessionRecord): SessionRecord {
   if (currentStep(rec) !== 'practice') return rec;
   const index = rec.practiceIndex ?? 0;
   const queue = rec.practiceQueue ?? [];
-  const next: SessionRecord = { ...rec, practiceQueue: [...queue.slice(0, index), ...queue.slice(index).filter((x) => x.ask !== 'say')] };
+  const next: SessionRecord = { ...rec, practiceQueue: [...queue.slice(0, index), ...queue.slice(index).filter((x) => x.ask !== 'say' && x.ask !== 'sentence')] };
   return index >= next.practiceQueue!.length ? finishStep(next) : next;
 }
 

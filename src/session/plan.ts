@@ -41,6 +41,8 @@ export const HEAR_REVIEW_CAP = 40;
 export const UNDERSTAND_REVIEW_CAP = 30;
 /** Say cards in one lesson at most (spec 2026-10-11 §4). */
 export const SAY_PER_LESSON = 6;
+/** 说一句 cards in one lesson at most (production practice spec §4). */
+export const SENTENCE_PER_LESSON = 2;
 
 export function buildSessionPlan({ cards, words, settings, now, practised = new Map(), newPerDay }: PlanInput): SessionPlan {
   const active = words.filter((w) => !w.paused);
@@ -97,6 +99,18 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
       .sort((a, b) => Number(inClass(b)) - Number(inClass(a)) || readAt.get(b.id)! - readAt.get(a.id)! || newWordOrder(a, b))
       .map((w) => w.id),
   ].slice(0, SAY_PER_LESSON);
+  // 说一句 (production practice spec §4): due Sentence cards first, then words whose Read has passed, that have a sentence-bank
+  // example and no Sentence card yet, the newest Read pass first. Never a word introduced today.
+  const sentence = ofKind('sentence');
+  const hasSentence = new Set(sentence.map((c) => c.wordId));
+  const canSentence = (id: string) => { const w = byId.get(id); return !!w && !today.has(id) && canAskRung(w, 'sentence'); };
+  const sentenceIds = [
+    ...dueOf(sentence).map((c) => c.wordId),
+    ...active
+      .filter((w) => readPassed.has(w.id) && !hasSentence.has(w.id))
+      .sort((a, b) => readAt.get(b.id)! - readAt.get(a.id)! || newWordOrder(a, b))
+      .map((w) => w.id),
+  ].filter(canSentence).slice(0, SENTENCE_PER_LESSON);
 
   return {
     steps,
@@ -120,5 +134,6 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
       .slice(0, NEW_MEANING_PER_DAY)
       .map((w) => w.id),
     sayIds,
+    sentenceIds,
   };
 }

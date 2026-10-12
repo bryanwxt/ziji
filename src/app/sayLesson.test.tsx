@@ -18,7 +18,7 @@ vi.mock('../session/say', async (orig) => {
 import { recordSayTake } from '../session/say';
 
 const words = builtinWords(0);
-const READ = ['大', '人', '口', '山', '水', '火'];
+const READ = ['木', '人', '口', '山', '水', '火']; // none has a sentence-bank example, so no 说一句 comes among the Say cards (production practice spec §4)
 beforeEach(() => {
   vi.mocked(recordingSupported).mockReturnValue(true);
   vi.mocked(startRecording).mockReset();
