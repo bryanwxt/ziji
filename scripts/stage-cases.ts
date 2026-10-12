@@ -41,7 +41,13 @@ const sheetFits = (page: import('playwright-core').Page, name: string) => page.e
   return out;
 }, name);
 
-const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
+/** A sheet's explanation that has to scroll hides its last lines (final review C2: 找一家人's two misses). */
+const sheetScrolls = (page: import('playwright-core').Page, name: string) => page.evaluate((n) => {
+  const d = document.querySelector('.sheet__detail');
+  return d && d.scrollHeight > d.clientHeight + 2 ? [`${n}: the sheet's explanation scrolls ${d.scrollHeight - d.clientHeight}px`] : [];
+}, name);
+
+const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'iphone-15', width: 390, height: 844 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
 const problems: string[] = [];
 const browser = await webkit.launch();
 for (const size of SIZES) {
@@ -166,7 +172,17 @@ for (const size of SIZES) {
     await page.waitForTimeout(1600);
     await page.screenshot({ path: `fit-shots/stage-cases/family-wrong-${size.name}.png` });
     if (!(await page.$('.family-sum__row.is-missed'))) problems.push(`${size.name} family: the miss is not explained`);
-    problems.push(...(await cardClipped(page, `${size.name} family wrong`)), ...(await sheetFits(page, `${size.name} family wrong`)));
+    problems.push(...(await cardClipped(page, `${size.name} family wrong`)), ...(await sheetFits(page, `${size.name} family wrong`)), ...(await sheetScrolls(page, `${size.name} family wrong`)));
+    // both picks wrong (final review C2, live on his iPad): two words, two look-alikes and two why-lines, none clipped or scrolled
+    await page.goto(`file://${dir}/index.html?case=family`);
+    await page.waitForTimeout(300);
+    await page.click('.choice:text-is("星星")');
+    await page.click('.choice:text-is("出去")');
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/family-two-wrong-${size.name}.png` });
+    const missed = (await page.$$('.family-sum__row.is-missed')).length;
+    if (missed !== 2) problems.push(`${size.name} family two wrong: ${missed} misses explained (want 2)`);
+    problems.push(...(await cardClipped(page, `${size.name} family two wrong`)), ...(await sheetFits(page, `${size.name} family two wrong`)), ...(await sheetScrolls(page, `${size.name} family two wrong`)));
   }
   // 朗读 (spec 2026-10-12 §8): every part with the longest built-in text, the sentence lit while the model reads, a missed question
   for (const c of ['langdu-warmup', 'langdu-listen', 'langdu-read', 'langdu-read-blocked', 'langdu-compare', 'langdu-meaning']) {
@@ -199,6 +215,19 @@ for (const size of SIZES) {
     const box = await b.boundingBox();
     if (!box || Math.min(box.width, box.height) < 43.5) problems.push(`${size.name} listen: ✓/✗ under 44px (${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'hidden'})`);
   }
+  // the passage row (final review I8): each misread character, 听原文 and Done big enough to tap; nothing makes the page scroll sideways
+  if (!(await page.$('.listen__row--passage'))) problems.push(`${size.name} listen: no passage row`);
+  else await page.locator('.listen__row--passage').screenshot({ path: `fit-shots/stage-cases/listen-passage-${size.name}.png` });
+  for (const q of ['.listen__row--passage .misread-ch', '.listen__row--passage .listen__done', '.listen__row--passage .listen__model']) {
+    const els = await page.$$(q);
+    if (!els.length) problems.push(`${size.name} listen: no ${q}`);
+    for (const b of els) {
+      const box = await b.boundingBox();
+      if (!box || Math.min(box.width, box.height) < 43.5) { problems.push(`${size.name} listen: ${q} under 44px (${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'hidden'})`); break; }
+    }
+  }
+  const sideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  if (sideways > 1) problems.push(`${size.name} listen: the page scrolls sideways ${sideways}px`);
   await page.close();
 }
 // every expression × looks: nothing of him pokes out of his box (a seam, an ear, a mark), and a sheet to read by eye
