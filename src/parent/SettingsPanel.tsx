@@ -127,7 +127,7 @@ export function SettingsPanel() {
       </div>
       <div class="field">
         <label>
-          <input type="checkbox" checked={s.langdu} onChange={(e) => void save({ langdu: e.currentTarget.checked })} />{' '}
+          <input type="checkbox" checked={s.langdu} onChange={(e) => void save(e.currentTarget.checked ? { langdu: true, activities: { ...s.activities, speaking: true } } : { langdu: false })} />{' '}
           朗读 Read aloud
         </label>
         <p class="hint">The last step of every lesson (about 3 minutes): the iPad reads today's text a sentence at a time, he reads it alone while it records, compares the two, and answers one question. Each text is read 3 days; on its first day he warms up with his self-introduction. His takes come to Listen &amp; confirm. Off: no 朗读 step.</p>

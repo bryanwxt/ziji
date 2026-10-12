@@ -288,9 +288,12 @@ function stageInvariants() {
   }
 }
 
+/** Taps a walk may take: a full lesson with 朗读 is ~250. */
+const WALK_CAP = 300;
+
 async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnly?: boolean } = {}) {
   const seen = new Set<string>(); // check each distinct screen once; keep walking through repeats (20 phrases, 25 words) to reach the end
-  for (let i = 0; i < 300; i++) { // a full lesson with 朗读 is ~250 taps
+  for (let i = 0; i < WALK_CAP; i++) {
     await page.waitForTimeout(450);
     if (!(await page.$('.lessonbar')) && !(await page.$('.celebrate'))) return; // back home
     const sig = await page.evaluate(signature);
@@ -301,6 +304,8 @@ async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnl
     if (box) { await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); await page.waitForTimeout(1500); await page.mouse.up(); continue; }
     if (!(await page.evaluate(advance))) return;
   }
+  // the cap reached with the lesson still up: the rest of the flow was never looked at (final review M5)
+  if (await page.$('.lessonbar')) results.push({ size: size.name, flow, step: WALK_CAP, sig: '', problems: [`walker ran out of taps: the lesson bar still shows after ${WALK_CAP} taps`] });
 }
 
 async function sweep(browser: Browser, size: Size) {

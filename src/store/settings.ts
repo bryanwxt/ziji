@@ -9,7 +9,8 @@ import { getSettings, updateSettings } from './repo';
  * number of new words becomes the ceiling 8 the app paces under (§2.2).
  * Both tracks (v5, spec 2026-10-11 §6): every install moves to 华文 + 高级华文 once, as the parent asked; a later pick stays.
  * The 15-minute lesson (v6, spec 2026-10-11 §4): a lesson on the old default of exactly 30 minutes becomes 15; any other length stays.
- * 朗读 back (v7, spec 2026-10-12 §7): 朗读 is switched on once; a parent who turns it off later keeps it off.
+ * 朗读 back (v7, spec 2026-10-12 §7): 朗读 is switched on once, with the lesson's speaking step (Activities) it runs in; a parent who
+ * turns either off later keeps it off.
  */
 export function migrateSettings(s: Settings): Partial<Settings> | null {
   const v = s.lessonVersion ?? 1;
@@ -26,6 +27,7 @@ export function migrateSettings(s: Settings): Partial<Settings> | null {
   if (v < 5) patch.course = 'both';
   if (v < 6 && (patch.sessionMinutes ?? s.sessionMinutes) === 30) patch.sessionMinutes = 15; // an install moved to 30 by v2 was on the default too
   patch.langdu = true;
+  patch.activities = { ...(patch.activities ?? s.activities), speaking: true }; // 朗读 runs in the speaking step: both switches on (final review M2)
   patch.lessonVersion = 7;
   return patch;
 }

@@ -99,10 +99,13 @@ export function LangduStep({ passage, oral, kid, withWarmup, extra = false, micB
     if (!right && answerAt >= 0) speak(sentences[answerAt]!); // the sentence that answers it, read again
   };
 
-  // 谢谢老师！ closes a warm-up day, on the step's last screen
+  // 谢谢老师！ closes a warm-up day, on the step's last screen; said once, though a re-read brings Compare back (final review M1)
   const closing = withWarmup && ((part === 'meaning' && picked !== null) || (part === 'compare' && !question));
+  const thanked = useRef(false);
   useEffect(() => {
-    if (closing) speak(lines.thanks, { queue: true });
+    if (!closing || thanked.current) return;
+    thanked.current = true;
+    speak(lines.thanks, { queue: true });
   }, [closing]);
   const thanks = closing ? <p class="langdu__line langdu__thanks"><Label zh={lines.thanks} /></p> : null;
 

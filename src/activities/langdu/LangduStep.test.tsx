@@ -183,6 +183,20 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     expect(onDone).toHaveBeenCalledWith({ intro: null, read: expect.objectContaining({ durationSec: 10 }), meaning: null });
   });
 
+  it('谢谢老师！ is said once per step, even after a re-read brings Compare back (final review M1)', async () => {
+    const { question: _q, ...plain } = passage;
+    render(<LangduStep passage={plain} oral={oral} kid={DEFAULT_KID} withWarmup startAt="listen" onDone={vi.fn()} />);
+    await toCompare();
+    expect(screen.getByText('谢谢老师！')).toBeTruthy();
+    fireEvent.click(button('再读一遍'));
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); }); // Re-read's screen settles
+    await record();
+    await screen.findByRole('button', { name: '听我的' });
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); }); // Compare's effects have run
+    expect(screen.getByText('谢谢老师！')).toBeTruthy();
+    expect(vi.mocked(speak).mock.calls.filter((c) => c[0] === '谢谢老师！')).toHaveLength(1);
+  });
+
   it('a tap during the first read-through reads on from there; after it, a tap reads that sentence only', () => {
     render(<LangduStep passage={{ ...passage, text: '甲甲。乙乙。丙丙。' }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
     fireEvent.click(button('乙乙。'));

@@ -1,7 +1,8 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
-import { getSettings } from '../store/repo';
+import { getSettings, updateSettings } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
+import { DEFAULT_SETTINGS } from '../types';
 import { SettingsPanel } from './SettingsPanel';
 
 describe('「朗读 Read aloud」 switch (spec 2026-10-12 §7)', () => {
@@ -16,5 +17,15 @@ describe('「朗读 Read aloud」 switch (spec 2026-10-12 §7)', () => {
     expect(screen.queryByLabelText('朗读 reading aloud')).toBeNull();
     fireEvent.click(screen.getByLabelText('朗读 Read aloud'));
     await waitFor(async () => expect((await getSettings(app.db)).langdu).toBe(true));
+  });
+  it('turning it on also turns on the lesson step it runs in; turning it off leaves that switch alone (final review M2)', async () => {
+    const off = { ...DEFAULT_SETTINGS, placementDone: true, langdu: false, activities: { ...DEFAULT_SETTINGS.activities, speaking: false } };
+    const app = await makeAppData({ settings: off });
+    await updateSettings(app.db, off);
+    renderWithApp(<SettingsPanel />, app);
+    fireEvent.click(screen.getByLabelText('朗读 Read aloud'));
+    await waitFor(async () => expect(await getSettings(app.db)).toMatchObject({ langdu: true, activities: { speaking: true } }));
+    fireEvent.click(screen.getByLabelText('朗读 Read aloud'));
+    await waitFor(async () => expect(await getSettings(app.db)).toMatchObject({ langdu: false, activities: { speaking: true } }));
   });
 });
