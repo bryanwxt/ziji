@@ -34,7 +34,8 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
   const target = end === undefined ? null : listedBy(end, course);
   const classAt = classLessonAt(now, settings);
   const atClass = classAt === null ? null : listedBy(classAt, course);
-  // can produce (spec 2026-10-11 §3): he writes it (write passed) or says it (Say passed); a 词语 said counts for itself only
+  // can produce (spec 2026-10-11 §3): he writes it (write passed) or says it (Say passed); a 词语 said counts for itself only;
+  // can use (production practice spec §4): words he said sentences with (Sentence passed)
   const { write: written, say: said } = produceChars(know.cards, (id) => wordOf(know, id));
   const read = target ? count(know.knownChars, target.read) : know.known;
   const wrote = target ? count(written, target.write) : know.written;
@@ -49,6 +50,7 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
         <dt>Characters recognised</dt><dd>{target ? `${read} of ${target.read.size} by the end of ${endTerm}` : know.known}</dd>
         <dt>Characters written</dt><dd>{target ? `${wrote} of ${target.write.size}` : know.written}</dd>
         <dt>Characters he can say</dt><dd>{target ? `${says} of ${target.read.size}` : says}</dd>
+        <dt>Words he can use in a sentence</dt><dd>{`${know.canUse} of ${know.begun} begun`}</dd>
         <dt>Heard (understands it by ear)</dt><dd>{know.heard}</dd>
         <dt>Understood in a sentence</dt><dd>{know.understood}</dd>
         <dt>Read</dt><dd>{know.read}</dd>
@@ -61,6 +63,7 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
           <Bar label="认读 reads (taps)" have={read} of={target.read.size} mark={atClass ? atClass.read.size : null} />
           <Bar label="会写 Can write" have={wrote} of={target.write.size} mark={atClass ? atClass.write.size : null} />
           <Bar label="会说 Can say" have={says} of={target.read.size} mark={atClass ? atClass.read.size : null} />
+          {know.begun > 0 && <Bar label="会用 Can use" have={know.canUse} of={know.begun} mark={null} />}{/* words, against those begun: no list to aim at (production practice spec §4) */}
         </div>
       )}
       {terms.length > 0 && (

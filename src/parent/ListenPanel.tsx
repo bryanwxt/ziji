@@ -1,5 +1,6 @@
-// Listen & confirm (spec 2026-10-11 §6; spec 2026-10-12 §6): his Say takes and his passage takes, oldest first. A word: play his
-// take and the model, then ✓ or ✗. A passage: play his take and the model, tap what he misread, then Done.
+// Listen & confirm (spec 2026-10-11 §6; spec 2026-10-12 §6; production practice spec §4): his Say takes, his 说一句 takes and his
+// passage takes, oldest first. A word: play his take and the model, then ✓ or ✗. A sentence: the word, his take and the model
+// sentence, then ✓ or ✗. A passage: play his take and the model, tap what he misread, then Done.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { PASSAGES } from '../content';
@@ -7,7 +8,9 @@ import { finishPassageReview, passageOf } from '../langdu/review';
 import { splitSentences } from '../langdu/sentences';
 import { useModelReader } from '../langdu/useModelReader';
 import { findWord } from '../ladder/words';
-import { reviewTake, takeWord, waitingTakes } from '../session/say';
+import { sentenceExample } from '../content/sentencePattern';
+import { stopSpeaking } from '../audio/speech';
+import { reviewTake, takeKind, takeWord, waitingTakes } from '../session/say';
 import { listParentPassages, listRecordings } from '../store/repo';
 import type { Recording, Word } from '../types';
 import { SpeakButton } from '../ui/SpeakButton';
@@ -69,6 +72,25 @@ export function ListenRows({ takes, words, texts = new Map(), onJudge, onDone = 
           if (passageOf(r) !== null) return <PassageRow key={r.id} r={r} url={urls.get(r.id)} texts={texts} onDone={onDone} />;
           const w = words.get(takeWord(r)!);
           const label = w?.text ?? takeWord(r) ?? '';
+          if (takeKind(r) === 'sentence') {
+            const model = w ? sentenceExample(w.text) : null;
+            return (
+              <tr key={r.id} class="listen__row listen__row--sentence">
+                <td>
+                  <small class="listen__kind">说一句</small> <span class="hanzi listen__word">{w?.text ?? '?'}</span> <span class="listen__py">{w?.pinyin}</span>
+                  {model && <><br /><span class="hanzi listen__sentence" lang="zh">{model}</span></>}
+                  <br />
+                  <small>{new Date(r.createdAt).toLocaleString()}</small>
+                </td>
+                <td><audio controls preload="none" src={urls.get(r.id)} aria-label="His sentence" onPlay={stopSpeaking} /></td>
+                <td>{model && <span onClickCapture={(e) => (e.currentTarget.closest('tr')?.querySelector('audio') as HTMLAudioElement | null)?.pause()}><SpeakButton text={model} /></span>}</td>
+                <td class="listen__verdict">
+                  <button type="button" class="small-btn" aria-label={`A good sentence: ${label}`} onClick={() => onJudge(r, 'ok')}>✓</button>{' '}
+                  <button type="button" class="small-btn" aria-label={`Not a good sentence: ${label}`} onClick={() => onJudge(r, 'no')}>✗</button>
+                </td>
+              </tr>
+            );
+          }
           return (
             <tr key={r.id} class="listen__row">
               <td>
@@ -135,7 +157,7 @@ export function ListenPanel({ onReviewed }: { onReviewed?: () => void }) {
   return (
     <section class="panel listen">
       <h2>Listen & confirm</h2>
-      <p class="muted">He read words aloud in 练一练 and today's text in 朗读. A word: play his take, then the model: ✓ if he said it right, ✗ if not; it counts as “can say” after ✓ on two different days, and ✗ brings it back soon. A text: play his take and the model, tap any character he misread (it comes up in practice), then Done.</p>
+      <p class="muted">He read words aloud in 练一练, said sentences with words (说一句), and read today's text in 朗读. A word: play his take, then the model: ✓ if he said it right, ✗ if not; it counts as “can say” after ✓ on two different days, and ✗ brings it back soon. A sentence: play his take; the model sentence is one way to say it. ✓ if his own sentence uses the word sensibly, ✗ if not; ✓ on two different days counts as “can use”. A text: play his take and the model, tap any character he misread (it comes up in practice), then Done.</p>
       {error && <p class="muted" role="alert">Something went wrong reading or saving the takes. Try again.</p>}
       {takes ? (
         <ListenRows takes={takes} words={words} texts={texts} onJudge={(r, v) => void settle(r, () => reviewTake(db, r.id, v, now()))} onDone={(r, marks) => void settle(r, () => finishPassageReview(db, r, marks, now()))} />

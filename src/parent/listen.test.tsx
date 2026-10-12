@@ -1,7 +1,7 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { hashPin } from '../lib/hash';
-import { addRecording, getCard, getSettings, listRecordings, putCards, putWords, saveParentPassage } from '../store/repo';
+import { addRecording, getCard, getSettings, listRecordings, logsForCard, putCards, putWords, saveParentPassage } from '../store/repo';
 import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS, type Recording } from '../types';
@@ -175,5 +175,53 @@ describe('passage takes in Listen & confirm (spec 2026-10-12 §6)', () => {
     vi.mocked(stopSpeaking).mockClear();
     fireEvent.play(au);
     expect(stopSpeaking).toHaveBeenCalled();
+  });
+});
+
+describe('说一句 takes in Listen & confirm (production practice spec §4)', () => {
+  const sentence = (id: string, wordId: string, d: number): Recording => ({ ...take(id, wordId, d), prompt: { kind: 'sentence', wordId } });
+  async function withSentences() {
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, placementDone: true, pinHash: await hashPin('1111') } });
+    await putWords(app.db, [makeWord('很', { pinyin: 'hěn' }), makeWord('森', { pinyin: 'sēn' })]);
+    await putCards(app.db, [makeCard('b:很', 'sentence', new Date(2026, 9, 9))]);
+    for (const t of [sentence('s1', 'b:很', 1), take('t2', 'b:森', 2)]) await addRecording(app.db, t);
+    return app;
+  }
+  it('a row of its own: the word, his take and the model sentence, beside the Say rows', async () => {
+    const app = await withSentences();
+    renderWithApp(<ListenPanel />, app);
+    await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(2));
+    const row = document.querySelector('.listen__row--sentence')!;
+    expect(row.querySelector('.listen__word')!.textContent).toBe('很');
+    expect(row.querySelector('.listen__sentence')!.textContent).toBe('今天很热。');
+    expect(row.querySelector('audio')).toBeTruthy();
+    fireEvent.click(row.querySelector('button[aria-label="听"]')!);
+    expect(speak).toHaveBeenCalledWith('今天很热。');
+  });
+  it('✓ logs a sentence verdict on the day he said it; ✗ brings his Sentence card back', async () => {
+    const app = await withSentences();
+    renderWithApp(<ListenPanel />, app);
+    fireEvent.click(await screen.findByRole('button', { name: 'A good sentence: 很' }));
+    await waitFor(() => expect(document.querySelector('.listen__row--sentence')).toBeNull());
+    const [log] = await logsForCard(app.db, 'b:很:sentence');
+    expect(log).toMatchObject({ kind: 'sentence', correct: true, at: at(1) });
+    await addRecording(app.db, sentence('s2', 'b:很', 3));
+    cleanup();
+    renderWithApp(<ListenPanel />, app);
+    fireEvent.click(await screen.findByRole('button', { name: 'Not a good sentence: 很' }));
+    await waitFor(async () => expect((await getCard(app.db, 'b:很:sentence'))!.fsrs.due.getTime()).toBeLessThan(new Date(2026, 9, 9).getTime()));
+  });
+  it('his take stops any model speech, and the model sentence stops his audio', async () => {
+    const app = await withSentences();
+    renderWithApp(<ListenPanel />, app);
+    await screen.findByRole('button', { name: 'A good sentence: 很' });
+    const row = document.querySelector('.listen__row--sentence') as HTMLElement;
+    const au = row.querySelector('audio') as HTMLAudioElement;
+    const pause = vi.spyOn(au, 'pause').mockImplementation(() => {});
+    vi.mocked(stopSpeaking).mockClear();
+    fireEvent.play(au);
+    expect(stopSpeaking).toHaveBeenCalled();
+    fireEvent.click(row.querySelector('button[aria-label="听"]')!);
+    expect(pause).toHaveBeenCalled();
   });
 });

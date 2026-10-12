@@ -5,7 +5,7 @@ import { summarize } from '../stats/stats';
 import { DEFAULT_SETTINGS } from '../types';
 import { makeCard, makeWord } from '../test/fixtures';
 
-const passed = (wordId: string, kind: 'recognise' | 'hear' | 'write' | 'say') => ({ ...makeCard(wordId, kind, new Date()), passed: 1 });
+const passed = (wordId: string, kind: 'recognise' | 'hear' | 'write' | 'say' | 'sentence') => ({ ...makeCard(wordId, kind, new Date()), passed: 1 });
 
 describe('the Progress tab (spec 2026-10-06 §3.4)', () => {
   it('shows characters recognised against the MOE target to date, and words heard, read, used, owned', () => {
@@ -55,9 +55,18 @@ describe('can write and can say (spec 2026-10-11 §6)', () => {
   it('bars next to reads (taps): characters he writes against the write list, characters he says against the read list', () => {
     const know = summarize([makeWord('门'), makeWord('介'), makeWord('大'), makeWord('门口', { id: 'w:门口' })], [passed('b:门', 'recognise'), passed('b:门', 'write'), passed('b:门', 'say'), passed('b:大', 'say'), passed('w:门口', 'say')]);
     render(<ProgressPanel know={know} settings={{ ...DEFAULT_SETTINGS, grade: 2, gradeYear: 2026 }} now={new Date('2026-10-11T09:00:00')} />);
-    expect([...document.querySelectorAll('.pbar__label')].map((l) => l.textContent)).toEqual(['认读 reads (taps)', '会写 Can write', '会说 Can say']);
+    expect([...document.querySelectorAll('.pbar__label')].map((l) => l.textContent)).toEqual(['认读 reads (taps)', '会写 Can write', '会说 Can say', '会用 Can use']);
     expect(screen.getByRole('img', { name: '会写 Can write: 1 of 435; his class is at 413' })).toBeTruthy();
     expect(screen.getByRole('img', { name: '会说 Can say: 2 of 746; his class is at 707' })).toBeTruthy(); // 门 and 大; 门口 counts for itself, not its characters
     expect(screen.getByText('2 of 746')).toBeTruthy();
+  });
+});
+
+describe('can use (production practice spec §4)', () => {
+  it('words he said sentences with, against the words he has begun', () => {
+    const know = summarize([makeWord('很'), makeWord('和'), makeWord('门'), makeWord('认真', { id: 'w:认真' })], [passed('b:很', 'recognise'), passed('b:和', 'hear'), passed('b:门', 'recognise'), passed('w:认真', 'recognise'), passed('b:很', 'sentence'), passed('w:认真', 'sentence')]);
+    render(<ProgressPanel know={know} settings={{ ...DEFAULT_SETTINGS, grade: 2, gradeYear: 2026 }} now={new Date('2026-10-11T09:00:00')} />);
+    expect(screen.getByRole('img', { name: '会用 Can use: 2 of 4' })).toBeTruthy();
+    expect(screen.getByText('2 of 4 begun')).toBeTruthy();
   });
 });

@@ -22,6 +22,8 @@ export interface Knowledge {
   used: number;
   owned: number;
   written: number; // characters whose writing has passed
+  canUse: number; // words whose Sentence rung has passed: he said sentences with them (production practice spec §4)
+  begun: number; // words begun: heard or read (a Hear or Read card)
 }
 
 export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
@@ -53,6 +55,8 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
     heard: count('hear'), understood: count('understand'), read: count('read'), used: count('use'),
     owned: [...passedRungs].filter(([id, s]) => isOwned(word(id)!, s)).length,
     written: cards.filter((c) => c.kind === 'write' && c.passed).length,
+    canUse: count('sentence'),
+    begun: new Set(cards.filter((c) => (c.kind === 'recognise' || c.kind === 'hear') && word(c.wordId)).map((c) => c.wordId)).size,
   };
 }
 
