@@ -1,4 +1,5 @@
-import type { BuiltinChar, Passage } from '../src/types';
+import type { BuiltinChar, Passage, PassageQuestion } from '../src/types';
+import { splitSentences } from '../src/langdu/sentences';
 
 const HAN = /\p{Script=Han}/u;
 
@@ -31,5 +32,30 @@ export function checkContent(chars: BuiltinChar[], passages: Passage[], hasStrok
     const outside = [...new Set(han.filter((ch) => !easy.has(ch)))];
     if (outside.length) problems.push(`${p.id}: uses ${outside.join('')} outside levels 1–2`);
   }
+  return problems;
+}
+
+const ASKS = ['谁', '哪', '什么', '为什么'];
+
+/** The meaning questions (spec 2026-10-12 §3): one per passage, asking 谁/哪/什么/为什么, three different choices with the right
+ *  one among them, a real answering sentence, characters from the passage or `easy` (levels 1–2). */
+export function checkPassageQuestions(passages: Passage[], questions: Readonly<Record<string, PassageQuestion>>, easy: ReadonlySet<string>): string[] {
+  const problems: string[] = [];
+  for (const p of passages) {
+    const q = questions[p.id];
+    if (!q) {
+      problems.push(`${p.id}: no meaning question`);
+      continue;
+    }
+    if (!ASKS.some((a) => q.q.includes(a))) problems.push(`${p.id}: the question asks none of 谁 哪 什么 为什么`);
+    if (q.choices.length !== 3 || new Set(q.choices).size !== 3) problems.push(`${p.id}: needs three different choices`);
+    if (q.choices[q.answer] === undefined) problems.push(`${p.id}: the right answer is not among the choices`);
+    const n = splitSentences(p.text).length;
+    if (q.sentence === undefined || !Number.isInteger(q.sentence) || q.sentence < 0 || q.sentence >= n) problems.push(`${p.id}: answering sentence ${q.sentence} is not one of its ${n} sentences`);
+    const own = new Set(Array.from(p.text));
+    const outside = [...new Set(Array.from(q.q + q.choices.join('')).filter((ch) => HAN.test(ch) && !own.has(ch) && !easy.has(ch)))];
+    if (outside.length) problems.push(`${p.id}: question uses ${outside.join('')} in neither the passage nor levels 1–2`);
+  }
+  for (const id of Object.keys(questions)) if (!passages.some((p) => p.id === id)) problems.push(`${id}: a question for no passage`);
   return problems;
 }

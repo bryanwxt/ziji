@@ -2,7 +2,7 @@ import { newId } from '../lib/id';
 import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { hanChars } from '../content';
-import { splitPhrases } from '../langdu/phrases';
+import { splitSentences } from '../langdu/sentences';
 import { deleteParentPassage, listParentPassages, saveParentPassage } from '../store/repo';
 import type { ParentPassage } from '../types';
 
@@ -18,7 +18,7 @@ export function PassagesPanel() {
     void reload();
   }, []);
 
-  const phrases = splitPhrases(text);
+  const phrases = splitSentences(text);
   const canSave = title.trim().length > 0 && hanChars(text).length > 0;
   const reset = () => {
     setEditing(null);
@@ -69,7 +69,7 @@ export function PassagesPanel() {
       <div class="field">
         <label for="pp-text">Text</label>
         <textarea id="pp-text" rows={5} value={text} onInput={(e) => setText(e.currentTarget.value)} />
-        <small>Paste the text from school. Optional: type / where he should pause.</small>
+        <small>Paste the text from school. The iPad reads it a sentence at a time (at 。！？); type / to end a sentence that has no full stop.</small>
       </div>
       {phrases.length > 0 && (
         <ol class="phrase-preview">

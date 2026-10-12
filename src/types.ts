@@ -212,12 +212,22 @@ export interface Passage {
   text: string;
 }
 
-/** A school text the parent added for 朗读. id 'pp:<uuid>'; text may hold '/' phrase marks. */
+/** A 朗读 meaning question (spec 2026-10-12 §3): 谁 / 哪里 / 什么 / 为什么, three choices, the right one marked. `sentence`: the
+ *  passage's sentence (splitSentences) that answers it; a parent's question has none and is answered where its right choice is. */
+export interface PassageQuestion {
+  q: string;
+  choices: [string, string, string];
+  answer: 0 | 1 | 2;
+  sentence?: number;
+}
+
+/** A school text the parent added for 朗读. id 'pp:<uuid>'; text may hold '/' marks; an optional meaning question. */
 export interface ParentPassage {
   id: string;
   title: string;
   text: string;
   createdAt: number;
+  question?: PassageQuestion;
 }
 
 /** Details for the oral-exam self-introduction (stored only on the iPad). */
