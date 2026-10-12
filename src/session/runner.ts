@@ -38,8 +38,9 @@ export function currentFlashItem(rec: SessionRecord): FlashItem | null {
 /** 写一写 passes (spec §20 part 3): a new word is traced, written with a hint, then from memory; a review word from memory only. */
 export type WritePass = 'trace' | 'hint' | 'recall';
 const NEW_WORD_PASSES: WritePass[] = ['trace', 'hint', 'recall'];
-/** `at`: the character of the word to write (spec 2026-10-05 §5); `last`: this item finishes the word, so it rates its write card. */
-export interface WriteTask { wordId: string; isNew: boolean; pass: WritePass; redo: boolean; at?: number; last?: boolean }
+/** `at`: the character of the word to write (spec 2026-10-05 §5); `last`: this item finishes the word, so it rates its write card;
+ *  `readOnly`: a character his course never has him write, traced over its outline (production practice spec §3). */
+export interface WriteTask { wordId: string; isNew: boolean; pass: WritePass; redo: boolean; at?: number; last?: boolean; readOnly?: boolean }
 
 const itemKey = (i: { wordId: string; at: number }) => `${i.wordId}#${i.at}`;
 const fromKey = (key: string) => { const k = key.lastIndexOf('#'); return { wordId: key.slice(0, k), at: Number(key.slice(k + 1)) }; };
@@ -70,7 +71,7 @@ export function currentWriteTask(rec: SessionRecord): WriteTask | null {
   const items = rec.plan.writeItems;
   if (items) {
     const it = items[nextItem(rec, rec.writeIndex)]!;
-    return { wordId: it.wordId, isNew: it.isNew, pass: it.pass, redo: false, at: it.at, last: !!it.last };
+    return { wordId: it.wordId, isNew: it.isNew, pass: it.pass, redo: false, at: it.at, last: !!it.last, ...(it.readOnly ? { readOnly: true } : {}) };
   }
   const c = rec.plan.writeCandidates[rec.writeIndex]!;
   const passes: WritePass[] = c.isNew ? NEW_WORD_PASSES : ['recall'];
@@ -187,11 +188,15 @@ export function createFreePracticeRecord(queue: PracticeItem[], date: string, no
 /**
  * After one written pass. done=false means the word was skipped (e.g. no stroke data) and does not count.
  * Only the recall pass finishes a word; one that needed a hint or had more than 3 misses is written once more at the end.
+ * `credited`: this pass rated the word's meaning card (production practice spec §3), which it does once a lesson.
  */
-export function afterWriteWord(rec: SessionRecord, done: boolean, rawElapsedMs: number, outcome: { hinted?: boolean; misses?: number } = {}): SessionRecord {
+export function afterWriteWord(rec: SessionRecord, done: boolean, rawElapsedMs: number, outcome: { hinted?: boolean; misses?: number; credited?: boolean } = {}): SessionRecord {
   const task = currentWriteTask(rec);
   if (!task) return rec;
-  const base: SessionRecord = { ...rec, activeMs: rec.activeMs + Math.min(rawElapsedMs, MAX_WORD_MS) };
+  const base: SessionRecord = {
+    ...rec, activeMs: rec.activeMs + Math.min(rawElapsedMs, MAX_WORD_MS),
+    ...(outcome.credited ? { meaningCredit: [...(rec.meaningCredit ?? []), task.wordId] } : {}),
+  };
   let next: SessionRecord;
   if (rec.plan.writeItems && !task.redo) next = afterWriteItem(rec, base, task, done, outcome);
   else if (task.redo) next = { ...base, writeRedoIndex: (rec.writeRedoIndex ?? 0) + 1 };

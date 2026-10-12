@@ -82,7 +82,7 @@ export interface ReviewLog {
   correct: boolean;
   responseMs?: number;
   misses?: number;
-  source?: 'use'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use)
+  source?: 'use' | 'write'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use), or from a 组词 written in 写一写 (production practice spec §3)
 }
 
 /** Skills the parent's Skills panel follows (spec §19 part 7). */
@@ -171,6 +171,7 @@ export interface SessionRecord {
   writeMisses?: Record<string, number>; // spec 2026-10-05 §5: each word's misses from memory so far, rated on its last character
   writeSkipped?: string[]; // words whose strokes failed to load this lesson: their other characters are skipped
   writeLast?: string; // the last character written ('id#at'): a redo never comes straight after it
+  meaningCredit?: string[]; // words whose meaning card 写一写 has rated this lesson (production practice spec §3): once a lesson
   practiceQueue?: PracticeItem[]; // 练一练's round, built when the step starts (spec 2026-10-05 §3)
   practiceIndex?: number;
   practiceElapsedMs?: number;
