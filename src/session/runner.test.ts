@@ -345,3 +345,25 @@ describe('a missed 找一家人 (spec 2026-10-12 §5: at most two a lesson)', ()
     expect(afterPracticeAnswer(rec, false, 2000).practiceQueue).toHaveLength(3);
   });
 });
+
+describe('写一写 does the 组词 work (production practice spec §3)', () => {
+  const items: WriteItem[] = [{ wordId: 'r', at: 0, pass: 'trace', isNew: true, readOnly: true }, { wordId: 'w', at: 0, pass: 'recall', isNew: false, last: true }];
+  const wp: SessionPlan = { steps: ['writing', 'speaking'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: items.length, writeItems: items };
+  it('a read-only item is a trace that rates no write card', () => {
+    const rec = createSessionRecord(wp, 'd', 0);
+    expect(currentWriteTask(rec)).toEqual({ wordId: 'r', isNew: true, pass: 'trace', redo: false, at: 0, last: false, readOnly: true });
+  });
+  it('a pass that rated meaning is remembered for the lesson; one that did not is not', () => {
+    let rec = createSessionRecord(wp, 'd', 0);
+    rec = afterWriteWord(rec, true, 10, { misses: 0, credited: true });
+    expect(rec.meaningCredit).toEqual(['r']);
+    rec = afterWriteWord(rec, true, 10, { misses: 0 });
+    expect(rec.meaningCredit).toEqual(['r']);
+  });
+  it('a trace whose strokes failed to load is skipped, credits nothing, and the lesson moves on', () => {
+    const rec = afterWriteWord(createSessionRecord(wp, 'd', 0), false, 0);
+    expect(rec.meaningCredit).toBeUndefined();
+    expect(rec.writeSkipped).toEqual(['r']);
+    expect(currentWriteTask(rec)).toMatchObject({ wordId: 'w', pass: 'recall' });
+  });
+});

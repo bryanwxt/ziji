@@ -1,12 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { Rating } from 'ts-fsrs';
-import { addReviewLog, allCards, allWords, getSession, getSettings, logsSince, putCards, putWords, saveSession, updateSettings } from '../store/repo';
+import { addReviewLog, allCards, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, updateSettings } from '../store/repo';
 import { builtinWords } from '../content';
 import { seededKnownCard } from '../srs/scheduler';
 import { DEFAULT_SETTINGS } from '../types';
 import { freshDb, makeWord } from '../test/fixtures';
-import { bringForward, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession } from './record';
+import { bringForward, markTraced, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession } from './record';
 /** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
 const DISTINCT = Array.from('一二三四五六七八九十人大小山水火木日月田上下中天地子女手口目耳心土石云雨花草米竹虫鱼羊牛马鸟');
 
@@ -196,3 +196,35 @@ describe('sweep: a day with new words switched off keeps his pace', () => {
   });
 });
 
+describe('the 组词 written in 写一写 rates meaning (production practice spec §3)', () => {
+  const day = (d: number, h = 17) => new Date(2026, 9, d, h);
+  it('logged like the other meaning ratings, with no answer time; two right days pass the Use rung', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('计', { examples: [{ text: '计划', pinyin: 'jì huà' }] })]);
+    await recordWrittenMeaning(db, 'b:计', true, day(5));
+    const [log] = await logsSince(db, 0);
+    expect(log).toMatchObject({ kind: 'meaning', cardId: 'b:计:meaning', correct: true, rating: Rating.Good, source: 'write' });
+    expect(log!.responseMs).toBeUndefined();
+    expect((await getCard(db, 'b:计:meaning'))!.passed).toBeUndefined();
+    await recordWrittenMeaning(db, 'b:计', true, day(6));
+    expect((await getCard(db, 'b:计:meaning'))!.passed).toBe(day(6).getTime());
+  });
+  it('wrong rates Again; a second rating the same day only brings a miss forward', async () => {
+    const db = await freshDb();
+    await recordUse(db, 'b:计', true, day(5, 9)); // 练一练 rated it this morning
+    await recordWrittenMeaning(db, 'b:计', false, day(5));
+    expect((await logsSince(db, 0)).filter((l) => l.source === 'write')).toEqual([]);
+    expect((await getCard(db, 'b:计:meaning'))!.fsrs.due.getTime()).toBeLessThanOrEqual(new Date(2026, 9, 5, 23, 59, 59, 999).getTime());
+    const db2 = await freshDb();
+    await recordWrittenMeaning(db2, 'b:计', false, day(5));
+    expect((await logsSince(db2, 0)).map((l) => [l.rating, l.correct])).toEqual([[Rating.Again, false]]);
+  });
+  it('markTraced notes a read-only character\'s first trace, once', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('澡', { writeable: false })]);
+    await markTraced(db, 'b:澡', day(5));
+    await markTraced(db, 'b:澡', day(6));
+    expect((await getWord(db, 'b:澡'))!.tracedAt).toBe(day(5).getTime());
+    await markTraced(db, 'b:不在', day(6)); // not stored (a ladder 词语): nothing happens
+  });
+});

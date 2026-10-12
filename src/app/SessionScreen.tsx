@@ -21,7 +21,8 @@ import { hatchAfterLesson } from '../fun/finds';
 import { STORY_PARTS, type Scene } from '../kantu/scenes';
 import { recordingSupported, type FinishedRecording } from '../audio/recorder';
 import { SayCard, type SayResult } from '../activities/say/SayCard';
-import { recordSayTake } from '../session/say';
+import { SentenceCard } from '../activities/say/SentenceCard';
+import { recordSayTake, recordSentenceTake } from '../session/say';
 import { pickPassage, readingPool, finishDay, isFirstDay, type ReadingPassage } from '../langdu/cycle';
 import { newestByPassage, tidyPassageTakes } from '../langdu/review';
 import { earnsBonus } from '../langdu/stars';
@@ -38,7 +39,8 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
-import { beginNewWord, bringForward, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { beginNewWord, bringForward, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { meaningCredit } from '../session/writeCredit';
 import { settleLessonStars } from '../session/stars';
 import { starsOf } from '../stats/stats';
 import {
@@ -321,7 +323,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom));
     })();
 
-  /** A Say card (spec 2026-10-11 §3): keep the take for the parent and schedule his Say card; a blocked microphone drops the lesson's Say cards (§7). */
+  /** A Say card (spec 2026-10-11 §3) or a 说一句 (production practice spec §4): keep the take for the parent and schedule its card; a blocked microphone drops the lesson's Say and 说一句 cards (§7). */
   const onSayDone = (r: SayResult | null) =>
     once(async () => {
       const item = practiceItem!;
@@ -332,7 +334,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       }
       if (!rec.free) {
         try {
-          know.cardsById.set(`${item.wordId}:say`, await recordSayTake(db, item.wordId, r.take, now()));
+          const card = await (item.ask === 'sentence' ? recordSentenceTake : recordSayTake)(db, item.wordId, r.take, now());
+          know.cardsById.set(card.id, card);
         } catch (err) {
           // the take couldn't be kept (a full disk, a failed put): never leave him stuck on this card — the lesson's Say cards
           // go, as for a blocked microphone, and 练一练 carries on with taps (final review I1)
@@ -349,12 +352,17 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const task = writeCandidate!;
       // only the recall pass rates the word (spec §20 part 3); a redo at the end is extra practice. Written a character at a time
       // (spec 2026-10-05 §5), the word is rated once, on the character that finishes it, with all its misses from memory.
-      const rates = task.at === undefined ? true : !!task.last;
+      const rates = !task.readOnly && (task.at === undefined ? true : !!task.last); // a traced read-only character never rates a write card
       if (r && !rec.free && task.pass === 'recall' && !task.redo && rates) await recordWriting(db, task.wordId, wordMisses(rec, task.wordId) + r.totalMisses, now());
       if (!r) await markWriteSkipped(db, task.wordId, now()); // any word whose strokes failed goes behind the others next time (sweep)
+      // the 组词 he wrote rates its meaning card, once a lesson (production practice spec §3)
+      const useOpen = know.cardsById.has(`${task.wordId}:meaning`) || (rec.plan.newMeaningIds ?? []).includes(task.wordId);
+      const credit = r && writeWord ? meaningCredit(rec, task, r, writeWord, useOpen) : null;
+      if (credit !== null) know.cardsById.set(`${task.wordId}:meaning`, await recordWrittenMeaning(db, task.wordId, credit, now()));
+      if (r && !rec.free && task.readOnly) await markTraced(db, task.wordId, now());
       // a new word written from memory with no misses showed the close-up if one was due: start the cooldown again
       if (r && task.pass === 'recall' && isHardWrite(task.isNew, r.totalMisses) && closeupAllowed(cardsSinceCloseup.current, reducedMotion())) cardsSinceCloseup.current = 0;
-      await commit(afterWriteWord(rec, r !== null, r?.elapsedMs ?? 0, { hinted: r?.hinted, misses: r?.totalMisses }));
+      await commit(afterWriteWord(rec, r !== null, r?.elapsedMs ?? 0, { hinted: r?.hinted, misses: r?.totalMisses, credited: credit !== null }));
     })();
 
   /** A word used in context (选一选): rate its meaning once a day, and count the recall for 用一用 (spec §20 part 7). */
@@ -480,7 +488,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       {step === 'practice' && practiceItem?.ask === 'say' && practiceWord && !practiceWord.paused && (
         <SayCard key={`p${rec.practiceIndex}`} word={practiceWord} kid={kid} onDone={(r) => void onSayDone(r)} />
       )}
-      {step === 'practice' && practiceItem && practiceItem.ask !== 'say' && practiceWord && !practiceWord.paused && (
+      {step === 'practice' && practiceItem?.ask === 'sentence' && practiceWord && !practiceWord.paused && (
+        <SentenceCard key={`p${rec.practiceIndex}`} word={practiceWord} kid={kid} onDone={(r) => void onSayDone(r)} />
+      )}
+      {step === 'practice' && practiceItem && practiceItem.ask !== 'say' && practiceItem.ask !== 'sentence' && practiceWord && !practiceWord.paused && (
         <PracticeQuestion
           key={`p${rec.practiceIndex}`}
           item={practiceItem}

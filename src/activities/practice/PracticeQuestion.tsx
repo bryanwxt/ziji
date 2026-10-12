@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'preact/hooks';
+import { noneKind } from '../../practice/noneOfThese';
 import { mulberry32 } from '../../lib/random';
 import { fitItem, usageItem } from '../../practice/useItems';
 import type { PracticeItem } from '../../session/round';
@@ -155,6 +156,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
       <MatchQuestion
         question={match}
         kid={kid}
+        none={noneKind(item.none) ?? undefined}
         onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning' })}
       />
     );
@@ -198,6 +200,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
         item={{ wordId: word.id, isNew: false, retry: item.retry, mode: item.ask === 'word' ? 'meaning' : 'read' }}
         ask={item.ask === 'listen' || item.ask === 'word' || item.ask === 'hear' || item.ask === 'meaningRead' ? item.ask : 'read'}
         word={word} pool={pool} card={card} voice={voice} kid={kid} resting={resting} combo={combo} closeupReady={closeupReady}
+        noneOfThese={noneKind(item.none) ?? undefined}
         onDone={(r) => onDone(r)}
       />
     );

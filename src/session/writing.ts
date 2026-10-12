@@ -1,4 +1,4 @@
-// 写一写 (spec 2026-10-05 §5; spec 2026-10-11 §4): 4 characters from memory at the usual 15 minutes (writeCharTarget), at or below his level, traced only once, never back to back.
+// 写一写 (spec 2026-10-05 §5; spec 2026-10-11 §4): 7 characters at the usual 20 minutes (writeCharTarget), at or below his level, traced only once, never back to back.
 import { hanChars } from '../content';
 import { State } from 'ts-fsrs';
 import { writeAt } from '../content/curriculum';
@@ -7,20 +7,29 @@ import { isKnown } from '../srs/scheduler';
 import type { CardRecord, Word } from '../types';
 
 export const MAX_WRITE_CHARS = 10;
-/** Characters a lesson (spec 2026-10-12 §4, 朗读 takes its ~3 minutes): 4 under 20 minutes (the usual 15), 5 at 20, 7 at 25, 8 at 30, 9 from 40. */
-export const writeCharTarget = (minutes: number): number => Math.min(MAX_WRITE_CHARS, minutes < 20 ? 4 : minutes < 25 ? 5 : minutes < 30 ? 7 : minutes < 40 ? 8 : 9);
+/** Characters a lesson (production practice spec §3, §6): 4 under 20 minutes, 7 at 20 (the usual), 8 at 25, 9 at 30, 10 from 40. */
+export const writeCharTarget = (minutes: number): number => Math.min(MAX_WRITE_CHARS, minutes < 20 ? 4 : minutes < 25 ? 7 : minutes < 30 ? 8 : minutes < 40 ? 9 : 10);
 
 /**
  * A word to write this lesson: the characters to write (each once — 妈妈 is one; one another word already brings is left out),
- * `ats` their places in the word, and whether he has never written it (each character is traced once first).
+ * `ats` their places in the word, and whether he has never written it (each character is traced once first). `readOnly`: a
+ * character he reads but his course never has him write — traced over its outline, once, and never on a write card
+ * (production practice spec §3).
  */
-export interface WriteUnit { wordId: string; chars: string[]; ats?: number[]; isNew: boolean }
-/** One character of a word, one pass; `last` is the item that finishes the word, which rates its write card. */
-export interface WriteItem { wordId: string; at: number; pass: 'trace' | 'recall'; isNew: boolean; last?: boolean }
+export interface WriteUnit { wordId: string; chars: string[]; ats?: number[]; isNew: boolean; readOnly?: true }
+/** One character of a word, one pass; `last` is the item that finishes the word, which rates its write card (never a read-only one). */
+export interface WriteItem { wordId: string; at: number; pass: 'trace' | 'recall'; isNew: boolean; last?: boolean; readOnly?: true }
+
+/** A character he reads that no write list of his course has (not writeable, no write card): traced, never written from memory. */
+const isReadOnly = (w: Word, written: ReadonlyMap<string, CardRecord>): boolean =>
+  !w.paused && !w.writeable && !written.has(w.id) && Array.from(w.text).length === 1 && hanChars(w.text).length === 1;
 
 /**
- * The words to write (spec §5), up to `target` characters and never half a word: writing due today, then today's new words
- * and recent lesson words he reads, then characters he reads within reach — a book character once his class has written it, others at his level — going down. Never one he can't read.
+ * The words to write (spec §5), up to `target` characters and never half a word. First up to half the target (rounded down) goes
+ * to read-only characters (production practice spec §3): today's new ones, then recent lesson ones he reads that he has never
+ * traced, the newest first. The other slots go to the write list: writing due today, then today's new words and recent lesson
+ * words he reads, then characters he reads within reach — a book character once his class has written it, others at his level —
+ * going down. Never one he can't read.
  */
 export function pickWriteUnits({ cards, words, newWordIds, practised, level, writeBy, cutoff, target }: {
   cards: CardRecord[]; words: Word[]; newWordIds: string[]; practised: ReadonlyMap<string, number>; level: number;
@@ -47,35 +56,45 @@ export function pickWriteUnits({ cards, words, newWordIds, practised, level, wri
   const readable = [...byId.values()]
     .filter((w) => { const r = reads.get(w.id); return unwritten(w) && !practised.has(w.id) && !!r && isKnown(r.fsrs) && inReach(w); })
     .sort((a, b) => skippedLast(a, b) || (b.level ?? 0) - (a.level ?? 0) || (b.rank ?? -1) - (a.rank ?? -1));
+  // read-only characters (production practice spec §3): today's, then recent lesson ones he reads (Read begun) never traced
+  const active = new Map(words.filter((w) => !w.paused).map((w) => [w.id, w]));
+  const roToday = newWordIds.map((id) => active.get(id)).filter((w): w is Word => !!w && isReadOnly(w, write));
+  const roRecent = [...active.values()]
+    .filter((w) => isReadOnly(w, write) && w.tracedAt === undefined && reads.has(w.id) && practised.has(w.id) && reads.get(w.id)!.fsrs.state !== State.Relearning)
+    .sort((a, b) => skippedLast(a, b) || practised.get(b.id)! - practised.get(a.id)!);
   const out: WriteUnit[] = [];
   const seen = new Set<string>();
   const taken = new Set<string>(); // a character comes once a lesson (final review I2)
   let n = 0;
-  const add = (w: Word, isNew: boolean) => {
+  const add = (w: Word, isNew: boolean, cap: number, readOnly = false) => {
     const all = hanChars(w.text);
     const ats = all.map((_, i) => i).filter((i) => all.indexOf(all[i]!) === i && !taken.has(all[i]!));
     const chars = ats.map((i) => all[i]!);
     // a word that doesn't fit waits and a shorter one may; one longer than the whole count is written on its own (sweep)
-    if (seen.has(w.id) || !chars.length || (n + chars.length > target && n > 0)) return;
+    if (seen.has(w.id) || !chars.length || (n + chars.length > cap && n > 0)) return;
     seen.add(w.id);
     for (const c of chars) taken.add(c);
-    out.push({ wordId: w.id, chars, ats, isNew });
+    out.push({ wordId: w.id, chars, ats, isNew, ...(readOnly ? { readOnly: true as const } : {}) });
     n += chars.length;
   };
-  for (const c of due) { if (n >= target) break; add(byId.get(c.wordId)!, c.fsrs.reps === 0); }
-  for (const w of [...today, ...recent, ...readable]) { if (n >= target) break; add(w, true); }
+  // their share is kept for them first: due writing alone would fill a 20-minute lesson most days (measured on a P2 profile)
+  const traced = [...new Set([...roToday, ...roRecent])].slice(0, Math.floor(target / 2));
+  const share = target - traced.length;
+  for (const c of due) { if (n >= share) break; add(byId.get(c.wordId)!, c.fsrs.reps === 0, share); }
+  for (const w of [...today, ...recent, ...readable]) { if (n >= share) break; add(w, true, share); }
+  for (const w of traced) add(w, true, target, true);
   return out;
 }
 
 /**
- * The order (spec §5; final review I1): a never-written character is traced once, early, and comes back from memory at least two
+ * The order (spec §5; final review I1): a read-only character is traced once and only traced; a never-written character is traced once, early, and comes back from memory at least two
  * items later; the same character never twice in a row, and a word's characters apart, wherever anything can come between. The
  * words with the most still to do go first (as when spreading out letters), so none is left to pile up at the end.
  */
 export function orderWriteItems(units: WriteUnit[]): WriteItem[] {
   type Slot = { u: WriteUnit; at: number; ch: string; passes: ('trace' | 'recall')[]; next: number; readyAt: number; order: number };
   let order = 0;
-  const slots: Slot[] = units.flatMap((u) => u.chars.map((ch, i): Slot => ({ u, at: u.ats?.[i] ?? i, ch, passes: u.isNew ? ['trace', 'recall'] : ['recall'], next: 0, readyAt: 0, order: order++ })));
+  const slots: Slot[] = units.flatMap((u) => u.chars.map((ch, i): Slot => ({ u, at: u.ats?.[i] ?? i, ch, passes: u.readOnly ? ['trace'] : u.isNew ? ['trace', 'recall'] : ['recall'], next: 0, readyAt: 0, order: order++ })));
   const out: WriteItem[] = [];
   let last: Slot | null = null;
   while (true) {
@@ -99,14 +118,14 @@ export function orderWriteItems(units: WriteUnit[]): WriteItem[] {
     ];
     const [tier, by] = tiers.find(([t]) => t.length)!;
     const s = [...tier].sort(by)[0]!;
-    out.push({ wordId: s.u.wordId, at: s.at, pass: s.passes[s.next]!, isNew: s.u.isNew });
+    out.push({ wordId: s.u.wordId, at: s.at, pass: s.passes[s.next]!, isNew: s.u.isNew, ...(s.u.readOnly ? { readOnly: true as const } : {}) });
     s.next += 1;
     s.readyAt = p + 3;
     last = s;
   }
   const done = new Set<string>();
   for (let i = out.length - 1; i >= 0; i--) {
-    if (done.has(out[i]!.wordId)) continue;
+    if (done.has(out[i]!.wordId) || out[i]!.readOnly) continue; // a traced read-only character never rates a write card
     done.add(out[i]!.wordId);
     out[i] = { ...out[i]!, last: true };
   }

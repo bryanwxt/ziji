@@ -57,6 +57,19 @@ describe('a 练一练 question (spec 2026-10-05 §3.2)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ asked: 'meaning' }));
   });
+  it('a question the round marked 都不对 asks without its answer: 都不对 is right (production practice spec §5)', () => {
+    const chuan = pool.find((w) => w.text === '穿')!;
+    const onDone = vi.fn();
+    const first = render(<PracticeQuestion {...base} word={chuan} item={{ wordId: chuan.id, rung: 2, ask: 'match', grades: 'meaning', retry: false, none: true }} onDone={onDone} />);
+    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    fireEvent.click(screen.getByRole('button', { name: '都不对' }));
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true, asked: 'meaning' }));
+    first.unmount();
+    const w = pool.find((x) => x.text === '河')!;
+    render(<PracticeQuestion {...base} word={w} item={{ wordId: w.id, rung: 1, ask: 'meaningRead', grades: null, retry: true, none: true }} onDone={vi.fn()} />);
+    expect(screen.getAllByRole('button', { name: '都不对' })).toHaveLength(1);
+  });
   it('钓鱼: the pond with the look-alike he picked among the fish; the answer comes back as a 字辨 answer', () => {
     const gen = pool.find((w) => w.text === '根')!;
     const onDone = vi.fn();

@@ -87,9 +87,13 @@ for (const size of SIZES) {
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
     if (c === 'pair') {
-      // play it with wrong tries (always the last open right tile): the board ends explaining every 组词, and nothing is cut off
-      for (let k = 0; k < 30; k++) {
-        const left = await page.$('.pairs__col--left .pair__tile:not(.is-matched):not(.is-shown)');
+      // 8 halves, two of them decoys (production practice spec §5), all on the card at every size
+      const tiles = (await page.$$('.pairs--eight .pair__tile')).length;
+      if (tiles !== 8) problems.push(`${size.name} pair: ${tiles} tiles on the board (want 8)`);
+      // play it with wrong tries (always the last open right tile): the board ends explaining every 组词, and nothing is cut off;
+      // a left decoy tried three times is set aside (disabled), so the next open left tile is taken
+      for (let k = 0; k < 40; k++) {
+        const left = await page.$('.pairs__col--left .pair__tile:not(.is-matched):not(.is-shown):not([disabled])');
         if (!left) break;
         await left.click();
         const rights = await page.$$('.pairs__col--right .pair__tile:not(.is-matched):not(.is-shown)');
@@ -100,6 +104,50 @@ for (const size of SIZES) {
       await page.screenshot({ path: `fit-shots/stage-cases/pair-done-${size.name}.png` });
       if (!(await page.$('.pair-summary'))) problems.push(`${size.name} pair: no 组词 explained after wrong tries`);
       problems.push(...(await cardClipped(page, `${size.name} pair done`)));
+    }
+  }
+  // a read-only character traced over its outline (production practice spec §3): the 田字格 with 澡's outline drawn, on the card
+  {
+    await page.goto(`file://${dir}/index.html?case=trace`);
+    await page.waitForSelector('.tianzige svg', { timeout: 5000 }).catch(() => null);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `fit-shots/stage-cases/trace-${size.name}.png` });
+    if ((await page.$$('.tianzige svg path')).length === 0) problems.push(`${size.name} trace: no outline in the 田字格`);
+    problems.push(...(await cardClipped(page, `${size.name} trace`)));
+  }
+  // 说一句 (production practice spec §4): the ask and its pattern, then after a take 再录一次 and 听一听例句, and the model sentence once he taps it
+  {
+    await page.goto(`file://${dir}/index.html?case=sentence`);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `fit-shots/stage-cases/sentence-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} sentence`)));
+    await page.click('.mic-btn');
+    await page.waitForSelector('.mic-btn.is-recording', { timeout: 5000 }).catch(() => null);
+    await page.click('.mic-btn.is-recording').catch(() => null);
+    await page.waitForSelector('text=听一听例句', { timeout: 5000 }).catch(() => null);
+    await page.screenshot({ path: `fit-shots/stage-cases/sentence-took-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} sentence took`)));
+    await page.click('text=听一听例句').catch(() => null); // the model shows only on this tap (or after the re-record)
+    const said = await page.waitForSelector('.say-sentence__model', { timeout: 5000 }).catch(() => null);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `fit-shots/stage-cases/sentence-said-${size.name}.png` });
+    if (!said) problems.push(`${size.name} sentence: no model sentence after a take`);
+    problems.push(...(await cardClipped(page, `${size.name} sentence said`)));
+  }
+  // 「都不对」 (production practice spec §5): right (the real answer on the sheet) and wrong, for the 组词 gap and the English meaning
+  for (const c of ['none-word', 'none-meaning']) {
+    for (const pick of ['.choice--none', '.choice:not(.choice--none)']) {
+      await page.goto(`file://${dir}/index.html?case=${c}`);
+      await page.waitForTimeout(300);
+      if (!(await page.$('.choice--none'))) { problems.push(`${size.name} ${c}: no 都不对 choice`); break; }
+      problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+      await page.click(pick);
+      await page.waitForTimeout(1600);
+      const name = `${c}-${pick === '.choice--none' ? 'right' : 'wrong'}`;
+      await page.screenshot({ path: `fit-shots/stage-cases/${name}-${size.name}.png` });
+      if (!(await page.$('.sheet .sheet__en'))) problems.push(`${size.name} ${name}: the sheet doesn't show the real answer`);
+      // a right pick flies to Truffle (is-eaten): it leaves the card on purpose
+      problems.push(...(await cardClipped(page, `${size.name} ${name}`, '.is-eaten')), ...(await sheetFits(page, `${size.name} ${name}`)), ...(await sheetScrolls(page, `${size.name} ${name}`)));
     }
   }
   // the Understand question (plan 2b): the choices open after the sentence (5 s here: no voice ends it), then a miss's sheet
@@ -217,6 +265,7 @@ for (const size of SIZES) {
   }
   // the passage row (final review I8): each misread character, 听原文 and Done big enough to tap; nothing makes the page scroll sideways
   if (!(await page.$('.listen__row--passage'))) problems.push(`${size.name} listen: no passage row`);
+  if (!(await page.$('.listen__row--sentence .listen__sentence'))) problems.push(`${size.name} listen: no 说一句 row with its model sentence`);
   else await page.locator('.listen__row--passage').screenshot({ path: `fit-shots/stage-cases/listen-passage-${size.name}.png` });
   for (const q of ['.listen__row--passage .misread-ch', '.listen__row--passage .listen__done', '.listen__row--passage .listen__model']) {
     const els = await page.$$(q);

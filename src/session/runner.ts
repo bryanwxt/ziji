@@ -38,8 +38,9 @@ export function currentFlashItem(rec: SessionRecord): FlashItem | null {
 /** 写一写 passes (spec §20 part 3): a new word is traced, written with a hint, then from memory; a review word from memory only. */
 export type WritePass = 'trace' | 'hint' | 'recall';
 const NEW_WORD_PASSES: WritePass[] = ['trace', 'hint', 'recall'];
-/** `at`: the character of the word to write (spec 2026-10-05 §5); `last`: this item finishes the word, so it rates its write card. */
-export interface WriteTask { wordId: string; isNew: boolean; pass: WritePass; redo: boolean; at?: number; last?: boolean }
+/** `at`: the character of the word to write (spec 2026-10-05 §5); `last`: this item finishes the word, so it rates its write card;
+ *  `readOnly`: a character his course never has him write, traced over its outline (production practice spec §3). */
+export interface WriteTask { wordId: string; isNew: boolean; pass: WritePass; redo: boolean; at?: number; last?: boolean; readOnly?: boolean }
 
 const itemKey = (i: { wordId: string; at: number }) => `${i.wordId}#${i.at}`;
 const fromKey = (key: string) => { const k = key.lastIndexOf('#'); return { wordId: key.slice(0, k), at: Number(key.slice(k + 1)) }; };
@@ -70,7 +71,7 @@ export function currentWriteTask(rec: SessionRecord): WriteTask | null {
   const items = rec.plan.writeItems;
   if (items) {
     const it = items[nextItem(rec, rec.writeIndex)]!;
-    return { wordId: it.wordId, isNew: it.isNew, pass: it.pass, redo: false, at: it.at, last: !!it.last };
+    return { wordId: it.wordId, isNew: it.isNew, pass: it.pass, redo: false, at: it.at, last: !!it.last, ...(it.readOnly ? { readOnly: true } : {}) };
   }
   const c = rec.plan.writeCandidates[rec.writeIndex]!;
   const passes: WritePass[] = c.isNew ? NEW_WORD_PASSES : ['recall'];
@@ -142,7 +143,7 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   const index = rec.practiceIndex ?? 0;
   const queue = [...rec.practiceQueue!];
   if (!correct && !item.retry && item.ask !== 'fish' && item.ask !== 'family') { // a missed 钓鱼 or 找一家人 isn't asked again: at most two a lesson (sweep; spec 2026-10-12 §5)
-    const { due: _due, ...again } = item; // a retry is practice only, never a due first appearance
+    const { due: _due, none: _none, ...again } = item; // a retry is practice only, never a due first appearance, and asks with its answer in
     let at = Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length);
     while (at < queue.length && (queue[at - 1]?.wordId === item.wordId || queue[at]?.wordId === item.wordId)) at++; // never beside the same word (sweep)
     queue.splice(at, 0, { ...again, grades: null, retry: true, missed: true, ...(idiom ? { idiom } : {}) }); // the same 成语 comes back (sweep)
@@ -161,12 +162,12 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   return next;
 }
 
-/** The microphone is blocked: this Say card and every later one are dropped for the rest of the lesson (spec 2026-10-11 §7). */
+/** The microphone is blocked: this card and every later Say and 说一句 card are dropped for the rest of the lesson (spec 2026-10-11 §7; production practice spec §4). */
 export function skipSayItems(rec: SessionRecord): SessionRecord {
   if (currentStep(rec) !== 'practice') return rec;
   const index = rec.practiceIndex ?? 0;
   const queue = rec.practiceQueue ?? [];
-  const next: SessionRecord = { ...rec, practiceQueue: [...queue.slice(0, index), ...queue.slice(index).filter((x) => x.ask !== 'say')] };
+  const next: SessionRecord = { ...rec, practiceQueue: [...queue.slice(0, index), ...queue.slice(index).filter((x) => x.ask !== 'say' && x.ask !== 'sentence')] };
   return index >= next.practiceQueue!.length ? finishStep(next) : next;
 }
 
@@ -187,11 +188,15 @@ export function createFreePracticeRecord(queue: PracticeItem[], date: string, no
 /**
  * After one written pass. done=false means the word was skipped (e.g. no stroke data) and does not count.
  * Only the recall pass finishes a word; one that needed a hint or had more than 3 misses is written once more at the end.
+ * `credited`: this pass rated the word's meaning card (production practice spec §3), which it does once a lesson.
  */
-export function afterWriteWord(rec: SessionRecord, done: boolean, rawElapsedMs: number, outcome: { hinted?: boolean; misses?: number } = {}): SessionRecord {
+export function afterWriteWord(rec: SessionRecord, done: boolean, rawElapsedMs: number, outcome: { hinted?: boolean; misses?: number; credited?: boolean } = {}): SessionRecord {
   const task = currentWriteTask(rec);
   if (!task) return rec;
-  const base: SessionRecord = { ...rec, activeMs: rec.activeMs + Math.min(rawElapsedMs, MAX_WORD_MS) };
+  const base: SessionRecord = {
+    ...rec, activeMs: rec.activeMs + Math.min(rawElapsedMs, MAX_WORD_MS),
+    ...(outcome.credited ? { meaningCredit: [...(rec.meaningCredit ?? []), task.wordId] } : {}),
+  };
   let next: SessionRecord;
   if (rec.plan.writeItems && !task.redo) next = afterWriteItem(rec, base, task, done, outcome);
   else if (task.redo) next = { ...base, writeRedoIndex: (rec.writeRedoIndex ?? 0) + 1 };

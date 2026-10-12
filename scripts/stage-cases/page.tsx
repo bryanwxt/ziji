@@ -57,6 +57,11 @@ import type { Recording } from '../../src/types';
 import { PinyinFade } from '../../src/ui/pinyinFade';
 import { FamilyQuestion } from '../../src/activities/practice/FamilyQuestion';
 import { familyBoard } from '../../src/practice/family';
+import { fillGap, SENTENCE_BANK } from '../../src/content/sentenceBank';
+import { WritingStep } from '../../src/activities/writing/WritingStep';
+import { SentenceCard } from '../../src/activities/say/SentenceCard';
+import { wordCue } from '../../src/activities/flashcards/meaning';
+import zao from 'hanzi-writer-data/澡.json';
 
 const screen = (body: preact.ComponentChildren) => (
   <div class="screen">
@@ -64,6 +69,12 @@ const screen = (body: preact.ComponentChildren) => (
     {body}
   </div>
 );
+/** The app word whose sentence-bank example (说一句's model sentence) is the longest: the tightest 说一句 card and Listen row. */
+function longestSentenceWord() {
+  const byText = new Map([...builtinWords(0), ...ladderWords()].map((w) => [w.text, w]));
+  const model = (b: (typeof SENTENCE_BANK)[number]) => Array.from(fillGap(b.gaps[0], b.word)).length;
+  return byText.get([...SENTENCE_BANK].filter((b) => byText.has(b.word)).sort((a, b) => model(b) - model(a))[0]!.word)!;
+}
 const clue = { kind: 'fit' as const, wordId: null, word: '连忙', before: '看到老师来了，他', after: '站起来。', options: ['连忙', '从来', '互相', '本来'], clue: '连忙：说已经发生的事；叫别人快一点用"赶快"' };
 const which = new URLSearchParams(location.search).get('case');
 if (which?.startsWith('alive') || which === 'moments') {
@@ -276,6 +287,10 @@ else if (which === 'listen') {
   const words = builtinWords(0);
   const said = [...['森', '林', '游', '泳'].map((t) => words.find((x) => x.text === t)!), ladderWords().find((w) => w.text === '森林') ?? ladderWords()[0]!];
   const takes: Recording[] = said.map((w, i) => ({ id: `t${i}`, createdAt: new Date(2026, 9, 11, 17, i * 3).getTime(), prompt: { kind: 'say', wordId: w.id }, blob: new Blob(['x'], { type: 'audio/mp4' }), mime: 'audio/mp4', durationSec: 2 }));
+  // a 说一句 take (production practice spec §4): the bank word with the longest model sentence
+  const used = longestSentenceWord();
+  said.push(used);
+  takes.push({ id: 'ts', createdAt: new Date(2026, 9, 11, 17, 30).getTime(), prompt: { kind: 'sentence', wordId: used.id }, blob: new Blob(['x'], { type: 'audio/mp4' }), mime: 'audio/mp4', durationSec: 4 });
   const p20 = PASSAGES.find((x) => x.id === 'p20')!; // the longest built-in text
   takes.push({ id: 'tp', createdAt: new Date(2026, 9, 11, 18).getTime(), prompt: { kind: 'passage', passageId: p20.id }, blob: new Blob(['x'], { type: 'audio/mp4' }), mime: 'audio/mp4', durationSec: 40, meaning: { correct: false, picked: '一个大商店' } });
   render(
@@ -344,6 +359,43 @@ else if (which === 'family') {
   // 找一家人 (spec 2026-10-12 §5): 生 among 星星, 出去, 在家, 坏人
   const w = builtinWords(0).find((x) => x.text === '生')!;
   render(screen(<FamilyQuestion board={familyBoard(w, new Set('男女气先口出学家人'), mulberry32(1))!} kid={DEFAULT_KID} onDone={() => {}} />), app);
+}
+else if (which === 'trace') {
+  // a read-only character traced over its outline (production practice spec §3): 澡's strokes from the package, not the CDN
+  const real = window.fetch.bind(window);
+  window.fetch = (input, init) => (String(input).includes('hanzi-writer-data') ? Promise.resolve(new Response(JSON.stringify(zao), { headers: { 'content-type': 'application/json' } })) : real(input, init));
+  const w = { ...builtinWords(0).find((x) => x.text === '澡')!, writeable: false };
+  render(screen(<WritingStep word={w} kid={DEFAULT_KID} isNew pass="trace" onDone={() => {}} />), app);
+}
+else if (which === 'sentence') {
+  // 说一句 (production practice spec §4) for the bank word with the longest model sentence, with a pretend microphone:
+  // stage-cases.ts records a take, so the model sentence and 再录一次 show (the tallest state)
+  class FakeRecorder {
+    static isTypeSupported() { return true; }
+    mimeType = 'audio/mp4'; state = 'inactive';
+    ondataavailable: ((e: { data: Blob }) => void) | null = null; onstop: (() => void) | null = null;
+    constructor(_s: MediaStream) {}
+    start() { this.state = 'recording'; }
+    stop() { this.state = 'inactive'; setTimeout(() => { this.ondataavailable?.({ data: new Blob(['x'], { type: 'audio/mp4' }) }); this.onstop?.(); }, 10); }
+    addEventListener(t: string, f: () => void) { (this as Record<string, unknown>)[`on${t}`] = f; }
+    removeEventListener() {}
+  }
+  (window as unknown as { MediaRecorder: unknown }).MediaRecorder = FakeRecorder;
+  const stream = () => { const ac = new AudioContext(); const o = ac.createOscillator(); const d = ac.createMediaStreamDestination(); o.connect(d); o.start(); return d.stream; };
+  Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => stream() } });
+  render(screen(<PinyinFade known={new Set()} on><SentenceCard word={longestSentenceWord()} kid={DEFAULT_KID} onDone={() => {}} /></PinyinFade>), app);
+}
+else if (which === 'none-word' || which === 'none-meaning') {
+  // 「都不对」 (production practice spec §5): the 组词 gap with six choices, and the English meaning with the longest English
+  const words = builtinWords(0);
+  const lw = ladderWords();
+  if (which === 'none-word') {
+    const w = words.find((x) => wordCue(x) && x.text === '河') ?? words.find((x) => wordCue(x))!;
+    render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false, mode: 'meaning' }} ask="word" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} noneOfThese="answer" onDone={() => {}} />), app);
+  } else {
+    const longest = [...lw].sort((a, b) => (cardMeaning(b)?.length ?? 0) - (cardMeaning(a)?.length ?? 0));
+    render(screen(<FlashcardStep item={{ wordId: longest[0]!.id, isNew: false, retry: false }} ask="meaningRead" word={longest[0]!} pool={longest.slice(0, 4)} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} noneOfThese="answer" onDone={() => {}} />), app);
+  }
 }
 else render(screen(
   <Stage activity="write" truffle={<Pet kid={DEFAULT_KID} size={180} />} sheet={which === 'good' ? <FeedbackSheet tone="good" title="写得好！" actionLabel="完成" onAction={() => {}} /> : <FeedbackSheet actionLabel="完成" disabled onAction={() => {}} />}>

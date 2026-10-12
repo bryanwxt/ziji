@@ -10,16 +10,16 @@ const day = 86_400_000;
 const base = { newWordIds: [] as string[], practised: new Map<string, number>(), level: 2, cutoff: now.getTime() + day, target: 9 };
 
 describe('how many characters (spec 2026-10-05 §5; spec 2026-10-12 §4)', () => {
-  it('4 at the usual 15 minutes; 5 at 20, 7 at 25, 8 at 30, 9 from 40', () => {
-    expect(writeCharTarget(15)).toBe(4); // 朗读 takes its ~3 minutes (spec 2026-10-12 §4)
+  it('7 at the usual 20 minutes; 4 under 20, 8 at 25, 9 at 30, 10 from 40 (production practice spec §3)', () => {
     expect(writeCharTarget(10)).toBe(4);
+    expect(writeCharTarget(15)).toBe(4);
     expect(writeCharTarget(19)).toBe(4);
-    expect(writeCharTarget(20)).toBe(5);
-    expect(writeCharTarget(25)).toBe(7);
-    expect(writeCharTarget(30)).toBe(8);
-    expect(writeCharTarget(35)).toBe(8);
-    expect(writeCharTarget(40)).toBe(9);
-    expect(writeCharTarget(45)).toBe(9);
+    expect(writeCharTarget(20)).toBe(7);
+    expect(writeCharTarget(25)).toBe(8);
+    expect(writeCharTarget(30)).toBe(9);
+    expect(writeCharTarget(35)).toBe(9);
+    expect(writeCharTarget(40)).toBe(10);
+    expect(writeCharTarget(45)).toBe(10);
   });
 });
 
@@ -167,5 +167,50 @@ describe('写一写 follows the book (spec 2026-10-11 §6)', () => {
     const w = makeWord('井', { writeable: false });
     const due = makeCard('b:井', 'write', new Date(now3.getTime() - 3_600_000));
     expect(pickWriteUnits({ ...base3, cards: [due], words: [w] }).map((u) => u.wordId)).toEqual(['b:井']);
+  });
+});
+
+describe('read-only characters are traced (production practice spec §3)', () => {
+  const now4 = new Date(2026, 9, 12, 10);
+  const later = new Date(2026, 9, 30);
+  const base4 = { level: 2, cutoff: now4.getTime() + 86_400_000, target: 7 };
+  const wl = Array.from('一二三四五六七八').map((t, i) => makeWord(t, { rank: i }));
+  const ro = Array.from('澡羽乖吐宠').map((t, i) => makeWord(t, { rank: 100 + i, writeable: false }));
+  const read = (w: { id: string }) => makeCard(w.id, 'recognise', later, true);
+  const cards = [...wl, ...ro].map(read);
+  /** read-only 澡 乖 吐 宠 were in recent lessons (宠 the newest); 羽 is today's new word */
+  const practised = new Map(['澡', '乖', '吐', '宠'].map((t, i) => [`b:${t}`, now4.getTime() - (10 - i) * 3_600_000]));
+  const pick = (over: Partial<Parameters<typeof pickWriteUnits>[0]> = {}) => pickWriteUnits({ ...base4, cards, words: [...wl, ...ro], newWordIds: ['b:羽'], practised, ...over });
+  it('at most half the target (rounded down): today\'s first, then the newest recent ones; the write list has the rest', () => {
+    const units = pick();
+    expect(units.filter((u) => u.readOnly).map((u) => u.wordId)).toEqual(['b:羽', 'b:宠', 'b:吐']);
+    expect(units.filter((u) => !u.readOnly)).toHaveLength(4);
+    expect(units.reduce((n, u) => n + u.chars.length, 0)).toBe(7);
+    expect(pick({ target: 4 }).filter((u) => u.readOnly)).toHaveLength(2);
+  });
+  it('a recent one already traced is not traced again; fewer read-only ones leave their slots to the write list', () => {
+    const traced = ro.map((w) => (w.text === '羽' ? w : { ...w, tracedAt: now4.getTime() - 86_400_000 }));
+    const units = pick({ words: [...wl, ...traced] });
+    expect(units.filter((u) => u.readOnly).map((u) => u.wordId)).toEqual(['b:羽']);
+    expect(units.filter((u) => !u.readOnly)).toHaveLength(6);
+  });
+  it('due writing fills only the write list\'s share: the traced ones keep theirs', () => {
+    const due = wl.map((w) => makeCard(w.id, 'write', new Date(now4.getTime() - 3_600_000)));
+    const units = pick({ cards: [...cards, ...due] });
+    expect(units.filter((u) => !u.readOnly).map((u) => u.wordId)).toEqual(['b:一', 'b:二', 'b:三', 'b:四']);
+    expect(units.filter((u) => u.readOnly)).toHaveLength(3);
+  });
+  it('never a character he has a write card for, a 词语, or one he has not begun reading', () => {
+    const units = pick({ cards: [...cards.filter((c) => c.wordId !== 'b:宠'), makeCard('b:吐', 'write', later)], words: [...wl, ...ro, makeWord('宠物', { id: 'w:宠物', writeable: false })], practised: new Map([...practised, ['w:宠物', now4.getTime()]]) });
+    expect(units.filter((u) => u.readOnly).map((u) => u.wordId)).toEqual(['b:羽', 'b:乖', 'b:澡']);
+  });
+  it('a recent one whose strokes failed to load goes behind the others, so it never holds a slot every lesson (review focus 2)', () => {
+    const failed = ro.map((w) => (w.text === '宠' ? { ...w, writeSkippedAt: now4.getTime() - 3_600_000 } : w));
+    expect(pick({ words: [...wl, ...failed] }).filter((u) => u.readOnly).map((u) => u.wordId)).toEqual(['b:羽', 'b:吐', 'b:乖']);
+  });
+  it('a read-only character is only traced, and never finishes a word (no write card is rated)', () => {
+    const items = orderWriteItems([{ wordId: 'b:一', chars: ['一'], isNew: true }, { wordId: 'b:羽', chars: ['羽'], isNew: true, readOnly: true }, { wordId: 'b:二', chars: ['二'], isNew: false }]);
+    expect(items.filter((i) => i.wordId === 'b:羽')).toEqual([{ wordId: 'b:羽', at: 0, pass: 'trace', isNew: true, readOnly: true }]);
+    expect(items.filter((i) => i.last).map((i) => i.wordId).sort()).toEqual(['b:一', 'b:二']);
   });
 });

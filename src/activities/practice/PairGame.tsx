@@ -22,7 +22,10 @@ const SHOW_AFTER = 3; // misses on one tile before its match is shown (review fo
 
 /**
  * Pairing (spec 2026-10-05 §3.2 rung 2): tap a left half, then its right half; tap the picked half again to let go. A wrong
- * pair lets go; three misses on a tile show its match. Only the word's own pair is graded: its first try, timed from its pick.
+ * pair lets go; three misses on a tile show its match. Every pair is graded (production practice spec §5): the board is right
+ * only when each pair was joined at its first try, so a lucky last pair can't pass it; the time is the word's own pair's, from its
+ * pick. A 组词 board has two decoy halves that pair with nothing: a try with one is a miss, three set a left decoy aside, and the
+ * board ends when the three pairs are joined.
  * Tiles are told apart by column and place, not by text, so a doubled word (妈妈) works.
  */
 /** A colour per matched pair: green, blue, gold, purple (palette inks dark enough for a ✓ on paper). */
@@ -34,16 +37,21 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
   const [joined, setJoined] = useState<Set<string>>(new Set()); // 'L0', 'R2'… joined, right or shown
   const [shown, setShown] = useState<Set<string>>(new Set());
   const [missed, setMissed] = useState<Record<number, number>>({});
+  const [setAside, setSetAside] = useState<Set<string>>(new Set()); // a left decoy tried three times
   const [result, setResult] = useState<{ correct: boolean; responseMs: number } | null>(null);
-  const target = useRef<{ pickedAt: number; tries: number; ms: number }>({ pickedAt: 0, tries: 0, ms: 0 });
+  const target = useRef<{ pickedAt: number; ms: number }>({ pickedAt: 0, ms: 0 }); // the word's own pair: its time, from its pick
   const isTarget = (l: number) => board.left[l] === board.target[0];
-  const partnerOf = (l: number) => board.right.findIndex((r, i) => r === board.pairs.find(([a]) => a === board.left[l])![1] && !joined.has(`R${i}`));
+  /** The right tile that joins this left one, or -1 for a decoy (it pairs with nothing). */
+  const partnerOf = (l: number) => {
+    const pair = board.pairs.find(([a]) => a === board.left[l]);
+    return pair ? board.right.findIndex((r, i) => r === pair[1] && !joined.has(`R${i}`)) : -1;
+  };
+  const isDecoy = (key: string) => !!board.decoys && (key[0] === 'L' ? board.left : board.right)[Number(key.slice(1))] === board.decoys[key[0] === 'L' ? 0 : 1];
 
   useEffect(() => {
     if (joined.size < board.pairs.length * 2 || result) return;
-    const t = target.current;
-    const correct = t.tries === 1 && !shown.has(`L${board.left.findIndex((x) => x === board.target[0])}`);
-    setResult({ correct, responseMs: t.ms });
+    const correct = !Object.values(missed).some((n) => n > 0); // every pair at its first try (production practice spec §5)
+    setResult({ correct, responseMs: target.current.ms });
     playSfx(correct ? 'correct' : 'wrong');
   }, [joined]);
 
@@ -57,7 +65,6 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
     if (picked === null) return;
     const l = picked;
     const partner = partnerOf(l);
-    if (isTarget(l)) target.current.tries += 1;
     if (partner === r) {
       if (isTarget(l)) target.current.ms = Math.round(performance.now() - target.current.pickedAt);
       setJoined(new Set([...joined, `L${l}`, `R${r}`]));
@@ -65,7 +72,8 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
     } else {
       const n = (missed[l] ?? 0) + 1;
       setMissed({ ...missed, [l]: n });
-      if (n >= SHOW_AFTER) {
+      if (n >= SHOW_AFTER && partner < 0) setSetAside(new Set([...setAside, `L${l}`])); // a decoy: it has no match to show
+      else if (n >= SHOW_AFTER) {
         setShown(new Set([...shown, `L${l}`, `R${partner}`]));
         setJoined(new Set([...joined, `L${l}`, `R${partner}`]));
       }
@@ -75,7 +83,8 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
 
   const done = result !== null;
   const anyMiss = Object.values(missed).some((n) => n > 0);
-  const cls = (key: string, isPicked: boolean) => `choice press pair__tile${joined.has(key) ? (shown.has(key) ? ' is-shown' : ' is-matched') : ''}${isPicked ? ' is-picked' : ''}`;
+  // the decoys show for what they are once the board is done, or once he has tried one three times
+  const cls = (key: string, isPicked: boolean) => `choice press pair__tile${joined.has(key) ? (shown.has(key) ? ' is-shown' : ' is-matched') : ''}${(done || setAside.has(key)) && isDecoy(key) ? ' is-decoy' : ''}${isPicked ? ' is-picked' : ''}`;
   // the two tiles of a pair share a colour, in the order he joined them, so he sees which go together (parent, 2026-10-05)
   const order = [...joined];
   const pairStyle = (key: string) => (joined.has(key) && !shown.has(key) ? `--pc:${PAIR_COLOURS[(order.indexOf(key) >> 1) % PAIR_COLOURS.length]}` : undefined);
@@ -111,7 +120,7 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
         />
       )}
     >
-      <div class="pairs">
+      <div class={`pairs${board.left.length > 3 ? ' pairs--eight' : ''}`}>
         {/* the right halves come first in the page (CSS shows them on the right): the first open tile is always one that moves the game on */}
         <div class="pairs__col pairs__col--right">
           {board.right.map((r, i) => (
@@ -120,7 +129,7 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
         </div>
         <div class="pairs__col pairs__col--left">
           {board.left.map((l, i) => (
-            <button key={`L${i}`} type="button" class={cls(`L${i}`, picked === i)} style={pairStyle(`L${i}`)} disabled={done || joined.has(`L${i}`) || (picked !== null && picked !== i)} onClick={() => pick(i)}>{l}</button>
+            <button key={`L${i}`} type="button" class={cls(`L${i}`, picked === i)} style={pairStyle(`L${i}`)} disabled={done || joined.has(`L${i}`) || setAside.has(`L${i}`) || (picked !== null && picked !== i)} onClick={() => pick(i)}>{l}</button>
           ))}
         </div>
       </div>

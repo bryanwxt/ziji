@@ -1,11 +1,13 @@
 // The pairing boards for the 词语 rung (spec 2026-10-05 §3.2): three pairs to join, one of them the word's own. No two halves
-// from different pairs may make a word too, so a right answer can never be marked wrong.
-import { HSK_WORDS } from '../content';
+// from different pairs may make a word too, so a right answer can never be marked wrong. A 组词 board also has two decoy halves
+// that pair with nothing (production practice spec §5), so the last pair can't be had by elimination.
+import { builtinWords, HSK_WORDS } from '../content';
 import { DAPEI } from '../content/dapei';
 import { shuffle, type Rng } from '../lib/random';
 import type { Word } from '../types';
 
-export interface PairBoard { left: string[]; right: string[]; pairs: [string, string][]; target: [string, string] }
+/** `decoys`: the left and the right half that pair with nothing on the board (a 组词 board's; a 搭配 board has none). */
+export interface PairBoard { left: string[]; right: string[]; pairs: [string, string][]; target: [string, string]; decoys?: [string, string] }
 
 const TWO_CHAR = [...HSK_WORDS.entries()].filter(([w]) => Array.from(w).length === 2);
 
@@ -31,6 +33,18 @@ function board(target: [string, string], extras: [string, string][], fits: (l: s
 /** Characters that make a word with almost anything (不远, 两下, 走上…): never in a board's extra pairs, where they'd fit across. */
 export const PRODUCTIVE: ReadonlySet<string> = new Set([...'不没一二三四五六七八九十两几大小好有是在上下人子们的了很走想爱会能要去来说看多少天头心中高长出开']);
 
+const nearCache = new Map<number, string[]>();
+let plain: [string, number][] | null = null;
+/** The two-character HSK words up to a level that avoid PRODUCTIVE characters and aren't doubled (妈妈), in list order; worked out once per level (a round asks each word's board many times). */
+function nearWords(upTo: number): string[] {
+  let out = nearCache.get(upTo);
+  if (!out) {
+    plain ??= TWO_CHAR.filter(([w]) => { const c = Array.from(w); return c[0] !== c[1] && !c.some((ch) => PRODUCTIVE.has(ch)); });
+    nearCache.set(upTo, (out = plain.filter(([, lvl]) => lvl <= upTo).map(([w]) => w)));
+  }
+  return out;
+}
+
 /**
  * 组词 pairing: the word's own two-character 组词 (at its reading, never a doubled word like 妈妈) and two more 词语 — from
  * characters he knows when there are enough, near his level otherwise, never with a character that fits almost anywhere.
@@ -41,12 +55,34 @@ export function zuciBoard(word: Word, rng: Rng, known?: ReadonlySet<string>): Pa
   const own = chars.length === 2 ? (twoChar(word.text) ? word.text : undefined) : word.examples?.find((e) => twoChar(e.text) && e.text.includes(word.text))?.text;
   if (!own) return null;
   const [a, b] = Array.from(own) as [string, string];
-  const ok = (w: string) => !Array.from(w).some((ch) => PRODUCTIVE.has(ch)) && twoChar(w);
-  const near = TWO_CHAR.filter(([w, lvl]) => w !== own && ok(w) && lvl <= (word.level ?? 3) + 1).map(([w]) => w);
+  const near = nearWords((word.level ?? 3) + 1).filter((w) => w !== own);
   const familiar = known ? near.filter((w) => Array.from(w).every((ch) => known.has(ch))) : [];
   const pool = familiar.length >= 6 ? familiar : near;
   const fits = (l: string, r: string) => HSK_WORDS.has(l + r) || (word.examples ?? []).some((e) => e.text === l + r);
-  return board([a, b], shuffle(pool, rng).map((w) => Array.from(w) as [string, string]), fits, rng);
+  const made = board([a, b], shuffle(pool, rng).map((w) => Array.from(w) as [string, string]), fits, rng);
+  return made && withDecoys(made, pool, fits, rng);
+}
+
+let examples: ReadonlySet<string> | null = null;
+/** A 组词 of any built-in character (切菜 isn't HSK, but it is a 组词 he may know): a decoy never makes one of these either. */
+const isExample = (s: string) => (examples ??= new Set(builtinWords(0).flatMap((w) => (w.examples ?? []).map((e) => e.text)))).has(s);
+
+/**
+ * One more half on each side that pairs with nothing (production practice spec §5): characters of the board's own word pool (his
+ * if he knows enough), never one on the board, one that fits almost anywhere, or one that makes a word — HSK, a built-in 组词 or
+ * the word's own, either way round — with any half on the board or with the other decoy. They go in on the same row, so no pair
+ * comes to sit on one. Null when no two such characters exist.
+ */
+function withDecoys(b: PairBoard, pool: string[], fits: (l: string, r: string) => boolean, rng: Rng): PairBoard | null {
+  const joins = (x: string, y: string) => fits(x, y) || fits(y, x) || isExample(x + y) || isExample(y + x);
+  const halves = b.pairs.flat();
+  const free = (c: string) => !PRODUCTIVE.has(c) && !halves.includes(c) && !halves.some((h) => joins(c, h));
+  const chars = shuffle([...new Set(pool.flatMap((w) => Array.from(w)))].filter(free), rng);
+  const left = chars[0];
+  const right = left === undefined ? undefined : chars.find((c) => c !== left && !joins(c, left));
+  if (left === undefined || right === undefined) return null;
+  const at = Math.floor(rng() * (b.left.length + 1));
+  return { ...b, left: [...b.left.slice(0, at), left, ...b.left.slice(at)], right: [...b.right.slice(0, at), right, ...b.right.slice(at)], decoys: [left, right] };
 }
 
 /** A 搭配 question: the verb, its partner and the partner's three written wrong partners, shuffled. */

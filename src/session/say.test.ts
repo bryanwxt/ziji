@@ -8,7 +8,7 @@ import { buildSessionPlan } from './plan';
 import { addRecording, allCards, getCard, getRecording, listRecordings, logsSince, putCards } from '../store/repo';
 import { endOfLocalDay } from '../lib/date';
 import type { Recording } from '../types';
-import { recordSayTake, reviewTake, takesToDrop, waitingTakes } from './say';
+import { recordSayTake, recordSentenceTake, reviewTake, takesToDrop, takeWord, waitingTakes } from './say';
 
 const take = { blob: new Blob(['x']), mime: 'audio/mp4', durationSec: 2 };
 const day = (d: number, h = 18) => new Date(2026, 9, d, h);
@@ -125,8 +125,8 @@ describe('keeping takes tidy (spec 2026-10-11 §6, §7)', () => {
   });
   it('once a word’s Say has passed, its reviewed takes older than 14 days all go, the newest too (final review I5)', () => {
     const recs = [rec('old', 'b:森', day(1), 'ok'), rec('newest', 'b:森', day(2), 'ok'), rec('lin', 'b:林', day(1), 'ok'), rec('waiting', 'b:森', day(1))];
-    expect(takesToDrop(recs, day(20), new Set(['b:森'])).sort()).toEqual(['newest', 'old']); // 林 has not passed: it keeps its newest
-    expect(takesToDrop(recs, day(14), new Set(['b:森']))).toEqual([]); // not yet 14 days
+    expect(takesToDrop(recs, day(20), new Set(['b:森:say'])).sort()).toEqual(['newest', 'old']); // 林 has not passed: it keeps its newest
+    expect(takesToDrop(recs, day(14), new Set(['b:森:say']))).toEqual([]); // not yet 14 days
   });
   it('a new take drops a passed word’s old reviewed takes from the store', async () => {
     const db = await freshDb();
@@ -141,5 +141,45 @@ describe('keeping takes tidy (spec 2026-10-11 §6, §7)', () => {
     await addRecording(db, rec('old', 'b:森', day(1), 'ok'));
     await recordSayTake(db, 'b:森', take, day(20));
     expect((await listRecordings(db)).map((r) => r.id)).not.toContain('old');
+  });
+});
+
+describe('说一句 takes (production practice spec §4)', () => {
+  const sentence = (id: string, wordId: string, at: Date, review?: 'ok' | 'no'): Recording => ({ ...rec(id, wordId, at, review), prompt: { kind: 'sentence', wordId } });
+  it('a take is kept and makes his Sentence card, not his Say card, due no sooner than tomorrow', async () => {
+    const db = await freshDb();
+    const card = await recordSentenceTake(db, 'b:很', take, day(1));
+    expect(card.id).toBe('b:很:sentence');
+    expect(card.kind).toBe('sentence');
+    expect(card.fsrs.due).toEqual(new Date(2026, 9, 2));
+    expect(await getCard(db, 'b:很:say')).toBeUndefined();
+    expect((await listRecordings(db))[0]!.prompt).toEqual({ kind: 'sentence', wordId: 'b:很' });
+    expect(takeWord((await listRecordings(db))[0]!)).toBe('b:很');
+  });
+  it('two confirmed days pass the Sentence rung; ✗ brings the Sentence card forward', async () => {
+    const db = await freshDb();
+    await recordSentenceTake(db, 'b:很', take, day(1));
+    await recordSentenceTake(db, 'b:很', take, day(2));
+    const [second, first] = await listRecordings(db);
+    await reviewTake(db, first!.id, 'ok', day(2, 20));
+    await reviewTake(db, second!.id, 'ok', day(3, 8));
+    expect((await getCard(db, 'b:很:sentence'))!.passed).toBe(day(3, 8).getTime());
+    expect((await logsSince(db, 0)).map((l) => [l.kind, l.cardId])).toEqual([['sentence', 'b:很:sentence'], ['sentence', 'b:很:sentence']]);
+    await putCards(db, [makeCard('b:大', 'sentence', day(9))]);
+    await addRecording(db, sentence('s1', 'b:大', day(4)));
+    await reviewTake(db, 's1', 'no', day(5, 7));
+    expect((await getCard(db, 'b:大:sentence'))!.fsrs.due).toEqual(endOfLocalDay(day(5, 7)));
+  });
+  it('two taps at once on a 说一句 take review it once (review focus 3)', async () => {
+    const db = await freshDb();
+    await addRecording(db, sentence('s1', 'b:很', day(1)));
+    await Promise.all([reviewTake(db, 's1', 'ok', day(2)), reviewTake(db, 's1', 'ok', day(2))]);
+    expect(await logsSince(db, 0)).toHaveLength(1);
+  });
+  it('they wait in the same queue as Say takes, and a word keeps its newest Say take and its newest 说一句 take apart', () => {
+    const recs = [sentence('s-old', 'b:很', day(1), 'ok'), sentence('s-new', 'b:很', day(2), 'ok'), rec('say-only', 'b:很', day(1), 'ok'), sentence('wait', 'b:大', day(3))];
+    expect(waitingTakes(recs).map((r) => r.id)).toEqual(['wait']);
+    expect(takesToDrop(recs, day(20))).toEqual(['s-old']);
+    expect(takesToDrop(recs, day(20), new Set(['b:很:sentence'])).sort()).toEqual(['s-new', 's-old']);
   });
 });

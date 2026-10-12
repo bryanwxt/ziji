@@ -46,6 +46,7 @@ const VERDICT = { ok: ' ✓', no: ' ✗' } as const;
 
 const describe = ({ prompt, review }: Recording, texts: Texts, said: Map<string, string>) => {
   if (prompt.kind === 'say') return `🗣️ Say: ${said.get(prompt.wordId) ?? '(deleted word)'}${review ? VERDICT[review] : ' (waiting)'}`;
+  if (prompt.kind === 'sentence') return `💬 Sentence: ${said.get(prompt.wordId) ?? '(deleted word)'}${review ? VERDICT[review] : ' (waiting)'}`;
   if (prompt.kind === 'picture') return '📷 Picture talk';
   if (prompt.kind === 'intro') return '🙋 Self-introduction';
   if (prompt.kind === 'story' || prompt.kind === 'answer') return '🖼️ Picture story';

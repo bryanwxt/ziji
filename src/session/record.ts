@@ -1,3 +1,4 @@
+import { Rating } from 'ts-fsrs';
 import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/date';
 import { canAskRung, fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
 import { findWord } from '../ladder/words';
@@ -151,6 +152,29 @@ export async function recordUse(db: AppDb, wordId: string, correct: boolean, now
   if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs, ratedMs: Math.max(0, responseMs - USE_READING_MS) }, now, 'use'); // logged as from 选一选/用一用, so Skills counts it once
   if (!correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
   return (await getCard(db, `${wordId}:meaning`))!;
+}
+
+/**
+ * A 组词 written in 写一写 (production practice spec §3): the day's first rating of the word's meaning card, right (Good) or wrong
+ * (Again), logged like the other meaning ratings (so the Use rung's two-day pass applies) with no answer time — writing is slow,
+ * never a guess. Already rated today (练一练 asked it): a miss brings it forward instead.
+ */
+export async function recordWrittenMeaning(db: AppDb, wordId: string, correct: boolean, now: Date): Promise<CardRecord> {
+  const existing = await getCard(db, `${wordId}:meaning`);
+  if (ratedToday(existing, now)) {
+    if (!correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
+    return (await getCard(db, `${wordId}:meaning`))!;
+  }
+  const rating = correct ? Rating.Good : Rating.Again;
+  const card = await reviewCard(db, wordId, 'meaning', rating, now);
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, correct, source: 'write' });
+  return (await settleRung(db, wordId, 'meaning', now)) ?? card;
+}
+
+/** A read-only character traced (production practice spec §3): a recent lesson word is traced once, not every lesson. */
+export async function markTraced(db: AppDb, wordId: string, now: Date): Promise<void> {
+  const word = await getWord(db, wordId);
+  if (word && word.tracedAt === undefined) await putWords(db, [{ ...word, tracedAt: now.getTime() }]);
 }
 
 export async function markWriteSkipped(db: AppDb, wordId: string, now: Date): Promise<void> {

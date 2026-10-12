@@ -32,7 +32,7 @@ export interface PlanInput {
   newPerDay?: number; // today's pace (spec 2026-10-05 §2.2); without one, the pace's start under the ceiling
 }
 
-export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: 5 of the usual 15 minutes, 朗读 takes ~3 (spec 2026-10-12 §4)
+export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: ~6.7 of the usual 20 minutes, 朗读 takes ~3 (production practice spec §6)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
 /** Hear cards reviewed in one lesson at most (spec 2026-10-06 §3.2). */
@@ -41,6 +41,8 @@ export const HEAR_REVIEW_CAP = 40;
 export const UNDERSTAND_REVIEW_CAP = 30;
 /** Say cards in one lesson at most (spec 2026-10-11 §4). */
 export const SAY_PER_LESSON = 6;
+/** 说一句 cards in one lesson at most (production practice spec §4). */
+export const SENTENCE_PER_LESSON = 2;
 
 export function buildSessionPlan({ cards, words, settings, now, practised = new Map(), newPerDay }: PlanInput): SessionPlan {
   const active = words.filter((w) => !w.paused);
@@ -97,6 +99,18 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
       .sort((a, b) => Number(inClass(b)) - Number(inClass(a)) || readAt.get(b.id)! - readAt.get(a.id)! || newWordOrder(a, b))
       .map((w) => w.id),
   ].slice(0, SAY_PER_LESSON);
+  // 说一句 (production practice spec §4): due Sentence cards first, then words whose Read has passed, that have a sentence-bank
+  // example and no Sentence card yet, the newest Read pass first. Never a word introduced today.
+  const sentence = ofKind('sentence');
+  const hasSentence = new Set(sentence.map((c) => c.wordId));
+  const canSentence = (id: string) => { const w = byId.get(id); return !!w && !today.has(id) && canAskRung(w, 'sentence'); };
+  const sentenceIds = [
+    ...dueOf(sentence).map((c) => c.wordId),
+    ...active
+      .filter((w) => readPassed.has(w.id) && !hasSentence.has(w.id))
+      .sort((a, b) => readAt.get(b.id)! - readAt.get(a.id)! || newWordOrder(a, b))
+      .map((w) => w.id),
+  ].filter(canSentence).slice(0, SENTENCE_PER_LESSON);
 
   return {
     steps,
@@ -108,6 +122,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     writeCandidates: writeUnits.map((u) => ({ wordId: u.wordId, isNew: u.isNew })),
     writeItems,
     writeCount: writeItems.length,
+    writeWordIds: writeUnits.map((u) => u.wordId),
     // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
     // only words that can be asked by ear: a card that can't be asked would stay due and hold a slot forever (final review I1)
     hearReviewIds: dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
@@ -119,5 +134,6 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
       .slice(0, NEW_MEANING_PER_DAY)
       .map((w) => w.id),
     sayIds,
+    sentenceIds,
   };
 }

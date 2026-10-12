@@ -35,6 +35,8 @@ if (typeof document !== 'undefined') {
     }
     Object.defineProperty(globalThis, 'PointerEvent', { value: TestPointerEvent, configurable: true, writable: true });
   }
-  const { cleanup } = await import('@testing-library/preact');
+  const { cleanup, configure } = await import('@testing-library/preact');
+  // waitFor polls until it passes, so a high ceiling costs a passing test nothing; the default 1 s fails under a loaded full run (8 workers, fake-indexeddb)
+  configure({ asyncUtilTimeout: 10_000 });
   afterEach(() => cleanup());
 }

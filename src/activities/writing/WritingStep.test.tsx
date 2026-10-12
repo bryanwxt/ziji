@@ -57,6 +57,26 @@ describe('WritingStep', () => {
     render(<WritingStep word={makeWord('朋友', { pinyin: 'péng you' })} at={1} kid={DEFAULT_KID} isNew={false} pass="recall" onDone={vi.fn()} />);
     expect(document.querySelector('.write__prompt .pinyin')?.textContent).toBe('yǒu');
   });
+  it('a traced character (a read-only one, production practice spec §3) shows its outline and reports its misses', () => {
+    quizzes.length = 0;
+    const onDone = vi.fn();
+    render(<WritingStep word={makeWord('澡', { pinyin: 'zǎo', writeable: false })} kid={DEFAULT_KID} isNew pass="trace" onDone={onDone} />);
+    expect(vi.mocked(HanziWriter.create).mock.calls.at(-1)![2]).toMatchObject({ showOutline: true, showHintAfterMisses: 1 });
+    expect(document.querySelector('.pet__bubble')?.textContent).toContain('描一描');
+    act(() => quizzes.at(-1)!.onComplete({ totalMistakes: 3 }));
+    fireEvent.click(screen.getByText('完成'));
+    expect(onDone).toHaveBeenCalledWith({ totalMisses: 3, hinted: false, elapsedMs: expect.any(Number) });
+  });
+  it('a trace is cleaned up when it leaves, and a trace whose strokes cannot load is skipped (he never gets stuck)', () => {
+    quizzes.length = 0;
+    const onDone = vi.fn();
+    const { unmount } = render(<WritingStep word={makeWord('澡', { writeable: false })} kid={DEFAULT_KID} isNew pass="trace" onDone={onDone} />);
+    const hw = vi.mocked(HanziWriter.create).mock.results.at(-1)!.value as { cancelQuiz: ReturnType<typeof vi.fn> };
+    act(() => loadError!());
+    expect(onDone).toHaveBeenCalledWith(null);
+    unmount();
+    expect(hw.cancelQuiz).toHaveBeenCalled();
+  });
   it('skips the word when its stroke data cannot load', () => {
     const onDone = vi.fn();
     render(<WritingStep word={makeWord('大')} kid={DEFAULT_KID} isNew={false} pass="recall" onDone={onDone} />);

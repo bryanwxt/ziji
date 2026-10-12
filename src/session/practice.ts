@@ -12,10 +12,12 @@ import { fishItem } from '../activities/components/zibian';
 import { meaningChoices } from '../activities/flashcards/distractors';
 import { understandItem } from '../practice/understand';
 import { introducedNewWords } from './runner';
-import { SAY_PER_LESSON } from './plan';
+import { SAY_PER_LESSON, SENTENCE_PER_LESSON } from './plan';
+import { canAskRung } from '../ladder/rungs';
 import { idiomOf, idiomsFor, isIdiomWord, type Idiom } from '../content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../practice/idioms';
 import { familyBoard } from '../practice/family';
+import { withNoneOfThese } from '../practice/noneOfThese';
 
 const idiomCache = new WeakMap<Word[], Map<string, Idiom[]>>();
 /** The 成语 for a word at his level, worked out once per word list (planning asks each word several times). */
@@ -91,6 +93,7 @@ function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: As
     case 'say': return false; // a Say card is added from the plan's sayIds (withSay), never asked from the ladder
     case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
     case 'family': return false; // 找一家人 takes over a planned rung-2 item (withFamily), never asked from the ladder
+    case 'sentence': return false; // 说一句 is added from the plan's sentenceIds (withSentence), never asked from the ladder
   }
 }
 
@@ -126,6 +129,27 @@ export function withSay(items: PracticeItem[], sayIds: string[]): PracticeItem[]
   return out;
 }
 
+/** 说一句 comes by this many items in (and the second by twice it): a round is cut by its time box, ~6.7 minutes at 20. */
+export const SENTENCE_BY = 12;
+
+/**
+ * Puts the 说一句 cards into the round (production practice spec §4): at most 2, and one for every three items at most, spread
+ * like the Say cards but never later than the 12th and 24th item, so the time box reaches them (measured: a P2 round of ~200
+ * items lost its second one at half-way); never beside the same word or another card he records. Like a Say card it grades
+ * nothing in the lesson: the parent confirms the take.
+ */
+export function withSentence(items: PracticeItem[], sentenceIds: string[]): PracticeItem[] {
+  const k = Math.min(SENTENCE_PER_LESSON, sentenceIds.length, Math.floor(items.length / 3));
+  const out = [...items];
+  sentenceIds.slice(0, k).forEach((wordId, j) => {
+    let at = Math.min(Math.round((out.length * (j + 1)) / (k + 1)), SENTENCE_BY * (j + 1));
+    const crowded = (x: PracticeItem | undefined) => !!x && (x.wordId === wordId || x.ask === 'say' || x.ask === 'sentence');
+    while (at < out.length && (crowded(out[at - 1]) || crowded(out[at]))) at++;
+    out.splice(at, 0, { wordId, rung: 3, ask: 'sentence', grades: 'sentence', retry: false });
+  });
+  return out;
+}
+
 /** At most two 找一家人 a lesson (spec 2026-10-12 §5). */
 export const MAX_FAMILY = 2;
 
@@ -146,24 +170,30 @@ export function withFamily(items: PracticeItem[], canFamily: (wordId: string) =>
   return out;
 }
 
-/** `canSay`: the iPad can record (no microphone or MediaRecorder: no Say cards this lesson, spec 2026-10-11 §7). */
+/** `canSay`: the iPad can record (no microphone or MediaRecorder: no Say or 说一句 cards this lesson, spec 2026-10-11 §7). */
 export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, number>, wordsById: ReadonlyMap<string, Word>, pool: Word[], voice: boolean, rng: Rng, confusions: ReadonlyMap<string, string[]> = new Map(), level = 1, canSay = false, known: ReadonlySet<string> = new Set()): PracticeItem[] {
   // no voice: a word due only for Understand is left for another day — a reading question would grade Use before Read (final review I2)
   const listenOnly = (w: RoundWord) => !!w.gradesUnderstand && !w.gradesRecognise && !w.gradesHear && !w.gradesMeaning;
   const words = practiceWords(rec, rungs).filter((w) => (voice || !listenOnly(w)) && (() => { const can = askable(wordsById.get(w.wordId), pool, voice, level); return can('read') || can('meaningRead'); })());
-  // 找一家人 takes up to two rung-2 items, for words with family he reads (`known`: know.knownChars, spec 2026-10-12 §5)
-  const round = withFamily(buildRound(words, (id, ask) => askable(wordsById.get(id), pool, voice, level)(ask), rng), (id) => {
+  // 写一写 does today's 组词 work for the words it covers (production practice spec §3): no 组词 gap or pairing for them here; the
+  // ladder asks another rung-2 question, or the nearest rung below, so the round keeps its length (plans saved before have none)
+  const written = new Set(rec.plan.writeWordIds ?? []);
+  const can = (id: string, ask: Ask) => !(written.has(id) && (ask === 'word' || ask === 'pair')) && askable(wordsById.get(id), pool, voice, level)(ask);
+  // never a word met today: it is said on another day (spec 2026-10-11 §4), and asked with its answer in (production practice spec §5)
+  const today = new Set([...rec.plan.newWordIds, ...introducedNewWords(rec)]);
+  // 找一家人 takes up to two rung-2 items, for words with family he reads (`known`: know.knownChars, spec 2026-10-12 §5); about one
+  // in five 组词-gap, 搭配 and English-meaning questions then leave their answer out for 「都不对」 (production practice spec §5)
+  const round = withNoneOfThese(withFamily(buildRound(words, can, rng), (id) => {
     const w = wordsById.get(id);
     return !!w && !w.paused && familyBoard(w, known, mulberry32(1)) !== null;
-  });
+  }), today, rng);
   const fish = [...confusions.keys()].filter((id) => {
     const w = wordsById.get(id);
     return w && !w.paused && fishItem(w, confusions.get(id)!, new Set(), mulberry32(1)) !== null;
   });
-  // never a word met today: it is said on another day (spec 2026-10-11 §4)
-  const today = new Set([...rec.plan.newWordIds, ...introducedNewWords(rec)]);
   const say = canSay ? (rec.plan.sayIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id); }) : [];
-  return withSay(withFish(round, fish), say);
+  const sentence = canSay ? (rec.plan.sentenceIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id) && canAskRung(w, 'sentence'); }) : [];
+  return withSentence(withSay(withFish(round, fish), say), sentence);
 }
 
 /** 再玩一会儿: a round of words he has begun, from their own rungs, twice each; practice only. */
