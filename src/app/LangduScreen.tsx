@@ -41,7 +41,7 @@ export function LangduScreen() {
 
   const done = async (r: LangduResult) => {
     if (r.read) {
-      await keepRecording(db, { id: newId(), createdAt: now().getTime(), prompt: { kind: 'passage', passageId: passage.id }, ...r.read });
+      await keepRecording(db, { id: newId(), createdAt: now().getTime(), prompt: { kind: 'passage', passageId: passage.id, extra: true }, ...r.read }); // never the queue's take (final review I6)
       try {
         await tidyPassageTakes(db, now());
       } catch (err) {

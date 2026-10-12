@@ -180,7 +180,7 @@ export interface SessionRecord {
 
 export type RecordingPrompt =
   | { kind: 'picture'; promptId: string }
-  | { kind: 'passage'; passageId: string }
+  | { kind: 'passage'; passageId: string; extra?: true } // extra: a 多读一遍 round, never the queue's take or the bonus baseline
   | { kind: 'intro' } // the exam-etiquette self-introduction
   | { kind: 'story'; sceneId: string; part: 'opening' | 'setting' | 'events' | 'ending' | 'opinion' | 'whole' } // 看图说话
   | { kind: 'answer'; sceneId: string; question: number } // Truffle asks

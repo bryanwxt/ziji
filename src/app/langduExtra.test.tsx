@@ -57,7 +57,7 @@ describe('朗读 extra rounds', () => {
     await waitFor(() => expect(app.go).toHaveBeenLastCalledWith({ name: 'home' }));
     const recs = await listRecordings(app.db);
     expect(recs).toHaveLength(1);
-    expect(recs[0]!.prompt).toEqual({ kind: 'passage', passageId: 'pp:1' });
+    expect(recs[0]!.prompt).toEqual({ kind: 'passage', passageId: 'pp:1', extra: true }); // tagged: never the queue's take (final review I6)
     const after = (await getKid(app.db))!;
     expect(after.reading.days).toBe(1);
     expect(after.bonusStars).toBe(0);

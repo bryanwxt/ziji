@@ -22,19 +22,21 @@ describe('passage takes in the queue (spec 2026-10-12 §6)', () => {
     const recs = [rec('i', { kind: 'intro' }, day(1)), passage('p', 'p01', day(3)), rec('s', { kind: 'say', wordId: 'b:大' }, day(2))];
     expect(waitingTakes(recs).map((r) => r.id)).toEqual(['s', 'p']);
   });
-  it('tidy: reviewed passage takes older than 14 days go, each passage keeps its newest; unreviewed ones and other recordings stay', async () => {
+  it('tidy: passage takes older than 14 days go, reviewed or not, each passage keeps its newest; other recordings stay', async () => {
     const now = new Date(2026, 9, 30);
     const recs = [
       passage('old', 'p01', day(1), 'ok'), passage('new', 'p01', day(28), 'ok'),
       passage('only', 'p02', day(1), 'ok'), // its passage's newest: kept whatever its age
-      passage('waiting', 'p03', day(1)), passage('newer', 'p03', day(2), 'ok'), // an older unreviewed take stays
+      passage('unheard-newest', 'p04', day(1)), // its passage's newest, never listened to: kept, it still waits
+      passage('superseded', 'p03', day(1)), passage('newer', 'p03', day(2), 'ok'), // superseded: it can never be reviewed (final review I5)
+      passage('recent', 'p03', day(20)), // under 14 days: kept, though superseded
       rec('intro', { kind: 'intro' }, day(1)),
     ];
-    expect(passageTakesToDrop(recs, now)).toEqual(['old']);
+    expect(passageTakesToDrop(recs, now).sort()).toEqual(['newer', 'old', 'superseded']);
     const db = await freshDb();
     for (const r of recs) await addRecording(db, r);
     await tidyPassageTakes(db, now);
-    expect((await listRecordings(db)).map((r) => r.id).sort()).toEqual(['intro', 'new', 'newer', 'only', 'waiting']);
+    expect((await listRecordings(db)).map((r) => r.id).sort()).toEqual(['intro', 'new', 'only', 'recent', 'unheard-newest']);
   });
   it('Done saves the marks as priority words and marks the take listened to', async () => {
     const db = await freshDb();
@@ -64,5 +66,21 @@ describe('passage takes in the queue (spec 2026-10-12 §6)', () => {
     expect(await getRecording(db, 'a')).toMatchObject({ review: 'ok', misread: ['爱'] });
     const after = (await getKid(db))!.reading;
     expect(JSON.stringify(after)).toBe(JSON.stringify(addExtraDay(before, 'p01')));
+  });
+});
+
+describe('多读一遍 takes (final review I6): listed, never the queue take, tidied after 14 days', () => {
+  const extra = (id: string, passageId: string, at: number) => rec(id, { kind: 'passage', passageId, extra: true }, at);
+  it("an extra round after the lesson leaves the lesson's take (with his answer) waiting", () => {
+    const lesson = { ...passage('lesson', 'p01', day(2)), meaning: { correct: true, picked: '树上' } };
+    expect(waitingPassageTakes([lesson, extra('x1', 'p01', day(2, 19)), extra('x2', 'p01', day(3))]).map((r) => r.id)).toEqual(['lesson']);
+  });
+  it('a passage read only in extra rounds has nothing waiting', () => {
+    expect(waitingPassageTakes([extra('x1', 'p01', day(2))])).toEqual([]);
+  });
+  it("tidy keeps the passage's newest lesson take forever; extra takes go after 14 days like any other", () => {
+    const now = new Date(2026, 9, 30);
+    const recs = [passage('lesson', 'p01', day(1), 'ok'), extra('x-old', 'p01', day(2)), extra('x-new', 'p01', day(25))];
+    expect(passageTakesToDrop(recs, now)).toEqual(['x-old']);
   });
 });
