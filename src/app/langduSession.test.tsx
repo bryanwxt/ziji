@@ -1,5 +1,6 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, screen, waitFor } from '@testing-library/preact';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setSpeaking } from '../audio/speaking';
 import { addRecording, getKid, listRecordings, saveKid, saveParentPassage, updateSettings } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS } from '../types';
@@ -16,6 +17,8 @@ vi.mock('../audio/recorder', () => ({
   }),
 }));
 
+afterEach(() => act(() => setSpeaking(false)));
+
 const speakingOnly = { newwords: false, practice: false, writing: false, speaking: true };
 
 async function setup() {
@@ -26,18 +29,30 @@ async function setup() {
   return app;
 }
 
-async function readThrough() {
+const btn = (t: string) => screen.getByText(t).closest('button') as HTMLButtonElement;
+
+async function warmUp() {
   await screen.findByText('老师好！');
   fireEvent.click(screen.getByText('开始录音'));
   fireEvent.click(await screen.findByText('停止'));
-  await waitFor(() => expect((screen.getByText('继续').closest('button') as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByText('继续'));
-  fireEvent.click(screen.getByText('下一句'));
-  fireEvent.click(screen.getByText('开始朗读'));
+  await waitFor(() => expect(btn('继续').disabled).toBe(false));
+  fireEvent.click(btn('继续'));
+}
+/** The model reads the passage's one sentence, he reads it: on Compare. */
+async function listenAndRead() {
+  await screen.findByText('我爱爸爸，我爱妈妈。');
+  act(() => setSpeaking(true));
+  act(() => setSpeaking(false));
+  await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
+  fireEvent.click(btn('开始朗读'));
   fireEvent.click(screen.getByText('开始录音'));
   fireEvent.click(await screen.findByText('停止'));
-  await screen.findByText('听听你自己');
-  fireEvent.click(screen.getByText('完成'));
+  await screen.findByRole('button', { name: '听我的' });
+}
+async function readThrough() {
+  await warmUp();
+  await listenAndRead();
+  fireEvent.click(btn('完成')); // a parent text with no question: Compare ends the step
 }
 
 describe('daily 朗读 step', () => {

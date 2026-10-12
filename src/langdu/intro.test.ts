@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { introLines, pinyinMode } from './intro';
+import { introLines } from './intro';
 const oral = { name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' };
 describe('self-introduction', () => {
   it('builds the standard script from Settings', () => {
@@ -8,8 +8,5 @@ describe('self-introduction', () => {
   it('a custom script replaces the body; missing details drop the body', () => {
     expect(introLines({ ...oral, customIntro: '大家好，我是小明。' }).body).toBe('大家好，我是小明。');
     expect(introLines({ ...oral, school: '' }).body).toBeNull();
-  });
-  it('pinyin fades: full for 5 warm-ups, unknown-only for 5, then none', () => {
-    expect([0, 4, 5, 9, 10, 30].map(pinyinMode)).toEqual(['full', 'full', 'unknown', 'unknown', 'none', 'none']);
   });
 });

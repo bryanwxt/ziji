@@ -513,15 +513,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <ComponentsStep key="components" items={state.round} kid={kid} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
-        <LangduStep
-          passage={state.speaking.passage}
-          oral={state.speaking.oral}
-          warmups={kid.reading.warmups}
-          knownChars={know.knownChars}
-          kid={kid}
-          withWarmup
-          onDone={(r) => void onLangduDone(r)}
-        />
+        <LangduStep passage={state.speaking.passage} oral={state.speaking.oral} kid={kid} withWarmup onDone={(r) => void onLangduDone(r)} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'story' && (
         <StoryStep scene={state.speaking.scene} told={kid.story.told} kid={kid} onDone={(r) => void onStoryDone(r)} />

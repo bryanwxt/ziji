@@ -72,16 +72,19 @@ export function useRecorder(startBlocked = false) {
   return { state, result, level, quietMs, heard, start, stop, reset };
 }
 
+/** The microphone is refused or missing: said once, kindly; the step goes on without recording. */
+export function BlockedNote() {
+  return (
+    <p class="warning">
+      <Label zh={BLOCKED_NOTE} />
+      <br />
+      <small>Ask a parent to allow the microphone for this app.</small>
+    </p>
+  );
+}
+
 export function MicButton({ rec, withLevel }: { rec: ReturnType<typeof useRecorder>; withLevel: boolean }) {
-  if (rec.state === 'blocked') {
-    return (
-      <p class="warning">
-        <Label zh={BLOCKED_NOTE} />
-        <br />
-        <small>Ask a parent to allow the microphone for this app.</small>
-      </p>
-    );
-  }
+  if (rec.state === 'blocked') return <BlockedNote />;
   if (rec.state === 'recording') {
     return (
       <>

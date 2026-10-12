@@ -1192,6 +1192,16 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .stage .langdu { width: 100%; min-height: 0; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.6dvh, 18px); }
 .stage .langdu__script { background: none; border: none; box-shadow: none; } /* the card is the paper */
 .stage .langdu__title, .stage .langdu__step, .stage .langdu__ok, .stage .langdu__thanks { background: none; padding: 0; }
+/* 朗读 (spec 2026-10-12 §3): the passage a sentence at a time, the one being read lit; compare's two big buttons; the question */
+.langdu__sentences { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: flex-start; gap: 2px 4px; text-align: left; }
+.langdu__sentence { font: inherit; color: inherit; background: none; border: 0; box-shadow: none; border-radius: 12px; padding: 2px 6px; margin: 0; transition: background-color 0.2s; }
+button.langdu__sentence { cursor: pointer; }
+.langdu__sentence.is-reading { background: var(--green-soft); box-shadow: inset 0 -4px 0 var(--green); }
+.langdu__compare { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+.langdu__big { display: inline-flex; align-items: center; gap: 10px; min-height: 64px; padding: 10px 22px; font-size: 24px; }
+.langdu__again { min-height: 52px; }
+.langdu__q { margin: 0; font-family: var(--hanzi); font-size: clamp(26px, 4dvh, 36px); }
+.langdu__choices { grid-template-columns: 1fr; max-width: 480px; }
 
 .stage--placement .stage__card { justify-content: center; gap: clamp(10px, 2dvh, 20px); }
 .stage--placement .placement__prompt { border: none; box-shadow: none; background: none; } /* the card is the paper; the box keeps its fixed size */

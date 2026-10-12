@@ -49,7 +49,7 @@ export function LangduScreen() {
           <X size={34} strokeWidth={3} />
         </button>
       </header>
-      <LangduStep passage={passage} oral={state.oral} warmups={state.kid.reading.warmups} knownChars={state.knownChars} kid={state.kid} withWarmup={false} onDone={(r) => void done(r)} />
+      <LangduStep passage={passage} oral={state.oral} kid={state.kid} withWarmup={false} extra onDone={(r) => void done(r)} />
     </div>
   );
 }
