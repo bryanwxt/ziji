@@ -13,11 +13,12 @@ await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdi
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
 /** Anything in the lesson card cut off by the card's own box (the same probe as the clue case). */
-const cardClipped = (page: import('playwright-core').Page, name: string) => page.evaluate((n) => {
+const cardClipped = (page: import('playwright-core').Page, name: string, scrolls = '') => page.evaluate(([n, s]) => {
   const card = document.querySelector('.stage__card')?.getBoundingClientRect();
   if (!card) return [`${n}: no lesson card`];
   for (const el of document.querySelectorAll('.stage__card *')) {
     if ((el instanceof SVGElement && el.ownerSVGElement) || el.closest('.sr-only, [aria-hidden="true"]')) continue;
+    if (s && el.closest(s)) continue; // a box meant to scroll, and what is inside it
     const r = el.getBoundingClientRect();
     if (r.width && r.height && (r.top < card.top - 2 || r.bottom > card.bottom + 2 || r.left < card.left - 2 || r.right > card.right + 2)) return [`${n}: clipped by the card: ${(el.textContent ?? '').trim().slice(0, 12)}`];
     // a box inside the card that has to scroll hides its last rows (the 认新字 card scrolls rather than squash)
@@ -25,7 +26,7 @@ const cardClipped = (page: import('playwright-core').Page, name: string) => page
     if ((o === 'auto' || o === 'scroll' || o === 'hidden') && el.scrollHeight > el.clientHeight + 2) return [`${n}: ${el.className} scrolls ${el.scrollHeight - el.clientHeight}px`];
   }
   return [];
-}, name);
+}, [name, scrolls] as const);
 
 /** Nothing in a feedback sheet's explanation past the sheet, and the sheet on the screen (spec 2026-10-12 §3's why-lines). */
 const sheetFits = (page: import('playwright-core').Page, name: string) => page.evaluate((n) => {
@@ -166,6 +167,23 @@ for (const size of SIZES) {
     await page.screenshot({ path: `fit-shots/stage-cases/family-wrong-${size.name}.png` });
     if (!(await page.$('.family-sum__row.is-missed'))) problems.push(`${size.name} family: the miss is not explained`);
     problems.push(...(await cardClipped(page, `${size.name} family wrong`)), ...(await sheetFits(page, `${size.name} family wrong`)));
+  }
+  // 朗读 (spec 2026-10-12 §8): every part with the longest built-in text, the sentence lit while the model reads, a missed question
+  for (const c of ['langdu-warmup', 'langdu-listen', 'langdu-read', 'langdu-read-blocked', 'langdu-compare', 'langdu-meaning']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`, '.langdu__passage')));
+    if (c === 'langdu-listen' && !(await page.$('.langdu__sentence.is-reading'))) problems.push(`${size.name} langdu-listen: no sentence lit while the model reads`);
+  }
+  {
+    await page.goto(`file://${dir}/index.html?case=langdu-meaning`);
+    await page.waitForTimeout(300);
+    await page.click('.langdu__choices .choice >> nth=0'); // p20's right answer is the second choice
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/langdu-meaning-wrong-${size.name}.png` });
+    if (!(await page.$('.langdu__choices .choice.is-answer'))) problems.push(`${size.name} langdu-meaning: the miss does not show the right choice`);
+    problems.push(...(await cardClipped(page, `${size.name} langdu-meaning wrong`)), ...(await sheetFits(page, `${size.name} langdu-meaning wrong`)));
   }
   await page.goto(`file://${dir}/index.html?case=build`);
   for (let i = 0; i < 6 && (await page.$('.build__bank .choice')); i++) await page.click('.build__bank .choice');

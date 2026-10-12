@@ -129,6 +129,7 @@ function advance(): boolean {
   const tap = (el: HTMLElement | undefined) => (el ? (el.click(), true) : false);
   if (tap(byText('停止'))) return true;
   if (!document.querySelector('.kantu__model') && tap(byText('听松露说'))) return true; // show the model once: the tallest state
+  if (document.querySelector('.langdu__listen[data-heard="false"]')) return true; // 朗读: the model is reading; 开始朗读 comes after
   if (tap(first('.sheet .btn'))) return true;
   if (tap(byText('开始录音'))) return true;
   for (const t of ['我记住了', '下一句', '开始朗读', '听听你自己', '开始！', '走吧', '继续', '回家']) if (tap(byText(t))) return true;
@@ -425,7 +426,7 @@ async function sweep(browser: Browser, size: Size) {
   await run('writing', AFTERNOON, { activities: only('writing') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing', { firstOnly: true }); });
   await run('writing-sentence', AFTERNOON, { activities: only('writing'), writeSentence: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing-sentence'); });
   await run('langdu', AFTERNOON, { activities: only('speaking'), speakingLast: 'story', langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu'); });
-  await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then the chest
+  await run('lesson', AFTERNOON, { langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, 朗读 too, then the chest
   await run('chest-stars', AFTERNOON, { ownsAll: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-stars'); }); // the chest's stars prize
   await run('langdu-extra', AFTERNOON, { doneToday: true, langdu: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
 }
