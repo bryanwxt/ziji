@@ -6,6 +6,7 @@ import { ClassLessonField } from './ClassLessonField';
 import { SetupPin } from '../app/SetupPin';
 import { setSfxEnabled } from '../audio/sfx';
 import { chineseVoices, currentVoice, setPreferredVoice, setSpeechRate, speak, voiceQuality } from '../audio/speech';
+import { TIER_LABEL, voiceTier } from '../audio/voiceTier';
 import { ONESIES, type ZodiacId } from '../fun/costumes';
 import { introLines } from '../langdu/intro';
 import { AsrTest } from './AsrTest';
@@ -188,8 +189,9 @@ const QUALITY = ['Standard', 'Enhanced', 'Premium'];
 function VoiceField({ value, onChange }: { value: string | null; onChange: (uri: string | null) => void }) {
   const [voices, setVoices] = useState(chineseVoices());
   const [using, setUsing] = useState(currentVoice()?.name ?? null);
+  const [tier, setTier] = useState(voiceTier());
   useEffect(() => {
-    const update = () => { setVoices(chineseVoices()); setUsing(currentVoice()?.name ?? null); };
+    const update = () => { setVoices(chineseVoices()); setUsing(currentVoice()?.name ?? null); setTier(voiceTier()); };
     update();
     if (typeof speechSynthesis === 'undefined' || !speechSynthesis) return;
     const synth = speechSynthesis;
@@ -199,11 +201,11 @@ function VoiceField({ value, onChange }: { value: string | null; onChange: (uri:
   return (
     <div class="field">
       <label for="st-voice">Voice</label>
-      <select id="st-voice" value={value ?? ''} onChange={(e) => { const uri = e.currentTarget.value || null; onChange(uri); setUsing(currentVoice()?.name ?? null); }}>
+      <select id="st-voice" value={value ?? ''} onChange={(e) => { const uri = e.currentTarget.value || null; onChange(uri); setUsing(currentVoice()?.name ?? null); setTier(voiceTier()); }}>
         <option value="">The clearest on this iPad (automatic)</option>
         {voices.map((v) => <option key={v.voiceURI} value={v.voiceURI}>{`${v.name} · ${QUALITY[voiceQuality(v)]} · ${v.lang}`}</option>)}
       </select>
-      <p class="hint">Now speaking: {using ?? 'no Mandarin voice found'}. {voices.length} Mandarin voice{voices.length === 1 ? '' : 's'} available to the app.</p>
+      <p class="hint">Now speaking: {using ? `${using} · ${TIER_LABEL[tier]}` : 'no Mandarin voice found'}. {voices.length} Mandarin voice{voices.length === 1 ? '' : 's'} available to the app. 朗读 reads with this voice: Enhanced or Premium sounds natural.</p>
       <button type="button" class="btn btn--secondary" onClick={() => speak('你好！我是松露。我们一起学汉字吧！')}>Test the voice</button>
     </div>
   );

@@ -3,6 +3,7 @@ import { audioContext } from './context';
 import { clipPlan, clipUrl } from './clips';
 import { createClipPlayer, type ClipPlayer } from './clipPlayer';
 import { setClipActive, setSpeaking } from './speaking';
+import { noteVoice, voiceQuality } from './voiceTier';
 
 let voice: SpeechSynthesisVoice | null = null;
 let rate = 0.8;
@@ -17,20 +18,20 @@ export function setSpeechRate(r: number): void {
   rate = r;
 }
 
-/**
- * How clear a voice is: an iPad's downloaded Premium or Enhanced voices are much clearer than the compact default (parent,
- * 2026-10-05). iPadOS often names them all "Tingting"; the quality is in the voiceURI (com.apple.voice.enhanced.zh-CN.…).
- */
-export const voiceQuality = (v: SpeechSynthesisVoice): number => {
-  const id = `${v.name} ${v.voiceURI ?? ''}`;
-  return /premium/i.test(id) ? 2 : /enhanced|增强|高品质|优化/i.test(id) ? 1 : 0;
+export { voiceQuality };
+
+/** The voice in use, and its tier for the parent's screens (spec 2026-10-12 §5). */
+const useVoice = (v: SpeechSynthesisVoice | null): SpeechSynthesisVoice | null => {
+  voice = v;
+  noteVoice(v);
+  return v;
 };
 
 /** The parent's pick (Settings → Voice), by voiceURI; null: the clearest the iPad has. */
 let preferred: string | null = null;
 export function setPreferredVoice(uri: string | null): void {
   preferred = uri;
-  if (available()) voice = pickVoice(speechSynthesis.getVoices());
+  if (available()) useVoice(pickVoice(speechSynthesis.getVoices()));
 }
 /** The voice speaking now, for the parent's Voice setting. */
 export const currentVoice = (): SpeechSynthesisVoice | null => voice;
@@ -54,16 +55,16 @@ export function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice 
 /** Voices load asynchronously on iPad Safari; wait briefly for them. */
 export async function loadChineseVoice(timeoutMs = 1500, pref: string | null = null): Promise<SpeechSynthesisVoice | null> {
   preferred = pref;
-  if (!available()) return (voice = null);
+  if (!available()) return useVoice(null);
   // the iPad can add voices after the first list (a downloaded Enhanced one): pick again whenever the list changes
-  speechSynthesis.addEventListener?.('voiceschanged', () => { voice = pickVoice(speechSynthesis.getVoices()) ?? voice; });
-  voice = pickVoice(speechSynthesis.getVoices());
+  speechSynthesis.addEventListener?.('voiceschanged', () => { useVoice(pickVoice(speechSynthesis.getVoices()) ?? voice); });
+  useVoice(pickVoice(speechSynthesis.getVoices()));
   if (!voice) {
-    voice = await new Promise<SpeechSynthesisVoice | null>((resolve) => {
+    useVoice(await new Promise<SpeechSynthesisVoice | null>((resolve) => {
       const done = () => resolve(pickVoice(speechSynthesis.getVoices()));
       speechSynthesis.addEventListener?.('voiceschanged', done, { once: true });
       setTimeout(done, timeoutMs);
-    });
+    }));
   }
   return voice;
 }
