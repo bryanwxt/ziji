@@ -133,7 +133,8 @@ function advance(): boolean {
   if (tap(first('.sheet .btn'))) return true;
   if (tap(byText('开始录音'))) return true;
   for (const t of ['我记住了', '下一句', '开始朗读', '听听你自己', '开始！', '走吧', '继续', '回家']) if (tap(byText(t))) return true;
-  if (tap(first('.choice'))) return true;
+  if (document.querySelector('.understand__choice:disabled:not(.is-answer):not(.is-wrong):not(.is-dim)')) return true; // 听一听 opens its choices after the line has been said
+  if (tap(first('.choice:not(.is-picked)'))) return true; // 找一家人 takes two picks: tapping a picked word lets it go
   if (tap(first('.fishtile, .bubble-opt, .whichpart__char'))) return true;
   if (tap(first('.chest'))) return true;
   return false;
@@ -289,7 +290,7 @@ function stageInvariants() {
 
 async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnly?: boolean } = {}) {
   const seen = new Set<string>(); // check each distinct screen once; keep walking through repeats (20 phrases, 25 words) to reach the end
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 300; i++) { // a full lesson with 朗读 is ~250 taps
     await page.waitForTimeout(450);
     if (!(await page.$('.lessonbar')) && !(await page.$('.celebrate'))) return; // back home
     const sig = await page.evaluate(signature);
@@ -308,7 +309,7 @@ async function sweep(browser: Browser, size: Size) {
     let page: Page | null = null;
     const errors: string[] = [];
     try {
-      const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error('flow took over 3 minutes (stuck?)')), 180_000));
+      const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error('flow took over 6 minutes (stuck?)')), 360_000));
       page = await Promise.race([open(browser, size, now, profile, errors), limit]);
       const p = page;
       await Promise.race([then(p), limit]); // one stuck screen can't stall the whole sweep
