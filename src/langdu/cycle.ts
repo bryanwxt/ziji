@@ -1,16 +1,18 @@
 import { eligiblePassages } from '../activities/speaking/prompts';
+import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { addDays, localDateKey, parseDateKey } from '../lib/date';
-import type { ParentPassage, Passage, ReadingState } from '../types';
+import type { ParentPassage, Passage, PassageQuestion, ReadingState } from '../types';
 
 export const CYCLE_DAYS = 3;
 export const MAX_EXTRA = 2;
 export const RECENT_DAYS = 30;
-export interface ReadingPassage { id: string; title: string; text: string; source: 'parent' | 'builtin' }
+export interface ReadingPassage { id: string; title: string; text: string; source: 'parent' | 'builtin'; question?: PassageQuestion }
 
-export function readingPool(parent: ParentPassage[], builtins: Passage[], knownChars: Set<string>): ReadingPassage[] {
+/** Parent texts first (in the order added), then built-ins he can read; each with its meaning question when it has one. */
+export function readingPool(parent: ParentPassage[], builtins: Passage[], knownChars: Set<string>, questions: Readonly<Record<string, PassageQuestion>> = PASSAGE_QUESTIONS): ReadingPassage[] {
   return [
-    ...[...parent].sort((a, b) => a.createdAt - b.createdAt).map((p) => ({ id: p.id, title: p.title, text: p.text, source: 'parent' as const })),
-    ...eligiblePassages(builtins, knownChars).map((p) => ({ ...p, source: 'builtin' as const })),
+    ...[...parent].sort((a, b) => a.createdAt - b.createdAt).map((p) => ({ id: p.id, title: p.title, text: p.text, source: 'parent' as const, ...(p.question ? { question: p.question } : {}) })),
+    ...eligiblePassages(builtins, knownChars).map((p) => ({ ...p, source: 'builtin' as const, ...(questions[p.id] ? { question: questions[p.id] } : {}) })),
   ];
 }
 
@@ -41,4 +43,13 @@ export function finishDay(r: ReadingState, passageId: string, today: string): Re
 export function addExtraDay(r: ReadingState, passageId: string): ReadingState {
   if (r.passageId !== passageId || r.extra >= MAX_EXTRA) return r;
   return { ...r, extra: r.extra + 1 };
+}
+
+/**
+ * Day 1 of this passage (spec 2026-10-12 §3: the warm-up runs then only): a passage the cycle hasn't counted yet (its count
+ * still belongs to the last passage until finishDay), day 0, or a second lesson on its first day.
+ */
+export function isFirstDay(r: ReadingState, passageId: string, today: string): boolean {
+  if (r.passageId !== passageId) return true;
+  return r.days === 0 || (r.days === 1 && r.lastDay === today);
 }

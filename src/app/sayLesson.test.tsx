@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../content';
-import { allCards, getSession, listRecordings, putCards, putWords, updateSettings } from '../store/repo';
+import { allCards, getSession, listRecordings, putCards, putWords, saveParentPassage, updateSettings } from '../store/repo';
 import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { SessionScreen } from './SessionScreen';
@@ -92,4 +92,38 @@ describe('Say cards in a lesson (spec 2026-10-11 §3, §4)', () => {
       expect(rec.practiceQueue!.slice(rec.practiceIndex).some((x) => x.ask === 'say')).toBe(false);
     });
   });
+});
+
+/** Taps through the rest of 练一练 (any question type: choices, 钓鱼 tiles, bubbles, parts) until 朗读 shows. A picked tile isn't
+ *  tapped again (找一家人 lets go of it on a second tap). */
+const TAPS = '.choice:not([disabled]):not(.is-picked):not(.is-matched), .fishtile:not([disabled]), .bubble-opt:not([disabled]), .whichpart__char:not([disabled])';
+async function untilLangdu() {
+  for (let i = 0; i < 120; i++) {
+    await waitFor(() => expect(document.querySelector(`.langdu, ${TAPS}, .sheet .btn:not([disabled])`)).toBeTruthy(), { timeout: 4000 });
+    if (document.querySelector('.langdu')) return;
+    const before = document.body.innerHTML;
+    const open = document.querySelector<HTMLElement>(TAPS);
+    if (open) fireEvent.click(open);
+    const next = document.querySelector<HTMLElement>('.sheet .btn:not([disabled])');
+    if (next) fireEvent.click(next);
+    await waitFor(() => expect(document.body.innerHTML).not.toBe(before), { timeout: 4000 });
+  }
+  throw new Error('no 朗读 came');
+}
+
+describe('a microphone refused on a Say card (spec 2026-10-12 §3)', () => {
+  it('朗读 later in the lesson does not ask for it again', async () => {
+    vi.mocked(startRecording).mockRejectedValue(new Error('denied'));
+    const app = await setup();
+    await updateSettings(app.db, { activities: { newwords: false, practice: true, writing: false, speaking: true }, langdu: true });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    renderWithApp(<SessionScreen free={false} />, app);
+    await untilSay();
+    fireEvent.click(screen.getByText('开始录音'));
+    await waitFor(() => expect(document.querySelector('.say')).toBeNull());
+    await untilLangdu();
+    expect(await screen.findByText('麦克风没有打开。我们下次再录！')).toBeTruthy(); // the warm-up says so…
+    expect(screen.queryByText('开始录音')).toBeNull(); // …and never asks
+    expect(startRecording).toHaveBeenCalledTimes(1);
+  }, 60_000);
 });

@@ -116,10 +116,10 @@ describe('看图说话 is parked by default', () => {
   });
 });
 
-describe('朗读 parked (parent, 2026-10-05)', () => {
+describe('朗读 switched off', () => {
   it('a lesson that still has its speaking stop passes it by', async () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 6, 17) });
-    await updateSettings(app.db, { activities: { newwords: false, practice: false, writing: false, speaking: true } });
+    await updateSettings(app.db, { activities: { newwords: false, practice: false, writing: false, speaking: true }, langdu: false });
     await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
     await saveKid(app.db, { ...DEFAULT_KID });
     renderWithApp(<SessionScreen free={false} />, app);

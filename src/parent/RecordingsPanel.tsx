@@ -4,14 +4,13 @@ import { useApp } from '../app/AppContext';
 import { PASSAGES } from '../content';
 import { applyMisreads } from '../langdu/misreads';
 import { SCENES_KT } from '../kantu/scenes';
-import { displayText } from '../langdu/phrases';
 import { findWord } from '../ladder/words';
 import { takeWord } from '../session/say';
 import { deleteRecording, listParentPassages, listRecordings } from '../store/repo';
 import type { ParentPassage, Recording } from '../types';
+import { MisreadText } from './MisreadText';
 
 const KEEP = 100; // a picture story (all its parts) counts as one
-const HAN = /\p{Script=Han}/u;
 
 type Texts = Map<string, { title: string; text: string }>;
 
@@ -79,15 +78,7 @@ function MisreadMarker({ recording, text, onSaved }: { recording: Recording; tex
   };
   return (
     <div class="misreads">
-      <p class="misreads__text">
-        {[...displayText(text)].map((ch, i) =>
-          HAN.test(ch) ? (
-            <button key={i} type="button" class={`misread-ch${marked.has(ch) ? ' is-on' : ''}`} aria-pressed={marked.has(ch)} onClick={() => toggle(ch)}>{ch}</button>
-          ) : (
-            <span key={i}>{ch}</span>
-          ),
-        )}
-      </p>
+      <MisreadText text={text} marked={marked} onToggle={toggle} />
       <button type="button" class="small-btn" onClick={() => void save()}>Save misread characters</button>
       {saved !== null && (
         <span class="misreads__done">

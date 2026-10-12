@@ -129,10 +129,12 @@ function advance(): boolean {
   const tap = (el: HTMLElement | undefined) => (el ? (el.click(), true) : false);
   if (tap(byText('停止'))) return true;
   if (!document.querySelector('.kantu__model') && tap(byText('听松露说'))) return true; // show the model once: the tallest state
+  if (document.querySelector('.langdu__listen[data-heard="false"]')) return true; // 朗读: the model is reading; 开始朗读 comes after
   if (tap(first('.sheet .btn'))) return true;
   if (tap(byText('开始录音'))) return true;
   for (const t of ['我记住了', '下一句', '开始朗读', '听听你自己', '开始！', '走吧', '继续', '回家']) if (tap(byText(t))) return true;
-  if (tap(first('.choice'))) return true;
+  if (document.querySelector('.understand__choice:disabled:not(.is-answer):not(.is-wrong):not(.is-dim)')) return true; // 听一听 opens its choices after the line has been said
+  if (tap(first('.choice:not(.is-picked)'))) return true; // 找一家人 takes two picks: tapping a picked word lets it go
   if (tap(first('.fishtile, .bubble-opt, .whichpart__char'))) return true;
   if (tap(first('.chest'))) return true;
   return false;
@@ -286,9 +288,12 @@ function stageInvariants() {
   }
 }
 
+/** Taps a walk may take: a full lesson with 朗读 is ~250. */
+const WALK_CAP = 300;
+
 async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnly?: boolean } = {}) {
   const seen = new Set<string>(); // check each distinct screen once; keep walking through repeats (20 phrases, 25 words) to reach the end
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < WALK_CAP; i++) {
     await page.waitForTimeout(450);
     if (!(await page.$('.lessonbar')) && !(await page.$('.celebrate'))) return; // back home
     const sig = await page.evaluate(signature);
@@ -299,6 +304,8 @@ async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnl
     if (box) { await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); await page.waitForTimeout(1500); await page.mouse.up(); continue; }
     if (!(await page.evaluate(advance))) return;
   }
+  // the cap reached with the lesson still up: the rest of the flow was never looked at (final review M5)
+  if (await page.$('.lessonbar')) results.push({ size: size.name, flow, step: WALK_CAP, sig: '', problems: [`walker ran out of taps: the lesson bar still shows after ${WALK_CAP} taps`] });
 }
 
 async function sweep(browser: Browser, size: Size) {
@@ -307,7 +314,7 @@ async function sweep(browser: Browser, size: Size) {
     let page: Page | null = null;
     const errors: string[] = [];
     try {
-      const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error('flow took over 3 minutes (stuck?)')), 180_000));
+      const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error('flow took over 6 minutes (stuck?)')), 360_000));
       page = await Promise.race([open(browser, size, now, profile, errors), limit]);
       const p = page;
       await Promise.race([then(p), limit]); // one stuck screen can't stall the whole sweep
@@ -425,7 +432,7 @@ async function sweep(browser: Browser, size: Size) {
   await run('writing', AFTERNOON, { activities: only('writing') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing', { firstOnly: true }); });
   await run('writing-sentence', AFTERNOON, { activities: only('writing'), writeSentence: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing-sentence'); });
   await run('langdu', AFTERNOON, { activities: only('speaking'), speakingLast: 'story', langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu'); });
-  await run('lesson', AFTERNOON, {}, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, then the chest
+  await run('lesson', AFTERNOON, { langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, 朗读 too, then the chest
   await run('chest-stars', AFTERNOON, { ownsAll: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-stars'); }); // the chest's stars prize
   await run('langdu-extra', AFTERNOON, { doneToday: true, langdu: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
 }

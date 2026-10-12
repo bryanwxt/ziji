@@ -1,11 +1,15 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
-import { describe, expect, it, vi } from 'vitest';
-import { getKid, listRecordings, saveKid, saveParentPassage, saveSession } from '../store/repo';
+import { act, fireEvent, screen, waitFor } from '@testing-library/preact';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setSpeaking } from '../audio/speaking';
+import { getKid, listRecordings, putCards, putWords, saveKid, saveParentPassage, saveSession } from '../store/repo';
+import { builtinWords } from '../content';
+import { makeCard } from '../test/fixtures';
 import { createSessionRecord } from '../session/runner';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS } from '../types';
 import { HomeScreen } from './HomeScreen';
 import { LangduScreen } from './LangduScreen';
+import { speak } from '../audio/speech';
 
 vi.mock('../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn(), primeSpeech: vi.fn() }));
 vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
@@ -17,6 +21,11 @@ vi.mock('../audio/recorder', () => ({
     return { stop: async () => ({ blob: new Blob(['x']), mime: 'audio/mp4', durationSec: 3, ...(onLevel ? { level: 0.2 } : {}) }), cancel: vi.fn() };
   }),
 }));
+
+beforeEach(() => vi.mocked(speak).mockClear());
+afterEach(() => act(() => setSpeaking(false)));
+
+const btn = (t: string) => screen.getByText(t).closest('button') as HTMLButtonElement;
 
 const kid = { ...DEFAULT_KID, reading: { passageId: 'pp:1', days: 1, extra: 0, lastDay: '2026-10-01', lastRead: { 'pp:1': '2026-10-01' }, warmups: 3 } };
 
@@ -34,18 +43,21 @@ describe('朗读 extra rounds', () => {
     home.unmount();
 
     renderWithApp(<LangduScreen />, app);
-    expect(await screen.findByText('我爱爸爸，')).toBeTruthy(); // straight to echo: no warm-up
+    expect(await screen.findByText('我爱爸爸，我爱妈妈。')).toBeTruthy(); // straight to listening: no warm-up
     expect(screen.queryByText('老师好！')).toBeNull();
-    fireEvent.click(screen.getByText('下一句'));
-    fireEvent.click(screen.getByText('开始朗读'));
+    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。')); // the model has begun (the step mounts after a load)
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
+    fireEvent.click(btn('开始朗读'));
     fireEvent.click(screen.getByText('开始录音'));
     fireEvent.click(await screen.findByText('停止'));
-    await screen.findByText('听听你自己');
-    fireEvent.click(screen.getByText('完成'));
+    await screen.findByRole('button', { name: '听我的' });
+    fireEvent.click(btn('完成'));
     await waitFor(() => expect(app.go).toHaveBeenLastCalledWith({ name: 'home' }));
     const recs = await listRecordings(app.db);
     expect(recs).toHaveLength(1);
-    expect(recs[0]!.prompt).toEqual({ kind: 'passage', passageId: 'pp:1' });
+    expect(recs[0]!.prompt).toEqual({ kind: 'passage', passageId: 'pp:1', extra: true }); // tagged: never the queue's take (final review I6)
     const after = (await getKid(app.db))!;
     expect(after.reading.days).toBe(1);
     expect(after.bonusStars).toBe(0);
@@ -58,13 +70,17 @@ describe('朗读 extra rounds', () => {
     const put = app.db.put.bind(app.db);
     app.db.put = ((store: string, ...rest: unknown[]) => (store === 'recordings' ? Promise.reject(new DOMException('full', 'QuotaExceededError')) : (put as (...a: unknown[]) => unknown)(store, ...rest))) as typeof app.db.put;
     renderWithApp(<LangduScreen />, app);
-    await screen.findByText('我爱爸爸，');
-    fireEvent.click(screen.getByText('下一句'));
-    fireEvent.click(screen.getByText('开始朗读'));
+    expect(await screen.findByText('我爱爸爸，我爱妈妈。')).toBeTruthy(); // straight to listening: no warm-up
+    expect(screen.queryByText('老师好！')).toBeNull();
+    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。')); // the model has begun (the step mounts after a load)
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
+    fireEvent.click(btn('开始朗读'));
     fireEvent.click(screen.getByText('开始录音'));
     fireEvent.click(await screen.findByText('停止'));
-    await screen.findByText('听听你自己');
-    fireEvent.click(screen.getByText('完成'));
+    await screen.findByRole('button', { name: '听我的' });
+    fireEvent.click(btn('完成'));
     await waitFor(() => expect(app.go).toHaveBeenLastCalledWith({ name: 'home' }));
   });
 
@@ -146,5 +162,31 @@ describe('the path after the day is done', () => {
     await screen.findByText('今天的练习');
     const names = [...document.querySelectorAll('.path__name')].map((n) => n.querySelector('.sr-only')?.textContent ?? n.textContent);
     expect(names).toContain('看图说话');
+  });
+});
+
+describe('多读一遍 (spec 2026-10-12 §3)', () => {
+  it('pinyin fades over the characters he reads, as in the lesson', async () => {
+    const app = await makeAppData({ settings: LANGDU, kid, now: () => new Date(2026, 9, 2, 17) });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    await saveKid(app.db, kid);
+    await putWords(app.db, [builtinWords(0).find((w) => w.text === '我')!]);
+    await putCards(app.db, [makeCard('b:我', 'recognise', new Date(2026, 9, 20), true)]);
+    renderWithApp(<LangduScreen />, app);
+    await screen.findByText('我爱爸爸，我爱妈妈。');
+    const cells = [...document.querySelectorAll('.langdu__sentence .label__cell--zh')];
+    expect(cells.find((c) => c.querySelector('.label__ch')!.textContent === '我')!.classList.contains('label__cell--hidden')).toBe(true);
+    expect(cells.find((c) => c.querySelector('.label__ch')!.textContent === '爱')!.classList.contains('label__cell--hidden')).toBe(false);
+  });
+});
+
+describe('朗读 on by default (spec 2026-10-12 §7)', () => {
+  it('with no setting touched, a text to read puts 朗读 on the path', async () => {
+    const names = () => [...document.querySelectorAll('.path__name')].map((n) => n.querySelector('.sr-only')?.textContent ?? n.textContent);
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, placementDone: true } });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(names()).toContain('朗读');
   });
 });

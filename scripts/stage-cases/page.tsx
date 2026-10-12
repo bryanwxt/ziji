@@ -44,7 +44,9 @@ import { IdiomQuestion } from '../../src/activities/practice/IdiomQuestion';
 import { FlashcardStep, introIdiom } from '../../src/activities/flashcards/FlashcardStep';
 import { builtinIdiom, chengyuOf, idiomsFor } from '../../src/content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../../src/practice/idioms';
-import { builtinWords } from '../../src/content';
+import { builtinWords, PASSAGES } from '../../src/content';
+import { LangduStep, type LangduPart } from '../../src/activities/langdu/LangduStep';
+import { PASSAGE_QUESTIONS } from '../../src/content/passageQuestions';
 import { ladderWords } from '../../src/content/ladder';
 import { cardMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
@@ -274,14 +276,28 @@ else if (which === 'listen') {
   const words = builtinWords(0);
   const said = [...['森', '林', '游', '泳'].map((t) => words.find((x) => x.text === t)!), ladderWords().find((w) => w.text === '森林') ?? ladderWords()[0]!];
   const takes: Recording[] = said.map((w, i) => ({ id: `t${i}`, createdAt: new Date(2026, 9, 11, 17, i * 3).getTime(), prompt: { kind: 'say', wordId: w.id }, blob: new Blob(['x'], { type: 'audio/mp4' }), mime: 'audio/mp4', durationSec: 2 }));
+  const p20 = PASSAGES.find((x) => x.id === 'p20')!; // the longest built-in text
+  takes.push({ id: 'tp', createdAt: new Date(2026, 9, 11, 18).getTime(), prompt: { kind: 'passage', passageId: p20.id }, blob: new Blob(['x'], { type: 'audio/mp4' }), mime: 'audio/mp4', durationSec: 40, meaning: { correct: false, picked: '一个大商店' } });
   render(
     <div class="screen screen--scroll parent">
       <main class="parent__body">
-        <section class="panel listen"><h2>Listen & confirm</h2><ListenRows takes={takes} words={new Map(said.map((w) => [w.id, w]))} onJudge={() => {}} /></section>
+        <section class="panel listen"><h2>Listen & confirm</h2><ListenRows takes={takes} words={new Map(said.map((w) => [w.id, w]))} texts={new Map([[p20.id, { title: p20.title, text: p20.text }]])} onJudge={() => {}} onDone={() => {}} /></section>
       </main>
     </div>,
     app,
   );
+}
+else if (which?.startsWith('langdu-')) {
+  // 朗读's parts (spec 2026-10-12 §3, §8): the longest built-in text (p20) with every syllable showing (nothing known), each part
+  // opened directly; stage-cases.ts misses the question. In listen, the first sentence lights as its voice starts.
+  const p = PASSAGES.find((x) => x.id === 'p20')!;
+  const part = (which === 'langdu-read-blocked' ? 'read' : which.slice('langdu-'.length)) as LangduPart;
+  render(screen(
+    <PinyinFade known={new Set()} on>
+      <LangduStep passage={{ ...p, source: 'builtin', question: PASSAGE_QUESTIONS[p.id] }} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup startAt={part} micBlocked={which === 'langdu-read-blocked'} onDone={() => {}} />
+    </PinyinFade>,
+  ), app);
+  if (part === 'listen') setTimeout(() => setSpeaking(true), 50);
 }
 else if (which === 'intro-school-idiom') {
   // a school 成语's own 认新字 card (final review I3): four characters where the card expects one

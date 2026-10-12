@@ -180,7 +180,7 @@ export interface SessionRecord {
 
 export type RecordingPrompt =
   | { kind: 'picture'; promptId: string }
-  | { kind: 'passage'; passageId: string }
+  | { kind: 'passage'; passageId: string; extra?: true } // extra: a 多读一遍 round, never the queue's take or the bonus baseline
   | { kind: 'intro' } // the exam-etiquette self-introduction
   | { kind: 'story'; sceneId: string; part: 'opening' | 'setting' | 'events' | 'ending' | 'opinion' | 'whole' } // 看图说话
   | { kind: 'answer'; sceneId: string; question: number } // Truffle asks
@@ -196,7 +196,8 @@ export interface Recording {
   level?: number; // average loudness (RMS 0..1) while reading; older recordings have none
   misread?: string[]; // characters the parent confirmed he misread
   extraDayGiven?: boolean; // its marks have given the passage its one extra day (never a second, however often re-marked)
-  review?: 'ok' | 'no'; // a Say take the parent confirmed (✓) or rejected (✗); absent: waiting (spec 2026-10-11 §6)
+  review?: 'ok' | 'no'; // a Say take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
+  meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
 }
 
 export interface PicturePrompt {
@@ -212,12 +213,22 @@ export interface Passage {
   text: string;
 }
 
-/** A school text the parent added for 朗读. id 'pp:<uuid>'; text may hold '/' phrase marks. */
+/** A 朗读 meaning question (spec 2026-10-12 §3): 谁 / 哪里 / 什么 / 为什么, three choices, the right one marked. `sentence`: the
+ *  passage's sentence (splitSentences) that answers it; a parent's question has none and is answered where its right choice is. */
+export interface PassageQuestion {
+  q: string;
+  choices: [string, string, string];
+  answer: 0 | 1 | 2;
+  sentence?: number;
+}
+
+/** A school text the parent added for 朗读. id 'pp:<uuid>'; text may hold '/' marks; an optional meaning question. */
 export interface ParentPassage {
   id: string;
   title: string;
   text: string;
   createdAt: number;
+  question?: PassageQuestion;
 }
 
 /** Details for the oral-exam self-introduction (stored only on the iPad). */
@@ -263,7 +274,7 @@ export interface Settings {
   gradeYear?: number; // the calendar year `grade` was set in: the school year goes up each January from there (a yardstick, never a cap)
   classLesson?: ClassLessonSetting | null; // the parent's "class is on" (spec 2026-10-11 §4): carries at the calendar's pace, lapses next semester; null/absent: the estimate
   story: boolean; // 看图说话 is parked until the parent rethinks it (spec §17): off by default, no parent switch yet
-  langdu: boolean; // 朗读 is parked too (parent, 2026-10-05: "not very useful at the moment"): off by default, no parent switch yet
+  langdu: boolean; // 朗读, the lesson's last step (spec 2026-10-12): on by default; Settings → 「朗读 Read aloud」
   course?: Course; // 华文, 高级华文 or both lists: which 识写字 he practises writing (all read the same characters); absent: 'both' (courseOf, spec 2026-10-11 §6)
   contentCourse?: Course; // the course the stored built-in words were written for; absent: 'cl' (written before courses)
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
@@ -292,8 +303,8 @@ export const DEFAULT_SETTINGS: Settings = {
   zodiac: null,
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
-  langdu: false,
-  lessonVersion: 6,
+  langdu: true,
+  lessonVersion: 7,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { onSpeaking, pickVoice, setSpeechRate, speak, stopSpeaking } from './speech';
-import { settleIfSilent } from './speaking';
+import { setRecordingNow, settleIfSilent } from './speaking';
 
 const v = (lang: string, localService = true, name = lang) => ({ lang, localService, name }) as SpeechSynthesisVoice;
 
@@ -253,5 +253,43 @@ describe('a voice Safari silently dropped is said again (parent, 2026-10-05: the
     stopSpeaking();
     vi.advanceTimersByTime(1000);
     expect(synth.speak).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('while he is recorded (final review C1): speak() says nothing', () => {
+  afterEach(() => { setRecordingNow(false); vi.unstubAllGlobals(); });
+  it('is a no-op while the recording flag is set, and speaks again once it clears', () => {
+    const spoken: string[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: SpeechSynthesisUtterance) => spoken.push(u.text), getVoices: () => [] });
+    vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; voice = null; constructor(t: string) { this.text = t; } });
+    setRecordingNow(true);
+    speak('我爱妈妈。');
+    speak('河', { queue: true });
+    expect(spoken).toEqual([]);
+    setRecordingNow(false);
+    speak('我爱妈妈。');
+    expect(spoken).toEqual(['我爱妈妈。']);
+  });
+});
+
+describe('a replaced voice ending late (final review I3)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it("a cut-off utterance's late end says nothing about the one playing now, so a model reader never advances on it", () => {
+    const spoken: (SpeechSynthesisUtterance & { onstart?: () => void; onend?: () => void; onerror?: () => void })[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: never) => spoken.push(u), getVoices: () => [], speaking: false, pending: false });
+    vi.stubGlobal('SpeechSynthesisUtterance', class { text: string; lang = ''; rate = 1; volume = 1; voice = null; constructor(t: string) { this.text = t; } });
+    const seen: boolean[] = [];
+    const off = onSpeaking((on) => seen.push(on));
+    speak('我爱爸爸。');
+    spoken[0]!.onstart!();
+    speak('我爱妈妈。'); // a tap: the first is cancelled
+    spoken[1]!.onstart!();
+    seen.length = 0;
+    spoken[0]!.onend!(); // Safari's late end of the cancelled one
+    spoken[0]!.onerror!();
+    expect(seen).toEqual([]);
+    spoken[1]!.onend!();
+    expect(seen).toEqual([false]);
+    off();
   });
 });

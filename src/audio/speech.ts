@@ -2,7 +2,8 @@ import SAY_AS from './sayAs.json';
 import { audioContext } from './context';
 import { clipPlan, clipUrl } from './clips';
 import { createClipPlayer, type ClipPlayer } from './clipPlayer';
-import { setClipActive, setSpeaking } from './speaking';
+import { recordingNow, setClipActive, setSpeaking } from './speaking';
+import { noteVoice, voiceQuality } from './voiceTier';
 
 let voice: SpeechSynthesisVoice | null = null;
 let rate = 0.8;
@@ -17,20 +18,20 @@ export function setSpeechRate(r: number): void {
   rate = r;
 }
 
-/**
- * How clear a voice is: an iPad's downloaded Premium or Enhanced voices are much clearer than the compact default (parent,
- * 2026-10-05). iPadOS often names them all "Tingting"; the quality is in the voiceURI (com.apple.voice.enhanced.zh-CN.…).
- */
-export const voiceQuality = (v: SpeechSynthesisVoice): number => {
-  const id = `${v.name} ${v.voiceURI ?? ''}`;
-  return /premium/i.test(id) ? 2 : /enhanced|增强|高品质|优化/i.test(id) ? 1 : 0;
+export { voiceQuality };
+
+/** The voice in use, and its tier for the parent's screens (spec 2026-10-12 §5). */
+const useVoice = (v: SpeechSynthesisVoice | null): SpeechSynthesisVoice | null => {
+  voice = v;
+  noteVoice(v);
+  return v;
 };
 
 /** The parent's pick (Settings → Voice), by voiceURI; null: the clearest the iPad has. */
 let preferred: string | null = null;
 export function setPreferredVoice(uri: string | null): void {
   preferred = uri;
-  if (available()) voice = pickVoice(speechSynthesis.getVoices());
+  if (available()) useVoice(pickVoice(speechSynthesis.getVoices()));
 }
 /** The voice speaking now, for the parent's Voice setting. */
 export const currentVoice = (): SpeechSynthesisVoice | null => voice;
@@ -54,16 +55,16 @@ export function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice 
 /** Voices load asynchronously on iPad Safari; wait briefly for them. */
 export async function loadChineseVoice(timeoutMs = 1500, pref: string | null = null): Promise<SpeechSynthesisVoice | null> {
   preferred = pref;
-  if (!available()) return (voice = null);
+  if (!available()) return useVoice(null);
   // the iPad can add voices after the first list (a downloaded Enhanced one): pick again whenever the list changes
-  speechSynthesis.addEventListener?.('voiceschanged', () => { voice = pickVoice(speechSynthesis.getVoices()) ?? voice; });
-  voice = pickVoice(speechSynthesis.getVoices());
+  speechSynthesis.addEventListener?.('voiceschanged', () => { useVoice(pickVoice(speechSynthesis.getVoices()) ?? voice); });
+  useVoice(pickVoice(speechSynthesis.getVoices()));
   if (!voice) {
-    voice = await new Promise<SpeechSynthesisVoice | null>((resolve) => {
+    useVoice(await new Promise<SpeechSynthesisVoice | null>((resolve) => {
       const done = () => resolve(pickVoice(speechSynthesis.getVoices()));
       speechSynthesis.addEventListener?.('voiceschanged', done, { once: true });
       setTimeout(done, timeoutMs);
-    });
+    }));
   }
   return voice;
 }
@@ -106,9 +107,11 @@ const ttsBusy = () => available() && (live.size > 0 || waiting !== null);
 /**
  * Say Chinese text: the neural voice's clip when there is one (spec 2026-10-06 §4), else the iPad voice. It cuts off whatever
  * is playing, unless `queue` (then it waits its turn: the character, then its usage line). `reading` is the pinyin a lone
- * character is taught with, when the screen knows it.
+ * character is taught with, when the screen knows it. While he is being recorded it says nothing (final review C1): a peek or
+ * a line on screen must never end up in his take.
  */
 export function speak(text: string, { queue = false, reading }: { queue?: boolean; reading?: string } = {}): void {
+  if (recordingNow()) return;
   if (queue && (clipBusy || after.length > 0 || (ttsBusy() && clipPlan(text, reading)))) {
     after.push({ text, reading });
     return;
@@ -172,6 +175,7 @@ function ttsSpeak(text: string, { queue = false, reading }: { queue?: boolean; r
     const busy = speechSynthesis.speaking || speechSynthesis.pending;
     epoch++;
     speechSynthesis.cancel();
+    live.clear(); // as stopSpeaking: a cancelled utterance ending late says nothing about this one (final review I3)
     setSpeaking(false); // a cancelled utterance may never say it ended
     if (busy) {
       // Safari drops or clips a voice started straight after cancelling one that was playing (parent, 2026-10-05: a sound

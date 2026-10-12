@@ -22,7 +22,8 @@ import { STORY_PARTS, type Scene } from '../kantu/scenes';
 import { recordingSupported, type FinishedRecording } from '../audio/recorder';
 import { SayCard, type SayResult } from '../activities/say/SayCard';
 import { recordSayTake } from '../session/say';
-import { pickPassage, readingPool, finishDay, type ReadingPassage } from '../langdu/cycle';
+import { pickPassage, readingPool, finishDay, isFirstDay, type ReadingPassage } from '../langdu/cycle';
+import { newestByPassage, tidyPassageTakes } from '../langdu/review';
 import { earnsBonus } from '../langdu/stars';
 import { burst } from '../ui/motion';
 import { WritingStep, type WriteResult } from '../activities/writing/WritingStep';
@@ -84,7 +85,7 @@ interface Loaded {
   fadePinyin: boolean; // settings.fadePinyin as the lesson loaded (spec 2026-10-12 §4): absent = on
   choose: UseItem[] | null; // built when 选一选 starts, so it knows what he missed earlier in the lesson
   wrapup: UseItem[] | null; // built when 用一用 starts, from today's recalls
-  speaking: { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo } | { kind: 'story'; scene: Scene } | null;
+  speaking: { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; firstDay: boolean; day: string } | { kind: 'story'; scene: Scene } | null;
   confusions: Map<string, string[]>; // look-alikes he picked, per word (钓鱼, spec 2026-10-05 §3.4)
 }
 
@@ -95,6 +96,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const [combo, setCombo] = useState(0);
   const [correct, setCorrect] = useState(0); // this sitting only: Truffle warms up from sulk
   const [stepFraction, setStepFraction] = useState(0); // how far through 选一选/字辨/用一用 he is
+  const [micRefused, setMicRefused] = useState(false); // a Say card found the microphone refused: 朗读 won't ask again (spec 2026-10-12 §3)
   const cardsSinceCloseup = useRef(CLOSEUP_EVERY);
   const stepStartedAt = useRef(performance.now());
   const busy = useRef(false);
@@ -132,9 +134,11 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           const k = kid ?? DEFAULT_KID;
           // 朗读 and 看图说话 only when switched back on (both parked, parent 2026-10-05). Nothing to run: the step is skipped, so a
           // lesson planned before 朗读 was parked passes its stop by
-          const passage = settings.langdu ? pickPassage(k.reading, readingPool(parentPassages, PASSAGES, know.knownChars), localDateKey(today)) : null;
+          // one date key for the whole step, the lesson's own: begun before midnight and finished after, it is still that day's
+          const day = rec.date;
+          const passage = settings.langdu ? pickPassage(k.reading, readingPool(parentPassages, PASSAGES, know.knownChars), day) : null;
           const kind = nextSpeaking(k.speakingLast, !!passage, settings.story);
-          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage, oral: settings.oral };
+          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage, oral: settings.oral, firstDay: isFirstDay(k.reading, passage.id, day), day };
           return kind === 'story' ? { kind: 'story' as const, scene: sceneFor(k.story) } : null;
         })(),
       });
@@ -322,6 +326,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     once(async () => {
       const item = practiceItem!;
       if (!r) {
+        setMicRefused(true);
         await commit(skipSayItems(latest.current ?? rec));
         return;
       }
@@ -396,26 +401,43 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       await commit(finishStep(addActiveTime(rec, Math.round(performance.now() - stepStartedAt.current))));
     })();
 
-  /** Save the warm-up and the read, count the cycle day, and give a bonus star for beating the last read. */
+  /**
+   * Save the warm-up and the kept read (with his answer), count the cycle day, tidy old passage takes, and give a bonus star for
+   * beating the last lesson read. Whatever fails on the way, the lesson goes on to its end (final review I4): no bonus at worst.
+   */
   const onLangduDone = (r: LangduResult) =>
     once(async () => {
-      const reading = state.speaking as { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo };
+      const reading = state.speaking as { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; firstDay: boolean; day: string };
       const at = now();
-      const today = localDateKey(at);
       if (r.intro) await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'intro' }, ...r.intro });
       let bonus = false;
       if (r.read) {
-        const prev = (await listRecordings(db)).find((x) => x.prompt.kind === 'passage' && x.prompt.passageId === reading.passage.id);
-        bonus = earnsBonus(prev, { level: r.read.level ?? 0, durationSec: r.read.durationSec });
-        await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'passage', passageId: reading.passage.id }, ...r.read });
+        try {
+          // the passage's last lesson take: a 多读一遍 take is never the baseline (final review I6)
+          const prev = newestByPassage(await listRecordings(db)).get(reading.passage.id);
+          bonus = earnsBonus(prev, { level: r.read.level ?? 0, durationSec: r.read.durationSec });
+        } catch (err) {
+          logError(err); // his takes couldn't be read: no bonus this time
+        }
+        await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'passage', passageId: reading.passage.id }, ...r.read, ...(r.meaning ? { meaning: r.meaning } : {}) });
+        try {
+          await tidyPassageTakes(db, at);
+        } catch (err) {
+          logError(err); // a failed tidy never stops the lesson
+        }
       }
-      const fresh = (await getKid(db)) ?? kid;
-      await saveKid(db, {
-        ...fresh,
-        reading: { ...finishDay(fresh.reading, reading.passage.id, today), warmups: fresh.reading.warmups + (r.intro ? 1 : 0) },
-        speakingLast: 'langdu',
-        bonusStars: fresh.bonusStars + (bonus ? 1 : 0),
-      });
+      try {
+        const fresh = (await getKid(db)) ?? kid;
+        await saveKid(db, {
+          ...fresh,
+          reading: { ...finishDay(fresh.reading, reading.passage.id, reading.day), warmups: fresh.reading.warmups + (r.intro ? 1 : 0) },
+          speakingLast: 'langdu',
+          bonusStars: fresh.bonusStars + (bonus ? 1 : 0),
+        });
+      } catch (err) {
+        logError(err); // his state couldn't be saved: the lesson still ends, with no bonus
+        bonus = false;
+      }
       if (bonus) {
         playSfx('star');
         burst(window.innerWidth / 2, window.innerHeight / 2, { count: 18 });
@@ -513,15 +535,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <ComponentsStep key="components" items={state.round} kid={kid} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
-        <LangduStep
-          passage={state.speaking.passage}
-          oral={state.speaking.oral}
-          warmups={kid.reading.warmups}
-          knownChars={know.knownChars}
-          kid={kid}
-          withWarmup
-          onDone={(r) => void onLangduDone(r)}
-        />
+        <LangduStep passage={state.speaking.passage} oral={state.speaking.oral} kid={kid} withWarmup={state.speaking.firstDay} micBlocked={micRefused} onDone={(r) => void onLangduDone(r)} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'story' && (
         <StoryStep scene={state.speaking.scene} told={kid.story.told} kid={kid} onDone={(r) => void onStoryDone(r)} />

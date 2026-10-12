@@ -9,15 +9,17 @@ const now = new Date(2026, 9, 6, 10);
 const day = 86_400_000;
 const base = { newWordIds: [] as string[], practised: new Map<string, number>(), level: 2, cutoff: now.getTime() + day, target: 9 };
 
-describe('how many characters (spec 2026-10-05 §5)', () => {
-  it('8–10 a lesson, 6 at 20 minutes', () => {
-    expect(writeCharTarget(15)).toBe(5); // the usual lesson (spec 2026-10-11 §4)
-    expect(writeCharTarget(10)).toBe(5);
-    expect(writeCharTarget(19)).toBe(5);
-    expect(writeCharTarget(20)).toBe(6);
-    expect(writeCharTarget(25)).toBe(8);
-    expect(writeCharTarget(30)).toBe(9);
-    expect(writeCharTarget(45)).toBe(10);
+describe('how many characters (spec 2026-10-05 §5; spec 2026-10-12 §4)', () => {
+  it('4 at the usual 15 minutes; 5 at 20, 7 at 25, 8 at 30, 9 from 40', () => {
+    expect(writeCharTarget(15)).toBe(4); // 朗读 takes its ~3 minutes (spec 2026-10-12 §4)
+    expect(writeCharTarget(10)).toBe(4);
+    expect(writeCharTarget(19)).toBe(4);
+    expect(writeCharTarget(20)).toBe(5);
+    expect(writeCharTarget(25)).toBe(7);
+    expect(writeCharTarget(30)).toBe(8);
+    expect(writeCharTarget(35)).toBe(8);
+    expect(writeCharTarget(40)).toBe(9);
+    expect(writeCharTarget(45)).toBe(9);
   });
 });
 

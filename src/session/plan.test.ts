@@ -67,15 +67,15 @@ describe('buildSessionPlan', () => {
     ]);
   });
 
-  it("sizes 写一写 (9 characters at 30 minutes, 6 at 20, 5 at 15) and 练一练's time box from session minutes", () => {
+  it("sizes 写一写 (8 characters at 30 minutes, 5 at 20, 4 at 15) and 练一练's time box from session minutes", () => {
     const ws = chars(12);
     const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
     const count = (min: number) => new Set(buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: min }), now }).writeItems!.map((i) => `${i.wordId}#${i.at}`)).size;
-    expect([count(30), count(20), count(15)]).toEqual([9, 6, 5]);
+    expect([count(30), count(20), count(15)]).toEqual([8, 5, 4]);
     const p20 = buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: 20 }), now });
     expect(p20.writeCount).toBe(p20.writeItems!.length); // each never-written character is traced, then written from memory
-    expect(p20.writeCount).toBe(12);
-    expect(p20.practiceTimeBoxMs).toBe(Math.round((20 * 60_000 * 12) / 30));
+    expect(p20.writeCount).toBe(10);
+    expect(p20.practiceTimeBoxMs).toBe(Math.round((20 * 60_000) / 3));
   });
   it("writes today's new words after due writing, and nothing above his level", () => {
     const ws = [makeWord('甲', { id: 'b:a', rank: 1, level: 1 }), makeWord('乙', { id: 'b:b', rank: 2, level: 3 }), makeWord('丙', { id: 'b:c', rank: 3, level: 2 })];
@@ -159,11 +159,14 @@ describe('the lesson (spec 2026-10-05 §2)', () => {
   it('认新字 → 练一练 → 写一写 → 朗读, with no separate 用一用', () => {
     expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: { ...DEFAULT_SETTINGS, langdu: true }, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing', 'speaking']);
   });
-  it('朗读 parked (the default, parent 2026-10-05): no speaking step', () => {
-    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing']);
+  it('朗读 on, the default since spec 2026-10-12 §7: the speaking step ends the lesson', () => {
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing', 'speaking']);
   });
-  it('练一练 has 6 of the default 15 minutes (spec 2026-10-11 §4: its share stays 0.4)', () => {
-    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).practiceTimeBoxMs).toBe(6 * 60_000);
+  it('朗读 switched off: no speaking step', () => {
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: { ...DEFAULT_SETTINGS, langdu: false }, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing']);
+  });
+  it('练一练 has 5 of the default 15 minutes (spec 2026-10-12 §4: its share is 1/3)', () => {
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).practiceTimeBoxMs).toBe(5 * 60_000);
   });
   it('with 新字 switched off there are no new words', () => {
     const settings = { ...DEFAULT_SETTINGS, activities: { ...DEFAULT_SETTINGS.activities, newwords: false } };

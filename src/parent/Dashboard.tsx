@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
+import { voiceTier } from '../audio/voiceTier';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
 import { addDays, localDateKey } from '../lib/date';
 import { dueTomorrow, minutesPerDay, streak, troubleWords, weeklyAccuracy, wordOf } from '../stats/stats';
@@ -58,6 +59,12 @@ export function Dashboard({ onNavigate }: { onNavigate: (tab: ParentTab) => void
         <p class="warning">
           <strong>No Chinese voice found.</strong> Listening cards are off. On the iPad: Settings → Accessibility → Spoken Content →
           Voices → Chinese (China mainland), download a voice, then reopen the app.
+        </p>
+      )}
+      {settings.langdu && (voiceTier() === 'default' || voiceTier() === 'none') && (
+        <p class="warning">
+          <strong>朗读 uses the iPad's voice as the model.</strong> For natural reading, download a better Chinese voice: Settings →
+          Accessibility → Spoken Content → Voices → Chinese (China mainland) → 婷婷 (Enhanced) or Lili (Premium), then reopen the app.
         </p>
       )}
       {d.micDenied && (

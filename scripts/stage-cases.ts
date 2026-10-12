@@ -13,11 +13,12 @@ await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdi
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
 /** Anything in the lesson card cut off by the card's own box (the same probe as the clue case). */
-const cardClipped = (page: import('playwright-core').Page, name: string) => page.evaluate((n) => {
+const cardClipped = (page: import('playwright-core').Page, name: string, scrolls = '') => page.evaluate(([n, s]) => {
   const card = document.querySelector('.stage__card')?.getBoundingClientRect();
   if (!card) return [`${n}: no lesson card`];
   for (const el of document.querySelectorAll('.stage__card *')) {
     if ((el instanceof SVGElement && el.ownerSVGElement) || el.closest('.sr-only, [aria-hidden="true"]')) continue;
+    if (s && el.closest(s)) continue; // a box meant to scroll, and what is inside it
     const r = el.getBoundingClientRect();
     if (r.width && r.height && (r.top < card.top - 2 || r.bottom > card.bottom + 2 || r.left < card.left - 2 || r.right > card.right + 2)) return [`${n}: clipped by the card: ${(el.textContent ?? '').trim().slice(0, 12)}`];
     // a box inside the card that has to scroll hides its last rows (the 认新字 card scrolls rather than squash)
@@ -25,7 +26,7 @@ const cardClipped = (page: import('playwright-core').Page, name: string) => page
     if ((o === 'auto' || o === 'scroll' || o === 'hidden') && el.scrollHeight > el.clientHeight + 2) return [`${n}: ${el.className} scrolls ${el.scrollHeight - el.clientHeight}px`];
   }
   return [];
-}, name);
+}, [name, scrolls] as const);
 
 /** Nothing in a feedback sheet's explanation past the sheet, and the sheet on the screen (spec 2026-10-12 §3's why-lines). */
 const sheetFits = (page: import('playwright-core').Page, name: string) => page.evaluate((n) => {
@@ -40,7 +41,13 @@ const sheetFits = (page: import('playwright-core').Page, name: string) => page.e
   return out;
 }, name);
 
-const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
+/** A sheet's explanation that has to scroll hides its last lines (final review C2: 找一家人's two misses). */
+const sheetScrolls = (page: import('playwright-core').Page, name: string) => page.evaluate((n) => {
+  const d = document.querySelector('.sheet__detail');
+  return d && d.scrollHeight > d.clientHeight + 2 ? [`${n}: the sheet's explanation scrolls ${d.scrollHeight - d.clientHeight}px`] : [];
+}, name);
+
+const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'iphone-15', width: 390, height: 844 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
 const problems: string[] = [];
 const browser = await webkit.launch();
 for (const size of SIZES) {
@@ -165,7 +172,34 @@ for (const size of SIZES) {
     await page.waitForTimeout(1600);
     await page.screenshot({ path: `fit-shots/stage-cases/family-wrong-${size.name}.png` });
     if (!(await page.$('.family-sum__row.is-missed'))) problems.push(`${size.name} family: the miss is not explained`);
-    problems.push(...(await cardClipped(page, `${size.name} family wrong`)), ...(await sheetFits(page, `${size.name} family wrong`)));
+    problems.push(...(await cardClipped(page, `${size.name} family wrong`)), ...(await sheetFits(page, `${size.name} family wrong`)), ...(await sheetScrolls(page, `${size.name} family wrong`)));
+    // both picks wrong (final review C2, live on his iPad): two words, two look-alikes and two why-lines, none clipped or scrolled
+    await page.goto(`file://${dir}/index.html?case=family`);
+    await page.waitForTimeout(300);
+    await page.click('.choice:text-is("星星")');
+    await page.click('.choice:text-is("出去")');
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/family-two-wrong-${size.name}.png` });
+    const missed = (await page.$$('.family-sum__row.is-missed')).length;
+    if (missed !== 2) problems.push(`${size.name} family two wrong: ${missed} misses explained (want 2)`);
+    problems.push(...(await cardClipped(page, `${size.name} family two wrong`)), ...(await sheetFits(page, `${size.name} family two wrong`)), ...(await sheetScrolls(page, `${size.name} family two wrong`)));
+  }
+  // 朗读 (spec 2026-10-12 §8): every part with the longest built-in text, the sentence lit while the model reads, a missed question
+  for (const c of ['langdu-warmup', 'langdu-listen', 'langdu-read', 'langdu-read-blocked', 'langdu-compare', 'langdu-meaning']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`, '.langdu__passage')));
+    if (c === 'langdu-listen' && !(await page.$('.langdu__sentence.is-reading'))) problems.push(`${size.name} langdu-listen: no sentence lit while the model reads`);
+  }
+  {
+    await page.goto(`file://${dir}/index.html?case=langdu-meaning`);
+    await page.waitForTimeout(300);
+    await page.click('.langdu__choices .choice >> nth=0'); // p20's right answer is the second choice
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/langdu-meaning-wrong-${size.name}.png` });
+    if (!(await page.$('.langdu__choices .choice.is-answer'))) problems.push(`${size.name} langdu-meaning: the miss does not show the right choice`);
+    problems.push(...(await cardClipped(page, `${size.name} langdu-meaning wrong`)), ...(await sheetFits(page, `${size.name} langdu-meaning wrong`)));
   }
   await page.goto(`file://${dir}/index.html?case=build`);
   for (let i = 0; i < 6 && (await page.$('.build__bank .choice')); i++) await page.click('.build__bank .choice');
@@ -181,6 +215,19 @@ for (const size of SIZES) {
     const box = await b.boundingBox();
     if (!box || Math.min(box.width, box.height) < 43.5) problems.push(`${size.name} listen: ✓/✗ under 44px (${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'hidden'})`);
   }
+  // the passage row (final review I8): each misread character, 听原文 and Done big enough to tap; nothing makes the page scroll sideways
+  if (!(await page.$('.listen__row--passage'))) problems.push(`${size.name} listen: no passage row`);
+  else await page.locator('.listen__row--passage').screenshot({ path: `fit-shots/stage-cases/listen-passage-${size.name}.png` });
+  for (const q of ['.listen__row--passage .misread-ch', '.listen__row--passage .listen__done', '.listen__row--passage .listen__model']) {
+    const els = await page.$$(q);
+    if (!els.length) problems.push(`${size.name} listen: no ${q}`);
+    for (const b of els) {
+      const box = await b.boundingBox();
+      if (!box || Math.min(box.width, box.height) < 43.5) { problems.push(`${size.name} listen: ${q} under 44px (${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'hidden'})`); break; }
+    }
+  }
+  const sideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  if (sideways > 1) problems.push(`${size.name} listen: the page scrolls sideways ${sideways}px`);
   await page.close();
 }
 // every expression × looks: nothing of him pokes out of his box (a seam, an ear, a mark), and a sheet to read by eye
