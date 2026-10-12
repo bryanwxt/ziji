@@ -33,6 +33,18 @@ function board(target: [string, string], extras: [string, string][], fits: (l: s
 /** Characters that make a word with almost anything (不远, 两下, 走上…): never in a board's extra pairs, where they'd fit across. */
 export const PRODUCTIVE: ReadonlySet<string> = new Set([...'不没一二三四五六七八九十两几大小好有是在上下人子们的了很走想爱会能要去来说看多少天头心中高长出开']);
 
+const nearCache = new Map<number, string[]>();
+let plain: [string, number][] | null = null;
+/** The two-character HSK words up to a level that avoid PRODUCTIVE characters and aren't doubled (妈妈), in list order; worked out once per level (a round asks each word's board many times). */
+function nearWords(upTo: number): string[] {
+  let out = nearCache.get(upTo);
+  if (!out) {
+    plain ??= TWO_CHAR.filter(([w]) => { const c = Array.from(w); return c[0] !== c[1] && !c.some((ch) => PRODUCTIVE.has(ch)); });
+    nearCache.set(upTo, (out = plain.filter(([, lvl]) => lvl <= upTo).map(([w]) => w)));
+  }
+  return out;
+}
+
 /**
  * 组词 pairing: the word's own two-character 组词 (at its reading, never a doubled word like 妈妈) and two more 词语 — from
  * characters he knows when there are enough, near his level otherwise, never with a character that fits almost anywhere.
@@ -43,8 +55,7 @@ export function zuciBoard(word: Word, rng: Rng, known?: ReadonlySet<string>): Pa
   const own = chars.length === 2 ? (twoChar(word.text) ? word.text : undefined) : word.examples?.find((e) => twoChar(e.text) && e.text.includes(word.text))?.text;
   if (!own) return null;
   const [a, b] = Array.from(own) as [string, string];
-  const ok = (w: string) => !Array.from(w).some((ch) => PRODUCTIVE.has(ch)) && twoChar(w);
-  const near = TWO_CHAR.filter(([w, lvl]) => w !== own && ok(w) && lvl <= (word.level ?? 3) + 1).map(([w]) => w);
+  const near = nearWords((word.level ?? 3) + 1).filter((w) => w !== own);
   const familiar = known ? near.filter((w) => Array.from(w).every((ch) => known.has(ch))) : [];
   const pool = familiar.length >= 6 ? familiar : near;
   const fits = (l: string, r: string) => HSK_WORDS.has(l + r) || (word.examples ?? []).some((e) => e.text === l + r);
