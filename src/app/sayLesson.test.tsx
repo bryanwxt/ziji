@@ -98,7 +98,7 @@ describe('Say cards in a lesson (spec 2026-10-11 §3, §4)', () => {
  *  tapped again (找一家人 lets go of it on a second tap). */
 const TAPS = '.choice:not([disabled]):not(.is-picked):not(.is-matched), .fishtile:not([disabled]), .bubble-opt:not([disabled]), .whichpart__char:not([disabled])';
 async function untilLangdu() {
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 300; i++) { // a pairing board has 8 halves now, two of them decoys: blind taps take longer (production practice spec §5)
     await waitFor(() => expect(document.querySelector(`.langdu, ${TAPS}, .sheet .btn:not([disabled])`)).toBeTruthy(), { timeout: 4000 });
     if (document.querySelector('.langdu')) return;
     const before = document.body.innerHTML;

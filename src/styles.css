@@ -1243,6 +1243,10 @@ button.langdu__sentence { cursor: pointer; }
 /* tiles not yet joined are paper, so a joined pair's colour stands out */
 .pair__tile:not(.is-matched):not(.is-shown) { background: var(--surface); }
 .pair__tile.is-shown { background: var(--orange-soft, #ffe2c2); }
+/* 8 halves (production practice spec §5): two columns of four, shorter tiles so a phone keeps them all */
+.pairs--eight .pairs__col { gap: 8px; }
+.pairs--eight .pair__tile { min-height: clamp(var(--tap-main), 8dvh, 96px); }
+.pair__tile.is-decoy { border-style: dashed; color: var(--muted); box-shadow: none; }
 
 /* 搭配 (spec 2026-10-05 §3.2 rung 2) */
 .match { display: flex; align-items: center; justify-content: center; gap: 14px; font-size: var(--q-hanzi, 64px); line-height: 1.1; }

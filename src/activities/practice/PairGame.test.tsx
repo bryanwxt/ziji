@@ -66,7 +66,7 @@ describe('final review C1/I4: pairing', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
   });
-  it("only the word's own pair is graded: a miss on another pair still counts the word right", () => {
+  it('every pair is graded (production practice spec §5): a miss on another pair makes the board wrong', () => {
     const onDone = vi.fn();
     render(<PairGame {...props} onDone={onDone} />);
     join('刷', '足球'); // a miss on an extra
@@ -74,7 +74,7 @@ describe('final review C1/I4: pairing', () => {
     join('刷', '牙');
     join('踢', '足球');
     fireEvent.click(screen.getByText('继续'));
-    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
   });
   it('a picked tile can be tapped again to let go (a slip is not a miss)', () => {
     render(<PairGame {...props} onDone={vi.fn()} />);
@@ -92,5 +92,49 @@ describe('final review C1/I4: pairing', () => {
     join('踢', '足球');
     fireEvent.click(screen.getByText('继续'));
     expect(onDone.mock.calls[0]![0].responseMs).toBeLessThan(6000);
+  });
+});
+
+describe('decoy halves (production practice spec §5)', () => {
+  // 火 + 山 = 火山; 公 + 园 = 公园; 先 + 生 = 先生; 鸟 and 木 pair with nothing here
+  const eight: PairBoard = { left: ['公', '鸟', '火', '先'], right: ['山', '木', '生', '园'], pairs: [['火', '山'], ['公', '园'], ['先', '生']], target: ['火', '山'], decoys: ['鸟', '木'] };
+  const p8 = { board: eight, kind: 'pair' as const, kid: DEFAULT_KID };
+  it('eight halves, two columns of four; the three pairs end the board right, and the decoys then show as decoys', () => {
+    const onDone = vi.fn();
+    render(<PairGame {...p8} onDone={onDone} />);
+    expect(document.querySelectorAll('.pairs--eight .pair__tile')).toHaveLength(8);
+    expect(document.querySelector('.is-decoy')).toBeNull(); // nothing gives them away while he plays
+    join('火', '山');
+    join('公', '园');
+    join('先', '生');
+    expect([...document.querySelectorAll('.is-decoy')].map((t) => t.textContent).sort()).toEqual(['木', '鸟']);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
+  });
+  it('a decoy tried is a miss: the board is wrong, and three tries set a left decoy aside', () => {
+    const onDone = vi.fn();
+    render(<PairGame {...p8} onDone={onDone} />);
+    join('鸟', '山');
+    expect(tile('鸟').disabled).toBe(false);
+    join('鸟', '园');
+    join('鸟', '生');
+    expect(tile('鸟').disabled).toBe(true);
+    expect(tile('鸟').classList.contains('is-decoy')).toBe(true);
+    join('火', '山');
+    join('公', '园');
+    join('先', '生');
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
+  });
+  it('a right-hand decoy tried with a real half is a miss on that half', () => {
+    const onDone = vi.fn();
+    render(<PairGame {...p8} onDone={onDone} />);
+    join('火', '木');
+    join('火', '山');
+    join('公', '园');
+    join('先', '生');
+    expect(document.querySelector('.sheet--oops')).toBeTruthy();
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
   });
 });

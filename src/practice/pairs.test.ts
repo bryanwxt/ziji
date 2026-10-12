@@ -37,9 +37,9 @@ describe('组词 pairing (spec 2026-10-05 §3.2 rung 2)', () => {
     expect(b.pairs).toHaveLength(3);
     expect(b.target.join('')).toContain('火');
     for (const [l, r] of b.pairs) expect(isWord(l + r), l + r).toBe(true);
-    expect([...b.left].sort()).toEqual(b.pairs.map(([l]) => l).sort());
-    expect([...b.right].sort()).toEqual(b.pairs.map(([, r]) => r).sort());
-    expect(new Set([...b.left, ...b.right]).size).toBe(6);
+    expect([...b.left].sort()).toEqual([...b.pairs.map(([l]) => l), b.decoys![0]].sort());
+    expect([...b.right].sort()).toEqual([...b.pairs.map(([, r]) => r), b.decoys![1]].sort());
+    expect(new Set([...b.left, ...b.right]).size).toBe(8);
   });
   it('no board has a cross pair that is also a word (review focus 1)', () => {
     for (const w of words.slice(0, 300)) {
@@ -106,5 +106,31 @@ describe('final review C1/C2: 组词 boards', () => {
     const known = new Set(words.slice(0, 400).map((w) => w.text));
     const b = zuciBoard(byText.get('火')!, mulberry32(5), known)!;
     for (const p of b.pairs.filter((x) => x !== b.target)) for (const ch of p) expect(known.has(ch), p.join('')).toBe(true);
+  });
+});
+
+describe('decoy halves (production practice spec §5)', () => {
+  it('every board has two, one each side, and neither makes a word with any half on the board or with the other', () => {
+    for (const w of words.slice(0, 400)) {
+      for (let seed = 1; seed <= 2; seed++) {
+        const b = zuciBoard(w, mulberry32(seed));
+        if (!b) continue;
+        const [dl, dr] = b.decoys!;
+        expect(b.left).toHaveLength(4);
+        expect(b.right).toHaveLength(4);
+        expect(b.left).toContain(dl);
+        expect(b.right).toContain(dr);
+        for (const h of [...b.pairs.flat(), dl, dr]) {
+          if (h !== dl) expect(isWord(dl + h) || isWord(h + dl), `${w.text}: ${dl} + ${h}`).toBe(false);
+          if (h !== dr) expect(isWord(dr + h) || isWord(h + dr), `${w.text}: ${dr} + ${h}`).toBe(false);
+        }
+        expect(PRODUCTIVE.has(dl) || PRODUCTIVE.has(dr)).toBe(false);
+      }
+    }
+  });
+  it('with what he knows, the decoys are characters he knows', () => {
+    const known = new Set(words.slice(0, 400).map((w) => w.text));
+    const b = zuciBoard(byText.get('火')!, mulberry32(5), known)!;
+    for (const d of b.decoys!) expect(known.has(d), d).toBe(true);
   });
 });
