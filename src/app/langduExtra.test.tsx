@@ -1,7 +1,9 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setSpeaking } from '../audio/speaking';
-import { getKid, listRecordings, saveKid, saveParentPassage, saveSession } from '../store/repo';
+import { getKid, listRecordings, putCards, putWords, saveKid, saveParentPassage, saveSession } from '../store/repo';
+import { builtinWords } from '../content';
+import { makeCard } from '../test/fixtures';
 import { createSessionRecord } from '../session/runner';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS } from '../types';
@@ -160,5 +162,31 @@ describe('the path after the day is done', () => {
     await screen.findByText('今天的练习');
     const names = [...document.querySelectorAll('.path__name')].map((n) => n.querySelector('.sr-only')?.textContent ?? n.textContent);
     expect(names).toContain('看图说话');
+  });
+});
+
+describe('多读一遍 (spec 2026-10-12 §3)', () => {
+  it('pinyin fades over the characters he reads, as in the lesson', async () => {
+    const app = await makeAppData({ settings: LANGDU, kid, now: () => new Date(2026, 9, 2, 17) });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    await saveKid(app.db, kid);
+    await putWords(app.db, [builtinWords(0).find((w) => w.text === '我')!]);
+    await putCards(app.db, [makeCard('b:我', 'recognise', new Date(2026, 9, 20), true)]);
+    renderWithApp(<LangduScreen />, app);
+    await screen.findByText('我爱爸爸，我爱妈妈。');
+    const cells = [...document.querySelectorAll('.langdu__sentence .label__cell--zh')];
+    expect(cells.find((c) => c.querySelector('.label__ch')!.textContent === '我')!.classList.contains('label__cell--hidden')).toBe(true);
+    expect(cells.find((c) => c.querySelector('.label__ch')!.textContent === '爱')!.classList.contains('label__cell--hidden')).toBe(false);
+  });
+});
+
+describe('朗读 on by default (spec 2026-10-12 §7)', () => {
+  it('with no setting touched, a text to read puts 朗读 on the path', async () => {
+    const names = () => [...document.querySelectorAll('.path__name')].map((n) => n.querySelector('.sr-only')?.textContent ?? n.textContent);
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, placementDone: true } });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(names()).toContain('朗读');
   });
 });

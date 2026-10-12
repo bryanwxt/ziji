@@ -1,9 +1,10 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setSpeaking } from '../audio/speaking';
+import { speak } from '../audio/speech';
 import { addRecording, getKid, listRecordings, saveKid, saveParentPassage, updateSettings } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
-import { DEFAULT_KID, DEFAULT_SETTINGS } from '../types';
+import { DEFAULT_KID, DEFAULT_SETTINGS, type PassageQuestion } from '../types';
 import { SessionScreen } from './SessionScreen';
 
 vi.mock('../audio/speech', () => ({ prefetchWords: vi.fn(), stopSpeaking: vi.fn(), speak: vi.fn(), primeSpeech: vi.fn() }));
@@ -17,7 +18,10 @@ vi.mock('../audio/recorder', () => ({
   }),
 }));
 
-afterEach(() => act(() => setSpeaking(false)));
+afterEach(() => {
+  act(() => setSpeaking(false));
+  vi.mocked(speak).mockClear();
+});
 
 const speakingOnly = { newwords: false, practice: false, writing: false, speaking: true };
 
@@ -41,6 +45,7 @@ async function warmUp() {
 /** The model reads the passage's one sentence, he reads it: on Compare. */
 async function listenAndRead() {
   await screen.findByText('我爱爸爸，我爱妈妈。');
+  await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。')); // the model has begun (with no warm-up the step mounts straight into listening)
   act(() => setSpeaking(true));
   act(() => setSpeaking(false));
   await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
@@ -84,5 +89,45 @@ describe('daily 朗读 step', () => {
     renderWithApp(<SessionScreen free={false} />, app);
     await readThrough();
     await waitFor(async () => expect((await getKid(app.db))!.bonusStars).toBe(1));
+  });
+});
+
+describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
+  it('after day 1 of a passage: no warm-up, straight to listening; only the read is saved', async () => {
+    const app = await setup();
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { passageId: 'pp:1', days: 1, extra: 0, lastDay: '2026-10-04', lastRead: { 'pp:1': '2026-10-04' }, warmups: 1 } });
+    renderWithApp(<SessionScreen free={false} />, app);
+    await listenAndRead();
+    expect(screen.queryByText('老师好！')).toBeNull();
+    fireEvent.click(btn('完成'));
+    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    expect((await listRecordings(app.db)).map((r) => r.prompt.kind)).toEqual(['passage']);
+    expect((await getKid(app.db))!.reading).toMatchObject({ days: 2, warmups: 1 });
+  });
+
+  it('his answer to the meaning question is kept with his take, for the parent', async () => {
+    const app = await setup();
+    const question: PassageQuestion = { q: '我爱谁？', choices: ['老师', '妈妈', '小马'], answer: 1 };
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1, question });
+    renderWithApp(<SessionScreen free={false} />, app);
+    await warmUp();
+    await listenAndRead();
+    fireEvent.click(btn('下一步'));
+    fireEvent.click(btn('小马'));
+    fireEvent.click(await screen.findByText('完成'));
+    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    expect((await listRecordings(app.db)).find((r) => r.prompt.kind === 'passage')!.meaning).toEqual({ correct: false, picked: '小马' });
+  });
+
+  it("saving a take tidies the passage's reviewed takes older than 14 days, keeping the newest", async () => {
+    const app = await setup();
+    const old = (id: string, d: Date, review?: 'ok') => ({ id, createdAt: d.getTime(), prompt: { kind: 'passage' as const, passageId: 'pp:1' }, blob: new Blob(['o']), mime: 'audio/mp4', durationSec: 5, ...(review ? { review } : {}) });
+    await addRecording(app.db, old('reviewed', new Date(2026, 8, 1), 'ok'));
+    await addRecording(app.db, old('unheard', new Date(2026, 8, 2)));
+    renderWithApp(<SessionScreen free={false} />, app);
+    await readThrough();
+    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    await waitFor(async () => expect((await listRecordings(app.db)).map((r) => r.id)).not.toContain('reviewed'));
+    expect((await listRecordings(app.db)).map((r) => r.id)).toContain('unheard');
   });
 });
