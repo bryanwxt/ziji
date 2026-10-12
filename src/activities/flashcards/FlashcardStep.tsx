@@ -26,7 +26,7 @@ import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from
 import { InkIcon } from '../../ui/icons/InkIcon';
 import type { Idiom } from '../../content/chengyu';
 import { familyOf, type FamilyWord } from '../../content/family';
-import { NONE_OF_THESE, noneChoices } from '../../practice/noneOfThese';
+import { NONE_OF_THESE, noneChoices, noneDecoyChoices } from '../../practice/noneOfThese';
 
 export interface FlashResult {
   correct: boolean;
@@ -60,23 +60,24 @@ interface Props {
   /** the characters he reads (know.knownChars): the 认新字 card's 「一家人」 row (spec 2026-10-12 §5) */
   knownChars?: ReadonlySet<string>;
   /** 练一练: a 组词 gap or English meaning asked without its answer, 「都不对」 right (production practice spec §5) */
-  noneOfThese?: boolean;
+  noneOfThese?: 'answer' | 'decoy';
 }
 
 const NO_CHARS: ReadonlySet<string> = new Set();
 
 type Phase = 'intro' | 'quiz' | 'feedback';
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null, knownChars = NO_CHARS, noneOfThese = false }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null, knownChars = NO_CHARS, noneOfThese }: Props) {
   // none: the right answer is left out and 都不对 is right; real: the right answer itself, shown after (production practice spec §5)
-  const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null; none: boolean; real: string } => {
+  const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null; none: boolean; showsNone: boolean; real: string } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
+    const pickOptions = (options: string[], real: string) => noneOfThese === 'answer' ? noneChoices(options, real) : noneOfThese === 'decoy' ? noneDecoyChoices(options, real) : options;
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
     const cue = ask === 'word' ? wordCue(word) : ask ? null : item.mode === 'meaning' ? meaningCue(word) : null;
     // six options where five good wrong ones exist, else four (spec 2026-10-11 §3); a class sentence's own wrong ones stay as they are
     if (cue) {
       const options = shuffle([word.text, ...(cue.wrong ?? fiveOrThree(pickSoundAlikes(word, cue, pool, rng, MANY_WRONG)))], rng);
-      return { listen: false, cue, answer: noneOfThese ? NONE_OF_THESE : word.text, options: noneOfThese ? noneChoices(options, word.text) : options, cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null, none: noneOfThese, real: word.text };
+      return { listen: false, cue, answer: noneOfThese === 'answer' ? NONE_OF_THESE : word.text, options: pickOptions(options, word.text), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null, none: noneOfThese === 'answer', showsNone: !!noneOfThese, real: word.text };
     }
     // the word ladder (spec 2026-10-06 §3.2): he hears it, or reads it, and picks its meaning in English
     if (ask === 'hear' || ask === 'meaningRead') {
@@ -85,7 +86,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       if (options) {
         const hear = ask === 'hear' && voice; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
         const real = firstSense(cardMeaning(word)!);
-        return { listen: hear, cue: null, answer: noneOfThese ? NONE_OF_THESE : real, options: noneOfThese ? noneChoices(options, real) : options, cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead', none: noneOfThese, real };
+        return { listen: hear, cue: null, answer: noneOfThese === 'answer' ? NONE_OF_THESE : real, options: pickOptions(options, real), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead', none: noneOfThese === 'answer', showsNone: !!noneOfThese, real };
       }
     }
     const five = pickLookAlikes(word, pool, rng);
@@ -93,7 +94,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     const listen = voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
     const answer = listen ? word.text : word.pinyin;
     const wrong = listen ? lookAlikes.map((w) => w.text) : fiveOrThree(pickPinyinDistractors(word, pool, rng, MANY_WRONG));
-    return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null, none: false, real: answer };
+    return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null, none: false, showsNone: false, real: answer };
   }, [word.id]);
   const [phase, setPhase] = useState<Phase>(item.isNew && !item.retry ? 'intro' : 'quiz');
   const [choice, setChoice] = useState<string | null>(null);
@@ -232,8 +233,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                   <button
                     key={o}
                     type="button"
-                    class={`choice press ${optionState(o)}${o === NONE_OF_THESE && quiz.none ? ' choice--none' : ''}`}
-                    lang={quiz.mode && !(o === NONE_OF_THESE && quiz.none) ? 'en' : undefined}
+                    class={`choice press ${optionState(o)}${o === NONE_OF_THESE && quiz.showsNone ? ' choice--none' : ''}`}
+                    lang={quiz.mode && !(o === NONE_OF_THESE && quiz.showsNone) ? 'en' : undefined}
                     disabled={phase === 'feedback'}
                     onClick={() => choose(o)}
                     ref={(el) => {

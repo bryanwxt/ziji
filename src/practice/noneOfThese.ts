@@ -19,9 +19,20 @@ export function withNoneOfThese(items: PracticeItem[], fresh: ReadonlySet<string
     const first = !seen.has(x.wordId);
     seen.add(x.wordId);
     if (first || x.retry || fresh.has(x.wordId) || !NONE_ASKS.has(x.ask)) return x;
-    return rng() < NONE_SHARE ? { ...x, none: true } : x;
+    const r = rng(); // one draw: the answer variant, then the decoy variant (都不对 as a wrong option, so seeing it is no tell)
+    return r < NONE_SHARE ? { ...x, none: 'answer' } : r < 2 * NONE_SHARE ? { ...x, none: 'decoy' } : x;
   });
 }
+
+/** A question's choices with one wrong one swapped for 都不对 (last): the right answer stays, the count is the same. */
+export function noneDecoyChoices(options: string[], answer: string): string[] {
+  const wrong = options.map((o, i) => (o === answer ? -1 : i)).filter((i) => i >= 0);
+  const drop = wrong.at(-1);
+  return drop === undefined ? options : [...options.filter((_, i) => i !== drop), NONE_OF_THESE];
+}
+
+/** What a stored item's `none` flag means: `true` (saved before the decoy variant) is the answer variant. */
+export const noneKind = (none: PracticeItem['none']): 'answer' | 'decoy' | null => (none === 'decoy' ? 'decoy' : none ? 'answer' : null);
 
 /** A question's choices without its right one, 都不对 last (as many choices as before). */
 export const noneChoices = (options: string[], answer: string): string[] => [...options.filter((o) => o !== answer), NONE_OF_THESE];

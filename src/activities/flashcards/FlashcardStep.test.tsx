@@ -361,7 +361,7 @@ describe('「都不对」 (production practice spec §5)', () => {
   const choices = () => [...document.querySelectorAll('.choice')].map((b) => b.textContent);
   it('the 组词 gap without its answer: 都不对 last, as many choices as before; picking it is right and shows the real 组词', () => {
     const onDone = vi.fn();
-    render(<FlashcardStep {...base} {...gap} noneOfThese onDone={onDone} />);
+    render(<FlashcardStep {...base} {...gap} noneOfThese="answer" onDone={onDone} />);
     expect(choices()).not.toContain(w.text);
     expect(choices().at(-1)).toBe('都不对');
     expect([4, 6]).toContain(choices().length);
@@ -370,16 +370,32 @@ describe('「都不对」 (production practice spec §5)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true, asked: 'meaning', picked: '都不对' }));
   });
+  it('as a wrong option: the answer stays, picking 都不对 is wrong and the real 组词 shows', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} {...gap} noneOfThese="decoy" onDone={onDone} />);
+    expect(choices()).toContain(w.text);
+    expect(choices().at(-1)).toBe('都不对');
+    fireEvent.click(screen.getByRole('button', { name: '都不对' }));
+    expect(document.querySelector('.sheet--oops .sheet__en')!.textContent).toContain(cue.full);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
+  });
+  it('as a wrong option on its English meaning: four choices with the real meaning', () => {
+    render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} noneOfThese="decoy" onDone={vi.fn()} />);
+    expect(choices()).toHaveLength(4);
+    expect(choices()).toContain(firstSense(cardMeaning(he)!));
+    expect(choices().at(-1)).toBe('都不对');
+  });
   it('picking a character there is wrong, and the real 组词 shows', () => {
     const onDone = vi.fn();
-    render(<FlashcardStep {...base} {...gap} noneOfThese onDone={onDone} />);
+    render(<FlashcardStep {...base} {...gap} noneOfThese="answer" onDone={onDone} />);
     fireEvent.click(document.querySelector<HTMLButtonElement>('.choice:not(.choice--none)')!);
     expect(document.querySelector('.sheet--oops .sheet__en')!.textContent).toContain(cue.full);
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
   });
   it('its English meaning without its answer: four choices, 都不对 last; picking it shows the real meaning', () => {
-    render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} noneOfThese onDone={vi.fn()} />);
+    render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} noneOfThese="answer" onDone={vi.fn()} />);
     const real = firstSense(cardMeaning(he)!);
     expect(choices()).toHaveLength(4);
     expect(choices()).not.toContain(real);

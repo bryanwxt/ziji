@@ -31,10 +31,24 @@ describe('搭配 (spec 2026-10-05 §3.2 rung 2, final review C2)', () => {
   });
 });
 
+describe('「都不对」 as a wrong option (production practice spec §5)', () => {
+  it('the partner stays, 都不对 replaces a wrong one; picking it is wrong and the real pair shows', () => {
+    const onDone = vi.fn();
+    render(<MatchQuestion {...props} none="decoy" onDone={onDone} />);
+    const labels = [...document.querySelectorAll('.choice')].map((b) => b.textContent);
+    expect(labels).toHaveLength(4);
+    expect(labels).toContain('衣服');
+    fireEvent.click(screen.getByRole('button', { name: '都不对' }));
+    expect(document.querySelector('.sheet--oops')!.textContent).toContain('穿衣服');
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
+  });
+});
+
 describe('「都不对」 in 搭配 (production practice spec §5)', () => {
   it('the partner is left out; 都不对 is right, and the sheet shows the real pair', () => {
     const onDone = vi.fn();
-    render(<MatchQuestion {...props} none onDone={onDone} />);
+    render(<MatchQuestion {...props} none="answer" onDone={onDone} />);
     expect([...document.querySelectorAll('.choice')].map((b) => b.textContent)).toEqual(['牙', '饭', '歌', '都不对']);
     fireEvent.click(screen.getByRole('button', { name: '都不对' }));
     expect(document.querySelector('.sheet--good')!.textContent).toContain('穿衣服');
@@ -43,7 +57,7 @@ describe('「都不对」 in 搭配 (production practice spec §5)', () => {
   });
   it('picking a partner there is wrong, and the real pair shows', () => {
     const onDone = vi.fn();
-    render(<MatchQuestion {...props} none onDone={onDone} />);
+    render(<MatchQuestion {...props} none="answer" onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: '牙' }));
     expect(document.querySelector('.sheet--oops')!.textContent).toContain('穿衣服');
     fireEvent.click(screen.getByText('继续'));

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../lib/random';
 import type { Ask, PracticeItem } from '../session/round';
-import { NONE_OF_THESE, NONE_SHARE, noneChoices, withNoneOfThese } from './noneOfThese';
+import { NONE_OF_THESE, NONE_SHARE, noneChoices, noneDecoyChoices, withNoneOfThese } from './noneOfThese';
 import { afterPracticeAnswer, createSessionRecord, finishStep, startPractice } from '../session/runner';
 
 const item = (wordId: string, ask: Ask, retry = false): PracticeItem => ({ wordId, rung: 2, ask, grades: null, retry });
@@ -10,9 +10,12 @@ describe('「都不对」 (production practice spec §5)', () => {
   it('about one in five of the questions that can take it, the same for the same seed', () => {
     // each word: a first question, then 4 that can take it
     const items = Array.from({ length: 500 }, (_, i) => [item(`w${i}`, 'read'), item(`w${i}`, 'word'), item(`w${i}`, 'match'), item(`w${i}`, 'meaningRead'), item(`w${i}`, 'hear')]).flat();
-    const marked = withNoneOfThese(items, new Set(), mulberry32(7)).filter((x) => x.none).length;
-    expect(marked / 2000).toBeGreaterThan(NONE_SHARE - 0.03);
-    expect(marked / 2000).toBeLessThan(NONE_SHARE + 0.03);
+    const marked = withNoneOfThese(items, new Set(), mulberry32(7)).filter((x) => x.none === 'answer').length;
+    const decoys = withNoneOfThese(items, new Set(), mulberry32(7)).filter((x) => x.none === 'decoy').length;
+    for (const n of [marked, decoys]) {
+      expect(n / 2000).toBeGreaterThan(NONE_SHARE - 0.03);
+      expect(n / 2000).toBeLessThan(NONE_SHARE + 0.03);
+    }
     expect(withNoneOfThese(items, new Set(), mulberry32(7))).toEqual(withNoneOfThese(items, new Set(), mulberry32(7)));
   });
   it("never a word's first question, a word introduced today, a retry, or another kind of question", () => {
@@ -29,6 +32,12 @@ describe('「都不对」 (production practice spec §5)', () => {
       expect(['word', 'match', 'meaningRead', 'hear']).toContain(x.ask);
     });
     expect(out.some((x) => x.none)).toBe(true);
+  });
+  it('a decoy keeps the answer, swaps one wrong choice for 都不对, same count', () => {
+    const out = noneDecoyChoices(['衣服', '牙', '饭', '歌'], '衣服');
+    expect(out).toHaveLength(4);
+    expect(out).toContain('衣服');
+    expect(out.at(-1)).toBe(NONE_OF_THESE);
   });
   it('the right answer is left out and 都不对 comes last: as many choices as before', () => {
     expect(noneChoices(['衣服', '牙', '饭', '歌'], '衣服')).toEqual(['牙', '饭', '歌', NONE_OF_THESE]);

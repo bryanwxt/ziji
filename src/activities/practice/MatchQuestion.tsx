@@ -4,7 +4,7 @@ import { speak } from '../../audio/speech';
 import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32 } from '../../lib/random';
 import type { DapeiQuestion } from '../../practice/pairs';
-import { NONE_OF_THESE, noneChoices } from '../../practice/noneOfThese';
+import { NONE_OF_THESE, noneChoices, noneDecoyChoices } from '../../practice/noneOfThese';
 import type { KidState } from '../../types';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
@@ -17,16 +17,16 @@ interface Props {
   kid: KidState;
   onDone: (r: { correct: boolean; responseMs: number }) => void;
   /** asked without its partner, 「都不对」 right (production practice spec §5) */
-  none?: boolean;
+  none?: 'answer' | 'decoy';
 }
 
 /** 搭配 (spec 2026-10-05 §3.2 rung 2): the word and four partners — which one goes with it? The right one joins it. */
-export function MatchQuestion({ question, kid, onDone, none = false }: Props) {
+export function MatchQuestion({ question, kid, onDone, none }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ question.verb.codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [question]);
   const [choice, setChoice] = useState<string | null>(null);
   const shownAt = useRef(performance.now());
-  const options = none ? noneChoices(question.options, question.noun) : question.options;
-  const answer = none ? NONE_OF_THESE : question.noun;
+  const options = none === 'answer' ? noneChoices(question.options, question.noun) : none === 'decoy' ? noneDecoyChoices(question.options, question.noun) : question.options;
+  const answer = none === 'answer' ? NONE_OF_THESE : question.noun;
   const done = choice !== null;
   const correct = choice === answer;
   const pair = question.verb + question.noun;
