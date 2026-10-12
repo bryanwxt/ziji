@@ -34,6 +34,34 @@ describe('PassagesPanel', () => {
     fireEvent.input(screen.getByLabelText('Text'), { target: { value: 'hello' } });
     expect((screen.getByText('Save text') as HTMLButtonElement).disabled).toBe(true);
   });
+  it('saves an optional meaning question with the right choice marked; editing shows it; clearing it removes it', async () => {
+    const app = await makeAppData();
+    renderWithApp(<PassagesPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Title'), { target: { value: '我家' } });
+    fireEvent.input(screen.getByLabelText('Text'), { target: { value: '我爱爸爸。我爱妈妈。' } });
+    fireEvent.input(screen.getByLabelText('Question'), { target: { value: '我爱谁？' } });
+    ['老师', '妈妈', '小马'].forEach((c, i) => fireEvent.input(screen.getByLabelText(`Choice ${i + 1}`), { target: { value: c } }));
+    fireEvent.click(screen.getByLabelText('Choice 2 is right'));
+    fireEvent.click(screen.getByText('Save text'));
+    await waitFor(async () => expect((await listParentPassages(app.db))[0]!.question).toEqual({ q: '我爱谁？', choices: ['老师', '妈妈', '小马'], answer: 1 }));
+    fireEvent.click(await screen.findByText('Edit'));
+    expect((screen.getByLabelText('Question') as HTMLInputElement).value).toBe('我爱谁？');
+    expect((screen.getByLabelText('Choice 2 is right') as HTMLInputElement).checked).toBe(true);
+    fireEvent.input(screen.getByLabelText('Question'), { target: { value: '' } });
+    ['', '', ''].forEach((c, i) => fireEvent.input(screen.getByLabelText(`Choice ${i + 1}`), { target: { value: c } }));
+    fireEvent.click(screen.getByText('Save text'));
+    await waitFor(async () => expect((await listParentPassages(app.db))[0]!.question).toBeUndefined());
+  });
+  it('a half-filled question cannot be saved, and says why', async () => {
+    const app = await makeAppData();
+    renderWithApp(<PassagesPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Title'), { target: { value: '我家' } });
+    fireEvent.input(screen.getByLabelText('Text'), { target: { value: '我爱爸爸。' } });
+    fireEvent.input(screen.getByLabelText('Question'), { target: { value: '我爱谁？' } });
+    fireEvent.input(screen.getByLabelText('Choice 1'), { target: { value: '爸爸' } });
+    expect((screen.getByText('Save text') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText('Fill in the question and all three choices, or leave them all empty.')).toBeTruthy();
+  });
 });
 
 describe('Settings oral exam', () => {

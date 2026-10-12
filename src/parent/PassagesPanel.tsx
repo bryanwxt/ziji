@@ -4,31 +4,42 @@ import { useApp } from '../app/AppContext';
 import { hanChars } from '../content';
 import { splitSentences } from '../langdu/sentences';
 import { deleteParentPassage, listParentPassages, saveParentPassage } from '../store/repo';
-import type { ParentPassage } from '../types';
+import type { ParentPassage, PassageQuestion } from '../types';
 
-/** School texts for 朗读: they come before the built-in passages, 3 days each. */
+const NO_CHOICES: [string, string, string] = ['', '', ''];
+
+/** School texts for 朗读: they come before the built-in passages, 3 days each; each may carry one meaning question (spec 2026-10-12 §3). */
 export function PassagesPanel() {
   const { db } = useApp();
   const [list, setList] = useState<ParentPassage[]>([]);
   const [editing, setEditing] = useState<ParentPassage | null>(null);
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
+  const [q, setQ] = useState('');
+  const [choices, setChoices] = useState<[string, string, string]>(NO_CHOICES);
+  const [right, setRight] = useState<0 | 1 | 2>(0);
   const reload = async () => setList(await listParentPassages(db));
   useEffect(() => {
     void reload();
   }, []);
 
-  const phrases = splitSentences(text);
-  const canSave = title.trim().length > 0 && hanChars(text).length > 0;
+  const sentences = splitSentences(text);
+  const filled = q.trim() !== '' && choices.every((c) => c.trim() !== '');
+  const empty = q.trim() === '' && choices.every((c) => c.trim() === '');
+  const question: PassageQuestion | undefined = filled ? { q: q.trim(), choices: choices.map((c) => c.trim()) as [string, string, string], answer: right } : undefined;
+  const canSave = title.trim().length > 0 && hanChars(text).length > 0 && (filled || empty);
   const reset = () => {
     setEditing(null);
     setTitle('');
     setText('');
+    setQ('');
+    setChoices(NO_CHOICES);
+    setRight(0);
   };
   const save = async () => {
     if (!canSave) return;
-    const base = editing ?? { id: `pp:${newId()}`, createdAt: Date.now() }; // newId works on plain-http hosts too
-    await saveParentPassage(db, { ...base, title: title.trim(), text: text.trim() });
+    const { id, createdAt } = editing ?? { id: `pp:${newId()}`, createdAt: Date.now() }; // newId works on plain-http hosts too
+    await saveParentPassage(db, { id, createdAt, title: title.trim(), text: text.trim(), ...(question ? { question } : {}) });
     reset();
     await reload();
   };
@@ -36,6 +47,9 @@ export function PassagesPanel() {
     setEditing(p);
     setTitle(p.title);
     setText(p.text);
+    setQ(p.question?.q ?? '');
+    setChoices(p.question ? [...p.question.choices] : NO_CHOICES);
+    setRight(p.question?.answer ?? 0);
   };
   const remove = async (p: ParentPassage) => {
     if (!confirm(`Delete "${p.title}"?`)) return;
@@ -43,6 +57,7 @@ export function PassagesPanel() {
     if (editing?.id === p.id) reset();
     await reload();
   };
+  const setChoice = (i: number, v: string) => setChoices((c) => c.map((x, j) => (j === i ? v : x)) as [string, string, string]);
 
   return (
     <section class="panel">
@@ -53,7 +68,7 @@ export function PassagesPanel() {
           <tbody>
             {list.map((p) => (
               <tr key={p.id}>
-                <td>{p.title}</td>
+                <td>{p.title}{p.question && <small> · ❓</small>}</td>
                 <td>{p.text.replace(/\s*\/\s*/g, '').slice(0, 20)}{p.text.length > 20 ? '…' : ''}</td>
                 <td><button type="button" class="small-btn" onClick={() => edit(p)}>Edit</button></td>
                 <td><button type="button" class="small-btn" onClick={() => void remove(p)}>Delete</button></td>
@@ -71,11 +86,26 @@ export function PassagesPanel() {
         <textarea id="pp-text" rows={5} value={text} onInput={(e) => setText(e.currentTarget.value)} />
         <small>Paste the text from school. The iPad reads it a sentence at a time (at 。！？); type / to end a sentence that has no full stop.</small>
       </div>
-      {phrases.length > 0 && (
+      {sentences.length > 0 && (
         <ol class="phrase-preview">
-          {phrases.map((ph, i) => <li key={i}>{ph}</li>)}
+          {sentences.map((s, i) => <li key={i}>{s}</li>)}
         </ol>
       )}
+      <fieldset class="field">
+        <legend>Meaning question (optional)</legend>
+        <div class="field">
+          <label for="pp-q">Question</label>
+          <input id="pp-q" value={q} placeholder="谁…？ 哪里…？ 什么…？ 为什么…？" onInput={(e) => setQ(e.currentTarget.value)} />
+        </div>
+        {[0, 1, 2].map((i) => (
+          <div class="row" key={i} style={{ justifyContent: 'flex-start' }}>
+            <input type="radio" name="pp-right" aria-label={`Choice ${i + 1} is right`} checked={right === i} onChange={() => setRight(i as 0 | 1 | 2)} />
+            <input aria-label={`Choice ${i + 1}`} value={choices[i]} onInput={(e) => setChoice(i, e.currentTarget.value)} />
+          </div>
+        ))}
+        <small>After reading he answers it. Mark the right choice; a miss shows it and reads again the sentence that has it.</small>
+        {!filled && !empty && <p class="hint" role="status">Fill in the question and all three choices, or leave them all empty.</p>}
+      </fieldset>
       <div class="row" style={{ justifyContent: 'flex-start' }}>
         <button type="button" class="small-btn" disabled={!canSave} onClick={() => void save()}>Save text</button>
         {editing && <button type="button" class="small-btn" onClick={reset}>Cancel</button>}
