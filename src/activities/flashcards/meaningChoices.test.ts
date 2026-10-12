@@ -28,6 +28,14 @@ describe('meaning choices (the Hear rung)', () => {
     expect(new Set(c.map(firstSense)).size).toBe(6);
     expect(meaningChoices(target, pool.slice(0, 6), mulberry32(1), 5)).toBeNull();
   });
+  it('no two choices share a key word, so none is half-right ("small box" beside "meal in a box")', () => {
+    const box = w('盒', 'small box');
+    const others = [box, w('饭盒', 'meal in a partitioned box'), w('盒子', 'box; case'), w('大', 'big'), w('门', 'door'), w('水', 'water'), w('火', 'fire')];
+    for (let seed = 1; seed < 30; seed++) {
+      const c = meaningChoices(box, others, mulberry32(seed))!;
+      expect(c.filter((x) => /\bbox\b/.test(x))).toEqual(['small box']);
+    }
+  });
   it('null when there are not three other meanings to choose from', () => {
     expect(meaningChoices(target, [target, w('大', 'big')], mulberry32(1))).toBeNull();
   });

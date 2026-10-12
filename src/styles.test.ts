@@ -288,3 +288,9 @@ describe('the new-word card (spec 2026-10-12 §4)', () => {
     expect(css).toMatch(/\.pinyin--later \{[^}]*animation: later-in 300ms ease-out 2s both/);
   });
 });
+
+describe('English choices never clip a long word', () => {
+  it('wraps anywhere inside its tile', () => {
+    expect(css).toMatch(/\.choices--english \.choice \{[^}]*overflow-wrap: anywhere/);
+  });
+});

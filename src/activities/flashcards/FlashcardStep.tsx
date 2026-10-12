@@ -75,7 +75,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     }
     // the word ladder (spec 2026-10-06 §3.2): he hears it, or reads it, and picks its meaning in English
     if (ask === 'hear' || ask === 'meaningRead') {
-      const options = meaningChoices(word, pool, rng, MANY_WRONG) ?? meaningChoices(word, pool, rng);
+      // always four: six English meanings crowd a phone and drag in obscure glosses (parent, 2026-10-12)
+      const options = meaningChoices(word, pool, rng);
       if (options) {
         const hear = ask === 'hear' && voice; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
         return { listen: hear, cue: null, answer: firstSense(cardMeaning(word)!), options, cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead' };

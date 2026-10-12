@@ -119,8 +119,13 @@ export function pickPinyinDistractors(target: Word, pool: Word[], rng: Rng, n = 
 export const firstSense = (m: string): string => m.split(';')[0]!.trim();
 /** A sense compared loosely: no brackets, no leading to/a/an/the, no punctuation ("to teach (at a school)" = "teach"). */
 const sense = (m: string) => firstSense(m).split(',')[0]!.replace(/\([^)]*\)/g, ' ').toLowerCase().replace(/^\s*(to|a|an|the)\s+/, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
-/** Two meanings that would both be right: the same sense, or one inside the other ("guide" / "tour guide"). */
-const alike = (a: string, b: string) => a === b || ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `);
+/** Words too common to tell two meanings apart ("one", "something"). */
+const GLUE = new Set(['and', 'the', 'for', 'with', 'one', 'ones', 'someone', 'something', 'sth', 'sb', 'used', 'kind', 'sort']);
+const keyWords = (s: string) => s.split(' ').filter((t) => t.length >= 3 && !GLUE.has(t));
+/** Two meanings that would both be right, or look half-right side by side: the same sense, one inside the other
+ *  ("guide" / "tour guide"), or a shared key word ("small box" / "meal in a box"; parent, 2026-10-12: confusing). */
+const alike = (a: string, b: string) => a === b || ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `)
+  || keyWords(a).some((t) => keyWords(b).includes(t));
 
 /** Hear / read-for-meaning (spec 2026-10-06 §3.2): its English meaning and three others (or `others`) whose first sense differs, near its place in his order. */
 export function meaningChoices(word: Word, pool: Word[], rng: Rng, others = FEW_WRONG): string[] | null {
