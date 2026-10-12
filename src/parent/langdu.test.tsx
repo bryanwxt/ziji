@@ -62,6 +62,28 @@ describe('PassagesPanel', () => {
     expect((screen.getByText('Save text') as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText('Fill in the question and all three choices, or leave them all empty.')).toBeTruthy();
   });
+  it('identical choices cannot be saved, and says why', async () => {
+    const app = await makeAppData();
+    renderWithApp(<PassagesPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Title'), { target: { value: '我家' } });
+    fireEvent.input(screen.getByLabelText('Text'), { target: { value: '我爱爸爸。' } });
+    fireEvent.input(screen.getByLabelText('Question'), { target: { value: '我爱谁？' } });
+    ['爸爸', '爸爸 ', '小马'].forEach((c, i) => fireEvent.input(screen.getByLabelText(`Choice ${i + 1}`), { target: { value: c } }));
+    expect((screen.getByText('Save text') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText('The three choices must be different.')).toBeTruthy();
+  });
+  it('whitespace-only question fields count as empty: saves with no question', async () => {
+    const app = await makeAppData();
+    renderWithApp(<PassagesPanel />, app);
+    fireEvent.input(await screen.findByLabelText('Title'), { target: { value: '我家' } });
+    fireEvent.input(screen.getByLabelText('Text'), { target: { value: '我爱爸爸。' } });
+    fireEvent.input(screen.getByLabelText('Question'), { target: { value: '   ' } });
+    [' ', '  ', ' '].forEach((c, i) => fireEvent.input(screen.getByLabelText(`Choice ${i + 1}`), { target: { value: c } }));
+    expect((screen.getByText('Save text') as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByText('Save text'));
+    await waitFor(async () => expect((await listParentPassages(app.db)).length).toBe(1));
+    expect((await listParentPassages(app.db))[0]!.question).toBeUndefined();
+  });
 });
 
 describe('Settings oral exam', () => {

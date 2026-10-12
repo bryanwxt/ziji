@@ -24,7 +24,9 @@ export function PassagesPanel() {
   }, []);
 
   const sentences = splitSentences(text);
-  const filled = q.trim() !== '' && choices.every((c) => c.trim() !== '');
+  const complete = q.trim() !== '' && choices.every((c) => c.trim() !== '');
+  const distinct = new Set(choices.map((c) => c.trim())).size === 3;
+  const filled = complete && distinct;
   const empty = q.trim() === '' && choices.every((c) => c.trim() === '');
   const question: PassageQuestion | undefined = filled ? { q: q.trim(), choices: choices.map((c) => c.trim()) as [string, string, string], answer: right } : undefined;
   const canSave = title.trim().length > 0 && hanChars(text).length > 0 && (filled || empty);
@@ -104,7 +106,8 @@ export function PassagesPanel() {
           </div>
         ))}
         <small>After reading he answers it. Mark the right choice; a miss shows it and reads again the sentence that has it.</small>
-        {!filled && !empty && <p class="hint" role="status">Fill in the question and all three choices, or leave them all empty.</p>}
+        {complete && !distinct && <p class="hint" role="status">The three choices must be different.</p>}
+        {!complete && !empty && <p class="hint" role="status">Fill in the question and all three choices, or leave them all empty.</p>}
       </fieldset>
       <div class="row" style={{ justifyContent: 'flex-start' }}>
         <button type="button" class="small-btn" disabled={!canSave} onClick={() => void save()}>Save text</button>
