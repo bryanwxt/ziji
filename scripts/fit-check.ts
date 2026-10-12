@@ -112,7 +112,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
 
 function signature(): string {
   const s = document.querySelector('.screen');
-  const marks = ['.home', '.usage-opts', '.intro', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.choices--six', '.say', '.say__after', '.arrival', '.zika-big', '.rotate-hint'];
+  const marks = ['.home', '.usage-opts', '.intro', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.choices--six', '.say', '.say__after', '.say-sentence', '.say-sentence__model', '.pairs--eight', '.choice--none', '.arrival', '.zika-big', '.rotate-hint'];
   const on = marks.filter((m) => s?.matches(m) || s?.querySelector(m) || document.querySelector(`${m}:not(.rotate-hint)`));
   const tone = document.querySelector('.sheet')?.className ?? '';
   const words = (s?.querySelector('.kantu__q, .langdu__step, .pet__bubble, h1, h2')?.textContent ?? '').slice(0, 14);
@@ -288,8 +288,8 @@ function stageInvariants() {
   }
 }
 
-/** Taps a walk may take: a full lesson with 朗读 is ~250. */
-const WALK_CAP = 300;
+/** Taps a walk may take: a full lesson with 朗读 is ~250, and each 8-tile 连一连 board takes ~30 blind taps (decoys; production practice spec §5). */
+const WALK_CAP = 900;
 
 async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnly?: boolean } = {}) {
   const seen = new Set<string>(); // check each distinct screen once; keep walking through repeats (20 phrases, 25 words) to reach the end
@@ -305,7 +305,7 @@ async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnl
     if (!(await page.evaluate(advance))) return;
   }
   // the cap reached with the lesson still up: the rest of the flow was never looked at (final review M5)
-  if (await page.$('.lessonbar')) results.push({ size: size.name, flow, step: WALK_CAP, sig: '', problems: [`walker ran out of taps: the lesson bar still shows after ${WALK_CAP} taps`] });
+  if (await page.$('.lessonbar')) results.push({ size: size.name, flow, step: WALK_CAP, sig: '', problems: [`walker ran out of taps: the lesson bar still shows after ${WALK_CAP} taps (stuck on: ${await page.evaluate(signature)})`] });
 }
 
 async function sweep(browser: Browser, size: Size) {
