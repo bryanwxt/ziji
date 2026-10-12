@@ -67,14 +67,14 @@ describe('buildSessionPlan', () => {
     ]);
   });
 
-  it("sizes 写一写 (8 characters at 30 minutes, 5 at 20, 4 at 15) and 练一练's time box from session minutes", () => {
+  it("sizes 写一写 (9 characters at 30 minutes, 7 at 20, 4 at 15) and 练一练's time box from session minutes", () => {
     const ws = chars(12);
     const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
     const count = (min: number) => new Set(buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: min }), now }).writeItems!.map((i) => `${i.wordId}#${i.at}`)).size;
-    expect([count(30), count(20), count(15)]).toEqual([8, 5, 4]);
+    expect([count(30), count(20), count(15)]).toEqual([9, 7, 4]);
     const p20 = buildSessionPlan({ cards, words: ws, settings: settings({ sessionMinutes: 20 }), now });
     expect(p20.writeCount).toBe(p20.writeItems!.length); // each never-written character is traced, then written from memory
-    expect(p20.writeCount).toBe(10);
+    expect(p20.writeCount).toBe(14);
     expect(p20.practiceTimeBoxMs).toBe(Math.round((20 * 60_000) / 3));
   });
   it("writes today's new words after due writing, and nothing above his level", () => {
@@ -165,8 +165,8 @@ describe('the lesson (spec 2026-10-05 §2)', () => {
   it('朗读 switched off: no speaking step', () => {
     expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: { ...DEFAULT_SETTINGS, langdu: false }, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing']);
   });
-  it('练一练 has 5 of the default 15 minutes (spec 2026-10-12 §4: its share is 1/3)', () => {
-    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).practiceTimeBoxMs).toBe(5 * 60_000);
+  it('练一练 has a third of the default 20 minutes (production practice spec §6)', () => {
+    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).practiceTimeBoxMs).toBe(Math.round((20 * 60_000) / 3));
   });
   it('with 新字 switched off there are no new words', () => {
     const settings = { ...DEFAULT_SETTINGS, activities: { ...DEFAULT_SETTINGS.activities, newwords: false } };

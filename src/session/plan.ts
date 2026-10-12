@@ -32,7 +32,7 @@ export interface PlanInput {
   newPerDay?: number; // today's pace (spec 2026-10-05 §2.2); without one, the pace's start under the ceiling
 }
 
-export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: 5 of the usual 15 minutes, 朗读 takes ~3 (spec 2026-10-12 §4)
+export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: ~6.7 of the usual 20 minutes, 朗读 takes ~3 (production practice spec §6)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
 /** Hear cards reviewed in one lesson at most (spec 2026-10-06 §3.2). */

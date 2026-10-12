@@ -11,24 +11,28 @@ import { getSettings, updateSettings } from './repo';
  * The 15-minute lesson (v6, spec 2026-10-11 §4): a lesson on the old default of exactly 30 minutes becomes 15; any other length stays.
  * 朗读 back (v7, spec 2026-10-12 §7): 朗读 is switched on once, with the lesson's speaking step (Activities) it runs in; a parent who
  * turns either off later keeps it off.
+ * The 20-minute lesson (v8, production practice spec §6): a lesson on exactly 15 minutes becomes 20; any other length stays.
  */
 export function migrateSettings(s: Settings): Partial<Settings> | null {
   const v = s.lessonVersion ?? 1;
-  if (v >= 7) return null;
+  if (v >= 8) return null;
   const patch: Partial<Settings> = {};
-  if (v < 4) {
-    if (v < 2) patch.sessionMinutes = s.sessionMinutes === 20 ? 30 : s.sessionMinutes;
-    const perDay = v < 3 && s.newPerDay === 5 ? 4 : s.newPerDay;
-    patch.newPerDay = perDay === 4 ? 8 : perDay;
-    const was = s.activities as unknown as Partial<Record<'flashcards' | 'choose' | 'components' | 'writing' | 'speaking', boolean>>;
-    const on = (k: keyof typeof was) => was[k] ?? true;
-    patch.activities = { newwords: on('flashcards'), practice: on('flashcards') || on('choose') || on('components'), writing: on('writing'), speaking: on('speaking') };
+  if (v < 7) {
+    if (v < 4) {
+      if (v < 2) patch.sessionMinutes = s.sessionMinutes === 20 ? 30 : s.sessionMinutes;
+      const perDay = v < 3 && s.newPerDay === 5 ? 4 : s.newPerDay;
+      patch.newPerDay = perDay === 4 ? 8 : perDay;
+      const was = s.activities as unknown as Partial<Record<'flashcards' | 'choose' | 'components' | 'writing' | 'speaking', boolean>>;
+      const on = (k: keyof typeof was) => was[k] ?? true;
+      patch.activities = { newwords: on('flashcards'), practice: on('flashcards') || on('choose') || on('components'), writing: on('writing'), speaking: on('speaking') };
+    }
+    if (v < 5) patch.course = 'both';
+    if (v < 6 && (patch.sessionMinutes ?? s.sessionMinutes) === 30) patch.sessionMinutes = 15; // an install moved to 30 by v2 was on the default too
+    patch.langdu = true;
+    patch.activities = { ...(patch.activities ?? s.activities), speaking: true }; // 朗读 runs in the speaking step: both switches on (final review M2)
   }
-  if (v < 5) patch.course = 'both';
-  if (v < 6 && (patch.sessionMinutes ?? s.sessionMinutes) === 30) patch.sessionMinutes = 15; // an install moved to 30 by v2 was on the default too
-  patch.langdu = true;
-  patch.activities = { ...(patch.activities ?? s.activities), speaking: true }; // 朗读 runs in the speaking step: both switches on (final review M2)
-  patch.lessonVersion = 7;
+  if ((patch.sessionMinutes ?? s.sessionMinutes) === 15) patch.sessionMinutes = 20; // v8: the old default only
+  patch.lessonVersion = 8;
   return patch;
 }
 

@@ -10,16 +10,16 @@ const day = 86_400_000;
 const base = { newWordIds: [] as string[], practised: new Map<string, number>(), level: 2, cutoff: now.getTime() + day, target: 9 };
 
 describe('how many characters (spec 2026-10-05 §5; spec 2026-10-12 §4)', () => {
-  it('4 at the usual 15 minutes; 5 at 20, 7 at 25, 8 at 30, 9 from 40', () => {
-    expect(writeCharTarget(15)).toBe(4); // 朗读 takes its ~3 minutes (spec 2026-10-12 §4)
+  it('7 at the usual 20 minutes; 4 under 20, 8 at 25, 9 at 30, 10 from 40 (production practice spec §3)', () => {
     expect(writeCharTarget(10)).toBe(4);
+    expect(writeCharTarget(15)).toBe(4);
     expect(writeCharTarget(19)).toBe(4);
-    expect(writeCharTarget(20)).toBe(5);
-    expect(writeCharTarget(25)).toBe(7);
-    expect(writeCharTarget(30)).toBe(8);
-    expect(writeCharTarget(35)).toBe(8);
-    expect(writeCharTarget(40)).toBe(9);
-    expect(writeCharTarget(45)).toBe(9);
+    expect(writeCharTarget(20)).toBe(7);
+    expect(writeCharTarget(25)).toBe(8);
+    expect(writeCharTarget(30)).toBe(9);
+    expect(writeCharTarget(35)).toBe(9);
+    expect(writeCharTarget(40)).toBe(10);
+    expect(writeCharTarget(45)).toBe(10);
   });
 });
 
