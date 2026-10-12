@@ -55,6 +55,7 @@ export interface Word {
   createdAt: number;
   examples?: Example[];
   writeSkippedAt?: number; // last time its strokes failed to load in 听写; such words go to the back of the queue
+  tracedAt?: number; // a read-only character's first trace in 写一写 (production practice spec §3): a recent one is traced once
   sentences?: Example[]; // imported class sentences that use this word (on-device only)
   pairs?: string[]; // words it pairs with in class (保持 → 安静)
   tags?: string[]; // e.g. '成语'
@@ -138,6 +139,7 @@ export interface SessionPlan {
   practiceTimeBoxMs?: number; // 练一练's time box (spec 2026-10-05 §2)
   newWordMeaningIds?: string[]; // today's new words that have a cue: their meaning question comes in the same lesson (spec §20 part 2)
   sayIds?: string[]; // words to say aloud in 练一练, best first (spec 2026-10-11 §4); plans saved before it have none
+  writeWordIds?: string[]; // the words 写一写 covers today (production practice spec §3): 练一练 leaves out their 组词 taps; plans saved before it have none
 }
 
 export interface FlashItem {

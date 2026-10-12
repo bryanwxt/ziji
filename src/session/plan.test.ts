@@ -165,6 +165,14 @@ describe('the lesson (spec 2026-10-05 §2)', () => {
   it('朗读 switched off: no speaking step', () => {
     expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: { ...DEFAULT_SETTINGS, langdu: false }, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing']);
   });
+  it('the plan carries the words 写一写 covers, so 练一练 can leave out their 组词 taps (production practice spec §3)', () => {
+    const ws = [...chars(3), makeWord('澡', { id: 'b:澡', rank: 50, writeable: false })];
+    const cards = ws.map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 20), true));
+    const plan = buildSessionPlan({ cards, words: ws, settings: settings(), now, practised: new Map([['b:澡', now.getTime() - 3_600_000]]) });
+    expect(new Set(plan.writeWordIds)).toEqual(new Set(['b:0', 'b:1', 'b:2', 'b:澡']));
+    expect(plan.writeItems!.find((i) => i.wordId === 'b:澡')).toMatchObject({ pass: 'trace', readOnly: true });
+    expect(buildSessionPlan({ cards, words: ws, settings: settings({ activities: { ...DEFAULT_SETTINGS.activities, writing: false } }), now }).writeWordIds).toEqual([]);
+  });
   it('练一练 has a third of the default 20 minutes (production practice spec §6)', () => {
     expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).practiceTimeBoxMs).toBe(Math.round((20 * 60_000) / 3));
   });

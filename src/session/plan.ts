@@ -108,6 +108,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     writeCandidates: writeUnits.map((u) => ({ wordId: u.wordId, isNew: u.isNew })),
     writeItems,
     writeCount: writeItems.length,
+    writeWordIds: writeUnits.map((u) => u.wordId),
     // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
     // only words that can be asked by ear: a card that can't be asked would stay due and hold a slot forever (final review I1)
     hearReviewIds: dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
