@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { hashPin } from '../lib/hash';
-import { addRecording, getCard, getSettings, listRecordings, putCards, putWords } from '../store/repo';
+import { addRecording, getCard, getSettings, listRecordings, putCards, putWords, saveParentPassage } from '../store/repo';
 import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS, type Recording } from '../types';
@@ -113,5 +113,52 @@ describe('Listen & confirm (spec 2026-10-11 §6)', () => {
     expect(box.checked).toBe(true);
     fireEvent.change(box, { target: { checked: false } });
     await waitFor(async () => expect((await getSettings(app.db)).sayCards).toBe(false));
+  });
+});
+
+const passageTake = (id: string, passageId: string, d: number, extra: Partial<Recording> = {}): Recording => ({ id, createdAt: at(d), prompt: { kind: 'passage', passageId }, blob: new Blob(['x']), mime: 'audio/mp4', durationSec: 20, ...extra });
+
+describe('passage takes in Listen & confirm (spec 2026-10-12 §6)', () => {
+  async function withPassage() {
+    const app = await withTakes();
+    await putWords(app.db, [makeWord('爱', { pinyin: 'ài' })]);
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸。我爱妈妈。', createdAt: 1 });
+    await addRecording(app.db, passageTake('p1', 'pp:1', 3, { meaning: { correct: false, picked: '老师' } }));
+    return app;
+  }
+  it('a row with the title, his answer, tappable characters, his take, the model and Done; Done saves the marks', async () => {
+    const app = await withPassage();
+    const onReviewed = vi.fn();
+    renderWithApp(<ListenPanel onReviewed={onReviewed} />, app);
+    await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(3));
+    const row = document.querySelector('.listen__row--passage')!;
+    expect(row.querySelector('.listen__title')!.textContent).toBe('📖 我家');
+    expect(row.textContent).toContain('Meaning question: missed (picked 老师)');
+    expect(row.querySelector('audio')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '听老师的' }));
+    expect(speak).toHaveBeenCalledWith('我爱爸爸。');
+    fireEvent.click([...row.querySelectorAll('.misread-ch')].find((b) => b.textContent === '爱')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Done: 我家' }));
+    await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(2));
+    expect((await listRecordings(app.db)).find((r) => r.id === 'p1')).toMatchObject({ review: 'ok', misread: ['爱'] });
+    expect(onReviewed).toHaveBeenCalledTimes(1);
+  });
+  it('Done twice saves once; a take of a deleted text still has Done', async () => {
+    const app = await withTakes();
+    await addRecording(app.db, passageTake('gone', 'pp:deleted', 3));
+    const done = vi.spyOn(await import('../langdu/review'), 'finishPassageReview');
+    renderWithApp(<ListenPanel />, app);
+    const b = await screen.findByRole('button', { name: 'Done: (deleted text)' });
+    fireEvent.click(b);
+    fireEvent.click(b);
+    await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(2));
+    expect(done).toHaveBeenCalledTimes(1);
+    expect((await listRecordings(app.db)).find((r) => r.id === 'gone')!.review).toBe('ok');
+  });
+  it('the badge and the Overview tile count passage takes too', async () => {
+    const app = await withPassage();
+    renderWithApp(<Dashboard onNavigate={vi.fn()} />, app);
+    const tile = (await screen.findByText('Takes to review')).closest('.tile')!;
+    expect(tile.querySelector('.tile__value')!.textContent).toBe('3');
   });
 });

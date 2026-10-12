@@ -5,6 +5,7 @@ import type { FinishedRecording } from '../audio/recorder';
 import { sayPassed } from '../ladder/rungs';
 import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
 import { newId } from '../lib/id';
+import { waitingPassageTakes } from '../langdu/review';
 import { newCard, review } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
 import { deleteRecording, getCard, getRecording, keepRecording, listRecordings, logsForCard, putCards, settleTake } from '../store/repo';
@@ -19,9 +20,9 @@ export const WAITING_CAP = 60;
 /** The word a Say take is of; null for any other recording. */
 export const takeWord = (r: Recording): string | null => (r.prompt.kind === 'say' ? r.prompt.wordId : null);
 
-/** Takes waiting for the parent, oldest first. */
+/** Takes waiting for the parent, oldest first: Say takes, and each passage's newest take (spec 2026-10-12 §6). */
 export function waitingTakes(recs: Recording[]): Recording[] {
-  return recs.filter((r) => takeWord(r) !== null && !r.review).sort((a, b) => a.createdAt - b.createdAt);
+  return [...recs.filter((r) => takeWord(r) !== null && !r.review), ...waitingPassageTakes(recs)].sort((a, b) => a.createdAt - b.createdAt);
 }
 
 /** The newest of each word's takes among `list`. */

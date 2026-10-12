@@ -1,14 +1,62 @@
-// Listen & confirm (spec 2026-10-11 §6): his Say takes, oldest first; the parent plays his take and the model, then ✓ or ✗.
+// Listen & confirm (spec 2026-10-11 §6; spec 2026-10-12 §6): his Say takes and his passage takes, oldest first. A word: play his
+// take and the model, then ✓ or ✗. A passage: play his take and the model, tap what he misread, then Done.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
+import { PASSAGES } from '../content';
+import { finishPassageReview, passageOf } from '../langdu/review';
+import { splitSentences } from '../langdu/sentences';
+import { useModelReader } from '../langdu/useModelReader';
 import { findWord } from '../ladder/words';
 import { reviewTake, takeWord, waitingTakes } from '../session/say';
-import { listRecordings } from '../store/repo';
+import { listParentPassages, listRecordings } from '../store/repo';
 import type { Recording, Word } from '../types';
 import { SpeakButton } from '../ui/SpeakButton';
+import { MisreadText } from './MisreadText';
 
-/** The queue's rows: the word with its pinyin, his take, the model, ✓ and ✗ (the stage cases show it with takes in memory). */
-export function ListenRows({ takes, words, onJudge }: { takes: Recording[]; words: ReadonlyMap<string, Word>; onJudge: (r: Recording, verdict: 'ok' | 'no') => void }) {
+export type PassageTexts = ReadonlyMap<string, { title: string; text: string }>;
+
+/** 听老师的: the model reads the passage a sentence at a time, as he heard it. */
+function ModelButton({ text }: { text: string }) {
+  const model = useModelReader(splitSentences(text));
+  return <button type="button" class="small-btn listen__model" onClick={() => model.read(0)}>听老师的</button>;
+}
+
+function PassageRow({ r, url, texts, onDone }: { r: Recording; url: string | undefined; texts: PassageTexts; onDone: (r: Recording, marks: string[]) => void }) {
+  const t = texts.get(passageOf(r)!);
+  const title = t?.title ?? '(deleted text)';
+  const [marks, setMarks] = useState<Set<string>>(new Set(r.misread ?? []));
+  const toggle = (ch: string) => setMarks((m) => {
+    const n = new Set(m);
+    if (n.has(ch)) n.delete(ch);
+    else n.add(ch);
+    return n;
+  });
+  return (
+    <tr class="listen__row listen__row--passage">
+      <td colSpan={4}>
+        <div class="listen__passage">
+          <div><strong class="listen__title">📖 {title}</strong> <small>{new Date(r.createdAt).toLocaleString()}</small></div>
+          {r.meaning && <small class="listen__meaning">{r.meaning.correct ? 'Meaning question: right' : `Meaning question: missed (picked ${r.meaning.picked})`}</small>}
+          {t && <MisreadText text={t.text} marked={marks} onToggle={toggle} />}
+          <div class="row listen__actions">
+            <audio controls preload="none" src={url} aria-label="His take" />
+            {t && <ModelButton text={t.text} />}
+            <button type="button" class="small-btn listen__done" aria-label={`Done: ${title}`} onClick={() => onDone(r, [...marks])}>Done</button>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/** The queue's rows (the stage cases show it with takes in memory): a Say take's word, take, model, ✓ and ✗; a passage take's row. */
+export function ListenRows({ takes, words, texts = new Map(), onJudge, onDone = () => {} }: {
+  takes: Recording[];
+  words: ReadonlyMap<string, Word>;
+  texts?: PassageTexts;
+  onJudge: (r: Recording, verdict: 'ok' | 'no') => void;
+  onDone?: (r: Recording, marks: string[]) => void;
+}) {
   const cache = useRef(new Map<string, string>()); // one object URL per take across reloads, so a take being played is not cut off
   for (const r of takes) if (!cache.current.has(r.id)) cache.current.set(r.id, URL.createObjectURL(r.blob));
   const urls = cache.current;
@@ -22,6 +70,7 @@ export function ListenRows({ takes, words, onJudge }: { takes: Recording[]; word
     <table class="table">
       <tbody>
         {takes.map((r) => {
+          if (passageOf(r) !== null) return <PassageRow key={r.id} r={r} url={urls.get(r.id)} texts={texts} onDone={onDone} />;
           const w = words.get(takeWord(r)!);
           const label = w?.text ?? takeWord(r) ?? '';
           return (
@@ -49,13 +98,16 @@ export function ListenPanel({ onReviewed }: { onReviewed?: () => void }) {
   const { db, now } = useApp();
   const [takes, setTakes] = useState<Recording[] | null>(null);
   const [words, setWords] = useState<Map<string, Word>>(new Map());
+  const [texts, setTexts] = useState<PassageTexts>(new Map());
   const [error, setError] = useState(false);
-  const busy = useRef(new Set<string>()); // a double tap on ✓ reviews a take once
+  const busy = useRef(new Set<string>()); // a double tap on ✓ or Done reviews a take once
   const reload = async () => {
-    const waiting = waitingTakes(await listRecordings(db));
-    const ids = [...new Set(waiting.map((r) => takeWord(r)!))];
+    const [recs, parent] = await Promise.all([listRecordings(db), listParentPassages(db)]);
+    const waiting = waitingTakes(recs);
+    const ids = [...new Set(waiting.map(takeWord).filter((id): id is string => id !== null))];
     const found = await Promise.all(ids.map(async (id) => [id, await findWord(db, id)] as const));
     setWords(new Map(found.filter((x): x is readonly [string, Word] => !!x[1])));
+    setTexts(new Map([...PASSAGES, ...parent].map((p) => [p.id, { title: p.title, text: p.text }])));
     setTakes(waiting);
   };
   useEffect(() => {
@@ -64,13 +116,13 @@ export function ListenPanel({ onReviewed }: { onReviewed?: () => void }) {
       setError(true);
     });
   }, []);
-  const judge = async (r: Recording, verdict: 'ok' | 'no') => {
+  const settle = async (r: Recording, act: () => Promise<unknown>) => {
     if (busy.current.has(r.id)) return;
     busy.current.add(r.id);
     try {
-      await reviewTake(db, r.id, verdict, now());
+      await act();
     } catch (e) {
-      busy.current.delete(r.id); // the review did not happen: let him tap again
+      busy.current.delete(r.id); // it did not happen: let the parent tap again
       console.error(e);
       setError(true);
       return;
@@ -87,9 +139,11 @@ export function ListenPanel({ onReviewed }: { onReviewed?: () => void }) {
   return (
     <section class="panel listen">
       <h2>Listen & confirm</h2>
-      <p class="muted">He read each word aloud in 练一练. Play his take, then the model: ✓ if he said it right, ✗ if not. A word counts as “can say” after ✓ on two different days; ✗ brings it back soon.</p>
+      <p class="muted">He read words aloud in 练一练 and today's text in 朗读. A word: play his take, then the model: ✓ if he said it right, ✗ if not; it counts as “can say” after ✓ on two different days, and ✗ brings it back soon. A text: play his take and the model, tap any character he misread (it comes up in practice), then Done.</p>
       {error && <p class="muted" role="alert">Something went wrong reading or saving the takes. Try again.</p>}
-      {takes ? <ListenRows takes={takes} words={words} onJudge={(r, v) => void judge(r, v)} /> : (!error && <p class="muted">Loading…</p>)}
+      {takes ? (
+        <ListenRows takes={takes} words={words} texts={texts} onJudge={(r, v) => void settle(r, () => reviewTake(db, r.id, v, now()))} onDone={(r, marks) => void settle(r, () => finishPassageReview(db, r, marks, now()))} />
+      ) : (!error && <p class="muted">Loading…</p>)}
     </section>
   );
 }

@@ -196,7 +196,8 @@ export interface Recording {
   level?: number; // average loudness (RMS 0..1) while reading; older recordings have none
   misread?: string[]; // characters the parent confirmed he misread
   extraDayGiven?: boolean; // its marks have given the passage its one extra day (never a second, however often re-marked)
-  review?: 'ok' | 'no'; // a Say take the parent confirmed (✓) or rejected (✗); absent: waiting (spec 2026-10-11 §6)
+  review?: 'ok' | 'no'; // a Say take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
+  meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
 }
 
 export interface PicturePrompt {

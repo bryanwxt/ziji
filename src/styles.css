@@ -1572,3 +1572,9 @@ button.langdu__sentence { cursor: pointer; }
 .family-sum__row { margin: 0; display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0 10px; font-size: 16px; color: var(--ink-soft); }
 .sheet__detail .family-sum__row .hanzi { font-size: 24px; color: var(--ink); }
 .family-sum__row.is-missed .hanzi { color: var(--orange-ink); }
+
+/* Listen & confirm's passage row (spec 2026-10-12 §6) */
+.listen__passage { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.listen__meaning { color: var(--muted); }
+.listen__actions { justify-content: flex-start; flex-wrap: wrap; gap: 10px; }
+.listen__done, .listen__model { min-height: 44px; min-width: 88px; }
