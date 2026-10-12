@@ -424,7 +424,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     })();
 
   return (
-    <PinyinFade known={know.knownChars} on={state.fadePinyin}>
+    <PinyinFade known={know.knownChars} readings={know.knownReadings} on={state.fadePinyin}>
     <div class="screen">
       <WorldScene world={currentWorld(kid)} time={timeOfDay(now())} />
       {painted && <PaintedBackdrop scene={painted} />}

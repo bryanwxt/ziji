@@ -9,11 +9,34 @@ import { speak } from '../audio/speech';
 const pys = (c: Element) => [...c.querySelectorAll('.label__py')].map((e) => e.textContent);
 afterEach(() => vi.useRealTimers());
 
+const readings = (r: Record<string, string[]>) => new Map(Object.entries(r).map(([ch, s]) => [ch, new Set(s)]));
+
 describe('showPinyin (spec 2026-10-12 §4)', () => {
   it("shows until the character's Read rung passes; the switch off shows it always", () => {
-    expect(showPinyin('你', new Set('你'), true)).toBe(false);
-    expect(showPinyin('好', new Set('你'), true)).toBe(true);
-    expect(showPinyin('你', new Set('你'), false)).toBe(true);
+    expect(showPinyin('你', 'nǐ', new Set('你'), readings({ 你: ['nǐ'] }), true)).toBe(false);
+    expect(showPinyin('好', 'hǎo', new Set('你'), readings({ 你: ['nǐ'] }), true)).toBe(true);
+    expect(showPinyin('你', 'nǐ', new Set('你'), readings({ 你: ['nǐ'] }), false)).toBe(true);
+  });
+  it('a 多音字 hides only at a reading he knows (final review I1)', () => {
+    const k = new Set('一只');
+    const r = readings({ 一: ['yì'], 只: ['zhī'] }); // from 一只 yì zhī
+    expect(showPinyin('只', 'zhī', k, r, true)).toBe(false);
+    expect(showPinyin('只', 'zhǐ', k, r, true)).toBe(true); // 只有
+    expect(showPinyin('只', 'zhǐ', k, r, false)).toBe(true);
+  });
+  it('a 轻声 syllable matches a known reading of the same sound; 一 and 不 keep theirs through a tone change', () => {
+    const r = readings({ 子: ['zǐ'], 一: ['yī'], 不: ['bù'] });
+    const k = new Set('子一不');
+    expect(showPinyin('子', 'zi', k, r, true)).toBe(false); // 杯子
+    expect(showPinyin('子', 'zī', k, r, true)).toBe(true);
+    for (const syl of ['yī', 'yí', 'yì']) expect(showPinyin('一', syl, k, r, true)).toBe(false);
+    for (const syl of ['bù', 'bú']) expect(showPinyin('不', syl, k, r, true)).toBe(false);
+    expect(showPinyin('不', 'fǒu', k, r, true)).toBe(true);
+  });
+  it('without a syllable, or with no reading on record for a known character, the character alone decides', () => {
+    expect(showPinyin('只', undefined, new Set('只'), readings({ 只: ['zhī'] }), true)).toBe(false);
+    expect(showPinyin('只', 'zhǐ', new Set('只'), readings({}), true)).toBe(false);
+    expect(showPinyin('只', 'zhǐ', new Set('只'), undefined, true)).toBe(false);
   });
 });
 
@@ -60,6 +83,16 @@ describe('faded pinyin in a Label (spec 2026-10-12 §4)', () => {
     expect(hit).toHaveBeenCalledTimes(1);
     expect(pys(container)).toEqual(['', '']);
     expect(speak).not.toHaveBeenCalled();
+  });
+  it('passes each cell its syllable: 只 known as zhī shows over 只有 and hides in 一只 (final review I1)', () => {
+    const r = readings({ 一: ['yì'], 只: ['zhī'] });
+    const { container } = render(<PinyinFade known={new Set('一只')} readings={r} on><Label zh="只有" py="zhǐ yǒu" fade /><Label zh="一只" py="yì zhī" fade /><Label zh="一个" py="yí gè" fade /></PinyinFade>);
+    const [a, b, c] = [...container.querySelectorAll('.label')];
+    expect(pys(a!)).toEqual(['zhǐ', 'yǒu']);
+    expect(pys(b!)).toEqual(['', '']);
+    expect(pys(c!)).toEqual(['', 'gè']);
+    const off = render(<PinyinFade known={new Set('一只')} readings={r} on={false}><Label zh="一只" py="yì zhī" fade /></PinyinFade>).container;
+    expect(pys(off)).toEqual(['yì', 'zhī']);
   });
   it('a gap keeps its sound: only Han characters fade', () => {
     const { container } = render(<PinyinFade known={new Set('门口')} on><Label zh="＿口" py="mén kǒu" fade /></PinyinFade>);

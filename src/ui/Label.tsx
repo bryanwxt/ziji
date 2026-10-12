@@ -25,8 +25,8 @@ export function Label({ zh, py: given, pinyinFor, mark, fade = false, peek = tru
   mark?: [number, number];
   /** syllables for its Han characters, from context (子 in 儿子 is zi) */
   py?: string;
-  /** which characters show their pinyin (all when omitted) — for fading pinyin as he learns */
-  pinyinFor?: (ch: string) => boolean;
+  /** which characters show their pinyin (all when omitted) — for fading pinyin as he learns; `syl`: its syllable here */
+  pinyinFor?: (ch: string, syl: string) => boolean;
   /** a line inside a question (spec 2026-10-12 §4): under a <PinyinFade>, characters he reads lose their pinyin, slot kept */
   fade?: boolean;
   /** false inside a button (a usage option, a placed 组句 tile): a tap there answers, so it never peeks */
@@ -48,7 +48,7 @@ export function Label({ zh, py: given, pinyinFor, mark, fade = false, peek = tru
     for (const d of all) {
       if (d.isZh) {
         const syl = fits || withBlanks ? ctx[k++]! : d.pinyin;
-        out.push({ py: syl, ch: d.origin, zh: true, ...(showFor && !showFor(d.origin) ? { hidden: true } : {}) });
+        out.push({ py: syl, ch: d.origin, zh: true, ...(showFor && !showFor(d.origin, syl) ? { hidden: true } : {}) });
         continue;
       }
       // pinyin-pro may hand a run like "＿！" over as one piece; split out each blank. Spaces around a number go: its own
