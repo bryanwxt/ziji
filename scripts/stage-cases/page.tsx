@@ -41,8 +41,8 @@ import { DEFAULT_FINDS } from '../../src/fun/finds';
 import { burstStyle } from '../../src/ui/worlds/burst';
 import type { ReactionKind } from '../../src/ui/truffle/timelines';
 import { IdiomQuestion } from '../../src/activities/practice/IdiomQuestion';
-import { FlashcardStep } from '../../src/activities/flashcards/FlashcardStep';
-import { builtinIdiom, chengyuOf } from '../../src/content/chengyu';
+import { FlashcardStep, introIdiom } from '../../src/activities/flashcards/FlashcardStep';
+import { builtinIdiom, chengyuOf, idiomsFor } from '../../src/content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../../src/practice/idioms';
 import { builtinWords } from '../../src/content';
 import { ladderWords } from '../../src/content/ladder';
@@ -52,6 +52,9 @@ import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
 import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
 import { ListenRows } from '../../src/parent/ListenPanel';
 import type { Recording } from '../../src/types';
+import { PinyinFade } from '../../src/ui/pinyinFade';
+import { FamilyQuestion } from '../../src/activities/practice/FamilyQuestion';
+import { familyBoard } from '../../src/practice/family';
 
 const screen = (body: preact.ComponentChildren) => (
   <div class="screen">
@@ -303,6 +306,28 @@ else if (which === 'idiom' || which === 'idiom-fit' || which === 'idiom-build' |
     })()
     : <FlashcardStep item={{ wordId: cheng.id, isNew: true, retry: false }} ask="listen" word={cheng} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={builtinIdiom('胸有成竹')!} onDone={() => {}} />;
   render(screen(body), app);
+}
+else if (which === 'why-look' || which === 'why-pinyin') {
+  // a miss says why (spec 2026-10-12 §3): 睛 for 晴 (the part that differs), 请 read qīng (the sound part); stage-cases.ts taps it
+  const words = builtinWords(0);
+  const near = words.filter((x) => [...'晴睛静精'].includes(x.text));
+  const w = which === 'why-look' ? near.find((x) => x.text === '晴')! : words.find((x) => x.text === '请')!;
+  render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'why-look' ? 'listen' : 'read'} word={w} pool={which === 'why-look' ? near : words} voice={which === 'why-look'} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
+}
+else if (which === 'fade-peek') {
+  // pinyin fades over characters he reads (spec 2026-10-12 §4): the long clue sentence, every character read; stage-cases.ts peeks
+  render(screen(<PinyinFade known={new Set(Array.from(clue.before + clue.word + clue.after))} on><UseQuestion item={clue} kid={DEFAULT_KID} onAnswer={() => {}} onNext={() => {}} /></PinyinFade>), app);
+}
+else if (which === 'intro-family') {
+  // 「一家人」 on the 认新字 card with its 成语 too (spec 2026-10-12 §5): the fullest card
+  const words = builtinWords(0);
+  const w = words.find((x) => x.text === '生')!;
+  render(screen(<PinyinFade known={new Set('男女气先日')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} knownChars={new Set('男女气先日')} onDone={() => {}} /></PinyinFade>), app);
+}
+else if (which === 'family') {
+  // 找一家人 (spec 2026-10-12 §5): 生 among 星星, 出去, 在家, 坏人
+  const w = builtinWords(0).find((x) => x.text === '生')!;
+  render(screen(<FamilyQuestion board={familyBoard(w, new Set('男女气先口出学家人'), mulberry32(1))!} kid={DEFAULT_KID} onDone={() => {}} />), app);
 }
 else render(screen(
   <Stage activity="write" truffle={<Pet kid={DEFAULT_KID} size={180} />} sheet={which === 'good' ? <FeedbackSheet tone="good" title="写得好！" actionLabel="完成" onAction={() => {}} /> : <FeedbackSheet actionLabel="完成" disabled onAction={() => {}} />}>

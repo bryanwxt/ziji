@@ -1514,6 +1514,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .why__syl--right { color: var(--green-ink); }
 .why mark { background: var(--gold-soft); color: inherit; border-radius: 4px; padding: 0 2px; }
 @media (max-width: 599px) { .sheet__detail .why .hanzi, .why__syl { font-size: 16px; } } /* phones: under the compact answer (18px); after the base rules so it wins */
+@media (max-width: 599px) { .why__dot { display: none; } } /* the two characters wrap onto two lines here; a dot left at a line's end means nothing */
 
 /* Pinyin fading (spec 2026-10-12 §4): a faded syllable keeps its slot; a tap shows it for 3 s */
 .label__cell--hidden { cursor: pointer; }
@@ -1526,9 +1527,27 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .family__words { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
 .family__word { display: inline-flex; align-items: flex-end; gap: 2px; font-size: 26px; }
 .family__word .hanzi { font-size: 26px; }
-@media (max-height: 700px) { .family__word:nth-child(n+3) { display: none; } } /* a phone: two words, so the card never scrolls */
+/* a short phone (iPhone SE / Safari with bars, 667 px) has no room for the row under two 词语 rows: the iPad is where he learns, so the phone drops it
+   rather than cut its words off at the card's edge (WebKit). With a 成语 on the card too a short iPad shows three words, a smaller character and no 成语 sentence. */
+@media (max-height: 700px) { .family { display: none; } }
+@media (min-height: 701px) and (max-height: 820px) {
+  .intro__card--idiom:has(.family) .hanzi--xl { font-size: min(var(--hanzi-xl), 56px); }
+  .intro__card--idiom:has(.family) .intro__idiom-sentence { display: none; }
+  .intro__card--idiom:has(.family) { gap: 6px; }
+  .intro__card--idiom .family__word:nth-child(n+4) { display: none; }
+}
+@media (min-height: 821px) { .intro__card--idiom:has(.family) .hanzi--xl { font-size: min(var(--hanzi-xl), 96px); } }
 
 /* 找一家人 (spec 2026-10-12 §5) */
+/* a short phone: when the sheet explains why (look-alike, sound-part) or lists the two family words it needs the room Truffle's bubble
+   took, so he sits this one out; the sheet's own lines are what he reads (WebKit, iPhone SE 375x667) */
+@media (max-width: 599px) and (max-height: 700px) {
+  .stage:has(.sheet .why, .sheet .family-sum) .stage__truffle { display: none; }
+  .stage__sheet .sheet__detail:has(.family-sum) { max-height: 38dvh; }
+  .family-sum { min-width: 0; max-width: 100%; }
+  .family-sum__row { flex-wrap: nowrap; }
+  .family-sum__row [lang="en"] { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
 .family-q { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .family-q__ask { margin: 0; font-size: 22px; font-weight: 800; }
 .family-q__tiles .choice.is-picked { outline: 4px solid var(--blue, #4aa3ff); }

@@ -27,6 +27,19 @@ const cardClipped = (page: import('playwright-core').Page, name: string) => page
   return [];
 }, name);
 
+/** Nothing in a feedback sheet's explanation past the sheet, and the sheet on the screen (spec 2026-10-12 §3's why-lines). */
+const sheetFits = (page: import('playwright-core').Page, name: string) => page.evaluate((n) => {
+  const sheet = document.querySelector('.sheet')?.getBoundingClientRect();
+  if (!sheet) return [`${n}: no sheet`];
+  const out: string[] = [];
+  if (sheet.top < -1 || sheet.bottom > innerHeight + 1) out.push(`${n}: the sheet runs off the screen (${Math.round(sheet.top)}–${Math.round(sheet.bottom)})`);
+  for (const el of document.querySelectorAll('.sheet__detail *')) {
+    const r = el.getBoundingClientRect();
+    if (r.width && r.height && (r.left < sheet.left - 2 || r.right > sheet.right + 2 || r.bottom > sheet.bottom + 2)) { out.push(`${n}: cut off in the sheet: ${(el.textContent ?? '').trim().slice(0, 12)}`); break; }
+  }
+  return out;
+}, name);
+
 const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
 const problems: string[] = [];
 const browser = await webkit.launch();
@@ -109,6 +122,46 @@ for (const size of SIZES) {
       await page.screenshot({ path: `fit-shots/stage-cases/${c}-wrong-${size.name}.png` });
       problems.push(...(await cardClipped(page, `${size.name} ${c} wrong`)));
     }
+  }
+  // cards that teach (spec 2026-10-12 §7): the why-sheets, a faded sentence with a peek, the 一家人 row, the family question
+  for (const [c, wrong] of [['why-look', '.choice:text-is("睛")'], ['why-pinyin', '.choice:text-is("qīng")']] as const) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(300);
+    await page.click(wrong);
+    await page.waitForTimeout(1600); // the pinyin and English come 1 s after the characters
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    if (!(await page.$('.sheet .why'))) problems.push(`${size.name} ${c}: no why-line on the sheet`);
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)), ...(await sheetFits(page, `${size.name} ${c}`)));
+  }
+  {
+    await page.goto(`file://${dir}/index.html?case=fade-peek`);
+    await page.waitForTimeout(300);
+    if (!(await page.$('.meaning-cue .label__cell--hidden'))) problems.push(`${size.name} fade-peek: no faded pinyin`);
+    await page.click('.meaning-cue .label__cell--hidden >> nth=0');
+    await page.waitForTimeout(200);
+    const peek = await page.$eval('.label__cell--peek .label__py', (e) => e.textContent ?? '').catch(() => '');
+    if (!peek) problems.push(`${size.name} fade-peek: a tap showed no pinyin`);
+    await page.screenshot({ path: `fit-shots/stage-cases/fade-peek-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} fade-peek`)));
+  }
+  {
+    await page.goto(`file://${dir}/index.html?case=intro-family`);
+    await page.waitForTimeout(2400); // its pinyin comes 2 s after the character
+    await page.screenshot({ path: `fit-shots/stage-cases/intro-family-${size.name}.png` });
+    if ((await page.$$('.family__word')).length < 2) problems.push(`${size.name} intro-family: no 一家人 row`);
+    problems.push(...(await cardClipped(page, `${size.name} intro-family`)));
+  }
+  {
+    await page.goto(`file://${dir}/index.html?case=family`);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `fit-shots/stage-cases/family-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} family`)));
+    await page.click('.choice:text-is("星星")');
+    await page.click('.choice:text-is("先生")');
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/family-wrong-${size.name}.png` });
+    if (!(await page.$('.family-sum__row.is-missed'))) problems.push(`${size.name} family: the miss is not explained`);
+    problems.push(...(await cardClipped(page, `${size.name} family wrong`)), ...(await sheetFits(page, `${size.name} family wrong`)));
   }
   await page.goto(`file://${dir}/index.html?case=build`);
   for (let i = 0; i < 6 && (await page.$('.build__bank .choice')); i++) await page.click('.build__bank .choice');
