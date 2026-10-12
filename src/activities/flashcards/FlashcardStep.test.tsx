@@ -405,11 +405,10 @@ describe('「都不对」 (production practice spec §5)', () => {
   });
   it('its English meaning with 都不对 as a decoy: picking it is wrong and the sheet shows the real meaning', () => {
     const onDone = vi.fn();
-    render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} noneOfThese="decoy" onDone={onDone} />);
-    const real = firstSense(cardMeaning(he)!);
-    expect(choices()).toContain(real);
+    const mine = { ...he, source: 'school' as const, meaning: 'a stream of moving water, wordy on purpose' }; // not the glossary's wording
+    render(<FlashcardStep {...base} word={mine} item={review} ask="meaningRead" voice={false} noneOfThese="decoy" onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: '都不对' }));
-    expect(document.querySelector('.sheet--oops .sheet__en')!.textContent).toContain(real);
+    expect(document.querySelector('.sheet--oops .sheet__en')!.textContent).toContain(firstSense(mine.meaning));
   });
 });
 
