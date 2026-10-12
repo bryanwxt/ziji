@@ -48,6 +48,7 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
     const syl = w.pinyin.trim().toLowerCase().normalize('NFC').split(/\s+/);
     if (syl.length === han.length) han.forEach((ch, i) => (knownReadings.get(ch) ?? knownReadings.set(ch, new Set()).get(ch)!).add(syl[i]!));
   }
+  const begunIds = new Set(cards.filter((c) => (c.kind === 'recognise' || c.kind === 'hear') && word(c.wordId)).map((c) => c.wordId));
   return {
     words, cards, wordsById, ladderById, passedRungs,
     cardsById: new Map(cards.map((c) => [c.id, c])),
@@ -55,8 +56,8 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
     heard: count('hear'), understood: count('understand'), read: count('read'), used: count('use'),
     owned: [...passedRungs].filter(([id, s]) => isOwned(word(id)!, s)).length,
     written: cards.filter((c) => c.kind === 'write' && c.passed).length,
-    canUse: count('sentence'),
-    begun: new Set(cards.filter((c) => (c.kind === 'recognise' || c.kind === 'hear') && word(c.wordId)).map((c) => c.wordId)).size,
+    canUse: [...passedRungs].filter(([id, s]) => s.has('sentence') && begunIds.has(id)).length, // only over begun words, so it never exceeds begun
+    begun: begunIds.size,
   };
 }
 

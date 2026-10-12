@@ -403,6 +403,14 @@ describe('「都不对」 (production practice spec §5)', () => {
     fireEvent.click(screen.getByRole('button', { name: '都不对' }));
     expect(document.querySelector('.sheet--good .sheet__en')!.textContent).toContain(real);
   });
+  it('its English meaning with 都不对 as a decoy: picking it is wrong and the sheet shows the real meaning', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} noneOfThese="decoy" onDone={onDone} />);
+    const real = firstSense(cardMeaning(he)!);
+    expect(choices()).toContain(real);
+    fireEvent.click(screen.getByRole('button', { name: '都不对' }));
+    expect(document.querySelector('.sheet--oops .sheet__en')!.textContent).toContain(real);
+  });
 });
 
 describe('asked by the round (spec 2026-10-05 §3.2)', () => {

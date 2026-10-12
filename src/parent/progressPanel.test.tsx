@@ -69,4 +69,15 @@ describe('can use (production practice spec §4)', () => {
     expect(screen.getByRole('img', { name: '会用 Can use: 2 of 4' })).toBeTruthy();
     expect(screen.getByText('2 of 4 begun')).toBeTruthy();
   });
+  it('hides the count row until a word has begun', () => {
+    const know = summarize([makeWord('很')], []);
+    render(<ProgressPanel know={know} settings={{ ...DEFAULT_SETTINGS, grade: 2, gradeYear: 2026 }} now={new Date('2026-10-11T09:00:00')} />);
+    expect(screen.queryByText('Words he can use in a sentence')).toBeNull();
+    expect(document.body.textContent).not.toContain('0 of 0 begun');
+  });
+  it('counts can-use only over begun words, so it never passes begun', () => {
+    const know = summarize([makeWord('很'), makeWord('和')], [passed('b:很', 'recognise'), passed('b:很', 'sentence'), passed('b:和', 'sentence')]);
+    expect(know.begun).toBe(1);
+    expect(know.canUse).toBe(1);
+  });
 });

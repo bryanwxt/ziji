@@ -183,7 +183,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           // a 都不对 question shows the real answer, right or wrong (production practice spec §5)
           detail={result.correct && !quiz.none ? undefined : (
             <>
-              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : word.pinyin} rightMeaning={quiz.none && quiz.mode ? quiz.real : undefined} picked={quiz.mode || choice === NONE_OF_THESE ? null : quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
+              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={quiz.mode || choice === NONE_OF_THESE ? null : quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
               {/* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
                   find the character → the look-alike part; its reading → the kind of pinyin slip */}
               {result.correct ? null

@@ -50,7 +50,7 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
         <dt>Characters recognised</dt><dd>{target ? `${read} of ${target.read.size} by the end of ${endTerm}` : know.known}</dd>
         <dt>Characters written</dt><dd>{target ? `${wrote} of ${target.write.size}` : know.written}</dd>
         <dt>Characters he can say</dt><dd>{target ? `${says} of ${target.read.size}` : says}</dd>
-        <dt>Words he can use in a sentence</dt><dd>{`${know.canUse} of ${know.begun} begun`}</dd>
+        {know.begun > 0 && <><dt>Words he can use in a sentence</dt><dd>{`${know.canUse} of ${know.begun} begun`}</dd></>}
         <dt>Heard (understands it by ear)</dt><dd>{know.heard}</dd>
         <dt>Understood in a sentence</dt><dd>{know.understood}</dd>
         <dt>Read</dt><dd>{know.read}</dd>
