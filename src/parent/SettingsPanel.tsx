@@ -122,7 +122,7 @@ export function SettingsPanel() {
           <input type="checkbox" checked={s.fadePinyin !== false} onChange={(e) => void save({ fadePinyin: e.currentTarget.checked })} />{' '}
           拼音渐隐 Fade pinyin
         </label>
-        <p class="hint">Pinyin hides over characters he already reads; he taps one to see it for 3 seconds. New characters, pinyin answer choices and the answer after a miss always show it. Off: pinyin over every character, as before.</p>
+        <p class="hint">Pinyin hides over characters he already reads, at the readings he knows; he taps one to see it for 3 seconds. New characters, pinyin answer choices and the right answer's own line after a miss always show it. Off: pinyin over every character, as before.</p>
       </div>
       <details class="field">
         <summary>Advanced: test speech recognition (for future auto-hints on misread characters)</summary>

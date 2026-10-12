@@ -323,7 +323,7 @@ export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
  */
 export function familyRow(word: Word, known: ReadonlySet<string>): FamilyWord[] {
   if (Array.from(word.text).length !== 1) return [];
-  const all = familyOf(word.text, known);
+  const all = familyOf(word.text, known, word.pinyin);
   if (all.length < 2) return [];
   const shown = shownOnCard(word);
   const onCard = (f: FamilyWord) => shown.some((t) => t.includes(f.text));

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { glossFor } from './glossary';
 import { familyOf, wordsAround } from './family';
+import { BUILTIN, suitableExample } from './index';
 
 const texts = (ch: string, readable: string) => familyOf(ch, new Set(readable)).map((f) => f.text);
 
@@ -28,5 +29,17 @@ describe('familyOf: words of a character he can read (spec 2026-10-12 §5)', () 
     expect(wordsAround('调').map((x) => x.text)).not.toContain('调查');
     expect(texts('脏', '心')).not.toContain('心脏');
     expect(texts('门', '口')).toContain('门口');
+  });
+});
+
+describe('suitableExample with the card\'s own reading (final review M3)', () => {
+  it('a character that is not built in is checked against the reading it is given', () => {
+    expect(BUILTIN.some((c) => c.char === '乂')).toBe(false);
+    expect(suitableExample('乂', { text: '乂安', pinyin: 'yì ān' }, 'yì')).toBe(true);
+    expect(suitableExample('乂', { text: '乂安', pinyin: 'ài ān' }, 'yì')).toBe(false);
+    expect(suitableExample('乂', { text: '乂安', pinyin: 'ài ān' })).toBe(true); // no reading: can't be checked
+  });
+  it("a built-in character keeps its card's reading (a stored word's pinyin never overrides it)", () => {
+    expect(suitableExample('长', { text: '长大', pinyin: 'zhǎng dà' }, 'cháng')).toBe(suitableExample('长', { text: '长大', pinyin: 'zhǎng dà' }));
   });
 });

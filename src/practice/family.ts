@@ -8,7 +8,7 @@ import { shuffle, type Rng } from '../lib/random';
 import type { Word } from '../types';
 
 export interface FamilyDistractor extends FamilyWord { swap: string } // swap: the look-alike it holds instead
-export interface FamilyBoard { ch: string; family: FamilyWord[]; distractors: FamilyDistractor[]; tiles: string[] }
+export interface FamilyBoard { ch: string; reading: string; family: FamilyWord[]; distractors: FamilyDistractor[]; tiles: string[] } // reading: the card's, to say ch
 
 const levelOf = new Map(BUILTIN.map((c) => [c.char, c.level]));
 let bySound: Map<string, string[]> | null = null;
@@ -54,10 +54,10 @@ export function familyDistractors(ch: string, readable: ReadonlySet<string>): Fa
 /** A board for a single character with two or more family words he reads and four distractors; else null. */
 export function familyBoard(word: Word, readable: ReadonlySet<string>, rng: Rng): FamilyBoard | null {
   if (Array.from(word.text).length !== 1) return null;
-  const family = familyOf(word.text, readable);
+  const family = familyOf(word.text, readable, word.pinyin);
   if (family.length < 2) return null;
   const distractors = familyDistractors(word.text, readable);
   if (distractors.length < 4) return null;
   const two = shuffle(family.slice(0, 4), rng).slice(0, 2);
-  return { ch: word.text, family: two, distractors, tiles: shuffle([...two, ...distractors].map((x) => x.text), rng) };
+  return { ch: word.text, reading: word.pinyin, family: two, distractors, tiles: shuffle([...two, ...distractors].map((x) => x.text), rng) };
 }

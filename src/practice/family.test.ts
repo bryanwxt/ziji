@@ -23,6 +23,9 @@ describe('the 找一家人 board (spec 2026-10-12 §5)', () => {
     }
     expect(familyBoard(w('生'), K, mulberry32(1))!.family.map((f) => f.text)).toEqual(['先生', '女生']);
   });
+  it("carries the card's reading, so the question says the character at it (final review M2)", () => {
+    expect(familyBoard(w('生'), K, mulberry32(1))!.reading).toBe('shēng');
+  });
   it('none for a character with fewer than two family words he reads, or for a 词语', () => {
     expect(familyBoard(w('火'), K, mulberry32(1))).toBeNull(); // 火车: he doesn't read 车
     expect(familyBoard(w('木'), K, mulberry32(1))).toBeNull();

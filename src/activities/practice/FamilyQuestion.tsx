@@ -1,7 +1,7 @@
 import { Fragment } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../audio/sfx';
-import { speak } from '../../audio/speech';
+import { speak, stopSpeaking } from '../../audio/speech';
 import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32 } from '../../lib/random';
 import type { FamilyBoard } from '../../practice/family';
@@ -33,7 +33,12 @@ export function FamilyQuestion({ board, kid, onDone }: Props) {
   const [picked, setPicked] = useState<string[]>([]);
   const shownAt = useRef(performance.now());
   const tookMs = useRef(0);
-  useEffect(() => speak(`哪两个词有${board.ch}？`), [board]);
+  useEffect(() => {
+    // the character on its own at its card's reading: inside one line the voice may pick its other reading (切 qiē, 教 jiāo)
+    speak('哪两个词有');
+    speak(board.ch, { reading: board.reading, queue: true });
+  }, [board]);
+  useEffect(() => stopSpeaking, []);
   const family = new Set(board.family.map((f) => f.text));
   const done = picked.length === 2;
   const correct = done && picked.every((t) => family.has(t));

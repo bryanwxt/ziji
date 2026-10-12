@@ -20,21 +20,27 @@ function ladderWith(ch: string): Word[] {
   return ladder.get(ch) ?? [];
 }
 
-/** Every word of two or more Han characters with `ch` in it, once: its 组词 first, then the ladder's, then the HSK list's. */
-export function wordsAround(ch: string): { text: string; pinyin: string }[] {
+/**
+ * Every word of two or more Han characters with `ch` in it, once: its 组词 first, then the ladder's, then the HSK list's.
+ * `reading`: the card's reading of `ch`, when known (suitableExample).
+ */
+export function wordsAround(ch: string, reading?: string): { text: string; pinyin: string }[] {
   const out = new Map<string, string>();
   for (const e of examplesOf(ch)) if (!out.has(e.text)) out.set(e.text, e.pinyin);
   for (const w of ladderWith(ch)) if (!out.has(w.text)) out.set(w.text, w.pinyin);
   for (const t of wordsWithChar(ch)) if (!out.has(t)) out.set(t, EXAMPLE_FIXES[t] ?? pinyin(t));
   return [...out]
-    .filter(([text, py]) => { const cs = Array.from(text); return cs.length >= 2 && cs.every(isHan) && cs.includes(ch) && suitableExample(ch, { text, pinyin: py }); })
+    .filter(([text, py]) => { const cs = Array.from(text); return cs.length >= 2 && cs.every(isHan) && cs.includes(ch) && suitableExample(ch, { text, pinyin: py }, reading); })
     .map(([text, py]) => ({ text, pinyin: py }));
 }
 
-/** The words with `ch` whose every other character he reads, with English; by HSK level, then length, then where they came from. */
-export function familyOf(ch: string, readable: ReadonlySet<string>): FamilyWord[] {
+/**
+ * The words with `ch` whose every other character he reads, with English; by HSK level, then length, then where they came from.
+ * `reading`: the card's reading of `ch` (a non-built-in character's family is checked against it too).
+ */
+export function familyOf(ch: string, readable: ReadonlySet<string>, reading?: string): FamilyWord[] {
   const rows: (FamilyWord & { level: number; n: number; k: number })[] = [];
-  wordsAround(ch).forEach(({ text, pinyin: py }, k) => {
+  wordsAround(ch, reading).forEach(({ text, pinyin: py }, k) => {
     if (!Array.from(text).every((c) => c === ch || readable.has(c))) return;
     const en = glossFor(text);
     if (en) rows.push({ text, pinyin: py, en, level: HSK_WORDS.get(text) ?? 8, n: Array.from(text).length, k });

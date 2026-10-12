@@ -3,12 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import type { FamilyBoard } from '../../practice/family';
 import { DEFAULT_KID } from '../../types';
 import { FamilyQuestion } from './FamilyQuestion';
+import { speak, stopSpeaking } from '../../audio/speech';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 
 const board: FamilyBoard = {
   ch: '生',
+  reading: 'shēng',
   family: [{ text: '先生', pinyin: 'xiān shēng', en: 'teacher; gentleman; sir; mister' }, { text: '女生', pinyin: 'nǚ shēng', en: 'schoolgirl; female student' }],
   distractors: [
     { text: '星星', pinyin: 'xīng xīng', en: 'a star; the stars in the sky', swap: '星' },
@@ -26,6 +28,14 @@ describe('找一家人 (spec 2026-10-12 §5)', () => {
     expect(document.querySelector('[data-q]')!.textContent).toBe('生');
     expect(document.querySelector('.family-q__ask .label')!.getAttribute('data-zh')).toBe('哪两个词有『生』？');
     expect(document.querySelectorAll('.family-q__tiles .choice')).toHaveLength(6);
+  });
+  it("says the question, then the character on its own at the card's reading; stops speaking when it goes (final review M2)", () => {
+    vi.mocked(speak).mockClear();
+    vi.mocked(stopSpeaking).mockClear();
+    const { unmount } = render(<FamilyQuestion board={{ ...board, ch: '切', reading: 'qiē' }} kid={DEFAULT_KID} onDone={vi.fn()} />);
+    expect(vi.mocked(speak).mock.calls).toEqual([['哪两个词有'], ['切', { reading: 'qiē', queue: true }]]);
+    unmount();
+    expect(stopSpeaking).toHaveBeenCalled();
   });
   it('both family words: right, with the two words, their pinyin and English', () => {
     const onDone = vi.fn();
