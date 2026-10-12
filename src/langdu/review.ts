@@ -40,7 +40,10 @@ export async function tidyPassageTakes(db: AppDb, now: Date): Promise<void> {
 
 /** Done on a passage take: its marks become priority words (as before), and it is listened to. Not graded. */
 export async function finishPassageReview(db: AppDb, rec: Recording, marks: string[], now: Date): Promise<{ updated: number; notInApp: string[] }> {
-  const res = await applyMisreads(db, rec, marks, now);
+  // work from the stored take, not the row's copy: a retry after a failed save must not grant the extra day twice
+  const stored = await getRecording(db, rec.id);
+  if (!stored || stored.review === 'ok') return { updated: 0, notInApp: [] };
+  const res = await applyMisreads(db, stored, marks, now);
   const saved = await getRecording(db, rec.id);
   if (saved && !saved.review) await updateRecording(db, { ...saved, review: 'ok' });
   return res;

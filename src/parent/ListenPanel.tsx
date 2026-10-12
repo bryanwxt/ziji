@@ -15,14 +15,10 @@ import { MisreadText } from './MisreadText';
 
 export type PassageTexts = ReadonlyMap<string, { title: string; text: string }>;
 
-/** 听老师的: the model reads the passage a sentence at a time, as he heard it. */
-function ModelButton({ text }: { text: string }) {
-  const model = useModelReader(splitSentences(text));
-  return <button type="button" class="small-btn listen__model" onClick={() => model.read(0)}>听老师的</button>;
-}
-
 function PassageRow({ r, url, texts, onDone }: { r: Recording; url: string | undefined; texts: PassageTexts; onDone: (r: Recording, marks: string[]) => void }) {
   const t = texts.get(passageOf(r)!);
+  const model = useModelReader(splitSentences(t?.text ?? ''));
+  const audio = useRef<HTMLAudioElement>(null);
   const title = t?.title ?? '(deleted text)';
   const [marks, setMarks] = useState<Set<string>>(new Set(r.misread ?? []));
   const toggle = (ch: string) => setMarks((m) => {
@@ -39,8 +35,8 @@ function PassageRow({ r, url, texts, onDone }: { r: Recording; url: string | und
           {r.meaning && <small class="listen__meaning">{r.meaning.correct ? 'Meaning question: right' : `Meaning question: missed (picked ${r.meaning.picked})`}</small>}
           {t && <MisreadText text={t.text} marked={marks} onToggle={toggle} />}
           <div class="row listen__actions">
-            <audio controls preload="none" src={url} aria-label="His take" />
-            {t && <ModelButton text={t.text} />}
+            <audio ref={audio} controls preload="none" src={url} aria-label="His take" onPlay={model.stop} />
+            {t && <button type="button" class="small-btn listen__model" onClick={() => { audio.current?.pause(); model.read(0); }}>听老师的</button>}
             <button type="button" class="small-btn listen__done" aria-label={`Done: ${title}`} onClick={() => onDone(r, [...marks])}>Done</button>
           </div>
         </div>

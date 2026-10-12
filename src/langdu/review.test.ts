@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import * as repo from '../store/repo';
+import { getKid, saveKid } from '../store/repo';
 import { waitingTakes } from '../session/say';
 import { addRecording, getRecording, listRecordings, putWords } from '../store/repo';
 import { freshDb, makeWord } from '../test/fixtures';
-import type { Recording } from '../types';
+import { DEFAULT_KID, type Recording } from '../types';
+import { addExtraDay } from './cycle';
 import { finishPassageReview, passageTakesToDrop, tidyPassageTakes, waitingPassageTakes } from './review';
 
 const day = (d: number, h = 17) => new Date(2026, 9, d, h).getTime();
@@ -41,5 +44,25 @@ describe('passage takes in the queue (spec 2026-10-12 §6)', () => {
     await finishPassageReview(db, r, ['爱'], new Date(2026, 9, 2));
     expect(await getRecording(db, 'a')).toMatchObject({ review: 'ok', misread: ['爱'] });
     expect(waitingPassageTakes(await listRecordings(db))).toEqual([]);
+  });
+  it('a retry after a failed save grants one extra day and finishes the take', async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('爱')]);
+    const r = passage('a', 'p01', day(1));
+    await addRecording(db, r);
+    const before = { passageId: 'p01', days: 3, extra: 0, lastDay: '2026-10-01', lastRead: {}, warmups: 0 };
+    await saveKid(db, { ...DEFAULT_KID, reading: before });
+    const real = repo.updateRecording;
+    let calls = 0;
+    const spy = vi.spyOn(repo, 'updateRecording').mockImplementation(async (d, x) => {
+      if (++calls === 2) throw new Error('boom'); // applyMisreads' save is call 1; the review save fails
+      return real(d, x);
+    });
+    await expect(finishPassageReview(db, r, ['爱'], new Date(2026, 9, 2))).rejects.toThrow('boom');
+    await finishPassageReview(db, r, ['爱'], new Date(2026, 9, 2));
+    spy.mockRestore();
+    expect(await getRecording(db, 'a')).toMatchObject({ review: 'ok', misread: ['爱'] });
+    const after = (await getKid(db))!.reading;
+    expect(JSON.stringify(after)).toBe(JSON.stringify(addExtraDay(before, 'p01')));
   });
 });

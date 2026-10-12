@@ -10,8 +10,8 @@ import { ListenPanel } from './ListenPanel';
 import { ParentArea } from './ParentArea';
 import { SettingsPanel } from './SettingsPanel';
 
-vi.mock('../audio/speech', async (orig) => ({ ...(await orig<typeof import('../audio/speech')>()), speak: vi.fn() }));
-import { speak } from '../audio/speech';
+vi.mock('../audio/speech', async (orig) => ({ ...(await orig<typeof import('../audio/speech')>()), speak: vi.fn(), stopSpeaking: vi.fn() }));
+import { speak, stopSpeaking } from '../audio/speech';
 import * as say from '../session/say';
 
 beforeEach(() => {
@@ -119,6 +119,9 @@ describe('Listen & confirm (spec 2026-10-11 §6)', () => {
 const passageTake = (id: string, passageId: string, d: number, extra: Partial<Recording> = {}): Recording => ({ id, createdAt: at(d), prompt: { kind: 'passage', passageId }, blob: new Blob(['x']), mime: 'audio/mp4', durationSec: 20, ...extra });
 
 describe('passage takes in Listen & confirm (spec 2026-10-12 §6)', () => {
+  beforeEach(() => {
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+  });
   async function withPassage() {
     const app = await withTakes();
     await putWords(app.db, [makeWord('爱', { pinyin: 'ài' })]);
@@ -160,5 +163,17 @@ describe('passage takes in Listen & confirm (spec 2026-10-12 §6)', () => {
     renderWithApp(<Dashboard onNavigate={vi.fn()} />, app);
     const tile = (await screen.findByText('Takes to review')).closest('.tile')!;
     expect(tile.querySelector('.tile__value')!.textContent).toBe('3');
+  });
+  it('the model and his take never play together', async () => {
+    const app = await withPassage();
+    renderWithApp(<ListenPanel />, app);
+    await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(3));
+    const au = document.querySelector('.listen__row--passage audio') as HTMLAudioElement;
+    const pause = vi.spyOn(au, 'pause').mockImplementation(() => {});
+    fireEvent.click(screen.getByRole('button', { name: '听老师的' }));
+    expect(pause).toHaveBeenCalled();
+    vi.mocked(stopSpeaking).mockClear();
+    fireEvent.play(au);
+    expect(stopSpeaking).toHaveBeenCalled();
   });
 });
