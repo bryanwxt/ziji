@@ -589,9 +589,10 @@ describe('six options where five good wrong ones exist (spec 2026-10-11 §3)', (
     expect(document.querySelectorAll('.choice')).toHaveLength(4);
     expect(document.querySelector('.choices--six')).toBeNull();
   });
-  it('its meaning in English: six when five other meanings differ, else four', () => {
+  it('its meaning in English: always four (six English meanings crowd a phone and drag in obscure glosses; parent, 2026-10-12)', () => {
     render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} onDone={vi.fn()} />);
-    expect(document.querySelectorAll('.choice')).toHaveLength(6);
+    expect(document.querySelectorAll('.choice')).toHaveLength(4);
+    expect(document.querySelector('.choices--six')).toBeNull();
     cleanup();
     const w = (text: string, meaning: string) => makeWord(text, { meaning, source: 'parent' });
     const small = [w('看', 'to look'), w('大', 'big'), w('小', 'small'), w('门', 'door'), w('水', 'water')];
