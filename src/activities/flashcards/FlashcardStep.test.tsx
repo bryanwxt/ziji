@@ -354,6 +354,41 @@ describe('Truffle in 认一认 (spec 2026-10-04 §4.3–4.4)', () => {
   });
 });
 
+describe('「都不对」 (production practice spec §5)', () => {
+  const w = pool.find((x) => bankFor(x.text) && wordCue(x))!;
+  const cue = wordCue(w)!;
+  const gap = { word: w, item: { wordId: w.id, isNew: false, retry: false, mode: 'meaning' as const }, ask: 'word' as const, voice: false };
+  const choices = () => [...document.querySelectorAll('.choice')].map((b) => b.textContent);
+  it('the 组词 gap without its answer: 都不对 last, as many choices as before; picking it is right and shows the real 组词', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} {...gap} noneOfThese onDone={onDone} />);
+    expect(choices()).not.toContain(w.text);
+    expect(choices().at(-1)).toBe('都不对');
+    expect([4, 6]).toContain(choices().length);
+    fireEvent.click(screen.getByRole('button', { name: '都不对' }));
+    expect(document.querySelector('.sheet--good .sheet__en')!.textContent).toContain(cue.full);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true, asked: 'meaning', picked: '都不对' }));
+  });
+  it('picking a character there is wrong, and the real 组词 shows', () => {
+    const onDone = vi.fn();
+    render(<FlashcardStep {...base} {...gap} noneOfThese onDone={onDone} />);
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.choice:not(.choice--none)')!);
+    expect(document.querySelector('.sheet--oops .sheet__en')!.textContent).toContain(cue.full);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
+  });
+  it('its English meaning without its answer: four choices, 都不对 last; picking it shows the real meaning', () => {
+    render(<FlashcardStep {...base} item={review} ask="meaningRead" voice={false} noneOfThese onDone={vi.fn()} />);
+    const real = firstSense(cardMeaning(he)!);
+    expect(choices()).toHaveLength(4);
+    expect(choices()).not.toContain(real);
+    expect(choices().at(-1)).toBe('都不对');
+    fireEvent.click(screen.getByRole('button', { name: '都不对' }));
+    expect(document.querySelector('.sheet--good .sheet__en')!.textContent).toContain(real);
+  });
+});
+
 describe('asked by the round (spec 2026-10-05 §3.2)', () => {
   it("ask 'word': the 组词 gap, even for a word that has a sentence", () => {
     const w = pool.find((x) => bankFor(x.text) && wordCue(x))!;

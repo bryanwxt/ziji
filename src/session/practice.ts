@@ -17,6 +17,7 @@ import { canAskRung } from '../ladder/rungs';
 import { idiomOf, idiomsFor, isIdiomWord, type Idiom } from '../content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../practice/idioms';
 import { familyBoard } from '../practice/family';
+import { withNoneOfThese } from '../practice/noneOfThese';
 
 const idiomCache = new WeakMap<Word[], Map<string, Idiom[]>>();
 /** The 成语 for a word at his level, worked out once per word list (planning asks each word several times). */
@@ -178,17 +179,18 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
   // ladder asks another rung-2 question, or the nearest rung below, so the round keeps its length (plans saved before have none)
   const written = new Set(rec.plan.writeWordIds ?? []);
   const can = (id: string, ask: Ask) => !(written.has(id) && (ask === 'word' || ask === 'pair')) && askable(wordsById.get(id), pool, voice, level)(ask);
-  // 找一家人 takes up to two rung-2 items, for words with family he reads (`known`: know.knownChars, spec 2026-10-12 §5)
-  const round = withFamily(buildRound(words, can, rng), (id) => {
+  // never a word met today: it is said on another day (spec 2026-10-11 §4), and asked with its answer in (production practice spec §5)
+  const today = new Set([...rec.plan.newWordIds, ...introducedNewWords(rec)]);
+  // 找一家人 takes up to two rung-2 items, for words with family he reads (`known`: know.knownChars, spec 2026-10-12 §5); about one
+  // in five 组词-gap, 搭配 and English-meaning questions then leave their answer out for 「都不对」 (production practice spec §5)
+  const round = withNoneOfThese(withFamily(buildRound(words, can, rng), (id) => {
     const w = wordsById.get(id);
     return !!w && !w.paused && familyBoard(w, known, mulberry32(1)) !== null;
-  });
+  }), today, rng);
   const fish = [...confusions.keys()].filter((id) => {
     const w = wordsById.get(id);
     return w && !w.paused && fishItem(w, confusions.get(id)!, new Set(), mulberry32(1)) !== null;
   });
-  // never a word met today: it is said on another day (spec 2026-10-11 §4)
-  const today = new Set([...rec.plan.newWordIds, ...introducedNewWords(rec)]);
   const say = canSay ? (rec.plan.sayIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id); }) : [];
   const sentence = canSay ? (rec.plan.sentenceIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id) && canAskRung(w, 'sentence'); }) : [];
   return withSentence(withSay(withFish(round, fish), say), sentence);

@@ -199,6 +199,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .choice.is-wrong { background: var(--orange-soft); border-color: var(--orange); box-shadow: 0 var(--edge) 0 var(--orange); color: var(--orange-ink); animation: wobble 0.45s; }
 .choice.is-dim { opacity: 0.4; }
 .choice.is-eaten { pointer-events: none; z-index: 20; }
+/* 「都不对」 (production practice spec §5): words, not a character tile, in any choice grid */
+.stage .choices .choice.choice--none { font-family: inherit; font-size: clamp(22px, 3.4dvh, 30px); font-weight: 900; }
 @keyframes wobble { 25% { transform: translateX(-7px) rotate(-2deg); } 75% { transform: translateX(7px) rotate(2deg); } }
 .intro { display: flex; flex-direction: column; align-items: center; }
 .intro__card {

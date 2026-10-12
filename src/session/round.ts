@@ -20,8 +20,9 @@ export const ASKS: Record<Rung, Ask[]> = {
 /** Which memory card an answer grades (spec §3.5); null = practice only (a retry, or already graded today). */
 export type Grades = 'recognise' | 'meaning' | 'use' | 'hear' | 'understand' | 'say' | 'sentence' | null;
 
-/** due: the first appearance of a word whose revision is due today (pacing counts these when time runs out, spec §2.2). */
-export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean; missed?: boolean; idiom?: string } // missed: it came back after a wrong answer (Truffle peeks); idiom: the 成语 a missed rung-5 question asked
+/** none: its right answer is left out and 「都不对」 is right (production practice spec §5).
+ *  due: the first appearance of a word whose revision is due today (pacing counts these when time runs out, spec §2.2). */
+export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean; missed?: boolean; idiom?: string; none?: true } // missed: it came back after a wrong answer (Truffle peeks); idiom: the 成语 a missed rung-5 question asked
 
 export interface RoundWord {
   wordId: string;

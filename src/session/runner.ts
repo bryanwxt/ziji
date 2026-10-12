@@ -143,7 +143,7 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   const index = rec.practiceIndex ?? 0;
   const queue = [...rec.practiceQueue!];
   if (!correct && !item.retry && item.ask !== 'fish' && item.ask !== 'family') { // a missed 钓鱼 or 找一家人 isn't asked again: at most two a lesson (sweep; spec 2026-10-12 §5)
-    const { due: _due, ...again } = item; // a retry is practice only, never a due first appearance
+    const { due: _due, none: _none, ...again } = item; // a retry is practice only, never a due first appearance, and asks with its answer in
     let at = Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length);
     while (at < queue.length && (queue[at - 1]?.wordId === item.wordId || queue[at]?.wordId === item.wordId)) at++; // never beside the same word (sweep)
     queue.splice(at, 0, { ...again, grades: null, retry: true, missed: true, ...(idiom ? { idiom } : {}) }); // the same 成语 comes back (sweep)

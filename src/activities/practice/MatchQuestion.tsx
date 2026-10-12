@@ -4,6 +4,7 @@ import { speak } from '../../audio/speech';
 import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32 } from '../../lib/random';
 import type { DapeiQuestion } from '../../practice/pairs';
+import { NONE_OF_THESE, noneChoices } from '../../practice/noneOfThese';
 import type { KidState } from '../../types';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
@@ -15,20 +16,24 @@ interface Props {
   question: DapeiQuestion;
   kid: KidState;
   onDone: (r: { correct: boolean; responseMs: number }) => void;
+  /** asked without its partner, 「都不对」 right (production practice spec §5) */
+  none?: boolean;
 }
 
 /** 搭配 (spec 2026-10-05 §3.2 rung 2): the word and four partners — which one goes with it? The right one joins it. */
-export function MatchQuestion({ question, kid, onDone }: Props) {
+export function MatchQuestion({ question, kid, onDone, none = false }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ question.verb.codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [question]);
   const [choice, setChoice] = useState<string | null>(null);
   const shownAt = useRef(performance.now());
+  const options = none ? noneChoices(question.options, question.noun) : question.options;
+  const answer = none ? NONE_OF_THESE : question.noun;
   const done = choice !== null;
-  const correct = choice === question.noun;
+  const correct = choice === answer;
   const pair = question.verb + question.noun;
   const pick = (o: string) => {
     if (done) return;
     setChoice(o);
-    playSfx(o === question.noun ? 'correct' : 'wrong');
+    playSfx(o === answer ? 'correct' : 'wrong');
     speak(pair);
   };
   return (
@@ -41,11 +46,11 @@ export function MatchQuestion({ question, kid, onDone }: Props) {
         <FeedbackSheet
           tone={correct ? 'good' : 'oops'}
           title={correct ? lines.cheer : lines.comfort}
-          detail={correct ? undefined : (
+          detail={correct && !none ? undefined : ( // a 都不对 question shows the real pair, right or wrong
             <>
               <span class="hanzi">{pair}</span>
               <SpeakButton text={pair} />
-              <MeaningNote right={question.noun} picked={choice} />
+              <MeaningNote right={question.noun} picked={choice === NONE_OF_THESE ? null : choice} />
             </>
           )}
           actionLabel="继续"
@@ -59,8 +64,8 @@ export function MatchQuestion({ question, kid, onDone }: Props) {
         <span class={`match__slot hanzi${done ? ' is-filled' : ''}`} style={`--n:${Array.from(question.noun).length}`} aria-label={done ? undefined : '空格'}>{done ? question.noun : '？'}</span>
       </div>
       <div class="choices">
-        {question.options.map((o) => (
-          <button key={o} type="button" class={`choice press${done ? (o === question.noun ? ' is-answer' : o === choice ? ' is-wrong' : ' is-dim') : ''}`} disabled={done} onClick={() => pick(o)}>{o}</button>
+        {options.map((o) => (
+          <button key={o} type="button" class={`choice press${o === NONE_OF_THESE && none ? ' choice--none' : ''}${done ? (o === answer ? ' is-answer' : o === choice ? ' is-wrong' : ' is-dim') : ''}`} disabled={done} onClick={() => pick(o)}>{o}</button>
         ))}
       </div>
     </Stage>
