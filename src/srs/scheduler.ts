@@ -38,12 +38,13 @@ export const TAP_KINDS: readonly TapKind[] = ['recognise', 'meaning', 'hear', 'u
 export const SLOW_ANSWER_MS = 6000;
 
 export type Outcome =
-  | { kind: TapKind; correct: boolean; responseMs: number; produced: boolean; slowMs?: number }
+  | { kind: TapKind; correct: boolean; responseMs: number; produced: boolean; state: State; slowMs?: number }
   | { kind: 'write'; totalMisses: number };
 
 /**
  * The one rating rule (spec §3.1): a write by its misses; a tap wrong → Again, right but slower than his line → Hard, right before
- * the word has a production pass → Hard, otherwise Good.
+ * the word has a production pass → Hard (only while the card is New or in Review: in (Re)Learning steps ts-fsrs's Hard repeats
+ * the step, so a card rated Hard daily would never graduate), otherwise Good. `state` is the card's state before this review.
  */
 export function toRating(o: Outcome): Grade {
   if (o.kind === 'write') {
@@ -52,7 +53,8 @@ export function toRating(o: Outcome): Grade {
   }
   if (!o.correct) return Rating.Again;
   if (o.responseMs > (o.slowMs ?? SLOW_ANSWER_MS)) return Rating.Hard;
-  return o.produced ? Rating.Good : Rating.Hard;
+  const learning = o.state === State.Learning || o.state === State.Relearning;
+  return o.produced || learning ? Rating.Good : Rating.Hard;
 }
 
 export function newCard(now: Date): Card {

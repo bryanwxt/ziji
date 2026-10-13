@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import type { Card } from 'ts-fsrs';
 import { default_w, fsrs, generatorParameters, get_fuzz_range, Rating, State } from 'ts-fsrs';
 import { isKnown, localDayGap, newCard, review, schedulerParams, seededKnownCard, setSchedulerParams, snapshot, toRating, validParams } from './scheduler';
 
@@ -14,21 +15,68 @@ describe('toRating', () => {
   // SRS tuning spec §3.1: every row of the table, for every tap kind
   for (const kind of ['recognise', 'meaning', 'hear', 'understand'] as const) {
     it(`${kind}: wrong is Again, produced or not`, () => {
-      expect(toRating({ kind, correct: false, responseMs: 500, produced: false })).toBe(Rating.Again);
-      expect(toRating({ kind, correct: false, responseMs: 500, produced: true })).toBe(Rating.Again);
+      expect(toRating({ kind, correct: false, responseMs: 500, produced: false, state: State.Review })).toBe(Rating.Again);
+      expect(toRating({ kind, correct: false, responseMs: 500, produced: true, state: State.Review })).toBe(Rating.Again);
     });
     it(`${kind}: right and slow is Hard, produced or not`, () => {
-      expect(toRating({ kind, correct: true, responseMs: 6001, produced: false })).toBe(Rating.Hard);
-      expect(toRating({ kind, correct: true, responseMs: 6001, produced: true })).toBe(Rating.Hard);
+      expect(toRating({ kind, correct: true, responseMs: 6001, produced: false, state: State.Review })).toBe(Rating.Hard);
+      expect(toRating({ kind, correct: true, responseMs: 6001, produced: true, state: State.Review })).toBe(Rating.Hard);
     });
     it(`${kind}: right is Hard until produced, then Good`, () => {
-      expect(toRating({ kind, correct: true, responseMs: 6000, produced: false })).toBe(Rating.Hard);
-      expect(toRating({ kind, correct: true, responseMs: 6000, produced: true })).toBe(Rating.Good);
+      expect(toRating({ kind, correct: true, responseMs: 6000, produced: false, state: State.Review })).toBe(Rating.Hard);
+      expect(toRating({ kind, correct: true, responseMs: 6000, produced: true, state: State.Review })).toBe(Rating.Good);
+    });
+  }
+  for (const kind of ['recognise', 'meaning', 'hear', 'understand'] as const) {
+    it(`${kind}: right, not slow, not produced: Hard when New or Review, Good when Learning or Relearning (ts-fsrs learning steps repeat on Hard)`, () => {
+      const right = (state: State) => toRating({ kind, correct: true, responseMs: 1500, produced: false, state });
+      expect(right(State.New)).toBe(Rating.Hard);
+      expect(right(State.Review)).toBe(Rating.Hard);
+      expect(right(State.Learning)).toBe(Rating.Good);
+      expect(right(State.Relearning)).toBe(Rating.Good);
+    });
+    it(`${kind}: slow stays Hard and wrong stays Again in a learning state`, () => {
+      for (const state of [State.Learning, State.Relearning]) {
+        expect(toRating({ kind, correct: true, responseMs: 6001, produced: true, state })).toBe(Rating.Hard);
+        expect(toRating({ kind, correct: false, responseMs: 500, produced: false, state })).toBe(Rating.Again);
+      }
     });
   }
   it('his own slow line replaces the 6 s default (spec §3.2)', () => {
-    expect(toRating({ kind: 'recognise', correct: true, responseMs: 4000, produced: true, slowMs: 3500 })).toBe(Rating.Hard);
-    expect(toRating({ kind: 'recognise', correct: true, responseMs: 9000, produced: true, slowMs: 9500 })).toBe(Rating.Good);
+    expect(toRating({ kind: 'recognise', correct: true, responseMs: 4000, produced: true, state: State.Review, slowMs: 3500 })).toBe(Rating.Hard);
+    expect(toRating({ kind: 'recognise', correct: true, responseMs: 9000, produced: true, state: State.Review, slowMs: 9500 })).toBe(Rating.Good);
+  });
+});
+
+describe('a tapped-only card, answered right once a day (final review C1)', () => {
+  const walk = (kind: 'recognise' | 'meaning' | 'hear' | 'understand', start?: Card) => {
+    let card = start ?? newCard(now);
+    for (let day = 1; day <= 14; day++) {
+      const at = new Date(now.getTime() + (day - 1) * 86_400_000);
+      card = review(card, toRating({ kind, correct: true, responseMs: 1800, produced: false, state: card.state }), at);
+      if (card.state === State.Review) return day;
+    }
+    return null;
+  };
+  for (const kind of ['recognise', 'meaning', 'hear', 'understand'] as const) {
+    it(`${kind}: reaches Review within 3 days`, () => {
+      const day = walk(kind);
+      console.info(`C1 walk: ${kind} tapped-only reaches Review on day ${day}`);
+      expect(day).not.toBeNull();
+      expect(day!).toBeLessThanOrEqual(3);
+    });
+  }
+  it('a Review-state card, not produced, still rates Hard', () => {
+    const card = review(review(newCard(now), Rating.Good, now), Rating.Good, new Date(now.getTime() + 86_400_000));
+    expect(card.state).toBe(State.Review);
+    expect(toRating({ kind: 'recognise', correct: true, responseMs: 1800, produced: false, state: card.state })).toBe(Rating.Hard);
+  });
+  it('a Relearning card answered right leaves Relearning', () => {
+    const known = seededKnownCard(now);
+    const lapsed = review(known, Rating.Again, known.due);
+    expect(lapsed.state).toBe(State.Relearning);
+    const back = review(lapsed, toRating({ kind: 'recognise', correct: true, responseMs: 1800, produced: false, state: lapsed.state }), new Date(lapsed.due.getTime() + 86_400_000));
+    expect(back.state).toBe(State.Review);
   });
 });
 
@@ -82,6 +130,7 @@ describe('fitted parameters (spec §6.2)', () => {
     expect(validParams(default_w.slice(0, 19))).toBe(false);
     expect(validParams([...default_w.slice(0, 20), Number.NaN])).toBe(false);
     expect(validParams('nope')).toBe(false);
+    for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, '1.5']) expect(validParams([...default_w.slice(0, 20), bad])).toBe(false); // 21 long, one bad entry
     expect(validParams(undefined)).toBe(false);
   });
   it('the scheduler uses valid fitted parameters', () => {

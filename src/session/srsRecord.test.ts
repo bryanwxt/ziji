@@ -2,7 +2,7 @@
 // SRS tuning spec §3.1 (Hard until produced), §3.2 (his slow line at the rating sites) and §4 (what every log keeps).
 import { describe, expect, it } from 'vitest';
 import { Rating, State } from 'ts-fsrs';
-import { addReviewLog, getCard, getRecording, listRecordings, logsSince, putCards, putWords } from '../store/repo';
+import { addReviewLog, getCard, getRecording, keepRecording, listRecordings, logsSince, putCards, putWords } from '../store/repo';
 import { seededKnownCard } from '../srs/scheduler';
 import { freshDb, makeWord, markProduced } from '../test/fixtures';
 import { beginNewWord, isProduced, lessonSlowLines, recordHear, recordMeaning, recordRecognition, recordUnderstand, recordUse, recordWriting, recordWrittenMeaning } from './record';
@@ -58,6 +58,23 @@ describe('Hard until produced, at every tap rating site (spec §3.1)', () => {
     await recordRecognition(db, 'b:大', { correct: true, responseMs: 1500 }, new Date(day4.getTime() + 60_000));
     expect((await lastLog(db)).rating).toBe(Rating.Good);
   });
+  it('a Learning card answered right (not produced, not slow) is Good, so it graduates (final review C1)', async () => {
+    const db = await freshDb();
+    await recordRecognition(db, 'b:大', { correct: true, responseMs: 1500 }, day1); // New: Hard
+    expect((await lastLog(db)).rating).toBe(Rating.Hard);
+    expect((await getCard(db, 'b:大:recognise'))!.fsrs.state).toBe(State.Learning);
+    const day2 = new Date(2026, 9, 14, 9);
+    await recordRecognition(db, 'b:大', { correct: true, responseMs: 1500 }, day2);
+    expect(await lastLog(db)).toMatchObject({ rating: Rating.Good, state: State.Learning });
+    await recordRecognition(db, 'b:大', { correct: true, responseMs: 1500 }, new Date(2026, 9, 15, 9));
+    expect((await getCard(db, 'b:大:recognise'))!.fsrs.state).toBe(State.Review);
+  });
+  it('a Review card, not produced, is still Hard', async () => {
+    const db = await freshDb();
+    await putCards(db, [{ id: 'b:大:recognise', wordId: 'b:大', kind: 'recognise', fsrs: seededKnownCard(day1, 3) }]);
+    await recordRecognition(db, 'b:大', { correct: true, responseMs: 1500 }, day4);
+    expect(await lastLog(db)).toMatchObject({ rating: Rating.Hard, state: State.Review });
+  });
   it('a wrong answer is Again either way', async () => {
     const db = await freshDb();
     await markProduced(db, 'b:大');
@@ -76,6 +93,20 @@ describe('his slow line at the rating sites (spec §3.2)', () => {
     const db = await freshDb();
     for (let i = 0; i < 10; i++) await addReviewLog(db, { cardId: 'b:大:hear', wordId: 'b:大', kind: 'hear', at: day1.getTime() + i, rating: Rating.Good, correct: true, responseMs: 2500 });
     expect(await lessonSlowLines(db)).toEqual({ recognise: 6000, meaning: 6000, hear: 5000, understand: 6000 });
+  });
+
+  it('lessonSlowLines reads only the last 120 days (older answers are ignored)', async () => {
+    const db = await freshDb();
+    const at = (daysAgo: number) => day1.getTime() - daysAgo * 86_400_000;
+    for (let i = 0; i < 10; i++) await addReviewLog(db, { cardId: 'b:大:hear', wordId: 'b:大', kind: 'hear', at: at(121) + i, rating: Rating.Good, correct: true, responseMs: 2500 });
+    expect((await lessonSlowLines(db, day1)).hear).toBe(6000); // all older than 120 days
+    for (let i = 0; i < 10; i++) await addReviewLog(db, { cardId: 'b:大:hear', wordId: 'b:大', kind: 'hear', at: at(119) + i, rating: Rating.Good, correct: true, responseMs: 1500 });
+    expect((await lessonSlowLines(db, day1)).hear).toBe(3000);
+  });
+  it('lessonSlowLines falls back to the 6 s default when the read fails', async () => {
+    const db = await freshDb();
+    const broken = { getAllFromIndex: () => Promise.reject(new Error('IndexedDB')) } as unknown as typeof db;
+    expect(await lessonSlowLines(broken, day1)).toEqual({});
   });
 
   it('a right answer over his line is Hard even when produced; under it, Good', async () => {
@@ -136,6 +167,14 @@ describe('every rating path logs the card before the review (spec §4)', () => {
       expect(await second(db, day4)).toMatchObject({ state: card.fsrs.state, elapsedDays: 3, scheduledDays: card.fsrs.scheduled_days });
     });
   }
+  it('an old take with no cardBefore settles to a log without state, elapsedDays or scheduledDays, and does not throw', async () => {
+    const db = await freshDb();
+    await keepRecording(db, { id: 'old1', createdAt: day1.getTime(), prompt: { kind: 'say', wordId: 'b:大' }, ...take });
+    await expect(reviewTake(db, 'old1', 'ok', day4)).resolves.toBeUndefined();
+    const l = await lastLog(db);
+    expect(l).toMatchObject({ kind: 'say', rating: Rating.Good, correct: true });
+    for (const k of ['state', 'elapsedDays', 'scheduledDays']) expect(k in l).toBe(false);
+  });
   it('Say and 说一句: the verdict logs the card as it was when he recorded (settleTake)', async () => {
     const db = await freshDb();
     await putWords(db, [makeWord('大')]);

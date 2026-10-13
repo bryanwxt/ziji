@@ -50,6 +50,7 @@ All of this lives in `src/srs/` and the record helpers (`src/session/record.ts`)
   | Right and slow (§3.2) | Hard | Hard |
   | Right | **Hard** | Good |
 
+- **State:** in ts-fsrs's learning steps, Hard repeats the step rather than shortening an interval, so the not-produced Hard applies only when the card *before this review* is New or in Review; in Learning or Relearning a right, not-slow answer rates Good (otherwise a tapped-only card, rated once a day, would never graduate).
 - **Unchanged:** write ratings (by misses), Say and 说一句 ratings (by the parent's ✓/✗), and rung passes. `passDays` counts correct first answers, not ratings, so ladder progress is the same.
 - **Effect:** more reviews for words he only taps. The existing backlog pause (`BACKLOG_PAUSE`) holds back new words if reviews pile up.
 

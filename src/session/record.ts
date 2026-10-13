@@ -1,4 +1,4 @@
-import { Rating } from 'ts-fsrs';
+import { Rating, State } from 'ts-fsrs';
 import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/date';
 import { canAskRung, fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
 import { findWord } from '../ladder/words';
@@ -18,8 +18,14 @@ export { LISTEN_MS, USE_READING_MS };
 export interface TapOutcome { correct: boolean; responseMs: number; slow?: SlowLines }
 
 /** His slow lines for a lesson (spec §3.2): from all his review logs, once, as the lesson starts. */
-export async function lessonSlowLines(db: AppDb): Promise<SlowLines> {
-  return slowLines(await logsSince(db, 0));
+export const SLOW_LOOKBACK_DAYS = 120; // the line needs his last 40 right answers per kind; older ones only slow the read
+
+export async function lessonSlowLines(db: AppDb, now: Date = new Date()): Promise<SlowLines> {
+  try {
+    return slowLines(await logsSince(db, now.getTime() - SLOW_LOOKBACK_DAYS * 86_400_000));
+  } catch {
+    return {}; // a storage error degrades to the 6 s default
+  }
 }
 
 /** Reviews a card (made now if it is the first) and returns it with what it was before, for the log (spec §4). */
@@ -39,9 +45,10 @@ export async function isProduced(db: AppDb, wordId: string): Promise<boolean> {
 }
 
 /** Rates a tap answer (spec §3.1: Hard until produced, Hard when slow for him), logs it with the card's state, and settles its rung. */
-async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, ratedMs: number, now: Date, extra: Partial<ReviewLog> = {}): Promise<CardRecord> {
+async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, ratedMs: number, now: Date, extra: Pick<ReviewLog, 'source'> = {}): Promise<CardRecord> {
+  const state = (await getCard(db, `${wordId}:${kind}`))?.fsrs.state ?? State.New; // the card before this review
   const produced = o.correct && (await isProduced(db, wordId));
-  const rating = toRating({ kind, correct: o.correct, responseMs: ratedMs, produced, slowMs: o.slow?.[kind] });
+  const rating = toRating({ kind, correct: o.correct, responseMs: ratedMs, produced, state, slowMs: o.slow?.[kind] });
   const { card, before } = await reviewCard(db, wordId, kind, rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind, at: now.getTime(), rating, correct: o.correct, responseMs: o.responseMs, ...before, ...extra });
   return (await settleRung(db, wordId, kind, now)) ?? card;
@@ -67,7 +74,6 @@ export async function recordWriting(db: AppDb, wordId: string, totalMisses: numb
   await settleRung(db, wordId, 'write', now); // not a rung: it passes, and opens nothing
   return (await getCard(db, card.id))!;
 }
-
 
 /**
  * After a rung's answer (spec 2026-10-06 §3.2): if this card has now had two days of right first answers, it passes, and the
