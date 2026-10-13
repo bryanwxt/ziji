@@ -21,8 +21,8 @@ export function mix(a: string, b: string, t: number): string {
 /** A fill's one hard shadow tone (row C: pale; k 0.4 for fur, less for pale fills). */
 export const shadeOf = (fill: string, k = 0.4) => mix(fill, SHADOW, k);
 
-/** Stroke attributes for the line at width w. */
-export const line = (w: number = LW) => `stroke="${LINE}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+/** Stroke attributes for the line at width w: pass LW/LWI (Truffle's 260 box) or WLW/WLWI (the worlds' 1000 box); LW is only the default. */
+export const line = (w: number) => `stroke="${LINE}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
 
 const r1 = (n: number) => +n.toFixed(1);
 
@@ -44,13 +44,12 @@ export function crescent(cx: number, cy: number, rx: number, ry: number, dx: num
     const t = (x: number) => ((x - from) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
     return t(mid) < t(to);
   };
-  const far = ang(-ux, -uy); // the ellipse's own edge away from the light
-  const sweep1 = between(ang(a[0], a[1]), ang(b[0], b[1]), far) ? 1 : 0;
-  const near = ang(-ux, -uy); // the moved ellipse's edge toward the centre: the same direction from its own centre
-  const sweep2 = between(ang(b[0] - ux, b[1] - uy), ang(a[0] - ux, a[1] - uy), near) ? 1 : 0;
+  const away = ang(-ux, -uy); // the direction away from the light: the ellipse's own far edge, and the moved ellipse's far edge from its own centre
+  const sweep1 = between(ang(a[0], a[1]), ang(b[0], b[1]), away) ? 1 : 0;
+  const sweep2 = between(ang(b[0] - ux, b[1] - uy), ang(a[0] - ux, a[1] - uy), away) ? 1 : 0;
   const X = (x: number) => r1(cx + x * rx);
   const Y = (y: number) => r1(cy + y * ry);
-  return `M${X(a[0])} ${Y(a[1])} A${rx} ${ry} 0 1 ${sweep1} ${X(b[0])} ${Y(b[1])} A${rx} ${ry} 0 0 ${sweep2} ${X(a[0])} ${Y(a[1])}Z`;
+  return `M${X(a[0])} ${Y(a[1])} A${r1(rx)} ${r1(ry)} 0 1 ${sweep1} ${X(b[0])} ${Y(b[1])} A${r1(rx)} ${r1(ry)} 0 0 ${sweep2} ${X(a[0])} ${Y(a[1])}Z`;
 }
 
 /** An outlined ellipse with its hard shadow; k is how far the lit shape moves toward the light (as a share of each radius). */
