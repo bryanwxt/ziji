@@ -4,12 +4,15 @@ import { canAskRung, fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '..
 import { findWord } from '../ladder/words';
 import { ladderWordsBesides } from '../content/ladder';
 import { newCard, review, toRating } from '../srs/scheduler';
+import { LISTEN_MS, USE_READING_MS } from '../srs/slow';
 import type { AppDb } from '../store/db';
 import { addReviewLog, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
 import type { CardKind, CardRecord, Grade, SessionRecord, Settings, Word } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
+
+export { LISTEN_MS, USE_READING_MS };
 
 async function reviewCard(db: AppDb, wordId: string, kind: CardKind, rating: Grade, now: Date): Promise<CardRecord> {
   const id = `${wordId}:${kind}`;
@@ -115,9 +118,6 @@ export async function openMissingRungs(db: AppDb, now: Date): Promise<number> {
   return made.length;
 }
 
-/** Listening to a sentence takes time before he can answer: it isn't slowness (the log keeps the real time). */
-export const LISTEN_MS = 4000;
-
 /** He heard a sentence with the word and picked its English (the Understand rung, spec 2026-10-06 §3.2). */
 export async function recordUnderstand(db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date): Promise<CardRecord> {
   const rating = toRating({ kind: 'recognise', correct: outcome.correct, responseMs: Math.max(0, outcome.responseMs - LISTEN_MS) });
@@ -141,9 +141,6 @@ export async function bringForward(db: AppDb, wordId: string, kind: CardKind, du
   const c = await getCard(db, `${wordId}:${kind}`);
   if (c && c.fsrs.due.getTime() > due.getTime()) await putCards(db, [{ ...c, fsrs: { ...c.fsrs, due } }]);
 }
-
-/** Reading time allowed before a 选一选/用一用 answer counts as slow (on top of the flashcard's 6 s). */
-export const USE_READING_MS = 9000;
 
 /** A word used in context (选一选, 用对了吗, 用一用): the day's first answer rates its meaning card; a later miss brings it forward. */
 export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date, responseMs = 0): Promise<CardRecord> {
