@@ -2,7 +2,7 @@ import type { IconName } from './ui/icons/icons';
 import type { Course } from './content';
 import type { WriteItem } from './session/writing';
 import { DEFAULT_FINDS, type Finds } from './fun/finds';
-import type { Card as FsrsCard, Grade } from 'ts-fsrs';
+import type { Card as FsrsCard, Grade, State } from 'ts-fsrs';
 import type { Recall } from './session/recall';
 import type { PracticeItem } from './session/round';
 
@@ -83,7 +83,17 @@ export interface ReviewLog {
   responseMs?: number;
   misses?: number;
   source?: 'use' | 'write'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use), or from a 组词 written in 写一写 (production practice spec §3)
+  // the card as it was before this review (SRS tuning spec §4); logs written before it have none
+  state?: State; // New, Learning, Review or Relearning
+  elapsedDays?: number; // whole local days since the card's last review (0 = the same day)
+  scheduledDays?: number; // the interval the card was on
 }
+
+/** The card before a review, as a review log keeps it (SRS tuning spec §4); a Say or 说一句 take keeps one for the parent's verdict. */
+export interface CardSnapshot { state: State; elapsedDays: number; scheduledDays: number }
+
+/** His fitted FSRS parameters (SRS tuning spec §6.2, §7): 21 numbers, when they were fitted, and on how many reviews. */
+export interface FsrsFit { w: number[]; fittedAt: number; reviews: number }
 
 /** Skills the parent's Skills panel follows (spec §19 part 7). */
 export type Skill = 'listening' | 'reading' | 'meaning' | 'use' | 'zibian' | 'writing';
@@ -203,6 +213,7 @@ export interface Recording {
   extraDayGiven?: boolean; // its marks have given the passage its one extra day (never a second, however often re-marked)
   review?: 'ok' | 'no'; // a Say or 说一句 take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
   meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
+  cardBefore?: CardSnapshot; // a Say or 说一句 take: its card as it was when he recorded (SRS tuning spec §4), for the verdict's log
 }
 
 export interface PicturePrompt {
@@ -292,6 +303,7 @@ export interface Settings {
   baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
   pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)
   contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION)
+  fsrs?: FsrsFit; // his fitted FSRS parameters (SRS tuning spec §6.2); absent: the defaults
 }
 
 export const DEFAULT_SETTINGS: Settings = {
