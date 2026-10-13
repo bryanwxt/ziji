@@ -3,48 +3,56 @@ import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/da
 import { canAskRung, fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
 import { findWord } from '../ladder/words';
 import { ladderWordsBesides } from '../content/ladder';
-import { newCard, review, toRating } from '../srs/scheduler';
-import { LISTEN_MS, USE_READING_MS } from '../srs/slow';
+import { newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
+import { LISTEN_MS, USE_READING_MS, type SlowLines } from '../srs/slow';
 import type { AppDb } from '../store/db';
 import { addReviewLog, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
-import type { CardKind, CardRecord, Grade, SessionRecord, Settings, Word } from '../types';
+import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, Word } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
 
 export { LISTEN_MS, USE_READING_MS };
 
-async function reviewCard(db: AppDb, wordId: string, kind: CardKind, rating: Grade, now: Date): Promise<CardRecord> {
+/** A tap answer: right or not, how long it took, and this lesson's slow lines (spec §3.2; absent: 6 s). */
+export interface TapOutcome { correct: boolean; responseMs: number; slow?: SlowLines }
+
+/** Reviews a card (made now if it is the first) and returns it with what it was before, for the log (spec §4). */
+async function reviewCard(db: AppDb, wordId: string, kind: CardKind, rating: Grade, now: Date): Promise<{ card: CardRecord; before: CardSnapshot }> {
   const id = `${wordId}:${kind}`;
   const existing = await getCard(db, id);
-  const rec: CardRecord = { ...(existing ?? {}), id, wordId, kind, fsrs: review(existing?.fsrs ?? newCard(now), rating, now) }; // keeps its pass
-  await putCards(db, [rec]);
-  return rec;
+  const was = existing?.fsrs ?? newCard(now);
+  const card: CardRecord = { ...(existing ?? {}), id, wordId, kind, fsrs: review(was, rating, now) }; // keeps its pass
+  await putCards(db, [card]);
+  return { card, before: snapshot(was, now) };
 }
 
-export async function recordRecognition(
-  db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date,
-): Promise<CardRecord> {
-  const rating = toRating({ kind: 'recognise', ...outcome });
-  const card = await reviewCard(db, wordId, 'recognise', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'recognise', at: now.getTime(), rating, ...outcome });
-  return (await settleRung(db, wordId, 'recognise', now)) ?? card;
+/** Produced (spec §3.1): the word has a passed write, Say or 说一句 card. */
+export async function isProduced(db: AppDb, wordId: string): Promise<boolean> {
+  const cards = await Promise.all((['write', 'say', 'sentence'] as const).map((k) => getCard(db, `${wordId}:${k}`)));
+  return cards.some((c) => c?.passed !== undefined);
 }
 
-export async function recordMeaning(
-  db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number; ratedMs?: number }, now: Date, source?: 'use',
-): Promise<CardRecord> {
-  const { correct, responseMs, ratedMs = responseMs } = outcome; // ratedMs: the time that counts toward "slow" (reading time taken off)
-  const rating = toRating({ kind: 'meaning', correct, responseMs: ratedMs });
-  const card = await reviewCard(db, wordId, 'meaning', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, correct, responseMs, ...(source ? { source } : {}) });
-  return (await settleRung(db, wordId, 'meaning', now)) ?? card;
+/** Rates a tap answer (spec §3.1: Hard until produced, Hard when slow for him), logs it with the card's state, and settles its rung. */
+async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, ratedMs: number, now: Date, extra: Partial<ReviewLog> = {}): Promise<CardRecord> {
+  const produced = o.correct && (await isProduced(db, wordId));
+  const rating = toRating({ kind, correct: o.correct, responseMs: ratedMs, produced, slowMs: o.slow?.[kind] });
+  const { card, before } = await reviewCard(db, wordId, kind, rating, now);
+  await addReviewLog(db, { cardId: card.id, wordId, kind, at: now.getTime(), rating, correct: o.correct, responseMs: o.responseMs, ...before, ...extra });
+  return (await settleRung(db, wordId, kind, now)) ?? card;
 }
+
+export const recordRecognition = (db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> =>
+  rateTap(db, wordId, 'recognise', outcome, outcome.responseMs, now);
+
+/** ratedMs: the time that counts toward "slow" (reading time taken off); the log keeps responseMs. */
+export const recordMeaning = (db: AppDb, wordId: string, outcome: TapOutcome & { ratedMs?: number }, now: Date, source?: 'use'): Promise<CardRecord> =>
+  rateTap(db, wordId, 'meaning', outcome, outcome.ratedMs ?? outcome.responseMs, now, source ? { source } : {});
 
 export async function recordWriting(db: AppDb, wordId: string, totalMisses: number, now: Date): Promise<CardRecord> {
   const rating = toRating({ kind: 'write', totalMisses });
-  const card = await reviewCard(db, wordId, 'write', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'write', at: now.getTime(), rating, correct: totalMisses <= 3, misses: totalMisses });
+  const { card, before } = await reviewCard(db, wordId, 'write', rating, now);
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'write', at: now.getTime(), rating, correct: totalMisses <= 3, misses: totalMisses, ...before });
   // written now: a day its strokes failed to load no longer keeps it at the back of the queue (final review I1)
   const word = await getWord(db, wordId);
   if (word?.writeSkippedAt !== undefined) {
@@ -54,6 +62,7 @@ export async function recordWriting(db: AppDb, wordId: string, totalMisses: numb
   await settleRung(db, wordId, 'write', now); // not a rung: it passes, and opens nothing
   return (await getCard(db, card.id))!;
 }
+
 
 /**
  * After a rung's answer (spec 2026-10-06 §3.2): if this card has now had two days of right first answers, it passes, and the
@@ -83,7 +92,7 @@ export async function settleRung(db: AppDb, wordId: string, kind: CardKind, now:
  * voice today), a word that can be heard gets its hear card for tomorrow, ungraded; a word with no English (a school list word)
  * starts on its Read rung, graded by that reading.
  */
-export async function beginNewWord(db: AppDb, word: Word, asked: 'hear' | 'read' | 'meaning', outcome: { correct: boolean; responseMs: number }, now: Date): Promise<CardRecord> {
+export async function beginNewWord(db: AppDb, word: Word, asked: 'hear' | 'read' | 'meaning', outcome: TapOutcome, now: Date): Promise<CardRecord> {
   if (asked === 'hear') return recordHear(db, word.id, outcome, now);
   if (!canAskRung(word, 'hear')) return recordRecognition(db, word.id, outcome, now);
   const id = `${word.id}:hear`;
@@ -118,21 +127,13 @@ export async function openMissingRungs(db: AppDb, now: Date): Promise<number> {
   return made.length;
 }
 
-/** He heard a sentence with the word and picked its English (the Understand rung, spec 2026-10-06 §3.2). */
-export async function recordUnderstand(db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date): Promise<CardRecord> {
-  const rating = toRating({ kind: 'recognise', correct: outcome.correct, responseMs: Math.max(0, outcome.responseMs - LISTEN_MS) });
-  const card = await reviewCard(db, wordId, 'understand', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'understand', at: now.getTime(), rating, ...outcome });
-  return (await settleRung(db, wordId, 'understand', now)) ?? card;
-}
+/** He heard a sentence with the word and picked its English (the Understand rung, spec 2026-10-06 §3.2): listening time isn't slowness. */
+export const recordUnderstand = (db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> =>
+  rateTap(db, wordId, 'understand', outcome, Math.max(0, outcome.responseMs - LISTEN_MS), now);
 
 /** He heard the word and picked its meaning (the Hear rung, spec 2026-10-06 §3.2). */
-export async function recordHear(db: AppDb, wordId: string, outcome: { correct: boolean; responseMs: number }, now: Date): Promise<CardRecord> {
-  const rating = toRating({ kind: 'recognise', ...outcome }); // same rule: wrong Again, slow Hard, else Good
-  const card = await reviewCard(db, wordId, 'hear', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'hear', at: now.getTime(), rating, ...outcome });
-  return (await settleRung(db, wordId, 'hear', now)) ?? card;
-}
+export const recordHear = (db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> =>
+  rateTap(db, wordId, 'hear', outcome, outcome.responseMs, now);
 
 const ratedToday = (c: CardRecord | undefined, now: Date) => !!c?.fsrs.last_review && localDateKey(c.fsrs.last_review) === localDateKey(now);
 
@@ -143,10 +144,10 @@ export async function bringForward(db: AppDb, wordId: string, kind: CardKind, du
 }
 
 /** A word used in context (选一选, 用对了吗, 用一用): the day's first answer rates its meaning card; a later miss brings it forward. */
-export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date, responseMs = 0): Promise<CardRecord> {
+export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date, responseMs = 0, slow?: SlowLines): Promise<CardRecord> {
   const existing = await getCard(db, `${wordId}:meaning`);
   // he reads a sentence (or two) first: that time doesn't make a right answer Hard
-  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs, ratedMs: Math.max(0, responseMs - USE_READING_MS) }, now, 'use'); // logged as from 选一选/用一用, so Skills counts it once
+  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs, ratedMs: Math.max(0, responseMs - USE_READING_MS), slow }, now, 'use'); // logged as from 选一选/用一用, so Skills counts it once
   if (!correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
   return (await getCard(db, `${wordId}:meaning`))!;
 }
@@ -162,9 +163,9 @@ export async function recordWrittenMeaning(db: AppDb, wordId: string, correct: b
     if (!correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
     return (await getCard(db, `${wordId}:meaning`))!;
   }
-  const rating = correct ? Rating.Good : Rating.Again;
-  const card = await reviewCard(db, wordId, 'meaning', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, correct, source: 'write' });
+  const rating = correct ? Rating.Good : Rating.Again; // writing is production: counts as produced for its own rating (spec §3.1)
+  const { card, before } = await reviewCard(db, wordId, 'meaning', rating, now);
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, correct, source: 'write', ...before });
   return (await settleRung(db, wordId, 'meaning', now)) ?? card;
 }
 

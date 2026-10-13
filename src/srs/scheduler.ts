@@ -38,16 +38,21 @@ export const TAP_KINDS: readonly TapKind[] = ['recognise', 'meaning', 'hear', 'u
 export const SLOW_ANSWER_MS = 6000;
 
 export type Outcome =
-  | { kind: 'recognise' | 'meaning'; correct: boolean; responseMs: number }
+  | { kind: TapKind; correct: boolean; responseMs: number; produced: boolean; slowMs?: number }
   | { kind: 'write'; totalMisses: number };
 
+/**
+ * The one rating rule (spec §3.1): a write by its misses; a tap wrong → Again, right but slower than his line → Hard, right before
+ * the word has a production pass → Hard, otherwise Good.
+ */
 export function toRating(o: Outcome): Grade {
   if (o.kind === 'write') {
     if (o.totalMisses === 0) return Rating.Good;
     return o.totalMisses <= 3 ? Rating.Hard : Rating.Again;
   }
-  if (!o.correct) return Rating.Again; // reading or meaning
-  return o.responseMs > SLOW_ANSWER_MS ? Rating.Hard : Rating.Good;
+  if (!o.correct) return Rating.Again;
+  if (o.responseMs > (o.slowMs ?? SLOW_ANSWER_MS)) return Rating.Hard;
+  return o.produced ? Rating.Good : Rating.Hard;
 }
 
 export function newCard(now: Date): Card {

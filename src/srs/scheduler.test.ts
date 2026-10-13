@@ -5,16 +5,30 @@ import { isKnown, localDayGap, newCard, review, schedulerParams, seededKnownCard
 const now = new Date(2026, 9, 2, 9, 0);
 
 describe('toRating', () => {
-  it('maps recognition answers', () => {
-    expect(toRating({ kind: 'recognise', correct: false, responseMs: 500 })).toBe(Rating.Again);
-    expect(toRating({ kind: 'recognise', correct: true, responseMs: 6000 })).toBe(Rating.Good);
-    expect(toRating({ kind: 'recognise', correct: true, responseMs: 6001 })).toBe(Rating.Hard);
-  });
   it('maps writing misses', () => {
     expect(toRating({ kind: 'write', totalMisses: 0 })).toBe(Rating.Good);
     expect(toRating({ kind: 'write', totalMisses: 1 })).toBe(Rating.Hard);
     expect(toRating({ kind: 'write', totalMisses: 3 })).toBe(Rating.Hard);
     expect(toRating({ kind: 'write', totalMisses: 4 })).toBe(Rating.Again);
+  });
+  // SRS tuning spec §3.1: every row of the table, for every tap kind
+  for (const kind of ['recognise', 'meaning', 'hear', 'understand'] as const) {
+    it(`${kind}: wrong is Again, produced or not`, () => {
+      expect(toRating({ kind, correct: false, responseMs: 500, produced: false })).toBe(Rating.Again);
+      expect(toRating({ kind, correct: false, responseMs: 500, produced: true })).toBe(Rating.Again);
+    });
+    it(`${kind}: right and slow is Hard, produced or not`, () => {
+      expect(toRating({ kind, correct: true, responseMs: 6001, produced: false })).toBe(Rating.Hard);
+      expect(toRating({ kind, correct: true, responseMs: 6001, produced: true })).toBe(Rating.Hard);
+    });
+    it(`${kind}: right is Hard until produced, then Good`, () => {
+      expect(toRating({ kind, correct: true, responseMs: 6000, produced: false })).toBe(Rating.Hard);
+      expect(toRating({ kind, correct: true, responseMs: 6000, produced: true })).toBe(Rating.Good);
+    });
+  }
+  it('his own slow line replaces the 6 s default (spec §3.2)', () => {
+    expect(toRating({ kind: 'recognise', correct: true, responseMs: 4000, produced: true, slowMs: 3500 })).toBe(Rating.Hard);
+    expect(toRating({ kind: 'recognise', correct: true, responseMs: 9000, produced: true, slowMs: 9500 })).toBe(Rating.Good);
   });
 });
 
