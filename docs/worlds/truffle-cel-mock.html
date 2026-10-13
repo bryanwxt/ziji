@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truffle Cel Probe</title>
+<style>
+  :root { --ink: #2e2a3a; --muted: #6b6680; --bg: #f4f0ea; --card: #fffdf8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 -apple-system, "Nunito", system-ui, sans-serif; padding: 18px 20px 24px; }
+  h1 { font-size: 20px; margin: 0 0 2px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 14px; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: 150px repeat(3, 1fr); gap: 12px; align-items: stretch; }
+  .colhead { font-weight: 700; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 0 2px; }
+  .rowhead { display: flex; flex-direction: column; justify-content: center; gap: 4px; padding-right: 4px; }
+  .rowhead b { font-size: 17px; }
+  .rowhead span { color: var(--muted); font-size: 12.5px; }
+  .panel { position: relative; height: 318px; border-radius: 14px; overflow: hidden; background: url(bg.jpg) center 78% / cover no-repeat; box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 6px 18px rgba(60,50,90,.10); }
+  .panel svg.t { position: absolute; left: 5%; bottom: 4%; width: 188px; height: auto; overflow: visible; }
+  .panel svg.otter { position: absolute; left: 60%; bottom: 7%; width: 98px; height: auto; overflow: visible; }
+  .tag { position: absolute; right: 10px; top: 10px; background: rgba(255,253,248,.85); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600; color: var(--ink); }
+  .zoom { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .zoom .panel { height: 420px; background-position: 10% 85%; }
+  .zoom .panel svg.t { width: 300px; left: 6%; }
+  .zoom .panel svg.otter { width: 132px; left: 70%; }
+</style>
+</head>
+<body>
+<h1>Truffle: current painted look vs. anime cel restyle</h1>
+<p class="sub">Design probe only. Same rig geometry in every row; only the paint changes. Light from the upper left.</p>
+<div class="grid" id="grid">
+  <div></div><div class="colhead">Idle</div><div class="colhead">Happy / cheer</div><div class="colhead">Costume: wizard</div>
+</div>
+<div class="zoom" id="zoom"></div>
+<script>
+const CURRENT = {"idle":"<svg class=\"truffle\" viewBox=\"30 20 260 270\" width=\"300\" height=\"312\" data-mood=\"neutral\" data-expression=\"neutral\" data-tier=\"0\" aria-hidden=\"true\"><defs><radialGradient id=\"truffle-P0-0-tf-fur\" gradientUnits=\"userSpaceOnUse\" cx=\"128\" cy=\"80\" r=\"215\"><stop offset=\"0\" stop-color=\"#cbc6cd\"></stop><stop offset=\"0.55\" stop-color=\"#a9a4ab\"></stop><stop offset=\"1\" stop-color=\"#7d7882\"></stop></radialGradient><linearGradient id=\"truffle-P0-0-tf-tail\" gradientUnits=\"userSpaceOnUse\" x1=\"236\" y1=\"190\" x2=\"226\" y2=\"256\"><stop offset=\"0\" stop-color=\"#bdb8c0\"></stop><stop offset=\"1\" stop-color=\"#7d7882\"></stop></linearGradient><radialGradient id=\"truffle-P0-0-tf-chest\" gradientUnits=\"userSpaceOnUse\" cx=\"146\" cy=\"140\" r=\"150\"><stop offset=\"0\" stop-color=\"#ffffff\"></stop><stop offset=\"0.6\" stop-color=\"#fbf5ea\"></stop><stop offset=\"1\" stop-color=\"#e6dccb\"></stop></radialGradient><linearGradient id=\"truffle-P0-0-tf-ear\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffd3ce\"></stop><stop offset=\"1\" stop-color=\"#eea4a3\"></stop></linearGradient></defs><ellipse data-part=\"shadow\" cx=\"160\" cy=\"279\" rx=\"64\" ry=\"7\" fill=\"#2b3a2a\" opacity=\"0.16\"></ellipse><g class=\"truffle__rig\" data-part=\"rig\"><g class=\"truffle__tail\" data-part=\"tail\" style=\"transform-origin: 214px 246px;\"><path d=\"M212 252 C246 256 262 226 248 204 C244 196 252 190 258 194 C246 182 232 194 236 208 C244 228 234 242 210 240Z\" fill=\"url(#truffle-P0-0-tf-tail)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><g stroke=\"#86818c\" stroke-width=\"6\" fill=\"none\" opacity=\".5\"><path d=\"M223 243 L225 249 M241 231 L245 236 M241 213 L247 210\"></path></g></g><g class=\"truffle__body\" data-part=\"body\" style=\"transform-origin: 160px 276px;\"><path d=\"M110 186 C112 158 208 158 210 186 C230 200 234 238 216 258 C200 276 120 276 104 258 C86 238 90 200 110 186Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><ellipse cx=\"160\" cy=\"236\" rx=\"36\" ry=\"30\" fill=\"url(#truffle-P0-0-tf-chest)\"></ellipse><g stroke=\"#86818c\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".45\"><path d=\"M104 208 Q114 212 117 222 M216 208 Q206 212 203 222 M100 228 Q110 232 113 242 M220 228 Q210 232 207 242\"></path></g></g><g class=\"truffle__headpos\" data-part=\"headpos\"><g transform=\"rotate(0 160 190)\" data-part=\"headrot\"><g class=\"truffle__head\"><g data-part=\"ear-l\" style=\"transform-origin: 100px 78px; transform: rotate(0deg);\"><path d=\"M74 92 C64 66 66 42 76 30 C94 36 112 48 122 60 Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g data-part=\"ear-r\" style=\"transform-origin: 220px 78px; transform: rotate(0deg);\"><path d=\"M246 92 C256 66 254 42 244 30 C226 36 208 48 198 60 Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g><g stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M160 34 C212 34 250 60 256 98 C266 104 268 116 261 122 C268 130 265 142 254 146 C242 178 204 198 160 198 C116 198 78 178 66 146 C55 142 52 130 59 122 C52 116 54 104 64 98 C70 60 108 34 160 34Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><path d=\"M70 92 C76 58 112 38 160 38 C208 38 244 58 250 92 C226 70 196 62 160 62 C124 62 94 70 70 92Z\" fill=\"#8a8590\" opacity=\".45\"></path><path d=\"M154 60 C156 92 158 112 160 126 C162 112 164 92 166 60 C163 76 161 88 160 98 C159 88 157 76 154 60Z\" fill=\"url(#truffle-P0-0-tf-chest)\"></path><path d=\"M134 132 C142 124 178 124 186 132 C204 140 212 160 202 176 C190 192 130 192 118 176 C108 160 116 140 134 132Z\" fill=\"url(#truffle-P0-0-tf-chest)\"></path><path d=\"M152 142 L168 142 C166 148 163 151 160 152 C157 151 154 148 152 142 Z\" fill=\"#ff9fa0\" stroke=\"#9a5d66\" stroke-width=\"1.8\" stroke-linejoin=\"round\"></path><g stroke=\"#6f6a75\" stroke-width=\"1.6\" stroke-linecap=\"round\" opacity=\".55\"><path d=\"M112 160 L72 154 M112 167 L76 172 M208 160 L248 154 M208 167 L244 172\"></path></g><g stroke=\"#86818c\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".5\"><path d=\"M130 62 Q136 76 133 90 M190 62 Q184 76 187 90 M110 74 Q118 84 118 94 M210 74 Q202 84 202 94\"></path></g><path d=\"M76 108 C80 72 112 46 152 42\" stroke=\"#ffffff\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\" opacity=\".3\"></path></g><g data-part=\"ear-in-l\" style=\"transform-origin: 100px 78px; transform: rotate(0deg);\"><path d=\"M82 76 C78 60 79 48 84 42 C94 48 104 54 110 62 Z\" fill=\"url(#truffle-P0-0-tf-ear)\"></path></g><g data-part=\"ear-in-r\" style=\"transform-origin: 220px 78px; transform: rotate(0deg);\"><path d=\"M238 76 C242 60 241 48 236 42 C226 48 216 54 210 62 Z\" fill=\"url(#truffle-P0-0-tf-ear)\"></path></g></g><g class=\"truffle__face truffle__face--neutral\"><ellipse data-part=\"blush-l\" cx=\"96\" cy=\"150\" rx=\"18\" ry=\"10\" fill=\"#ff9d8a\" opacity=\"0.27\"></ellipse><ellipse data-part=\"blush-r\" cx=\"224\" cy=\"150\" rx=\"18\" ry=\"10\" fill=\"#ff9d8a\" opacity=\"0.27\"></ellipse><g data-part=\"eye-l\"><clipPath id=\"truffle-P0-0-in-l\"><circle cx=\"118\" cy=\"118\" r=\"21\"></circle></clipPath><clipPath id=\"truffle-P0-0-lid-l\"><circle cx=\"118\" cy=\"118\" r=\"23.8\"></circle></clipPath><circle cx=\"118\" cy=\"118\" r=\"22\" fill=\"#fffdf7\"></circle><g clip-path=\"url(#truffle-P0-0-in-l)\"><g data-part=\"iris-l\"><circle cx=\"118\" cy=\"120\" r=\"17\" fill=\"#9cc56a\"></circle><circle cx=\"113\" cy=\"114\" r=\"9\" fill=\"#c6e39a\" opacity=\"0.6\"></circle><ellipse data-part=\"pupil-l\" cx=\"118\" cy=\"121\" rx=\"7\" ry=\"11\" fill=\"#2f2a36\"></ellipse><circle cx=\"124\" cy=\"113\" r=\"4\" fill=\"#fff\"></circle></g></g><circle cx=\"118\" cy=\"118\" r=\"22\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.6\"></circle><g clip-path=\"url(#truffle-P0-0-lid-l)\"><path data-part=\"lid-top-l\" d=\"M92 90 L144 90 L144 95 Q118 101 92 95Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path><path data-part=\"lid-bottom-l\" d=\"M92 146 L144 146 L144 141 Q118 141 92 141Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><g clip-path=\"url(#truffle-P0-0-in-l)\"><path data-part=\"lid-edge-l\" d=\"M92 95 Q118 101 144 95\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.8\" stroke-linecap=\"round\" opacity=\"0\"></path><path data-part=\"lid-bedge-l\" d=\"M92 141 Q118 141 144 141\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\"0\"></path></g><path data-part=\"lid-closed-l\" d=\"M99 127 Q118 131 137 127\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"3.6\" stroke-linecap=\"round\" opacity=\"0\"></path></g><g data-part=\"eye-r\"><clipPath id=\"truffle-P0-0-in-r\"><circle cx=\"202\" cy=\"118\" r=\"21\"></circle></clipPath><clipPath id=\"truffle-P0-0-lid-r\"><circle cx=\"202\" cy=\"118\" r=\"23.8\"></circle></clipPath><circle cx=\"202\" cy=\"118\" r=\"22\" fill=\"#fffdf7\"></circle><g clip-path=\"url(#truffle-P0-0-in-r)\"><g data-part=\"iris-r\"><circle cx=\"202\" cy=\"120\" r=\"17\" fill=\"#9cc56a\"></circle><circle cx=\"197\" cy=\"114\" r=\"9\" fill=\"#c6e39a\" opacity=\"0.6\"></circle><ellipse data-part=\"pupil-r\" cx=\"202\" cy=\"121\" rx=\"7\" ry=\"11\" fill=\"#2f2a36\"></ellipse><circle cx=\"208\" cy=\"113\" r=\"4\" fill=\"#fff\"></circle></g></g><circle cx=\"202\" cy=\"118\" r=\"22\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.6\"></circle><g clip-path=\"url(#truffle-P0-0-lid-r)\"><path data-part=\"lid-top-r\" d=\"M176 90 L228 90 L228 95 Q202 101 176 95Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path><path data-part=\"lid-bottom-r\" d=\"M176 146 L228 146 L228 141 Q202 141 176 141Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><g clip-path=\"url(#truffle-P0-0-in-r)\"><path data-part=\"lid-edge-r\" d=\"M176 95 Q202 101 228 95\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.8\" stroke-linecap=\"round\" opacity=\"0\"></path><path data-part=\"lid-bedge-r\" d=\"M176 141 Q202 141 228 141\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\"0\"></path></g><path data-part=\"lid-closed-r\" d=\"M183 127 Q202 131 221 127\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"3.6\" stroke-linecap=\"round\" opacity=\"0\"></path></g><path data-part=\"brow-l\" d=\"M100 90 Q116 83 132 89\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"4\" stroke-linecap=\"round\" transform=\"translate(0 0) rotate(0 116 87)\" opacity=\"0\"></path><path data-part=\"brow-r\" d=\"M188 89 Q204 83 220 90\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"4\" stroke-linecap=\"round\" transform=\"translate(0 0) rotate(0 204 87)\" opacity=\"0\"></path><path data-part=\"mouth\" d=\"M150 164.25 C154 166.5 166 166.5 170 164.25 C167 168.5 153 168.5 150 164.25Z\" fill=\"#8a3d4c\" fill-opacity=\"0\" stroke=\"#4a4250\" stroke-width=\"2.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><g data-part=\"extra-curious\" opacity=\"0\"><g transform=\"translate(236 40)\"><rect width=\"34\" height=\"34\" rx=\"12\" fill=\"#fffdf7\" stroke=\"#4a4250\" stroke-width=\"2.4\"></rect><text x=\"17\" y=\"26\" text-anchor=\"middle\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"24\" fill=\"#4a4250\">?</text></g></g><g data-part=\"extra-surprised\" opacity=\"0\"><path d=\"M70 52 L80 64 M58 70 L72 76 M250 52 L240 64 M262 70 L248 76\" stroke=\"#4a4250\" stroke-width=\"3.4\" stroke-linecap=\"round\"></path></g><g data-part=\"extra-sleepy\" opacity=\"0\"><text x=\"236\" y=\"70\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"26\" fill=\"#4a4250\">z</text><text x=\"256\" y=\"48\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"18\" fill=\"#4a4250\">z</text></g><g data-part=\"extra-joy\" opacity=\"0\"><circle cx=\"44\" cy=\"70\" r=\"5\" fill=\"#7fdc7a\"></circle><rect x=\"266\" y=\"60\" width=\"9\" height=\"9\" rx=\"2\" fill=\"#ffc94a\" transform=\"rotate(20 270 64)\"></rect><circle cx=\"282\" cy=\"106\" r=\"4\" fill=\"#ff7f6a\"></circle><rect x=\"30\" y=\"104\" width=\"8\" height=\"8\" rx=\"2\" fill=\"#7fb8ff\" transform=\"rotate(-15 34 108)\"></rect></g></g></g></g><g class=\"truffle__paw\" data-part=\"paw-l\"><path d=\"M122 262 C120 276 154 278 154 266 C154 258 124 254 122 262Z\" fill=\"url(#truffle-P0-0-tf-chest)\" stroke=\"#b9ae9d\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g class=\"truffle__paw\" data-part=\"paw-r\"><g><path d=\"M198 262 C200 276 166 278 166 266 C166 258 196 254 198 262Z\" fill=\"url(#truffle-P0-0-tf-chest)\" stroke=\"#b9ae9d\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g></g></g></svg>","cheer":"<svg class=\"truffle\" viewBox=\"30 20 260 270\" width=\"300\" height=\"312\" data-mood=\"cheer\" data-expression=\"joy\" data-tier=\"0\" aria-hidden=\"true\"><defs><radialGradient id=\"truffle-P0-0-tf-fur\" gradientUnits=\"userSpaceOnUse\" cx=\"128\" cy=\"80\" r=\"215\"><stop offset=\"0\" stop-color=\"#cbc6cd\"></stop><stop offset=\"0.55\" stop-color=\"#a9a4ab\"></stop><stop offset=\"1\" stop-color=\"#7d7882\"></stop></radialGradient><linearGradient id=\"truffle-P0-0-tf-tail\" gradientUnits=\"userSpaceOnUse\" x1=\"236\" y1=\"190\" x2=\"226\" y2=\"256\"><stop offset=\"0\" stop-color=\"#bdb8c0\"></stop><stop offset=\"1\" stop-color=\"#7d7882\"></stop></linearGradient><radialGradient id=\"truffle-P0-0-tf-chest\" gradientUnits=\"userSpaceOnUse\" cx=\"146\" cy=\"140\" r=\"150\"><stop offset=\"0\" stop-color=\"#ffffff\"></stop><stop offset=\"0.6\" stop-color=\"#fbf5ea\"></stop><stop offset=\"1\" stop-color=\"#e6dccb\"></stop></radialGradient><linearGradient id=\"truffle-P0-0-tf-ear\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffd3ce\"></stop><stop offset=\"1\" stop-color=\"#eea4a3\"></stop></linearGradient></defs><ellipse data-part=\"shadow\" cx=\"160\" cy=\"279\" rx=\"64\" ry=\"7\" fill=\"#2b3a2a\" opacity=\"0.16\"></ellipse><g class=\"truffle__rig\" data-part=\"rig\"><g class=\"truffle__tail\" data-part=\"tail\" style=\"transform-origin: 214px 246px;\"><path d=\"M212 252 C246 256 262 226 248 204 C244 196 252 190 258 194 C246 182 232 194 236 208 C244 228 234 242 210 240Z\" fill=\"url(#truffle-P0-0-tf-tail)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><g stroke=\"#86818c\" stroke-width=\"6\" fill=\"none\" opacity=\".5\"><path d=\"M223 243 L225 249 M241 231 L245 236 M241 213 L247 210\"></path></g></g><g class=\"truffle__body\" data-part=\"body\" style=\"transform-origin: 160px 276px;\"><path d=\"M110 186 C112 158 208 158 210 186 C230 200 234 238 216 258 C200 276 120 276 104 258 C86 238 90 200 110 186Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><ellipse cx=\"160\" cy=\"236\" rx=\"36\" ry=\"30\" fill=\"url(#truffle-P0-0-tf-chest)\"></ellipse><g stroke=\"#86818c\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".45\"><path d=\"M104 208 Q114 212 117 222 M216 208 Q206 212 203 222 M100 228 Q110 232 113 242 M220 228 Q210 232 207 242\"></path></g></g><g class=\"truffle__headpos\" data-part=\"headpos\"><g transform=\"rotate(0 160 190)\" data-part=\"headrot\"><g class=\"truffle__head\"><g data-part=\"ear-l\" style=\"transform-origin: 100px 78px; transform: rotate(10deg);\"><path d=\"M74 92 C64 66 66 42 76 30 C94 36 112 48 122 60 Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g data-part=\"ear-r\" style=\"transform-origin: 220px 78px; transform: rotate(10deg);\"><path d=\"M246 92 C256 66 254 42 244 30 C226 36 208 48 198 60 Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g><g stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M160 34 C212 34 250 60 256 98 C266 104 268 116 261 122 C268 130 265 142 254 146 C242 178 204 198 160 198 C116 198 78 178 66 146 C55 142 52 130 59 122 C52 116 54 104 64 98 C70 60 108 34 160 34Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><path d=\"M70 92 C76 58 112 38 160 38 C208 38 244 58 250 92 C226 70 196 62 160 62 C124 62 94 70 70 92Z\" fill=\"#8a8590\" opacity=\".45\"></path><path d=\"M154 60 C156 92 158 112 160 126 C162 112 164 92 166 60 C163 76 161 88 160 98 C159 88 157 76 154 60Z\" fill=\"url(#truffle-P0-0-tf-chest)\"></path><path d=\"M134 132 C142 124 178 124 186 132 C204 140 212 160 202 176 C190 192 130 192 118 176 C108 160 116 140 134 132Z\" fill=\"url(#truffle-P0-0-tf-chest)\"></path><path d=\"M152 142 L168 142 C166 148 163 151 160 152 C157 151 154 148 152 142 Z\" fill=\"#ff9fa0\" stroke=\"#9a5d66\" stroke-width=\"1.8\" stroke-linejoin=\"round\"></path><g stroke=\"#6f6a75\" stroke-width=\"1.6\" stroke-linecap=\"round\" opacity=\".55\"><path d=\"M112 160 L72 154 M112 167 L76 172 M208 160 L248 154 M208 167 L244 172\"></path></g><g stroke=\"#86818c\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".5\"><path d=\"M130 62 Q136 76 133 90 M190 62 Q184 76 187 90 M110 74 Q118 84 118 94 M210 74 Q202 84 202 94\"></path></g><path d=\"M76 108 C80 72 112 46 152 42\" stroke=\"#ffffff\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\" opacity=\".3\"></path></g><g data-part=\"ear-in-l\" style=\"transform-origin: 100px 78px; transform: rotate(10deg);\"><path d=\"M82 76 C78 60 79 48 84 42 C94 48 104 54 110 62 Z\" fill=\"url(#truffle-P0-0-tf-ear)\"></path></g><g data-part=\"ear-in-r\" style=\"transform-origin: 220px 78px; transform: rotate(10deg);\"><path d=\"M238 76 C242 60 241 48 236 42 C226 48 216 54 210 62 Z\" fill=\"url(#truffle-P0-0-tf-ear)\"></path></g></g><g class=\"truffle__face truffle__face--cheer\"><ellipse data-part=\"blush-l\" cx=\"96\" cy=\"150\" rx=\"18\" ry=\"10\" fill=\"#ff9d8a\" opacity=\"0.6\"></ellipse><ellipse data-part=\"blush-r\" cx=\"224\" cy=\"150\" rx=\"18\" ry=\"10\" fill=\"#ff9d8a\" opacity=\"0.6\"></ellipse><g data-part=\"eye-l\"><clipPath id=\"truffle-P0-0-in-l\"><circle cx=\"118\" cy=\"118\" r=\"21\"></circle></clipPath><clipPath id=\"truffle-P0-0-lid-l\"><circle cx=\"118\" cy=\"118\" r=\"23.8\"></circle></clipPath><circle cx=\"118\" cy=\"118\" r=\"22\" fill=\"#fffdf7\"></circle><g clip-path=\"url(#truffle-P0-0-in-l)\"><g data-part=\"iris-l\"><circle cx=\"118\" cy=\"120\" r=\"17\" fill=\"#9cc56a\"></circle><circle cx=\"113\" cy=\"114\" r=\"9\" fill=\"#c6e39a\" opacity=\"0.6\"></circle><ellipse data-part=\"pupil-l\" cx=\"118\" cy=\"121\" rx=\"7.700000000000001\" ry=\"12.100000000000001\" fill=\"#2f2a36\"></ellipse><circle cx=\"124\" cy=\"113\" r=\"4\" fill=\"#fff\"></circle></g></g><circle cx=\"118\" cy=\"118\" r=\"22\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.6\"></circle><g clip-path=\"url(#truffle-P0-0-lid-l)\"><path data-part=\"lid-top-l\" d=\"M92 90 L144 90 L144 148 Q118 148 92 148Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path><path data-part=\"lid-bottom-l\" d=\"M92 146 L144 146 L144 141 Q118 141 92 141Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><g clip-path=\"url(#truffle-P0-0-in-l)\"><path data-part=\"lid-edge-l\" d=\"M92 148 Q118 148 144 148\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.8\" stroke-linecap=\"round\" opacity=\"0\"></path><path data-part=\"lid-bedge-l\" d=\"M92 141 Q118 141 144 141\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\"0\"></path></g><path data-part=\"lid-closed-l\" d=\"M99 124 Q118 110 137 124\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"3.6\" stroke-linecap=\"round\" opacity=\"1\"></path></g><g data-part=\"eye-r\"><clipPath id=\"truffle-P0-0-in-r\"><circle cx=\"202\" cy=\"118\" r=\"21\"></circle></clipPath><clipPath id=\"truffle-P0-0-lid-r\"><circle cx=\"202\" cy=\"118\" r=\"23.8\"></circle></clipPath><circle cx=\"202\" cy=\"118\" r=\"22\" fill=\"#fffdf7\"></circle><g clip-path=\"url(#truffle-P0-0-in-r)\"><g data-part=\"iris-r\"><circle cx=\"202\" cy=\"120\" r=\"17\" fill=\"#9cc56a\"></circle><circle cx=\"197\" cy=\"114\" r=\"9\" fill=\"#c6e39a\" opacity=\"0.6\"></circle><ellipse data-part=\"pupil-r\" cx=\"202\" cy=\"121\" rx=\"7.700000000000001\" ry=\"12.100000000000001\" fill=\"#2f2a36\"></ellipse><circle cx=\"208\" cy=\"113\" r=\"4\" fill=\"#fff\"></circle></g></g><circle cx=\"202\" cy=\"118\" r=\"22\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.6\"></circle><g clip-path=\"url(#truffle-P0-0-lid-r)\"><path data-part=\"lid-top-r\" d=\"M176 90 L228 90 L228 148 Q202 148 176 148Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path><path data-part=\"lid-bottom-r\" d=\"M176 146 L228 146 L228 141 Q202 141 176 141Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><g clip-path=\"url(#truffle-P0-0-in-r)\"><path data-part=\"lid-edge-r\" d=\"M176 148 Q202 148 228 148\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.8\" stroke-linecap=\"round\" opacity=\"0\"></path><path data-part=\"lid-bedge-r\" d=\"M176 141 Q202 141 228 141\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\"0\"></path></g><path data-part=\"lid-closed-r\" d=\"M183 124 Q202 110 221 124\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"3.6\" stroke-linecap=\"round\" opacity=\"1\"></path></g><path data-part=\"brow-l\" d=\"M100 90 Q116 83 132 89\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"4\" stroke-linecap=\"round\" transform=\"translate(0 0) rotate(0 116 87)\" opacity=\"0\"></path><path data-part=\"brow-r\" d=\"M188 89 Q204 83 220 90\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"4\" stroke-linecap=\"round\" transform=\"translate(0 0) rotate(0 204 87)\" opacity=\"0\"></path><path data-part=\"mouth\" d=\"M148.8 162 C153.76 171 166.24 171 171.2 162 C167.36 182.6 152.64 182.6 148.8 162Z\" fill=\"#8a3d4c\" fill-opacity=\"1\" stroke=\"#4a4250\" stroke-width=\"2.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><g data-part=\"extra-curious\" opacity=\"0\"><g transform=\"translate(236 40)\"><rect width=\"34\" height=\"34\" rx=\"12\" fill=\"#fffdf7\" stroke=\"#4a4250\" stroke-width=\"2.4\"></rect><text x=\"17\" y=\"26\" text-anchor=\"middle\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"24\" fill=\"#4a4250\">?</text></g></g><g data-part=\"extra-surprised\" opacity=\"0\"><path d=\"M70 52 L80 64 M58 70 L72 76 M250 52 L240 64 M262 70 L248 76\" stroke=\"#4a4250\" stroke-width=\"3.4\" stroke-linecap=\"round\"></path></g><g data-part=\"extra-sleepy\" opacity=\"0\"><text x=\"236\" y=\"70\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"26\" fill=\"#4a4250\">z</text><text x=\"256\" y=\"48\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"18\" fill=\"#4a4250\">z</text></g><g data-part=\"extra-joy\" opacity=\"1\"><circle cx=\"44\" cy=\"70\" r=\"5\" fill=\"#7fdc7a\"></circle><rect x=\"266\" y=\"60\" width=\"9\" height=\"9\" rx=\"2\" fill=\"#ffc94a\" transform=\"rotate(20 270 64)\"></rect><circle cx=\"282\" cy=\"106\" r=\"4\" fill=\"#ff7f6a\"></circle><rect x=\"30\" y=\"104\" width=\"8\" height=\"8\" rx=\"2\" fill=\"#7fb8ff\" transform=\"rotate(-15 34 108)\"></rect></g></g></g></g><g class=\"truffle__paw\" data-part=\"paw-l\" transform=\"translate(0 0) rotate(0 138 266)\"><path d=\"M122 262 C120 276 154 278 154 266 C154 258 124 254 122 262Z\" fill=\"url(#truffle-P0-0-tf-chest)\" stroke=\"#b9ae9d\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g class=\"truffle__paw\" data-part=\"paw-r\" transform=\"translate(4 -62) rotate(-12 182 266)\"><g><path d=\"M198 262 C200 276 166 278 166 266 C166 258 196 254 198 262Z\" fill=\"url(#truffle-P0-0-tf-chest)\" stroke=\"#b9ae9d\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g></g></g></svg>","costume":"<svg class=\"truffle\" viewBox=\"30 20 260 270\" width=\"300\" height=\"312\" data-mood=\"pleased\" data-expression=\"happy\" data-tier=\"0\" data-outfit=\"wizard\" aria-hidden=\"true\"><defs><radialGradient id=\"truffle-P0-0-tf-fur\" gradientUnits=\"userSpaceOnUse\" cx=\"128\" cy=\"80\" r=\"215\"><stop offset=\"0\" stop-color=\"#cbc6cd\"></stop><stop offset=\"0.55\" stop-color=\"#a9a4ab\"></stop><stop offset=\"1\" stop-color=\"#7d7882\"></stop></radialGradient><linearGradient id=\"truffle-P0-0-tf-tail\" gradientUnits=\"userSpaceOnUse\" x1=\"236\" y1=\"190\" x2=\"226\" y2=\"256\"><stop offset=\"0\" stop-color=\"#bdb8c0\"></stop><stop offset=\"1\" stop-color=\"#7d7882\"></stop></linearGradient><radialGradient id=\"truffle-P0-0-tf-chest\" gradientUnits=\"userSpaceOnUse\" cx=\"146\" cy=\"140\" r=\"150\"><stop offset=\"0\" stop-color=\"#ffffff\"></stop><stop offset=\"0.6\" stop-color=\"#fbf5ea\"></stop><stop offset=\"1\" stop-color=\"#e6dccb\"></stop></radialGradient><linearGradient id=\"truffle-P0-0-tf-ear\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffd3ce\"></stop><stop offset=\"1\" stop-color=\"#eea4a3\"></stop></linearGradient></defs><ellipse data-part=\"shadow\" cx=\"160\" cy=\"279\" rx=\"64\" ry=\"7\" fill=\"#2b3a2a\" opacity=\"0.16\"></ellipse><g class=\"truffle__rig\" data-part=\"rig\"><g class=\"truffle__tail\" data-part=\"tail\" style=\"transform-origin: 214px 246px;\"><path d=\"M212 252 C246 256 262 226 248 204 C244 196 252 190 258 194 C246 182 232 194 236 208 C244 228 234 242 210 240Z\" fill=\"url(#truffle-P0-0-tf-tail)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><g stroke=\"#86818c\" stroke-width=\"6\" fill=\"none\" opacity=\".5\"><path d=\"M223 243 L225 249 M241 231 L245 236 M241 213 L247 210\"></path></g></g><g class=\"truffle__body\" data-part=\"body\" style=\"transform-origin: 160px 276px;\"><path d=\"M110 186 C112 158 208 158 210 186 C230 200 234 238 216 258 C200 276 120 276 104 258 C86 238 90 200 110 186Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><ellipse cx=\"160\" cy=\"236\" rx=\"36\" ry=\"30\" fill=\"url(#truffle-P0-0-tf-chest)\"></ellipse><g stroke=\"#86818c\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".45\"><path d=\"M104 208 Q114 212 117 222 M216 208 Q206 212 203 222 M100 228 Q110 232 113 242 M220 228 Q210 232 207 242\"></path></g></g><g class=\"truffle__outfit-body\"><path d=\"M110 186 C90 200 86 238 104 258 C120 276 200 276 216 258 C234 238 230 200 210 186 Z\" fill=\"#7b5cd6\" stroke=\"#2a2630\" stroke-width=\"3.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><path d=\"M160 214 l5 10 11 2 -8 8 2 11 -10 -5 -10 5 2 -11 -8 -8 11 -2 Z\" fill=\"#ffc94a\" stroke=\"#2a2630\" stroke-width=\"2.4\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><path d=\"M100 262 L76 214\" stroke=\"#2a2630\" stroke-width=\"7\" stroke-linecap=\"round\"></path><path d=\"M74 210 l3 7 8 1 -6 5 2 8 -7 -4 -7 4 2 -8 -6 -5 8 -1 Z\" fill=\"#ffc94a\" stroke=\"#2a2630\" stroke-width=\"2.4\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g class=\"truffle__headpos\" data-part=\"headpos\"><g transform=\"rotate(0 160 190)\" data-part=\"headrot\"><g class=\"truffle__head\"><g data-part=\"ear-l\" style=\"transform-origin: 100px 78px; transform: rotate(6deg);\"><path d=\"M74 92 C64 66 66 42 76 30 C94 36 112 48 122 60 Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g data-part=\"ear-r\" style=\"transform-origin: 220px 78px; transform: rotate(6deg);\"><path d=\"M246 92 C256 66 254 42 244 30 C226 36 208 48 198 60 Z\" fill=\"url(#truffle-P0-0-tf-fur)\" stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g><g stroke=\"#6f6a75\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M160 34 C212 34 250 60 256 98 C266 104 268 116 261 122 C268 130 265 142 254 146 C242 178 204 198 160 198 C116 198 78 178 66 146 C55 142 52 130 59 122 C52 116 54 104 64 98 C70 60 108 34 160 34Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><path d=\"M70 92 C76 58 112 38 160 38 C208 38 244 58 250 92 C226 70 196 62 160 62 C124 62 94 70 70 92Z\" fill=\"#8a8590\" opacity=\".45\"></path><path d=\"M154 60 C156 92 158 112 160 126 C162 112 164 92 166 60 C163 76 161 88 160 98 C159 88 157 76 154 60Z\" fill=\"url(#truffle-P0-0-tf-chest)\"></path><path d=\"M134 132 C142 124 178 124 186 132 C204 140 212 160 202 176 C190 192 130 192 118 176 C108 160 116 140 134 132Z\" fill=\"url(#truffle-P0-0-tf-chest)\"></path><path d=\"M152 142 L168 142 C166 148 163 151 160 152 C157 151 154 148 152 142 Z\" fill=\"#ff9fa0\" stroke=\"#9a5d66\" stroke-width=\"1.8\" stroke-linejoin=\"round\"></path><g stroke=\"#6f6a75\" stroke-width=\"1.6\" stroke-linecap=\"round\" opacity=\".55\"><path d=\"M112 160 L72 154 M112 167 L76 172 M208 160 L248 154 M208 167 L244 172\"></path></g><g stroke=\"#86818c\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".5\"><path d=\"M130 62 Q136 76 133 90 M190 62 Q184 76 187 90 M110 74 Q118 84 118 94 M210 74 Q202 84 202 94\"></path></g><path d=\"M76 108 C80 72 112 46 152 42\" stroke=\"#ffffff\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\" opacity=\".3\"></path></g><g data-part=\"ear-in-l\" style=\"transform-origin: 100px 78px; transform: rotate(6deg);\"><path d=\"M82 76 C78 60 79 48 84 42 C94 48 104 54 110 62 Z\" fill=\"url(#truffle-P0-0-tf-ear)\"></path></g><g data-part=\"ear-in-r\" style=\"transform-origin: 220px 78px; transform: rotate(6deg);\"><path d=\"M238 76 C242 60 241 48 236 42 C226 48 216 54 210 62 Z\" fill=\"url(#truffle-P0-0-tf-ear)\"></path></g></g><g class=\"truffle__face truffle__face--pleased\"><ellipse data-part=\"blush-l\" cx=\"96\" cy=\"150\" rx=\"18\" ry=\"10\" fill=\"#ff9d8a\" opacity=\"0.51\"></ellipse><ellipse data-part=\"blush-r\" cx=\"224\" cy=\"150\" rx=\"18\" ry=\"10\" fill=\"#ff9d8a\" opacity=\"0.51\"></ellipse><g data-part=\"eye-l\"><clipPath id=\"truffle-P0-0-in-l\"><circle cx=\"118\" cy=\"118\" r=\"21\"></circle></clipPath><clipPath id=\"truffle-P0-0-lid-l\"><circle cx=\"118\" cy=\"118\" r=\"23.8\"></circle></clipPath><circle cx=\"118\" cy=\"118\" r=\"22\" fill=\"#fffdf7\"></circle><g clip-path=\"url(#truffle-P0-0-in-l)\"><g data-part=\"iris-l\"><circle cx=\"118\" cy=\"120\" r=\"17\" fill=\"#9cc56a\"></circle><circle cx=\"113\" cy=\"114\" r=\"9\" fill=\"#c6e39a\" opacity=\"0.6\"></circle><ellipse data-part=\"pupil-l\" cx=\"118\" cy=\"121\" rx=\"8.4\" ry=\"13.2\" fill=\"#2f2a36\"></ellipse><circle cx=\"124\" cy=\"113\" r=\"4\" fill=\"#fff\"></circle></g></g><circle cx=\"118\" cy=\"118\" r=\"22\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.6\"></circle><g clip-path=\"url(#truffle-P0-0-lid-l)\"><path data-part=\"lid-top-l\" d=\"M92 90 L144 90 L144 95 Q118 101 92 95Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path><path data-part=\"lid-bottom-l\" d=\"M92 146 L144 146 L144 135.4 Q118 132.04 92 135.4Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><g clip-path=\"url(#truffle-P0-0-in-l)\"><path data-part=\"lid-edge-l\" d=\"M92 95 Q118 101 144 95\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.8\" stroke-linecap=\"round\" opacity=\"0\"></path><path data-part=\"lid-bedge-l\" d=\"M92 135.4 Q118 132.04 144 135.4\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\"1\"></path></g><path data-part=\"lid-closed-l\" d=\"M99 127 Q118 131 137 127\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"3.6\" stroke-linecap=\"round\" opacity=\"0\"></path></g><g data-part=\"eye-r\"><clipPath id=\"truffle-P0-0-in-r\"><circle cx=\"202\" cy=\"118\" r=\"21\"></circle></clipPath><clipPath id=\"truffle-P0-0-lid-r\"><circle cx=\"202\" cy=\"118\" r=\"23.8\"></circle></clipPath><circle cx=\"202\" cy=\"118\" r=\"22\" fill=\"#fffdf7\"></circle><g clip-path=\"url(#truffle-P0-0-in-r)\"><g data-part=\"iris-r\"><circle cx=\"202\" cy=\"120\" r=\"17\" fill=\"#9cc56a\"></circle><circle cx=\"197\" cy=\"114\" r=\"9\" fill=\"#c6e39a\" opacity=\"0.6\"></circle><ellipse data-part=\"pupil-r\" cx=\"202\" cy=\"121\" rx=\"8.4\" ry=\"13.2\" fill=\"#2f2a36\"></ellipse><circle cx=\"208\" cy=\"113\" r=\"4\" fill=\"#fff\"></circle></g></g><circle cx=\"202\" cy=\"118\" r=\"22\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.6\"></circle><g clip-path=\"url(#truffle-P0-0-lid-r)\"><path data-part=\"lid-top-r\" d=\"M176 90 L228 90 L228 95 Q202 101 176 95Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path><path data-part=\"lid-bottom-r\" d=\"M176 146 L228 146 L228 135.4 Q202 132.04 176 135.4Z\" fill=\"url(#truffle-P0-0-tf-fur)\"></path></g><g clip-path=\"url(#truffle-P0-0-in-r)\"><path data-part=\"lid-edge-r\" d=\"M176 95 Q202 101 228 95\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.8\" stroke-linecap=\"round\" opacity=\"0\"></path><path data-part=\"lid-bedge-r\" d=\"M176 135.4 Q202 132.04 228 135.4\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\"1\"></path></g><path data-part=\"lid-closed-r\" d=\"M183 127 Q202 131 221 127\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"3.6\" stroke-linecap=\"round\" opacity=\"0\"></path></g><path data-part=\"brow-l\" d=\"M100 90 Q116 83 132 89\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"4\" stroke-linecap=\"round\" transform=\"translate(0 0) rotate(0 116 87)\" opacity=\"0\"></path><path data-part=\"brow-r\" d=\"M188 89 Q204 83 220 90\" fill=\"none\" stroke=\"#4a4250\" stroke-width=\"4\" stroke-linecap=\"round\" transform=\"translate(0 0) rotate(0 204 87)\" opacity=\"0\"></path><path data-part=\"mouth\" d=\"M149.4 162 C153.88 171 166.12 171 170.6 162 C167.18 177.8 152.82 177.8 149.4 162Z\" fill=\"#8a3d4c\" fill-opacity=\"0.8999999999999999\" stroke=\"#4a4250\" stroke-width=\"2.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><g data-part=\"extra-curious\" opacity=\"0\"><g transform=\"translate(236 40)\"><rect width=\"34\" height=\"34\" rx=\"12\" fill=\"#fffdf7\" stroke=\"#4a4250\" stroke-width=\"2.4\"></rect><text x=\"17\" y=\"26\" text-anchor=\"middle\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"24\" fill=\"#4a4250\">?</text></g></g><g data-part=\"extra-surprised\" opacity=\"0\"><path d=\"M70 52 L80 64 M58 70 L72 76 M250 52 L240 64 M262 70 L248 76\" stroke=\"#4a4250\" stroke-width=\"3.4\" stroke-linecap=\"round\"></path></g><g data-part=\"extra-sleepy\" opacity=\"0\"><text x=\"236\" y=\"70\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"26\" fill=\"#4a4250\">z</text><text x=\"256\" y=\"48\" font-family=\"Nunito\" font-weight=\"900\" font-size=\"18\" fill=\"#4a4250\">z</text></g><g data-part=\"extra-joy\" opacity=\"0\"><circle cx=\"44\" cy=\"70\" r=\"5\" fill=\"#7fdc7a\"></circle><rect x=\"266\" y=\"60\" width=\"9\" height=\"9\" rx=\"2\" fill=\"#ffc94a\" transform=\"rotate(20 270 64)\"></rect><circle cx=\"282\" cy=\"106\" r=\"4\" fill=\"#ff7f6a\"></circle><rect x=\"30\" y=\"104\" width=\"8\" height=\"8\" rx=\"2\" fill=\"#7fb8ff\" transform=\"rotate(-15 34 108)\"></rect></g></g><g class=\"truffle__outfit-head\"><ellipse cx=\"160\" cy=\"68\" rx=\"80\" ry=\"13\" fill=\"#6f54bd\" stroke=\"#2a2630\" stroke-width=\"3.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></ellipse><path d=\"M106 66 C118 52 130 34 148 26 C166 18 196 22 230 40 C214 40 196 42 186 48 C196 54 208 60 214 66 Z\" fill=\"#7b5cd6\" stroke=\"#2a2630\" stroke-width=\"3.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><path d=\"M110 60 C140 52 180 52 210 60 L214 66 C180 58 140 58 106 66 Z\" fill=\"#ffc94a\" stroke=\"#2a2630\" stroke-width=\"2.4\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path><path d=\"M150 46 l2 5 5 1 -4 3 1 5 -4 -3 -4 3 1 -5 -4 -3 5 -1 Z M182 34 l1.6 4 4 .8 -3 2.4 .8 4 -3.4 -2.4 -3.4 2.4 .8 -4 -3 -2.4 4 -.8 Z\" fill=\"#ffc94a\"></path><circle cx=\"230\" cy=\"41\" r=\"5\" fill=\"#ffc94a\" stroke=\"#2a2630\" stroke-width=\"2.4\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></circle><path d=\"M124 50 C132 40 140 34 148 31\" stroke=\"#fff\" stroke-opacity=\".45\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"></path></g></g></g><g class=\"truffle__paw\" data-part=\"paw-l\"><path d=\"M122 262 C120 276 154 278 154 266 C154 258 124 254 122 262Z\" fill=\"url(#truffle-P0-0-tf-chest)\" stroke=\"#b9ae9d\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g><g class=\"truffle__paw\" data-part=\"paw-r\"><g><path d=\"M198 262 C200 276 166 278 166 266 C166 258 196 254 198 262Z\" fill=\"url(#truffle-P0-0-tf-chest)\" stroke=\"#b9ae9d\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"></path></g></g></g></svg>"};
+
+// ---------- palette ----------
+const FUR = '#a9a4ab', CHEST = '#fbf5ea', SHADOW = '#7a7398';
+const mix = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
+
+const STYLES = {
+  bold: { line: '#3a3150', lw: 4.8, lwi: 2.9, shade: 0.5, eyeLine: '#2b2440' },
+  soft: { line: '#706889', lw: 2.8, lwi: 1.8, shade: 0.28, eyeLine: '#3f3756' },
+};
+function pal(s) {
+  return {
+    fur: FUR, furSh: mix(FUR, SHADOW, s.shade + 0.12), furHi: '#c7c3cc', furMark: mix(FUR, '#4e4858', 0.32),
+    chest: CHEST, chestSh: mix(CHEST, SHADOW, s.shade * 0.5),
+    pink: '#f6b6b6', pinkSh: mix('#f6b6b6', SHADOW, s.shade * 0.7),
+  };
+}
+
+// ---------- rig geometry (from src/ui/truffle/parts.ts) ----------
+const G = {
+  head: 'M160 34 C212 34 250 60 256 98 C266 104 268 116 261 122 C268 130 265 142 254 146 C242 178 204 198 160 198 C116 198 78 178 66 146 C55 142 52 130 59 122 C52 116 54 104 64 98 C70 60 108 34 160 34Z',
+  torso: 'M110 186 C112 158 208 158 210 186 C230 200 234 238 216 258 C200 276 120 276 104 258 C86 238 90 200 110 186Z',
+  earL: 'M74 92 C64 66 66 42 76 30 C94 36 112 48 122 60 Z',
+  earR: 'M246 92 C256 66 254 42 244 30 C226 36 208 48 198 60 Z',
+  earInL: 'M82 76 C78 60 79 48 84 42 C94 48 104 54 110 62 Z',
+  earInR: 'M238 76 C242 60 241 48 236 42 C226 48 216 54 210 62 Z',
+  blaze: 'M154 60 C156 92 158 112 160 126 C162 112 164 92 166 60 C163 76 161 88 160 98 C159 88 157 76 154 60Z',
+  muzzle: 'M134 132 C142 124 178 124 186 132 C204 140 212 160 202 176 C190 192 130 192 118 176 C108 160 116 140 134 132Z',
+  nose: 'M152 142 L168 142 C166 148 163 151 160 152 C157 151 154 148 152 142 Z',
+  tail: 'M212 252 C246 256 262 226 248 204 C244 196 252 190 258 194 C246 182 232 194 236 208 C244 228 234 242 210 240Z',
+  pawL: 'M122 262 C120 276 154 278 154 266 C154 258 124 254 122 262Z',
+  pawR: 'M198 262 C200 276 166 278 166 266 C166 258 196 254 198 262Z',
+  robe: 'M110 186 C90 200 86 238 104 258 C120 276 200 276 216 258 C234 238 230 200 210 186 Z',
+};
+
+let uid = 0;
+const nid = (p) => `${p}${++uid}`;
+const stroke = (c, w) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+
+/** A cel-shaded fill: the whole shape in its shadow tone, then the lit tone (the same shape nudged toward the light) inside it.
+ *  One hard edge, no gradient. In the app this would be baked into explicit shadow paths (no clip-paths, for WebKit). */
+function cel(d, lit, sh, dx = -9, dy = -10, extra = '') {
+  const c = nid('c');
+  return `<clipPath id="${c}"><path d="${d}"/></clipPath><path d="${d}" fill="${sh}"/><g clip-path="url(#${c})"><path d="${d}" fill="${lit}" transform="translate(${dx} ${dy})"/>${extra}</g>`;
+}
+const outline = (d, s, w) => `<path d="${d}" ${stroke(s.line, w ?? s.lw)}/>`;
+
+function sparkle(x, y, r, fill, s) {
+  const k = r * 0.28;
+  return `<path d="M${x} ${y - r} Q${x + k} ${y - k} ${x + r} ${y} Q${x + k} ${y + k} ${x} ${y + r} Q${x - k} ${y + k} ${x - r} ${y} Q${x - k} ${y - k} ${x} ${y - r}Z" fill="${fill}" stroke="${s.line}" stroke-width="${s.lwi * 0.7}" stroke-linejoin="round"/>`;
+}
+
+function eye(cx, s, look = 0) {
+  const cy = 119, c = nid('e'), ci = nid('i');
+  const ix = cx + look;
+  return `<clipPath id="${c}"><ellipse cx="${cx}" cy="${cy}" rx="21" ry="23"/></clipPath>
+    <clipPath id="${ci}"><ellipse cx="${ix}" cy="${cy + 2}" rx="16" ry="19"/></clipPath>
+    <ellipse cx="${cx}" cy="${cy}" rx="21" ry="23" fill="#fffdf7"/>
+    <g clip-path="url(#${c})">
+      <path d="M${cx - 22} ${cy - 24} L${cx + 22} ${cy - 24} L${cx + 22} ${cy - 13} Q${cx} ${cy - 20} ${cx - 22} ${cy - 13}Z" fill="#dcd8e6"/>
+      <ellipse cx="${ix}" cy="${cy + 2}" rx="16" ry="19" fill="#93c25c"/>
+      <g clip-path="url(#${ci})">
+        <path d="M${ix - 17} ${cy - 18} L${ix + 17} ${cy - 18} L${ix + 17} ${cy - 3} Q${ix} ${cy - 10} ${ix - 17} ${cy - 3}Z" fill="#4f7d3c"/>
+        <path d="M${ix - 13} ${cy + 12} Q${ix} ${cy + 25} ${ix + 13} ${cy + 12} Q${ix} ${cy + 17} ${ix - 13} ${cy + 12}Z" fill="#d3ec97"/>
+      </g>
+      <ellipse cx="${ix}" cy="${cy + 2}" rx="16" ry="19" fill="none" stroke="#3d5f2f" stroke-width="1.4"/>
+      <ellipse cx="${ix}" cy="${cy + 2}" rx="7.5" ry="11.5" fill="#241e30"/>
+      <ellipse cx="${ix + 6}" cy="${cy - 7}" rx="5.6" ry="6.4" fill="#fff"/>
+      <circle cx="${ix - 6}" cy="${cy + 11}" r="2.6" fill="#fff"/>
+    </g>
+    <ellipse cx="${cx}" cy="${cy}" rx="21" ry="23" ${stroke(s.eyeLine, s.lwi)}/>
+    <path d="M${cx - 22} ${cy - 2} C${cx - 20} ${cy - 22} ${cx + 20} ${cy - 22} ${cx + 22} ${cy - 2}" ${stroke(s.eyeLine, s.lw * 1.25)}/>`;
+}
+
+function blush(cx, s, strong) {
+  const op = strong ? 0.75 : 0.5;
+  return `<ellipse cx="${cx}" cy="151" rx="16" ry="8" fill="#ff9d8a" opacity="${op}"/>` +
+    `<path d="M${cx - 9} 155 l5 -7 M${cx - 2} 155 l5 -7 M${cx + 5} 155 l5 -7" ${stroke('#e2707c', 1.5)} opacity="${strong ? 0.9 : 0.6}"/>`;
+}
+
+function face(state, s, p) {
+  const happy = state !== 'idle';
+  let out = blush(96, s, happy) + blush(224, s, happy);
+  if (state === 'cheer') {
+    out += `<path d="M97 126 C105 108 131 108 139 126 M181 126 C189 108 215 108 223 126" ${stroke(s.eyeLine, s.lw * 1.25)}/>`;
+  } else if (state === 'costume') {
+    // happy: the lower lid lifts into a smile squint (as the rig's 'happy' preset)
+    out += eye(118, s) + eye(202, s);
+    out += [118, 202].map(cx => `<path d="M${cx - 23} 142 L${cx + 23} 142 L${cx + 23} 134 Q${cx} 124 ${cx - 23} 134Z" fill="${p.fur}"/><path d="M${cx - 20} 135 Q${cx} 126 ${cx + 20} 135" ${stroke(s.eyeLine, s.lwi)}/>`).join('');
+  } else {
+    out += eye(118, s) + eye(202, s);
+  }
+  // nose + mouth
+  out += `<path d="${G.nose}" fill="#f2949c" stroke="${s.line}" stroke-width="${s.lwi}" stroke-linejoin="round"/><ellipse cx="156.5" cy="145" rx="2.4" ry="1.4" fill="#fff" opacity=".9"/>`;
+  if (state === 'cheer') {
+    const m = 'M146 158 C149 182 171 182 174 158 C168 162 164 162 160 157 C156 162 152 162 146 158Z';
+    out += `<path d="${m}" fill="#7d3348"/><path d="M151 171 C155 179 165 179 169 171 C164 168 156 168 151 171Z" fill="#ff9aa0"/><path d="${m}" ${stroke(s.line, s.lwi)}/>`;
+  } else if (state === 'costume') {
+    out += `<path d="M160 152 L160 157 M148 158 C151 166 158 166 160 157 C162 166 169 166 172 158" ${stroke(s.line, s.lwi)}/>`;
+  } else {
+    out += `<path d="M160 152 L160 157 M150 160 C153 164 158 164 160 157.5 C162 164 167 164 170 160" ${stroke(s.line, s.lwi)}/>`;
+  }
+  // whiskers
+  out += `<path d="M112 160 L74 155 M112 167 L77 172 M208 160 L246 155 M208 167 L243 172" ${stroke(s.line, s.lwi * 0.6)} opacity=".7"/>`;
+  return out;
+}
+
+function head(s, p, opt) {
+  const ears = !opt.noEars;
+  let out = '';
+  if (ears) {
+    out += cel(G.earL, p.fur, p.furSh, -6, -6) + outline(G.earL, s);
+    out += cel(G.earR, p.fur, p.furSh, -6, -6) + outline(G.earR, s);
+  }
+  // head: shadow crescent lower-right, flat crown, painted stripes as flat marks, one hard highlight
+  const markings =
+    `<path d="M70 92 C76 58 112 38 160 38 C208 38 244 58 250 92 C226 70 196 62 160 62 C124 62 94 70 70 92Z" fill="${p.furMark}" opacity=".45"/>` +
+    `<path d="M128 60 C134 72 136 82 133 92 C131 82 127 72 124 62Z M192 60 C186 72 184 82 187 92 C189 82 193 72 196 62Z M108 72 C116 80 120 88 119 96 C116 88 110 82 104 76Z M212 72 C204 80 200 88 201 96 C204 88 210 82 216 76Z" fill="${p.furMark}"/>` +
+    `<path d="M80 104 C82 78 106 54 142 46 C112 58 92 78 86 104Z" fill="${p.furHi}"/>`;
+  out += cel(G.head, p.fur, p.furSh, -8, -10, markings);
+  out += cel(G.blaze, p.chest, p.chest);
+  out += cel(G.muzzle, p.chest, p.chestSh, -5, -6);
+  out += outline(G.head, s);
+  if (ears) {
+    out += cel(G.earInL, p.pink, p.pinkSh, 3, 4) + cel(G.earInR, p.pink, p.pinkSh, -3, 4);
+  }
+  return out;
+}
+
+function body(s, p, robeColor) {
+  let out = '';
+  // tail
+  out += cel(G.tail, p.fur, p.furSh, -4, -7,
+    `<path d="M221 242 L226 250 M240 230 L247 236 M240 212 L249 208" ${stroke(p.furMark, 6)}/>`) + outline(G.tail, s);
+  if (robeColor) {
+    const rsh = mix(robeColor, '#2a2050', 0.35);
+    out += cel(G.robe, robeColor, rsh, -12, -6,
+      `<ellipse cx="160" cy="194" rx="72" ry="15" fill="${rsh}"/>`) + outline(G.robe, s);
+    out += `<path d="M108 252 C130 262 190 262 212 252" ${stroke('#ffc94a', 5)}/>`;
+    out += `<path d="M160 214 l5 10 11 2 -8 8 2 11 -10 -5 -10 5 2 -11 -8 -8 11 -2 Z" fill="#ffd45a" stroke="${s.line}" stroke-width="${s.lwi}" stroke-linejoin="round"/>`;
+  } else {
+    const chestC = nid('ch');
+    out += cel(G.torso, p.fur, p.furSh, -12, -7,
+      `<path d="M104 208 Q114 212 117 222 M216 208 Q206 212 203 222 M100 228 Q110 232 113 242 M220 228 Q210 232 207 242" ${stroke(p.furMark, 5)}/>` +
+      `<ellipse cx="160" cy="194" rx="70" ry="15" fill="${p.furSh}"/>`);
+    out += `<clipPath id="${chestC}"><ellipse cx="160" cy="236" rx="36" ry="30"/></clipPath><ellipse cx="160" cy="236" rx="36" ry="30" fill="${p.chestSh}"/>` +
+      `<g clip-path="url(#${chestC})"><ellipse cx="160" cy="236" rx="36" ry="30" fill="${p.chest}" transform="translate(-6 -6)"/><ellipse cx="160" cy="198" rx="60" ry="12" fill="${p.chestSh}"/></g>`;
+    out += outline(G.torso, s);
+  }
+  return out;
+}
+
+function paw(d, s, p, toes) {
+  return cel(d, p.chest, p.chestSh, -3, -4) + outline(d, s, s.lwi * 1.15) +
+    `<path d="${toes}" ${stroke(s.line, s.lwi * 0.75)}/>`;
+}
+
+function wizardHat(s) {
+  const hat = 'M106 66 C118 52 130 34 148 26 C166 18 196 22 230 40 C214 40 196 42 186 48 C196 54 208 60 214 66 Z';
+  const c = '#7b5cd6', sh = mix(c, '#2a2050', 0.35);
+  return cel('M80 68 A80 13 0 1 0 240 68 A80 13 0 1 0 80 68Z', mix(c, '#2a2050', 0.15), mix(c, '#2a2050', 0.45), -10, -5) +
+    outline('M80 68 A80 13 0 1 0 240 68 A80 13 0 1 0 80 68Z', s) +
+    cel(hat, c, sh, -14, -6) + outline(hat, s) +
+    cel('M110 60 C140 52 180 52 210 60 L214 66 C180 58 140 58 106 66 Z', '#ffd45a', '#d9a23a', 0, -2) +
+    outline('M110 60 C140 52 180 52 210 60 L214 66 C180 58 140 58 106 66 Z', s, s.lwi) +
+    `<path d="M150 46 l2 5 5 1 -4 3 1 5 -4 -3 -4 3 1 -5 -4 -3 5 -1 Z M182 34 l1.6 4 4 .8 -3 2.4 .8 4 -3.4 -2.4 -3.4 2.4 .8 -4 -3 -2.4 4 -.8 Z" fill="#ffd45a"/>` +
+    `<path d="M126 48 C132 40 138 35 146 31" ${stroke('#a68cf0', 4)}/>` +
+    `<circle cx="230" cy="41" r="6" fill="#ffd45a" stroke="${s.line}" stroke-width="${s.lwi}"/>`;
+}
+
+function celTruffle(state, styleKey) {
+  const s = STYLES[styleKey], p = pal(s);
+  const costume = state === 'costume';
+  const raised = state === 'cheer';
+  let svg = `<svg class="t" viewBox="30 20 260 270" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<ellipse cx="160" cy="279" rx="66" ry="7.5" fill="#5d5585" opacity=".32"/>`;
+  svg += body(s, p, costume ? '#7b5cd6' : null);
+  svg += `<g transform="rotate(${raised ? -3 : 0} 160 190)">` + head(s, p, {}) + face(state, s, p) + (costume ? wizardHat(s) : '') + `</g>`;
+  svg += paw(G.pawL, s, p, 'M132 264 L132 270 M142 264 L142 270');
+  const pr = paw(G.pawR, s, p, 'M178 264 L178 270 M188 264 L188 270');
+  if (raised) {
+    svg += `<g transform="translate(6 -66) rotate(-14 182 266)">${pr}</g>`;
+    svg += sparkle(60, 74, 11, '#ffe27a', s) + sparkle(266, 64, 13, '#ffe27a', s) + sparkle(276, 112, 7, '#fff', s) + sparkle(46, 116, 7, '#bfe6ff', s);
+  } else if (costume) {
+    svg += `<path d="M200 262 L238 210" ${stroke(s.line, 9)}/><path d="M200 262 L238 210" ${stroke('#8a5a3a', 5.5)}/>` + pr +
+      sparkle(242, 204, 10, '#ffe27a', s);
+  } else {
+    svg += pr;
+  }
+  return svg + `</svg>`;
+}
+
+// ---------- the otter: a Singapore smooth-coated otter, same cel rules ----------
+function otter(styleKey) {
+  const s = STYLES[styleKey];
+  const br = '#9a7556', brSh = mix(br, SHADOW, s.shade + 0.1), cream = '#f1dfc2', creamSh = mix(cream, SHADOW, s.shade * 0.55);
+  const tail = 'M132 196 C160 204 186 200 196 186 C200 180 194 176 190 180 C178 192 158 192 136 184Z';
+  const bodyP = 'M100 90 C126 90 140 120 142 152 C144 186 128 204 100 204 C72 204 56 186 58 152 C60 120 74 90 100 90Z';
+  const belly = 'M100 100 C117 100 124 128 124 154 C124 182 115 197 100 197 C85 197 76 182 76 154 C76 128 83 100 100 100Z';
+  const headP = 'M100 22 C132 22 150 42 150 64 C150 90 128 104 100 104 C72 104 50 90 50 64 C50 42 68 22 100 22Z';
+  const muzzle = 'M100 68 C118 68 128 76 128 85 C128 95 115 101 100 101 C85 101 72 95 72 85 C72 76 82 68 100 68Z';
+  const earL = 'M56 46 C50 32 62 24 72 32Z', earR = 'M144 46 C150 32 138 24 128 32Z';
+  const e = (x) => `<ellipse cx="${x}" cy="60" rx="8.5" ry="10" fill="#2a1f26"/><ellipse cx="${x}" cy="62.5" rx="6" ry="6.6" fill="#6a4632"/><ellipse cx="${x}" cy="63" rx="3.6" ry="4.4" fill="#1c1420"/><ellipse cx="${x + 3}" cy="56" rx="3.1" ry="3.6" fill="#fff"/><circle cx="${x - 3}" cy="66" r="1.5" fill="#fff"/>`;
+  return `<svg class="otter" viewBox="40 18 165 200" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="108" cy="206" rx="62" ry="6" fill="#5d5585" opacity=".32"/>
+    ${cel(tail, br, brSh, -3, -5)}${outline(tail, s)}
+    <ellipse cx="82" cy="204" rx="15" ry="7" fill="${mix(br, '#3a2a30', .25)}" stroke="${s.line}" stroke-width="${s.lwi}"/>
+    <ellipse cx="118" cy="204" rx="15" ry="7" fill="${mix(br, '#3a2a30', .25)}" stroke="${s.line}" stroke-width="${s.lwi}"/>
+    ${cel(bodyP, br, brSh, -9, -6, `<ellipse cx="100" cy="106" rx="48" ry="10" fill="${brSh}"/>`)}
+    ${cel(belly, cream, creamSh, -5, -5, `<ellipse cx="100" cy="106" rx="34" ry="8" fill="${creamSh}"/>`)}
+    ${outline(bodyP, s)}
+    ${cel(earL, br, brSh, -2, -2)}${outline(earL, s, s.lwi)}${cel(earR, br, brSh, -2, -2)}${outline(earR, s, s.lwi)}
+    ${cel(headP, br, brSh, -7, -8, `<path d="M62 52 C66 38 80 28 96 26 C82 32 74 42 69 54Z" fill="${mix(br, '#ffffff', .25)}"/>`)}
+    ${cel(muzzle, cream, creamSh, -3, -4)}
+    ${outline(headP, s)}
+    ${e(80)}${e(120)}
+    <ellipse cx="66" cy="80" rx="9" ry="5" fill="#ff9d8a" opacity=".55"/><ellipse cx="134" cy="80" rx="8" ry="4.5" fill="#ff9d8a" opacity=".55"/>
+    <path d="M92 76 C92 71 108 71 108 76 C108 81 102 84 100 84 C98 84 92 81 92 76Z" fill="#3a2a30" stroke="${s.line}" stroke-width="${s.lwi * .8}"/><ellipse cx="96.5" cy="75" rx="2.2" ry="1.2" fill="#fff" opacity=".8"/>
+    <path d="M100 84 L100 88 M92 90 C95 94 99 94 100 88 C101 94 105 94 108 90" ${stroke(s.line, s.lwi * .85)}/>
+    <path d="M82 86 L62 83 M82 91 L64 95 M118 86 L138 83 M118 91 L136 95" ${stroke(s.line, s.lwi * .5)} opacity=".6"/>
+    ${cel('M84 120 C92 116 100 122 98 132 C96 140 84 140 82 132 C80 126 80 122 84 120Z', br, brSh, -2, -3)}${outline('M84 120 C92 116 100 122 98 132 C96 140 84 140 82 132 C80 126 80 122 84 120Z', s, s.lwi * 1.1)}
+    ${cel('M116 120 C108 116 100 122 102 132 C104 140 116 140 118 132 C120 126 120 122 116 120Z', br, brSh, -2, -3)}${outline('M116 120 C108 116 100 122 102 132 C104 140 116 140 118 132 C120 126 120 122 116 120Z', s, s.lwi * 1.1)}
+  </svg>`;
+}
+
+// ---------- page ----------
+const grid = document.getElementById('grid');
+const ROWS = [
+  { key: 'A', title: 'A · Current', note: 'Soft radial gradients, soft fur-coloured edges, painted strokes. As the app draws him today.' },
+  { key: 'B', title: 'B · Cel (full)', note: 'Deep blue-violet line ~2% of his height, flat fur + one hard blue-violet shadow, crisp highlight, anime eyes.' },
+  { key: 'C', title: 'C · Cel (light)', note: 'Same shapes, thinner (~1.2%) softer-violet line and a paler shadow. Closer to the painting.' },
+];
+const STATES = ['idle', 'cheer', 'costume'];
+for (const r of ROWS) {
+  grid.insertAdjacentHTML('beforeend', `<div class="rowhead"><b>${r.title}</b><span>${r.note}</span></div>`);
+  for (const st of STATES) {
+    let art;
+    if (r.key === 'A') art = CURRENT[st].replace(/truffle-P0-0/g, `cur-${st}`).replace('<svg class="truffle"', '<svg class="t truffle"');
+    else art = celTruffle(st, r.key === 'B' ? 'bold' : 'soft');
+    const ot = r.key !== 'A' && st === 'idle' ? otter(r.key === 'B' ? 'bold' : 'soft') : '';
+    grid.insertAdjacentHTML('beforeend', `<div class="panel">${art}${ot}</div>`);
+  }
+}
+const zoom = document.getElementById('zoom');
+zoom.insertAdjacentHTML('beforeend', `<div class="panel"><span class="tag">A · current</span>${CURRENT.idle.replace(/truffle-P0-0/g, 'zcur').replace('<svg class="truffle"', '<svg class="t truffle"')}</div>`);
+zoom.insertAdjacentHTML('beforeend', `<div class="panel"><span class="tag">B · cel full, with otter</span>${celTruffle('idle', 'bold')}${otter('bold')}</div>`);
+zoom.insertAdjacentHTML('beforeend', `<div class="panel"><span class="tag">C · cel light, with otter</span>${celTruffle('idle', 'soft')}${otter('soft')}</div>`);
+</script>
+</body>
+</html>
