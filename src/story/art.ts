@@ -1,5 +1,5 @@
 // Backgrounds for the story (spec 2026-10-07 3b §4): the parent's paintings, centre-cropped to 4:3, at most 1600×1200, WebP ≤ 300 KB.
-import sharp from 'sharp';
+import sharp, { type Sharp } from 'sharp';
 import type { Chapter } from './format';
 
 export const BG_WIDTH = 1600;
@@ -10,6 +10,15 @@ export const BG_SEASON_MAX_BYTES = 2_500_000;
 export const BG_MIN_WIDTH = 1180;
 const QUALITY_START = 80;
 const QUALITY_FLOOR = 50;
+
+/** The image as WebP at the best quality (80, 75 … 50) that fits in `maxBytes`, or null if even 50 is too big. */
+export async function webpUnder(img: Sharp, maxBytes: number): Promise<{ webp: Buffer; quality: number } | null> {
+  for (let quality = QUALITY_START; quality >= QUALITY_FLOOR; quality -= 5) {
+    const webp = await img.clone().webp({ quality }).toBuffer();
+    if (webp.length <= maxBytes) return { webp, quality };
+  }
+  return null;
+}
 
 export async function prepareBackground(input: Buffer): Promise<{ webp: Buffer; quality: number; width: number; height: number }> {
   const meta = await sharp(input).metadata();
@@ -24,10 +33,8 @@ export async function prepareBackground(input: Buffer): Promise<{ webp: Buffer; 
   const outH = Math.min(BG_HEIGHT, ch);
   const left = Math.floor((w - cw) / 2);
   const top = Math.floor((h - ch) / 2);
-  for (let quality = QUALITY_START; quality >= QUALITY_FLOOR; quality -= 5) {
-    const webp = await sharp(input).extract({ left, top, width: cw, height: ch }).resize(outW, outH).webp({ quality }).toBuffer();
-    if (webp.length <= BG_MAX_BYTES) return { webp, quality, width: outW, height: outH };
-  }
+  const fit = await webpUnder(sharp(input).extract({ left, top, width: cw, height: ch }).resize(outW, outH), BG_MAX_BYTES);
+  if (fit) return { ...fit, width: outW, height: outH };
   throw new Error(`can't fit in 300 KB even at quality ${QUALITY_FLOOR}: simplify the painting or regenerate it`);
 }
 
