@@ -86,7 +86,7 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
     expect(await screen.findByText("Couldn't fit — keeping the default")).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
-    expect(await screen.findByText(/needs the internet/)).toBeTruthy();
+    expect(await screen.findByText(/needs the internet the first time\. Try again when online\. If it still fails, close and reopen the app\./)).toBeTruthy();
     expect((await getSettings(app.db)).fsrs).toBeUndefined();
   });
   it('fitted: when and on how many; Back to default; Fit again only after 500 more reviews', async () => {
@@ -98,6 +98,12 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back to default' }));
     await waitFor(async () => expect((await getSettings(app.db)).fsrs).toBeUndefined());
     expect([...schedulerParams()]).toEqual([...default_w]);
+  });
+  it('a stored fit that is not valid shows as not fitted', async () => {
+    await show(1000, { fsrs: { w: [1, 2, 3], fittedAt: 0, reviews: 900 } });
+    expect(screen.queryByText(/Fitted on/)).toBeNull();
+    expect(screen.getByText(/1,000 reviews to fit on\./)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Fit to his memory' }) as HTMLButtonElement).disabled).toBe(false);
   });
   it('Fit again is enabled at 500 more reviews', async () => {
     await show(1532, { fsrs: { w: FITTED, fittedAt: 0, reviews: 1032 } });

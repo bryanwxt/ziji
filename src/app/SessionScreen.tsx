@@ -112,7 +112,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   useEffect(() => {
     void (async () => {
       const rng = mulberry32(Date.now() >>> 0);
-      const [know, kid, parentPassages, settings, practised, confusions, slow] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db), getConfusions(db), lessonSlowLines(db)]);
+      const [know, kid, parentPassages, settings, practised, confusions, slow] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db), getConfusions(db), free ? Promise.resolve({}) : lessonSlowLines(db, now())]);
       const today = now();
       const rec = free
         ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng, undefined, levelOf(know)), localDateKey(today), today.getTime())

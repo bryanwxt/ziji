@@ -1,3 +1,4 @@
+import { useMemo } from 'preact/hooks';
 import { RETENTION_MIN, RETENTION_TARGET, retention, type Retention, type RetentionLine } from '../stats/retention';
 import type { ReviewLog } from '../types';
 
@@ -11,7 +12,7 @@ function figure(r: Retention): string {
 
 /** "Remembered after a gap" (SRS tuning spec §5): his real retention, per line, against the 90% FSRS aims for. */
 export function RetentionCheck({ logs, now }: { logs: ReviewLog[]; now: Date }) {
-  const r = retention(logs, now);
+  const r = useMemo(() => retention(logs, now), [logs]); // now() ticks every render; the logs change on load
   return (
     <div class="skills__retention">
       <h3>Remembered after a gap (last 30 days, target {Math.round(RETENTION_TARGET * 100)}%)</h3>

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { compareIntervals, formatDays, type IntervalStep } from '../srs/compare';
 import { fitData } from '../srs/fitData';
 import { fitParameters } from '../srs/optimizer';
-import { setSchedulerParams } from '../srs/scheduler';
+import { setSchedulerParams, validParams } from '../srs/scheduler';
 import { updateSettings } from '../store/repo';
 import type { CardRecord, ReviewLog, Settings } from '../types';
 
@@ -22,8 +22,8 @@ const day = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numer
 export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewLog[]; cards: CardRecord[]; settings: Settings; onChange: () => Promise<void> }) {
   const { db, now, refresh } = useApp();
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
-  const data = fitData(logs, cards);
-  const fitted = settings.fsrs;
+  const data = useMemo(() => fitData(logs, cards), [logs, cards]);
+  const fitted = settings.fsrs && validParams(settings.fsrs.w) ? settings.fsrs : undefined; // an invalid stored fit isn't in use
   const canFit = fitted ? data.count >= fitted.reviews + REFIT_AFTER : data.count >= FIT_MIN_REVIEWS;
 
   const mounted = useRef(true); // no state change after unmount, mid-fit
@@ -39,7 +39,7 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
       const r = await fitParameters(data);
       if (!mounted.current) return;
       if (r.ok) setPhase({ kind: 'result', w: r.w, rows: compareIntervals(r.w) });
-      else setPhase({ kind: 'message', text: r.reason === 'offline' ? "Couldn't load the fitting tool — it needs the internet the first time. Try again when online." : "Couldn't fit — keeping the default" });
+      else setPhase({ kind: 'message', text: r.reason === 'offline' ? "Couldn't load the fitting tool — it needs the internet the first time. Try again when online. If it still fails, close and reopen the app." : "Couldn't fit — keeping the default" });
     } finally {
       busy.current = false;
     }

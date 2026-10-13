@@ -23,8 +23,8 @@ export interface Retention {
 export function retention(logs: ReviewLog[], now: Date): Record<RetentionLine, Retention> {
   const since = now.getTime() - RETENTION_DAYS * 86_400_000;
   const firsts = new Map<string, ReviewLog>(); // card + local day → its first review that day
-  for (const l of [...logs].sort((a, b) => a.at - b.at)) {
-    if (l.at < since || l.at > now.getTime()) continue;
+  const windowed = logs.filter((l) => l.at >= since && l.at <= now.getTime()); // the window first: the sort then touches 30 days, not all
+  for (const l of windowed.sort((a, b) => a.at - b.at)) {
     const key = `${l.cardId}|${localDateKey(new Date(l.at))}`;
     if (!firsts.has(key)) firsts.set(key, l);
   }
