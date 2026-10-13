@@ -113,7 +113,7 @@ Follow mockup row C.
 - **Joy confetti** becomes outlined four-point sparkles.
 - **What stays the same:** rig geometry, parts, `data-part` hooks, timelines, paws, face rig and costume anchors. Only the paint changes.
 - **Costumes, accessories and powers** (`costumes.ts`, `costumeKit.ts`, `mythCostumes.ts`, `accessories.ts`, powers): they get the same line colour and weight (replacing `#2a2630` at 3.2) and one hard shadow, through the shared helpers where possible. Every item is checked on Truffle in WebKit.
-- **Story characters:** Granny Dragon and `HushScene` get the same treatment. `docs/story/style.md` changes its "no hard outlines, soft gradients" rule to the light-cel rule.
+- **Story characters are left as they are** for now (parent, 2026-10-13): Granny Dragon, `HushScene` and `docs/story/style.md` keep their current look. The story is parked, so the mismatch isn't seen. They follow when the story resumes.
 - **New creatures** (§6) are drawn to the same rules. The mockup's otter is the reference.
 
 ## 8. Existing data
@@ -143,7 +143,6 @@ Follow mockup row C.
 - **WebKit:**
   - Stage cases for every world: day and evening at iPad landscape, iPad portrait and phone, with props and Truffle.
   - Truffle in idle, cheer, three costumes and two powers.
-  - Granny Dragon in a story scene.
   - The arrival card and 松露's room thumbnails.
   - The fit sweep stays clean, and the per-frame check passes.
 
@@ -151,6 +150,6 @@ Follow mockup row C.
 
 - New worlds beyond 8.
 - Animated paintings, such as moving water in the image itself.
-- Repainting the story backgrounds in the new look; that can follow with the same prompts.
+- The story: repainting its backgrounds, and restyling Granny Dragon and `HushScene`. Both follow when the story resumes.
 - Sound effects for the new creatures, unless they reuse existing ones.
 - Two-way sync (next).
