@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -6,6 +7,9 @@ export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
   // story-trial.html: the animated-page trial for the parent (2026-10-08), outside the app; index.html is the app
   build: { rollupOptions: { input: { main: 'index.html', trial: 'story-trial.html' } } },
+  // fsrs-browser's thread helper (wasm-bindgen-rayon) is a module worker; the app never starts its thread pool, but it must build
+  worker: { format: 'es' },
+  optimizeDeps: { exclude: ['fsrs-browser'] }, // pre-bundled, its .wasm URL (new URL(…, import.meta.url)) would point nowhere in dev
   plugins: [
     preact(),
     VitePWA({
@@ -29,8 +33,15 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest,woff2}'],
+        // the FSRS optimizer (SRS tuning spec §6.2) loads only when the parent taps Fit: never precached, runtime-cached below
+        globIgnores: ['**/fsrs_browser*', '**/workerHelpers*'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => /\/assets\/(fsrs_browser|workerHelpers)[^/]*\.(js|wasm)$/.test(url.pathname),
+            handler: 'CacheFirst', // hashed names: a new build is a new URL
+            options: { cacheName: 'optimizer', expiration: { maxEntries: 8 }, cacheableResponse: { statuses: [200] } },
+          },
           {
             urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/npm\/hanzi-writer-data@/,
             handler: 'CacheFirst',
@@ -57,6 +68,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // fsrs-browser names only a browser "module" entry, which vitest's resolver skips; the optimizer itself runs in WebKit (scripts/optimizer-check.ts)
+    alias: { 'fsrs-browser': fileURLToPath(new URL('./node_modules/fsrs-browser/fsrs_browser.js', import.meta.url)) },
     testTimeout: 20_000, // the placement and first-launch walks answer 30–40 questions; a loaded machine (or CI) can pass 5 s
   },
 });
