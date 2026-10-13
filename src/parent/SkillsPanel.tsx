@@ -7,6 +7,7 @@ import { bandLevel, rankBands } from '../placement/walk';
 import { bringForward } from '../session/record';
 import { SKILL_CARD, SKILLS, skillAccuracy, topMissed } from '../stats/skills';
 import { allCards, allWords, answersSince, getSettings, listRecordings, logsSince, updateSettings } from '../store/repo';
+import { FitToMemory } from './FitToMemory';
 import { RetentionCheck } from './RetentionCheck';
 import type { AnswerLog, CardRecord, Recording, ReviewLog, Settings, Skill, Word } from '../types';
 
@@ -126,6 +127,7 @@ export function SkillsPanel() {
         </tbody>
       </table>
       <RetentionCheck logs={d.allLogs} now={now()} />
+      <FitToMemory logs={d.allLogs} cards={d.cards} settings={d.settings} onChange={load} />
       <h3>Missed most (last {DAYS} days)</h3>
       {SKILLS.map((s) => {
         const missed = topMissed(d.logs, d.answers, s);

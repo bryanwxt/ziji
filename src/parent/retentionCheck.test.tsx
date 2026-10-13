@@ -33,10 +33,11 @@ describe('Remembered after a gap (SRS tuning spec §5)', () => {
     render(<RetentionCheck logs={logs(30)} now={now} />);
     expect(screen.getByText('Reviews come sooner than he needs.')).toBeTruthy();
   });
-  it('the Skills panel shows it from his stored logs', async () => {
+  it('the Skills panel shows it, and the fit, from his stored logs', async () => {
     const app = await makeAppData({ now: () => now });
     for (const l of logs(3)) await addReviewLog(app.db, l);
     renderWithApp(<SkillsPanel />, app);
     expect(await screen.findByText(/Measuring — 3 of 30 reviews/)).toBeTruthy();
+    expect(screen.getByText(/Fit to his memory: 0 \/ 1,000 reviews/)).toBeTruthy();
   });
 });

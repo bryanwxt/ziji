@@ -1090,6 +1090,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 /* retention and the fit (SRS tuning spec §5, §6.2) */
 .skills__retention ul { padding-left: 20px; }
 .skills__note { margin: 4px 0 0; color: var(--orange-ink); }
+.skills__compare { border-collapse: collapse; margin: 8px 0 16px; }
+.skills__compare th, .skills__compare td { padding: 4px 20px 4px 0; text-align: left; white-space: nowrap; }
+.skills__fit-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; }
 
 /* 写一写's cue: the word's sentence with a gap (parent, 2026-10-04) */
 .write__sentence { font-size: clamp(20px, 2.8dvh, 28px); line-height: 1.4; max-width: min(100%, 520px); white-space: normal; }
