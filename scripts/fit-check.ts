@@ -96,17 +96,26 @@ function probe(args: { main: string; scrollers: string }): string[] {
     const w = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left), h = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
     if (w > 6 && h > 6) { const key = `${name(A)} × ${name(B)}`; if (!seenPair.has(key)) { seenPair.add(key); out.push(`overlap: ${key}`); } }
   }
-  for (const t of document.querySelectorAll('.world-props .tap')) {
+  // world props: one the painting's crop leaves off this screen is fine (spec 2026-10-13 §5), one on it must not be covered, and
+  // every world keeps at least one to tap
+  const taps = [...document.querySelectorAll('.world-props .tap')];
+  const onScreen = (x: number, y: number) => x >= 0 && y >= 0 && x < innerWidth && y < innerHeight;
+  let usable = 0;
+  for (const t of taps) {
     // the centre and four points around it: a target is lost when its centre is covered, or half of it (2 of the 4 points)
     const r = t.getBoundingClientRect();
+    if (!onScreen(r.left + r.width / 2, r.top + r.height / 2)) continue;
     const covered = [[0.5, 0.5], [0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]].map(([fx, fy]) => {
       const x = r.left + r.width * fx!, y = r.top + r.height * fy!;
+      if (!onScreen(x, y)) return null;
       const top = document.elementFromPoint(x, y);
-      return top?.closest('.world-props .tap') ? null : `${Math.round(x)},${Math.round(y)} covered by ${top ? (typeof top.className === 'string' ? top.className : top.tagName) || top.tagName : 'nothing (off screen)'}`;
+      return top?.closest('.world-props .tap') ? null : `${Math.round(x)},${Math.round(y)} covered by ${top ? (typeof top.className === 'string' ? top.className : top.tagName) || top.tagName : 'nothing'}`;
     });
     const hits = covered.filter((c): c is string => !!c);
-    if (covered[0] || hits.length >= 2) out.push(`world tap at ${hits.join('; ')}`);
+    if (covered[0] || hits.length >= 2) out.push(`world tap ${t.getAttribute('aria-label')} at ${hits.join('; ')}`);
+    else usable++;
   }
+  if (taps.length && !usable) out.push('no world prop to tap on this screen');
   return out;
 }
 

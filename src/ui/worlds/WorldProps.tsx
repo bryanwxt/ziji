@@ -5,10 +5,10 @@ import type { WorldId } from '../../fun/worlds';
 import type { KidState } from '../../types';
 import { reducedMotion } from '../motion';
 import type { ReactionKind } from '../truffle/timelines';
-import { FX_MS, GEM_POP_MS, momentFx } from './momentFx';
+import { FX_MS, momentFx } from './momentFx';
 import { MOMENTS, runMoment, type Fx, type Outcome } from './moments';
-import { SCENE_VIEWBOX, WORLD_ART } from './scenes';
-import { BABY_DINO } from './tapArt';
+import { RIVER } from './river';
+import { SCENE_VIEWBOX } from './scene';
 
 /** How often a moment starts by itself on Home (ms), plus up to half as much again at random. */
 export const AUTO_MS = 30_000;
@@ -31,7 +31,7 @@ interface Props {
 export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery = AUTO_MS }: Props) {
   const [fx, setFx] = useState<{ svg: string; run: number; kind: Fx['kind'] } | null>(null);
   const busy = useRef(false);
-  const gemTaps = useRef({ day: today, n: 0 }); // taps count toward one day's gem only
+  const lotusTaps = useRef({ day: today, n: 0 }); // taps count toward one day's pearl only
   const hidden = useRef<HTMLElement | SVGElement | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]); // the playing moment's (its end, a line after)
   const auto = useRef(false); // the playing moment started by itself: a tap takes over from it
@@ -39,7 +39,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
   const run = useRef(0);
   const latest = useRef({ kid, today, onKid, onSay, onReact });
   latest.current = { kid, today, onKid, onSay, onReact };
-  const art = WORLD_ART[world];
+  const spots = RIVER[world].props;
 
   const show = () => {
     if (hidden.current) hidden.current.style.visibility = '';
@@ -80,24 +80,24 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     busy.current = true;
     // SVG animations run on their outermost <svg>'s clock: each moment gets a fresh <svg> (keyed), so it always plays from its start
     setFx({ svg, run: ++run.current, kind: o.fx.kind });
-    const ms = o.fx.kind === 'crack' && o.fx.gem ? GEM_POP_MS : FX_MS[o.fx.kind];
+    const ms = FX_MS[o.fx.kind];
     later(ms, () => {
       busy.current = false;
       show();
-      if (o.fx.kind !== 'crack') setFx(null); // cracks stay on the block for this visit
+      setFx(null);
     });
     if (o.say) latest.current.onSay(o.say);
     if (o.later) { const line = o.later.say; later(o.later.ms, () => latest.current.onSay(line)); }
     if (o.speak && !byItself) speak(o.speak); // a moment that starts by itself never talks out loud
     if (o.sfx && !byItself) playSfx(o.sfx); // nor makes a sound (sweep)
-    latest.current.onReact(o.react, art.props[prop]!.x < 180 ? -1 : 1);
+    latest.current.onReact(o.react, spots[prop]!.x < 500 ? -1 : 1);
   };
 
   const onTap = (prop: string) => {
     if (busy.current && !auto.current) return; // a moment he started ignores taps; one that started by itself gives way
     const { kid: k, today: day } = latest.current;
-    if (gemTaps.current.day !== day) gemTaps.current = { day, n: 0 };
-    const o = runMoment(world, prop, k, day, prop === 'gem-block' ? ++gemTaps.current.n : 0);
+    if (lotusTaps.current.day !== day) lotusTaps.current = { day, n: 0 };
+    const o = runMoment(world, prop, k, day, prop === 'lotus' ? ++lotusTaps.current.n : 0);
     if (o.kid) latest.current.onKid(o.kid);
     play(prop, o);
   };
@@ -123,15 +123,12 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     return () => clearTimeout(t);
   }, [world, autoEvery]);
 
-  const nest = art.props.nest;
-  const baby = world === 'dino' && kid.finds.dinoHatched && fx?.kind !== 'hop' && nest ? `<g class="tap-baby-dino" transform="translate(${nest.x + 10} ${nest.y - 8}) scale(0.9)">${BABY_DINO}</g>` : '';
 
   return (
     <>
       <svg class="world-props" data-world={world} viewBox={SCENE_VIEWBOX} preserveAspectRatio="xMidYMax slice">
-        {baby && <g aria-hidden="true" dangerouslySetInnerHTML={{ __html: baby }} />}
         {MOMENTS[world].filter((m) => m.tap).map((m) => {
-          const s = art.props[m.prop]!;
+          const s = spots[m.prop]!;
           return (
             <rect
               key={m.prop}
@@ -143,7 +140,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
               y={s.y - s.h}
               width={s.w}
               height={s.h}
-              rx={10}
+              rx={16}
               fill="#000"
               fill-opacity="0"
               onClick={() => onTap(m.prop)}

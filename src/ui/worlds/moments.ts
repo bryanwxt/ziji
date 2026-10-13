@@ -1,21 +1,15 @@
-// Prop moments (spec 2026-10-04 §4.5): Truffle plays with his own things without walking across the screen. Which props
-// each world has, what each moment does, and the daily finds they host (spec §15) — the same finds as before, now on props.
+// Prop moments on One River (spec 2026-10-13 §6; the moment rules of 2026-10-04 §4.5): which creatures and things each world
+// has, what each moment does, and the daily finds they host. The find rules are unchanged (src/fun/finds.ts); only where they
+// happen moved: the zodiac animal comes out of the paper boat, the gem is the lotus's pearl, the egg is in 恐龙谷, the dig in 海湾.
 import type { Sfx } from '../../audio/sfx';
-import { dig, findAnimal, tapEgg, tapGem } from '../../fun/finds';
+import { findAnimal } from '../../fun/finds';
 import type { WorldId } from '../../fun/worlds';
 import type { KidState } from '../../types';
 import type { ReactionKind } from '../truffle/timelines';
 
-/** What a moment draws (momentFx.ts turns it into SVG). */
+/** What a moment draws (momentFx.ts turns it into SVG). Each world's task adds its kinds to this union. */
 export type Fx =
-  | { kind: 'spray' } | { kind: 'munch' } | { kind: 'roll' } | { kind: 'bird' }
-  | { kind: 'animal'; animal: string } | { kind: 'flutter' }
-  | { kind: 'lap' } | { kind: 'tip' }
-  | { kind: 'crack'; cracks: number; gem: boolean } | { kind: 'scratch' } | { kind: 'sparkle' }
-  | { kind: 'wobble' } | { kind: 'hop' } | { kind: 'drops' }
-  | { kind: 'bubbles' } | { kind: 'swim' }
-  | { kind: 'launch' } | { kind: 'drift' }
-  | { kind: 'dig'; star: boolean } | { kind: 'open' } | { kind: 'flap' };
+  | { kind: 'boat'; animal: string | null };
 
 /**
  * A prop and its moment. `auto` moments also start by themselves on Home now and then (never ones that hold a find); `tap` is
@@ -23,15 +17,18 @@ export type Fx =
  */
 export interface PropMoment { prop: string; label: string; auto: boolean; tap: boolean }
 
+const BOAT: PropMoment = { prop: 'boat', label: '纸船', auto: false, tap: true };
+
+/** Every world has the paper boat first; each world's task adds its creatures after it. */
 export const MOMENTS: Record<WorldId, PropMoment[]> = {
-  home: [{ prop: 'sprinkler', label: '洒水器', auto: false, tap: true }, { prop: 'bowl', label: '小碗', auto: true, tap: true }, { prop: 'ball', label: '红球', auto: true, tap: true }, { prop: 'birdhouse', label: '鸟屋', auto: true, tap: false }],
-  rainforest: [{ prop: 'box', label: '纸箱', auto: false, tap: true }, { prop: 'butterfly', label: '蝴蝶', auto: true, tap: true }],
-  bamboo: [{ prop: 'kart', label: '赛车', auto: false, tap: true }, { prop: 'cone', label: '路障', auto: true, tap: true }],
-  terraces: [{ prop: 'gem-block', label: '宝石', auto: false, tap: true }, { prop: 'post', label: '猫抓板', auto: true, tap: true }, { prop: 'statue', label: '猫雕像', auto: true, tap: false }],
-  dino: [{ prop: 'nest', label: '恐龙蛋', auto: false, tap: true }, { prop: 'leaf', label: '大叶子', auto: true, tap: true }],
-  lantern: [{ prop: 'sub', label: '潜水艇', auto: false, tap: true }, { prop: 'fish', label: '小鱼', auto: true, tap: true }],
-  cove: [{ prop: 'rocket', label: '火箭', auto: false, tap: true }, { prop: 'yarn', label: '毛线球', auto: true, tap: false }],
-  milkyway: [{ prop: 'x', label: '宝藏', auto: false, tap: true }, { prop: 'chest', label: '藏宝箱', auto: false, tap: true }, { prop: 'parrot', label: '鹦鹉', auto: true, tap: false }],
+  home: [BOAT],
+  rainforest: [BOAT],
+  bamboo: [BOAT],
+  terraces: [BOAT],
+  dino: [BOAT],
+  lantern: [BOAT],
+  cove: [BOAT],
+  milkyway: [BOAT],
 };
 
 /** What happens: what is drawn, how Truffle reacts, what he says (and a line after), what is spoken, a sound, a saved find. */
@@ -45,43 +42,16 @@ export interface Outcome {
   kid?: KidState;
 }
 
-/** One moment. Pure, so the finds keep their rules: one animal, one gem (after three cracks) and one dig star a day; the egg remembered. */
-export function runMoment(world: WorldId, prop: string, kid: KidState, today: string, gemTaps: number): Outcome {
+/** One moment. Pure, so the finds keep their rules: one animal, one pearl (after three taps) and one dig star a day; the egg remembered. */
+export function runMoment(world: WorldId, prop: string, kid: KidState, today: string, lotusTaps: number): Outcome {
   const f = kid.finds;
-  switch (`${world}:${prop}`) {
-    case 'home:sprinkler': return { fx: { kind: 'spray' }, react: 'flinch', say: '哇！', later: { say: '哈哈哈！', ms: 700 } };
-    case 'home:bowl': return { fx: { kind: 'munch' }, react: 'munch', say: '好吃！', sfx: 'munch' };
-    case 'home:ball': return { fx: { kind: 'roll' }, react: 'pounce' };
-    case 'home:birdhouse': return { fx: { kind: 'bird' }, react: 'watch', say: '小鸟！' };
-    case 'rainforest:box': {
-      const r = findAnimal(f, today);
-      return { fx: { kind: 'animal', animal: r.animal }, react: 'excited', ...(r.isNew ? { kid: { ...kid, finds: r.finds }, say: '找到了！' } : {}) };
-    }
-    case 'rainforest:butterfly': return { fx: { kind: 'flutter' }, react: 'pounce' };
-    case 'bamboo:kart': return { fx: { kind: 'lap' }, react: 'excited', say: '出发！' };
-    case 'bamboo:cone': return { fx: { kind: 'tip' }, react: 'pounce' };
-    case 'terraces:gem-block': {
-      const r = tapGem(f, today, gemTaps);
-      return { fx: { kind: 'crack', cracks: r.cracks, gem: r.gem }, react: r.gem ? 'excited' : 'watch', ...(r.gem ? { kid: { ...kid, finds: r.finds }, say: '宝石！' } : {}) };
-    }
-    case 'terraces:post': return { fx: { kind: 'scratch' }, react: 'excited' };
-    case 'terraces:statue': return { fx: { kind: 'sparkle' }, react: 'proud', say: '真像我！' };
-    case 'dino:nest': {
-      if (f.dinoHatched) return { fx: { kind: 'hop' }, react: 'excited', say: '你好，小恐龙！' };
-      const next = tapEgg(f);
-      return { fx: { kind: 'wobble' }, react: 'watch', ...(next !== f ? { kid: { ...kid, finds: next } } : {}) };
-    }
-    case 'dino:leaf': return { fx: { kind: 'drops' }, react: 'flinch' };
-    case 'lantern:sub': return { fx: { kind: 'bubbles' }, react: 'excited' };
-    case 'lantern:fish': return { fx: { kind: 'swim' }, react: 'pounce', say: '小鱼！' };
-    case 'cove:rocket': return { fx: { kind: 'launch' }, react: 'excited', speak: '三，二，一！' };
-    case 'cove:yarn': return { fx: { kind: 'drift' }, react: 'pounce' };
-    case 'milkyway:x': {
-      const r = dig(f, today);
-      return { fx: { kind: 'dig', star: r.star }, react: 'excited', ...(r.star ? { kid: { ...kid, finds: r.finds, bonusStars: kid.bonusStars + 1 }, say: '找到星星了！' } : { say: '挖呀挖！' }) };
-    }
-    case 'milkyway:chest': return { fx: { kind: 'open' }, react: 'excited', say: '哇！' };
-    case 'milkyway:parrot': return { fx: { kind: 'flap' }, react: 'watch', say: '你好！' }; // it only starts by itself, which never speaks: Truffle says hello back
+  if (prop === 'boat') {
+    const r = findAnimal(f, today);
+    return r.isNew ? { fx: { kind: 'boat', animal: r.animal }, react: 'excited', kid: { ...kid, finds: r.finds }, say: '找到了！' } : { fx: { kind: 'boat', animal: null }, react: 'watch' };
   }
+  switch (`${world}:${prop}`) {
+    // each world's task adds its cases here
+  }
+  void lotusTaps;
   throw new Error(`no moment for ${world}:${prop}`);
 }

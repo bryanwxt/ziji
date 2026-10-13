@@ -24,7 +24,7 @@ import { WorldProps } from '../ui/worlds/WorldProps';
 import { dayMood } from '../ui/truffle/greeting';
 import { applyFind } from '../fun/finds';
 import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
-import { SCENE_VIEWBOX, SCENES } from '../ui/worlds/scenes';
+import { paintingHref } from '../ui/worlds/scene';
 import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId, resetWorlds } from '../fun/worlds';
 import { settleJourney } from '../placement/journey';
 import { TabBar } from '../ui/TabBar';
@@ -298,7 +298,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       {arrival && (
         <div class="arrival" role="dialog" aria-label="新地方">
           <div class="arrival__card">
-            <span class="grainy arrival__frame"><svg class="arrival__scene" viewBox={SCENE_VIEWBOX} preserveAspectRatio="xMidYMax slice" aria-hidden="true" dangerouslySetInnerHTML={{ __html: SCENES[arrival] }} /></span>
+            <img class="arrival__scene" src={paintingHref(arrival)} alt="" aria-hidden="true" />
             <h2><Label zh={`到${worldById(arrival)!.zh}了！`} /></h2>
             <button type="button" class="btn btn--primary btn--big" onClick={() => setArrival(null)}><Label zh="走吧！" /></button>
           </div>

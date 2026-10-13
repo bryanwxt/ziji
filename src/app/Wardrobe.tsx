@@ -16,7 +16,7 @@ import { loadKnowledge } from './knowledge';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { currentWorld, WORLDS } from '../fun/worlds';
 import { journeyCount } from '../placement/journey';
-import { SCENES } from '../ui/worlds/scenes';
+import { paintingHref } from '../ui/worlds/scene';
 import { GEM } from '../ui/worlds/tapArt';
 
 type RoomTab = 'outfits' | 'powers' | 'places';
@@ -156,7 +156,7 @@ export function Wardrobe() {
                   disabled={!reached}
                   onClick={() => void save({ ...k, world: w.id })}
                 >
-                  <span class="grainy place__frame"><svg class="place__thumb" viewBox="0 160 360 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true" dangerouslySetInnerHTML={{ __html: SCENES[w.id] }} /></span>
+                  <img class="place__thumb" src={paintingHref(w.id, true)} alt="" aria-hidden="true" />
                   <Label zh={w.zh} />
                   {!reached && (
                     <span class="place__lock"><InkIcon name="lock" size={20} /> <Label zh={`再学 ${Math.max(1, w.at - learned)} 个字`} /></span>

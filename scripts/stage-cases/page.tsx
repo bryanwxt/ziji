@@ -35,7 +35,7 @@ import { understandItem, type UnderstandItem } from '../../src/practice/understa
 import { inScopeWords, SENTENCE_TERMS } from '../../src/content/understand';
 import { WorldScene } from '../../src/ui/worlds/WorldScene';
 import { WorldProps } from '../../src/ui/worlds/WorldProps';
-import { sceneFor } from '../../src/ui/worlds/scenes';
+import { CREATURES } from './creatures';
 import { WORLDS, type WorldId } from '../../src/fun/worlds';
 import { DEFAULT_FINDS } from '../../src/fun/finds';
 import { burstStyle } from '../../src/ui/worlds/burst';
@@ -142,10 +142,10 @@ else if (which === 'understand') {
   const item = items.sort((a, b) => Math.max(...b.choices.map((c) => c.length)) - Math.max(...a.choices.map((c) => c.length)))[0]!;
   render(screen(<UnderstandQuestion item={item} kid={DEFAULT_KID} onDone={() => {}} />), app);
 }
-else if (which === 'worlds') {
-  // every world by day and by evening, for the parent to look over (spec 2026-10-04 §2)
-  const cell = (w: WorldId, t: 'afternoon' | 'evening') => `<figure style="margin:0"><svg viewBox="0 0 360 480" width="180" height="240">${sceneFor(w, t)}</svg><figcaption>${w} · ${t}</figcaption></figure>`;
-  app.innerHTML = `<div style="display:grid;grid-template-columns:repeat(8,180px);gap:6px;padding:8px;font:11px sans-serif;background:#fff">${WORLDS.map((w) => cell(w.id, 'afternoon')).join('')}${WORLDS.map((w) => cell(w.id, 'evening')).join('')}</div>`;
+else if (which === 'creatures') {
+  // every creature and thing of One River in light cel, at rest and mid-moment, for the parent to look over (spec 2026-10-13 §6–7)
+  const cell = ([name, art]: [string, string]) => `<figure style="margin:0;background:#dfe9ec"><svg viewBox="-70 -110 140 130" width="210" height="195">${art}</svg><figcaption>${name}</figcaption></figure>`;
+  app.innerHTML = `<div style="display:grid;grid-template-columns:repeat(6,210px);gap:6px;padding:8px;font:12px sans-serif;background:#fff">${CREATURES.map(cell).join('')}</div>`;
 }
 else if (which === 'costumes') {
   // every costume, shelf by shelf, for the parent to look over (2026-10-06: easy to tell apart?)
@@ -256,17 +256,20 @@ else if (which === 'bursts') {
     app,
   );
 }
-else if (which === 'moments') {
-  // Home's world with its props and a live Truffle: each moment is tapped and its frames timed (spec 2026-10-04 §6)
-  const world = (new URLSearchParams(location.search).get('world') ?? 'home') as WorldId;
+else if (which === 'moments' || which === 'river') {
+  // Home's world with its props and a live Truffle: each moment is tapped and its frames timed (spec 2026-10-04 §6); `river` is
+  // the same stage still, by day or evening, for the screenshots at three sizes (spec 2026-10-13 §10)
+  const q = new URLSearchParams(location.search);
+  const world = (q.get('world') ?? 'home') as WorldId;
+  const time = q.get('time') === 'evening' ? 'evening' : 'afternoon';
   const kid = { ...DEFAULT_KID, finds: { ...DEFAULT_FINDS } };
   function Moments() {
     const [react, setReact] = useState<{ kind: ReactionKind; key: number } | null>(null);
     return (
       <div class="screen home">
-        <WorldScene world={world} time="afternoon" />
+        <WorldScene world={world} time={time} />
         <WorldProps world={world} kid={kid} today="2026-10-06" onKid={() => {}} onSay={() => {}} onReact={(kind) => setReact((r) => ({ kind, key: (r?.key ?? 0) + 1 }))} autoEvery={1e9} />
-        <div style="position:fixed;left:50%;bottom:120px;transform:translateX(-50%)"><Pet kid={kid} size={150} alive react={react} /></div>
+        <div style="position:fixed;left:50%;bottom:120px;transform:translateX(-50%)"><Pet kid={kid} size={150} alive={which === 'moments'} react={react} /></div>
       </div>
     );
   }

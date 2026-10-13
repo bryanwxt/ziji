@@ -1,6 +1,6 @@
 // Runs the stage cases (stage-cases/page.tsx) in WebKit at a phone and an iPad size; exits 1 on any problem.
 import { build } from 'esbuild';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { webkit } from 'playwright-core';
@@ -11,6 +11,7 @@ import { WORLDS } from '../src/fun/worlds';
 const dir = join(tmpdir(), `ziji-stage-cases-${process.pid}`);
 mkdirSync(dir, { recursive: true });
 await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, plugins: [chaptersShim], jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.woff': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"./"' }, logLevel: 'error' });
+cpSync('public/worlds', join(dir, 'worlds'), { recursive: true }); // the paintings, next to the page (spec 2026-10-13 §5)
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
 /** Anything in the lesson card cut off by the card's own box (the same probe as the clue case). */
@@ -300,13 +301,25 @@ for (const size of SIZES) {
   })));
   await page.close();
 }
-// the worlds for the parent to look over, and every prop moment timed (spec 2026-10-04 §2, §6)
+// the worlds' creatures and every world at three sizes for the parent to look over, and every prop moment timed (spec 2026-10-13 §6, §10; 2026-10-04 §6)
 {
-  const page = await browser.newPage({ viewport: { width: 1480, height: 540 } });
-  await page.goto(`file://${dir}/index.html?case=worlds`);
-  await page.waitForTimeout(300);
+  const page = await browser.newPage({ viewport: { width: 1320, height: 1300 } });
   mkdirSync('fit-shots/stage-cases', { recursive: true });
-  await page.screenshot({ path: 'fit-shots/stage-cases/worlds.png' });
+  // every creature and thing in light cel (spec 2026-10-13 §6–7)
+  await page.goto(`file://${dir}/index.html?case=creatures`);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'fit-shots/stage-cases/creatures.png', fullPage: true });
+  // every world, by day and by evening, at iPad landscape, iPad portrait and phone, with its props and Truffle (spec §10)
+  for (const w of WORLDS) for (const time of ['afternoon', 'evening']) for (const [name, width, height] of [['ipad-landscape', 1024, 768], ['ipad-portrait', 768, 1024], ['iphone', 390, 844]] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto(`file://${dir}/index.html?case=river&world=${w.id}&time=${time}`);
+    await page.waitForFunction(() => { const i = document.querySelector('.world-scene image') as SVGImageElement | null; return !!i && i.getBBox().width > 0; }, null, { timeout: 5000 }).catch(() => null);
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: `fit-shots/stage-cases/river-${w.id}-${time}-${name}.png` });
+    const shown = await page.evaluate(() => { const r = document.querySelector('.world-scene svg')!.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !!document.querySelector('.world-props .tap'); });
+    if (!shown) problems.push(`river ${w.id} ${time} ${name}: the world or its props did not draw`);
+  }
+  await page.setViewportSize({ width: 1480, height: 540 });
   await page.setViewportSize({ width: 1000, height: 640 });
   await page.goto(`file://${dir}/index.html?case=bursts`);
   await page.waitForTimeout(300);
@@ -416,7 +429,7 @@ for (const size of SIZES) {
       await m.waitForTimeout(1500);
       const worst = await m.evaluate<number>(`(() => { const w = window.rafWork.splice(0).sort((a, b) => a - b); return w[Math.floor(w.length * 0.95)] ?? 0; })()`);
       if (worst > 8) problems.push(`moments ${world} ${label}: too much work per frame: p95 ${worst.toFixed(1)}ms (budget 8)`);
-      await m.waitForTimeout(3200); // let it finish (the rocket is the longest, 4.3 s)
+      await m.waitForTimeout(2400); // let it finish (the magpie bridge is the longest, 3.6 s)
     }
     await m.screenshot({ path: `fit-shots/stage-cases/moments-${world}.png` });
   }

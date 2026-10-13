@@ -1,9 +1,10 @@
-/* Tap-fun art (spec §15): the 12 zodiac animals as small ink faces (drawn in a 48×48 box centred on 0,0),
- * a gem, a baby dinosaur and sprinkler spray. §13 ink rules; original drawings, no IP. */
+/* The 12 zodiac animals that come out of the paper boat, as small faces drawn in a 48×48 box centred on 0,0, in light cel
+ * (spec 2026-10-13 §7): the soft-violet line, flat fills. Original drawings, no IP. */
+import { LINE } from '../cel';
 
-const INK = '#2a2630';
-const S = `stroke="${INK}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"`;
-const eyes = (y = -2, gap = 7) => `<g fill="${INK}"><circle cx="${-gap}" cy="${y}" r="2.2"/><circle cx="${gap}" cy="${y}" r="2.2"/></g>`;
+const INK = LINE;
+const S = `stroke="${INK}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
+const eyes = (y = -2, gap = 7) => `<g fill="#3a3045"><circle cx="${-gap}" cy="${y}" r="2.2"/><circle cx="${gap}" cy="${y}" r="2.2"/></g>`;
 const cheeks = (y = 5) => `<g fill="#edb8c0" opacity=".8"><ellipse cx="-11" cy="${y}" rx="3" ry="2"/><ellipse cx="11" cy="${y}" rx="3" ry="2"/></g>`;
 const smile = (y = 6) => `<path d="M-3 ${y} q3 3 6 0" fill="none" ${S} stroke-width="2"/>`;
 const head = (fill: string, rx = 17, ry = 16) => `<ellipse cx="0" cy="0" rx="${rx}" ry="${ry}" fill="${fill}" ${S}/>`;

@@ -1,20 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ZODIAC_ORDER } from '../../fun/finds';
-import { ANIMAL_FACES, BABY_DINO, GEM } from './tapArt';
+import { LINE } from '../cel';
+import { ANIMAL_FACES } from './tapArt';
 
-describe('tap art', () => {
-  it('an ink face for each zodiac animal', () => {
+describe('the zodiac faces from the paper boat', () => {
+  it('a light-cel face for each zodiac animal: the soft-violet line, never the old ink', () => {
     for (const a of ZODIAC_ORDER) {
       const s = ANIMAL_FACES[a]!;
       expect(s.length, a).toBeGreaterThan(200);
-      expect(s).toContain('#2a2630');
-      expect(s).not.toMatch(/Gradient|<filter|url\(#|NaN|undefined/);
-    }
-  });
-  it('gem, baby dino and spray', () => {
-    for (const s of [GEM, BABY_DINO]) {
-      expect(s.length).toBeGreaterThan(80);
-      expect(s).not.toMatch(/NaN|undefined/);
+      expect(s).toContain(LINE);
+      expect(s).not.toContain('#2a2630');
+      expect(s).not.toMatch(/Gradient|<filter|url\(#|clip-path|NaN|undefined/);
     }
   });
 });

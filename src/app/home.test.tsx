@@ -447,6 +447,7 @@ describe('HomeScreen journey', () => {
     const first = renderWithApp(<HomeScreen />, app);
     const card = await screen.findByRole('dialog', { name: '新地方' });
     expect(card.textContent).toContain('到竹林了！');
+    expect(card.querySelector('img.arrival__scene')?.getAttribute('src')).toBe('/worlds/bamboo.webp');
     expect((await getKid(app.db))?.worldsSeen).toEqual(['home', 'rainforest', 'bamboo']);
     fireEvent.click(screen.getByText('走吧！'));
     expect(screen.queryByRole('dialog', { name: '新地方' })).toBeNull();
@@ -521,22 +522,12 @@ describe('HomeScreen word of the day reading', () => {
 });
 
 describe('HomeScreen world tap fun', () => {
-  it("Truffle plays with his props: tapping his bowl, he munches, looking toward it, and says so (spec 2026-10-04 §4.5)", async () => {
-    const app = await makeAppData();
-    await saveKid(app.db, app.kid!);
-    renderWithApp(<HomeScreen />, app);
-    await screen.findByText('今天的练习');
-    fireEvent.click(document.querySelector('.world-props [aria-label="小碗"]')!);
-    await waitFor(() => expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('好吃！'));
-    expect(document.querySelector('.home .truffle')?.getAttribute('data-expression')).toBe('content');
-    expect(document.querySelector('.home [data-part="headrot"]')?.getAttribute('transform')).toMatch(/^rotate\(-/); // the bowl is on his left
-  });
-  it('tapping the box in the tall grass finds an animal, saves it, and Truffle says so', async () => {
+  it('tapping the paper boat finds an animal, saves it, and Truffle says so', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest'] } });
     await saveKid(app.db, app.kid!);
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
-    fireEvent.click(document.querySelector('.world-props [aria-label="纸箱"]')!);
+    fireEvent.click(document.querySelector('.world-props [aria-label="纸船"]')!);
     await waitFor(async () => expect((await getKid(app.db))?.finds.animals).toEqual(['rat']));
     expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('找到了！');
   });
