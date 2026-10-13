@@ -4,7 +4,7 @@ import { canAskRung, fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '..
 import { findWord } from '../ladder/words';
 import { ladderWordsBesides } from '../content/ladder';
 import { newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
-import { LISTEN_MS, USE_READING_MS, type SlowLines } from '../srs/slow';
+import { LISTEN_MS, slowLines, USE_READING_MS, type SlowLines } from '../srs/slow';
 import type { AppDb } from '../store/db';
 import { addReviewLog, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
 import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, Word } from '../types';
@@ -16,6 +16,11 @@ export { LISTEN_MS, USE_READING_MS };
 
 /** A tap answer: right or not, how long it took, and this lesson's slow lines (spec §3.2; absent: 6 s). */
 export interface TapOutcome { correct: boolean; responseMs: number; slow?: SlowLines }
+
+/** His slow lines for a lesson (spec §3.2): from all his review logs, once, as the lesson starts. */
+export async function lessonSlowLines(db: AppDb): Promise<SlowLines> {
+  return slowLines(await logsSince(db, 0));
+}
 
 /** Reviews a card (made now if it is the first) and returns it with what it was before, for the log (spec §4). */
 async function reviewCard(db: AppDb, wordId: string, kind: CardKind, rating: Grade, now: Date): Promise<{ card: CardRecord; before: CardSnapshot }> {

@@ -2,10 +2,10 @@
 // SRS tuning spec §3.1 (Hard until produced), §3.2 (his slow line at the rating sites) and §4 (what every log keeps).
 import { describe, expect, it } from 'vitest';
 import { Rating, State } from 'ts-fsrs';
-import { getCard, getRecording, listRecordings, logsSince, putCards, putWords } from '../store/repo';
+import { addReviewLog, getCard, getRecording, listRecordings, logsSince, putCards, putWords } from '../store/repo';
 import { seededKnownCard } from '../srs/scheduler';
 import { freshDb, makeWord, markProduced } from '../test/fixtures';
-import { beginNewWord, isProduced, recordHear, recordMeaning, recordRecognition, recordUnderstand, recordUse, recordWriting, recordWrittenMeaning } from './record';
+import { beginNewWord, isProduced, lessonSlowLines, recordHear, recordMeaning, recordRecognition, recordUnderstand, recordUse, recordWriting, recordWrittenMeaning } from './record';
 import { recordSayTake, recordSentenceTake, reviewTake } from './say';
 
 type Db = Awaited<ReturnType<typeof freshDb>>;
@@ -72,6 +72,12 @@ describe('Hard until produced, at every tap rating site (spec §3.1)', () => {
 });
 
 describe('his slow line at the rating sites (spec §3.2)', () => {
+  it('lessonSlowLines reads them from his logs once (10 hear answers at 2.5 s: 5 s; the rest stay at 6 s)', async () => {
+    const db = await freshDb();
+    for (let i = 0; i < 10; i++) await addReviewLog(db, { cardId: 'b:大:hear', wordId: 'b:大', kind: 'hear', at: day1.getTime() + i, rating: Rating.Good, correct: true, responseMs: 2500 });
+    expect(await lessonSlowLines(db)).toEqual({ recognise: 6000, meaning: 6000, hear: 5000, understand: 6000 });
+  });
+
   it('a right answer over his line is Hard even when produced; under it, Good', async () => {
     const db = await freshDb();
     await markProduced(db, 'b:大');
