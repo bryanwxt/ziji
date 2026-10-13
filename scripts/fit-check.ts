@@ -377,7 +377,7 @@ async function sweep(browser: Browser, size: Size) {
     }
   });
   // the parent's class lesson and Progress against the lists (spec 2026-10-11 §8), in WebKit
-  await run('parent', AFTERNOON, { pinCode: FIT_PIN }, async (p) => {
+  await run('parent', AFTERNOON, { pinCode: FIT_PIN, reviewHistory: true }, async (p) => {
     await tabTo(p, '家长');
     for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
     await p.click('.tab:has-text("Settings")');
@@ -386,6 +386,13 @@ async function sweep(browser: Browser, size: Size) {
     await p.click('.tab:has-text("Progress")');
     await p.waitForSelector('.progress__bars');
     await snap(p, size, 'parent-progress', '.progress__bars');
+    // retention and the fit (SRS tuning spec §5, §6.2): the real optimizer loads from the build, in WebKit
+    await p.click('.tab:has-text("Skills")');
+    await p.waitForSelector('.skills__retention');
+    await snap(p, size, 'parent-skills', '.skills__retention');
+    await p.click('button:has-text("Fit to his memory")');
+    await p.waitForSelector('.skills__compare', { timeout: 20_000 });
+    await snap(p, size, 'parent-fit', 'button:has-text("Use these")');
   });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });
