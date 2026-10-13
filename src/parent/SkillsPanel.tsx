@@ -7,6 +7,7 @@ import { bandLevel, rankBands } from '../placement/walk';
 import { bringForward } from '../session/record';
 import { SKILL_CARD, SKILLS, skillAccuracy, topMissed } from '../stats/skills';
 import { allCards, allWords, answersSince, getSettings, listRecordings, logsSince, updateSettings } from '../store/repo';
+import { RetentionCheck } from './RetentionCheck';
 import type { AnswerLog, CardRecord, Recording, ReviewLog, Settings, Skill, Word } from '../types';
 
 const LABEL: Record<Skill, string> = {
@@ -19,7 +20,7 @@ const LABEL: Record<Skill, string> = {
 };
 const DAYS = 14;
 
-interface Data { logs: ReviewLog[]; answers: AnswerLog[]; words: Word[]; cards: CardRecord[]; reads: Recording[]; settings: Settings }
+interface Data { logs: ReviewLog[]; allLogs: ReviewLog[]; answers: AnswerLog[]; words: Word[]; cards: CardRecord[]; reads: Recording[]; settings: Settings }
 
 /** The parent's view of each skill (spec §19 part 7): 14-day accuracy, the class baseline they typed in, the last placement, and the words to practise more. */
 export function SkillsPanel() {
@@ -29,11 +30,12 @@ export function SkillsPanel() {
 
   const load = async () => {
     const since = addDays(now(), -DAYS).getTime();
-    const [logs, answers, words, cards, recordings, settings] = await Promise.all([
-      logsSince(db, since), answersSince(db, since), allWords(db), allCards(db), listRecordings(db), getSettings(db),
-    ]);
+    const [allLogs, answers, words, cards, recordings, settings] = await Promise.all([
+      logsSince(db, 0), answersSince(db, since), allWords(db), allCards(db), listRecordings(db), getSettings(db),
+    ]); // every log: retention reads 30 days and the fit all of them (SRS tuning spec §5, §6)
+    const logs = allLogs.filter((l) => l.at >= since);
     const reads = recordings.filter((r) => r.prompt.kind === 'passage' && r.createdAt >= since);
-    setD({ logs, answers, words, cards, reads, settings });
+    setD({ logs, allLogs, answers, words, cards, reads, settings });
   };
   useEffect(() => void load(), []);
   const typing = useRef(new Map<Skill, { value: string; t: ReturnType<typeof setTimeout> }>()); // baselines typed, not yet saved
@@ -123,6 +125,7 @@ export function SkillsPanel() {
           </tr>
         </tbody>
       </table>
+      <RetentionCheck logs={d.allLogs} now={now()} />
       <h3>Missed most (last {DAYS} days)</h3>
       {SKILLS.map((s) => {
         const missed = topMissed(d.logs, d.answers, s);
