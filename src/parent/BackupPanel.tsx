@@ -5,6 +5,7 @@ import { localDateKey } from '../lib/date';
 import { saveTextFile } from '../lib/files';
 import { applyBackup, BackupError, exportBackup, readBackup, type BackupPreview } from '../store/backup';
 import { getSettings, updateSettings } from '../store/repo';
+import { setSchedulerParams } from '../srs/scheduler';
 import { setSfxEnabled } from '../audio/sfx';
 import { setSpeechRate } from '../audio/speech';
 
@@ -53,6 +54,7 @@ export function BackupPanel() {
       const settings = await getSettings(db);
       setSpeechRate(settings.speechRate);
       setSfxEnabled(settings.soundEffects);
+      setSchedulerParams(settings.fsrs?.w ?? null); // a restored fit (or none) applies now, not on the next launch
       setPreview(null);
       await refresh();
       setStatus('Backup restored.');
