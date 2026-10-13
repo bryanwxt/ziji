@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { default_w, Rating } from 'ts-fsrs';
 import { getSettings, updateSettings } from '../store/repo';
@@ -51,12 +51,25 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
     await show(1000);
     const button = screen.getByRole('button', { name: 'Fit to his memory' });
     fireEvent.click(button);
+    fireEvent.click(button); // both before any re-render: only the busy guard can stop the second
     expect(await screen.findByText('Fitting…')).toBeTruthy();
-    fireEvent.click(button);
     await new Promise((r) => setTimeout(r, 80));
     finish({ ok: true, w: FITTED });
     expect(await screen.findByText('Right 3 times')).toBeTruthy();
     expect(fit).toHaveBeenCalledTimes(1);
+  });
+  it('unmounting during a pending fit: nothing is set or saved afterwards', async () => {
+    let finish: (r: unknown) => void = () => {};
+    fit.mockReturnValue(new Promise((r) => (finish = r)));
+    const { app, onChange } = await show(1000);
+    fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
+    expect(await screen.findByText('Fitting…')).toBeTruthy();
+    await new Promise((r) => setTimeout(r, 80)); // the optimizer is running
+    cleanup();
+    finish({ ok: true, w: FITTED });
+    await new Promise((r) => setTimeout(r, 30));
+    expect((await getSettings(app.db)).fsrs).toBeUndefined();
+    expect(onChange).not.toHaveBeenCalled();
   });
   it('Keep default: nothing is saved', async () => {
     fit.mockResolvedValue({ ok: true, w: FITTED });
@@ -71,7 +84,7 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
     fit.mockResolvedValueOnce({ ok: false, reason: 'failed' }).mockResolvedValueOnce({ ok: false, reason: 'offline' });
     const { app } = await show(1000);
     fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
-    expect(await screen.findByText("Couldn't fit — keeping the default.")).toBeTruthy();
+    expect(await screen.findByText("Couldn't fit — keeping the default")).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
     expect(await screen.findByText(/needs the internet/)).toBeTruthy();
     expect((await getSettings(app.db)).fsrs).toBeUndefined();
@@ -80,7 +93,7 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
     const fsrs = { w: FITTED, fittedAt: new Date(2026, 9, 13, 9).getTime(), reviews: 1032 };
     setSchedulerParams(FITTED);
     const { app } = await show(1500, { fsrs });
-    expect(screen.getByText(/Fitted on 1,032 reviews, 13 Oct/)).toBeTruthy();
+    expect(screen.getByText(/Fitted on 1,032 reviews, 13 Oct$/)).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Fit again' }) as HTMLButtonElement).disabled).toBe(true); // 1,500 < 1,532
     fireEvent.click(screen.getByRole('button', { name: 'Back to default' }));
     await waitFor(async () => expect((await getSettings(app.db)).fsrs).toBeUndefined());

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { compareIntervals, formatDays, type IntervalStep } from '../srs/compare';
 import { fitData } from '../srs/fitData';
@@ -26,6 +26,8 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
   const fitted = settings.fsrs;
   const canFit = fitted ? data.count >= fitted.reviews + REFIT_AFTER : data.count >= FIT_MIN_REVIEWS;
 
+  const mounted = useRef(true); // no state change after unmount, mid-fit
+  useEffect(() => () => { mounted.current = false; }, []);
   const busy = useRef(false); // a double tap fits once (a tap can land before the disabled button re-renders)
   const fit = async () => {
     if (busy.current) return;
@@ -33,9 +35,11 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
     try {
       setPhase({ kind: 'fitting' });
       await new Promise((r) => setTimeout(r, 50)); // let "Fitting…" paint before the optimizer takes the main thread
+      if (!mounted.current) return;
       const r = await fitParameters(data);
+      if (!mounted.current) return;
       if (r.ok) setPhase({ kind: 'result', w: r.w, rows: compareIntervals(r.w) });
-      else setPhase({ kind: 'message', text: r.reason === 'offline' ? "Couldn't load the fitting tool — it needs the internet the first time. Try again when online." : "Couldn't fit — keeping the default." });
+      else setPhase({ kind: 'message', text: r.reason === 'offline' ? "Couldn't load the fitting tool — it needs the internet the first time. Try again when online." : "Couldn't fit — keeping the default" });
     } finally {
       busy.current = false;
     }
@@ -60,7 +64,7 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
       <h3>Fit to his memory</h3>
       {fitted ? (
         <p>
-          Fitted on {num(fitted.reviews)} reviews, {day(fitted.fittedAt)}.{' '}
+          Fitted on {num(fitted.reviews)} reviews, {day(fitted.fittedAt)}{' '}
           <button type="button" class="small-btn" onClick={() => void backToDefault()}>Back to default</button>{' '}
           <button type="button" class="small-btn" disabled={!canFit || phase.kind === 'fitting'} onClick={() => void fit()}>Fit again</button>
           {!canFit && <span> (after {num(fitted.reviews + REFIT_AFTER)} reviews; now {num(data.count)})</span>}
