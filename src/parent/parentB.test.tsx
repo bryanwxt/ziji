@@ -1,5 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
+import { default_w } from 'ts-fsrs';
+import { schedulerParams, setSchedulerParams } from '../srs/scheduler';
 import { exportBackup } from '../store/backup';
 import { allCards, allWords, getSettings, putWords, updateSettings } from '../store/repo';
 import { setSpeechRate } from '../audio/speech';
@@ -107,6 +109,27 @@ describe('BackupPanel restore', () => {
     expect(await screen.findByText('Backup restored.')).toBeTruthy();
     expect(setSfxEnabled).toHaveBeenLastCalledWith(false);
     expect(setSpeechRate).toHaveBeenLastCalledWith(0.6);
+  });
+
+  it('a restored fit applies straight away; a backup with none puts the defaults back (SRS tuning spec §6.2)', async () => {
+    const w = default_w.map((x, i) => (i === 0 ? x * 2 : x));
+    const restore = async (fsrs: { w: number[]; fittedAt: number; reviews: number } | undefined) => {
+      const source = await makeAppData();
+      await updateSettings(source.db, { fsrs });
+      const text = await exportBackup(source.db, { includeMedia: false, now: 1 });
+      const { unmount } = renderWithApp(<BackupPanel />, await makeAppData());
+      const input = document.getElementById('bk-file') as HTMLInputElement;
+      Object.defineProperty(input, 'files', { value: [backupFile(text)] });
+      fireEvent.change(input);
+      fireEvent.click(await screen.findByText('Replace with this backup'));
+      expect(await screen.findByText('Backup restored.')).toBeTruthy();
+      unmount();
+    };
+    await restore({ w, fittedAt: 1, reviews: 1000 });
+    expect(schedulerParams()[0]).toBeCloseTo(w[0]!, 3);
+    await restore(undefined);
+    expect([...schedulerParams()]).toEqual([...default_w]);
+    setSchedulerParams(null);
   });
 
   it('tells the parent when a restore fails instead of failing silently', async () => {

@@ -7,7 +7,7 @@ import { sayPassed, type TakeRung } from '../ladder/rungs';
 import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
 import { newId } from '../lib/id';
 import { waitingPassageTakes } from '../langdu/review';
-import { newCard, review } from '../srs/scheduler';
+import { newCard, review, snapshot } from '../srs/scheduler';
 import type { AppDb } from '../store/db';
 import { deleteRecording, getCard, getRecording, keepRecording, listRecordings, logsForCard, putCards, settleTake } from '../store/repo';
 import type { CardRecord, Recording } from '../types';
@@ -66,10 +66,12 @@ export function takesToDrop(recs: Recording[], now: Date, passed: ReadonlySet<st
  * Nothing is logged: only the parent's verdict counts toward the pass. Old takes are tidied after.
  */
 export async function recordTake(db: AppDb, kind: TakeRung, wordId: string, take: FinishedRecording, now: Date): Promise<CardRecord> {
-  await keepRecording(db, { id: newId(), createdAt: now.getTime(), prompt: { kind, wordId }, ...take });
   const id = `${wordId}:${kind}`;
   const had = await getCard(db, id);
-  const next = review(had?.fsrs ?? newCard(now), Rating.Good, now);
+  const was = had?.fsrs ?? newCard(now);
+  // the take keeps its card as it was now, for the parent's verdict's log (SRS tuning spec §4)
+  await keepRecording(db, { id: newId(), createdAt: now.getTime(), prompt: { kind, wordId }, ...take, cardBefore: snapshot(was, now) });
+  const next = review(was, Rating.Good, now);
   const tomorrow = startOfLocalDay(addDays(now, 1));
   const card: CardRecord = { ...(had ?? {}), id, wordId, kind, fsrs: next.due < tomorrow ? { ...next, due: tomorrow } : next }; // keeps its pass
   await putCards(db, [card]);
@@ -99,7 +101,7 @@ export async function reviewTake(db: AppDb, recordingId: string, verdict: 'ok' |
   const ok = verdict === 'ok';
   const cardId = `${wordId}:${kind}`;
   // verdict and log commit together, and only once (a double tap finds it reviewed)
-  if (!(await settleTake(db, recordingId, verdict, { cardId, wordId, kind, at: rec.createdAt, rating: ok ? Rating.Good : Rating.Again, correct: ok }))) return;
+  if (!(await settleTake(db, recordingId, verdict, { cardId, wordId, kind, at: rec.createdAt, rating: ok ? Rating.Good : Rating.Again, correct: ok, ...rec.cardBefore }))) return;
   if (!ok) {
     await bringForward(db, wordId, kind, endOfLocalDay(now));
     return;

@@ -5,7 +5,7 @@ import { addReviewLog, allCards, allWords, getCard, getSession, getSettings, get
 import { builtinWords } from '../content';
 import { seededKnownCard } from '../srs/scheduler';
 import { DEFAULT_SETTINGS } from '../types';
-import { freshDb, makeWord } from '../test/fixtures';
+import { freshDb, makeWord, markProduced } from '../test/fixtures';
 import { bringForward, markTraced, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession } from './record';
 /** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
 const DISTINCT = Array.from('一二三四五六七八九十人大小山水火木日月田上下中天地子女手口目耳心土石云雨花草米竹虫鱼羊牛马鸟');
@@ -15,6 +15,7 @@ const now = new Date(2026, 9, 2, 9);
 describe('recording answers', () => {
   it('creates a card on the first answer and reviews it afterwards', async () => {
     const db = await freshDb();
+    await markProduced(db, 'b:大'); // written already: a right tap is Good
     const first = await recordRecognition(db, 'b:大', { correct: true, responseMs: 1000 }, now);
     expect(first.id).toBe('b:大:recognise');
     const second = await recordRecognition(db, 'b:大', { correct: true, responseMs: 1000 }, new Date(first.fsrs.due.getTime() + 1000));
@@ -134,6 +135,7 @@ describe('response time in words-in-use answers (deferred minor, plan 13)', () =
   });
   it('reading the sentence takes time: a right answer at 8 s is still Good, not Hard (review I4)', async () => {
     const db = await freshDb();
+    await markProduced(db, 'b:很');
     await recordUse(db, 'b:很', true, new Date(2026, 9, 5, 10), 8_000);
     expect((await logsSince(db, 0))[0]!.rating).toBe(Rating.Good);
   });

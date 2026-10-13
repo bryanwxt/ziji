@@ -39,7 +39,8 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
-import { beginNewWord, bringForward, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { beginNewWord, bringForward, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import type { SlowLines } from '../srs/slow';
 import { meaningCredit } from '../session/writeCredit';
 import { settleLessonStars } from '../session/stars';
 import { starsOf } from '../stats/stats';
@@ -89,6 +90,7 @@ interface Loaded {
   wrapup: UseItem[] | null; // built when 用一用 starts, from today's recalls
   speaking: { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; firstDay: boolean; day: string } | { kind: 'story'; scene: Scene } | null;
   confusions: Map<string, string[]>; // look-alikes he picked, per word (钓鱼, spec 2026-10-05 §3.4)
+  slow: SlowLines; // his slow line per tap kind, worked out once as the lesson loads (SRS tuning spec §3.2)
 }
 
 export function SessionScreen({ free, extra = false }: { free: boolean; extra?: boolean }) {
@@ -110,7 +112,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   useEffect(() => {
     void (async () => {
       const rng = mulberry32(Date.now() >>> 0);
-      const [know, kid, parentPassages, settings, practised, confusions] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db), getConfusions(db)]);
+      const [know, kid, parentPassages, settings, practised, confusions, slow] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db), practisedWords(db), getConfusions(db), free ? Promise.resolve({}) : lessonSlowLines(db, now())]);
       const today = now();
       const rec = free
         ? createFreePracticeRecord(planFreePlay(know.cards, know.words, await getRungs(db), voice, rng, undefined, levelOf(know)), localDateKey(today), today.getTime())
@@ -132,6 +134,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         choose: null,
         wrapup: null,
         confusions,
+        slow,
         speaking: (() => {
           const k = kid ?? DEFAULT_KID;
           // 朗读 and 看图说话 only when switched back on (both parked, parent 2026-10-05). Nothing to run: the step is skipped, so a
@@ -270,7 +273,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     once(async () => {
       const item = flashItem!;
       if (!item.retry && !rec.free) {
-        const outcome = { correct: r.correct, responseMs: r.responseMs };
+        const outcome = { correct: r.correct, responseMs: r.responseMs, slow: state.slow };
         // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing
         const fresh = item.isNew ? know.wordsById.get(item.wordId) : undefined;
         if (fresh) {
@@ -301,12 +304,12 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       }
       if (!rec.free && !item.retry) {
         // a sentence takes reading time first: that doesn't make a right answer slow (as in 选一选)
-        const outcome = { correct: r.correct, responseMs: r.asked === 'use' || r.inContext ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs };
-        if (item.grades === 'understand' && r.asked === 'understand') know.cardsById.set(`${item.wordId}:understand`, await recordUnderstand(db, item.wordId, { correct: r.correct, responseMs: r.responseMs }, now()));
+        const outcome = { correct: r.correct, responseMs: r.asked === 'use' || r.inContext ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs, slow: state.slow };
+        if (item.grades === 'understand' && r.asked === 'understand') know.cardsById.set(`${item.wordId}:understand`, await recordUnderstand(db, item.wordId, { correct: r.correct, responseMs: r.responseMs, slow: state.slow }, now()));
         else if (item.grades === 'hear' && r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
         else if (item.grades === 'recognise') know.cardsById.set(`${item.wordId}:recognise`, await recordRecognition(db, item.wordId, outcome, now()));
         else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
-        else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs));
+        else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs, state.slow));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
         if (item.ask !== 'fish' && item.ask !== 'understand') await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b)
         if (r.asked === 'zibian') {
@@ -369,7 +372,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const onUseAnswer = async (item: UseItem, correct: boolean, responseMs = 0) => {
     if (!item.wordId) return; // a bank word, not one of his own: practice only
     if (!rec.free) {
-      know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, correct, now(), responseMs));
+      know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, correct, now(), responseMs, state.slow));
       await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct }); // every answer, for the Skills panel
     }
     if (correct) setCorrect((n) => n + 1);

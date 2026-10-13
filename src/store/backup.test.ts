@@ -4,7 +4,7 @@ import { createSessionRecord } from '../session/runner';
 import { freshDb, makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_KID } from '../types';
 import { applyBackup, BACKUP_FORMAT, BackupError, exportBackup, exportRawBackup, readBackup } from './backup';
-import { addAnswer, addRecording, allCards, answersSince, getKid, getSettings, listParentPassages, listRecordings, putCards, putWords, saveKid, saveParentPassage, saveSession, updateSettings } from './repo';
+import { addAnswer, addRecording, addReviewLog, allCards, answersSince, getKid, getSettings, listParentPassages, listRecordings, logsSince, putCards, putWords, saveKid, saveParentPassage, saveSession, updateSettings } from './repo';
 
 async function seeded() {
   const db = await freshDb();
@@ -159,3 +159,16 @@ describe('sweep: restoring an older backup', () => {
   });
 });
 
+
+describe('backups carry his fitted memory (SRS tuning spec §6.2)', () => {
+  it("settings.fsrs and the review logs' new fields come back from a backup", async () => {
+    const db = await freshDb();
+    const fsrs = { w: Array.from({ length: 21 }, (_, i) => i / 10), fittedAt: 5, reviews: 1032 };
+    await updateSettings(db, { fsrs });
+    await addReviewLog(db, { cardId: 'b:大:recognise', wordId: 'b:大', kind: 'recognise', at: 9, rating: 3, correct: true, state: 2, elapsedDays: 4, scheduledDays: 5 });
+    const target = await freshDb();
+    await applyBackup(target, readBackup(await exportBackup(db, { includeMedia: false, now: 1 })));
+    expect((await getSettings(target)).fsrs).toEqual(fsrs);
+    expect((await logsSince(target, 0))[0]).toMatchObject({ state: 2, elapsedDays: 4, scheduledDays: 5 });
+  });
+});

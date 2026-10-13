@@ -12,7 +12,8 @@ import { seededKnownCard } from '../src/srs/scheduler';
 import { createSessionRecord } from '../src/session/runner';
 import { exportBackup } from '../src/store/backup';
 import { openAppDb } from '../src/store/db';
-import { putCards, putWords, saveKid, saveParentPassage, saveReward, saveSession, seedBuiltinWords, updateSettings } from '../src/store/repo';
+import { addReviewLog, putCards, putWords, saveKid, saveParentPassage, saveReward, saveSession, seedBuiltinWords, updateSettings } from '../src/store/repo';
+import { makeReviewHistory } from '../src/test/reviewHistory';
 import { DEFAULT_KID, DEFAULT_SETTINGS, type ActivityKind, type SessionPlan } from '../src/types';
 
 export interface FitProfileOptions {
@@ -27,6 +28,7 @@ export interface FitProfileOptions {
   kid?: boolean; // false: stop at PetSetup
   placementDone?: boolean; // false: stop at the placement quiz
   writeSentence?: boolean; // 写一写 opens on 保持, whose cue is a long class sentence
+  reviewHistory?: boolean; // four months of reviews (~1,700 training items): Skills shows retention and Fit can run (SRS tuning spec §9)
   ownsAll?: boolean; // every costume and accessory owned: the chest gives stars (sweep: that prize was never screenshotted)
 }
 
@@ -64,6 +66,10 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
     langdu: o.langdu ?? false,
     oral: { ...DEFAULT_SETTINGS.oral, name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '我叫小明。我今年八岁。我在光明小学读二年级。我的爸爸是医生，妈妈是老师。我有一个妹妹，她今年五岁。我喜欢画画、踢足球和看书。我最喜欢的动物是猫，因为猫很可爱。' }, // a long parent-written intro: the card must scroll, not push the buttons off an SE
   });
+  if (o.reviewHistory) {
+    const { logs } = makeReviewHistory({ cards: 330, days: 120, end: new Date(t - 3_600_000), wordIds: words.slice(100, 430).map((w) => w.id) });
+    for (const l of logs) await addReviewLog(db, l);
+  }
   await saveParentPassage(db, { id: 'pp:fit', title: '我的家', text: LONG_PASSAGE, createdAt: t - 86_400_000 });
   await saveReward(db, { id: 'goal:fit', title: 'Lego set', emoji: '🧱', metric: 'stars', target: 40, createdAt: t - 86_400_000, claimedAt: null });
   const today = localDateKey(o.now);

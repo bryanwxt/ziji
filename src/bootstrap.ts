@@ -7,6 +7,8 @@ import { builtinWords, CONTENT_VERSION } from './content';
 import { courseOf } from './content/curriculum';
 import { openAppDb, type AppDb } from './store/db';
 import { getKid, getSettings, seedBuiltinWords, updateSettings } from './store/repo';
+import { keepStorage } from './store/persist';
+import { setSchedulerParams } from './srs/scheduler';
 import { applySettingsMigration } from './store/settings';
 import type { KidState, Settings } from './types';
 
@@ -34,8 +36,9 @@ export async function bootstrap(dbName: string): Promise<Booted> {
   const voice = await loadChineseVoice(1500, settings.voiceURI ?? null);
   setSpeechRate(settings.speechRate);
   setSfxEnabled(settings.soundEffects);
+  setSchedulerParams(settings.fsrs?.w ?? null); // his fitted memory, if the parent chose it (SRS tuning spec §6.2)
   // Ask Safari not to evict our data (home-screen apps are also exempt from its 7-day cleanup).
-  void navigator.storage?.persist?.().catch(() => false);
+  void keepStorage();
   return { db, settings, kid, voice: voice !== null };
 }
 

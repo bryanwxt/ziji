@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>optimizer check</title>
+<script type="module">
+  // SRS tuning spec §9: the real fsrs-browser, through the app's own wrapper, on a made-up child's logs (run by optimizer-check.ts)
+  import { checkParameters } from 'ts-fsrs';
+  import { makeReviewHistory } from '/src/test/reviewHistory.ts';
+  import { fitData } from '/src/srs/fitData.ts';
+  import { fitParameters } from '/src/srs/optimizer.ts';
+  window.result = (async () => {
+    const out = {};
+    const end = new Date(2026, 9, 13, 18);
+    out.tooLittle = await fitParameters({ ratings: [3, 3], deltaTs: [0, 1], lengths: [2], count: 1 }); // the defaults come back: nothing fitted
+    out.malformed = await fitParameters({ ratings: [0, 3], deltaTs: [0, 1], lengths: [2], count: 1 }); // a panic, caught (the fits below show the module survives it)
+    for (const [name, cards] of [['normal', 330], ['large', 1000]]) {
+      const h = makeReviewHistory({ cards, days: 120, end });
+      const data = fitData(h.logs, h.cards);
+      const t = performance.now();
+      const r = await fitParameters(data);
+      const ms = Math.round(performance.now() - t);
+      let checked = false;
+      try { checked = r.ok && checkParameters(r.w).length === 21; } catch { checked = false; }
+      out[name] = { items: data.count, ok: r.ok, n: r.ok ? r.w.length : 0, checked, ms };
+    }
+    return out;
+  })();
+</script>

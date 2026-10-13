@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import { default_w } from 'ts-fsrs';
 import { bootstrap } from './bootstrap';
 import { builtinWords, CONTENT_VERSION } from './content';
+import { schedulerParams, setSchedulerParams } from './srs/scheduler';
 import { getSettings, getWord, putWords, seedBuiltinWords, updateSettings } from './store/repo';
 
 
@@ -39,5 +41,20 @@ describe('launch (deferred minor, plan 11)', () => {
     expect(await getSettings(third.db)).toMatchObject({ course: 'cl', contentCourse: 'cl' });
     expect((await getWord(third.db, 'b:井'))!.writeable).toBe(false);
     third.db.close();
+  });
+
+  it('builds the scheduler from his fitted parameters, and from the defaults when they are invalid (SRS tuning spec §6.2)', async () => {
+    const name = `boot-${crypto.randomUUID()}`;
+    const first = await bootstrap(name);
+    const w = default_w.map((x, i) => (i === 0 ? x * 2 : x));
+    await updateSettings(first.db, { fsrs: { w, fittedAt: 1, reviews: 1000 } });
+    first.db.close();
+    const second = await bootstrap(name);
+    expect(schedulerParams()[0]).toBeCloseTo(w[0]!, 3);
+    await updateSettings(second.db, { fsrs: { w: [1, 2, 3], fittedAt: 1, reviews: 1000 } });
+    second.db.close();
+    (await bootstrap(name)).db.close();
+    expect([...schedulerParams()]).toEqual([...default_w]);
+    setSchedulerParams(null);
   });
 });
