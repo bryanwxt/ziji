@@ -1,4 +1,4 @@
-import { WORLDS, worldById } from '../fun/worlds';
+import { migrateWorldId, OLD_WORLDS, WORLDS } from '../fun/worlds';
 import { nextRung, type Rung } from '../session/ladder';
 import { normalizeFinds } from '../fun/finds';
 import { migrateAccessory } from '../fun/accessories';
@@ -29,11 +29,15 @@ export function normalizeKid(raw: Partial<KidState> | null | undefined): KidStat
   // Accessories v2: dragon-era emoji map one-to-one onto the new add-ons; unknown values are dropped.
   const list = Array.isArray(kid.ownedAccessories) ? kid.ownedAccessories : [];
   const owned = [...new Set(list.map((v) => migrateAccessory(typeof v === 'string' ? v : null)).filter((x): x is string => !!x))];
-  // Journey worlds: known ids only, in unlock order; a pick must be a reached world.
-  const worldList = Array.isArray(kid.worldsSeen) ? kid.worldsSeen.filter((w): w is string => typeof w === 'string' && !!worldById(w)) : [];
-  const worldsSeen = WORLDS.map((w) => w.id as string).filter((id) => worldList.includes(id));
-  const world = typeof kid.world === 'string' && worldsSeen.includes(kid.world) ? kid.world : null;
-  return { ...kid, ownedAccessories: owned, wearing: migrateAccessory(typeof kid.wearing === 'string' ? kid.wearing : null), worldsSeen, world, reading: normalizeReading(kid.reading),
+  // Journey worlds: One River ids only (an old paper world maps across by position, spec 2026-10-13 §8), in unlock order;
+  // a pick must be a reached world. Unknown ids are dropped. Mapping an old id once is what tells Home to say so.
+  const rawWorlds = Array.isArray(kid.worldsSeen) ? kid.worldsSeen : [];
+  const worldList = rawWorlds.map(migrateWorldId);
+  const worldsSeen: string[] = WORLDS.map((w) => w.id as string).filter((id) => worldList.includes(id as never));
+  const picked = migrateWorldId(kid.world);
+  const world = picked && worldsSeen.includes(picked) ? picked : null;
+  const moved = rawWorlds.some((w) => typeof w === 'string' && Object.hasOwn(OLD_WORLDS, w) && !WORLDS.some((x) => x.id === w));
+  return { ...kid, ownedAccessories: owned, wearing: migrateAccessory(typeof kid.wearing === 'string' ? kid.wearing : null), worldsSeen, world, riverNews: kid.riverNews === true || moved, reading: normalizeReading(kid.reading),
     speakingLast: kid.speakingLast === 'langdu' || kid.speakingLast === 'story' ? kid.speakingLast : null,
     story: normalizeStory(kid.story),
     finds: normalizeFinds(kid.finds),

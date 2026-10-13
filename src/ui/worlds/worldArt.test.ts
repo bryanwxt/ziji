@@ -7,11 +7,11 @@ import { sceneFor, SCENES, WORLD_ART } from './scenes';
 
 const PALETTE = new Set(Object.values(P).map((c) => c.toLowerCase()));
 /** The evening light each world adds over its land (spec 2026-10-04 §2: "lamps or stars that suit the world"). */
-const LIGHT: Record<WorldId, string> = { yard: 'lantern', grass: 'firefly', race: 'lamp', blocks: 'torch', dino: 'lava', sea: 'jelly', space: 'window', pirate: 'lamp' };
+const LIGHT: Record<WorldId, string> = { home: 'lantern', rainforest: 'firefly', bamboo: 'lamp', terraces: 'torch', dino: 'lava', lantern: 'jelly', cove: 'window', milkyway: 'lamp' };
 const paper = Object.entries(WORLD_ART) as [WorldId, WorldArt][];
 
 describe('the storybook paper worlds (spec 2026-10-04 §2)', () => {
-  it('these worlds are in storybook paper', () => expect(paper.map(([w]) => w)).toEqual(expect.arrayContaining(['yard', 'pirate'])));
+  it('these worlds are in storybook paper', () => expect(paper.map(([w]) => w)).toEqual(expect.arrayContaining(['home', 'milkyway'])));
   for (const [w, a] of paper) {
     describe(w, () => {
       const day = sceneFor(w, 'afternoon');
@@ -57,8 +57,8 @@ describe('the storybook paper worlds (spec 2026-10-04 §2)', () => {
       });
       it('evening swaps the sky (moon and stars behind the land), keeps the land, and adds its own lights over it', () => {
         expect(evening).toContain(a.land);
-        if (w !== 'space') expect(evening).not.toContain(a.sky); // the moon base is always night: it keeps its sky
-        if (w !== 'sea' && w !== 'space') expect(evening.indexOf('data-part="moon"')).toBeLessThan(evening.indexOf(a.land));
+        if (w !== 'cove') expect(evening).not.toContain(a.sky); // the moon base is always night: it keeps its sky
+        if (w !== 'lantern' && w !== 'cove') expect(evening.indexOf('data-part="moon"')).toBeLessThan(evening.indexOf(a.land));
         expect(evening.slice(evening.indexOf(a.land) + a.land.length)).toContain(`data-part="${LIGHT[w]}"`);
       });
       it('morning and afternoon share the art; the room thumbnails show the day', () => {

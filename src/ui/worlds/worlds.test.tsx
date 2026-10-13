@@ -9,16 +9,16 @@ describe('world scenes', () => {
     for (const w of WORLDS) expect(WORLD_ART[w.id], w.id).toBeTruthy();
   });
   it('WorldScene draws the world at its time of day, decorative only', () => {
-    const { container } = render(<WorldScene world="yard" time="afternoon" />);
+    const { container } = render(<WorldScene world="home" time="afternoon" />);
     const el = container.querySelector('.world-scene')!;
-    expect(el.getAttribute('data-world')).toBe('yard');
+    expect(el.getAttribute('data-world')).toBe('home');
     expect(el.getAttribute('data-time')).toBe('afternoon');
     expect(el.getAttribute('aria-hidden')).toBe('true');
     expect(container.querySelector('[data-prop="ball"]')).toBeTruthy();
     expect(container.querySelector('[data-part="moon"]')).toBeNull();
   });
   it('evening in the yard: the moon is up, and the lanterns hang in one group with their string (a lesson hides it)', () => {
-    const { container } = render(<WorldScene world="yard" time="evening" />);
+    const { container } = render(<WorldScene world="home" time="evening" />);
     expect(container.querySelector('[data-part="moon"]')).toBeTruthy();
     expect(container.querySelectorAll('[data-part="lanterns"] [data-part="lantern"]')).toHaveLength(4);
   });

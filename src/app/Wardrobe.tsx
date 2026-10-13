@@ -146,7 +146,7 @@ export function Wardrobe() {
               <Label zh={`${k.finds.gems} 颗宝石`} />
             </div>
             {WORLDS.map((w) => {
-              const reached = w.id === 'yard' || k.worldsSeen.includes(w.id);
+              const reached = w.id === 'home' || k.worldsSeen.includes(w.id);
               return (
                 <button
                   key={w.id}

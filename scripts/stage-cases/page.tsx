@@ -258,7 +258,7 @@ else if (which === 'bursts') {
 }
 else if (which === 'moments') {
   // Home's world with its props and a live Truffle: each moment is tapped and its frames timed (spec 2026-10-04 §6)
-  const world = (new URLSearchParams(location.search).get('world') ?? 'yard') as WorldId;
+  const world = (new URLSearchParams(location.search).get('world') ?? 'home') as WorldId;
   const kid = { ...DEFAULT_KID, finds: { ...DEFAULT_FINDS } };
   function Moments() {
     const [react, setReact] = useState<{ kind: ReactionKind; key: number } | null>(null);

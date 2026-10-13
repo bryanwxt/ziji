@@ -14,7 +14,7 @@ import { RACE } from './race';
 export const SCENE_VIEWBOX = '0 0 360 480';
 
 /** Every world, in storybook paper. */
-export const WORLD_ART: Record<WorldId, WorldArt> = { yard: YARD, grass: GRASS, race: RACE, blocks: BLOCKS, dino: DINO, sea: SEA, space: SPACE, pirate: PIRATE };
+export const WORLD_ART: Record<WorldId, WorldArt> = { home: YARD, rainforest: GRASS, bamboo: RACE, terraces: BLOCKS, dino: DINO, lantern: SEA, cove: SPACE, milkyway: PIRATE };
 
 /** Each world by day (thumbnails in 松露's room, the arrival card). */
 export const SCENES = Object.fromEntries(WORLDS.map((w) => [w.id, WORLD_ART[w.id].sky + WORLD_ART[w.id].land])) as Record<WorldId, string>;

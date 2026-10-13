@@ -77,7 +77,7 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
   await saveSession(db, { ...createSessionRecord(emptyPlan, yesterday, t - 86_400_000), completed: true, completedSteps: ['flashcards', 'writing'] });
   if (o.doneToday) await saveSession(db, { ...createSessionRecord({ ...emptyPlan, steps: ['flashcards', 'choose', 'components', 'writing', 'speaking'] }, today, t - 3_600_000), completed: true, completedSteps: ['flashcards', 'choose', 'components', 'writing', 'speaking'] });
   if (o.kid !== false) {
-    const world = o.world ?? 'race';
+    const world = o.world ?? 'bamboo';
     await saveKid(db, {
       ...DEFAULT_KID,
       worldsSeen: WORLDS.map((w) => w.id),

@@ -58,10 +58,10 @@ describe('an install placed before this change (no starting point saved)', () =>
     await applyPlacement(db, readOnly(words.map((w) => w.id)), now);
     const s = await getSettings(db);
     await updateSettings(db, { placementResult: { ...s.placementResult!, worldBase: undefined } }); // as saved before the change
-    const kid = { ...DEFAULT_KID, worldsSeen: ['yard', 'grass', 'race', 'blocks', 'dino', 'sea', 'space', 'pirate'], world: 'pirate' };
+    const kid = { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest', 'bamboo', 'terraces', 'dino', 'lantern', 'cove', 'milkyway'], world: 'milkyway' };
     const first = await settleJourney(db, kid, 500);
     expect(first.count).toBe(0);
-    expect(first.kid.worldsSeen).toEqual(['yard']);
+    expect(first.kid.worldsSeen).toEqual(['home']);
     expect(first.kid.world).toBeNull();
     expect((await getSettings(db)).placementResult!.worldBase).toBe(500);
     const again = await settleJourney(db, first.kid, 500);

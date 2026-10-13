@@ -20,7 +20,7 @@ async function setup(free = false, everything = false) {
   const app = await makeAppData();
   // with every costume and accessory owned, the chest gives stars, and the watching Truffle stays to pounce
   const owned = everything ? { ownedCostumes: COSTUMES.map((c) => c.id), ownedAccessories: [...ACCESSORIES] } : {};
-  await saveKid(app.db, { ...DEFAULT_KID, worldsSeen: ['yard', 'grass'], ...owned });
+  await saveKid(app.db, { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest'], ...owned });
   renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'], free)} />, app);
   await screen.findByText(free ? '练习得很好！' : '太棒了！');
   return app;
@@ -31,7 +31,7 @@ describe('the celebration on the stage (spec 2026-10-04 §3, §4.4, phase D)', (
     motion.reduced = false;
     await setup();
     const burst = document.querySelector('.burst')!;
-    expect(burst.getAttribute('data-world')).toBe('grass');
+    expect(burst.getAttribute('data-world')).toBe('rainforest');
     expect(burst.getAttribute('style')).toMatch(/--burst-a:\s*#[0-9a-f]{6}/i);
     expect(burst.classList.contains('burst--turning')).toBe(true);
     expect(document.querySelector('.scene--night')).toBeNull();

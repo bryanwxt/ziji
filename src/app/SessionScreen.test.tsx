@@ -77,9 +77,9 @@ async function learnCurrentWord() {
 describe('SessionScreen', { timeout: 60_000 }, () => {
   it('shows the current world behind the lesson', async () => {
     const app = await setup();
-    await saveKid(app.db, { ...DEFAULT_KID, worldsSeen: ['yard', 'grass'] }); // the session reads the kid from the db
+    await saveKid(app.db, { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest'] }); // the session reads the kid from the db
     renderWithApp(<SessionScreen free={false} />, app);
-    await waitFor(() => expect(document.querySelector('.world-scene')?.getAttribute('data-world')).toBe('grass'));
+    await waitFor(() => expect(document.querySelector('.world-scene')?.getAttribute('data-world')).toBe('rainforest'));
     expect(document.querySelector('.world-strip')).toBeNull(); // the whole world, not a strip
   });
 

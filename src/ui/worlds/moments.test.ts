@@ -31,24 +31,24 @@ describe('prop moments (spec 2026-10-04 §4.5)', () => {
     for (const w of WORLDS) expect(MOMENTS[w.id].some((m) => m.auto), w.id).toBe(true);
   });
   it('the box in the tall grass shows the next animal once a day', () => {
-    const first = runMoment('grass', 'box', kid(), DAY, 1);
+    const first = runMoment('rainforest', 'box', kid(), DAY, 1);
     expect(first.fx).toEqual({ kind: 'animal', animal: 'rat' });
     expect(first.kid!.finds.animals).toEqual(['rat']);
     expect(first.say).toBe('找到了！');
-    const again = runMoment('grass', 'box', first.kid!, DAY, 1);
+    const again = runMoment('rainforest', 'box', first.kid!, DAY, 1);
     expect(again.kid).toBeUndefined(); // nothing new today; the rat just waves
     expect(again.fx).toEqual({ kind: 'animal', animal: 'rat' });
   });
   it('the gem block cracks three times, then pops the day’s gem; a new day starts over (review focus 3)', () => {
     for (let n = 1; n <= 3; n++) {
-      const o = runMoment('blocks', 'gem-block', kid(), DAY, n);
+      const o = runMoment('terraces', 'gem-block', kid(), DAY, n);
       expect(o.fx).toEqual({ kind: 'crack', cracks: n, gem: false });
       expect(o.kid).toBeUndefined();
     }
-    const pop = runMoment('blocks', 'gem-block', kid(), DAY, 4);
+    const pop = runMoment('terraces', 'gem-block', kid(), DAY, 4);
     expect(pop.fx).toMatchObject({ kind: 'crack', gem: true });
     expect(pop.kid!.finds.gems).toBe(1);
-    expect(runMoment('blocks', 'gem-block', pop.kid!, DAY, 5).kid).toBeUndefined(); // one gem a day
+    expect(runMoment('terraces', 'gem-block', pop.kid!, DAY, 5).kid).toBeUndefined(); // one gem a day
   });
   it('the egg remembers the tap; once hatched the baby hops', () => {
     const o = runMoment('dino', 'nest', kid(), DAY, 1);
@@ -60,33 +60,33 @@ describe('prop moments (spec 2026-10-04 §4.5)', () => {
     expect(hatched.say).toBe('你好，小恐龙！');
   });
   it('the X gives one bonus star a day, then Truffle just digs', () => {
-    const o = runMoment('pirate', 'x', kid({ bonusStars: 2 }), DAY, 1);
+    const o = runMoment('milkyway', 'x', kid({ bonusStars: 2 }), DAY, 1);
     expect(o.fx).toEqual({ kind: 'dig', star: true });
     expect(o.kid).toMatchObject({ bonusStars: 3, finds: { lastDigDate: DAY } });
-    const again = runMoment('pirate', 'x', o.kid!, DAY, 1);
+    const again = runMoment('milkyway', 'x', o.kid!, DAY, 1);
     expect(again.kid).toBeUndefined();
     expect(again.say).toBe('挖呀挖！');
   });
   it('the rocket counts down in Chinese; the parrot says hello; the sprinkler gets a flinch, then a laugh', () => {
-    expect(runMoment('space', 'rocket', kid(), DAY, 1).speak).toBe('三，二，一！');
-    expect(runMoment('pirate', 'parrot', kid(), DAY, 1).say).toBe('你好！'); // his bubble: the parrot only starts by itself, which never speaks
-    const s = runMoment('yard', 'sprinkler', kid(), DAY, 1);
+    expect(runMoment('cove', 'rocket', kid(), DAY, 1).speak).toBe('三，二，一！');
+    expect(runMoment('milkyway', 'parrot', kid(), DAY, 1).say).toBe('你好！'); // his bubble: the parrot only starts by itself, which never speaks
+    const s = runMoment('home', 'sprinkler', kid(), DAY, 1);
     expect(s).toMatchObject({ react: 'flinch', say: '哇！', later: { say: '哈哈哈！', ms: 700 } });
   });
   it('Truffle plays along: he pounces on the ball, munches at his bowl and watches the bird', () => {
-    expect(runMoment('yard', 'ball', kid(), DAY, 1).react).toBe('pounce');
-    expect(runMoment('yard', 'bowl', kid(), DAY, 1)).toMatchObject({ react: 'munch', sfx: 'munch' });
-    expect(runMoment('yard', 'birdhouse', kid(), DAY, 1).react).toBe('watch');
+    expect(runMoment('home', 'ball', kid(), DAY, 1).react).toBe('pounce');
+    expect(runMoment('home', 'bowl', kid(), DAY, 1)).toMatchObject({ react: 'munch', sfx: 'munch' });
+    expect(runMoment('home', 'birdhouse', kid(), DAY, 1).react).toBe('watch');
   });
 });
 
 describe('props Home covers on some screens (WebKit sweep)', () => {
   it('play by themselves rather than wait for a tap that would land on a card or the path', () => {
     const hands = (w: Parameters<typeof runMoment>[0]) => MOMENTS[w].filter((m) => !m.tap).map((m) => m.prop);
-    expect(hands('yard')).toEqual(['birdhouse']);
-    expect(hands('blocks')).toEqual(['statue']);
-    expect(hands('space')).toEqual(['yarn']);
-    expect(hands('pirate')).toEqual(['parrot']);
+    expect(hands('home')).toEqual(['birdhouse']);
+    expect(hands('terraces')).toEqual(['statue']);
+    expect(hands('cove')).toEqual(['yarn']);
+    expect(hands('milkyway')).toEqual(['parrot']);
     for (const w of WORLDS) {
       for (const m of MOMENTS[w.id].filter((x) => !x.tap)) expect(m.auto, `${w.id}:${m.prop}`).toBe(true);
       expect(MOMENTS[w.id].some((m) => m.tap), w.id).toBe(true);

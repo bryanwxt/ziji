@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { webkit } from 'playwright-core';
 import { chaptersShim } from './stage-cases/shim';
 import { storyWalk } from './story-walk';
+import { WORLDS } from '../src/fun/worlds';
 
 const dir = join(tmpdir(), `ziji-stage-cases-${process.pid}`);
 mkdirSync(dir, { recursive: true });
@@ -404,7 +405,7 @@ for (const size of SIZES) {
   }
   await page.close();
   const m = await browser.newPage({ viewport: { width: 1024, height: 768 } });
-  for (const world of ['yard', 'grass', 'race', 'blocks', 'dino', 'sea', 'space', 'pirate']) {
+  for (const world of WORLDS.map((w) => w.id)) {
     await m.goto(`file://${dir}/index.html?case=moments&world=${world}`);
     await m.waitForTimeout(400);
     const labels = await m.$$eval('.world-props .tap', (ts) => ts.map((t) => t.getAttribute('aria-label')!));

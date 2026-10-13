@@ -105,9 +105,25 @@ describe('normalizeKid accessories v2', () => {
 describe('normalizeKid hardening', () => {
   it('normalizes world fields from old or malformed data', () => {
     expect(normalizeKid({ petName: '松露' } as never)).toMatchObject({ worldsSeen: [], world: null });
-    expect(normalizeKid({ worldsSeen: 'race', world: 7 } as never)).toMatchObject({ worldsSeen: [], world: null });
-    expect(normalizeKid({ worldsSeen: ['race', 'bogus', 'yard', 'race'], world: 'bogus' } as never)).toMatchObject({ worldsSeen: ['yard', 'race'], world: null });
-    expect(normalizeKid({ worldsSeen: ['yard', 'grass'], world: 'grass' } as never)?.world).toBe('grass');
+    expect(normalizeKid({ worldsSeen: 'bamboo', world: 7 } as never)).toMatchObject({ worldsSeen: [], world: null });
+    expect(normalizeKid({ worldsSeen: ['bamboo', 'bogus', 'home', 'bamboo'], world: 'bogus' } as never)).toMatchObject({ worldsSeen: ['home', 'bamboo'], world: null });
+    expect(normalizeKid({ worldsSeen: ['home', 'rainforest'], world: 'rainforest' } as never)?.world).toBe('rainforest');
+  });
+  it('maps his paper worlds onto One River by position, once, and says so once (spec 2026-10-13 §8)', () => {
+    const old = normalizeKid({ worldsSeen: ['yard', 'grass', 'race', 'blocks', 'dino', 'sea', 'space', 'pirate', 'bogus', 'constructor'], world: 'sea' } as never)!;
+    expect(old.worldsSeen).toEqual(['home', 'rainforest', 'bamboo', 'terraces', 'dino', 'lantern', 'cove', 'milkyway']);
+    expect(old.world).toBe('lantern');
+    expect(old.riverNews).toBe(true);
+    // idempotent: loading what was saved changes nothing and doesn't say it again
+    const again = normalizeKid({ ...old, riverNews: false })!;
+    expect([again.worldsSeen, again.world, again.riverNews]).toEqual([old.worldsSeen, 'lantern', false]);
+    // a half-migrated record: old and new side by side, an old pick
+    expect(normalizeKid({ worldsSeen: ['home', 'grass', 'race'], world: 'race' } as never)).toMatchObject({ worldsSeen: ['home', 'rainforest', 'bamboo'], world: 'bamboo', riverNews: true });
+    // only 恐龙谷 (its id never changed) or a new install: no news
+    expect(normalizeKid({ worldsSeen: ['dino'] } as never)!.riverNews).toBe(false);
+    expect(normalizeKid({ petName: '松露' } as never)!.riverNews).toBe(false);
+    // a pick that isn't reached is dropped, as before
+    expect(normalizeKid({ worldsSeen: ['yard'], world: 'pirate' } as never)!.world).toBeNull();
   });
 
   it('does not crash on a malformed accessory list', async () => {

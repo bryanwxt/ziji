@@ -16,13 +16,13 @@ const lampPost = (pre: string, i: number, x: number, y: number) => `<g data-part
 const torch = (pre: string, i: number, x: number, y: number) => `<g data-part="torch">${light(`${pre}-ev-t${i}`, x, y - 14, 34)}${lift(`<rect x="${x - 3}" y="${y - 14}" width="6" height="14" fill="${P.wood}"/>`)}<rect x="${x - 5}" y="${y - 24}" width="10" height="10" fill="${P.orange}"/><rect x="${x - 3}" y="${y - 22}" width="6" height="6" fill="${P.lamp}"/></g>`;
 const jelly = (pre: string, i: number, x: number, y: number) => `<g data-part="jelly">${glow(`${pre}-ev-j${i}`, x, y, 26, P.lilac, 0.7)}<path d="M${x - 10} ${y} a10 9 0 0 1 20 0Z" fill="${P.lilac}"/><path d="M${x - 6} ${y} q-2 8 1 14 M${x} ${y} q2 8 -1 16 M${x + 6} ${y} q-2 8 1 14" stroke="${P.lilac}" stroke-width="1.6" fill="none"/></g>`;
 
-const PREFIX: Record<WorldId, string> = { yard: 'yp', grass: 'gp', race: 'rp', blocks: 'bp', dino: 'dp', sea: 'sp', space: 'xp', pirate: 'ip' };
+const PREFIX: Record<WorldId, string> = { home: 'yp', rainforest: 'gp', bamboo: 'rp', terraces: 'bp', dino: 'dp', lantern: 'sp', cove: 'xp', milkyway: 'ip' };
 
 /** The dusk sky that takes the day sky's place. The moon base is always night: it keeps its own sky. */
 export function eveningSky(world: WorldId, daySky: string): string {
   const pre = PREFIX[world];
-  if (world === 'space') return daySky;
-  if (world === 'sea') return sky(`${pre}-ev-sky`, P.duskSea, P.duskSeaLow);
+  if (world === 'cove') return daySky;
+  if (world === 'lantern') return sky(`${pre}-ev-sky`, P.duskSea, P.duskSeaLow);
   return sky(`${pre}-ev-sky`, P.duskTop, P.duskLow) + moon(pre) + stars();
 }
 
@@ -30,13 +30,13 @@ export function eveningSky(world: WorldId, daySky: string): string {
 export function eveningLights(world: WorldId): string {
   const pre = PREFIX[world];
   switch (world) {
-    case 'yard': return tint() + lanterns(pre);
-    case 'grass': return tint() + firefly(pre, 1, 40, 330) + firefly(pre, 2, 70, 372) + firefly(pre, 3, 300, 340) + firefly(pre, 4, 332, 392) + firefly(pre, 5, 120, 420);
-    case 'race': return tint() + lampPost(pre, 1, 22, 400) + lampPost(pre, 2, 342, 396);
-    case 'blocks': return tint() + torch(pre, 1, 13, 402) + torch(pre, 2, 347, 402);
+    case 'home': return tint() + lanterns(pre);
+    case 'rainforest': return tint() + firefly(pre, 1, 40, 330) + firefly(pre, 2, 70, 372) + firefly(pre, 3, 300, 340) + firefly(pre, 4, 332, 392) + firefly(pre, 5, 120, 420);
+    case 'bamboo': return tint() + lampPost(pre, 1, 22, 400) + lampPost(pre, 2, 342, 396);
+    case 'terraces': return tint() + torch(pre, 1, 13, 402) + torch(pre, 2, 347, 402);
     case 'dino': return tint() + `<g data-part="lava">${glow(`${pre}-ev-v`, 312, 186, 60, P.ember, 0.6)}${glow(`${pre}-ev-v2`, 312, 240, 70, P.warm, 0.3)}</g>`;
-    case 'sea': return tint(0.3) + jelly(pre, 1, 34, 300) + jelly(pre, 2, 326, 310) + jelly(pre, 3, 120, 270);
-    case 'space': return `<g data-part="window">${light(`${pre}-ev-w`, 324, 404, 30)}</g>${glow(`${pre}-ev-r`, 62, 340, 30, P.lamp, 0.45)}`;
-    case 'pirate': return tint() + `<g data-part="lamp">${light(`${pre}-ev-s`, 300, 280, 30)}<rect x="296" y="276" width="8" height="8" fill="${P.lamp}"/></g><path d="M282 318 h36 M290 326 h22 M296 334 h10" stroke="${P.lamp}" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>`;
+    case 'lantern': return tint(0.3) + jelly(pre, 1, 34, 300) + jelly(pre, 2, 326, 310) + jelly(pre, 3, 120, 270);
+    case 'cove': return `<g data-part="window">${light(`${pre}-ev-w`, 324, 404, 30)}</g>${glow(`${pre}-ev-r`, 62, 340, 30, P.lamp, 0.45)}`;
+    case 'milkyway': return tint() + `<g data-part="lamp">${light(`${pre}-ev-s`, 300, 280, 30)}<rect x="296" y="276" width="8" height="8" fill="${P.lamp}"/></g><path d="M282 318 h36 M290 326 h22 M296 334 h10" stroke="${P.lamp}" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>`;
   }
 }
