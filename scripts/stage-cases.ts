@@ -240,7 +240,9 @@ for (const size of SIZES) {
     await page.waitForTimeout(400);
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
     problems.push(...(await cardClipped(page, `${size.name} ${c}`, '.langdu__passage')));
-    if (c === 'langdu-listen' && !(await page.$('.langdu__sentence.is-reading'))) problems.push(`${size.name} langdu-listen: no sentence lit while the model reads`);
+    // the highlight follows the voice: a machine with no Chinese voice (a Linux CI runner) never reads, so there is nothing to light
+    const zhVoice = await page.evaluate(() => typeof speechSynthesis !== 'undefined' && speechSynthesis.getVoices().some((v) => v.lang.toLowerCase().startsWith('zh')));
+    if (c === 'langdu-listen' && zhVoice && !(await page.$('.langdu__sentence.is-reading'))) problems.push(`${size.name} langdu-listen: no sentence lit while the model reads`);
   }
   {
     await page.goto(`file://${dir}/index.html?case=langdu-meaning`);
@@ -446,8 +448,10 @@ for (const size of SIZES) {
   await page.goto(`file://${dir}/index.html?case=alive`);
   await page.waitForTimeout(500);
   if (!(await page.$('svg.truffle[data-alive="true"]'))) problems.push('alive: no live Truffle rendered');
+  // frame intervals measure the machine as much as the app: a 2-core CI runner gets more slack; the per-frame work budget below stays 8 ms
+  const SLOW_FRAME = process.env.CI ? 40 : 20;
   const idle = await p95();
-  if (idle > 20) problems.push(`alive: slow frames while idle: p95 ${idle.toFixed(1)}ms over 120 frames`);
+  if (idle > SLOW_FRAME) problems.push(`alive: slow frames while idle: p95 ${idle.toFixed(1)}ms over 120 frames`);
   // spec §6: ≤ 8 ms of script + layout per frame on the Mac (headroom for an older iPad); the interval check above only
   // notices work past a whole frame
   const work = () => page.evaluate<number>(`(() => { const w = window.rafWork.splice(0).sort((a, b) => a - b); return w[Math.floor(w.length * 0.95)] ?? 0; })()`);
@@ -455,7 +459,7 @@ for (const size of SIZES) {
   if (idleWork > 8) problems.push(`alive: too much work per frame while idle: p95 ${idleWork.toFixed(1)}ms (budget 8)`);
   await page.evaluate(() => (window as unknown as { react: (k: string) => void }).react('right'));
   const reacting = await p95();
-  if (reacting > 20) problems.push(`alive: slow frames while reacting: p95 ${reacting.toFixed(1)}ms over 120 frames`);
+  if (reacting > SLOW_FRAME) problems.push(`alive: slow frames while reacting: p95 ${reacting.toFixed(1)}ms over 120 frames`);
   const reactWork = await work();
   if (reactWork > 8) problems.push(`alive: too much work per frame while reacting: p95 ${reactWork.toFixed(1)}ms (budget 8)`);
   // his paws (phase E): a wave and covering his eyes, timed the same way
