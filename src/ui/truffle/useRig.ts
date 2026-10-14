@@ -43,10 +43,13 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
     el.setAttribute(attr, v);
   };
   const lidTop = Math.min(1, f.lidTop + pose.blink * (1 - f.lidTop));
+  // the gaze spring overshoots full gaze (to about 1.18): past ±1 the iris would leave the white, which has no clip-path
+  const gx = Math.max(-1, Math.min(1, pose.gx));
+  const gy = Math.max(-1, Math.min(1, pose.gy));
   for (const [side, cx] of [['l', EYE_L], ['r', EYE_R]] as const) {
     const up = upperLid(cx, lidTop, f.lidArc);
     const low = lowerLid(cx, f.lidBottom);
-    set(`iris-${side}`, 'transform', `translate(${(pose.gx * GAZE_X).toFixed(2)} ${(pose.gy * GAZE_Y).toFixed(2)})`);
+    set(`iris-${side}`, 'transform', `translate(${(gx * GAZE_X).toFixed(2)} ${(gy * GAZE_Y).toFixed(2)})`);
     set(`pupil-${side}`, 'rx', (7 * f.pupil).toFixed(2));
     set(`pupil-${side}`, 'ry', (11 * f.pupil).toFixed(2));
     set(`lid-top-${side}`, 'd', up.fill);

@@ -45,7 +45,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 /**
  * One anime eye (spec 2026-10-13 §7): a taller white, an iris with a dark upper band and a pale lower crescent, a dark pupil and
  * two catch-lights, the outline and a heavy upper lash, then the fur lids over it. No clip-paths: the iris never leaves the white
- * (it moves at most 6 across and 5 down, inside the room the ellipse leaves), and each lid is drawn only inside the eye.
+ * (it moves at most GAZE_X across and GAZE_Y down, its gaze clamped to ±1, inside the room the ellipse leaves), and each lid is drawn only inside the eye.
  */
 function Eye({ side, cx, f }: { side: 'l' | 'r'; cx: number; f: Face }) {
   const up = upperLid(cx, f.lidTop, f.lidArc);

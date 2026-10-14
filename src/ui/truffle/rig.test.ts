@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { TRUFFLE_MOODS } from './parts';
 import { blushOpacity, clampFace, EXTRAS, EYE_RX, EYE_RY, EYE_Y, GAZE_X, GAZE_Y, IRIS_RX, IRIS_RY, IRIS_Y, lowerLid, mouthPath, MOOD_EXPRESSION, PRESETS, ringOn, springStep, upperLid, type Expression } from './rig';
+import { paint, REST_POSE } from './useRig';
 
 describe("Truffle's face model (spec 2026-10-04 §4.1)", () => {
   it('has the eleven expressions', () => {
@@ -81,6 +82,18 @@ describe('clip-free iris (spec 2026-10-13 §7)', () => {
       }
       expect(worst, `gaze ${gx} ${gy}`).toBeLessThanOrEqual(0.98);
     }
+  });
+  it("paints the iris at most full gaze: the gaze spring's overshoot (about 1.18) never pushes it out of the eye", () => {
+    const attrs: Record<string, string> = {};
+    const els = (part: string) => ({ setAttribute: (a: string, v: string) => { attrs[`${part} ${a}`] = v; } }) as unknown as Element;
+    for (const [gx, gy] of [[1.18, -1.18], [-1.18, 1.18], [3, 3]] as const) {
+      paint(els, PRESETS.neutral, { ...REST_POSE, gx, gy }, {});
+      const sx = Math.sign(gx);
+      const sy = Math.sign(gy);
+      for (const side of ['l', 'r']) expect(attrs[`iris-${side} transform`], `gaze ${gx} ${gy}`).toBe(`translate(${(sx * GAZE_X).toFixed(2)} ${(sy * GAZE_Y).toFixed(2)})`);
+    }
+    paint(els, PRESETS.neutral, { ...REST_POSE, gx: 0.5, gy: -0.5 }, {});
+    expect(attrs['iris-l transform']).toBe(`translate(${(0.5 * GAZE_X).toFixed(2)} ${(-0.5 * GAZE_Y).toFixed(2)})`); // inside ±1 it is unchanged
   });
   it('the eye ring and lash fade out as the lid closes, gone before the lid is shut, so no frame shows an empty outlined eye', () => {
     expect(ringOn(0)).toBe(1);
