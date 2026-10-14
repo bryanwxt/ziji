@@ -106,13 +106,24 @@ describe('a microphone that fails to start (mic fix 2026-10-14)', () => {
     expect(readErrorLog()).toEqual([]);
   });
   it('failing twice: back to ready with 再试一次, and the next tap asks again', async () => {
-    vi.mocked(startRecording).mockRejectedValueOnce(busy()).mockRejectedValueOnce(new MicTimeoutError()).mockResolvedValueOnce(ok);
+    vi.mocked(startRecording).mockRejectedValueOnce(busy()).mockRejectedValueOnce(busy()).mockResolvedValueOnce(ok);
     render(<Harness />);
     fireEvent.click(screen.getByText('开始录音'));
     fireEvent.click(await screen.findByText('再试一次', {}, { timeout: 2000 }));
     expect(screen.getByTestId('state').textContent).not.toBe('blocked');
     await screen.findByText('停止');
     expect(startRecording).toHaveBeenCalledTimes(3);
+  });
+  it('a timeout (the prompt still open) is not retried by itself: straight to 再试一次, and the next tap asks again', async () => {
+    vi.mocked(startRecording).mockRejectedValueOnce(new MicTimeoutError()).mockResolvedValueOnce(ok);
+    render(<Harness />);
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('再试一次');
+    expect(startRecording).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(readMicFailure()).toMatchObject({ kind: 'transient', stage: 'timeout' }));
+    fireEvent.click(screen.getByText('再试一次'));
+    await screen.findByText('停止');
+    expect(startRecording).toHaveBeenCalledTimes(2);
   });
   it('a failure is logged and kept for the parent: what, where and the iPad\'s state', async () => {
     vi.mocked(startRecording).mockRejectedValue(new MicDeniedError(new DOMException('no', 'NotAllowedError')));

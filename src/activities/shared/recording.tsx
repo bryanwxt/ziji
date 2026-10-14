@@ -4,7 +4,7 @@ import { recordingSupported, startRecording, type ActiveRecording, type Finished
 import { quietFor } from '../../langdu/loudness';
 import { setRecordingNow } from '../../audio/speaking';
 import { stopSpeaking } from '../../audio/speech';
-import { MicDeniedError } from '../../audio/micErrors';
+import { MicDeniedError, MicTimeoutError } from '../../audio/micErrors';
 import { recordMicFailure } from '../../audio/micFailure';
 import { logError } from '../../app/errorLog';
 import { Label } from '../../ui/Label';
@@ -14,7 +14,7 @@ export type MicState = 'ready' | 'recording' | 'done' | 'blocked';
 
 export const BLOCKED_NOTE = '麦克风没有打开。我们下次再录！';
 export const RETRY_LABEL = '再试一次';
-const RETRY_AFTER_MS = 300; // a passing failure (NotReadableError, AbortError, a timeout) is tried once more, by itself
+const RETRY_AFTER_MS = 300; // a passing failure (NotReadableError, AbortError…) is tried once more, by itself; a timeout is not
 const HEARD = 0.002; // above a working microphone's noise floor; a suspended meter reads exactly 0
 
 /** One recording at a time, with an optional live level. Only a refused or missing mic becomes 'blocked'; any other failure is
@@ -80,14 +80,15 @@ export function useRecorder(startBlocked = false) {
           setState('recording');
           return;
         } catch (e) {
-          const final = e instanceof MicDeniedError || attempt > 0; // a failure the retry fixed isn't news for the parent
+          // a timeout is a prompt still on screen while he decides: no auto-retry (it would wait another 10 s); straight to 再试一次
+          const final = e instanceof MicDeniedError || e instanceof MicTimeoutError || attempt > 0; // a failure the retry fixed isn't news for the parent
           if (final) {
             logError(e);
             void recordMicFailure(e);
           }
           if (!mounted.current) return;
           if (e instanceof MicDeniedError) return setState('blocked'); // a real refusal: don't ask again
-          if (attempt > 0) {
+          if (final) {
             setFailed(true);
             setState('ready');
             return;
