@@ -180,4 +180,4 @@ export const fringe = (color: string, kind: 'fluff' | 'spike' = 'fluff', from = 
 
 /** A horse's muzzle on a hood: a long pale oval with nostril slits (dots would read as a pig's snout). */
 export const MUZZLE = (fill: string) =>
-  `<ellipse cx="160" cy="70" rx="21" ry="13" fill="${fill}" ${S}/><path d="M151 66 q3 4 1 8 M169 66 q-3 4 -1 8" stroke="${INK}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  `<ellipse cx="160" cy="70" rx="21" ry="13" fill="${fill}" ${S}/><path d="M151 66 q3 4 1 8 M169 66 q-3 4 -1 8" stroke="${DARK}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;

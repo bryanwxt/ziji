@@ -1,5 +1,6 @@
 import { accessoryById } from '../../fun/accessories';
 import { INK, S, s2 } from './costumeKit';
+import { LWI } from '../cel';
 
 // Accessory art in Truffle's viewBox (30 20 260 270), in the costumes' cel line.
 // Places: back = behind the body; under = neck items, over the body but under the chin;
@@ -67,13 +68,13 @@ const ART: Record<string, () => Partial<AccessoryLayer>> = {
   brush: () => ({
     over:
       `<path d="M252 172 L198 246" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="M252 172 L198 246" stroke="#c98a52" stroke-width="7" stroke-linecap="round"/>` +
-      `<path d="M240 190 L234 186 M226 206 L220 202 M213 224 L207 220" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>` +
+      `<path d="M240 190 L234 186 M226 206 L220 202 M213 224 L207 220" stroke="${INK}" stroke-width="${LWI}" stroke-linecap="round"/>` +
       `<path d="M200 240 C190 248 182 262 180 276 C190 270 202 262 208 250 Z" fill="${INK}"/>` +
       PAW,
   }),
   lantern: () => ({
     over:
-      `<path d="M188 258 L238 196" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path d="M240 194 L248 206" stroke="${INK}" stroke-width="2.4"/>` +
+      `<path d="M188 258 L238 196" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path d="M240 194 L248 206" stroke="${INK}" stroke-width="${LWI}"/>` +
       `<rect x="236" y="204" width="24" height="6" rx="2" fill="${GOLD}" ${s2}/><ellipse cx="248" cy="226" rx="26" ry="20" fill="${RED}" ${S}/>` +
       `<path d="M236 210 C230 222 230 232 236 242 M260 210 C266 222 266 232 260 242 M248 206 L248 246" fill="none" stroke="#c23a1e" stroke-width="2"/>` +
       `<rect x="236" y="242" width="24" height="6" rx="2" fill="${GOLD}" ${s2}/><path d="M248 248 L248 266 M243 266 L253 266" stroke="${GOLD}" stroke-width="4" stroke-linecap="round"/>` +
