@@ -3,13 +3,16 @@ import hsk from './hskwords.json';
 import passages from './passages.json';
 import type { BuiltinChar, CharInfo, Example, Passage, Word } from '../types';
 import { EXTRA_EXAMPLES } from './extraExamples';
+import { ZUCI_DROPS } from './zuciPicks';
 import { LESSONS, listedBy } from './curriculum';
 import { SWEEP_MEANINGS, SWEEP_PINYIN } from './sweepFixes';
+import { BLOCKED } from './blocked';
 
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.11`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists; .11: 蚂蚁拇狐狸 and readable 组词
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.12`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists;
+// .11: 蚂蚁拇狐狸 and readable 组词; .12: the content audit (the blocklist, the readings his lessons use, 组词 a child knows first)
 export const PASSAGES: Passage[] = passages as Passage[];
 
 const infoByChar = new Map<string, CharInfo>(
@@ -19,8 +22,9 @@ const infoByChar = new Map<string, CharInfo>(
 /** HSK 3.0 words (two characters or more) → HSK level 1–7 (7 = 七—九级). */
 export const HSK_WORDS: ReadonlyMap<string, number> = new Map((hsk as unknown as { words: [string, number][] }).words);
 const wordsByChar = new Map<string, string[]>();
-for (const w of HSK_WORDS.keys()) for (const ch of new Set(w)) (wordsByChar.get(ch) ?? wordsByChar.set(ch, []).get(ch)!).push(w);
-/** HSK words containing the character (组词). */
+for (const w of HSK_WORDS.keys()) if (!BLOCKED.has(w)) for (const ch of new Set(w)) (wordsByChar.get(ch) ?? wordsByChar.set(ch, []).get(ch)!).push(w);
+/** HSK words containing the character (组词), never a blocked one. HSK_WORDS itself keeps every word: it also answers "is this a
+ *  real word?" (a cross pair, a 字辨 swap), and a blocked word is still a word. */
 export const wordsWithChar = (ch: string): string[] => wordsByChar.get(ch) ?? [];
 
 export function getCharInfo(char: string): CharInfo | undefined {
@@ -76,11 +80,22 @@ export function builtinWords(now: number, course: Course = 'cl'): Word[] {
 }
 
 /** The 组词 a card shows, at the card's reading: ones written for the app first (extraExamples.ts: chosen for a P2 child), then the HSK list's. */
-function examplesFor(c: BuiltinChar): Example[] {
+function examplesFor(c: BuiltinChar, { onCard = true } = {}): Example[] {
   const fix = (e: Example) => (EXAMPLE_FIXES[e.text] ? { ...e, pinyin: EXAMPLE_FIXES[e.text]! } : e);
   const written = (EXTRA_EXAMPLES[c.char] ?? []).map(([text, pinyin]) => fix({ text, pinyin }));
-  const own = c.examples.map(fix).filter((e) => !EXAMPLE_DROPS.has(e.text) && !written.some((w) => w.text === e.text));
+  const dropped = new Set(onCard ? (ZUCI_DROPS[c.char] ?? '').split(' ') : []);
+  const own = c.examples.map(fix).filter((e) => !BLOCKED.has(e.text) && !dropped.has(e.text) && !written.some((w) => w.text === e.text));
   return [...written, ...own].filter((e) => saysItAs(e, c.char, builtinReading(c)));
+}
+/**
+ * The 组词 a card leaves off (zuciPicks.ts ZUCI_DROPS: 马虎 on 虎, 四周 on 四) at its reading: still words of his ladder, only not
+ * shown on the card (review 2026-10-15: dropping them from the card had taken them off the ladder too).
+ */
+export function cardDroppedExamples(char: string): Example[] {
+  const c = builtinByChar.get(char);
+  if (!c || !ZUCI_DROPS[char]) return [];
+  const shown = new Set(examplesFor(c).map((e) => e.text));
+  return examplesFor(c, { onCard: false }).filter((e) => !shown.has(e.text));
 }
 
 /**
@@ -90,7 +105,14 @@ function examplesFor(c: BuiltinChar): Example[] {
 export const READING_FIXES: Record<string, string> = {
   了: 'le', 夹: 'jiā', 咳: 'ké', 供: 'gōng', 教: 'jiāo', 兴: 'xìng', 漂: 'piào', 切: 'qiē', // content sweep
   帖: 'tiě', 荫: 'yīn', 咧: 'liě', 唉: 'āi', 唠: 'láo', 倔: 'jué', 粘: 'zhān', 喇: 'lǎ', 遛: 'liù', 曝: 'bào', // second sweep
+  // content audit 2026-10-15: the reading his lesson uses (萝卜 in the 拔萝卜 story, 应该, 炸鸡/油炸 in the food lesson, 种花 in the
+  // jobs lesson, a mouse 钻进 a hole, 抹布 for cleaning, 仔细). 觉: 二下 L13 reads 睡觉 (jiào), the first lesson that has it;
+  // 觉得 (jué, HCL's write list in the same lesson) shows its own pinyin wherever it appears
+  卜: 'bo', 应: 'yīng', 炸: 'zhá', 种: 'zhòng', 钻: 'zuān', 抹: 'mā', 仔: 'zǐ', 觉: 'jiào',
+  勒: 'lēi', // review 2026-10-15: 勒紧, not the lè of 悬崖勒马
 };
+/** Cards whose reading changed with content 1.12: his Say and Hear rungs on them were earned at the old one (readingMigration.ts). */
+export const READINGS_CHANGED_1_12 = [...'卜应炸种钻抹仔觉勒'];
 /** A built-in character's reading as his lessons teach it. */
 export const builtinReading = (c: BuiltinChar): string => READING_FIXES[c.char] ?? c.pinyin;
 /** 组词 readings the source data gets wrong (包子's 子 is 轻声). */
@@ -101,24 +123,20 @@ export const MEANING_FIXES: Record<string, string> = {
   // the dictionary's first sense is another reading or a rare one (parent, 2026-10-05)
   只: '(for animals: a, one)', 咸: 'salty', 戴: 'to wear (a hat, glasses)', 夹: 'to clip; to hold between', 咳: 'to cough',
   供: 'to supply; to provide', 差: 'not good enough; short of',
+  // with the content audit's readings (2026-10-15)
+  卜: '(in 萝卜: radish)', 应: 'should; ought to', 炸: 'to fry (in oil)', 种: 'to plant; to grow', 钻: 'to squeeze into; to burrow',
+  抹: 'to wipe (抹布: a cleaning cloth)', 仔: 'careful (in 仔细)', 觉: 'sleep (in 睡觉)',
+  勒: 'to tie tight; to strap',
 };
 export const EXAMPLE_FIXES: Record<string, string> = {
   ...SWEEP_PINYIN,
-  包子: 'bāo zi',
+  包子: 'bāo zi', 种植: 'zhòng zhí', // 种植 is planting (zhòng); pinyin-pro reads zhǒng (review 2026-10-15)
   // 儿化: the 儿 joins the syllable before it (nǎr), written as its own "r" so each character keeps a slot (content sweep)
   哪儿: 'nǎ r', 那儿: 'nà r', 这儿: 'zhè r', 一块儿: 'yí kuài r', 玩儿: 'wán r', 好玩儿: 'hǎo wán r', 男孩儿: 'nán hái r',
   女孩儿: 'nǚ hái r', 鸟儿: 'niǎo r', 画儿: 'huà r', 味儿: 'wèi r', 聊天儿: 'liáo tiān r', 贪玩儿: 'tān wán r', 打盹儿: 'dǎ dǔn r',
   兜儿: 'dōu r', 馅儿: 'xiàn r', 冰棍儿: 'bīng gùn r', 大腕儿: 'dà wàn r', 离谱儿: 'lí pǔ r',
 };
-/** 组词 a child shouldn't meet on a card (content sweep): unsuitable or too obscure to teach anything. */
-export const EXAMPLE_DROPS = new Set<string>([
-  '自杀', '谋害', '绯闻', '暗杀', '抽烟', '笨蛋', '收买', '风流', // unsuitable
-  '板块', '新兴', '风度', '第一手', '卖弄', '饱和', '雷同', '哭笑不得', // obscure, or adult words a child can't use
-  '心脏', '心脏病', // zàng, on 脏's zāng ("dirty") card
-  // second sweep (HSK 5–9)
-  '开枪', '酒鬼', '傻瓜', '凶手', '肿瘤', '暴力', '艾滋病', '茅台', '枪毙', '屠杀', '绑架', '忽悠', '偷窥',
-  '纲领', '吊销', '回扣', '炒股', '伊斯兰教', '禅杖', '哗变', '怠工', '抚恤', '血栓',
-]);
+export { BLOCKED, EXAMPLE_DROPS } from './blocked';
 
 const toneless = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 /**
@@ -143,7 +161,7 @@ const builtinByChar = new Map(BUILTIN.map((c) => [c.char, c]));
  * review M3). A stored word's pinyin may predate a READING_FIXES entry, so it never overrides the built-in reading.
  */
 export function suitableExample(ch: string, e: { text: string; pinyin: string }, reading?: string): boolean {
-  if (EXAMPLE_DROPS.has(e.text)) return false;
+  if (BLOCKED.has(e.text)) return false;
   if (e.pinyin.trim().split(/\s+/).length !== Array.from(e.text).length) return false;
   const c = builtinByChar.get(ch);
   const at = c ? builtinReading(c) : reading?.trim();

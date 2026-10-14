@@ -197,34 +197,36 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
         {phase === 'chest' && (
           <>
             <h1><Label zh={chest ? (chest.kind === 'costume' ? '松露有新衣服了！' : chest.kind === 'accessory' ? '松露有新东西了！' : `多了 ${chest.amount} 颗星！`) : '宝箱！'} /></h1>
-            {chest && (
-              <div class="prize">
-                {chest.kind === 'costume' ? (
-                  <div class="prize__costume">
-                    <Truffle mood="cheer" outfit={chest.id} accessory={null} size={190} alive react={POUNCE} />
-                    <Label zh={costumeById(chest.id)?.zh ?? ''} py={costumeById(chest.id)?.py} />
-                  </div>
-                ) : chest.kind === 'accessory' ? (
-                  <div class="prize__costume">
-                    <Truffle mood="cheer" outfit={kid.outfit} accessory={chest.item} size={190} alive react={POUNCE} />
-                    <Label zh={accessoryById(chest.item)?.zh ?? ''} py={accessoryById(chest.item)?.py} />
-                  </div>
-                ) : (
-                  <span class="prize__stars"><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /></span>
-                )}
+            {/* one slot above the chest, the same size closed and open (review 2026-10-15: the chest dropped ~40 px as the prize
+                came in above it): the watching Truffle, or the dressed-up Truffle that replaces him; a stars prize rises out of
+                the chest instead; a costume's name sits at his feet */}
+            {chest && chest.kind !== 'stars' ? (
+              <div class="celebrate__watch prize prize__costume">
+                <Truffle mood="cheer" outfit={chest.kind === 'costume' ? chest.id : kid.outfit} accessory={chest.kind === 'costume' ? null : chest.item} size={130} alive react={POUNCE} />
+                <span class="prize__label"><Label zh={(chest.kind === 'costume' ? costumeById(chest.id) : accessoryById(chest.item))?.zh ?? ''} py={(chest.kind === 'costume' ? costumeById(chest.id) : accessoryById(chest.item))?.py} /></span>
               </div>
-            )}
-            {(!chest || chest.kind === 'stars') && (
+            ) : (
               // he watches the chest and wiggles, then pounces when it opens (spec 2026-10-04 §4.4)
               <div class="celebrate__watch">
                 <Truffle mood="cheer" outfit={kid.outfit} accessory={visibleAccessory(kid)} size={130} alive react={chest ? WATCH_POUNCE : still ? null : { kind: 'excited', key: wiggle }} />
               </div>
             )}
-            <div ref={chestRef}>
-              <div class="chest-art" onClick={chest ? undefined : hint}><Chest open={!!chest} /></div>
-              {!chest && <HoldButton label="按住打开宝箱" onComplete={() => void open()} onTooShort={hint} />}
+            {/* the hold button centred under the chest, and 继续 in its place once it opens: what is below the chest keeps its
+                height, so the chest doesn't drop (chest layout fix) */}
+            <div ref={chestRef} class="chest-slot">
+              <div class="chest-art" onClick={chest ? undefined : hint}>
+                <Chest open={!!chest} />
+                {chest?.kind === 'stars' && <span class="prize prize__stars"><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /></span>}
+              </div>
+              <div class="chest-slot__under">
+                {!chest ? <HoldButton label="按住打开宝箱" onComplete={() => void open()} onTooShort={hint} /> : (
+                  <button type="button" class="btn btn--primary btn--big" onClick={() => void advance()}>
+                    <Label zh={isLast ? '回家' : '继续'} />
+                  </button>
+                )}
+              </div>
             </div>
-            {!chest && <p><Label zh="按住，打开宝箱！" /></p>}
+            <p class={chest ? 'is-kept' : undefined} aria-hidden={chest ? 'true' : undefined}><Label zh="按住，打开宝箱！" /></p>
           </>
         )}
         {phase === 'power' && def && seq.power && (
@@ -265,7 +267,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
             bounce={phase !== 'stars'}
           />
         )}
-        {(phase === 'chest' ? !!chest : phase === 'power' ? powered : true) && (
+        {phase !== 'chest' && (phase === 'power' ? powered : true) && (
           <button type="button" class="btn btn--primary btn--big" onClick={() => void advance()}>
             <Label zh={isLast ? '回家' : '继续'} />
           </button>

@@ -5,6 +5,7 @@ import { PASSAGES } from '../content';
 import { applyMisreads } from '../langdu/misreads';
 import { SCENES_KT } from '../kantu/scenes';
 import { findWord } from '../ladder/words';
+import { goneWord } from '../content/ladder';
 import { takeWord } from '../session/say';
 import { deleteRecording, listParentPassages, listRecordings } from '../store/repo';
 import type { ParentPassage, Recording } from '../types';
@@ -99,7 +100,8 @@ export function RecordingsPanel() {
   const [open, setOpen] = useState<string | null>(null);
   const [openStory, setOpenStory] = useState<string | null>(null);
   const reload = async () => {
-    const [r, p] = await Promise.all([listRecordings(db), listParentPassages(db)]);
+    const [all, p] = await Promise.all([listRecordings(db), listParentPassages(db)]);
+    const r = all.filter((x) => { const w = takeWord(x); return w === null || !goneWord(w); }); // a take of a word the content dropped stays stored, unlisted
     const ids = [...new Set(r.map(takeWord).filter((id): id is string => id !== null))];
     const found = await Promise.all(ids.map(async (id) => [id, (await findWord(db, id))?.text] as const));
     setSaid(new Map(found.filter((x): x is readonly [string, string] => !!x[1])));

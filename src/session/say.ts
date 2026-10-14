@@ -2,6 +2,7 @@
 // parent confirms (✓) or rejects (✗) it in Listen & confirm. Speech recognition is not used. 说一句 takes (production practice
 // spec §4) — a sentence he says with a word — are kept, reviewed and tidied the same way, on the word's Sentence card.
 import { Rating } from 'ts-fsrs';
+import { goneWord } from '../content/ladder';
 import type { FinishedRecording } from '../audio/recorder';
 import { sayPassed, type TakeRung } from '../ladder/rungs';
 import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
@@ -27,7 +28,8 @@ const takeCard = (r: Recording): string => `${takeWord(r)}:${takeKind(r)}`;
 
 /** Takes waiting for the parent, oldest first: Say and 说一句 takes, and each passage's newest take (spec 2026-10-12 §6). */
 export function waitingTakes(recs: Recording[]): Recording[] {
-  return [...recs.filter((r) => takeWord(r) !== null && !r.review), ...waitingPassageTakes(recs)].sort((a, b) => a.createdAt - b.createdAt);
+  // never a take of a word the content dropped (content audit 2026-10-15): it stays stored, unheard
+  return [...recs.filter((r) => { const w = takeWord(r); return w !== null && !goneWord(w) && !r.review; }), ...waitingPassageTakes(recs)].sort((a, b) => a.createdAt - b.createdAt);
 }
 
 /** The newest of each card's takes among `list` (a word's Say and 说一句 takes apart). */

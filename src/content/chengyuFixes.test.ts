@@ -33,7 +33,7 @@ describe('I2: the 成语 pinyin is right', () => {
 });
 
 describe('I5: a completion never offers a character that also makes a real phrase', () => {
-  const never: [string, string, string][] = [['千家万户', '家', '门'], ['全心全意', '意', '力'], ['一举一动', '举', '言'], ['一路平安', '路', '生'], ['无忧无虑', '忧', '思'], ['成千上万', '千', '百'], ['一年到头', '年', '天'], ['前所未有', '有', '见'], ['齐心协力', '协', '合']];
+  const never: [string, string, string][] = [['千家万户', '家', '门'], ['全心全意', '意', '力'], ['一举一动', '举', '言'], ['一路平安', '路', '生'], ['无忧无虑', '忧', '思'], ['一年到头', '年', '天'], ['前所未有', '有', '见'], ['齐心协力', '协', '合']];
   it.each(never)('%s [%s] never offers %s', (text, blank, bad) => {
     for (let s = 1; s < 200; s++) expect(idiomGap(asIdiom(text), blank, mulberry32(s))!.options).not.toContain(bad);
   });

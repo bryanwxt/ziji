@@ -71,3 +71,16 @@ describe('final review I3: he hears the sentence first', () => {
     expect(speak).toHaveBeenCalled();
   });
 });
+
+describe('a placed tile shows its pinyin as read in its sentence (content audit 2026-10-15)', () => {
+  it('转 in 小狗在地上转圈 is zhuàn, not the zhuǎn it is alone', async () => {
+    const { tiles } = await import('../../content/zuju');
+    const full = '小狗在地上转圈。';
+    const t = tiles(full);
+    render(<BuildSentence {...props} item={{ full, tiles: t, orders: [t] }} word={makeWord('转')} onDone={vi.fn()} />);
+    const turn = t.find((x) => x.includes('转'))!;
+    tap(turn);
+    expect(document.querySelector('.build__placed .label')!.getAttribute('data-py')).toContain('zhuàn');
+  });
+});
+

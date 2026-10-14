@@ -1,11 +1,10 @@
 // A character's word family (spec 2026-10-12 §5): the words with it that he can read, for the 认新字 card's 「一家人」 row and
 // the 找一家人 question. From its 组词, the word ladder's 词语 and the HSK list; static content, worked out on demand.
-import { pinyin } from 'pinyin-pro';
-import './pinyinFixes';
 import type { Example, Word } from '../types';
 import { glossFor } from './glossary';
-import { builtinWords, EXAMPLE_FIXES, HSK_WORDS, isHan, suitableExample, wordsWithChar } from './index';
+import { builtinWords, HSK_WORDS, isHan, suitableExample, wordsWithChar } from './index';
 import { ladderWords } from './ladder';
+import { isChildWord, readingOf } from './wordGate';
 
 export interface FamilyWord { text: string; pinyin: string; en: string }
 
@@ -21,14 +20,15 @@ function ladderWith(ch: string): Word[] {
 }
 
 /**
- * Every word of two or more Han characters with `ch` in it, once: its 组词 first, then the ladder's, then the HSK list's.
+ * Every word of two or more Han characters with `ch` in it, once: its 组词 first, then the ladder's, then the HSK list's (a
+ * child word only: content audit 2026-10-15, the list's HSK 5–9 words had 艾滋病 and 枪毙 in a family row).
  * `reading`: the card's reading of `ch`, when known (suitableExample).
  */
 export function wordsAround(ch: string, reading?: string): { text: string; pinyin: string }[] {
   const out = new Map<string, string>();
   for (const e of examplesOf(ch)) if (!out.has(e.text)) out.set(e.text, e.pinyin);
   for (const w of ladderWith(ch)) if (!out.has(w.text)) out.set(w.text, w.pinyin);
-  for (const t of wordsWithChar(ch)) if (!out.has(t)) out.set(t, EXAMPLE_FIXES[t] ?? pinyin(t));
+  for (const t of wordsWithChar(ch)) if (!out.has(t) && isChildWord(t)) out.set(t, readingOf(t)); // HSK 1–4, or a word chosen for him
   return [...out]
     .filter(([text, py]) => { const cs = Array.from(text); return cs.length >= 2 && cs.every(isHan) && cs.includes(ch) && suitableExample(ch, { text, pinyin: py }, reading); })
     .map(([text, py]) => ({ text, pinyin: py }));

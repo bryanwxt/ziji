@@ -42,6 +42,18 @@ describe('Celebration chest', () => {
     expect(kid?.ownedAccessories).toHaveLength(0);
     expect(kid?.bonusStars).toBe(0);
   });
+  it('opening adds nothing above the chest, so the chest stays put (review 2026-10-15): the prize takes the watching Truffle\'s place', async () => {
+    await setup('2026-10-02', ['flashcards']);
+    fireEvent.click(screen.getByText('继续'));
+    const chest = await screen.findByRole('button', { name: '按住打开宝箱' });
+    const above = () => { const out: string[] = []; for (let e = document.querySelector('.chest-slot')!.previousElementSibling; e; e = e.previousElementSibling) out.unshift(e.tagName + '.' + e.className.split(' ')[0]); return out; };
+    const closed = above();
+    fireEvent(chest, new Event('pointerdown', { bubbles: true }));
+    await hold();
+    await screen.findByText('松露有新衣服了！');
+    expect(above()).toEqual(closed);
+    expect(document.querySelector('.prize .prize__label')!.textContent).toContain('龙'); // its name at his feet
+  });
 
   it("dates the chest by the session's own day when it finishes after midnight", async () => {
     const app = await setup('2026-10-01', ['flashcards']);

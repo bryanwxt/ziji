@@ -13,19 +13,6 @@
 ]
 },
 {
-"word": "图纸",
-"s": [
-{
-"zh": "爸爸在看房子的图纸。",
-"en": "Dad is looking at the plans for the house."
-},
-{
-"zh": "工人看着图纸做事。",
-"en": "The workers follow the drawings to do their work."
-}
-]
-},
-{
 "word": "机",
 "s": [
 {
@@ -325,19 +312,6 @@
 ]
 },
 {
-"word": "公布",
-"s": [
-{
-"zh": "老师公布了谁是班长。",
-"en": "The teacher announced who the class monitor is."
-},
-{
-"zh": "老师公布了考试的日子。",
-"en": "The teacher announced the exam date."
-}
-]
-},
-{
 "word": "娃娃",
 "s": [
 {
@@ -611,19 +585,6 @@
 ]
 },
 {
-"word": "拼命",
-"s": [
-{
-"zh": "他拼命地跑。",
-"en": "He ran with all his might."
-},
-{
-"zh": "小狗拼命摇尾巴。",
-"en": "The puppy is wagging its tail like crazy."
-}
-]
-},
-{
 "word": "百",
 "s": [
 {
@@ -884,19 +845,6 @@
 ]
 },
 {
-"word": "影片",
-"s": [
-{
-"zh": "我们在课上看了一个影片。",
-"en": "We watched a film in class."
-},
-{
-"zh": "这个影片讲的是小狗。",
-"en": "This film is about a dog."
-}
-]
-},
-{
 "word": "票",
 "s": [
 {
@@ -958,19 +906,6 @@
 {
 "zh": "生日那天我收到很多礼物。",
 "en": "I got lots of presents on my birthday."
-}
-]
-},
-{
-"word": "礼拜",
-"s": [
-{
-"zh": "下个礼拜我们去动物园。",
-"en": "Next week we are going to the zoo."
-},
-{
-"zh": "礼拜六我不用上学。",
-"en": "I do not have school on Saturday."
 }
 ]
 },
@@ -3250,19 +3185,6 @@
 ]
 },
 {
-"word": "心肠",
-"s": [
-{
-"zh": "王阿姨的心肠很好。",
-"en": "Auntie Wang is very kind-hearted."
-},
-{
-"zh": "奶奶是一个好心肠的人。",
-"en": "Grandma is a kind-hearted person."
-}
-]
-},
-{
 "word": "碰",
 "s": [
 {
@@ -3666,19 +3588,6 @@
 ]
 },
 {
-"word": "两岸",
-"s": [
-{
-"zh": "河的两岸有很多树。",
-"en": "There are many trees on both sides of the river."
-},
-{
-"zh": "小河两岸开满了花。",
-"en": "Flowers bloom all along both banks of the stream."
-}
-]
-},
-{
 "word": "岸上",
 "s": [
 {
@@ -3974,19 +3883,6 @@
 {
 "zh": "我看见远处有一只船。",
 "en": "I see a boat far away."
-}
-]
-},
-{
-"word": "四处",
-"s": [
-{
-"zh": "小狗四处找吃的。",
-"en": "The puppy looks all over for food."
-},
-{
-"zh": "妈妈四处找她的手机。",
-"en": "Mum searches everywhere for her phone."
 }
 ]
 },
@@ -4663,19 +4559,6 @@
 {
 "zh": "做这个很费时间。",
 "en": "Doing this takes a lot of time."
-}
-]
-},
-{
-"word": "收费",
-"s": [
-{
-"zh": "这个公园不收费。",
-"en": "This park is free to enter."
-},
-{
-"zh": "那里停车要收费。",
-"en": "Parking there costs money."
 }
 ]
 },

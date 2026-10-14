@@ -2,9 +2,11 @@
 // Written for the app, HSK 1–6 characters and his textbook's own: everyday words a P2 child meets, at the card's reading, with their English.
 // [组词, pinyin as said (一/不 with their tone changes, 轻声 toneless), English]
 
+import { ZUCI_FIRST } from './zuciPicks';
+
 export type ExtraExample = [text: string, pinyin: string, english: string];
 
-export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
+const WRITTEN: Record<string, ExtraExample[]> = {
   // HSK 1
   几: [['几个', 'jǐ gè', 'how many; a few'], ['几天', 'jǐ tiān', 'a few days; how many days']],
   九: [['九月', 'jiǔ yuè', 'September'], ['九个', 'jiǔ gè', 'nine (of them)']],
@@ -14,7 +16,7 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
   呢: [['你呢', 'nǐ ne', 'and you?'], ['他呢', 'tā ne', 'what about him?']],
   差: [['差不多', 'chà bu duō', 'almost; about the same'], ['很差', 'hěn chà', 'very poor; not good']],
   饿: [['饿了', 'è le', 'hungry now'], ['很饿', 'hěn è', 'very hungry']],
-  假: [['假的', 'jiǎ de', 'fake; not real'], ['真假', 'zhēn jiǎ', 'real or fake']],
+  假: [['假的', 'jiǎ de', 'fake; not real'], ['假话', 'jiǎ huà', 'a lie']],
   累: [['累了', 'lèi le', 'tired now'], ['很累', 'hěn lèi', 'very tired']],
   您: [['您好', 'nín hǎo', 'hello (polite)'], ['谢谢您', 'xiè xie nín', 'thank you (polite)']],
   渴: [['口渴', 'kǒu kě', 'thirsty'], ['渴了', 'kě le', 'thirsty now']],
@@ -104,7 +106,7 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
   猴: [['猴子', 'hóu zi', 'monkey'], ['小猴', 'xiǎo hóu', 'little monkey']],
   紫: [['紫色', 'zǐ sè', 'purple'], ['紫花', 'zǐ huā', 'purple flower']],
   歇: [['歇一歇', 'xiē yi xiē', 'to rest a little'], ['歇脚', 'xiē jiǎo', 'to rest one\'s feet']],
-  颗: [['一颗', 'yì kē', 'one (small round thing)'], ['颗粒', 'kē lì', 'grain; pellet']],
+  颗: [['一颗', 'yì kē', 'one (small round thing)'], ['两颗', 'liǎng kē', 'two (small round things)']],
   瘦: [['很瘦', 'hěn shòu', 'very thin'], ['瘦了', 'shòu le', 'got thinner']],
   摘: [['摘花', 'zhāi huā', 'to pick flowers'], ['摘下', 'zhāi xià', 'to take off; to pick']],
   // HSK 6
@@ -123,10 +125,19 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
   嘛: [['好嘛', 'hǎo ma', 'OK then'], ['是嘛', 'shì ma', 'is that so?']],
   膜: [['薄膜', 'bó mó', 'thin film'], ['保鲜膜', 'bǎo xiān mó', 'cling film']],
   踩: [['踩到', 'cǎi dào', 'to step on'], ['踩水', 'cǎi shuǐ', 'to splash in water']],
-  醋: [['吃醋', 'chī cù', 'to be jealous'], ['白醋', 'bái cù', 'white vinegar']],
+  醋: [['白醋', 'bái cù', 'white vinegar'], ['加醋', 'jiā cù', 'to add vinegar']],
   趟: [['一趟', 'yí tàng', 'one trip'], ['走一趟', 'zǒu yí tàng', 'to make a trip']],
   踢: [['踢球', 'tī qiú', 'to kick a ball; to play football'], ['踢足球', 'tī zú qiú', 'to play football']],
   蹲: [['蹲下', 'dūn xià', 'to squat down'], ['蹲着', 'dūn zhe', 'squatting']],
+  // the content audit (2026-10-15) blocked every 组词 these had: everyday ones instead (死 血 肝 婚 啤 媒 醉 舰 哲 济 宣 资 keep none
+  // — every word with them is about death, blood, marriage, drink, the media, war, philosophy, the economy or propaganda)
+  帅: [['很帅', 'hěn shuài', 'very handsome; cool']], 郎: [['牛郎', 'niú láng', 'the Cowherd (in the folk tale)']],
+  织: [['织毛衣', 'zhī máo yī', 'to knit a sweater'], ['织布', 'zhī bù', 'to weave cloth']], 挣: [['挣开', 'zhèng kāi', 'to break free']],
+  漏: [['漏水', 'lòu shuǐ', 'to leak (water)']], 压: [['压扁', 'yā biǎn', 'to squash flat']],
+  势: [['手势', 'shǒu shì', 'hand gesture']],
+  // characters no voice reads right on their own (gen-say-as's unsure list) are said as their first 组词: these had none
+  闷: [['闷热', 'mēn rè', 'hot and stuffy']], 哄: [['哄孩子', 'hǒng hái zi', 'to soothe a child']], 撇: [['一撇', 'yì piě', 'a left-falling stroke (丿)']],
+  勒: [['勒紧', 'lēi jǐn', 'to tie tight']], // lēi, the reading a child meets (review 2026-10-15)
   // his textbook's characters that HSK doesn't have (欢乐伙伴2.0 二上 L10, 三下 L12–13; spec 2026-10-11 §7)
   蚂: [['蚂蚁', 'mǎ yǐ', 'ant']],
   蚁: [['蚂蚁', 'mǎ yǐ', 'ant'], ['小蚂蚁', 'xiǎo mǎ yǐ', 'little ant']],
@@ -134,6 +145,14 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = {
   狐: [['狐狸', 'hú li', 'fox']],
   狸: [['狐狸', 'hú li', 'fox']],
 };
+
+/** The 组词 written for the app, by character: the content audit's picks (zuciPicks.ts) first, then the ones above. */
+export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = Object.fromEntries(
+  [...new Set([...Object.keys(ZUCI_FIRST), ...Object.keys(WRITTEN)])].map((ch) => {
+    const picks = ZUCI_FIRST[ch] ?? [];
+    return [ch, [...picks, ...(WRITTEN[ch] ?? []).filter(([t]) => !picks.some(([p]) => p === t))]];
+  }),
+);
 
 /** English for the 组词 above, for the cards and the sheet (the HSK glossary only covers its own words). */
 export const EXTRA_GLOSS: Record<string, string> = Object.fromEntries(

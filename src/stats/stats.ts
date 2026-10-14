@@ -1,6 +1,6 @@
 import { Rating } from 'ts-fsrs';
 import { addDays, endOfLocalDay, localDateKey, parseDateKey } from '../lib/date';
-import { ladderWords } from '../content/ladder';
+import { goneWord, ladderWords } from '../content/ladder';
 import { isOwned, rungOf, type RungKind } from '../ladder/rungs';
 import type { CardRecord, ReviewLog, SessionRecord, Word } from '../types';
 
@@ -131,9 +131,9 @@ export function weeklyAccuracy(logs: ReviewLog[], now: Date, weeks = 6): { weekS
   });
 }
 
-export function troubleWords(logs: ReviewLog[], limit = 10): { wordId: string; misses: number }[] {
+export function troubleWords(logs: ReviewLog[], limit = 10, keep: (wordId: string) => boolean = (id) => !goneWord(id)): { wordId: string; misses: number }[] {
   const misses = new Map<string, number>();
-  for (const l of logs) if (l.rating === Rating.Again) misses.set(l.wordId, (misses.get(l.wordId) ?? 0) + 1);
+  for (const l of logs) if (l.rating === Rating.Again && keep(l.wordId)) misses.set(l.wordId, (misses.get(l.wordId) ?? 0) + 1); // never a word the content dropped
   return [...misses]
     .map(([wordId, n]) => ({ wordId, misses: n }))
     .sort((a, b) => b.misses - a.misses || a.wordId.localeCompare(b.wordId))

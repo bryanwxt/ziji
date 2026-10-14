@@ -6,6 +6,7 @@ import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32, shuffle } from '../../lib/random';
 import type { KidState, Word } from '../../types';
 import { Label } from '../../ui/Label';
+import { readingsInContext } from '../../content/wordGate';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
@@ -27,6 +28,7 @@ export function BuildSentence({ item, word, kid, onDone }: Props) {
     for (let n = 0; n < 5 && order.every((v, i) => v === i); n++) order = shuffle(order, rng); // never handed over in order
     return { order, cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) };
   }, [item]);
+  const tilePy = useMemo(() => readingsInContext(item.full, item.tiles), [item]); // each tile read in its sentence (转圈 zhuàn)
   const [placed, setPlaced] = useState<number[]>([]);
   const [result, setResult] = useState<{ correct: boolean; responseMs: number } | null>(null);
   const shownAt = useRef(performance.now());
@@ -70,7 +72,7 @@ export function BuildSentence({ item, word, kid, onDone }: Props) {
         <div class="build__answer hanzi" aria-label="句子">
           {placed.map((i) => (
             <button key={i} type="button" class="build__placed" disabled={done} onClick={() => setPlaced(placed.filter((p) => p !== i))}>
-              <Label zh={item.tiles[i]!} fade peek={false} />
+              <Label zh={item.tiles[i]!} py={tilePy[i]} fade peek={false} />
             </button>
           ))}
         </div>

@@ -2197,19 +2197,6 @@
 ]
 },
 {
-"word": "二手",
-"s": [
-{
-"zh": "我的书包是二手的。",
-"en": "My school bag is second-hand."
-},
-{
-"zh": "哥哥有一本二手书。",
-"en": "My brother has a second-hand book."
-}
-]
-},
-{
 "word": "把手",
 "s": [
 {
@@ -2219,19 +2206,6 @@
 {
 "zh": "伞的把手是白的。",
 "en": "The umbrella's handle is white."
-}
-]
-},
-{
-"word": "二手车",
-"s": [
-{
-"zh": "我家的车是二手车。",
-"en": "Our car is a second-hand car."
-},
-{
-"zh": "爸爸去看二手车。",
-"en": "Dad goes to look at second-hand cars."
 }
 ]
 },
@@ -2314,19 +2288,6 @@
 ]
 },
 {
-"word": "厂长",
-"s": [
-{
-"zh": "爷爷是厂长。",
-"en": "Grandpa is the factory director."
-},
-{
-"zh": "厂长今天来我家。",
-"en": "The factory director is coming to my home today."
-}
-]
-},
-{
 "word": "走",
 "s": [
 {
@@ -2362,19 +2323,6 @@
 {
 "zh": "我和爸爸早上去长跑。",
 "en": "Dad and I go long-distance running in the morning."
-}
-]
-},
-{
-"word": "跑车",
-"s": [
-{
-"zh": "我有一个小跑车。",
-"en": "I have a small toy sports car."
-},
-{
-"zh": "哥哥的跑车是白的。",
-"en": "My brother's sports car is white."
 }
 ]
 },
@@ -3545,6 +3493,136 @@
 {
 "zh": "早上多云，下午下雨了。",
 "en": "It was cloudy in the morning and it rained in the afternoon."
+}
+]
+},
+{
+"word": "二月",
+"s": [
+{
+"zh": "二月有二十八天。",
+"en": "February has twenty-eight days."
+},
+{
+"zh": "二月我们去看花。",
+"en": "In February we go to see the flowers."
+}
+]
+},
+{
+"word": "三月",
+"s": [
+{
+"zh": "三月下了好多雨。",
+"en": "It rained a lot in March."
+},
+{
+"zh": "三月天天下雨。",
+"en": "It rains every day in March."
+}
+]
+},
+{
+"word": "四月",
+"s": [
+{
+"zh": "四月有好多花。",
+"en": "There are lots of flowers in April."
+},
+{
+"zh": "我四月去奶奶家。",
+"en": "I go to Grandma's house in April."
+}
+]
+},
+{
+"word": "五月",
+"s": [
+{
+"zh": "五月天天下大雨。",
+"en": "It pours every day in May."
+},
+{
+"zh": "我们五月去爷爷家玩。",
+"en": "In May we go to play at Grandpa's house."
+}
+]
+},
+{
+"word": "三个",
+"s": [
+{
+"zh": "我有三个哥哥。",
+"en": "I have three older brothers."
+},
+{
+"zh": "我吃了三个包子。",
+"en": "I ate three buns."
+}
+]
+},
+{
+"word": "好人",
+"s": [
+{
+"zh": "爷爷是个好人。",
+"en": "Grandpa is a good person."
+},
+{
+"zh": "他是一个好人。",
+"en": "He is a good person."
+}
+]
+},
+{
+"word": "山上",
+"s": [
+{
+"zh": "山上有一头大牛。",
+"en": "There is a big cow on the hill."
+},
+{
+"zh": "山上有好多花。",
+"en": "There are lots of flowers on the hill."
+}
+]
+},
+{
+"word": "白云",
+"s": [
+{
+"zh": "天上有白云。",
+"en": "There are white clouds in the sky."
+},
+{
+"zh": "我看见一片白云。",
+"en": "I see a white cloud."
+}
+]
+},
+{
+"word": "小河",
+"s": [
+{
+"zh": "家门口有一条小河。",
+"en": "There is a little river by our door."
+},
+{
+"zh": "小河里有鱼。",
+"en": "There are fish in the little river."
+}
+]
+},
+{
+"word": "小草",
+"s": [
+{
+"zh": "小草长出来了。",
+"en": "The little grass has grown."
+},
+{
+"zh": "地上有好多小草。",
+"en": "There is lots of little grass on the ground."
 }
 ]
 }

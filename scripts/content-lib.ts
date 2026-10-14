@@ -16,6 +16,8 @@ export interface BuildInput {
   pinyinOf: (text: string) => string;
   /** His textbook's lessons in order (src/content/moe2024.json): characters it teaches that HSK lacks are added, and 组词 he can read come first. */
   school?: SchoolLesson[];
+  /** Words never kept as a 组词 (src/content/blocked.ts: the content audit's blocklist and the sweeps' drops). */
+  blocked?: ReadonlySet<string>;
 }
 
 export interface SchoolLesson { term: string; read: string }
@@ -143,7 +145,9 @@ export function buildBuiltin(input: BuildInput, skipped: string[] = []): Builtin
     // 2026-10-11 §7); the card keeps every 组词 it had, so no ladder 词语 he has begun goes away
     const at = taught.get(p.char);
     const readable = at === undefined ? [] : pick((w) => (wordLevel.get(w) ?? 9) <= 3 && [...w].some((c) => c !== p.char) && [...w].every((c) => c === p.char || (taught.get(c) ?? Infinity) <= at));
-    const examples: Example[] = [...readable, ...current.filter((w) => !readable.includes(w))].map((w) => ({ text: w, pinyin: input.pinyinOf(w) }));
+    // a blocked word leaves the card without another taking its place: the audit vetted the words that stay, not the ones
+    // further down the list (src/content/zuciPicks.ts gives a card with none left the words a child knows)
+    const examples: Example[] = [...readable, ...current.filter((w) => !readable.includes(w))].filter((w) => !input.blocked?.has(w)).map((w) => ({ text: w, pinyin: input.pinyinOf(w) }));
     return {
       char: p.char,
       pinyin: input.pinyinOf(p.char),

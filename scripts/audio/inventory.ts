@@ -2,21 +2,28 @@
 // npx tsx scripts/audio/inventory.ts [voiceTag] [out.json]
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
-import { pinyin } from 'pinyin-pro';
 import { clipKey } from '../../src/audio/clipKey';
 import { builtinWords, schoolTerm } from '../../src/content';
 import { CHENGYU, chengyuPinyin } from '../../src/content/chengyu';
 import { DAPEI } from '../../src/content/dapei';
 import { BLANK, fillGap, SENTENCE_BANK } from '../../src/content/sentenceBank';
 import { inScopeWords, SENTENCE_TERMS, sentencesFor } from '../../src/content/understand';
+import { ladderWords } from '../../src/content/ladder';
+import { halfReading, readingOf } from '../../src/content/wordGate';
+import { NEAR_MAX_HSK, nearWords } from '../../src/practice/pairs';
 import { clipId, engineText, type ClipJob, type ClipKind } from './inventory-lib';
+import SAY_AS from '../../src/audio/sayAs.json';
+
+/** Lone characters said as a 组词 instead (scripts/gen-say-as.ts `words`): they need no clip of their own at their card's reading. */
+const SAID_AS_WORD: Record<string, string[]> = (SAY_AS as { words?: Record<string, string[]> }).words ?? {};
 import { parseChapter } from '../../src/story/format';
 
 /** Lines said as they are (Settings' voice tests, 朗读's warm-up). */
 export const FIXED_LINES = ['你好！', '你好，我们一起学汉字！', '你好！我是松露。我们一起学汉字吧！'];
 
 const isHan = (c: string) => /\p{Script=Han}/u.test(c);
-const sentencePinyin = (t: string) => pinyin(t, { type: 'array', nonZh: 'removed' }).join(' ');
+// the app's one pinyin source (content audit 2026-10-15): a written sentence's stored reading, a word's checked one
+const sentencePinyin = (t: string) => readingOf(t);
 
 /**
  * Words the voice gets wrong said alone even ending in 。, so they are cut from a sentence instead (scripts/audio/tts:
@@ -51,7 +58,7 @@ export function buildInventory(voice: string): ClipJob[] {
   const ours = (t: string) => Array.from(t).every((c) => !isHan(c) || rangeChars.has(c));
 
   for (const w of inRange) {
-    add(w.text, w.pinyin, 'char', w.pinyin);
+    if (!SAID_AS_WORD[w.text]) add(w.text, w.pinyin, 'char', w.pinyin); // 爪 is said as 爪子 (speech.ts loneSpoken): its 组词's clip
     for (const e of w.examples ?? []) {
       add(e.text, e.pinyin, 'word');
       add(`${e.text}的`, `${e.pinyin} de`, 'word', undefined, { piece: true }); // 听写's "长，长城的，长"
@@ -59,7 +66,7 @@ export function buildInventory(voice: string): ClipJob[] {
   }
   for (const b of SENTENCE_BANK) {
     if (!ours(b.word)) continue;
-    add(b.word, pinyin(b.word), 'word');
+    add(b.word, readingOf(b.word), 'word');
     for (const gap of b.gaps) {
       sentence(fillGap(gap, b.word));
       const at = gap.text.indexOf(BLANK);
@@ -79,9 +86,19 @@ export function buildInventory(voice: string): ClipJob[] {
   for (const term of SENTENCE_TERMS) for (const w of inScopeWords(term)) for (const s of sentencesFor(w.text)) sentence(s.zh);
   for (const d of DAPEI) {
     if (!ours(d.verb + d.noun)) continue;
-    add(d.verb, pinyin(d.verb), 'word');
-    add(d.noun, pinyin(d.noun), 'word');
-    add(d.verb + d.noun, pinyin(d.verb + d.noun), 'word');
+    add(d.verb, readingOf(d.verb), 'word');
+    add(d.noun, readingOf(d.noun), 'word');
+    add(d.verb + d.noun, readingOf(d.verb + d.noun), 'word');
+  }
+  // 连一连's left halves, said at their reading in their word when it isn't their card's (长 in 长大: zhǎng): every two-character
+  // word a board can hold — the near pool, and each card's and ladder word's own (content audit 2026-10-15)
+  const halves = new Set<string>(nearWords(NEAR_MAX_HSK));
+  for (const w of inRange) for (const e of w.examples ?? []) if (Array.from(e.text).length === 2) halves.add(e.text);
+  for (const w of ladderWords()) if (Array.from(w.text).length === 2) halves.add(w.text);
+  for (const word of halves) {
+    const [first] = Array.from(word) as [string];
+    const r = halfReading(word, 0);
+    if (r && rangeChars.has(first) && r !== inRange.find((w) => w.text === first)?.pinyin) add(first, r, 'char', r);
   }
   for (const l of FIXED_LINES) sentence(l);
   // the story's Mandarin (spec 2026-10-07 3c §2): Granny Dragon's lines, each 听一听 scene, its questions and their choices
@@ -92,7 +109,7 @@ export function buildInventory(voice: string): ClipJob[] {
       for (const m of [...c.granny, ...c.listen.lines]) sentence(m.zh);
       for (const q of c.listen.questions) {
         sentence(q.zh);
-        for (const choice of [q.answer, ...q.wrong]) add(choice, pinyin(choice), 'word');
+        for (const choice of [q.answer, ...q.wrong]) add(choice, readingOf(choice), 'word');
       }
     }
   }
