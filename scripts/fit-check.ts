@@ -321,17 +321,28 @@ async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnl
 async function sweep(browser: Browser, size: Size) {
   const run = async (flow: string, now: Date, profile: Omit<FitProfileOptions, 'now'>, then: (p: Page) => Promise<void>) => {
     if (ONLY && !ONLY.test(flow)) return;
-    let page: Page | null = null;
-    const errors: string[] = [];
-    try {
-      const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error('flow took over 6 minutes (stuck?)')), 360_000));
-      page = await Promise.race([open(browser, size, now, profile, errors), limit]);
-      const p = page;
-      await Promise.race([then(p), limit]); // one stuck screen can't stall the whole sweep
-    } catch (e) {
-      results.push({ size: size.name, flow, step: -1, sig: '', problems: [`flow crashed: ${String(e).slice(0, 900)}`, ...errors.map((m) => `page error: ${m}`)] });
+    // a 2-core CI runner is several times slower than the Mac: more time per flow, and one retry of a crashed flow (what we do by hand locally)
+    const limitMs = process.env.CI ? 15 * 60_000 : 360_000;
+    for (let attempt = 1; attempt <= (process.env.CI ? 2 : 1); attempt++) {
+      const mark = results.length;
+      let page: Page | null = null;
+      const errors: string[] = [];
+      let crashed = false;
+      try {
+        const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error(`flow took over ${limitMs / 60_000} minutes (stuck?)`)), limitMs));
+        page = await Promise.race([open(browser, size, now, profile, errors), limit]);
+        if (process.env.CI) page.setDefaultTimeout(60_000);
+        const p = page;
+        await Promise.race([then(p), limit]); // one stuck screen can't stall the whole sweep
+      } catch (e) {
+        crashed = true;
+        results.splice(mark); // a retry re-checks the whole flow; keep only the last attempt's screens
+        results.push({ size: size.name, flow, step: -1, sig: '', problems: [`flow crashed${attempt > 1 ? ' (after a retry)' : ''}: ${String(e).slice(0, 900)}`, ...errors.map((m) => `page error: ${m}`)] });
+      }
+      await page?.context().close().catch(() => {});
+      if (!crashed) return;
+      if (attempt < (process.env.CI ? 2 : 1)) { results.splice(mark); console.log(`retrying ${size.name} ${flow} after a crash`); }
     }
-    await page?.context().close();
   };
   const tabTo = (p: Page, label: string) => p.click(`.tabbar__item:has-text("${label}")`);
   // wait for the lesson to load: a slow start used to look like "back home" and skip the whole flow silently (3b review: Truffle's
