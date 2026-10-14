@@ -197,6 +197,7 @@ export interface SessionRecord {
   writeLast?: string; // the last character written ('id#at'): a redo never comes straight after it
   meaningCredit?: string[]; // words whose meaning card 写一写 has rated this lesson (production practice spec §3): once a lesson
   practiceQueue?: PracticeItem[]; // 练一练's round, built when the step starts (spec 2026-10-05 §3)
+  sentBack?: string[]; // words a missed placement recheck sent back to learn in this lesson: nothing more of them today (review M1)
   practiceIndex?: number;
   practiceElapsedMs?: number;
   practiceLeft?: number; // items the time box left for tomorrow (pacing reads it, spec §2.2)
