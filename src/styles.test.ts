@@ -132,6 +132,8 @@ describe('adaptive layouts (spec §18)', () => {
   });
   it('evening lights move only on Home, never behind a lesson, and never with reduced motion (spec 2026-10-13 §6)', () => {
     expect(css).toMatch(/\.home \.world-anim--pulse \{ animation:/);
+    expect(css).toMatch(/\.home \.world-anim--twinkle \{ animation:/);
+    expect(css).toMatch(/\.home \.world-anim--sweep \{[^}]*animation:/);
     expect(css).not.toMatch(/^\.world-anim--\w+ \{[^}]*animation:/m);
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.home \.world-anim \{ animation: none; \} \}/);
   });

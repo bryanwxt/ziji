@@ -38,7 +38,7 @@ describe('One River anchors (spec 2026-10-13 §5)', () => {
   });
   it('the boats sit on the water where review placed them (fix round 0): a plan restating the old anchors must fail here', () => {
     expect(Object.fromEntries(WORLDS.map((w) => [w.id, RIVER[w.id].props.boat]))).toEqual({
-      home: { x: 703, y: 830, w: 96, h: 60 },
+      home: { x: 712, y: 812, w: 80, h: 60 },
       rainforest: { x: 700, y: 955, w: 100, h: 90 },
       bamboo: { x: 862, y: 830, w: 100, h: 90 },
       terraces: { x: 815, y: 940, w: 120, h: 90 },

@@ -15,7 +15,7 @@ export interface RiverWorld {
 
 export const RIVER: Record<WorldId, RiverWorld> = {
   home: {
-    props: { boat: { x: 703, y: 830, w: 96, h: 60 }, otter: { x: 605, y: 815, w: 80, h: 80 }, kingfisher: { x: 930, y: 690, w: 60, h: 50 } }, // the boat and the otter float on the canal (inside the phone crop); the kingfisher is on the shaded strip above the far wall; tight boxes clear 宝箱 on a 1024 iPad
+    props: { boat: { x: 712, y: 812, w: 80, h: 60 }, otter: { x: 795, y: 822, w: 80, h: 80 }, kingfisher: { x: 930, y: 690, w: 60, h: 50 } }, // the boat and the otter float on the canal (inside the phone crop); the kingfisher is on the shaded strip above the far wall; tight boxes clear 宝箱 on a 1024 iPad
     dusk: 0.36,
     moon: { x: 640, y: 420 },
   },
