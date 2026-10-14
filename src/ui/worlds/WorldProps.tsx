@@ -48,7 +48,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
   };
   const later = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms));
   useEffect(() => () => { timers.current.forEach(clearTimeout); show(); }, []);
-  // another world: what this one was playing (a crack on its block, a hidden prop) stays behind (sweep)
+  // another world: what this one was playing (an opened lotus, a hidden prop) stays behind (sweep)
   const shownWorld = useRef(world);
   useEffect(() => {
     if (shownWorld.current === world) return;

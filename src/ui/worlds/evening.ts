@@ -22,7 +22,6 @@ const glows = (w: WorldId, part: string, pts: [number, number, number][]) => pts
 const lamp = (w: WorldId, i: number, x: number, y: number) =>
   `<g data-part="lamp">${glow(`${w}-lamp${i}`, x, y - 52, 44)}<path d="M${x} ${y} L${x} ${y - 48}" stroke="#706889" stroke-width="3" stroke-linecap="round"/><path d="M${x - 7} ${y - 48} h14 l-3 -8 h-8 Z" fill="#fff4c8" stroke="#706889" stroke-width="1.6" stroke-linejoin="round"/></g>`;
 
-
 const r1 = (n: number) => +n.toFixed(1);
 /** Stars that twinkle (the night sky of 银河). */
 const twinkles = (pts: [number, number, number][]) => pts.map(([x, y, r], i) =>

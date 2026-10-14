@@ -1,4 +1,4 @@
-import { migrateWorldId, OLD_WORLDS, WORLDS } from '../fun/worlds';
+import { migrateWorldId, OLD_WORLDS, WORLDS, type WorldId } from '../fun/worlds';
 import { nextRung, type Rung } from '../session/ladder';
 import { normalizeFinds } from '../fun/finds';
 import { migrateAccessory } from '../fun/accessories';
@@ -32,8 +32,8 @@ export function normalizeKid(raw: Partial<KidState> | null | undefined): KidStat
   // Journey worlds: One River ids only (an old paper world maps across by position, spec 2026-10-13 §8), in unlock order;
   // a pick must be a reached world. Unknown ids are dropped. Mapping an old id once is what tells Home to say so.
   const rawWorlds = Array.isArray(kid.worldsSeen) ? kid.worldsSeen : [];
-  const worldList = rawWorlds.map(migrateWorldId);
-  const worldsSeen: string[] = WORLDS.map((w) => w.id as string).filter((id) => worldList.includes(id as never));
+  const worldList: (WorldId | null)[] = rawWorlds.map(migrateWorldId);
+  const worldsSeen: WorldId[] = WORLDS.map((w) => w.id).filter((id) => worldList.includes(id));
   const picked = migrateWorldId(kid.world);
   const world = picked && worldsSeen.includes(picked) ? picked : null;
   const moved = rawWorlds.some((w) => typeof w === 'string' && Object.hasOwn(OLD_WORLDS, w) && !WORLDS.some((x) => x.id === w));
