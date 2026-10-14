@@ -11,6 +11,8 @@ import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settin
 
 export const REVIEW_CAP = 60;
 export const BACKLOG_PAUSE = 40;
+/** First rechecks of placed characters in one lesson at most (spec 2026-10-14); the rest wait for later days. */
+export const PLACEMENT_CHECKS_PER_LESSON = 10;
 export const STEP_ORDER: ActivityKind[] = ['newwords', 'practice', 'writing', 'speaking']; // spec 2026-10-05 §2
 /** The lesson's steps the parent has on. The speaking step needs 朗读 or 看图说话 back from being parked (settings.langdu / story). */
 export const stepsOn = (settings: Pick<Settings, 'activities' | 'story' | 'langdu'>): ActivityKind[] =>
@@ -62,9 +64,13 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const started = new Set([...recognise, ...hear].map((c) => c.wordId));
   // Use (meaning practice) starts once Read has passed: two days' right first answers (spec 2026-10-06 §3.2)
   const readPassed = new Set(recognise.filter((c) => c.passed).map((c) => c.wordId));
-  const dueRecognise = dueOf(recognise);
-  // a real backlog pauses new words; first rechecks of placement guesses (never practised) don't
-  const backlog = dueRecognise.filter((c) => practised.has(c.wordId)).length;
+  // first rechecks of placed characters (spec 2026-10-14): 10 a lesson, in the school order their due times keep
+  const placementCheck = (c: CardRecord) => c.placed === true;
+  const dueAll = dueOf(recognise);
+  const checks = new Set(dueAll.filter(placementCheck).slice(0, PLACEMENT_CHECKS_PER_LESSON));
+  const dueRecognise = dueAll.filter((c) => !placementCheck(c) || checks.has(c));
+  // a real backlog pauses new words; first rechecks of placement guesses (never practised, or marked placed) don't
+  const backlog = dueAll.filter((c) => !placementCheck(c) && practised.has(c.wordId)).length;
   const perDay = newPerDay ?? Math.min(settings.newPerDay, PACE_START);
   const newLimit = backlog > BACKLOG_PAUSE || !settings.activities.newwords ? 0 : perDay;
 
