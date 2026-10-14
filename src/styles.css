@@ -316,6 +316,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .chest-slot { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.4dvh, 14px); }
 .chest-slot__under { min-height: 112px; display: grid; place-items: center; }
 .celebrate > p.is-kept { visibility: hidden; }
+/* the prize takes the watching Truffle's slot (no margin of its own) and a stars prize rises out of the chest over the lid,
+   so opening adds nothing above the chest (review 2026-10-15: it dropped ~40 px) */
+.celebrate__watch.prize__costume { margin-bottom: 0; position: relative; }
+.prize__label { position: absolute; left: 50%; bottom: -10px; translate: -50% 0; font-size: clamp(22px, 3.4dvh, 32px); line-height: 1.1; background: var(--surface); border: var(--panel-border); border-radius: 14px; box-shadow: 3px 3px 0 var(--ink); padding: 2px 12px 4px; } /* a name tag at his feet */
+.chest-art { position: relative; }
+.chest-art .prize__stars { position: absolute; left: 0; right: 0; top: -12%; display: flex; justify-content: center; z-index: 2; pointer-events: none; }
 .chest__glow { opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 .chest.is-open .chest__glow { opacity: 1; }
 .prize { animation: prize-rise var(--dur-slow) var(--spring-bouncy) backwards; }
