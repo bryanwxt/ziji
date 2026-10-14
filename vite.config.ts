@@ -1,7 +1,10 @@
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/** .test.ts files that need a DOM (document, HTMLElement, matchMedia, AudioContext stand-ins): they run with the .tsx tests in jsdom */
+const DOM_TS = ['src/audio/context.test.ts', 'src/audio/micFailure.test.ts', 'src/audio/recorder.test.ts', 'src/audio/sfx.test.ts', 'src/lib/files.test.ts', 'src/ui/motion.test.ts'];
 
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
@@ -66,10 +69,14 @@ export default defineConfig({
     }),
   ],
   test: {
-    environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     // fsrs-browser names only a browser "module" entry, which vitest's resolver skips; the optimizer itself runs in WebKit (scripts/optimizer-check.ts)
     alias: { 'fsrs-browser': fileURLToPath(new URL('./node_modules/fsrs-browser/fsrs_browser.js', import.meta.url)) },
     testTimeout: 20_000, // the placement and first-launch walks answer 30–40 questions; a loaded machine (or CI) can pass 5 s
+    // TESTING.md: *.test.ts runs in node (no DOM to build per file), *.test.tsx in jsdom; DOM_TS lists the .ts tests that need a DOM
+    projects: [
+      { extends: true, test: { name: 'node', environment: 'node', include: ['{src,scripts}/**/*.test.ts'], exclude: [...configDefaults.exclude, ...DOM_TS] } },
+      { extends: true, test: { name: 'dom', environment: 'jsdom', include: ['{src,scripts}/**/*.test.tsx', ...DOM_TS] } },
+    ],
   },
 });

@@ -28,6 +28,7 @@ interface StageEntry { size: string; flow: string; step: number; group: string; 
 const stageEntries: StageEntry[] = [];
 const framed = new Set<string>(); // size|flow pairs whose frame time was measured
 const ONLY = process.env.FIT_ONLY ? new RegExp(process.env.FIT_ONLY) : null; // e.g. FIT_ONLY=home npm run fit
+const VIEWPORT = process.env.FIT_VIEWPORT ? new RegExp(process.env.FIT_VIEWPORT) : null; // size names, e.g. FIT_VIEWPORT='^ipad-' (CI shards the sweep by size; iphone-sideways is the rotate check)
 
 /* ---------- in-page probes (plain JS: they run inside WebKit) ---------- */
 const MAIN = '.choice, .sheet .btn, .path__node, .mic-btn, .tabbar__item, .fishtile, .bubble-opt';
@@ -320,17 +321,28 @@ async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnl
 async function sweep(browser: Browser, size: Size) {
   const run = async (flow: string, now: Date, profile: Omit<FitProfileOptions, 'now'>, then: (p: Page) => Promise<void>) => {
     if (ONLY && !ONLY.test(flow)) return;
-    let page: Page | null = null;
-    const errors: string[] = [];
-    try {
-      const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error('flow took over 6 minutes (stuck?)')), 360_000));
-      page = await Promise.race([open(browser, size, now, profile, errors), limit]);
-      const p = page;
-      await Promise.race([then(p), limit]); // one stuck screen can't stall the whole sweep
-    } catch (e) {
-      results.push({ size: size.name, flow, step: -1, sig: '', problems: [`flow crashed: ${String(e).slice(0, 900)}`, ...errors.map((m) => `page error: ${m}`)] });
+    // a 2-core CI runner is several times slower than the Mac: more time per flow, and one retry of a crashed flow (what we do by hand locally)
+    const limitMs = process.env.CI ? 15 * 60_000 : 360_000;
+    for (let attempt = 1; attempt <= (process.env.CI ? 2 : 1); attempt++) {
+      const mark = results.length;
+      let page: Page | null = null;
+      const errors: string[] = [];
+      let crashed = false;
+      try {
+        const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error(`flow took over ${limitMs / 60_000} minutes (stuck?)`)), limitMs));
+        page = await Promise.race([open(browser, size, now, profile, errors), limit]);
+        if (process.env.CI) page.setDefaultTimeout(60_000);
+        const p = page;
+        await Promise.race([then(p), limit]); // one stuck screen can't stall the whole sweep
+      } catch (e) {
+        crashed = true;
+        results.splice(mark); // a retry re-checks the whole flow; keep only the last attempt's screens
+        results.push({ size: size.name, flow, step: -1, sig: '', problems: [`flow crashed${attempt > 1 ? ' (after a retry)' : ''}: ${String(e).slice(0, 900)}`, ...errors.map((m) => `page error: ${m}`)] });
+      }
+      await page?.context().close().catch(() => {});
+      if (!crashed) return;
+      if (attempt < (process.env.CI ? 2 : 1)) { results.splice(mark); console.log(`retrying ${size.name} ${flow} after a crash`); }
     }
-    await page?.context().close();
   };
   const tabTo = (p: Page, label: string) => p.click(`.tabbar__item:has-text("${label}")`);
   // wait for the lesson to load: a slow start used to look like "back home" and skip the whole flow silently (3b review: Truffle's
@@ -468,24 +480,29 @@ async function main() {
     for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE)).ok) break; } catch { /* starting */ } await new Promise((r) => setTimeout(r, 250)); }
     let browser: Browser;
     try { browser = await webkit.launch(); } catch (e) { console.error(`WebKit is missing: run  npx playwright-core install webkit  (ask first: it downloads ~100 MB)\n${e}`); process.exitCode = 2; return; }
-    await Promise.all(SIZES.map((size) => sweep(browser, size))); // sizes in parallel, each in its own contexts
+    const sizes = SIZES.filter((s) => !VIEWPORT || VIEWPORT.test(s.name));
+    await Promise.all(sizes.map((size) => sweep(browser, size))); // sizes in parallel, each in its own contexts
     stageInvariants();
     // A phone turned sideways: the overlay covers the screen
     const side = { name: 'iphone-sideways', width: 667, height: 375 };
-    const page = await open(browser, side, AFTERNOON, {});
-    const covered = await page.evaluate(() => { const h = document.querySelector('.rotate-hint'); if (!h) return false; const r = h.getBoundingClientRect(); return getComputedStyle(h).display !== 'none' && r.width >= innerWidth && r.height >= innerHeight; });
-    mkdirSync(`${OUT}/${side.name}`, { recursive: true });
-    await page.screenshot({ path: `${OUT}/${side.name}/home-00.png` });
-    results.push({ size: side.name, flow: 'rotate', step: 0, sig: '', problems: covered ? [] : ['the turn-it-upright overlay does not cover the screen'] });
+    if (!VIEWPORT || VIEWPORT.test(side.name)) {
+      const page = await open(browser, side, AFTERNOON, {});
+      const covered = await page.evaluate(() => { const h = document.querySelector('.rotate-hint'); if (!h) return false; const r = h.getBoundingClientRect(); return getComputedStyle(h).display !== 'none' && r.width >= innerWidth && r.height >= innerHeight; });
+      mkdirSync(`${OUT}/${side.name}`, { recursive: true });
+      await page.screenshot({ path: `${OUT}/${side.name}/home-00.png` });
+      results.push({ size: side.name, flow: 'rotate', step: 0, sig: '', problems: covered ? [] : ['the turn-it-upright overlay does not cover the screen'] });
+    }
     await browser.close();
   } finally {
     server.kill();
   }
   const bad = results.filter((r) => r.problems.length);
   const lines = results.map((r) => `${r.problems.length ? 'FAIL' : 'ok  '} ${r.size.padEnd(18)} ${r.flow}-${String(r.step).padStart(2, '0')}  ${r.sig}${r.problems.length ? `\n       - ${r.problems.join('\n       - ')}` : ''}`);
+  mkdirSync(OUT, { recursive: true });
   writeFileSync(`${OUT}/report.txt`, lines.join('\n') + '\n');
   console.log(lines.join('\n'));
   console.log(`\n${results.length} screens checked, ${bad.length} with problems. Screenshots: ${OUT}/`);
+  if (!results.length) { console.error(`nothing was checked: FIT_VIEWPORT=${process.env.FIT_VIEWPORT ?? ''} FIT_ONLY=${process.env.FIT_ONLY ?? ''} match no size or flow`); process.exit(1); }
   process.exit(bad.length ? 1 : 0);
 }
 

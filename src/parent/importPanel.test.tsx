@@ -23,8 +23,8 @@ describe('ImportPanel', () => {
     expect(screen.getByText(/小明在公园里玩/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^Add/ }));
     await waitFor(async () => expect((await allWords(app.db)).map((w) => w.text)).toEqual(expect.arrayContaining(['欺负', '告诉'])));
-    expect((await listParentPassages(app.db))).toHaveLength(1);
-    expect(screen.getByRole('status').textContent).toMatch(/Added/);
+    await waitFor(async () => expect(await listParentPassages(app.db)).toHaveLength(1)); // the passage saves after the words: wait for it too
+    await waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/Added/));
   });
   it('leaves out an unticked item, and joins two pieces of a split word', async () => {
     const app = await makeAppData();
