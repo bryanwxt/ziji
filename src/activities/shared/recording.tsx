@@ -4,8 +4,9 @@ import { recordingSupported, startRecording, type ActiveRecording, type Finished
 import { quietFor } from '../../langdu/loudness';
 import { setRecordingNow } from '../../audio/speaking';
 import { stopSpeaking } from '../../audio/speech';
-import { MicDeniedError, MicTimeoutError } from '../../audio/micErrors';
-import { recordMicFailure } from '../../audio/micFailure';
+import { MicDeniedError, MicTimeoutError, MicUnsupportedError } from '../../audio/micErrors';
+import { clearMicFailure, recordMicFailure } from '../../audio/micFailure';
+import { openMeterContext } from '../../audio/meter';
 import { logError } from '../../app/errorLog';
 import { Label } from '../../ui/Label';
 import { LoudnessMeter } from '../langdu/LoudnessMeter';
@@ -17,7 +18,7 @@ export const RETRY_LABEL = '再试一次';
 const RETRY_AFTER_MS = 300; // a passing failure (NotReadableError, AbortError…) is tried once more, by itself; a timeout is not
 const HEARD = 0.002; // above a working microphone's noise floor; a suspended meter reads exactly 0
 
-/** One recording at a time, with an optional live level. Only a refused or missing mic becomes 'blocked'; any other failure is
+/** One recording at a time, with an optional live level. Only a refused mic, or none to record with, becomes 'blocked'; any other failure is
  *  tried again once, then the button says 再试一次 (`failed`) so his next tap asks again (mic fix 2026-10-14). */
 /** startBlocked: the microphone was already refused on an earlier screen, so don't ask again. */
 export function useRecorder(startBlocked = false) {
@@ -29,6 +30,7 @@ export function useRecorder(startBlocked = false) {
   const [heard, setHeard] = useState(false); // a real level has arrived: until then no meter, so a silent meter never nags
   const active = useRef<ActiveRecording | null>(null);
   const starting = useRef(false); // the mic is opening: a second tap must not start a second recording
+  const [opening, setOpening] = useState(false); // the same, for the button: disabled, "…"
   const mounted = useRef(true);
   const series = useRef<{ at: number; level: number }[]>([]);
   useEffect(() => () => {
@@ -47,11 +49,12 @@ export function useRecorder(startBlocked = false) {
       if (!mounted.current) return;
       setResult(done);
       setState('done');
+      clearMicFailure(); // the mic works now: an old failure is no longer news for the parent
     } catch {
       if (mounted.current) setState('ready'); // nothing was kept: he can record again
     }
   };
-  const open = (withLevel: boolean) =>
+  const open = (withLevel: boolean, meterCtx: AudioContext | null, wasSpeaking: boolean) =>
     startRecording(
       () => void stop(),
       withLevel
@@ -63,16 +66,25 @@ export function useRecorder(startBlocked = false) {
             if (l > HEARD) setHeard(true);
           }
         : undefined,
+      { meterCtx, wasSpeaking },
     );
   const start = async (withLevel: boolean) => {
     if (starting.current || active.current) return;
     starting.current = true;
-    stopSpeaking(); // don't record Truffle's voice into his answer (startRecording gives it a moment to let go)
+    setOpening(true);
+    let speaking = false;
+    try { speaking = typeof speechSynthesis !== 'undefined' && !!speechSynthesis?.speaking; } catch { /* no speech here */ }
+    stopSpeaking(); // don't record Truffle's voice into his answer (startRecording waits for it to let go, if it was speaking)
+    // the meter's context, made in the tap (iPad Safari) and kept for the retry: 朗读's level and its bonus need it
+    const meterCtx = withLevel ? openMeterContext() : null;
+    let started = false;
     series.current = [];
     try {
       for (let attempt = 0; ; attempt++) {
         try {
-          const rec = await open(withLevel);
+          // the first try is asked for inside the tap; only the retry runs outside it
+          const rec = await open(withLevel, meterCtx, attempt === 0 && speaking);
+          started = true; // the recording owns the context now
           if (!mounted.current) return rec.cancel(); // he left while the mic was opening: never leave it on
           active.current = rec;
           setFailed(false);
@@ -81,13 +93,14 @@ export function useRecorder(startBlocked = false) {
           return;
         } catch (e) {
           // a timeout is a prompt still on screen while he decides: no auto-retry (it would wait another 10 s); straight to 再试一次
-          const final = e instanceof MicDeniedError || e instanceof MicTimeoutError || attempt > 0; // a failure the retry fixed isn't news for the parent
+          const blocks = e instanceof MicDeniedError || e instanceof MicUnsupportedError; // refused, or no way to record here
+          const final = blocks || e instanceof MicTimeoutError || attempt > 0; // a failure the retry fixed isn't news for the parent
           if (final) {
             logError(e);
-            void recordMicFailure(e);
+            void recordMicFailure(e, 'lesson');
           }
           if (!mounted.current) return;
-          if (e instanceof MicDeniedError) return setState('blocked'); // a real refusal: don't ask again
+          if (blocks) return setState('blocked'); // a real refusal, or no recording on this iPad: don't ask again
           if (final) {
             setFailed(true);
             setState('ready');
@@ -98,7 +111,9 @@ export function useRecorder(startBlocked = false) {
         }
       }
     } finally {
+      if (!started) void meterCtx?.close().catch(() => {});
       starting.current = false;
+      if (mounted.current) setOpening(false);
     }
   };
   const reset = () => {
@@ -108,7 +123,7 @@ export function useRecorder(startBlocked = false) {
     setHeard(false);
     setState((s) => (s === 'blocked' ? s : 'ready'));
   };
-  return { state, result, level, quietMs, heard, failed, start, stop, reset };
+  return { state, result, level, quietMs, heard, failed, starting: opening, start, stop, reset };
 }
 
 /** The microphone is refused or missing: said once, kindly; the step goes on without recording (its 继续 is open). */
@@ -137,9 +152,9 @@ export function MicButton({ rec, withLevel }: { rec: ReturnType<typeof useRecord
   }
   if (rec.state === 'ready') {
     return (
-      <button type="button" class={`mic-btn${rec.failed ? ' mic-btn--retry' : ''}`} onClick={() => void rec.start(withLevel)}>
+      <button type="button" class={`mic-btn${rec.failed ? ' mic-btn--retry' : ''}`} disabled={rec.starting} aria-busy={rec.starting || undefined} onClick={() => void rec.start(withLevel)}>
         <Mic size={52} strokeWidth={2.5} />
-        <Label zh={rec.failed ? RETRY_LABEL : '开始录音'} />
+        {rec.starting ? <span class="mic-btn__wait">…</span> : <Label zh={rec.failed ? RETRY_LABEL : '开始录音'} />}
       </button>
     );
   }
