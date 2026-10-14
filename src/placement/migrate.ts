@@ -17,9 +17,11 @@ export async function markOldPlacement(db: AppDb, now: Date): Promise<number> {
   let marked: CardRecord[] = [];
   if (at !== undefined) {
     const [cards, words, logs] = await Promise.all([allCards(db), allWords(db), db.getAll('reviewLogs')]);
-    const answered = new Set(logs.map((l) => l.wordId)); // any review of the word, of any kind
+    // its first recheck is a reading log on this card; an answer by ear or meaning doesn't count (review M4). A card earned in
+    // lessons, or passed on the ladder, has reading logs, so it is never marked
+    const answered = new Set(logs.filter((l) => l.kind === 'recognise').map((l) => l.cardId));
     const byId = new Map(words.map((w) => [w.id, w]));
-    const old = cards.filter((c) => c.kind === 'recognise' && !c.placed && c.passed !== undefined && c.passed <= at + MINUTE && !answered.has(c.wordId) && byId.has(c.wordId));
+    const old = cards.filter((c) => c.kind === 'recognise' && !c.placed && c.passed !== undefined && c.passed <= at + MINUTE && !answered.has(c.id) && byId.has(c.wordId));
     old.sort((a, b) => schoolOrder(byId.get(a.wordId)!, byId.get(b.wordId)!));
     const today = startOfLocalDay(now).getTime();
     const dayOf = (t: number) => Math.max(0, Math.round((startOfLocalDay(new Date(t)).getTime() - today) / 86_400_000));

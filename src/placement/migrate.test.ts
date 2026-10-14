@@ -35,19 +35,32 @@ describe('marking an older placement (spec 2026-10-14 ruling)', () => {
     for (const c of (await allCards(db))) expect(c.placed).toBe(true);
     expect((await getSettings(db)).placementMarked).toBe(true);
   });
-  it('a card already rechecked, a word practised in another kind, a card passed later, and a card with no pass stay untouched', async () => {
-    const [a, b, c, d, e] = terms[0]!.slice(0, 5).map((w) => w.id);
-    const db = await oldInstall([a!, b!, c!, d!, e!]);
+  it('a card already rechecked, a card passed later, and a card with no pass stay untouched', async () => {
+    const [a, c, d, e] = terms[0]!.slice(0, 4).map((w) => w.id);
+    const db = await oldInstall([a!, c!, d!, e!]);
     await addReviewLog(db, { cardId: `${a}:recognise`, wordId: a!, kind: 'recognise', at: now.getTime() - 1000, rating: 3, correct: true });
-    await addReviewLog(db, { cardId: `${b}:hear`, wordId: b!, kind: 'hear', at: now.getTime() - 1000, rating: 3, correct: true });
     const later = await card(db, c!);
     await putCards(db, [{ ...later, passed: placedAt.getTime() + 2 * 86_400_000 }]); // passed on the ladder after placement
     const { passed: _p, ...unpassed } = await card(db, d!);
     await putCards(db, [unpassed]);
     const before = new Map((await allCards(db)).map((x) => [x.id, x]));
     expect(await markOldPlacement(db, now)).toBe(1);
-    for (const id of [a, b, c, d]) expect(await card(db, id!)).toEqual(before.get(`${id}:recognise`));
+    for (const id of [a, c, d]) expect(await card(db, id!)).toEqual(before.get(`${id}:recognise`));
     expect((await card(db, e!)).placed).toBe(true);
+  });
+  it('a word he has only answered by ear (or by meaning) is still marked: only a reading log counts as its recheck (review M4)', async () => {
+    const [b, m] = terms[0]!.slice(0, 2).map((w) => w.id);
+    const db = await oldInstall([b!, m!]);
+    await addReviewLog(db, { cardId: `${b}:hear`, wordId: b!, kind: 'hear', at: now.getTime() - 1000, rating: 3, correct: true });
+    await addReviewLog(db, { cardId: `${m}:meaning`, wordId: m!, kind: 'meaning', at: now.getTime() - 1000, rating: 3, correct: true });
+    expect(await markOldPlacement(db, now)).toBe(2);
+  });
+  it('never marks a card he earned in lessons: it has reading logs', async () => {
+    const [a] = terms[0]!.map((w) => w.id);
+    const db = await oldInstall([a!]);
+    await putCards(db, [{ ...(await card(db, a!)), passed: placedAt.getTime() - 86_400_000 }]); // passed before the placement
+    await addReviewLog(db, { cardId: `${a}:recognise`, wordId: a!, kind: 'recognise', at: placedAt.getTime() - 2 * 86_400_000, rating: 3, correct: true });
+    expect(await markOldPlacement(db, now)).toBe(0);
   });
   it('a pass within a minute of the placement counts as the placement', async () => {
     const [a] = terms[0]!.map((w) => w.id);
