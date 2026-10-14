@@ -11,7 +11,8 @@ import { DEFAULT_KID, type Word } from '../types';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { Label } from '../ui/Label';
 import { Pet } from '../ui/Pet';
-import { Scene } from '../ui/Scene';
+import { WorldScene } from '../ui/worlds/WorldScene';
+import { currentWorld, timeOfDay } from '../fun/worlds';
 import { SpeakButton } from '../ui/SpeakButton';
 import { useApp } from './AppContext';
 import { FeedbackSheet } from '../ui/stage/FeedbackSheet';
@@ -117,7 +118,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
   if (result) {
     return (
       <div class="screen">
-        <Scene kind="home" />
+        <WorldScene world={currentWorld(k)} time={timeOfDay(now())} bare />
         <div class="center">
           <Pet kid={k} mood="pleased" size={160} />
           <h1><Label zh={result.known > 0 ? `你已经认识 ${result.known} 个字了！` : '我们从第一个字开始！'} /></h1>
@@ -139,7 +140,7 @@ export function PlacementScreen({ tapGuardMs = 350, voice: voiceProp, seed }: { 
   );
   return (
     <div class={`screen placement${rerun ? ' placement--rerun' : ''}`} data-ready={ready ? 'true' : 'false'} data-asked={asked} data-question={shown} data-style={question?.style}>
-      <Scene kind="home" />
+      <WorldScene world={currentWorld(k)} time={timeOfDay(now())} bare />
       {rerun && (
         <button type="button" class="icon-btn placement__home" aria-label="回家" onClick={() => go({ name: 'home' })}>
           <X size={34} strokeWidth={3} />
