@@ -28,6 +28,7 @@ interface StageEntry { size: string; flow: string; step: number; group: string; 
 const stageEntries: StageEntry[] = [];
 const framed = new Set<string>(); // size|flow pairs whose frame time was measured
 const ONLY = process.env.FIT_ONLY ? new RegExp(process.env.FIT_ONLY) : null; // e.g. FIT_ONLY=home npm run fit
+const VIEWPORT = process.env.FIT_VIEWPORT ? new RegExp(process.env.FIT_VIEWPORT) : null; // size names, e.g. FIT_VIEWPORT='^ipad-' (CI shards the sweep by size; iphone-sideways is the rotate check)
 
 /* ---------- in-page probes (plain JS: they run inside WebKit) ---------- */
 const MAIN = '.choice, .sheet .btn, .path__node, .mic-btn, .tabbar__item, .fishtile, .bubble-opt';
@@ -468,24 +469,29 @@ async function main() {
     for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE)).ok) break; } catch { /* starting */ } await new Promise((r) => setTimeout(r, 250)); }
     let browser: Browser;
     try { browser = await webkit.launch(); } catch (e) { console.error(`WebKit is missing: run  npx playwright-core install webkit  (ask first: it downloads ~100 MB)\n${e}`); process.exitCode = 2; return; }
-    await Promise.all(SIZES.map((size) => sweep(browser, size))); // sizes in parallel, each in its own contexts
+    const sizes = SIZES.filter((s) => !VIEWPORT || VIEWPORT.test(s.name));
+    await Promise.all(sizes.map((size) => sweep(browser, size))); // sizes in parallel, each in its own contexts
     stageInvariants();
     // A phone turned sideways: the overlay covers the screen
     const side = { name: 'iphone-sideways', width: 667, height: 375 };
-    const page = await open(browser, side, AFTERNOON, {});
-    const covered = await page.evaluate(() => { const h = document.querySelector('.rotate-hint'); if (!h) return false; const r = h.getBoundingClientRect(); return getComputedStyle(h).display !== 'none' && r.width >= innerWidth && r.height >= innerHeight; });
-    mkdirSync(`${OUT}/${side.name}`, { recursive: true });
-    await page.screenshot({ path: `${OUT}/${side.name}/home-00.png` });
-    results.push({ size: side.name, flow: 'rotate', step: 0, sig: '', problems: covered ? [] : ['the turn-it-upright overlay does not cover the screen'] });
+    if (!VIEWPORT || VIEWPORT.test(side.name)) {
+      const page = await open(browser, side, AFTERNOON, {});
+      const covered = await page.evaluate(() => { const h = document.querySelector('.rotate-hint'); if (!h) return false; const r = h.getBoundingClientRect(); return getComputedStyle(h).display !== 'none' && r.width >= innerWidth && r.height >= innerHeight; });
+      mkdirSync(`${OUT}/${side.name}`, { recursive: true });
+      await page.screenshot({ path: `${OUT}/${side.name}/home-00.png` });
+      results.push({ size: side.name, flow: 'rotate', step: 0, sig: '', problems: covered ? [] : ['the turn-it-upright overlay does not cover the screen'] });
+    }
     await browser.close();
   } finally {
     server.kill();
   }
   const bad = results.filter((r) => r.problems.length);
   const lines = results.map((r) => `${r.problems.length ? 'FAIL' : 'ok  '} ${r.size.padEnd(18)} ${r.flow}-${String(r.step).padStart(2, '0')}  ${r.sig}${r.problems.length ? `\n       - ${r.problems.join('\n       - ')}` : ''}`);
+  mkdirSync(OUT, { recursive: true });
   writeFileSync(`${OUT}/report.txt`, lines.join('\n') + '\n');
   console.log(lines.join('\n'));
   console.log(`\n${results.length} screens checked, ${bad.length} with problems. Screenshots: ${OUT}/`);
+  if (!results.length) { console.error(`nothing was checked: FIT_VIEWPORT=${process.env.FIT_VIEWPORT ?? ''} FIT_ONLY=${process.env.FIT_ONLY ?? ''} match no size or flow`); process.exit(1); }
   process.exit(bad.length ? 1 : 0);
 }
 

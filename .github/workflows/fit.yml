@@ -1,0 +1,111 @@
+name: Fit
+# The WebKit fit sweep (scripts/fit-check.ts), one shard per screen size, plus the stage cases and the story walk.
+on:
+  pull_request: {}
+  workflow_dispatch:
+    inputs:
+      only:
+        description: FIT_ONLY flow regex (empty = every flow)
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vite build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+
+  sweep:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - size: iphone-se
+            viewport: '^iphone-se$|^iphone-sideways$'
+          - size: iphone-15
+            viewport: '^iphone-15$'
+          - size: iphone-safari
+            viewport: '^iphone-safari$'
+          - size: ipad-portrait
+            viewport: '^ipad-portrait$'
+          - size: ipad-landscape
+            viewport: '^ipad-landscape$'
+          - size: ipad-air-landscape
+            viewport: '^ipad-air-landscape$'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright WebKit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-webkit-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install WebKit and the system libraries it needs
+        run: npx playwright-core install --with-deps webkit
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Fit sweep (${{ matrix.size }})
+        run: npx tsx scripts/fit-check.ts
+        env:
+          FIT_VIEWPORT: ${{ matrix.viewport }}
+          FIT_ONLY: ${{ inputs.only }}
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fit-shots-${{ matrix.size }}
+          path: fit-shots
+          retention-days: 7
+
+  stage-cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright WebKit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-webkit-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install WebKit and the system libraries it needs
+        run: npx playwright-core install --with-deps webkit
+      - run: npx tsx scripts/stage-cases.ts
+      - run: npx tsx scripts/story-walk.ts
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fit-shots-stage-cases
+          path: fit-shots
+          retention-days: 7

@@ -29,7 +29,7 @@ Design: `docs/superpowers/specs/2026-10-02-hanzi-buddy-design.md`, redesign `doc
 ```bash
 npm install
 npm run dev        # http://localhost:5173 (also on your LAN for testing on the iPad)
-npm test
+npm test           # every test; see TESTING.md for the faster loops
 npm run build
 npm run content    # regenerate src/content/builtin.json from HSK 3.0 + Make Me a Hanzi
 npx tsx scripts/build-glossary.ts <cedict_ts.u8>   # regenerate src/content/glossary.json (English on the 认字 card) from CC-CEDICT; CC BY-SA 4.0

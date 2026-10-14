@@ -14,6 +14,7 @@
     "content": "tsx scripts/build-content.ts",
     "font": "tsx scripts/build-font.ts",
     "fit": "vite build && tsx scripts/fit-check.ts && tsx scripts/stage-cases.ts && tsx scripts/story-walk.ts",
+    "fit:changed": "tsx scripts/fit-changed.ts",
     "story-walk": "tsx scripts/story-walk.ts",
     "optimizer": "tsx scripts/optimizer-check.ts"
   },
