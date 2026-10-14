@@ -48,6 +48,14 @@ describe('SkillsPanel (spec §19 part 7)', () => {
     expect(await screen.findByText(/Reads up to 一下 — 12 tested, 360 assumed\./)).toBeTruthy();
     expect(screen.getByText('Placement rechecks: 1 of 3 done, 1 sent back to learn.')).toBeTruthy();
   });
+  it('an older band placement shows its rechecks too, once marked (review I2)', async () => {
+    const app = await makeAppData();
+    const at = app.now().getTime() - 8 * 86_400_000;
+    await updateSettings(app.db, { placementResult: { at, reading: 2, understanding: 0, missed: [] } });
+    await putCards(app.db, [{ ...makeCard('b:人', 'recognise', app.now(), true), placed: true }]);
+    renderWithApp(<SkillsPanel />, app);
+    expect(await screen.findByText('Placement rechecks: 0 of 1 done, 0 sent back to learn.')).toBeTruthy();
+  });
   it('before any placement or practice it says so', async () => {
     const app = await makeAppData();
     renderWithApp(<SkillsPanel />, app);

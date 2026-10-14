@@ -88,7 +88,7 @@ export function SkillsPanel() {
           ? `Placement (${new Date(p.at).toLocaleDateString()}): ${isLegacyPlacement(p) ? legacyPlacementLine(p, d.words) : placementLine(p)}`
           : 'Placement: not done yet'}
       </p>
-      {p && !isLegacyPlacement(p) && <p>{recheckLine(recheckProgress(d.cards, d.allLogs, p.at))}</p>}
+      {p && <p>{recheckLine(recheckProgress(d.cards, d.allLogs, p.at))}</p>}
       {d.settings.pace && <p>New words: {Math.min(d.settings.pace.perDay, d.settings.newPerDay)} a day — {d.settings.pace.reason} (most {d.settings.newPerDay})</p>}
       {p && p.missed.length > 0 && <p class="hanzi">Missed in placement: {p.missed.slice(0, 12).map((id) => byId.get(id)?.text ?? '').join(' ')}</p>}
       <table class="skills__table">
