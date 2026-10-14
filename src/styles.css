@@ -308,8 +308,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .chest-hint .chest { animation: wobble 450ms ease-in-out 2; }
 .chest-hint .hold { animation: bump 450ms ease-out; }
 @keyframes chest-shake { 0%, 70%, 100% { transform: rotate(0); } 76% { transform: rotate(-4deg); } 84% { transform: rotate(4deg); } 92% { transform: rotate(-2deg); } }
-.chest__lid { transform-box: fill-box; transform-origin: 0% 100%; transition: transform var(--dur-slow) var(--spring-bouncy); }
-.chest.is-open .chest__lid { transform: translate(-8px, -30px) rotate(-30deg); }
+/* the lid lifts on its back hinge, a little: swung out sideways it hit Truffle or the prize's name (chest layout fix) */
+.chest__lid { transform-box: fill-box; transform-origin: 50% 100%; transition: transform var(--dur-slow) var(--spring-bouncy); }
+.chest.is-open .chest__lid { transform: rotate(-12deg) translateY(-14px); }
+/* the chest and its hold button, centred; 继续 takes the button's place once the chest opens and the hint keeps its room, so
+   nothing below the chest changes height and the chest stays put */
+.chest-slot { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.4dvh, 14px); }
+.chest-slot__under { min-height: 112px; display: grid; place-items: center; }
+.celebrate > p.is-kept { visibility: hidden; }
 .chest__glow { opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 .chest.is-open .chest__glow { opacity: 1; }
 .prize { animation: prize-rise var(--dur-slow) var(--spring-bouncy) backwards; }
@@ -1286,7 +1292,7 @@ button.langdu__sentence { cursor: pointer; }
 .burst--turning::before { animation: burst-turn 60s linear infinite; }
 @keyframes burst-turn { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .burst--turning::before { animation: none; } }
-.celebrate__watch { display: flex; justify-content: center; margin-bottom: -18px; }
+.celebrate__watch { display: flex; justify-content: center; margin-bottom: 0; } /* clear of the lid as it lifts */
 
 /* the 认新字 card in three soft groups with one type scale (parent, 2026-10-05: "a bit busy", "font sizes feel off"):
    the character; its 词语; its 成语. Every 词语 and 成语 line is the same size, every English line too. */

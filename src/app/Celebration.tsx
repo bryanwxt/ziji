@@ -220,11 +220,19 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
                 <Truffle mood="cheer" outfit={kid.outfit} accessory={visibleAccessory(kid)} size={130} alive react={chest ? WATCH_POUNCE : still ? null : { kind: 'excited', key: wiggle }} />
               </div>
             )}
-            <div ref={chestRef}>
+            {/* the hold button centred under the chest, and 继续 in its place once it opens: what is below the chest keeps its
+                height, so the chest doesn't drop (chest layout fix) */}
+            <div ref={chestRef} class="chest-slot">
               <div class="chest-art" onClick={chest ? undefined : hint}><Chest open={!!chest} /></div>
-              {!chest && <HoldButton label="按住打开宝箱" onComplete={() => void open()} onTooShort={hint} />}
+              <div class="chest-slot__under">
+                {!chest ? <HoldButton label="按住打开宝箱" onComplete={() => void open()} onTooShort={hint} /> : (
+                  <button type="button" class="btn btn--primary btn--big" onClick={() => void advance()}>
+                    <Label zh={isLast ? '回家' : '继续'} />
+                  </button>
+                )}
+              </div>
             </div>
-            {!chest && <p><Label zh="按住，打开宝箱！" /></p>}
+            <p class={chest ? 'is-kept' : undefined} aria-hidden={chest ? 'true' : undefined}><Label zh="按住，打开宝箱！" /></p>
           </>
         )}
         {phase === 'power' && def && seq.power && (
@@ -265,7 +273,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
             bounce={phase !== 'stars'}
           />
         )}
-        {(phase === 'chest' ? !!chest : phase === 'power' ? powered : true) && (
+        {phase !== 'chest' && (phase === 'power' ? powered : true) && (
           <button type="button" class="btn btn--primary btn--big" onClick={() => void advance()}>
             <Label zh={isLast ? '回家' : '继续'} />
           </button>
