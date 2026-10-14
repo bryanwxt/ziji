@@ -1,6 +1,12 @@
-import data from './sentencePinyin.json';
+import { pinyin } from 'pinyin-pro';
+import './pinyinFixes';
 
-/** Pinyin read in context for each sentence written for the app (scripts/gen-pinyin.ts): one syllable per Han character. */
-export const STORED_PINYIN: Readonly<Record<string, string>> = (data as { sentences: Record<string, string> }).sentences;
-/** The stored pinyin of a sentence written for the app, if it is one. */
-export const storedPinyin = (zh: string): string | undefined => STORED_PINYIN[zh.trim()];
+/** pinyin-pro's reading in context, with the app's fixes (pinyinFixes.ts): one syllable per Han character. */
+export const sentenceReading = (text: string): string => pinyin(text, { type: 'array', nonZh: 'removed' }).join(' ');
+
+/**
+ * A sentence's pinyin, read in context with the app's fixes (教我 jiāo, 切菜 qiē, 好好 hǎo). Read at runtime: the snapshot
+ * scripts/gen-pinyin.ts writes (sentencePinyin.json) is not shipped (review 2026-10-15: ~270 KB); contentGate.test.ts holds this
+ * reading to it, so a pinyin-pro upgrade that reads a written sentence differently fails a test, not the child.
+ */
+export const storedPinyin = (zh: string): string => sentenceReading(zh.trim());

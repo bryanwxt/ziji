@@ -1,6 +1,6 @@
 // Every sentence written for the app that a child sees or hears (bank gaps and misuses, the Understand rung's sentences, the 成语
-// sentences): what scripts/gen-pinyin.ts reads in context once and stores (sentencePinyin.json), so pinyin-pro never reads a
-// sentence again on the iPad (content audit 2026-10-15: 教我 came out jiào, 切菜 qiè, 好好学习 hào).
+// sentences): what scripts/gen-pinyin.ts snapshots (sentencePinyin.json, test-only), so a fix or a pinyin-pro upgrade that
+// changes how one reads shows up in contentGate.test.ts (content audit 2026-10-15: 教我 came out jiào, 切菜 qiè, 好好学习 hào).
 import { CHENGYU } from './chengyu';
 import { fillGap, SENTENCE_BANK } from './sentenceBank';
 import s1a from './sentences/一上.json';
