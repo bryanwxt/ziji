@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
-import { builtinWords } from '../content';
+import { builtinWords, schoolTerm } from '../content';
 import { allCards, getSettings, putWords } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { PlacementScreen } from './PlacementScreen';
@@ -29,29 +29,24 @@ async function walkThrough(pick: () => HTMLElement, each?: () => void): Promise<
 const dontKnow = () => screen.getByText('不知道');
 
 describe('PlacementScreen (spec §19 part 6)', () => {
-  it('sweep: 不知道 is the quiet button, and every word-sized prompt is marked for the layout check', async () => {
+  it('sweep: 不知道 is the quiet button', async () => {
     const app = await setup();
     renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
-    let fitWords = 0;
     await walkThrough(dontKnow, () => {
       const btn = dontKnow().closest('button')!;
       expect(btn.className).not.toMatch(/btn--primary/);
       expect(btn.className).toMatch(/btn--ghost/);
-      for (const w of document.querySelectorAll('.placement__prompt .placement__word')) {
-        if (w.querySelector('.meaning-cue__blank')) fitWords++;
-        expect(w.hasAttribute('data-q')).toBe(true);
-      }
     });
   }, 30_000);
-  it('opens with reading questions, then mixes styles; 不知道 always works; no right/wrong is shown', async () => {
+  it('no warm-up, no 补一补 or 选一选: only 读一读 and 听一听; 不知道 always works; no right/wrong is shown', async () => {
     const app = await setup();
-    renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
-    const bubbles = new Set<string>();
+    renderWithApp(<PlacementScreen tapGuardMs={0} voice seed={SEED} />, app);
+    const styles = new Set<string>();
     await walkThrough(dontKnow, () => {
-      bubbles.add(bubble());
+      styles.add(document.querySelector('.placement')!.getAttribute('data-style')!);
       expect(document.querySelector('.is-wrong, .is-right, .is-answer, .sheet--oops')).toBeNull();
     });
-    expect(bubbles.size).toBeGreaterThanOrEqual(3);
+    expect([...styles].sort()).toEqual(['hear', 'read']);
   });
 
   it('knows nothing: ends kindly with no cards, and 开始！ opens Home', async () => {
@@ -59,21 +54,41 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
     await walkThrough(dontKnow);
     expect(screen.getByText('开始！')).toBeTruthy();
-    expect(screen.getByText(/读：还没开始/)).toBeTruthy();
+    expect(document.querySelector('.placement__levels')!.textContent).toContain('还没开始');
     expect(await allCards(app.db)).toEqual([]);
     expect((await getSettings(app.db)).placementDone).toBe(true);
     fireEvent.click(screen.getByText('开始！'));
     await waitFor(() => expect(app.go).toHaveBeenCalledWith({ name: 'home' }));
   });
 
-  it('a strong reader gets both levels on the result screen', async () => {
+  it('a strong reader climbs off the top: reads up to 三下, in at most 15 questions', async () => {
     const app = await setup();
     renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={SEED} />, app);
-    await walkThrough(() => document.querySelector<HTMLElement>('[data-answer="true"]')!);
+    const n = await walkThrough(() => document.querySelector<HTMLElement>('[data-answer="true"]')!);
+    expect(n).toBeLessThanOrEqual(15);
     expect(screen.getByText('开始！')).toBeTruthy();
-    expect(screen.getByText(/读：(五级|六级|七—九级)/)).toBeTruthy();
-    expect((await getSettings(app.db)).placementResult!.reading).toBeGreaterThan(10);
+    const r = (await getSettings(app.db)).placementResult!;
+    expect(r).toMatchObject({ readsUpTo: '三下', tested: n });
+    expect(document.querySelector('.placement__levels')!.textContent).toContain(`读到 三下 · 已测 ${n} 个字，推定`);
+  }, 30_000);
+  it('starts one term below his class term: a P2 child in 二下 is asked 二上 characters first', async () => {
+    const app = await setup();
+    app.settings = { ...app.settings, grade: 2, gradeYear: 2026 };
+    app.now = () => new Date(2026, 9, 14, 16);
+    renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={SEED} />, app);
+    await waitFor(() => expect(document.querySelector('[data-question="0"]')).toBeTruthy(), LONG);
+    expect(schoolTerm(screen.getByTestId('placement-char').textContent!)).toBe('二上');
   });
+  it('always ends within 15 questions, whatever he answers', async () => {
+    for (const seed of [1, 2, 3]) {
+      const app = await setup();
+      const { unmount } = renderWithApp(<PlacementScreen tapGuardMs={0} seed={seed} />, app);
+      let i = 0;
+      const n = await walkThrough(() => (i++ % 3 === 0 ? dontKnow() : document.querySelector<HTMLElement>('[data-answer="true"]')!));
+      expect(n).toBeLessThanOrEqual(15);
+      unmount();
+    }
+  }, 30_000);
 
   it('a fixed seed asks the same questions every time (so tests never depend on the clock)', async () => {
     const walk = async () => {
@@ -105,7 +120,7 @@ describe('PlacementScreen (spec §19 part 6)', () => {
   it('a child who knows no characters yet gets a kind start, not "0" (deferred minor, plan 5)', async () => {
     const app = await setup();
     renderWithApp(<PlacementScreen tapGuardMs={0} seed={SEED} />, app);
-    expect(await walkThrough(dontKnow)).toBe(6); // 3 warm-up, 3 at the first band (parent, 2026-10-05: it took 15)
+    expect(await walkThrough(dontKnow)).toBe(9); // a P2 child in 二下: 3 at 二上, 3 at 一下, 3 at 一上, off the bottom
     expect(screen.getByText('开始！')).toBeTruthy();
     expect(document.querySelector('h1')!.textContent).toContain('我们从第一个字开始！');
     expect(screen.queryByText(/认识 0 个字/)).toBeNull();
@@ -155,31 +170,28 @@ describe('skipping placement (parent, 2026-10-05: an option to start at the star
   });
 });
 
-describe('听一听 in placement (spec 2026-10-06 §3.5)', () => {
-  it('with a voice he hears words and picks their English meaning; the result shows 听', async () => {
+describe('听一听 in placement (spec 2026-10-14)', () => {
+  it('with a voice each term asks one 听一听: he hears a word and picks its English meaning; a right one is a hear guess', async () => {
     const { speak } = await import('../audio/speech');
     const app = await setup();
     renderWithApp(<PlacementScreen tapGuardMs={0} voice seed={SEED} />, app);
     let heardQs = 0;
+    let readQs = 0;
     await walkThrough(() => document.querySelector<HTMLElement>('[data-answer="true"]')!, () => {
       if (document.querySelector('.placement[data-style="hear"]')) {
         heardQs++;
         expect(document.querySelectorAll('.placement__choices--meaning .choice')).toHaveLength(4);
         expect(bubble()).toBe('听一听，是什么意思？');
-      }
+      } else readQs++;
     });
-    expect(heardQs).toBeGreaterThan(3);
+    expect(heardQs).toBeGreaterThan(0);
+    expect(readQs).toBe(heardQs * 2);
     expect(vi.mocked(speak)).toHaveBeenCalled();
-    expect(screen.getByText(/听：/)).toBeTruthy();
-    const s = await getSettings(app.db);
-    expect(s.placementResult!.listening).toBeGreaterThan(5);
-    expect((await allCards(app.db)).some((c) => c.kind === 'hear' && c.passed)).toBe(true);
+    expect((await allCards(app.db)).some((c) => c.kind === 'hear' && c.guess && c.passed)).toBe(true);
   }, 30_000);
-  it('with no voice the result shows no 听', async () => {
+  it('with no voice every question is a 读一读', async () => {
     const app = await setup();
     renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={SEED} />, app);
-    await walkThrough(dontKnow, () => expect(document.querySelector('.placement[data-style="hear"]')).toBeNull());
-    expect(screen.queryByText(/听：/)).toBeNull();
-    expect((await getSettings(app.db)).placementResult!.listening).toBe(-1);
+    await walkThrough(dontKnow, () => expect(document.querySelector('.placement[data-style="read"]')).toBeTruthy());
   });
 });

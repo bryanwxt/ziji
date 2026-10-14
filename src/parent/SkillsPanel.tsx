@@ -1,15 +1,14 @@
-import { schoolTerm } from '../content';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { ladderWords } from '../content/ladder';
 import { addDays } from '../lib/date';
-import { bandLevel, rankBands } from '../placement/walk';
+import { legacyPlacementLine, placementLine, recheckLine, recheckProgress } from '../placement/summary';
 import { bringForward } from '../session/record';
 import { SKILL_CARD, SKILLS, skillAccuracy, topMissed } from '../stats/skills';
 import { allCards, allWords, answersSince, getSettings, listRecordings, logsSince, updateSettings } from '../store/repo';
 import { FitToMemory } from './FitToMemory';
 import { RetentionCheck } from './RetentionCheck';
-import type { AnswerLog, CardRecord, Recording, ReviewLog, Settings, Skill, Word } from '../types';
+import { isLegacyPlacement, type AnswerLog, type CardRecord, type Recording, type ReviewLog, type Settings, type Skill, type Word } from '../types';
 
 const LABEL: Record<Skill, string> = {
   listening: 'Listening (understands the word when he hears it)',
@@ -52,14 +51,6 @@ export function SkillsPanel() {
 
   const acc = skillAccuracy(d.logs, d.answers);
   const byId = new Map([...ladderWords(), ...d.words].map((w) => [w.id, w])); // ladder 词语 by their text, not their id (final review I8)
-  const bands = rankBands(d.words);
-  // where a band sits: his school term (P2 term 2, 二下) while it's within his textbook's lists, else its HSK level
-  const hsk = (band: number) => {
-    if (band < 0) return 'none yet';
-    const term = schoolTerm(bands[Math.min(band, bands.length - 1)]?.at(-1)?.text ?? '');
-    if (term) return `P${'一二三四五六'.indexOf(term[0]!) + 1} term ${term[1] === '上' ? 1 : 2} (${term})`;
-    return bandLevel(bands, band) >= 7 ? 'HSK 7–9' : `HSK ${bandLevel(bands, band)}`;
-  };
   const p = d.settings.placementResult;
   const pct = (s: Skill) => (acc[s].total ? Math.round((acc[s].right * 100) / acc[s].total) : null);
 
@@ -94,9 +85,10 @@ export function SkillsPanel() {
       <h2>Skills</h2>
       <p>
         {p
-          ? `Placement (${new Date(p.at).toLocaleDateString()}) — ${p.listening !== undefined && p.listening >= 0 ? `Listening: ${hsk(p.listening)} · ` : ''}Reading: ${hsk(p.reading)} · Understanding: ${hsk(p.understanding)}`
+          ? `Placement (${new Date(p.at).toLocaleDateString()}): ${isLegacyPlacement(p) ? legacyPlacementLine(p, d.words) : placementLine(p)}`
           : 'Placement: not done yet'}
       </p>
+      {p && !isLegacyPlacement(p) && <p>{recheckLine(recheckProgress(d.cards, d.allLogs, p.at))}</p>}
       {d.settings.pace && <p>New words: {Math.min(d.settings.pace.perDay, d.settings.newPerDay)} a day — {d.settings.pace.reason} (most {d.settings.newPerDay})</p>}
       {p && p.missed.length > 0 && <p class="hanzi">Missed in placement: {p.missed.slice(0, 12).map((id) => byId.get(id)?.text ?? '').join(' ')}</p>}
       <table class="skills__table">

@@ -355,9 +355,8 @@ async function sweep(browser: Browser, size: Size) {
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));
   await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));
   await run('placement', AFTERNOON, { placementDone: false }, async (p) => {
-    // each style is its own screen (spec §19 part 6): answer and look again, ten times — a guess between the 不知道 taps, as
-    // 不知道 three times running steps down at once and six from the start end the check (parent, 2026-10-05)
-    // and every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
+    // 读一读 and 听一听 (spec 2026-10-14): answer and look again, up to eleven times (the walk ends by 15) — a guess between
+    // the 不知道 taps; every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
     const boxes: string[] = [];
     for (let i = 0; i < 11; i++) {
       if (await p.$('.placement__levels')) break; // the walk can end early: the result is already up
