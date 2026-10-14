@@ -5,6 +5,8 @@ import { sparkle } from '../cel';
 import type { Fx } from './moments';
 import { RIVER } from './river';
 import { BOAT, RIPPLE } from './creatures/boat';
+import { FROG, panda } from './creatures/bamboo';
+import { DRAGONFLY, DUCKS, KITE } from './creatures/terraces';
 import { KINGFISHER, otter } from './creatures/home';
 import { BUTTERFLY, HORNBILL, HORNBILL_FLY, MONKEY } from './creatures/rainforest';
 import { ANIMAL_FACES } from './tapArt';
@@ -13,6 +15,7 @@ import { ANIMAL_FACES } from './tapArt';
 export const FX_MS: Record<Fx['kind'], number> = {
   boat: 1400,
   otters: 2400, dart: 1600, glide: 2600, swing: 2000, flutter: 1800,
+  roll: 2200, hop: 1200, paddle: 3000, dip: 2000, zip: 1600,
 };
 
 /** A boat that brings the day's zodiac animal stays up until the animal has risen and faded (its pop runs this long). */
@@ -66,12 +69,35 @@ const DRAW: Record<Fx['kind'], Draw> = {
     const wings = `<g>${BUTTERFLY}<animateTransform attributeName="transform" type="scale" values="1 1;0.4 1;1 1" dur="220ms" repeatCount="${Math.round(FX_MS.flutter / 220)}"/></g>`;
     return { svg: at(s.x, s.y, `<g>${wings}<animateMotion dur="${FX_MS.flutter}ms" path="M0 0 C40 -60 90 -20 70 20 C50 50 10 30 0 0" fill="freeze"/></g>`, 'tap-butterfly'), hide: '[data-prop="butterfly"]' };
   },
+  roll: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, panda(true)), hide: '[data-prop="panda"]' };
+    const munch = `<g>${panda(true)}<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.4;0.42" dur="${FX_MS.roll}ms" fill="freeze"/>${move('0 0;0 -3;0 0;0 -3;0 0', 880)}</g>`;
+    const over = `<g opacity="0">${panda(false)}<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.4;0.42;1" dur="${FX_MS.roll}ms" fill="freeze"/><animateTransform attributeName="transform" type="rotate" values="0 0 -40;0 0 -40;-360 0 -40" keyTimes="0;0.42;1" dur="${FX_MS.roll}ms" fill="freeze"/></g>`;
+    return { svg: at(s.x, s.y, munch + over, 'tap-roll'), hide: '[data-prop="panda"]' };
+  },
+  hop: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, FROG), hide: '[data-prop="frog"]' };
+    return { svg: at(s.x, s.y, `<g>${FROG}${move('0 0;20 -40;40 0;40 0;20 -30;0 0', FX_MS.hop, '0;0.2;0.4;0.6;0.8;1')}</g>`, 'tap-hop'), hide: '[data-prop="frog"]' };
+  },
+  paddle: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, DUCKS), hide: '[data-prop="ducks"]' };
+    return { svg: at(s.x, s.y, `<g>${DUCKS}${move('0 0;-40 30;-40 30;0 0', FX_MS.paddle, '0;0.45;0.55;1')}${turn('0;-2;2;-2;0', FX_MS.paddle)}</g>`, 'tap-paddle'), hide: '[data-prop="ducks"]' };
+  },
+  dip: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, KITE), hide: '[data-prop="kite"]' };
+    return { svg: at(s.x, s.y, `<g>${KITE}${move('0 0;20 30;-10 -20;0 0', FX_MS.dip)}<animateTransform attributeName="transform" type="rotate" additive="sum" values="0 0 -60;18 0 -60;-14 0 -60;0 0 -60" dur="${FX_MS.dip}ms" fill="freeze"/></g>`, 'tap-dip'), hide: '[data-prop="kite"]' };
+  },
+  zip: (_fx, s, still) => {
+    if (still) return none();
+    return { svg: at(s.x, s.y, `<g>${DRAGONFLY}${move('0 0;60 -20;60 -20;-30 -40;0 0', FX_MS.zip, '0;0.25;0.45;0.75;1')}</g>`, 'tap-zip'), hide: '[data-prop="dragonfly"]' };
+  },
 };
 
 /** Which prop a moment plays on (the zodiac animal's on the boat in any world). */
 const PROP_OF: Record<Fx['kind'], string> = {
   boat: 'boat',
   otters: 'otter', dart: 'kingfisher', glide: 'hornbill', swing: 'monkey', flutter: 'butterfly',
+  roll: 'panda', hop: 'frog', paddle: 'ducks', dip: 'kite', zip: 'dragonfly',
 };
 
 /** The moment's art, and the scene part it stands in for while it plays (that part is hidden, then shown again). */

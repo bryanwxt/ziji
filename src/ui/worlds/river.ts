@@ -25,12 +25,12 @@ export const RIVER: Record<WorldId, RiverWorld> = {
     moon: { x: 520, y: 380 },
   },
   bamboo: {
-    props: { boat: { x: 800, y: 770, w: 120, h: 90 } }, // the water inside the phone's crop lies under Home's path row, so the boat stays on the right
+    props: { boat: { x: 800, y: 770, w: 120, h: 90 }, panda: { x: 190, y: 850, w: 100, h: 100 }, frog: { x: 560, y: 820, w: 60, h: 50 } }, // the water inside the phone's crop lies under Home's path row, so the boat stays on the right
     dusk: 0.34,
     moon: { x: 640, y: 380 },
   },
   terraces: {
-    props: { boat: { x: 790, y: 950, w: 120, h: 90 } }, // mid-stream: the water near the bottom is right of the phone's crop
+    props: { boat: { x: 790, y: 950, w: 120, h: 90 }, ducks: { x: 650, y: 835, w: 110, h: 56 }, kite: { x: 300, y: 420, w: 70, h: 96 }, dragonfly: { x: 200, y: 880, w: 60, h: 56 } }, // mid-stream: the water near the bottom is right of the phone's crop
     dusk: 0.36,
     moon: { x: 620, y: 360 },
   },

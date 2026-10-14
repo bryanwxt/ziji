@@ -37,4 +37,10 @@ describe('One River moments (spec 2026-10-13 §6)', () => {
     expect(runMoment('home', 'otter', kid(), DAY, 0)).toMatchObject({ fx: { kind: 'otters' }, react: 'excited', say: '水獭！', later: { say: '它们在玩！', ms: 1200 } });
     for (const w of ['home', 'rainforest'] as const) for (const m of MOMENTS[w].filter((x) => x.auto)) expect(runMoment(w, m.prop, kid(), DAY, 3).kid).toBeUndefined();
   });
+  it('竹林 and 梯田: the panda munches then rolls (with the munch sound), the frog hops; the kite only plays by itself (the cards cover its sky)', () => {
+    expect(MOMENTS.bamboo.map((m) => m.prop)).toEqual(['boat', 'panda', 'frog']);
+    expect(MOMENTS.terraces.map((m) => m.prop)).toEqual(['boat', 'ducks', 'kite', 'dragonfly']);
+    expect(runMoment('bamboo', 'panda', kid(), DAY, 0)).toMatchObject({ fx: { kind: 'roll' }, react: 'munch', sfx: 'munch', later: { say: '哈哈，打滚了！' } });
+    expect(MOMENTS.terraces.find((m) => m.prop === 'kite')).toMatchObject({ auto: true, tap: false });
+  });
 });

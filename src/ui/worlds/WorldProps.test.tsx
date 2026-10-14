@@ -1,5 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { playSfx } from '../../audio/sfx';
 import { DEFAULT_FINDS } from '../../fun/finds';
 import { WORLDS } from '../../fun/worlds';
 import { DEFAULT_KID, type KidState } from '../../types';
@@ -151,5 +152,15 @@ describe('WorldProps on One River (spec 2026-10-13 §6; 2026-10-04 §4.5)', () =
     act(() => { vi.advanceTimersByTime(5000); });
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
     expect(onReact).not.toHaveBeenCalled();
+  });
+  it('sweep: a moment that starts by itself makes no sound (the panda munches silently)', () => {
+    vi.mocked(playSfx).mockClear();
+    const onReact = vi.fn();
+    vi.spyOn(Math, 'random').mockReturnValue(0); // 竹林's first moment that starts by itself: the panda
+    render(<WorldProps world="bamboo" {...props({ onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1100); });
+    expect(onReact).toHaveBeenCalledWith('munch', -1);
+    expect(playSfx).not.toHaveBeenCalled();
+    vi.mocked(Math.random).mockRestore();
   });
 });

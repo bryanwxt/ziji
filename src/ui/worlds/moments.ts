@@ -10,7 +10,8 @@ import type { ReactionKind } from '../truffle/timelines';
 /** What a moment draws (momentFx.ts turns it into SVG). Each world's task adds its kinds to this union. */
 export type Fx =
   | { kind: 'boat'; animal: string | null }
-  | { kind: 'otters' } | { kind: 'dart' } | { kind: 'glide' } | { kind: 'swing' } | { kind: 'flutter' };
+  | { kind: 'otters' } | { kind: 'dart' } | { kind: 'glide' } | { kind: 'swing' } | { kind: 'flutter' }
+  | { kind: 'roll' } | { kind: 'hop' } | { kind: 'paddle' } | { kind: 'dip' } | { kind: 'zip' };
 
 /**
  * A prop and its moment. `auto` moments also start by themselves on Home now and then (never ones that hold a find); `tap` is
@@ -24,8 +25,8 @@ const BOAT: PropMoment = { prop: 'boat', label: '纸船', auto: false, tap: true
 export const MOMENTS: Record<WorldId, PropMoment[]> = {
   home: [BOAT, { prop: 'otter', label: '水獭', auto: true, tap: true }, { prop: 'kingfisher', label: '翠鸟', auto: true, tap: true }],
   rainforest: [BOAT, { prop: 'hornbill', label: '犀鸟', auto: true, tap: true }, { prop: 'monkey', label: '猴子', auto: true, tap: false }, { prop: 'butterfly', label: '蝴蝶', auto: true, tap: true }],
-  bamboo: [BOAT],
-  terraces: [BOAT],
+  bamboo: [BOAT, { prop: 'panda', label: '熊猫', auto: true, tap: true }, { prop: 'frog', label: '青蛙', auto: true, tap: true }],
+  terraces: [BOAT, { prop: 'ducks', label: '鸭子', auto: true, tap: true }, { prop: 'kite', label: '风筝', auto: true, tap: false }, { prop: 'dragonfly', label: '蜻蜓', auto: true, tap: true }],
   dino: [BOAT],
   lantern: [BOAT],
   cove: [BOAT],
@@ -57,6 +58,11 @@ export function runMoment(world: WorldId, prop: string, kid: KidState, today: st
     case 'rainforest:hornbill': return { fx: { kind: 'glide' }, react: 'watch', say: '大鸟！' };
     case 'rainforest:monkey': return { fx: { kind: 'swing' }, react: 'excited', say: '荡秋千！' };
     case 'rainforest:butterfly': return { fx: { kind: 'flutter' }, react: 'pounce' };
+    case 'bamboo:panda': return { fx: { kind: 'roll' }, react: 'munch', say: '好吃！', later: { say: '哈哈，打滚了！', ms: 1300 }, sfx: 'munch' };
+    case 'bamboo:frog': return { fx: { kind: 'hop' }, react: 'pounce', say: '呱呱！' };
+    case 'terraces:ducks': return { fx: { kind: 'paddle' }, react: 'watch', say: '鸭妈妈和鸭宝宝！' };
+    case 'terraces:kite': return { fx: { kind: 'dip' }, react: 'excited', say: '飞高高！' };
+    case 'terraces:dragonfly': return { fx: { kind: 'zip' }, react: 'pounce' };
   }
   void lotusTaps;
   throw new Error(`no moment for ${world}:${prop}`);
