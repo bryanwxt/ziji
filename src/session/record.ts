@@ -56,7 +56,7 @@ async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, 
 
 /**
  * A reading answer. A placed card's first recheck (spec 2026-10-14) ends its placement: missed (Again), the character goes back
- * to learn — its reading card and every card of it he has never answered are deleted, so it is unstarted and the catch-up lane
+ * to learn — every card of it but a write card he has answered is deleted (the logs stay), so it is unstarted and the catch-up lane
  * teaches it again with a proper 认新字 introduction; the log is kept. Only placement cards, only their first recheck.
  */
 export async function recordRecognition(db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> {
@@ -68,8 +68,10 @@ export async function recordRecognition(db: AppDb, wordId: string, outcome: TapO
     await putCards(db, [rest]);
     return rest;
   }
-  const answered = new Set((await db.getAll('reviewLogs')).filter((l) => l.wordId === wordId && l.kind !== 'recognise').map((l) => l.cardId));
-  const gone = (await allCards(db)).filter((c) => c.wordId === wordId && (c.kind === 'recognise' || !answered.has(c.id)));
+  // truly unstarted (review I1): every card of the word goes — a passed hear rung would reopen its Read card — but a write card he
+  // has answered (his handwriting stays his); 认新字 gives the hear card back when it teaches the word again
+  const written = (await db.getAll('reviewLogs')).some((l) => l.wordId === wordId && l.kind === 'write');
+  const gone = (await allCards(db)).filter((c) => c.wordId === wordId && !(c.kind === 'write' && written));
   await deleteCards(db, gone.map((c) => c.id));
   return rest;
 }

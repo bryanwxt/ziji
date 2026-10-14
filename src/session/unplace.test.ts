@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../content';
 import { applyPlacement } from '../placement/apply';
 import { termWords } from '../placement/questions';
-import { addReviewLog, allCards, getCard, logsSince, practisedWords, putWords } from '../store/repo';
-import { freshDb } from '../test/fixtures';
+import { allCards, getCard, logsSince, practisedWords, putCards, putWords } from '../store/repo';
+import { freshDb, makeCard } from '../test/fixtures';
 import { DEFAULT_SETTINGS } from '../types';
 import { buildSessionPlan } from './plan';
-import { recordRecognition } from './record';
+import { beginNewWord, openMissingRungs, recordHear, recordRecognition, recordWriting } from './record';
 
 // Un-place on a miss (spec 2026-10-14): a placed character's first recheck rated Again sends it back to learn.
 const now = new Date(2026, 9, 5, 9);
@@ -60,10 +60,37 @@ describe('un-place on a missed first recheck (spec 2026-10-14)', () => {
     await recordRecognition(db, w.id, miss, later);
     expect(await getCard(db, `${w.id}:recognise`)).toBeTruthy();
   });
-  it('keeps a hear card he has practised', async () => {
-    const { db, char } = await placedDb();
-    await addReviewLog(db, { cardId: `${char.id}:hear`, wordId: char.id, kind: 'hear', at: later.getTime() - 1000, rating: 3, correct: true });
+  it('even after his hear rung passed, the word is unstarted: the catch-up lane picks it up and no rung reopens (review I1)', async () => {
+    const { db, words, char } = await placedDb();
+    await recordHear(db, char.id, right, new Date(2026, 9, 6, 9));
+    await recordHear(db, char.id, right, new Date(2026, 9, 7, 9)); // two days right: the hear rung passed
     await recordRecognition(db, char.id, miss, later);
+    expect((await allCards(db)).filter((c) => c.wordId === char.id)).toEqual([]);
+    expect((await logsSince(db, 0)).filter((l) => l.wordId === char.id)).toHaveLength(3); // every log kept
+    const settings = { ...DEFAULT_SETTINGS, newPerDay: 4, grade: 2, gradeYear: 2026 };
+    const plan = buildSessionPlan({ cards: await allCards(db), words, settings, now: later, practised: await practisedWords(db), newPerDay: 4 });
+    expect(plan.newWordIds).toContain(char.id);
+    expect(await openMissingRungs(db, later)).toBe(0);
+    expect((await allCards(db)).filter((c) => c.wordId === char.id)).toEqual([]);
+  });
+  it('every card of the word goes except a write card he has answered', async () => {
+    const { db, char } = await placedDb();
+    const extra = (['understand', 'say', 'sentence', 'write'] as const).map((kind) => makeCard(char.id, kind, later));
+    await putCards(db, extra);
+    await recordWriting(db, char.id, 0, new Date(2026, 9, 12, 9)); // written: kept
+    await recordRecognition(db, char.id, miss, later);
+    expect((await allCards(db)).filter((c) => c.wordId === char.id).map((c) => c.kind)).toEqual(['write']);
+  });
+  it('an unanswered write card goes too', async () => {
+    const { db, char } = await placedDb();
+    await putCards(db, [makeCard(char.id, 'write', later)]);
+    await recordRecognition(db, char.id, miss, later);
+    expect((await allCards(db)).filter((c) => c.wordId === char.id)).toEqual([]);
+  });
+  it('认新字 teaching it again gives it its hear card back', async () => {
+    const { db, char } = await placedDb();
+    await recordRecognition(db, char.id, miss, later);
+    await beginNewWord(db, char, 'read', right, new Date(2026, 9, 14, 9));
     expect((await allCards(db)).filter((c) => c.wordId === char.id).map((c) => c.kind)).toEqual(['hear']);
   });
 });
