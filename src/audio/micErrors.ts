@@ -34,3 +34,21 @@ export class MicTimeoutError extends MicStartError {
     this.name = 'TimeoutError';
   }
 }
+
+/** This iPad/browser has no way to record (no getUserMedia or no MediaRecorder). */
+export class MicUnsupportedError extends MicStartError {
+  constructor() {
+    super('getUserMedia', new Error('no getUserMedia or MediaRecorder here'));
+    this.name = 'NotSupportedError';
+  }
+}
+
+/** The microphone permission as navigator.permissions reports it ('granted' | 'denied' | 'prompt'), or 'unknown'. */
+export async function micPermission(): Promise<string> {
+  try {
+    const status = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+    return status.state;
+  } catch {
+    return 'unknown'; // older Safari has no microphone permission query
+  }
+}

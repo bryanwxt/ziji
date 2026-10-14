@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pickMime, recordingSupported, startRecording } from './recorder';
-import { MicDeniedError, MicStartError, MicTimeoutError } from './micErrors';
+import { MicDeniedError, MicStartError, MicTimeoutError, MicUnsupportedError } from './micErrors';
 
 describe('recorder support', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -40,9 +40,7 @@ describe('recording levels', () => {
     }
     vi.stubGlobal('AudioContext', FakeCtx);
     const levels: number[] = [];
-    const opening = startRecording(() => {}, (l) => levels.push(l));
-    await vi.advanceTimersByTimeAsync(150); // Truffle's voice is given a moment to let go of the audio first
-    const rec = await opening;
+    const rec = await startRecording(() => {}, (l) => levels.push(l)); // not speaking: the mic opens at once
     vi.advanceTimersByTime(350);
     expect(levels.length).toBe(3);
     expect(levels[0]).toBeCloseTo(0.5);
@@ -110,17 +108,63 @@ describe('a recorder that fails to start (deferred minor, plan 8)', () => {
 describe('opening the microphone (mic fix 2026-10-14)', () => {
   afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
   const recorderClass = () => class { static isTypeSupported = () => true; mimeType = ''; state = 'inactive'; start() {} stop() {} };
-  it('waits for speech to let go of the audio before asking for the microphone', async () => {
+  it('asks for the microphone inside the tap when nothing was speaking (iPad Safari gesture)', () => {
+    const gum = vi.fn(async () => ({ getTracks: () => [] }));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: gum } });
+    vi.stubGlobal('MediaRecorder', recorderClass());
+    void startRecording(() => {}).then((r) => r.cancel());
+    expect(gum).toHaveBeenCalledTimes(1); // synchronously, before any await
+  });
+  it('Truffle was speaking at the tap: waits for the audio to let go, at most ~300 ms', async () => {
     vi.useFakeTimers();
     const gum = vi.fn(async () => ({ getTracks: () => [] }));
     vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: gum } });
     vi.stubGlobal('MediaRecorder', recorderClass());
-    const opening = startRecording(() => {});
+    vi.stubGlobal('speechSynthesis', { speaking: true }); // never stops
+    const opening = startRecording(() => {}, undefined, { wasSpeaking: true });
     await vi.advanceTimersByTimeAsync(100);
     expect(gum).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(250);
     expect(gum).toHaveBeenCalledTimes(1);
     (await opening).cancel();
+  });
+  it("uses the caller's meter context (made in the tap), wakes it once the mic is open, and leaves it open on a failure", async () => {
+    const order: string[] = [];
+    const ctx = { resume: vi.fn(async () => { order.push('resume'); }), close: vi.fn(async () => {}), createMediaStreamSource: () => ({ connect: () => {} }), createAnalyser: () => ({ fftSize: 4, getFloatTimeDomainData: () => {} }) };
+    vi.stubGlobal('AudioContext', class { constructor() { throw new Error('a second context'); } });
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(async () => { order.push('mic'); return { getTracks: () => [] }; }) } });
+    vi.stubGlobal('MediaRecorder', recorderClass());
+    const rec = await startRecording(() => {}, () => {}, { meterCtx: ctx as unknown as AudioContext });
+    expect(order).toEqual(['mic', 'resume']);
+    rec.cancel();
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(async () => { throw new DOMException('busy', 'NotReadableError'); }) } });
+    ctx.close.mockClear();
+    await startRecording(() => {}, () => {}, { meterCtx: ctx as unknown as AudioContext }).catch(() => {});
+    expect(ctx.close).not.toHaveBeenCalled(); // the retry will use it
+  });
+  it('the permission question still on screen: no time limit while he decides', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(() => new Promise(() => {})) }, permissions: { query: async () => ({ state: 'prompt' }) } });
+    vi.stubGlobal('MediaRecorder', recorderClass());
+    let failed = false;
+    startRecording(() => {}).catch(() => { failed = true; });
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(failed).toBe(false);
+  });
+  it('no way to record at all is its own error', async () => {
+    vi.stubGlobal('navigator', {});
+    vi.stubGlobal('MediaRecorder', recorderClass());
+    await expect(startRecording(() => {})).rejects.toBeInstanceOf(MicUnsupportedError);
+  });
+  it('permission already granted, or no permission query at all: the 10 s limit still applies', async () => {
+    vi.useFakeTimers();
+    for (const permissions of [{ query: async () => ({ state: 'granted' }) }, { query: async () => { throw new TypeError('microphone'); } }]) {
+      vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(() => new Promise(() => {})) }, permissions });
+      vi.stubGlobal('MediaRecorder', recorderClass());
+      const failed = expect(startRecording(() => {})).rejects.toBeInstanceOf(MicTimeoutError);
+      await vi.advanceTimersByTimeAsync(10_200);
+      await failed;
+    }
   });
   it('a prompt nobody answers times out after 10 s; a stream that comes later is let go at once', async () => {
     vi.useFakeTimers();
