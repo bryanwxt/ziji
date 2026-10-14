@@ -182,14 +182,27 @@ describe('Truffle onesie hood', () => {
 });
 
 describe('Truffle accessories v2', () => {
-  it('draws every accessory as ink art (never emoji text)', async () => {
+  it('draws every accessory as drawn art in his cel line (never emoji text, never the old ink)', async () => {
     const { ACCESSORY_IDS } = await import('../../fun/accessories');
     for (const id of ACCESSORY_IDS) {
       const { container, unmount } = render(<Truffle accessory={id} />);
       expect(container.querySelector('svg.truffle')?.getAttribute('data-accessory')).toBe(id);
       const art = [...container.querySelectorAll('.truffle__accessory')].map((g) => g.innerHTML).join('');
-      expect(art).toContain('stroke="#2a2630"');
+      expect(art).toContain(`stroke="${LINE}"`);
+      expect(art).not.toContain('#2a2630');
       expect(art).not.toMatch(/\p{Extended_Pictographic}/u);
+      unmount();
+    }
+  });
+  it('light cel (spec 2026-10-13 §7): no gradient and no clip-path anywhere on him, in any costume, accessory or power', async () => {
+    const { ACCESSORY_IDS } = await import('../../fun/accessories');
+    const { COSTUMES } = await import('../../fun/costumes');
+    const looks = [{}, ...COSTUMES.map((c) => ({ outfit: c.id })), ...ACCESSORY_IDS.map((a) => ({ accessory: a })), { power: 'fire', powerTier: 3 }];
+    for (const look of looks) {
+      const { container, unmount } = render(<Truffle mood="cheer" {...look} />);
+      const html = svg(container).outerHTML;
+      expect(html, JSON.stringify(look)).not.toMatch(/clip-path|clipPath|Gradient|url\(#/);
+      expect(html, JSON.stringify(look)).not.toMatch(/stroke="#2a2630" stroke-width="(3\.2|2\.4)"/); // the old ink outline (a black staff or robe may stay black)
       unmount();
     }
   });

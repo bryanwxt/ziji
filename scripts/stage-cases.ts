@@ -283,7 +283,7 @@ for (const size of SIZES) {
 }
 // every expression × looks: nothing of him pokes out of his box (a seam, an ear, a mark), and a sheet to read by eye
 {
-  const page = await browser.newPage({ viewport: { width: 1100, height: 560 } });
+  const page = await browser.newPage({ viewport: { width: 1100, height: 720 } });
   await page.goto(`file://${dir}/index.html?case=faces`);
   await page.waitForTimeout(400);
   mkdirSync('fit-shots/stage-cases', { recursive: true });

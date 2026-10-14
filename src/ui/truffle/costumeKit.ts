@@ -1,7 +1,15 @@
-// Shared drawing pieces for Truffle's costumes, in his viewBox (30 20 260 270): ink outlines match the mascot (3.2px, round joins).
-export const INK = '#2a2630';
-export const S = `stroke="${INK}" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"`;
-export const s2 = `stroke="${INK}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"`;
+// Shared drawing pieces for Truffle's costumes, accessories and powers, in his viewBox (30 20 260 270), in his light cel
+// (spec 2026-10-13 §7): the same soft-violet line and weights as his body (2.8 outer, 1.8 inner), and one hard shadow on the
+// big pieces (the robe and the hood), each an explicit path.
+import { LINE, LW, LWI, mix } from '../cel';
+
+export const INK = LINE;
+export const S = `stroke="${INK}" stroke-width="${LW}" stroke-linejoin="round" stroke-linecap="round"`;
+export const s2 = `stroke="${INK}" stroke-width="${LWI}" stroke-linejoin="round" stroke-linecap="round"`;
+/** A dark for small solid marks (an animal's eyes on a hood, nostrils): the line is too pale for them. */
+export const DARK = '#3a3045';
+/** A costume colour's one hard shadow tone (the mockup's wizard robe: toward a deep violet). */
+export const celShade = (hex: string) => mix(hex, '#2a2050', 0.3);
 
 /** Mirror an x coordinate across Truffle's centre line (x = 160). */
 export const mx = (x: number) => 320 - x;
@@ -13,19 +21,25 @@ export const HOOD =
   'M160 28 C224 28 270 64 276 116 C280 152 268 184 246 200 L74 200 C52 184 40 152 44 116 C50 64 96 28 160 28 Z ' +
   'M160 76 C210 76 250 102 250 138 C250 174 210 198 160 198 C110 198 70 174 70 138 C70 102 110 76 160 76 Z';
 
-export const tint = (color: string) => `<path d="${BODY}" fill="${color}" ${S}/>`;
-/** The hood, with a shade round the face opening and a highlight on its crown (so it reads as cloth, not a flat cut-out). */
+/** The robe's shadow on the lower right and the band where his head shadows it (baked like his body's, spec §7). */
+const ROBE_SH = 'M106.3 260.2 L112.8 263.9 L116.7 265.5 L126 268.1 L136.6 270 L154 271.4 L171.9 271.1 L188.8 269.2 L203.3 265.5 L210.7 262.1 L216 258 L220 252.6 L223.2 246.7 L226.3 236.9 L227.3 230.1 L227.3 219.8 L225.4 209.7 L221.9 200.3 L216.7 192.3 L212.4 187.9 L210 186 L204.5 186 L209.9 194.3 L213.4 203.7 L215.3 213.8 L215.3 224.1 L213.5 234.3 L209.7 243.7 L204 252 L198.7 256.1 L191.3 259.5 L182 262.1 L171.4 264 L154 265.4 L142 265.4 L130.3 264.7 L119.2 263.2Z';
+const ROBE_BAND = 'M222.4 201.5 L210.9 204.6 L196 207 L178.6 208.5 L160 209 L141.4 208.5 L124 207 L109.1 204.6 L97.6 201.5 L99.6 197.5 L103.3 192.3 L110 186 L210 186 L216.7 192.3 L220.4 197.5Z';
+export const tint = (color: string) => `<path d="${BODY}" fill="${color}"/><path d="${ROBE_SH}" fill="${celShade(color)}"/><path d="${ROBE_BAND}" fill="${celShade(color)}"/><path d="${BODY}" fill="none" ${S}/>`;
+
+/** The hood's hard shadow: its dome's lower right, never over the face opening. */
+const HOOD_SH = 'M65 192 L74 200 L246 200 L253.8 193.3 L260.5 185.2 L266.2 175.9 L270.8 165.5 L274.1 154.2 L276.1 142.1 L276.8 129.3 L276.4 120.5 L275 109.6 L271.9 97.3 L269.8 91.4 L264.3 80.3 L261.1 75.1 L253.5 65.3 L249.3 60.8 L239.8 52.5 L236.3 50 L243.5 57.3 L251.1 67.1 L257.2 77.8 L259.8 83.4 L263.7 95.3 L265 101.6 L266.4 112.5 L266.8 121.3 L266.5 129.9 L264.9 142.2 L263.1 150 L259.4 161.1 L254.4 171.1 L250.5 177.2 L243.8 185.3 L236 192 L201 192 L184 196.1 L172.3 197.5 L160 198 L147.7 197.5 L136 196.1 L119 192Z';
 export const hood = (color: string) =>
-  `<path d="${HOOD}" fill="${color}" fill-rule="evenodd" ${S}/>` +
-  `<path d="M160 76 C210 76 250 102 250 138 C250 174 210 198 160 198 C110 198 70 174 70 138 C70 102 110 76 160 76 Z" transform="translate(160 137) scale(1.075) translate(-160 -137)" fill="none" stroke="${shade(color, 0.16)}" stroke-width="7"/>` +
+  `<path d="${HOOD}" fill="${color}" fill-rule="evenodd"/><path d="${HOOD_SH}" fill="${celShade(color)}"/>` +
+  `<path d="M160 76 C210 76 250 102 250 138 C250 174 210 198 160 198 C110 198 70 174 70 138 C70 102 110 76 160 76 Z" transform="translate(160 137) scale(1.075) translate(-160 -137)" fill="none" stroke="${celShade(color)}" stroke-width="7"/>` +
+  `<path d="${HOOD}" fill="none" fill-rule="evenodd" ${S}/>` +
   `<path d="M74 92 C88 62 116 42 148 37" stroke="#fff" stroke-opacity=".42" stroke-width="7" fill="none" stroke-linecap="round"/>`;
 export const pair = (draw: (flip: (x: number) => number) => string) => draw((x) => x) + draw(mx);
 /** The animal's own eyes on the hood, above his face (as on an animal onesie). */
 export const eyes = (dx = 22, y = 54, r = 5.5) =>
-  pair((f) => `<circle cx="${f(160 - dx)}" cy="${y}" r="${r}" fill="${INK}"/><circle cx="${f(160 - dx) + 1.6}" cy="${y - 1.8}" r="1.7" fill="#fff"/>`);
+  pair((f) => `<circle cx="${f(160 - dx)}" cy="${y}" r="${r}" fill="${DARK}"/><circle cx="${f(160 - dx) + 1.6}" cy="${y - 1.8}" r="1.7" fill="#fff"/>`);
 /** A tail drawn as a thick stroke with an ink edge (in his tail's place, so it swishes with him). */
 export const ropeTail = (d: string, color: string, w = 8) =>
-  `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${w + 3.2}" stroke-linecap="round" stroke-linejoin="round"/>` +
+  `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${w + 2 * LW}" stroke-linecap="round" stroke-linejoin="round"/>` +
   `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
 
 /** Text in the app's rounded font (a jersey number). */
@@ -40,7 +54,7 @@ export const toga = (sash: string) =>
   tint('#fbfaf6') + `<path d="M118 190 C150 214 182 236 210 252" fill="none" stroke="${sash}" stroke-width="14" stroke-linecap="round"/><path d="M108 252 C130 262 190 262 212 252" fill="none" stroke="#e0b13a" stroke-width="5" stroke-linecap="round"/>`;
 /** Something held upright at his side (a staff, a spear): its shaft from his paw to `top`. */
 export const staff = (x: number, top: number, color: string, w = 5) =>
-  `<path d="M${x} 266 L${x} ${top}" stroke="${INK}" stroke-width="${w + 3.2}" stroke-linecap="round"/><path d="M${x} 266 L${x} ${top}" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>`;
+  `<path d="M${x} 266 L${x} ${top}" stroke="${INK}" stroke-width="${w + 2 * LW}" stroke-linecap="round"/><path d="M${x} 266 L${x} ${top}" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>`;
 
 // ---- headpieces, made to sit on his head (parent, 2026-10-06: the first ones looked amateur) ----
 // Each follows the curve of his head (top at 160,34), has one bold outline round the whole piece, a shade underneath and a

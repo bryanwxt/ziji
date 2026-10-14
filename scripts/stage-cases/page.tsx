@@ -103,8 +103,8 @@ const app = document.getElementById('app')!;
 if (which === 'faces') {
   // every expression × a few looks (spec 2026-10-04 §4.1): read by eye, and checked to stay inside his box
   const looks: { label: string; props: Record<string, unknown> }[] = [
-    { label: 'plain', props: {} }, { label: 'rabbit', props: { outfit: 'rabbit' } }, { label: 'chef', props: { outfit: 'chef' } },
-    { label: 'sunglasses', props: { accessory: 'sunglasses' } }, { label: 'fire 3', props: { power: 'fire', powerTier: 3 } },
+    { label: 'plain', props: {} }, { label: 'rabbit', props: { outfit: 'rabbit' } }, { label: 'chef', props: { outfit: 'chef' } }, { label: 'wizard', props: { outfit: 'wizard' } },
+    { label: 'sunglasses', props: { accessory: 'sunglasses' } }, { label: 'fire 3', props: { power: 'fire', powerTier: 3 } }, { label: 'water 2', props: { power: 'water', powerTier: 2 } },
   ];
   render(
     <div style="display:grid;grid-template-columns:90px repeat(11, 82px);gap:2px;padding:8px;background:#f6f1df;font:11px sans-serif">
