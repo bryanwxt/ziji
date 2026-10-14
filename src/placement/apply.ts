@@ -81,6 +81,6 @@ export async function applyPlacement(db: AppDb, r: PlacementOutcome, now: Date):
   const worldBase = startingPoint(countKnownReading(await allCards(db)), learnedBefore);
   const asked = new Set(r.askedIds);
   const assumed = [...read].filter((id) => !asked.has(id)).length;
-  await updateSettings(db, { placementDone: true, placementResult: { at: now.getTime(), readsUpTo: r.readsUpTo, tested: asked.size, assumed, missed: r.missed, worldBase } });
+  await updateSettings(db, { placementDone: true, placementMarked: true, placementResult: { at: now.getTime(), readsUpTo: r.readsUpTo, tested: asked.size, assumed, missed: r.missed, worldBase } });
   return seeds.filter((c) => c.kind === 'recognise').length;
 }

@@ -7,7 +7,7 @@ export const FIRST_CHECK_DAYS = [7, 28] as const;
 export const MAX_FIRST_CHECKS_PER_DAY = 10;
 
 /** School order for rechecks (spec 2026-10-14): the most recent term first, then earlier terms; in book order within a term. */
-function schoolOrder(a: Word, b: Word): number {
+export function schoolOrder(a: Word, b: Word): number {
   const term = (w: Word) => { const t = schoolTerm(w.text); return t ? MOE_TERMS.indexOf(t) : MOE_TERMS.length; }; // outside the book: first
   return term(b) - term(a) || (a.rank ?? 0) - (b.rank ?? 0);
 }

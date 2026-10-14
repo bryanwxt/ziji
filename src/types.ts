@@ -298,6 +298,7 @@ export interface Settings {
   zodiac: ZodiacId | null; // the child's 生肖, the first chest's gift
   oral: OralInfo;
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
+  placementMarked?: boolean; // an older placement's unrechecked cards marked placed and re-spread (src/placement/migrate.ts)
   ladderMigrated?: boolean; // his cards moved onto the word ladder (spec 2026-10-06 §3.6)
   grade?: number; // his school year (P1 = 1): which MOE term's targets apply (spec 2026-10-06 §3.4)
   gradeYear?: number; // the calendar year `grade` was set in: the school year goes up each January from there (a yardstick, never a cap)
