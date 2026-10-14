@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pickMime, recordingSupported, startRecording } from './recorder';
+import { MicDeniedError, MicStartError, MicTimeoutError } from './micErrors';
 
 describe('recorder support', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -39,7 +40,9 @@ describe('recording levels', () => {
     }
     vi.stubGlobal('AudioContext', FakeCtx);
     const levels: number[] = [];
-    const rec = await startRecording(() => {}, (l) => levels.push(l));
+    const opening = startRecording(() => {}, (l) => levels.push(l));
+    await vi.advanceTimersByTimeAsync(150); // Truffle's voice is given a moment to let go of the audio first
+    const rec = await opening;
     vi.advanceTimersByTime(350);
     expect(levels.length).toBe(3);
     expect(levels[0]).toBeCloseTo(0.5);
@@ -101,5 +104,51 @@ describe('a recorder that fails to start (deferred minor, plan 8)', () => {
     await expect(startRecording(() => {}, () => {})).rejects.toThrow();
     expect(track.stop).toHaveBeenCalled();
     expect(close).toHaveBeenCalled();
+  });
+});
+
+describe('opening the microphone (mic fix 2026-10-14)', () => {
+  afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+  const recorderClass = () => class { static isTypeSupported = () => true; mimeType = ''; state = 'inactive'; start() {} stop() {} };
+  it('waits for speech to let go of the audio before asking for the microphone', async () => {
+    vi.useFakeTimers();
+    const gum = vi.fn(async () => ({ getTracks: () => [] }));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: gum } });
+    vi.stubGlobal('MediaRecorder', recorderClass());
+    const opening = startRecording(() => {});
+    await vi.advanceTimersByTimeAsync(100);
+    expect(gum).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(gum).toHaveBeenCalledTimes(1);
+    (await opening).cancel();
+  });
+  it('a prompt nobody answers times out after 10 s; a stream that comes later is let go at once', async () => {
+    vi.useFakeTimers();
+    let answer: (s: unknown) => void = () => {};
+    const track = { stop: vi.fn() };
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(() => new Promise((ok) => { answer = ok; })) } });
+    vi.stubGlobal('MediaRecorder', recorderClass());
+    const opening = startRecording(() => {});
+    const failed = expect(opening).rejects.toBeInstanceOf(MicTimeoutError);
+    await vi.advanceTimersByTimeAsync(10_200);
+    await failed;
+    await opening.catch((e: MicStartError) => expect(e.stage).toBe('timeout'));
+    answer({ getTracks: () => [track] });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(track.stop).toHaveBeenCalled();
+  });
+  it('a refusal is MicDeniedError, keeping the browser\'s name; anything else keeps its stage', async () => {
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(async () => { throw new DOMException('denied by user', 'NotAllowedError'); }) } });
+    vi.stubGlobal('MediaRecorder', recorderClass());
+    const denied = await startRecording(() => {}).catch((e: unknown) => e);
+    expect(denied).toBeInstanceOf(MicDeniedError);
+    expect(denied).toMatchObject({ name: 'NotAllowedError', message: 'denied by user', stage: 'getUserMedia' });
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(async () => { throw new DOMException('busy', 'NotReadableError'); }) } });
+    const busy = await startRecording(() => {}).catch((e: unknown) => e);
+    expect(busy).not.toBeInstanceOf(MicDeniedError);
+    expect(busy).toMatchObject({ name: 'NotReadableError', stage: 'getUserMedia' });
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [] })) } });
+    vi.stubGlobal('MediaRecorder', class { static isTypeSupported = () => true; constructor() { throw new DOMException('no', 'NotSupportedError'); } });
+    expect(await startRecording(() => {}).catch((e: unknown) => e)).toMatchObject({ name: 'NotSupportedError', stage: 'MediaRecorder' });
   });
 });

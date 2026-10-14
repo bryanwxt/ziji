@@ -20,7 +20,7 @@ import { afterStory, nextSpeaking, sceneFor } from '../kantu/flow';
 import { hatchAfterLesson } from '../fun/finds';
 import { STORY_PARTS, type Scene } from '../kantu/scenes';
 import { recordingSupported, type FinishedRecording } from '../audio/recorder';
-import { SayCard, type SayResult } from '../activities/say/SayCard';
+import { SayCard, type SayResult, type SaySkip } from '../activities/say/SayCard';
 import { SentenceCard } from '../activities/say/SentenceCard';
 import { recordSayTake, recordSentenceTake } from '../session/say';
 import { pickPassage, readingPool, finishDay, isFirstDay, type ReadingPassage } from '../langdu/cycle';
@@ -341,10 +341,15 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       await commit(sent ? sendBack(next, item.wordId) : next);
     })();
 
-  /** A Say card (spec 2026-10-11 §3) or a 说一句 (production practice spec §4): keep the take for the parent and schedule its card; a blocked microphone drops the lesson's Say and 说一句 cards (§7). */
-  const onSayDone = (r: SayResult | null) =>
+  /** A Say card (spec 2026-10-11 §3) or a 说一句 (production practice spec §4): keep the take for the parent and schedule its card; a refused microphone (after its note) drops the lesson's Say and 说一句 cards (§7). */
+  const onSayDone = (r: SayResult | SaySkip) =>
     once(async () => {
       const item = practiceItem!;
+      if (r === 'skip') {
+        // the mic failed twice for a passing reason and he went on: this card only, ungraded; nothing is refused (mic fix 2026-10-14)
+        await commit(skipPracticeItem(latest.current ?? rec));
+        return;
+      }
       if (!r) {
         setMicRefused(true);
         await commit(skipSayItems(latest.current ?? rec));

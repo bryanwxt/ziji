@@ -7,6 +7,7 @@ import { SentenceCard } from './SentenceCard';
 vi.mock('../../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 import { recordingSupported, startRecording } from '../../audio/recorder';
+import { MicDeniedError } from '../../audio/micErrors';
 import { speak } from '../../audio/speech';
 
 const hen = makeWord('很', { pinyin: 'hěn' }); // the bank's example: 今天很热。
@@ -91,19 +92,35 @@ describe('说一句 (production practice spec §4)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone.mock.calls[0]![0].take.durationSec).toBe(2);
   });
-  it('a refused microphone skips the card at once, with no note', async () => {
-    vi.mocked(startRecording).mockRejectedValue(new Error('denied'));
+  it('a refused microphone shows the note once; 继续 goes on without a take (mic fix 2026-10-14)', async () => {
+    vi.mocked(startRecording).mockRejectedValue(new MicDeniedError());
     const onDone = vi.fn();
     render(<SentenceCard word={hen} kid={DEFAULT_KID} onDone={onDone} />);
     fireEvent.click(screen.getByText('开始录音'));
-    await waitFor(() => expect(onDone).toHaveBeenCalledWith(null));
+    await screen.findByText('麦克风没有打开。我们下次再录！');
+    expect(onDone).not.toHaveBeenCalled(); // never skipped silently
+    fireEvent.click(screen.getByText('继续'));
+    fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(document.body.textContent).not.toContain('麦克风没有打开');
+    expect(onDone).toHaveBeenCalledWith(null);
   });
-  it('no microphone at all skips it straight away', async () => {
+  it('a passing failure is never a skip: 再试一次 and the card stays', async () => {
+    vi.mocked(startRecording).mockRejectedValue(new DOMException('busy', 'NotReadableError'));
+    const onDone = vi.fn();
+    render(<SentenceCard word={hen} kid={DEFAULT_KID} onDone={onDone} />);
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('再试一次', {}, { timeout: 2000 });
+    expect(onDone).not.toHaveBeenCalled();
+    expect(document.body.textContent).not.toContain('麦克风没有打开');
+    fireEvent.click(screen.getByText('继续')); // still failing: he may go on — this card only, never a refusal
+    expect(onDone).toHaveBeenCalledWith('skip');
+  });
+  it('no microphone at all: the note, and 继续 goes on', async () => {
     vi.mocked(recordingSupported).mockReturnValue(false);
     const onDone = vi.fn();
     render(<SentenceCard word={hen} kid={DEFAULT_KID} onDone={onDone} />);
+    expect(screen.getByText('麦克风没有打开。我们下次再录！')).toBeTruthy();
+    fireEvent.click(screen.getByText('继续'));
     await waitFor(() => expect(onDone).toHaveBeenCalledWith(null));
   });
 });

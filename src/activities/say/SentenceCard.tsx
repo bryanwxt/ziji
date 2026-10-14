@@ -8,14 +8,14 @@ import { Label } from '../../ui/Label';
 import { Pet } from '../../ui/Pet';
 import { SpeakButton } from '../../ui/SpeakButton';
 import { MicButton, useRecorder } from '../shared/recording';
-import type { SayResult } from './SayCard';
+import type { SayResult, SaySkip } from './SayCard';
 
 /**
  * 说一句 (production practice spec §4): 「用『计划』说一句话」 over a pattern from the word's sentence-bank example (「我们…计划…」,
  * its pinyin fading like every line). He records, with one optional re-record (the last take is kept). The model sentence is the answer he is meant to produce
- * himself, so it shows and plays only when he taps 听一听例句 or once the re-record is used; after that there is no more re-recording. A blocked or missing microphone skips the card (null), and the lesson skips the rest, as for Say cards.
+ * himself, so it shows and plays only when he taps 听一听例句 or once the re-record is used; after that there is no more re-recording. A refused or missing microphone shows the note and 继续 hands over null; the lesson drops the rest, as for Say cards.
  */
-export function SentenceCard({ word, kid, onDone }: { word: Word; kid: KidState; onDone: (r: SayResult | null) => void }) {
+export function SentenceCard({ word, kid, onDone }: { word: Word; kid: KidState; onDone: (r: SayResult | SaySkip) => void }) {
   const model = sentenceExample(word.text) ?? word.text;
   const frame = sentencePattern(model, word.text);
   // a frame of up to 4 characters is the card's question, at the question size; a longer one is a line (as a sentence cue is)
@@ -26,18 +26,25 @@ export function SentenceCard({ word, kid, onDone }: { word: Word; kid: KidState;
   const shownAt = useRef(performance.now());
   const finished = useRef(false);
   useEffect(() => {
-    if (rec.state === 'blocked' && !finished.current) {
-      finished.current = true;
-      onDone(null);
-    }
     if (rec.state === 'done' && again) setShown(true); // the re-record is used: now the model
   }, [rec.state]);
   useEffect(() => {
     if (shown) speak(model);
   }, [shown]);
   useEffect(() => () => stopSpeaking(), []); // the model stops when the card goes
+  const blocked = rec.state === 'blocked';
+  const stuck = rec.state === 'ready' && rec.failed;
   const next = () => {
-    if (finished.current || !rec.result) return; // a double tap on 继续 keeps one take
+    if (finished.current) return; // a double tap on 继续 keeps one take
+    if (blocked) {
+      finished.current = true;
+      return onDone(null); // refused: he read the note; the lesson drops its other mic cards
+    }
+    if (stuck) {
+      finished.current = true;
+      return onDone('skip'); // the mic failed twice for a passing reason: this card only goes, ungraded; the rest stay
+    }
+    if (!rec.result) return;
     finished.current = true;
     onDone({ take: rec.result, elapsedMs: Math.round(performance.now() - shownAt.current) });
   };
@@ -50,12 +57,12 @@ export function SentenceCard({ word, kid, onDone }: { word: Word; kid: KidState;
     <Stage
       activity="flash"
       truffle={<Pet kid={kid} mood="neutral" size={180} calm={!said} bubble={said ? '听一听！' : '说一句！'} />}
-      sheet={<FeedbackSheet actionLabel="继续" disabled={!said} onAction={next} />}
+      sheet={<FeedbackSheet actionLabel="继续" disabled={!said && !blocked && !stuck} onAction={next} />}
     >
       <div class="say-sentence">
         <p class="say-sentence__prompt" lang="zh"><Label zh={`用『${word.text}』说一句话`} fade /></p>
         <div class={`say-sentence__pattern hanzi${short ? ' say-sentence__pattern--short' : ''}`} lang="zh" data-q={short || undefined}><Label zh={frame} fade /></div>
-        {rec.state !== 'blocked' && <MicButton rec={rec} withLevel={false} />}{/* blocked: the card is skipped at once, with no note */}
+        <MicButton rec={rec} withLevel={false} />{/* blocked: the note, and 继续 goes on (mic fix 2026-10-14) */}
         {said && shown && (
           <>
             <div class="say-sentence__model hanzi" lang="zh"><Label zh={model} fade /></div>

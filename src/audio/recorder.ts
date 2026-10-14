@@ -1,8 +1,46 @@
 import { average, rmsLevel } from '../langdu/loudness';
+import { MIC_TIMEOUT_MS, MicDeniedError, MicStartError, MicTimeoutError } from './micErrors';
 
 export const MAX_RECORDING_MS = 60_000;
+export { MicDeniedError } from './micErrors';
 
-export class MicDeniedError extends Error {}
+const SPEECH_SETTLE_MS = 150; // after stopSpeaking(), iPad's audio session needs a moment before the mic can open
+const SPEECH_SETTLE_MAX_MS = 1000;
+const wait = (ms: number) => new Promise<void>((ok) => setTimeout(ok, ms));
+
+/** Truffle's voice was just cancelled: give it ~150 ms, and a little longer while speechSynthesis still says it is speaking. */
+async function speechSettled(): Promise<void> {
+  await wait(SPEECH_SETTLE_MS);
+  const speaking = () => { try { return typeof speechSynthesis !== 'undefined' && !!speechSynthesis?.speaking; } catch { return false; } };
+  for (let t = SPEECH_SETTLE_MS; t < SPEECH_SETTLE_MAX_MS && speaking(); t += 50) await wait(50);
+}
+
+/** getUserMedia with a time limit: an unanswered prompt (or a stuck iPad) must not hang the button. A stream that comes after the
+ *  limit is let go at once. */
+function openMic(): Promise<MediaStream> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      settled = true;
+      reject(new MicTimeoutError());
+    }, MIC_TIMEOUT_MS);
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(
+      (stream) => {
+        if (settled) return stream.getTracks().forEach((t) => t.stop());
+        settled = true;
+        clearTimeout(timer);
+        resolve(stream);
+      },
+      (e: unknown) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        const name = (e as { name?: string } | null)?.name;
+        reject(name === 'NotAllowedError' || name === 'SecurityError' ? new MicDeniedError(e) : new MicStartError('getUserMedia', e));
+      },
+    );
+  });
+}
 
 export interface FinishedRecording {
   blob: Blob;
@@ -66,14 +104,14 @@ function startLevels(ctx: AudioContext, stream: MediaStream, onLevel: (level: nu
 }
 
 export async function startRecording(onAutoStop: () => void, onLevel?: (level: number) => void): Promise<ActiveRecording> {
-  const meterCtx = onLevel ? openMeterContext() : null;
+  const meterCtx = onLevel ? openMeterContext() : null; // made in the tap, before any waiting
   let stream: MediaStream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    await speechSettled();
+    stream = await openMic();
   } catch (e) {
     void meterCtx?.close().catch(() => {});
-    if (e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) throw new MicDeniedError();
-    throw e;
+    throw e instanceof MicStartError ? e : new MicStartError('getUserMedia', e);
   }
   const mime = pickMime();
   let recorder: MediaRecorder;
@@ -83,7 +121,7 @@ export async function startRecording(onAutoStop: () => void, onLevel?: (level: n
     // couldn't record after all: let go of the microphone and the meter
     stream.getTracks().forEach((t) => t.stop());
     void meterCtx?.close().catch(() => {});
-    throw e;
+    throw new MicStartError('MediaRecorder', e);
   }
   const chunks: Blob[] = [];
   recorder.ondataavailable = (e) => {
@@ -102,7 +140,7 @@ export async function startRecording(onAutoStop: () => void, onLevel?: (level: n
   } catch (e) {
     release();
     void meterCtx?.close().catch(() => {});
-    throw e;
+    throw new MicStartError('start', e);
   }
   return {
     stop: () =>

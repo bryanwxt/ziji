@@ -114,7 +114,7 @@ export function LangduStep({ passage, oral, kid, withWarmup, extra = false, micB
 
   if (part === 'warmup') {
     return (
-      <Stage activity="langdu" truffle={pet} sheet={<FeedbackSheet actionLabel="继续" disabled={intro.state === 'ready' || intro.state === 'recording'} onAction={() => setPart('listen')} />}>
+      <Stage activity="langdu" truffle={pet} sheet={<FeedbackSheet actionLabel="继续" disabled={(intro.state === 'ready' && !intro.failed) || intro.state === 'recording'} onAction={() => setPart('listen')} />}>
         <div class="langdu">
           <div class="langdu__script">
             <p class="langdu__line"><Label zh={lines.hello} fade /></p>
@@ -141,7 +141,7 @@ export function LangduStep({ passage, oral, kid, withWarmup, extra = false, micB
 
   if (part === 'read') {
     return (
-      <Stage activity="langdu" truffle={pet} sheet={<FeedbackSheet actionLabel="读完了" disabled={!readBlocked} onAction={afterReading} />}>
+      <Stage activity="langdu" truffle={pet} sheet={<FeedbackSheet actionLabel="读完了" disabled={!readBlocked && !(read.state === 'ready' && read.failed)} onAction={afterReading} />}>
         <div class="langdu">
           <p class="langdu__step"><Label zh="自己读，大声读" /></p>
           <Sentences sentences={sentences} current={null} />

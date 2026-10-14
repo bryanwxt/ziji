@@ -7,6 +7,9 @@ vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn() }));
 import { stopSpeaking } from '../../audio/speech';
 import { recordingNow } from '../../audio/speaking';
 import { recordingSupported, startRecording } from '../../audio/recorder';
+import { MicDeniedError, MicTimeoutError } from '../../audio/micErrors';
+import { clearMicFailure, readMicFailure } from '../../audio/micFailure';
+import { clearErrorLog, readErrorLog } from '../../app/errorLog';
 
 function Harness() {
   const rec = useRecorder();
@@ -19,6 +22,8 @@ function Harness() {
 }
 
 beforeEach(() => {
+  clearErrorLog();
+  clearMicFailure();
   vi.mocked(recordingSupported).mockReturnValue(true);
   vi.mocked(startRecording).mockReset();
   vi.mocked(startRecording).mockResolvedValue({ stop: async () => ({ blob: new Blob(['x']), mime: 'audio/mp4', durationSec: 2 }), cancel: vi.fn() });
@@ -78,5 +83,43 @@ describe('the recording flag (final review C1): speech is silent only while he i
     await screen.findByText('停止');
     fireEvent.click(screen.getByText('停止'));
     await waitFor(() => expect(recordingNow()).toBe(false));
+  });
+});
+
+describe('a microphone that fails to start (mic fix 2026-10-14)', () => {
+  const ok = { stop: async () => ({ blob: new Blob(['x']), mime: 'audio/mp4', durationSec: 2 }), cancel: vi.fn() };
+  const busy = () => new DOMException('busy', 'NotReadableError');
+  it('only a refusal blocks it: no second ask', async () => {
+    vi.mocked(startRecording).mockRejectedValue(new MicDeniedError(new DOMException('no', 'NotAllowedError')));
+    render(<Harness />);
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText(BLOCKED_NOTE);
+    expect(startRecording).toHaveBeenCalledTimes(1);
+  });
+  it('a passing failure is tried again once, by itself', async () => {
+    vi.mocked(startRecording).mockRejectedValueOnce(busy()).mockResolvedValueOnce(ok);
+    render(<Harness />);
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('停止', {}, { timeout: 2000 });
+    expect(startRecording).toHaveBeenCalledTimes(2);
+    expect(readMicFailure()).toBeNull(); // fixed by the retry: not news for the parent
+    expect(readErrorLog()).toEqual([]);
+  });
+  it('failing twice: back to ready with 再试一次, and the next tap asks again', async () => {
+    vi.mocked(startRecording).mockRejectedValueOnce(busy()).mockRejectedValueOnce(new MicTimeoutError()).mockResolvedValueOnce(ok);
+    render(<Harness />);
+    fireEvent.click(screen.getByText('开始录音'));
+    fireEvent.click(await screen.findByText('再试一次', {}, { timeout: 2000 }));
+    expect(screen.getByTestId('state').textContent).not.toBe('blocked');
+    await screen.findByText('停止');
+    expect(startRecording).toHaveBeenCalledTimes(3);
+  });
+  it('a failure is logged and kept for the parent: what, where and the iPad\'s state', async () => {
+    vi.mocked(startRecording).mockRejectedValue(new MicDeniedError(new DOMException('no', 'NotAllowedError')));
+    render(<Harness />);
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText(BLOCKED_NOTE);
+    expect(readErrorLog()[0]!.message).toContain('NotAllowedError');
+    await waitFor(() => expect(readMicFailure()).toMatchObject({ kind: 'denied', stage: 'getUserMedia', name: 'NotAllowedError', message: 'no', visibility: 'visible' }));
   });
 });

@@ -10,6 +10,7 @@ vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }))
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 
 import { recordingSupported, startRecording } from '../../audio/recorder';
+import { MicDeniedError } from '../../audio/micErrors';
 import { speak } from '../../audio/speech';
 
 const vase = SCENES_KT[0]!;
@@ -99,7 +100,7 @@ describe('StoryStep', () => {
     expect(container.querySelector('.kantu__ask .truffle')!.getAttribute('data-calm')).toBe('true');
   });
   it('a refused microphone is remembered for the rest of the story: no tapping 开始录音 on every screen', async () => {
-    vi.mocked(startRecording).mockRejectedValue(new Error('denied'));
+    vi.mocked(startRecording).mockRejectedValue(new MicDeniedError());
     render(<StoryStep scene={vase} told={0} kid={DEFAULT_KID} onDone={vi.fn()} />);
     fireEvent.click(screen.getByText('开始录音'));
     await screen.findByText(BLOCKED_NOTE);
