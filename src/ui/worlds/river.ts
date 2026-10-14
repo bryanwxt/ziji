@@ -25,7 +25,7 @@ export const RIVER: Record<WorldId, RiverWorld> = {
     moon: { x: 520, y: 380 },
   },
   bamboo: {
-    props: { boat: { x: 862, y: 830, w: 100, h: 90 }, panda: { x: 190, y: 850, w: 100, h: 100 }, frog: { x: 560, y: 820, w: 60, h: 50 } }, // the water inside the phone's crop lies under Home's path row, so the boat stays on the right
+    props: { boat: { x: 862, y: 830, w: 100, h: 90 }, panda: { x: 340, y: 935, w: 100, h: 100 }, frog: { x: 560, y: 820, w: 60, h: 50 } }, // the water inside the phone's crop lies under Home's path row, so the boat stays on the right; the panda sits on the open ground left of the stepping stones, clear of the lesson Truffle and inside the phone crop
     dusk: 0.34,
     moon: { x: 640, y: 380 },
   },
