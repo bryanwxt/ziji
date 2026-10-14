@@ -86,7 +86,6 @@ export function springStep(cur: number, vel: number, target: number, stiffness =
 const f2 = (n: number) => +n.toFixed(2);
 /** Where a lid line at height y meets the lid ellipse round the eye: its half-width (0 at the top or bottom). */
 const halfWidth = (y: number) => LID_RX * Math.sqrt(Math.max(0, 1 - ((y - EYE_Y) / LID_RY) ** 2));
-const fullEye = (cx: number) => `M${f2(cx - LID_RX)} ${EYE_Y} A${LID_RX} ${LID_RY} 0 1 1 ${f2(cx + LID_RX)} ${EYE_Y} A${LID_RX} ${LID_RY} 0 1 1 ${f2(cx - LID_RX)} ${EYE_Y}Z`;
 /** No lid: an empty path at the eye's centre (a point at 0,0 would stretch his bounding box). */
 const none = (cx: number) => `M${cx} ${EYE_Y}Z`;
 
@@ -114,7 +113,7 @@ function lowerGeom(cx: number, lidBottom: number) {
 }
 
 /**
- * The upper lid: bows down when relaxed, up into a ^ when happy; fully closed it covers the eye and a curved line remains. The
+ * The upper lid: bows down when relaxed, up into a ^ when happy; once the open eye has faded it draws nothing and a curved line remains. The
  * lid is the part of the eye above its edge, bounded by the eye's own ellipse, so it needs no clip-path (spec 2026-10-13 §7):
  * the lid logic (eT, curve, closed) is unchanged.
  */
@@ -125,7 +124,9 @@ export function upperLid(cx: number, lidTop: number, lidArc: number) {
   const [xl, xr, y] = [f2(g.xl), f2(g.xr), f2(g.y)];
   const ctl = f2(g.y + g.curve);
   return {
-    fill: g.shut ? fullEye(cx) : !g.active ? none(cx) : `M${xl} ${y} A${LID_RX} ${LID_RY} 0 ${g.y > EYE_Y ? 1 : 0} 1 ${xr} ${y} Q${cx} ${ctl} ${xl} ${y}Z`,
+    // once the open eye has faded out (ringOn 0, lid ≥ 0.86) the fur lid hides nothing, and as the whole lid ellipse it would
+    // bite into the cream muzzle at the inner corners: a shut eye is only its closed line
+    fill: ringOn(lidTop) === 0 || !g.active ? none(cx) : `M${xl} ${y} A${LID_RX} ${LID_RY} 0 ${g.y > EYE_Y ? 1 : 0} 1 ${xr} ${y} Q${cx} ${ctl} ${xl} ${y}Z`,
     edge: `M${xl} ${y} Q${cx} ${ctl} ${xr} ${y}`,
     closed: `M${cx - 19} ${yy} Q${cx} ${yy + bend} ${cx + 19} ${yy}`,
     closedOn: 1 - ringOn(lidTop), // cross-fades in as the open eye fades out: a line shows in every frame of a blink

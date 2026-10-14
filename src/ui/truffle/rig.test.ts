@@ -26,20 +26,45 @@ describe("Truffle's face model (spec 2026-10-04 §4.1)", () => {
     expect(x).toBeCloseTo(1, 3);
     expect(peak).toBeLessThan(1.25);
   });
-  it('a fully closed upper lid covers the eye and shows only the closed line', () => {
+  it('a fully closed upper lid draws no fur and shows only the closed line', () => {
     const open = upperLid(118, 0, 0);
     expect(open.fill).toBe('M118 118Z'); // an open lid draws nothing
     expect(open.closedOn).toBe(0);
     const shut = upperLid(118, 1, 1);
     expect(shut.closedOn).toBe(1);
-    expect(shut.fill).toMatch(/^M95\.8 118 A22\.2 24\.2 0 1 1 140\.2 118 A/); // shut, the lid is the whole eye
+    expect(shut.fill).toBe('M118 118Z'); // shut, the eye is gone and only its closed line is drawn: no fur lid over the muzzle
     expect(shut.closed).toMatch(/^M99 /); // a ^ line across the eye
   });
-  it('the lids stay inside the eye (no clip-path, spec 2026-10-13 §7): every point of a lid edge is on or in the eye', () => {
-    for (const lidTop of [0, 0.2, 0.42, 0.5, 0.7, 0.86, 0.95]) for (const arc of [-0.25, 0, 0.4, 1]) {
-      const pts = [...upperLid(118, lidTop, arc).edge.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
-      const [[x0, y0], , [x1, y1]] = pts as [number, number][];
-      for (const [x, y] of [[x0, y0], [x1, y1]] as [number, number][]) expect(((x - 118) / 22.2) ** 2 + ((y - 118) / 24.2) ** 2, `${lidTop} ${arc}`).toBeLessThanOrEqual(1.001);
+  it('a shut eye draws no fur lid, so it never bites into his cream muzzle at the inner corners', () => {
+    // the muzzle's top contour (parts.ts G.muzzle: M134 132 C142 124 178 124 186 132, mirrored on the left by C108 160 116 140 134 132)
+    const bez = (p0: number, p1: number, p2: number, p3: number, t: number) => (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t ** 2 * p2 + t ** 3 * p3;
+    const muzzleTop = (x: number) => {
+      let best = Infinity;
+      for (let i = 0; i <= 400; i++) {
+        const t = i / 400;
+        for (const [xs, ys] of [[[134, 142, 178, 186], [132, 124, 124, 132]], [[118, 108, 116, 134], [176, 160, 140, 132]]] as const) {
+          const bx = bez(xs[0], xs[1], xs[2], xs[3], t);
+          if (Math.abs(bx - x) < 0.5) best = Math.min(best, bez(ys[0], ys[1], ys[2], ys[3], t));
+        }
+      }
+      return best;
+    };
+    // the lid's lowest point at x: a lid ellipse sub-path reaches the ellipse's bottom there; an empty point reaches nothing
+    const lowestAt = (d: string, cx: number, x: number) => {
+      if (/^M[\d.]+ [\d.]+Z$/.test(d)) return -Infinity;
+      const m = d.match(/A([\d.]+) ([\d.]+) /)!;
+      const [rx, ry] = [Number(m[1]), Number(m[2])];
+      return EYE_Y + ry * Math.sqrt(Math.max(0, 1 - ((x - cx) / rx) ** 2));
+    };
+    const corners = [[118, 136], [202, 184]] as const; // each eye's inner corner, over the muzzle
+    for (const [, x] of corners) expect(EYE_Y + 24.2 * Math.sqrt(1 - ((x - (x < 160 ? 118 : 202)) / 22.2) ** 2), 'a whole-eye lid would reach the muzzle').toBeGreaterThan(muzzleTop(x));
+    const arcs = [...new Set([-1, -0.25, 0, 0.4, 0.7, 1, ...Object.values(PRESETS).map((f) => f.lidArc)])];
+    for (const lidTop of [0.86, 0.9, 1]) for (const arc of arcs) for (const [cx, x] of corners) {
+      expect(ringOn(lidTop)).toBe(0);
+      const { fill, closedOn } = upperLid(cx, lidTop, arc);
+      expect(fill, `${lidTop} ${arc}`).toBe(`M${cx} ${EYE_Y}Z`);
+      expect(lowestAt(fill, cx, x), `${lidTop} ${arc} at ${x}`).toBeLessThan(muzzleTop(x));
+      expect(closedOn).toBe(1); // the closed line still shows
     }
   });
   it('a happy lower lid rises in the middle (a smile squint)', () => {
