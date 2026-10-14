@@ -3,6 +3,7 @@ import { setSfxEnabled } from './audio/sfx';
 import { loadClipIndex } from './audio/clips';
 import { migrateToLadder } from './ladder/migrate';
 import { markOldPlacement } from './placement/migrate';
+import { reopenChangedReadings } from './store/readingMigration';
 import { loadChineseVoice, setSpeechRate } from './audio/speech';
 import { builtinWords, CONTENT_VERSION } from './content';
 import { courseOf } from './content/curriculum';
@@ -32,6 +33,7 @@ export async function bootstrap(dbName: string): Promise<Booted> {
   if (stale) await updateSettings(db, { contentVersion: CONTENT_VERSION, contentCourse: course });
   await migrateToLadder(db, new Date()); // once: earned cards pass, words he reads get listening checks (spec 2026-10-06 §3.6)
   await markOldPlacement(db, new Date()); // once: an older placement's unrechecked cards follow the new recheck rules (spec 2026-10-14)
+  await reopenChangedReadings(db, new Date()); // once: Say and Hear on the cards whose reading changed with content 1.12 start again
   const [settings, kid] = await Promise.all([getSettings(db), getKid(db)]);
   // the recorded clips only when the parent switches them on (2026-10-08: the iPhone voice sounded better than Kokoro's); else the iPad voice
   if (settings.recordedVoice) void loadClipIndex();
