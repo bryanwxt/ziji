@@ -34,7 +34,6 @@ import { TodayPath } from './TodayPath';
 import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
 import { InkIcon } from '../ui/icons/InkIcon';
-import { TownMap } from '../town/TownMap';
 
 interface HomeData {
   know: Knowledge;
@@ -216,8 +215,6 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           <WeekStrip days={weekDays(data.sessions, today)} />
         </div>
         <span class="spacer" />
-        <TownMap know={data.know} where="bar" />
-        <span class="spacer" />
         <span class="home__who">
           <strong><Label zh="松露" /></strong>
           <Label zh={`认识 ${data.know.known} 个字`} />
@@ -242,7 +239,6 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
               </div>
             </div>
           )}
-          <TownMap know={data.know} />
           {doneToday && chestOpened && (
             <div class="card done-card">
               <p class="done-today"><Label zh="今天完成了！" /> <InkIcon name="party" size={30} /></p>
