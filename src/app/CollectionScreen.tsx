@@ -85,7 +85,7 @@ export function CollectionScreen() {
       <div class="scroll-panel" ref={panel}>
         {filter === 'animals' && (
           <div class="animals" aria-label="找到的动物">
-            <p class="animals__note"><Label zh="在草丛里找一找！" /></p>
+            <p class="animals__note"><Label zh="在纸船里找一找！" /></p>
             <div class="animals__grid">
               {ZODIAC_ORDER.map((a) => {
                 const found = (kid ?? DEFAULT_KID).finds.animals.includes(a);

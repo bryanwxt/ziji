@@ -548,6 +548,7 @@ describe('找到的动物 and the pearl jar', () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, finds: { ...DEFAULT_KID.finds, animals: ['rat', 'ox'] } } });
     renderWithApp(<CollectionScreen />, app);
     fireEvent.click(await screen.findByRole('button', { name: '找到的动物' }));
+    expect(document.querySelector('.animals__note')?.textContent).toContain('在纸船里找一找！'); // the animals come out of the paper boat now
     const slots = [...document.querySelectorAll('.animal-slot')];
     expect(slots).toHaveLength(12);
     expect(slots.filter((s) => s.classList.contains('is-found')).map((s) => s.querySelector('.label__ch')?.textContent)).toEqual(['鼠', '牛']);
