@@ -15,7 +15,7 @@ describe('One River scenes (spec 2026-10-13 §5)', () => {
     const img = container.querySelectorAll('image');
     expect(img).toHaveLength(1);
     expect(img[0]!.getAttribute('href')).toBe('/worlds/home.webp');
-    for (const p of ['boat']) expect(container.querySelector(`[data-prop="${p}"]`), p).toBeTruthy();
+    for (const p of ['boat', 'otter', 'kingfisher']) expect(container.querySelector(`[data-prop="${p}"]`), p).toBeTruthy();
     expect(container.querySelector('[data-part="dusk"]')).toBeNull();
   });
   it('evening tints the painting, hangs the moon and lights the world, under the props; 银河 is night already', () => {

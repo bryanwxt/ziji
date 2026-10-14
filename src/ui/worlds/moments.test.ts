@@ -30,4 +30,11 @@ describe('One River moments (spec 2026-10-13 §6)', () => {
     const all = kid({ finds: { ...DEFAULT_FINDS, animals: [...ZODIAC_ORDER] } });
     expect(runMoment('home', 'boat', all, DAY, 0).fx).toEqual({ kind: 'boat', animal: null });
   });
+  it('家门口 and 雨林: the otters, the kingfisher, the hornbill, the monkey and the butterfly; the monkey only plays by itself (the cards cover the walkway)', () => {
+    expect(MOMENTS.home.map((m) => m.prop)).toEqual(['boat', 'otter', 'kingfisher']);
+    expect(MOMENTS.rainforest.map((m) => m.prop)).toEqual(['boat', 'hornbill', 'monkey', 'butterfly']);
+    expect(MOMENTS.rainforest.find((m) => m.prop === 'monkey')).toMatchObject({ auto: true, tap: false });
+    expect(runMoment('home', 'otter', kid(), DAY, 0)).toMatchObject({ fx: { kind: 'otters' }, react: 'excited', say: '水獭！', later: { say: '它们在玩！', ms: 1200 } });
+    for (const w of ['home', 'rainforest'] as const) for (const m of MOMENTS[w].filter((x) => x.auto)) expect(runMoment(w, m.prop, kid(), DAY, 3).kid).toBeUndefined();
+  });
 });

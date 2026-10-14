@@ -97,4 +97,59 @@ describe('WorldProps on One River (spec 2026-10-13 §6; 2026-10-04 §4.5)', () =
     expect(document.querySelector('.world-props__fx')).toBeNull();
     expect([...document.querySelectorAll<SVGElement>('.world-scene [style*="visibility"]')].filter((e) => e.style.visibility === 'hidden')).toHaveLength(0);
   });
+  it('some moments start by themselves on Home, and never give finds', () => {
+    const onKid = vi.fn();
+    const onReact = vi.fn();
+    render(<WorldProps world="home" {...props({ onKid, onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1600); });
+    expect(onReact).toHaveBeenCalled();
+    expect(onKid).not.toHaveBeenCalled();
+  });
+  it('the otters: Truffle gets excited toward them (on his right), then says a line after', () => {
+    const onSay = vi.fn();
+    const onReact = vi.fn();
+    render(<WorldProps world="home" {...props({ onSay, onReact })} />);
+    tap('水獭');
+    expect(onReact).toHaveBeenCalledWith('excited', 1);
+    expect(onSay).toHaveBeenLastCalledWith('水獭！');
+    act(() => { vi.advanceTimersByTime(1200); });
+    expect(onSay).toHaveBeenLastCalledWith('它们在玩！');
+  });
+  it("final review I1: a child's tap during a moment that started by itself plays the tapped one (no tap is lost)", () => {
+    const onKid = vi.fn();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    render(<WorldProps world="home" {...props({ onKid, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1100); }); // the otters start by themselves
+    expect(document.querySelector('.world-props__fx')).toBeTruthy();
+    tap('纸船');
+    expect(onKid).toHaveBeenCalledWith(expect.objectContaining({ finds: expect.objectContaining({ animals: ['rat'] }) }));
+    vi.mocked(Math.random).mockRestore();
+  });
+  it('final review I1: moments start by themselves only when he has left the screen alone for a while', () => {
+    const onReact = vi.fn();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    render(<WorldProps world="home" {...props({ onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(900); });
+    fireEvent.pointerDown(document.body);
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(onReact).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(onReact).toHaveBeenCalled();
+    vi.mocked(Math.random).mockRestore();
+  });
+  it('sweep: reduced motion switched on while Home is open stops moments starting by themselves', () => {
+    const onReact = vi.fn();
+    render(<WorldProps world="home" {...props({ onReact, autoEvery: 1000 })} />);
+    still.on = true;
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(onReact).not.toHaveBeenCalled();
+  });
+  it('sweep: nothing starts by itself while the page is hidden', () => {
+    const onReact = vi.fn();
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    render(<WorldProps world="home" {...props({ onReact, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(5000); });
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    expect(onReact).not.toHaveBeenCalled();
+  });
 });

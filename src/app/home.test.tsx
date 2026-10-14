@@ -531,6 +531,16 @@ describe('HomeScreen world tap fun', () => {
     await waitFor(async () => expect((await getKid(app.db))?.finds.animals).toEqual(['rat']));
     expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('找到了！');
   });
+  it("Truffle plays along: tapping the otter in the canal, he is excited, looks toward it and says so (spec 2026-10-13 §6)", async () => {
+    const app = await makeAppData();
+    await saveKid(app.db, app.kid!);
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    fireEvent.click(document.querySelector('.world-props [aria-label="水獭"]')!);
+    await waitFor(() => expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('水獭！'));
+    expect(document.querySelector('.home .truffle')?.getAttribute('data-expression')).toBe('surprised');
+    expect(document.querySelector('.home [data-part="headrot"]')?.getAttribute('transform')).toMatch(/^rotate\([1-9]/); // the otter is on his right
+  });
 });
 
 describe('找到的动物 and the gem jar', () => {

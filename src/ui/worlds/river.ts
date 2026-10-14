@@ -15,12 +15,12 @@ export interface RiverWorld {
 
 export const RIVER: Record<WorldId, RiverWorld> = {
   home: {
-    props: { boat: { x: 703, y: 832, w: 96, h: 60 } }, // on the canal's shaded strip above its wall; a tight box clears 宝箱 on a 1024 iPad
+    props: { boat: { x: 703, y: 832, w: 96, h: 60 }, otter: { x: 860, y: 790, w: 80, h: 80 }, kingfisher: { x: 930, y: 690, w: 60, h: 50 } }, // on the canal's shaded strip above its wall; a tight box clears 宝箱 on a 1024 iPad
     dusk: 0.36,
     moon: { x: 640, y: 420 },
   },
   rainforest: {
-    props: { boat: { x: 690, y: 945, w: 120, h: 90 } },
+    props: { boat: { x: 690, y: 945, w: 120, h: 90 }, hornbill: { x: 880, y: 560, w: 80, h: 64 }, monkey: { x: 300, y: 470, w: 60, h: 96 }, butterfly: { x: 200, y: 860, w: 60, h: 60 } },
     dusk: 0.36,
     moon: { x: 520, y: 380 },
   },

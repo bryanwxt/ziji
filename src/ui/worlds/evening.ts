@@ -13,9 +13,21 @@ export const glow = (id: string, x: number, y: number, r: number, color = WARM, 
 const moon = (w: WorldId, x: number, y: number) =>
   `<g data-part="moon">${glow(`${w}-moon`, x, y, 90, '#fff4c8', 0.45)}<circle cx="${x}" cy="${y}" r="34" fill="#fff8e1"/><path d="M${x + 6} ${y - 30} a34 34 0 0 1 0 60 a26 30 0 0 0 0 -60Z" fill="#efe2b8"/></g>`;
 
+/** Fireflies: a dot and its glow; they pulse (CSS, only on Home and never with reduced motion). */
+const fireflies = (w: WorldId, pts: [number, number][]) => pts.map(([x, y], i) =>
+  `<g data-part="firefly" class="world-anim world-anim--pulse" style="animation-delay:${(i * 0.37).toFixed(2)}s">${glow(`${w}-ff${i}`, x, y, 18, '#e9ff9a', 0.8)}<circle cx="${x}" cy="${y}" r="3.2" fill="#f6ffc4"/></g>`).join('');
+/** Warm glows over lit windows or lanterns the painting already has. */
+const glows = (w: WorldId, part: string, pts: [number, number, number][]) => pts.map(([x, y, r], i) => `<g data-part="${part}">${glow(`${w}-${part}${i}`, x, y, r)}</g>`).join('');
+/** A drawn street lamp, standing at (x, y). */
+const lamp = (w: WorldId, i: number, x: number, y: number) =>
+  `<g data-part="lamp">${glow(`${w}-lamp${i}`, x, y - 52, 44)}<path d="M${x} ${y} L${x} ${y - 48}" stroke="#706889" stroke-width="3" stroke-linecap="round"/><path d="M${x - 7} ${y - 48} h14 l-3 -8 h-8 Z" fill="#fff4c8" stroke="#706889" stroke-width="1.6" stroke-linejoin="round"/></g>`;
+
+
 /** Each world's lights (spec 2026-10-13 §6), placed by eye on its painting; each world's task fills in its own. */
 const LIGHTS: Record<WorldId, (w: WorldId) => string> = {
-  home: () => '', rainforest: () => '', bamboo: () => '', terraces: () => '', dino: () => '', lantern: () => '', cove: () => '', milkyway: () => '',
+  home: (w) => glows(w, 'window', [[230, 380, 60], [400, 440, 60], [930, 330, 70], [920, 520, 60]]) + lamp(w, 1, 440, 650) + lamp(w, 2, 790, 660),
+  rainforest: (w) => fireflies(w, [[150, 700], [260, 640], [380, 760], [620, 700], [780, 640], [860, 760], [500, 860], [90, 860]]),
+  bamboo: () => '', terraces: () => '', dino: () => '', lantern: () => '', cove: () => '', milkyway: () => '',
 };
 /** The boat's lantern glows in every world. */
 const boatGlow = (w: WorldId) => { const b = RIVER[w].props.boat!; return `<g data-part="boat-lantern">${glow(`${w}-boat`, b.x + 34, b.y - 46, 40, '#ffb86b', 0.8)}</g>`; };
