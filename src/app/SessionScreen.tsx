@@ -462,7 +462,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         const fresh = (await getKid(db)) ?? kid;
         await saveKid(db, {
           ...fresh,
-          reading: { ...finishDay(fresh.reading, reading.passage.id, reading.day), warmups: fresh.reading.warmups + (r.intro ? 1 : 0) },
+          // no take (the mic refused or failing): the passage day isn't counted, so he reads it again next time (review M-6)
+          reading: { ...(r.read ? finishDay(fresh.reading, reading.passage.id, reading.day) : fresh.reading), warmups: fresh.reading.warmups + (r.intro ? 1 : 0) },
           speakingLast: 'langdu',
           bonusStars: fresh.bonusStars + (bonus ? 1 : 0),
         });
