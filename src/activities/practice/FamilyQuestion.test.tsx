@@ -33,7 +33,7 @@ describe('找一家人 (spec 2026-10-12 §5)', () => {
     vi.mocked(speak).mockClear();
     vi.mocked(stopSpeaking).mockClear();
     const { unmount } = render(<FamilyQuestion board={{ ...board, ch: '切', reading: 'qiē' }} kid={DEFAULT_KID} onDone={vi.fn()} />);
-    expect(vi.mocked(speak).mock.calls).toEqual([['哪两个词有'], ['切', { reading: 'qiē', queue: true }]]);
+    expect(vi.mocked(speak).mock.calls).toEqual([['哪两个词有'], ['切', { reading: 'qiē', queue: true, avoid: board.tiles }]]); // never said as a tile (切 → 切菜 would give the answer)
     unmount();
     expect(stopSpeaking).toHaveBeenCalled();
   });

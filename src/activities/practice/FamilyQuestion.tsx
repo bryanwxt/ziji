@@ -36,7 +36,8 @@ export function FamilyQuestion({ board, kid, onDone }: Props) {
   useEffect(() => {
     // the character on its own at its card's reading: inside one line the voice may pick its other reading (切 qiē, 教 jiāo)
     speak('哪两个词有');
-    speak(board.ch, { reading: board.reading, queue: true });
+    // a character said as its 组词 (切 → 切菜) is never said as a word on the board: that would say the answer
+    speak(board.ch, { reading: board.reading, queue: true, avoid: board.tiles });
   }, [board]);
   useEffect(() => stopSpeaking, []);
   const family = new Set(board.family.map((f) => f.text));

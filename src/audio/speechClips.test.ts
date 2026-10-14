@@ -119,7 +119,8 @@ describe('a lone character no voice can be steered on is said as its first 组�
   });
   it('in a dictation cue each lone piece is the word, and prefetch fetches the word', () => {
     speak('爪，爪子的，爪', { reading: 'zhuǎ' });
-    expect(spoken).toEqual(['爪子，爪子的，爪子']);
+    speak('了', { reading: 'le', queue: true });
+    expect(spoken).toEqual(['爪，爪子的，爪', '为了']); // a cue whose word already says it leaves the lone pieces bare (review 2026-10-15)
     setClipIndex({ v: 1, voice: 't', clips: { 爪子: 'z' } });
     prefetchWords([{ text: '爪', pinyin: 'zhuǎ' }]);
     expect(player.prefetch).toHaveBeenCalledWith(['z']);

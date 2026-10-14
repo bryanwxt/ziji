@@ -92,15 +92,24 @@ export function spokenAs(text: string, reading?: string): string {
 /**
  * What is said for a line: a lone character no voice can be steered on (sayAs.json's `unsure`: 爪 is zhuǎ on his card, zhǎo
  * to the voices) is said as its card's first 组词 instead (爪子), when it is wanted at its card's reading; so is each lone piece
- * of a line built from pieces (写一写's "爪，爪子的，爪"). `avoid`: words it must not be said as, because they are the answer on
- * screen (连一连's 切 joins 菜: it is said as 切开, not 切菜); with none left, the character is said alone. Else as it is.
+ * of a line built from pieces, unless another piece already says it (写一写's "爪，爪子的，爪" stays). `avoid`: words it must not
+ * be said as, because they are the answer on screen (连一连's 切 joins 菜: it is said as 切开, not 切菜), and `endings`: nor as
+ * one ending in a tile it could join (茄子 when 子 is on the board); with none left, the character is said alone.
  */
-export function loneSpoken(text: string, reading?: string, avoid: readonly string[] = []): string {
+export function loneSpoken(text: string, reading?: string, avoid: readonly string[] = [], endings: readonly string[] = []): string {
   const { poly, words } = SAY_AS as { poly: Record<string, string>; words?: Record<string, string[]> };
-  if (text.includes('，')) return text.split('，').map((part) => (Array.from(part.trim()).length === 1 ? loneSpoken(part, reading, avoid) : part)).join('，');
+  if (text.includes('，')) {
+    const parts = text.split('，');
+    // a cue whose word already says it (了，为了的，了): its lone pieces stay bare (review 2026-10-15)
+    return parts.map((part, i) => {
+      const ch = part.trim();
+      if (Array.from(ch).length !== 1) return part;
+      return parts.some((p, j) => j !== i && Array.from(p.trim()).length > 1 && p.includes(ch)) ? part : loneSpoken(part, reading, avoid, endings);
+    }).join('，');
+  }
   const t = text.trim();
   if (reading && reading !== poly[t]) return text;
-  return words?.[t]?.find((w) => !avoid.includes(w)) ?? text;
+  return words?.[t]?.find((w) => !avoid.includes(w) && !endings.some((e) => w.endsWith(e))) ?? text;
 }
 
 let player: ClipPlayer = createClipPlayer({
@@ -124,9 +133,9 @@ const ttsBusy = () => available() && (live.size > 0 || waiting !== null);
  * character is taught with, when the screen knows it. While he is being recorded it says nothing (final review C1): a peek or
  * a line on screen must never end up in his take.
  */
-export function speak(line: string, { queue = false, reading, avoid }: { queue?: boolean; reading?: string; avoid?: readonly string[] } = {}): void {
+export function speak(line: string, { queue = false, reading, avoid, endings }: { queue?: boolean; reading?: string; avoid?: readonly string[]; endings?: readonly string[] } = {}): void {
   if (recordingNow()) return;
-  const text = loneSpoken(line, reading, avoid);
+  const text = loneSpoken(line, reading, avoid, endings);
   if (queue && (clipBusy || after.length > 0 || (ttsBusy() && clipPlan(text, reading)))) {
     after.push({ text, reading });
     return;
