@@ -1,15 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { builtinWords, HSK_WORDS } from '../content';
+import { builtinWords, schoolTerm } from '../content';
 import { mulberry32 } from '../lib/random';
 import { firstSense } from '../activities/flashcards/distractors';
 import { cardMeaning } from '../content/glossary';
-import { buildQuestion, hearBand, nextQuestion, visitStyles } from './questions';
-import { rankBands, type Style } from './walk';
+import { buildQuestion, nextQuestion, termStyles, termWords } from './questions';
+import { TERMS } from './walk';
 
 const pool = builtinWords(0);
 const byText = new Map(pool.map((w) => [w.text, w]));
+const terms = termWords(pool);
 
-describe('placement questions (spec §19 part 6)', () => {
+describe('placement v2 questions (spec 2026-10-14)', () => {
+  it("a term's characters are the recognise characters first taught in it, in book order", () => {
+    expect(terms).toHaveLength(TERMS.length);
+    terms.forEach((ws, i) => {
+      expect(ws.length).toBeGreaterThan(100);
+      for (const w of ws) expect(schoolTerm(w.text)).toBe(TERMS[i]);
+      for (let j = 1; j < ws.length; j++) expect(ws[j]!.rank!).toBeGreaterThan(ws[j - 1]!.rank!);
+    });
+  });
   it('读一读: the character and 4 pinyin choices, one right', () => {
     const q = buildQuestion('read', byText.get('静')!, pool, mulberry32(1))!;
     if (q.style !== 'read') throw new Error(q.style);
@@ -20,68 +29,35 @@ describe('placement questions (spec §19 part 6)', () => {
     const q = buildQuestion('hear', byText.get('门')!, pool, mulberry32(1))!;
     if (q.style !== 'hear') throw new Error(q.style);
     expect(q.answer).toBe(firstSense(cardMeaning(byText.get('门')!)!));
-    expect(q.options).toContain(q.answer);
     expect(new Set(q.options).size).toBe(4);
   });
-  it('听一听 asks words, not only characters: the band brings its 词语 (spec 2026-10-06 §3.5)', () => {
-    const band = rankBands(pool)[2]!;
-    const words = hearBand(band);
-    expect(words.some((w) => w.id.startsWith('w:'))).toBe(true);
-    const ranks = new Set(band.map((w) => w.rank));
-    for (const w of words) expect(ranks.has(Math.floor(w.rank!))).toBe(true);
-  });
-
-  it('补一补: a word with the character missing and 4 look-alikes, none making another word', () => {
-    const q = buildQuestion('fill', byText.get('银')!, pool, mulberry32(2))!;
-    if (q.style !== 'fill') throw new Error(q.style);
-    expect(q.answer).toBe('银');
-    expect(q.options).toContain('银');
-    expect(new Set(q.options).size).toBe(4);
-    for (const o of q.options.filter((x) => x !== '银')) expect(HSK_WORDS.has([...q.word].map((c, i) => (i === q.index ? o : c)).join(''))).toBe(false);
-  });
-  it('选一选: a sentence or 组词 with the character blanked', () => {
-    const q = buildQuestion('fit', byText.get('很')!, pool, mulberry32(1))!;
-    if (q.style !== 'fit') throw new Error(q.style);
-    expect(q.item.word).toBe('很');
-    expect(q.item.options).toContain('很');
-  });
-  it('with a voice a visit has exactly one 听一听, one 选一选 and two reading questions, never the same twice in a row', () => {
-    for (let seed = 1; seed < 40; seed++) {
-      const v = visitStyles('read', true, mulberry32(seed));
-      expect(v).toHaveLength(4);
-      expect(v.filter((s) => s === 'hear')).toHaveLength(1);
-      expect(v.filter((s) => s === 'fit')).toHaveLength(1);
-      expect(v.filter((s) => s === 'read' || s === 'fill')).toHaveLength(2);
-      const all: Style[] = ['read', ...v];
-      for (let i = 1; i < all.length; i++) expect(all[i]).not.toBe(all[i - 1]);
-    }
-  });
-  it('no voice, no 听一听', () => {
-    for (let seed = 1; seed < 30; seed++) expect(visitStyles(null, false, mulberry32(seed))).not.toContain('hear');
-  });
-  it('every band can ask every style (falling back when a rare character has no word for it)', () => {
-    const bands = rankBands(pool);
-    for (const band of [bands[0]!, bands[10]!, bands[29]!]) {
-      for (const style of ['read', 'hear', 'fill', 'fit'] as const) {
-        const q = nextQuestion(band, style, pool, mulberry32(3), new Set());
-        expect((style === 'hear' ? hearBand(band) : band).some((w) => w.id === q.wordId)).toBe(true);
-      }
-    }
-  });
-  it('never asks a word already asked this check, while others remain', () => {
-    const band = rankBands(pool)[0]!;
-    const used = new Set(band.slice(1).map((w) => w.id));
-    expect(nextQuestion(band, 'read', pool, mulberry32(1), used).wordId).toBe(band[0]!.id);
-  });
-
-
-  it('without a voice a visit still mixes styles: 读一读 and 补一补 alternate around one 选一选', () => {
+  it('with a voice a term asks 2 读一读 and 1 听一听; without, 3 读一读', () => {
     for (let seed = 1; seed < 30; seed++) {
-      const v = visitStyles('fill', false, mulberry32(seed));
-      expect(v).toHaveLength(4);
-      expect(v.filter((s) => s === 'fit')).toHaveLength(1);
-      const all: Style[] = ['fill', ...v];
-      for (let i = 1; i < all.length; i++) expect(all[i]).not.toBe(all[i - 1]);
+      const v = termStyles(true, mulberry32(seed));
+      expect([...v].sort()).toEqual(['hear', 'read', 'read']);
+      expect(termStyles(false, mulberry32(seed))).toEqual(['read', 'read', 'read']);
     }
+  });
+  it("each question uses a different character of the term, picked at random", () => {
+    const used = new Set<string>();
+    const rng = mulberry32(5);
+    const first: string[] = [];
+    for (const style of ['read', 'hear', 'read', 'read'] as const) {
+      const q = nextQuestion(terms, 2, style, pool, rng, used);
+      expect(terms[2]!.some((w) => w.id === q.charId)).toBe(true);
+      expect(used.has(q.charId)).toBe(false);
+      used.add(q.charId);
+      first.push(q.charId);
+    }
+    expect(new Set(first).size).toBe(4);
+    const other = nextQuestion(terms, 2, 'read', pool, mulberry32(99), new Set());
+    expect(other.charId).not.toBe(terms[2]![0]!.id); // random, not the first in the book
+  });
+  it("never repeats a character; a term run short borrows the nearest term's untested characters", () => {
+    const used = new Set(terms[0]!.slice(1).map((w) => w.id));
+    expect(nextQuestion(terms, 0, 'read', pool, mulberry32(1), used).charId).toBe(terms[0]![0]!.id);
+    used.add(terms[0]![0]!.id);
+    const borrowed = nextQuestion(terms, 0, 'read', pool, mulberry32(1), used);
+    expect(terms[1]!.some((w) => w.id === borrowed.charId)).toBe(true);
   });
 });

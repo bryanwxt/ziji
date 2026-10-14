@@ -1,121 +1,63 @@
-import type { Word } from '../types';
+import { MOE_TERMS } from '../content';
+import { classLessonAt, gradeTerms, LESSONS, schoolYear } from '../content/curriculum';
+import type { Settings } from '../types';
 
-/** The adaptive placement check (spec §19 part 6): 30 bands of 100 characters, 4 questions a visit, two results. */
-export const BAND_SIZE = 100;
-export const START_BAND = 6; // band 7 of 30: with school order (MOE 2.0 lists), late 二上/二下 — where a P2 child is in his books
-export const PER_VISIT = 4;
-export const MAX_QUESTIONS = 40;
-export const WARMUP = 3; // easy reading questions first, so a nervous start doesn't skew the result
-export const LOW_START = 2; // band 3 (一上/一下 in school order): where the walk starts when the warm-up went badly (at most 1 of 3 right)
-/** 不知道 this many times in a row ends the visit as a miss; each further one steps down at once (parent, 2026-10-05). */
-export const DONT_KNOW_RUN = 3;
+/**
+ * The placement check (spec 2026-10-14): a short walk over his school terms in 欢乐伙伴 order, 3 quick questions a term
+ * (one more on a 2 of 3), up on a pass and down on a miss, ending at the first turn, off either end, or after 15 questions.
+ */
+export const TERMS: readonly string[] = MOE_TERMS;
+export const PER_TERM = 3;
+export const MAX_QUESTIONS = 15;
 
-export type Style = 'read' | 'hear' | 'fill' | 'fit'; // 读一读 听一听 补一补 选一选; 听一听 = hear a word, pick its meaning (spec 2026-10-06 §3.5) (真的假的 was dropped: a 50/50 guess, and odd to the parent)
-export const READING_STYLES: Style[] = ['read', 'fill'];
+export type Style = 'read' | 'hear'; // 读一读: the character → its pinyin; 听一听: hear a word → pick its meaning
 
-export interface WalkAnswer { band: number; style: Style; wordId: string; correct: boolean; dontKnow?: boolean } // dontKnow: he tapped 不知道 (a miss, said honestly)
+/** wordId: what was asked (a 词语 to hear, or a character); charId: the term character it used; dontKnow: he tapped 不知道 (a miss). */
+export interface WalkAnswer { term: number; style: Style; wordId: string; charId?: string; correct: boolean; dontKnow?: boolean }
 
-const share = (xs: WalkAnswer[]) => (xs.length ? xs.filter((a) => a.correct).length / xs.length : 0);
 export interface WalkState {
-  band: number;
-  warmup: number; // warm-up questions answered (not scored)
-  warmRight?: number; // warm-up questions answered right
-  warmDontKnow?: number; // warm-up questions answered 不知道
-  dontKnowRun?: number; // 不知道 in a row, now
-  visit: WalkAnswer[]; // this visit's answers so far
-  answers: WalkAnswer[]; // every scored answer
-  visits: Record<number, number>; // completed visits per band
+  term: number; // the term being asked (an index in TERMS)
+  visit: WalkAnswer[]; // this term's answers so far
+  answers: WalkAnswer[]; // every answer
+  passed: number[]; // terms he passed
   direction: -1 | 0 | 1; // the last move
-  turns: number; // changes of direction: the boundary crossed
   done: boolean;
 }
 
-/** A band's HSK level (that of its last character): 1–6, or 7 for 七—九级. */
-export function bandLevel(bands: Word[][], band: number): number {
-  return bands[Math.max(0, Math.min(band, bands.length - 1))]?.at(-1)?.level ?? 1;
+/**
+ * His class term today (an index in TERMS): the term of his class lesson (classLessonAt), else the first term of his school
+ * year; past 三下, the last term. Null if neither is known.
+ */
+export function classTerm(now: Date, settings: Pick<Settings, 'grade' | 'gradeYear' | 'classLesson'>): number | null {
+  const at = classLessonAt(now, settings);
+  const term = at !== null ? LESSONS[at]!.term : gradeTerms(schoolYear(settings, now))[0];
+  const i = TERMS.indexOf(term);
+  return i >= 0 ? i : schoolYear(settings, now) > 3 ? TERMS.length - 1 : null;
 }
 
-/** The built-in characters in rank order, in bands of 100; a short tail (the 5 school characters HSK lacks) joins the last band. */
-export function rankBands(words: Word[]): Word[][] {
-  const ranked = words.filter((w) => w.source === 'builtin' && w.rank !== null).sort((a, b) => a.rank! - b.rank!);
-  const bands: Word[][] = [];
-  for (let i = 0; i < ranked.length; i += BAND_SIZE) bands.push(ranked.slice(i, i + BAND_SIZE));
-  if (bands.length > 1 && bands.at(-1)!.length < BAND_SIZE / 2) bands.splice(-2, 2, [...bands.at(-2)!, ...bands.at(-1)!]);
-  return bands;
-}
+/** Where the walk starts: one term below his class term, clamped to 一上; 一上 when his class term isn't known. */
+export const startTerm = (classTerm: number | null): number => (classTerm === null ? 0 : Math.max(0, classTerm - 1));
 
-export const startWalk = (bandCount: number): WalkState => ({
-  band: Math.max(0, Math.min(START_BAND, bandCount - 1)), warmup: 0, visit: [], answers: [], visits: {}, direction: 0, turns: 0, done: bandCount === 0,
+export const startWalk = (term: number, termCount: number): WalkState => ({
+  term: Math.max(0, Math.min(term, termCount - 1)), visit: [], answers: [], passed: [], direction: 0, done: termCount === 0,
 });
 
-/** One answer. After a visit of 4: up after 3–4 right, down after 0–1, a second visit after a 2 (then down). Stops at the second turn, after 40 questions, or off either end. */
-export function walkStep(s: WalkState, a: Omit<WalkAnswer, 'band'>, bandCount: number): WalkState {
+/** One answer. 3 right: up; 0–1: down; 2: one more (3 of 4 up, 2 of 4 down). Ends at a turn, off either end, or after 15. */
+export function walkStep(s: WalkState, a: Omit<WalkAnswer, 'term'>, termCount: number): WalkState {
   if (s.done) return s;
-  if (s.warmup < WARMUP) {
-    const warmRight = (s.warmRight ?? 0) + (a.correct ? 1 : 0);
-    const warmDontKnow = (s.warmDontKnow ?? 0) + (a.dontKnow ? 1 : 0);
-    const last = s.warmup + 1 === WARMUP;
-    // a shaky warm-up starts the walk low: quicker for a beginner, and a guesser isn't carried up by luck; all 不知道: the first band
-    const band = !last ? s.band : warmDontKnow === WARMUP ? 0 : warmRight <= 1 ? Math.min(s.band, LOW_START) : s.band;
-    return { ...s, warmup: s.warmup + 1, warmRight, warmDontKnow, band };
-  }
-  const answer = { ...a, band: s.band };
+  const answer: WalkAnswer = { ...a, correct: a.correct && !a.dontKnow, term: s.term };
   const visit = [...s.visit, answer];
   const answers = [...s.answers, answer];
-  const dontKnowRun = a.dontKnow ? (s.dontKnowRun ?? 0) + 1 : 0; // a guess, right or wrong, breaks the run
-  const lost = dontKnowRun >= DONT_KNOW_RUN; // he keeps saying he doesn't know: down now, not after the rest of the visit
-  if (!lost && visit.length < PER_VISIT) return { ...s, visit, answers, dontKnowRun, done: answers.length >= MAX_QUESTIONS };
-  const right = share(visit) * PER_VISIT; // 0–4 right
-  const seen = (s.visits[s.band] ?? 0) + 1;
-  const move: -1 | 0 | 1 = lost || right <= 1 ? -1 : right >= 3 ? 1 : seen >= 2 ? -1 : 0;
-  const turns = s.turns + (move !== 0 && s.direction !== 0 && move !== s.direction ? 1 : 0);
-  const band = s.band + move;
-  const done = turns >= 2 || answers.length >= MAX_QUESTIONS || band < 0 || band >= bandCount;
-  return {
-    band: Math.max(0, Math.min(bandCount - 1, band)), warmup: s.warmup, visit: [], answers,
-    visits: { ...s.visits, [s.band]: seen }, direction: move === 0 ? s.direction : move, turns, done, dontKnowRun,
-  };
+  const right = visit.filter((x) => x.correct).length;
+  const decided = visit.length > PER_TERM || (visit.length === PER_TERM && right !== 2);
+  if (!decided) return { ...s, visit, answers, done: answers.length >= MAX_QUESTIONS };
+  const move: -1 | 1 = right >= PER_TERM ? 1 : -1;
+  const passed = move === 1 ? [...s.passed, s.term] : s.passed;
+  const turned = s.direction !== 0 && move !== s.direction;
+  const term = s.term + move;
+  const done = turned || term < 0 || term >= termCount || answers.length >= MAX_QUESTIONS;
+  return { term: Math.max(0, Math.min(termCount - 1, term)), visit: [], answers, passed, direction: move, done };
 }
 
-/**
- * The three results (spec §19 part 6; 2026-10-06 §3.5). Reading holds in a band when 2/3 of its 读一读/补一补 answers are right;
- * understanding (选一选) when half are, never above reading; each is the highest band that holds, and bands below the first one visited
- * count as held. Listening (听一听) is on its own — he may hear more than he reads — and stricter (listeningLevel). -1 = none.
- */
-export function placementLevels(answers: WalkAnswer[]): { reading: number; understanding: number; listening: number } {
-  const bands = [...new Set(answers.map((a) => a.band))].sort((x, y) => x - y);
-  if (!bands.length) return { reading: -1, understanding: -1, listening: -1 };
-  const holds = (band: number, g: StyleGroup, need: number) => {
-    const xs = answers.filter((a) => a.band === band && styleGroup(a.style) === g);
-    return xs.length > 0 && share(xs) >= need;
-  };
-  const top = (g: StyleGroup, need: number, cap: number) => {
-    const held = bands.filter((b) => b <= cap && holds(b, g, need));
-    return held.length ? Math.max(...held) : Math.min(cap, bands[0]! - 1);
-  };
-  const reading = top('read', 2 / 3, Infinity);
-  const listening = listeningLevel(answers);
-  // a lucky 选一选 in a band he can't read says nothing: understanding looks only at bands he reads
-  return { reading, understanding: top('fit', 0.5, reading), listening };
-}
-
-export const LISTEN_SHARE = 0.75;
-export const LISTEN_MIN = 3;
-/**
- * His listening level (final review I2): the highest band where at least 3/4 of every 听一听 answer at or below it is right, over at
- * least 3 answers; else -1. A visit asks one 听一听, so one band's single answer is a 1-in-4 guess, and a placed level marks hundreds of
- * words heard: guessing must not place him (a silent iPad), while missing a listener only queues his listening checks as before.
- */
-export function listeningLevel(answers: WalkAnswer[]): number {
-  const heard = answers.filter((a) => a.style === 'hear');
-  let best = -1;
-  for (const b of [...new Set(heard.map((a) => a.band))]) {
-    const xs = heard.filter((a) => a.band <= b);
-    if (b > best && xs.length >= LISTEN_MIN && share(xs) >= LISTEN_SHARE) best = b;
-  }
-  return best;
-}
-
-export type StyleGroup = 'read' | 'fit' | 'hear';
-/** What an answer measures: reading (读一读, 补一补), understanding (选一选) or listening (听一听). */
-export const styleGroup = (s: Style): StyleGroup => (s === 'fit' ? 'fit' : s === 'hear' ? 'hear' : 'read');
+/** The result: the highest term he passed, or null for none. */
+export const readsUpTo = (s: Pick<WalkState, 'passed'>): number | null => (s.passed.length ? Math.max(...s.passed) : null);

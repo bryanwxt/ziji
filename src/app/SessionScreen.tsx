@@ -46,9 +46,9 @@ import { settleLessonStars } from '../session/stars';
 import { starsOf } from '../stats/stats';
 import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
-  currentWriteTask, finishStep, finishStepIf, introducedNewWords, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
+  currentWriteTask, finishStep, finishStepIf, introducedNewWords, sendBack, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
-import { addAnswer, clearConfusion, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
+import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
@@ -234,7 +234,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           await commit(startPractice(latest.current ?? cur, queue));
         })();
       }
-    } else if (step === 'practice' && practiceItem && (!practiceWord || practiceWord.paused)) void commit(skipPracticeItem(cur));
+    } else if (step === 'practice' && practiceItem && (!practiceWord || practiceWord.paused || cur.sentBack?.includes(practiceItem.wordId))) void commit(skipPracticeItem(cur));
     else if (step === 'speaking' && !state.speaking) void commit(finishStep(cur));
   }, [rec, state?.choose, state?.wrapup]);
 
@@ -243,6 +243,19 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const { know, kid } = state;
   const level = levelOf(know);
   const resting = restingMood(correct);
+
+  /** Sent back to learn by a missed placement recheck in this lesson: nothing more of it is graded today (review M1). */
+  const gone = (wordId: string) => !!(latest.current ?? rec)?.sentBack?.includes(wordId);
+  /** A reading answer; true when it sent the word back to learn (spec 2026-10-14): its cards are gone, so the lesson forgets them too. */
+  const gradeReading = async (wordId: string, outcome: Parameters<typeof recordRecognition>[2]): Promise<boolean> => {
+    const card = await recordRecognition(db, wordId, outcome, now());
+    if (await getCard(db, card.id)) {
+      state!.know.cardsById.set(card.id, card);
+      return false;
+    }
+    for (const id of [...state!.know.cardsById.keys()]) if (id.startsWith(`${wordId}:`)) state!.know.cardsById.delete(id);
+    return true;
+  };
 
   const once = (fn: () => Promise<void>) => async () => {
     if (busy.current) return;
@@ -272,7 +285,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const onFlashDone = (r: FlashResult) =>
     once(async () => {
       const item = flashItem!;
-      if (!item.retry && !rec.free) {
+      let sent = false;
+      if (!item.retry && !rec.free && !gone(item.wordId)) {
         const outcome = { correct: r.correct, responseMs: r.responseMs, slow: state.slow };
         // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing
         const fresh = item.isNew ? know.wordsById.get(item.wordId) : undefined;
@@ -281,17 +295,16 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           const card = await beginNewWord(db, fresh, r.asked, outcome, now());
           know.cardsById.set(card.id, card);
         } else if (r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
-        else {
-          const card = r.asked === 'meaning' ? await recordMeaning(db, item.wordId, outcome, now()) : await recordRecognition(db, item.wordId, outcome, now());
-          know.cardsById.set(card.id, card);
-        }
+        else if (r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
+        else sent = await gradeReading(item.wordId, outcome);
       }
       if (!r.correct) await rememberConfusion(item.wordId, r.picked);
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
       setCombo(r.correct ? combo + 1 : 0); // his hearts at three right in a row; no counter, no spoken 连对 (spec 2026-10-11 §5)
-      await commit(afterFlashAnswer(rec, r.correct, r.elapsedMs, r.inContext));
+      const next = afterFlashAnswer(rec, r.correct, r.elapsedMs, r.inContext);
+      await commit(sent ? sendBack(next, item.wordId) : next);
     })();
 
   /** A 练一练 answer (spec 2026-10-05 §3.5): grade the card the item grades (never a retry or free play), note his rung, move on. */
@@ -302,12 +315,13 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         await commit(skipPracticeItem(latest.current ?? rec));
         return;
       }
-      if (!rec.free && !item.retry) {
+      let sent = false;
+      if (!rec.free && !item.retry && !gone(item.wordId)) {
         // a sentence takes reading time first: that doesn't make a right answer slow (as in 选一选)
         const outcome = { correct: r.correct, responseMs: r.asked === 'use' || r.inContext ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs, slow: state.slow };
         if (item.grades === 'understand' && r.asked === 'understand') know.cardsById.set(`${item.wordId}:understand`, await recordUnderstand(db, item.wordId, { correct: r.correct, responseMs: r.responseMs, slow: state.slow }, now()));
         else if (item.grades === 'hear' && r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
-        else if (item.grades === 'recognise') know.cardsById.set(`${item.wordId}:recognise`, await recordRecognition(db, item.wordId, outcome, now()));
+        else if (item.grades === 'recognise') sent = await gradeReading(item.wordId, outcome);
         else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs, state.slow));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
@@ -323,7 +337,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
       setCombo(r.correct ? combo + 1 : 0);
-      await commit(afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom));
+      const next = afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom);
+      await commit(sent ? sendBack(next, item.wordId) : next);
     })();
 
   /** A Say card (spec 2026-10-11 §3) or a 说一句 (production practice spec §4): keep the take for the parent and schedule its card; a blocked microphone drops the lesson's Say and 说一句 cards (§7). */
@@ -335,7 +350,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         await commit(skipSayItems(latest.current ?? rec));
         return;
       }
-      if (!rec.free) {
+      if (!rec.free && !gone(item.wordId)) {
         try {
           const card = await (item.ask === 'sentence' ? recordSentenceTake : recordSayTake)(db, item.wordId, r.take, now());
           know.cardsById.set(card.id, card);
@@ -356,13 +371,14 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       // only the recall pass rates the word (spec §20 part 3); a redo at the end is extra practice. Written a character at a time
       // (spec 2026-10-05 §5), the word is rated once, on the character that finishes it, with all its misses from memory.
       const rates = !task.readOnly && (task.at === undefined ? true : !!task.last); // a traced read-only character never rates a write card
-      if (r && !rec.free && task.pass === 'recall' && !task.redo && rates) await recordWriting(db, task.wordId, wordMisses(rec, task.wordId) + r.totalMisses, now());
+      const off = gone(task.wordId); // sent back to learn this lesson: traced, never graded (no fresh card)
+      if (r && !rec.free && !off && task.pass === 'recall' && !task.redo && rates) await recordWriting(db, task.wordId, wordMisses(rec, task.wordId) + r.totalMisses, now());
       if (!r) await markWriteSkipped(db, task.wordId, now()); // any word whose strokes failed goes behind the others next time (sweep)
       // the 组词 he wrote rates its meaning card, once a lesson (production practice spec §3)
       const useOpen = know.cardsById.has(`${task.wordId}:meaning`) || (rec.plan.newMeaningIds ?? []).includes(task.wordId);
       const credit = r && writeWord ? meaningCredit(rec, task, r, writeWord, useOpen) : null;
-      if (credit !== null) know.cardsById.set(`${task.wordId}:meaning`, await recordWrittenMeaning(db, task.wordId, credit, now()));
-      if (r && !rec.free && task.readOnly) await markTraced(db, task.wordId, now());
+      if (credit !== null && !off) know.cardsById.set(`${task.wordId}:meaning`, await recordWrittenMeaning(db, task.wordId, credit, now()));
+      if (r && !rec.free && !off && task.readOnly) await markTraced(db, task.wordId, now());
       // a new word written from memory with no misses showed the close-up if one was due: start the cooldown again
       if (r && task.pass === 'recall' && isHardWrite(task.isNew, r.totalMisses) && closeupAllowed(cardsSinceCloseup.current, reducedMotion())) cardsSinceCloseup.current = 0;
       await commit(afterWriteWord(rec, r !== null, r?.elapsedMs ?? 0, { hinted: r?.hinted, misses: r?.totalMisses, credited: credit !== null }));
@@ -371,7 +387,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   /** A word used in context (选一选): rate its meaning once a day, and count the recall for 用一用 (spec §20 part 7). */
   const onUseAnswer = async (item: UseItem, correct: boolean, responseMs = 0) => {
     if (!item.wordId) return; // a bank word, not one of his own: practice only
-    if (!rec.free) {
+    if (!rec.free && !gone(item.wordId)) {
       know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, correct, now(), responseMs, state.slow));
       await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct }); // every answer, for the Skills panel
     }

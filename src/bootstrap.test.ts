@@ -3,12 +3,26 @@ import { default_w } from 'ts-fsrs';
 import { bootstrap } from './bootstrap';
 import { builtinWords, CONTENT_VERSION } from './content';
 import { schedulerParams, setSchedulerParams } from './srs/scheduler';
-import { getSettings, getWord, putWords, seedBuiltinWords, updateSettings } from './store/repo';
+import { allCards, getSettings, getWord, putCards, putWords, seedBuiltinWords, updateSettings } from './store/repo';
+import { seededKnownCard } from './srs/scheduler';
 
 
 vi.mock('./audio/speech', () => ({ loadChineseVoice: vi.fn(async () => null), setSpeechRate: vi.fn() }));
 
 describe('launch (deferred minor, plan 11)', () => {
+  it('an older band placement is marked for the new recheck rules on the next launch, once (spec 2026-10-14)', async () => {
+    const name = `boot-${crypto.randomUUID()}`;
+    const first = await bootstrap(name);
+    const at = Date.now() - 8 * 86_400_000;
+    await updateSettings(first.db, { placementMarked: undefined, placementResult: { at, reading: 2, understanding: 0, missed: [] } });
+    await putCards(first.db, [{ id: 'b:人:recognise', wordId: 'b:人', kind: 'recognise', fsrs: seededKnownCard(new Date(at), 10), passed: at }]);
+    first.db.close();
+    const second = await bootstrap(name);
+    expect((await allCards(second.db)).find((c) => c.id === 'b:人:recognise')!.placed).toBe(true);
+    expect((await getSettings(second.db)).placementMarked).toBe(true);
+    second.db.close();
+  });
+
   it('rewrites the 3,000 built-in words only when the content changed, not on every launch', async () => {
     const name = `boot-${crypto.randomUUID()}`;
     const first = await bootstrap(name);

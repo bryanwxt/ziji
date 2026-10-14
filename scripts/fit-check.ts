@@ -355,13 +355,13 @@ async function sweep(browser: Browser, size: Size) {
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));
   await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));
   await run('placement', AFTERNOON, { placementDone: false }, async (p) => {
-    // each style is its own screen (spec §19 part 6): answer and look again, ten times — a guess between the 不知道 taps, as
-    // 不知道 three times running steps down at once and six from the start end the check (parent, 2026-10-05)
-    // and every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
+    // 读一读 and 听一听 (spec 2026-10-14): answer and look again, up to eleven times (the walk ends by 15) — a guess between
+    // the 不知道 taps; every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
     const boxes: string[] = [];
     for (let i = 0; i < 11; i++) {
-      if (await p.$('.placement__levels')) break; // the walk can end early: the result is already up
-      await p.waitForSelector('.placement[data-ready="true"]');
+      // the walk can end early (by 15, often by 6–9 here): the result comes up once the placement is saved
+      await p.waitForSelector('.placement[data-ready="true"], .placement__levels', { timeout: 60_000 });
+      if (await p.$('.placement__levels')) break;
       await check(p, size, 'placement', i);
       boxes.push(await p.evaluate(() => ['.placement__prompt', '.placement__choices', '.placement .btn--big']
         .map((sel) => { const r = document.querySelector(sel)!.getBoundingClientRect(); return [r.top, r.height, r.width].map(Math.round).join(','); }).join(' | ')));
@@ -405,6 +405,7 @@ async function sweep(browser: Browser, size: Size) {
     // retention and the fit (SRS tuning spec §5, §6.2): the real optimizer loads from the build, in WebKit
     await p.click('.tab:has-text("Skills")');
     await p.waitForSelector('.skills__retention');
+    await snap(p, size, 'parent-skills-placement', '.skills > h2'); // the placement result and its rechecks (spec 2026-10-14)
     await snap(p, size, 'parent-skills', '.skills__retention');
     await p.click('button:has-text("Fit to his memory")');
     await p.waitForSelector('.skills__compare', { timeout: 20_000 });

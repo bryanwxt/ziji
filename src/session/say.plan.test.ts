@@ -16,6 +16,16 @@ const later = new Date(2026, 10, 1);
 /** Read passed `daysAgo` days ago (the newest pass first, spec 2026-10-11 §4). */
 const read = (t: string, daysAgo: number): CardRecord => ({ ...makeCard(id(t), 'recognise', later, true), passed: now.getTime() - daysAgo * 86_400_000 });
 
+describe('a word sent back to learn (review M2)', () => {
+  it('no Say or 说一句 for a word with no reading card, even with its cards due', () => {
+    const cards = [makeCard(id('很'), 'say', new Date(2026, 9, 1)), makeCard(id('很'), 'sentence', new Date(2026, 9, 1)), read('大', 1)];
+    const plan = buildSessionPlan({ cards, words, settings: settings({ grade: undefined }), now });
+    expect(plan.sayIds).not.toContain(id('很'));
+    expect(plan.sentenceIds).not.toContain(id('很'));
+    expect(plan.sayIds).toContain(id('大'));
+  });
+});
+
 describe('which words are said (spec 2026-10-11 §4)', () => {
   it('due Say cards first, then words whose Read has passed and that have no Say card, the newest pass first', () => {
     const cards = [read('大', 5), read('人', 1), read('口', 3), read('山', 9), { ...makeCard(id('山'), 'say', new Date(2026, 9, 1)) }, { ...makeCard(id('口'), 'say', later) }];

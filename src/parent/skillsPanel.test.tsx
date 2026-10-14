@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../content';
-import { addAnswer, allCards, getSettings, putCards, putWords, updateSettings } from '../store/repo';
+import { addAnswer, addReviewLog, allCards, getSettings, putCards, putWords, updateSettings } from '../store/repo';
 import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { SkillsPanel } from './SkillsPanel';
@@ -16,7 +16,7 @@ describe('SkillsPanel (spec §19 part 7)', () => {
     await updateSettings(app.db, { placementResult: { at: app.now().getTime(), reading: 8, understanding: 4, missed: [gen.id] } });
     renderWithApp(<SkillsPanel />, app);
     expect((await screen.findAllByText('Look-alike characters (字辨)')).length).toBe(2); // its row, and its missed words
-    expect(screen.getByText(/Reading: P\d term \d \(.{2}\) · Understanding: P\d term \d \(.{2}\)/)).toBeTruthy(); // school terms (MOE order, 2026-10-06)
+    expect(screen.getByText(/Earlier check \(bands\) — Reading: .{2} · Understanding: .{2}\./)).toBeTruthy(); // an older band result, read-only, by school term
     expect(screen.getByText('0% (1)')).toBeTruthy();
     const box = screen.getByLabelText('Class baseline for Look-alike characters (字辨) (% right)');
     fireEvent.input(box, { target: { value: '5' } }); // still typing: nothing saved yet
@@ -37,6 +37,24 @@ describe('SkillsPanel (spec §19 part 7)', () => {
     fireEvent.input(screen.getByLabelText('Class baseline for Reading (认一认) (% right)'), { target: { value: '70' } });
     unmount(); // he leaves straight away
     await waitFor(async () => expect((await getSettings(app.db)).baselines).toMatchObject({ zibian: 61, reading: 70 }));
+  });
+  it('a term placement: reads up to, tested and assumed, and the rechecks (spec 2026-10-14)', async () => {
+    const app = await makeAppData();
+    const at = app.now().getTime() - 86_400_000;
+    await updateSettings(app.db, { placementResult: { at, readsUpTo: '一下', tested: 12, assumed: 360, missed: [] } });
+    await putCards(app.db, [{ ...makeCard('b:人', 'recognise', app.now(), true), placed: true }, { ...makeCard('b:大', 'recognise', app.now(), true), placed: true }]);
+    await addReviewLog(app.db, { cardId: 'b:天:recognise', wordId: 'b:天', kind: 'recognise', at: at + 1000, rating: 1, correct: false, placedCheck: true });
+    renderWithApp(<SkillsPanel />, app);
+    expect(await screen.findByText(/Reads up to 一下 — 12 tested, 360 assumed\./)).toBeTruthy();
+    expect(screen.getByText('Placement rechecks: 1 of 3 done, 1 sent back to learn.')).toBeTruthy();
+  });
+  it('an older band placement shows its rechecks too, once marked (review I2)', async () => {
+    const app = await makeAppData();
+    const at = app.now().getTime() - 8 * 86_400_000;
+    await updateSettings(app.db, { placementResult: { at, reading: 2, understanding: 0, missed: [] } });
+    await putCards(app.db, [{ ...makeCard('b:人', 'recognise', app.now(), true), placed: true }]);
+    renderWithApp(<SkillsPanel />, app);
+    expect(await screen.findByText('Placement rechecks: 0 of 1 done, 0 sent back to learn.')).toBeTruthy();
   });
   it('before any placement or practice it says so', async () => {
     const app = await makeAppData();

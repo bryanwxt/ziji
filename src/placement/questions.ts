@@ -1,89 +1,64 @@
 import { firstSense, meaningChoices, pickPinyinDistractors } from '../activities/flashcards/distractors';
-import { fillChoices } from '../activities/components/zibian';
-import { HSK_WORDS, wordsWithChar } from '../content';
+import { schoolTerm } from '../content';
 import { cardMeaning } from '../content/glossary';
 import { ladderWords } from '../content/ladder';
 import { canAskRung } from '../ladder/rungs';
 import { shuffle, type Rng } from '../lib/random';
-import { fitItem, type UseItem } from '../practice/useItems';
 import type { Word } from '../types';
-import { READING_STYLES, type Style } from './walk';
+import { TERMS, type Style } from './walk';
 
-/** One placement question (spec §19 part 6). The right answer is never shown as right or wrong to the child (§14). */
+/**
+ * One placement question (spec 2026-10-14). charId: the term character it uses (a 词语 heard uses its newest character), so no
+ * character is asked twice. The right answer is never shown as right or wrong to the child (§14).
+ */
 export type PlacementQuestion =
-  | { style: 'read'; wordId: string; text: string; answer: string; options: string[] } // 读一读: the character → its pinyin
-  | { style: 'hear'; wordId: string; text: string; answer: string; options: string[] } // 听一听: Truffle says a word → pick its meaning (spec 2026-10-06 §3.5)
-  | { style: 'fill'; wordId: string; word: string; index: number; answer: string; options: string[] } // 补一补
-  | { style: 'fit'; wordId: string; item: Extract<UseItem, { kind: 'fit' }> }; // 选一选
+  | { style: 'read'; wordId: string; charId: string; text: string; answer: string; options: string[] } // 读一读: the character → its pinyin
+  | { style: 'hear'; wordId: string; charId: string; text: string; answer: string; options: string[] }; // 听一听: Truffle says a word → pick its meaning
 
-
-/** A two-character HSK word with the character, at most a level above it, easiest first; else one of its own 组词 that is an HSK word. */
-function partnerWord(w: Word): string | undefined {
-  const near = wordsWithChar(w.text)
-    .filter((t) => Array.from(t).length === 2 && (HSK_WORDS.get(t) ?? 9) <= (w.level ?? 7) + 1)
-    .sort((a, b) => (HSK_WORDS.get(a) ?? 9) - (HSK_WORDS.get(b) ?? 9))[0];
-  return near ?? w.examples?.map((e) => e.text).find((t) => Array.from(t).length === 2 && HSK_WORDS.has(t));
+/** Each term's characters: the built-in characters first read in it (taughtAt), in book order. */
+export function termWords(words: Word[]): Word[][] {
+  const chars = words.filter((w) => w.source === 'builtin' && Array.from(w.text).length === 1).sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+  return TERMS.map((t) => chars.filter((w) => schoolTerm(w.text) === t));
 }
 
-export function buildQuestion(style: Style, word: Word, pool: Word[], rng: Rng): PlacementQuestion | null {
-  switch (style) {
-    case 'read': {
-      const wrong = pickPinyinDistractors(word, pool, rng);
-      return wrong.length >= 3 ? { style, wordId: word.id, text: word.text, answer: word.pinyin, options: shuffle([word.pinyin, ...wrong.slice(0, 3)], rng) } : null;
-    }
-    case 'hear': {
-      const options = meaningChoices(word, pool, rng);
-      return options ? { style, wordId: word.id, text: word.text, answer: firstSense(cardMeaning(word)!), options } : null;
-    }
-    case 'fill': {
-      const w2 = partnerWord(word);
-      if (!w2) return null;
-      const chars = Array.from(w2);
-      const index = chars.indexOf(word.text);
-      const options = fillChoices(chars, index, rng);
-      return options ? { style, wordId: word.id, word: w2, index, answer: word.text, options } : null;
-    }
-    case 'fit': {
-      const item = fitItem(word, pool, rng);
-      return item && item.kind === 'fit' ? { style, wordId: word.id, item } : null;
-    }
+/** A term's 3 styles: with a voice 2 读一读 and 1 听一听 in a random order; without, 3 读一读. The one more on a 2 of 3 is a 读一读. */
+export const termStyles = (canHear: boolean, rng: Rng): Style[] => (canHear ? shuffle<Style>(['read', 'read', 'hear'], rng) : ['read', 'read', 'read']);
+
+export function buildQuestion(style: Style, word: Word, pool: Word[], rng: Rng, charId = word.id): PlacementQuestion | null {
+  if (style === 'read') {
+    const wrong = pickPinyinDistractors(word, pool, rng);
+    return wrong.length >= 3 ? { style, wordId: word.id, charId, text: word.text, answer: word.pinyin, options: shuffle([word.pinyin, ...wrong.slice(0, 3)], rng) } : null;
   }
+  const options = canAskRung(word, 'hear') ? meaningChoices(word, pool, rng) : null;
+  return options ? { style, wordId: word.id, charId, text: word.text, answer: firstSense(cardMeaning(word)!), options } : null;
 }
 
-/** A band's words to hear: its characters and the 词语 that arrive with them (a ladder word's rank is its last character's + k/1000). */
-export function hearBand(band: Word[]): Word[] {
-  const ranks = new Set(band.map((w) => w.rank));
-  return [...band, ...ladderWords().filter((w) => ranks.has(Math.floor(w.rank!)))].filter((w) => canAskRung(w, 'hear'));
+/** Words to hear for a term's characters: each character, and the ladder 词语 it completes (a 词语's rank is its newest character's + k/1000). */
+function hearable(chars: Word[]): { word: Word; charId: string }[] {
+  const byRank = new Map(chars.map((w) => [w.rank, w.id]));
+  const words = ladderWords().flatMap((w) => { const id = byRank.get(Math.floor(w.rank!)); return id ? [{ word: w, charId: id }] : []; });
+  return [...chars.map((w) => ({ word: w, charId: w.id })), ...words];
 }
 
-/** A visit's 4 styles (spec 2026-10-06 §3.5): with a voice one 听一听, one 选一选 and two of 读一读/补一补; without, one 选一选 and three
- *  reading questions. Never the same style twice in a row, counting the last visit's last style. */
-export function visitStyles(prev: Style | null, canHear: boolean, rng: Rng): Style[] {
-  const pickReading = () => READING_STYLES[Math.floor(rng() * READING_STYLES.length)]!;
-  for (let tries = 0; tries < 200; tries++) {
-    const v: Style[] = canHear ? ['hear', 'fit', pickReading(), pickReading()] : ['fit', pickReading(), pickReading(), pickReading()];
-    const order = shuffle(v, rng);
-    const all = prev ? [prev, ...order] : order;
-    if (all.every((s, i) => i === 0 || s !== all[i - 1])) return order;
+/**
+ * A question of `style` on an untested character of the term, picked at random. A term run short (never in practice: each term
+ * has 150+ characters and is asked at most 4) borrows the nearest term's untested characters. 读一读 is the fallback style.
+ */
+export function nextQuestion(terms: Word[][], term: number, style: Style, pool: Word[], rng: Rng, used: ReadonlySet<string>): PlacementQuestion {
+  const near = terms.map((_, i) => i).sort((a, b) => Math.abs(a - term) - Math.abs(b - term) || a - b);
+  for (const t of near) {
+    const fresh = terms[t]!.filter((w) => !used.has(w.id));
+    if (!fresh.length) continue;
+    const tries = style === 'hear' ? hearable(fresh) : fresh.map((w) => ({ word: w, charId: w.id }));
+    for (const { word, charId } of shuffle(tries, rng).slice(0, 25)) {
+      const q = buildQuestion(style, word, pool, rng, charId);
+      if (q) return q;
+    }
+    for (const w of shuffle(fresh, rng)) {
+      const q = buildQuestion('read', w, pool, rng);
+      if (q) return q;
+    }
   }
-  if (canHear) return prev === 'read' ? ['fill', 'hear', 'read', 'fit'] : ['read', 'hear', 'fill', 'fit'];
-  return prev === 'read' ? ['fill', 'read', 'fit', 'read'] : ['read', 'fill', 'fit', 'read'];
-}
-
-/** A question of `style` from the band (听一听: from its words too), in a random order, skipping words asked already; 读一读 is the fallback. */
-export function nextQuestion(band: Word[], style: Style, pool: Word[], rng: Rng, used: ReadonlySet<string>): PlacementQuestion {
-  const from = style === 'hear' ? hearBand(band) : band;
-  const fresh = shuffle(from.filter((w) => !used.has(w.id)), rng);
-  const words = fresh.length ? fresh : shuffle(from.length ? from : band, rng);
-  for (const w of words.slice(0, 25)) {
-    const q = buildQuestion(style, w, pool, rng);
-    if (q) return q;
-  }
-  const reading = shuffle(band, rng);
-  for (const w of reading) {
-    const q = buildQuestion('read', w, pool, rng);
-    if (q) return q;
-  }
-  const w = reading[0]!;
-  return { style: 'read', wordId: w.id, text: w.text, answer: w.pinyin, options: [w.pinyin] };
+  const w = terms[term]![0] ?? pool[0]!; // every character asked: cannot happen within 15 questions
+  return { style: 'read', wordId: w.id, charId: w.id, text: w.text, answer: w.pinyin, options: [w.pinyin] };
 }

@@ -155,6 +155,25 @@ describe('the new-word pause (deferred minor, plan 5)', () => {
   });
 });
 
+describe('placement rechecks (spec 2026-10-14)', () => {
+  const ws = words(80);
+  const placedCard = (id: string, due: Date) => ({ ...makeCard(id, 'recognise', due, true), placed: true as const });
+  it('at most 10 a lesson, the earliest due first; the rest wait; other reviews are not held back', () => {
+    const placed = ws.slice(0, 30).map((w, i) => placedCard(w.id, hoursAgo(30 - i))); // b:0 the earliest due
+    const practisedCards = ws.slice(30, 35).map((w) => makeCard(w.id, 'recognise', hoursAgo(1)));
+    const practised = new Map(ws.slice(30, 35).map((w) => [w.id, 1]));
+    const plan = buildSessionPlan({ cards: [...placed, ...practisedCards], words: ws, settings: settings(), now, practised });
+    const checks = plan.reviewWordIds.filter((id) => Number(id.slice(2)) < 30);
+    expect(checks).toEqual(ws.slice(0, 10).map((w) => w.id));
+    expect(plan.reviewWordIds.filter((id) => Number(id.slice(2)) >= 30)).toHaveLength(5);
+  });
+  it('never count toward the new-word pause, even for a word whose listening he has practised', () => {
+    const placed = ws.slice(0, 60).map((w) => placedCard(w.id, hoursAgo(1)));
+    const practised = new Map(ws.slice(0, 60).map((w) => [w.id, 1])); // a hear check answered: the word is practised
+    expect(buildSessionPlan({ cards: placed, words: ws, settings: settings(), now, practised }).newWordIds.length).toBeGreaterThan(0);
+  });
+});
+
 describe('the lesson (spec 2026-10-05 §2)', () => {
   it('认新字 → 练一练 → 写一写 → 朗读, with no separate 用一用', () => {
     expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: { ...DEFAULT_SETTINGS, langdu: true }, now: new Date(2026, 9, 6) }).steps).toEqual(['newwords', 'practice', 'writing', 'speaking']);

@@ -131,6 +131,21 @@ describe('backups across the plan 14 update', () => {
   });
 });
 
+describe('an older placement in a backup (review M3)', () => {
+  it('restoring a backup with a band placement marks its unrechecked cards placed', async () => {
+    const db = await freshDb();
+    const at = Date.now() - 8 * 86_400_000;
+    await putWords(db, [makeWord('人', { rank: 1 })]);
+    await putCards(db, [{ ...makeCard('b:人', 'recognise', new Date(at + 10 * 86_400_000), true), passed: at }]);
+    await updateSettings(db, { placementResult: { at, reading: 2, understanding: 0, missed: [] } });
+    const json = await exportBackup(db, { includeMedia: false, now: 0 });
+    const fresh = await freshDb();
+    await applyBackup(fresh, readBackup(json));
+    expect((await allCards(fresh)).find((c) => c.id === 'b:人:recognise')!.placed).toBe(true);
+    expect((await getSettings(fresh)).placementMarked).toBe(true);
+  });
+});
+
 describe('imported class data in backups (deferred minor, plan 12)', () => {
   it('sentences, pairings and tags come back from a backup', async () => {
     const db = await freshDb();

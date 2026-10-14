@@ -6,7 +6,7 @@ import { ladderWordsBesides } from '../content/ladder';
 import { newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
 import { LISTEN_MS, slowLines, USE_READING_MS, type SlowLines } from '../srs/slow';
 import type { AppDb } from '../store/db';
-import { addReviewLog, allCards, allSessions, allWords, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
+import { addReviewLog, allCards, allSessions, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
 import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, Word } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
@@ -45,7 +45,7 @@ export async function isProduced(db: AppDb, wordId: string): Promise<boolean> {
 }
 
 /** Rates a tap answer (spec §3.1: Hard until produced, Hard when slow for him), logs it with the card's state, and settles its rung. */
-async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, ratedMs: number, now: Date, extra: Pick<ReviewLog, 'source'> = {}): Promise<CardRecord> {
+async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, ratedMs: number, now: Date, extra: Pick<ReviewLog, 'source' | 'placedCheck'> = {}): Promise<CardRecord> {
   const state = (await getCard(db, `${wordId}:${kind}`))?.fsrs.state ?? State.New; // the card before this review
   const produced = o.correct && (await isProduced(db, wordId));
   const rating = toRating({ kind, correct: o.correct, responseMs: ratedMs, produced, state, slowMs: o.slow?.[kind] });
@@ -54,8 +54,27 @@ async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, 
   return (await settleRung(db, wordId, kind, now)) ?? card;
 }
 
-export const recordRecognition = (db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> =>
-  rateTap(db, wordId, 'recognise', outcome, outcome.responseMs, now);
+/**
+ * A reading answer. A placed card's first recheck (spec 2026-10-14) ends its placement: missed (Again), the character goes back
+ * to learn — every card of it but a write card he has answered is deleted (the logs stay), so it is unstarted and the catch-up lane
+ * teaches it again with a proper 认新字 introduction; the log is kept. Only placement cards, only their first recheck.
+ */
+export async function recordRecognition(db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> {
+  const placed = (await getCard(db, `${wordId}:recognise`))?.placed === true;
+  const card = await rateTap(db, wordId, 'recognise', outcome, outcome.responseMs, now, placed ? { placedCheck: true } : {});
+  if (!placed) return card;
+  const { placed: _done, ...rest } = card;
+  if (outcome.correct) {
+    await putCards(db, [rest]);
+    return rest;
+  }
+  // truly unstarted (review I1): every card of the word goes — a passed hear rung would reopen its Read card — but a write card he
+  // has answered (his handwriting stays his); 认新字 gives the hear card back when it teaches the word again
+  const written = (await db.getAll('reviewLogs')).some((l) => l.wordId === wordId && l.kind === 'write');
+  const gone = (await allCards(db)).filter((c) => c.wordId === wordId && !(c.kind === 'write' && written));
+  await deleteCards(db, gone.map((c) => c.id));
+  return rest;
+}
 
 /** ratedMs: the time that counts toward "slow" (reading time taken off); the log keeps responseMs. */
 export const recordMeaning = (db: AppDb, wordId: string, outcome: TapOutcome & { ratedMs?: number }, now: Date, source?: 'use'): Promise<CardRecord> =>

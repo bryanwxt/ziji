@@ -128,8 +128,9 @@ export const PRACTICE_RETRY_GAP = 4;
 
 /** 练一练's round, built when the step starts (it needs today's 认新字 answers and his rungs); an empty round ends the step. */
 export function startPractice(rec: SessionRecord, queue: PracticeItem[]): SessionRecord {
-  const next: SessionRecord = { ...rec, practiceQueue: queue, practiceIndex: 0, practiceElapsedMs: 0 };
-  return queue.length ? next : finishStep(next);
+  const gone = new Set(rec.sentBack ?? []); // sent back to learn earlier in the lesson: none of its practice (review M1)
+  const next: SessionRecord = { ...rec, practiceQueue: queue.filter((x) => !gone.has(x.wordId)), practiceIndex: 0, practiceElapsedMs: 0 };
+  return next.practiceQueue!.length ? next : finishStep(next); // empty after the filter too: never a blank 练一练 (re-review N1)
 }
 
 export function currentPracticeItem(rec: SessionRecord): PracticeItem | null {
@@ -169,6 +170,18 @@ export function skipSayItems(rec: SessionRecord): SessionRecord {
   const queue = rec.practiceQueue ?? [];
   const next: SessionRecord = { ...rec, practiceQueue: [...queue.slice(0, index), ...queue.slice(index).filter((x) => x.ask !== 'say' && x.ask !== 'sentence')] };
   return index >= next.practiceQueue!.length ? finishStep(next) : next;
+}
+
+/**
+ * A missed placement recheck sent the word back to learn (spec 2026-10-14): the lesson drops its practice still to come —
+ * retries, meaning, Say, 说一句 and the rest — and grades nothing more of it (review M1). Call after the answer has moved on.
+ */
+export function sendBack(rec: SessionRecord, wordId: string): SessionRecord {
+  const next: SessionRecord = { ...rec, sentBack: [...new Set([...(rec.sentBack ?? []), wordId])] };
+  if (!rec.practiceQueue) return next;
+  const index = rec.practiceIndex ?? 0;
+  next.practiceQueue = [...rec.practiceQueue.slice(0, index), ...rec.practiceQueue.slice(index).filter((x) => x.wordId !== wordId)];
+  return currentStep(rec) === 'practice' && index >= next.practiceQueue.length ? finishStep(next) : next;
 }
 
 export function skipPracticeItem(rec: SessionRecord): SessionRecord {
