@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import type { PairBoard } from '../../practice/pairs';
 import { DEFAULT_KID } from '../../types';
+import { speak } from '../../audio/speech';
 import { PairGame } from './PairGame';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
@@ -136,5 +137,23 @@ describe('decoy halves (production practice spec §5)', () => {
     expect(document.querySelector('.sheet--oops')).toBeTruthy();
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
+  });
+});
+
+describe('each half is said at its reading in its own word (content audit 2026-10-15)', () => {
+  const zuci: PairBoard = { left: ['长', '切', '月'], right: ['亮', '大', '菜'], pairs: [['长', '大'], ['切', '菜'], ['月', '亮']], target: ['长', '大'] };
+  it("长 in 长大 is zhǎng, not its card's cháng; 切 in 切菜 qiē; the summary shows each word's own pinyin", () => {
+    render(<PairGame board={zuci} kind="pair" kid={DEFAULT_KID} onDone={vi.fn()} />);
+    fireEvent.click(tile('长'));
+    expect(vi.mocked(speak)).toHaveBeenLastCalledWith('长', { reading: 'zhǎng' });
+    fireEvent.click(tile('长'));
+    fireEvent.click(tile('切'));
+    expect(vi.mocked(speak)).toHaveBeenLastCalledWith('切', { reading: 'qiē' });
+    fireEvent.click(tile('亮')); // a miss: the sheet explains every pair
+    join('切', '菜');
+    join('长', '大');
+    join('月', '亮');
+    const rows = [...document.querySelectorAll('.pair-summary .label')].map((l) => `${l.getAttribute('data-zh')} ${l.getAttribute('data-py')}`);
+    expect(rows).toEqual(expect.arrayContaining(['切菜 qiē cài', '长大 zhǎng dà']));
   });
 });

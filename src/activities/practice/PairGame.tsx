@@ -6,6 +6,7 @@ import { mulberry32 } from '../../lib/random';
 import type { PairBoard } from '../../practice/pairs';
 import type { KidState } from '../../types';
 import { glossFor } from '../../content/glossary';
+import { halfReading, readingOf } from '../../content/wordGate';
 import { Label } from '../../ui/Label';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
@@ -58,7 +59,10 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
   const pick = (l: number) => {
     if (picked === l) return setPicked(null); // let go
     setPicked(l);
-    speak(board.left[l]!); // he hears what he picked: reading, not just matching shapes (parent, 2026-10-05)
+    // he hears what he picked: reading, not just matching shapes (parent, 2026-10-05), and at its reading in its own word (长 in
+    // 长大 is zhǎng: content audit 2026-10-15); a decoy, in no word, at its card's
+    const pair = board.pairs.find(([a]) => a === board.left[l]);
+    speak(board.left[l]!, { reading: pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!) });
     if (isTarget(l) && !target.current.pickedAt) target.current.pickedAt = performance.now();
   };
   const tapRight = (r: number) => {
@@ -108,7 +112,7 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
                 const wrong = (missed[board.left.indexOf(l)] ?? 0) > 0;
                 return (
                   <p key={i} class={`pair-summary__row${wrong ? ' is-missed' : ''}`}>
-                    <span class="hanzi"><Label zh={word} fade /></span>
+                    <span class="hanzi"><Label zh={word} py={readingOf(word)} fade /></span>
                     {glossFor(word) && <span lang="en">{glossFor(word)}</span>}
                   </p>
                 );

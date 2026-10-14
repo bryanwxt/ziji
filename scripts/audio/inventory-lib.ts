@@ -35,6 +35,9 @@ const TWINS: Record<string, string> = Object.fromEntries(
   Object.entries((SAY_AS as { plain: Record<string, string> }).plain).filter(([, c]) => !SANDHI.has(c)),
 );
 
+/** Lone characters a voice may read another way and no twin can steer (scripts/gen-say-as.ts). */
+const UNSURE = new Set((SAY_AS as { unsure?: string[] }).unsure ?? []);
+
 /** Does the engine need help with this character? 一/不, 儿化 and 轻声 come right from the word itself. */
 const needsHelp = (ch: string, want: string, got: string | undefined) => !SANDHI.has(ch) && want !== 'r' && marked(want) && got !== want;
 
@@ -55,7 +58,9 @@ export function engineText(text: string, expected: string): { text: string; sure
   if (chars.length === 1 && hanAt.length === 1 && !SANDHI.has(text) && readingsOf(text).length > 1) {
     const twin = TWINS[want[0]!];
     if (twin) return { text: twin, sure: true };
-    return { text, sure: pinyin(text) === want[0] }; // no twin: fine when the taught reading is its common one (大 dà, 说 shuō)
+    // no twin: fine when the taught reading is its common one (大 dà, 说 shuō) — unless the dictionaries disagree on which that
+    // is (爪: zhuǎ to pinyin-pro, zhǎo to the voices; gen-say-as's `unsure`), so it goes on the spot-listen list
+    return { text, sure: pinyin(text) === want[0] && !UNSURE.has(text) };
   }
   for (let pass = 0; pass < 3; pass++) {
     const got = pinyin(chars.join(''), { type: 'all' }).filter((p) => p.isZh).map((p) => p.pinyin);

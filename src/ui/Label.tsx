@@ -1,5 +1,6 @@
 import { pinyin } from 'pinyin-pro';
 import '../content/pinyinFixes';
+import { storedPinyin } from '../content/storedPinyin';
 import { useContext, useMemo, useRef } from 'preact/hooks';
 import { speak } from '../audio/speech';
 import { PinyinFadeContext } from './pinyinFade';
@@ -39,7 +40,8 @@ export function Label({ zh, py: given, pinyinFor, mark, fade = false, peek = tru
   const { cells, py } = useMemo(() => {
     const out: Cell[] = [];
     const all = pinyin(zh, { type: 'all' });
-    const ctx = given?.trim().split(/\s+/);
+    // a sentence written for the app carries its pinyin read once in context (content audit 2026-10-15: 教我 jiāo, not jiào)
+    const ctx = (given ?? storedPinyin(zh))?.trim().split(/\s+/);
     const zhCount = all.filter((d) => d.isZh).length;
     const fits = ctx && ctx.length === zhCount;
     // syllables for the blanks too: the gap's sound is the clue in a 组词 with its character missing (parent, 2026-10-05)
