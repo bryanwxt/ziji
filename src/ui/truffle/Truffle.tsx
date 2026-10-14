@@ -1,15 +1,14 @@
 import type { JSX } from 'preact';
 import { useId, useRef } from 'preact/hooks';
 import { reducedMotion } from '../motion';
-import { P } from '../worlds/kit/palette';
 import { useRig } from './useRig';
 import type { PawPose } from './timelines';
 import { POWERS, type PowerId } from '../../fun/powers';
 import { accessoryLayer } from './accessories';
 import { costumeLayer } from './costumes';
-import { EAR_IN_L, EAR_IN_R, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, type TruffleMood } from './parts';
+import { CEL, EAR_IN_L, EAR_IN_R, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, type TruffleMood } from './parts';
 import { powerLayer } from './powers';
-import { cleanId, EDGE, paintIds, truffleDefs } from './paint';
+import { cleanId } from './paint';
 import { browTransform, EXTRAS, EYE_L, EYE_R, EYE_Y, FUR, lowerLid, MOOD_EXPRESSION, mouthPath, PRESETS, upperLid, type Expression, type Face } from './rig';
 import type { Reaction } from './timelines';
 
@@ -38,7 +37,7 @@ interface Props {
   onPart?: (part: 'head' | 'body' | 'tail', e: PointerEvent) => void;
 }
 
-const INK = EDGE.face; // soft, never black ink (spec 3b §2); pupils keep their own dark
+const INK = '#3f3756'; // soft, never black ink (spec 3b §2); pupils keep their own dark
 const PUPIL = '#2f2a36';
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -61,8 +60,8 @@ function Eye({ side, cx, f, id }: { side: 'l' | 'r'; cx: number; f: Face; id: st
       </g>
       <circle cx={cx} cy={EYE_Y} r={22} fill="none" stroke={INK} stroke-width={2.6} />
       <g clip-path={`url(#${id}-lid-${side})`}>
-        <path data-part={`lid-top-${side}`} d={up.fill} fill={`url(#${id}-tf-fur)`} />
-        <path data-part={`lid-bottom-${side}`} d={low.fill} fill={`url(#${id}-tf-fur)`} />
+        <path data-part={`lid-top-${side}`} d={up.fill} fill={CEL.fur} />
+        <path data-part={`lid-bottom-${side}`} d={low.fill} fill={CEL.fur} />
       </g>
       <g clip-path={`url(#${id}-in-${side})`}>
         <path data-part={`lid-edge-${side}`} d={up.edge} fill="none" stroke={INK} stroke-width={2.8} stroke-linecap="round" opacity={up.edgeOn ? 1 : 0} />
@@ -130,24 +129,23 @@ export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, siz
       {...a11y}
     >
       {/* his ground shadow stays on the ground and shrinks as he goes up (spec §4.1) */}
-      <defs dangerouslySetInnerHTML={{ __html: truffleDefs(id) }} />
-      <ellipse data-part="shadow" cx="160" cy="279" rx="64" ry="7" fill={P.shadow} opacity="0.16" />
+      <ellipse data-part="shadow" cx="160" cy="279" rx="66" ry="7.5" fill="#5d5585" opacity="0.32" />
       <g class="truffle__rig" data-part="rig">
         {layer && <g class="truffle__power-back" dangerouslySetInnerHTML={{ __html: layer.back }} />}
         {wear?.back && <g class="truffle__outfit-back" dangerouslySetInnerHTML={{ __html: wear.back }} />}
         {acc?.back && <g class="truffle__accessory truffle__accessory--back" dangerouslySetInnerHTML={{ __html: acc.back }} />}
-        <g class="truffle__tail" data-part="tail" style="transform-origin:214px 246px" {...part('tail')} dangerouslySetInnerHTML={{ __html: wear?.tail ?? paintIds(TAIL, id) }} />
-        <g class="truffle__body" data-part="body" style="transform-origin:160px 276px" {...part('body')} dangerouslySetInnerHTML={{ __html: paintIds(TORSO, id) }} />
+        <g class="truffle__tail" data-part="tail" style="transform-origin:214px 246px" {...part('tail')} dangerouslySetInnerHTML={{ __html: wear?.tail ?? TAIL }} />
+        <g class="truffle__body" data-part="body" style="transform-origin:160px 276px" {...part('body')} dangerouslySetInnerHTML={{ __html: TORSO }} />
         {wear && <g class="truffle__outfit-body" dangerouslySetInnerHTML={{ __html: wear.body }} />}
         {acc?.under && <g class="truffle__accessory truffle__accessory--under" dangerouslySetInnerHTML={{ __html: acc.under }} />}
         <g class="truffle__headpos" data-part="headpos" {...part('head')}>
           <g transform={`rotate(${tilt} 160 190)`} data-part="headrot">
             <g class="truffle__head">
-              {ears && <g data-part="ear-l" style={`transform-origin:100px 78px;transform:rotate(${-f.earL}deg)`} dangerouslySetInnerHTML={{ __html: paintIds(EAR_L, id) }} />}
-              {ears && <g data-part="ear-r" style={`transform-origin:220px 78px;transform:rotate(${f.earR}deg)`} dangerouslySetInnerHTML={{ __html: paintIds(EAR_R, id) }} />}
-              <g dangerouslySetInnerHTML={{ __html: paintIds(HEAD_SHAPE, id) }} />
-              {ears && <g data-part="ear-in-l" style={`transform-origin:100px 78px;transform:rotate(${-f.earL}deg)`} dangerouslySetInnerHTML={{ __html: paintIds(EAR_IN_L, id) }} />}
-              {ears && <g data-part="ear-in-r" style={`transform-origin:220px 78px;transform:rotate(${f.earR}deg)`} dangerouslySetInnerHTML={{ __html: paintIds(EAR_IN_R, id) }} />}
+              {ears && <g data-part="ear-l" style={`transform-origin:100px 78px;transform:rotate(${-f.earL}deg)`} dangerouslySetInnerHTML={{ __html: EAR_L }} />}
+              {ears && <g data-part="ear-r" style={`transform-origin:220px 78px;transform:rotate(${f.earR}deg)`} dangerouslySetInnerHTML={{ __html: EAR_R }} />}
+              <g dangerouslySetInnerHTML={{ __html: HEAD_SHAPE }} />
+              {ears && <g data-part="ear-in-l" style={`transform-origin:100px 78px;transform:rotate(${-f.earL}deg)`} dangerouslySetInnerHTML={{ __html: EAR_IN_L }} />}
+              {ears && <g data-part="ear-in-r" style={`transform-origin:220px 78px;transform:rotate(${f.earR}deg)`} dangerouslySetInnerHTML={{ __html: EAR_IN_R }} />}
             </g>
             <g class={`truffle__face truffle__face--${mood}`}>
               <FaceRig f={f} expr={drawnExpr} id={id} />
@@ -158,9 +156,9 @@ export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, siz
           </g>
         </g>
         {/* his front paws, in front of his head (spec 2026-10-04 §4.6): at rest at his feet; they wave, knead and cover his eyes */}
-        <g class="truffle__paw" data-part="paw-l" transform={paws ? `translate(${paws.lx} ${paws.ly}) rotate(${paws.lr} 138 266)` : undefined} {...part('body')} dangerouslySetInnerHTML={{ __html: paintIds(PAW_L, id) }} />
+        <g class="truffle__paw" data-part="paw-l" transform={paws ? `translate(${paws.lx} ${paws.ly}) rotate(${paws.lr} 138 266)` : undefined} {...part('body')} dangerouslySetInnerHTML={{ __html: PAW_L }} />
         <g class="truffle__paw" data-part="paw-r" transform={paws ? `translate(${paws.rx} ${paws.ry}) rotate(${paws.rr} 182 266)` : undefined} {...part('body')}>
-          <g dangerouslySetInnerHTML={{ __html: paintIds(PAW_R, id) }} />
+          <g dangerouslySetInnerHTML={{ __html: PAW_R }} />
           {/* a held item (brush, lantern, kite, balloon, wand) is in this paw: it moves with it, so a raised paw never leaves another behind */}
           {acc?.over && <g class="truffle__accessory truffle__accessory--over" dangerouslySetInnerHTML={{ __html: acc.over }} />}
         </g>

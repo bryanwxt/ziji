@@ -1,8 +1,6 @@
 import { render } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
-import { BODY, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, TRUFFLE_MOODS } from './parts';
-import { COSTUMES } from '../../fun/costumes';
-import { costumeLayer } from './costumes';
+import { BODY, CEL, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, TRUFFLE_MOODS } from './parts';
 import { Truffle } from './Truffle';
 
 const svg = (c: Element) => c.querySelector('svg.truffle')!;
@@ -62,7 +60,7 @@ describe('Truffle', () => {
     const { COSTUMES } = await import('../../fun/costumes');
     for (const c of COSTUMES) {
       const { container, unmount } = render(<Truffle outfit={c.id} />);
-      expect(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('fill'), c.id).toMatch(/^url\(#truffle-.*-tf-fur\)$/); // his painted fur (3b)
+      expect(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('fill'), c.id).toBe(CEL.fur); // his flat fur (spec 2026-10-13 §7)
       unmount();
     }
   });
@@ -263,18 +261,11 @@ describe('Truffle repainted (spec 3b §5)', () => {
   it('no hard black outline on his fur, chest or paws', () => {
     for (const art of [TORSO, BODY, PAW_L, PAW_R, TAIL, EAR_L, EAR_R, HEAD_SHAPE]) expect(art).not.toContain('#2a2630');
   });
-  it('two Truffles never share a gradient id, and each url(#…) resolves inside its own svg', () => {
-    const { container } = render(<div><Truffle /><div style="display:none"><Truffle outfit="tiger" /></div></div>);
-    const svgs = [...container.querySelectorAll('svg.truffle')];
-    const ids = svgs.map((x) => [...x.querySelectorAll('linearGradient, radialGradient')].map((g) => g.id));
-    expect(ids[0]!.length).toBeGreaterThan(0);
-    expect(ids[0]!.some((i) => ids[1]!.includes(i))).toBe(false);
-    for (const x of svgs) for (const m of x.outerHTML.matchAll(/url\(#([^)]+)\)/g)) expect(x.querySelector(`[id="${m[1]}"]`), m[1]).toBeTruthy();
-  });
-  it('with an ear-hiding hood and a costume tail, every url(#…) still resolves', () => {
-    const hood = COSTUMES.find((c) => costumeLayer(c.id)?.hidesEars && costumeLayer(c.id)?.tail)!;
-    const { container } = render(<Truffle outfit={hood.id} />);
-    const x = svg(container);
-    for (const m of x.outerHTML.matchAll(/url\(#([^)]+)\)/g)) expect(x.querySelector(`[id="${m[1]}"]`), m[1]).toBeTruthy();
+  it('his body is flat light cel: no gradient, and each part carries its own explicit shadow path', () => {
+    const { container } = render(<Truffle />);
+    expect(svg(container).outerHTML).not.toMatch(/Gradient|-tf-/); // (the eyes' clip-paths go in Task 10)
+    for (const part of [TORSO, TAIL, EAR_L, HEAD_SHAPE]) expect(part).toContain(`fill="${CEL.furSh}"`);
+    expect(PAW_L).toContain(`fill="${CEL.chestSh}"`);
+    for (const part of [TORSO, TAIL, EAR_L, EAR_R, HEAD_SHAPE]) expect(part).toContain('stroke="#706889"');
   });
 });
