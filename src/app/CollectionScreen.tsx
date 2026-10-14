@@ -7,7 +7,8 @@ import { collectionCards, type CharCard } from '../fun/collection';
 import { POWERS, powerDef, type PowerId } from '../fun/powers';
 import { completedBadges, stickerFamilies } from '../fun/stickers';
 import { Label } from '../ui/Label';
-import { Scene } from '../ui/Scene';
+import { WorldScene } from '../ui/worlds/WorldScene';
+import { currentWorld, timeOfDay } from '../fun/worlds';
 import { SpeakButton } from '../ui/SpeakButton';
 import { TabBar } from '../ui/TabBar';
 import { useApp } from './AppContext';
@@ -22,7 +23,7 @@ type Filter = 'all' | 'gold' | 'animals' | PowerId;
 
 /** 字卡: every built-in character as a collectible card. */
 export function CollectionScreen() {
-  const { db, kid } = useApp();
+  const { db, kid, now } = useApp();
   const families = useMemo(() => stickerFamilies(BUILTIN), []);
   const [know, setKnow] = useState<Knowledge | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
@@ -66,7 +67,7 @@ export function CollectionScreen() {
   const shownWord = shown ? know.wordsById.get(builtinWordId(shown.char)) : undefined;
   return (
     <div class="screen">
-      <Scene kind="home" />
+      <WorldScene world={currentWorld({ ...DEFAULT_KID, ...kid })} time={timeOfDay(now())} bare />
       <header class="topbar">
         <h1 style={{ margin: 0 }}><Label zh="字卡" /></h1>
         <span class="spacer" />

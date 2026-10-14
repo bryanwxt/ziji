@@ -8,13 +8,13 @@ import { saveKid } from '../store/repo';
 import { DEFAULT_KID, type KidState } from '../types';
 import { Label } from '../ui/Label';
 import { Pet } from '../ui/Pet';
-import { Scene } from '../ui/Scene';
+import { WorldScene } from '../ui/worlds/WorldScene';
 import { TabBar } from '../ui/TabBar';
 import { Truffle } from '../ui/truffle/Truffle';
 import { useApp } from './AppContext';
 import { loadKnowledge } from './knowledge';
 import { InkIcon } from '../ui/icons/InkIcon';
-import { currentWorld, WORLDS } from '../fun/worlds';
+import { currentWorld, timeOfDay, WORLDS } from '../fun/worlds';
 import { journeyCount } from '../placement/journey';
 import { paintingHref } from '../ui/worlds/scene';
 import { PEARL } from '../ui/worlds/creatures/lantern';
@@ -26,7 +26,7 @@ const SLOT_TITLE = { face: '脸上', neck: '脖子上', held: '手里', back: '�
 
 /** Truffle's room: what he wears and which power he shows. */
 export function Wardrobe() {
-  const { db, refresh, kid } = useApp();
+  const { db, refresh, kid, now } = useApp();
   const [k, setK] = useState<KidState>({ ...DEFAULT_KID, ...kid });
   const [tab, setTab] = useState<RoomTab>('outfits');
   const [progress, setProgress] = useState<PowerProgress[] | null>(null);
@@ -47,7 +47,7 @@ export function Wardrobe() {
 
   return (
     <div class="screen">
-      <Scene kind="home" />
+      <WorldScene world={currentWorld(k)} time={timeOfDay(now())} bare />
       <div class="center room">
         <Pet kid={k} mood="content" size={180} />
         <div class="room__tabs" role="tablist" aria-label="松露的房间">

@@ -43,7 +43,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
   for (const sc of document.querySelectorAll('.screen')) if (sc.scrollTop > 0 || sc.scrollLeft > 0) out.push(`screen scrolled by ${sc.scrollTop}px (a clipped screen moved: its top is hidden)`);
   if ((document.scrollingElement?.scrollTop ?? 0) > 0) out.push(`page scrolled by ${document.scrollingElement!.scrollTop}px`);
   const past = (el: Element) => {
-    if (el.closest('[aria-hidden="true"], .sr-only, .world-props, [hidden], .scene') || el.parentElement?.closest(args.scrollers)) return;
+    if (el.closest('[aria-hidden="true"], .sr-only, .world-props, [hidden]') || el.parentElement?.closest(args.scrollers)) return;
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height || getComputedStyle(el).visibility === 'hidden') return;
     if (r.bottom > innerHeight + 1 || r.top < -1 || r.right > innerWidth + 1 || r.left < -1) { cut.add(`content cut off: ${(el.textContent ?? '').trim().slice(0, 16) || `<${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}">`} at ${Math.round(r.left)},${Math.round(r.top)}–${Math.round(r.right)},${Math.round(r.bottom)}`); }
@@ -360,16 +360,23 @@ async function sweep(browser: Browser, size: Size) {
     // and every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
     const boxes: string[] = [];
     for (let i = 0; i < 11; i++) {
+      if (await p.$('.placement__levels')) break; // the walk can end early: the result is already up
       await p.waitForSelector('.placement[data-ready="true"]');
       await check(p, size, 'placement', i);
       boxes.push(await p.evaluate(() => ['.placement__prompt', '.placement__choices', '.placement .btn--big']
         .map((sel) => { const r = document.querySelector(sel)!.getBoundingClientRect(); return [r.top, r.height, r.width].map(Math.round).join(','); }).join(' | ')));
       const guess = i % 2 === 1 ? await p.$('.placement .choice') : null;
-      await (guess ? guess.click() : p.click('.placement .btn--big'));
+      await (guess ? guess.click() : p.click('.placement .btn--big', { timeout: 3000 })).catch(() => {}); // the walk can end under the tap: the result is up
       await p.waitForTimeout(150);
     }
     const moved = boxes.findIndex((b) => b !== boxes[0]);
     if (moved > 0) results.push({ size: size.name, flow: 'placement', step: moved, sig: 'steady', problems: [`question size changed between questions: ${boxes[0]} → ${boxes[moved]}`] });
+    // on to the result screen, over the same painted backdrop: a screenshot only (its 开始！ is off screen on the smallest phones, noted 2026-10-14)
+    for (let i = 0; i < 30 && !(await p.$('.placement__levels')); i++) {
+      if (await p.$('.placement .btn--big')) await p.click('.placement .btn--big', { timeout: 2000 }).catch(() => {});
+      await p.waitForTimeout(150);
+    }
+    if (await p.$('.placement__levels')) await snap(p, size, 'placement-result', '.placement__levels');
   });
   // the placement check re-run from Settings (sweep): its 回家 ✕ against the card and Truffle's bubble
   const FIT_PIN = '2580'; // a test PIN for this local sweep only

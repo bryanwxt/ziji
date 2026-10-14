@@ -2,20 +2,6 @@ import { render } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { Chest } from './Chest';
 import { ProgressBar } from './ProgressBar';
-import { Scene } from './Scene';
-
-describe('Scene (ink layer)', () => {
-  it('draws paper with two soft swashes and no old scenery', () => {
-    const { container } = render(<Scene kind="home" />);
-    expect(container.querySelectorAll('.scene__swash')).toHaveLength(2);
-    expect(container.querySelector('.scene__cloud, .scene__hills, .scene__waves, .scene__star')).toBeNull();
-    expect(container.querySelector('.scene')!.getAttribute('aria-hidden')).toBe('true');
-  });
-  it('uses the red celebration block for night', () => {
-    const { container } = render(<Scene kind="night" />);
-    expect(container.querySelector('.scene')?.className).toContain('scene--night');
-  });
-});
 
 describe('ProgressBar', () => {
   it('fills to the fraction and marks finished checkpoints', () => {

@@ -8,6 +8,11 @@ export const SCENE_VIEWBOX = '0 0 1000 1000';
 /** The painting (or its 240 px thumbnail) under the app's base path. */
 export const paintingHref = (world: WorldId, thumb = false) => `${import.meta.env.BASE_URL}worlds/${world}${thumb ? '-thumb' : ''}.webp`;
 
+/** Only the painting (and the evening over it): no props, creatures or lights. For screens that borrow his world as a backdrop. */
+export function paintingOf(world: WorldId, time: TimeOfDay): string {
+  return `<image data-part="painting" href="${paintingHref(world)}" width="1000" height="1000" preserveAspectRatio="none"/>` + (time === 'evening' ? eveningOver(world) : '');
+}
+
 /** A world at a time of day: morning and afternoon are the painting as it is; evening tints it and lights it. */
 export function sceneFor(world: WorldId, time: TimeOfDay): string {
   return `<image data-part="painting" href="${paintingHref(world)}" width="1000" height="1000" preserveAspectRatio="none"/>` + (time === 'evening' ? eveningOver(world) : '') + propsOf(world);

@@ -2,13 +2,14 @@ import { useState } from 'preact/hooks';
 import { saveKid } from '../store/repo';
 import { DEFAULT_KID } from '../types';
 import { Label } from '../ui/Label';
-import { Scene } from '../ui/Scene';
+import { WorldScene } from '../ui/worlds/WorldScene';
+import { timeOfDay } from '../fun/worlds';
 import { Truffle } from '../ui/truffle/Truffle';
 import { useApp } from './AppContext';
 
 /** First run: meet Truffle 松露 (the family's cat), then go to placement. */
 export function PetSetup() {
-  const { db, go, refresh } = useApp();
+  const { db, go, refresh, now } = useApp();
   const [awake, setAwake] = useState(false);
 
   const done = async () => {
@@ -19,7 +20,7 @@ export function PetSetup() {
 
   return (
     <div class="screen">
-      <Scene kind="home" />
+      <WorldScene world="home" time={timeOfDay(now())} bare />
       <div class="setup">
         <div class="setup__pet">
           <h1 class="brand" aria-label="字己"><span class="seal seal--big" aria-hidden="true"><span>字</span><span>己</span></span></h1>
