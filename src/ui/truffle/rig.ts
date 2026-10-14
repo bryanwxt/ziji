@@ -19,7 +19,18 @@ const LID_RX = EYE_RX + 1.2;
 const LID_RY = EYE_RY + 1.2;
 /** The eyes' own dark line (the lash, the outline, the brows), a little deeper than his body's line. */
 export const EYE_LINE = '#3f3756';
-export const FUR = '#a9a4ab'; // flat fur, for art that can't use his gradient (costumes' bare arms)
+/** How far the iris travels at full gaze (useRig: gx * GAZE_X across, gy * GAZE_Y down). */
+export const GAZE_X = 6;
+export const GAZE_Y = 5;
+/** The iris: sized so that at full gaze in any direction it stays inside the white with no clip-path (spec 2026-10-13 §7). */
+export const IRIS_RX = 13;
+export const IRIS_RY = 14.6;
+export const IRIS_Y = EYE_Y;
+/** The eye ring and lash fade out from lid 0.7 and are gone at 0.86, where the closed line takes over (no empty outlined eye). */
+export const ringOn = (lidTop: number) => Math.max(0, Math.min(1, (0.86 - lidTop) / 0.16));
+/** His blush's strength from the face's blush value: visible at rest, full when he glows (row C). */
+export const blushOpacity = (b: number) => Math.sqrt(Math.max(0, Math.min(1, b)));
+export const FUR = '#a9a4ab'; // his flat fur, for art drawn outside the body (costumes' bare arms)
 
 const base: Face = { lidTop: 0, lidBottom: 0, lidArc: 0, pupil: 1, browY: 0, browAngle: 0, browShow: 0, browAsym: 0, smile: 0.25, mouthOpen: 0, earL: 0, earR: 0, blush: 0.45, tilt: 0 };
 export const PRESETS: Record<Expression, Face> = {

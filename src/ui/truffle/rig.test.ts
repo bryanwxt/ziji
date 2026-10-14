@@ -1,7 +1,7 @@
 // src/ui/truffle/rig.test.ts
 import { describe, expect, it } from 'vitest';
 import { TRUFFLE_MOODS } from './parts';
-import { clampFace, EXTRAS, lowerLid, mouthPath, MOOD_EXPRESSION, PRESETS, springStep, upperLid, type Expression } from './rig';
+import { blushOpacity, clampFace, EXTRAS, EYE_RX, EYE_RY, EYE_Y, GAZE_X, GAZE_Y, IRIS_RX, IRIS_RY, IRIS_Y, lowerLid, mouthPath, MOOD_EXPRESSION, PRESETS, ringOn, springStep, upperLid, type Expression } from './rig';
 
 describe("Truffle's face model (spec 2026-10-04 §4.1)", () => {
   it('has the eleven expressions', () => {
@@ -67,5 +67,33 @@ describe('clip-free lids (spec 2026-10-13 §7)', () => {
   it('an open lid draws nothing, and never a point away from the eye (it would stretch his box)', () => {
     for (const d of [lowerLid(118, 0).fill, upperLid(202, 0, 0).fill]) for (const m of d.matchAll(/M(-?[\d.]+) (-?[\d.]+)/g)) expect(Math.abs(Number(m[1]) - (d.includes('202') ? 202 : 118))).toBeLessThan(30);
     expect(lowerLid(118, 0).fill).toBe('M118 118Z');
+  });
+});
+describe('clip-free iris (spec 2026-10-13 §7)', () => {
+  it('at full gaze in all eight directions and at the centre, the iris stays inside the eye white (with a margin)', () => {
+    for (const gx of [-1, 0, 1]) for (const gy of [-1, 0, 1]) {
+      let worst = 0;
+      for (let i = 0; i < 360; i++) {
+        const t = (i / 360) * 2 * Math.PI;
+        const x = gx * GAZE_X + IRIS_RX * Math.cos(t);
+        const y = IRIS_Y - EYE_Y + gy * GAZE_Y + IRIS_RY * Math.sin(t);
+        worst = Math.max(worst, (x / EYE_RX) ** 2 + (y / EYE_RY) ** 2);
+      }
+      expect(worst, `gaze ${gx} ${gy}`).toBeLessThanOrEqual(0.98);
+    }
+  });
+  it('the eye ring and lash fade out as the lid closes, gone before the lid is shut, so no frame shows an empty outlined eye', () => {
+    expect(ringOn(0)).toBe(1);
+    expect(ringOn(0.5)).toBe(1); // proud, grumpy keep their outline
+    expect(ringOn(0.7)).toBe(1);
+    expect(ringOn(0.78)).toBeGreaterThan(0);
+    expect(ringOn(0.78)).toBeLessThan(1);
+    expect(ringOn(0.86)).toBe(0); // where the closed line takes over
+    expect(ringOn(1)).toBe(0);
+  });
+  it('his blush shows even at rest, and fully when he glows (closer to row C)', () => {
+    expect(blushOpacity(PRESETS.neutral.blush)).toBeGreaterThanOrEqual(0.6);
+    expect(blushOpacity(1)).toBe(1);
+    expect(blushOpacity(0)).toBe(0);
   });
 });

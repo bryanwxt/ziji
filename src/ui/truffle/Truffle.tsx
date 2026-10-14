@@ -9,7 +9,7 @@ import { accessoryLayer } from './accessories';
 import { costumeLayer } from './costumes';
 import { CEL, EAR_IN_L, EAR_IN_R, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, type TruffleMood } from './parts';
 import { powerLayer } from './powers';
-import { browTransform, EXTRAS, EYE_L, EYE_LINE, EYE_R, EYE_RX, EYE_RY, EYE_Y, FUR, lowerLid, MOOD_EXPRESSION, MOUTH_W, mouthPath, mouthW, PRESETS, upperLid, type Expression, type Face } from './rig';
+import { blushOpacity, browTransform, EXTRAS, EYE_L, EYE_LINE, EYE_R, EYE_RX, EYE_RY, EYE_Y, FUR, IRIS_RX, IRIS_RY, IRIS_Y, ringOn, lowerLid, MOOD_EXPRESSION, MOUTH_W, mouthPath, mouthW, PRESETS, upperLid, type Expression, type Face } from './rig';
 import type { Reaction } from './timelines';
 
 export type { TruffleMood } from './parts';
@@ -50,24 +50,33 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 function Eye({ side, cx, f }: { side: 'l' | 'r'; cx: number; f: Face }) {
   const up = upperLid(cx, f.lidTop, f.lidArc);
   const low = lowerLid(cx, f.lidBottom);
-  const iy = EYE_Y + 2;
-  const band = 14.3; // the iris's half-width 7 above its centre
+  const iy = IRIS_Y;
+  // the iris's parts, laid out on its own size (it was drawn 15.5 × 18.5; sx, sy scale those offsets to IRIS_RX × IRIS_RY)
+  const sx = IRIS_RX / 15.5;
+  const sy = IRIS_RY / 18.5;
+  const r = (n: number) => +n.toFixed(2);
+  const bandY = r(iy - 7 * sy);
+  const band = r(IRIS_RX * Math.sqrt(1 - (7 / 18.5) ** 2)); // the iris's half-width at the top of the band
+  const pupilY = r(iy + sy);
+  const k = 0.8; // the pupil and catch-lights shrink with the iris
   return (
     <g data-part={`eye-${side}`}>
       <ellipse cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="#fffdf7" />
       <g data-part={`iris-${side}`}>
-        <ellipse cx={cx} cy={iy} rx={15.5} ry={18.5} fill={IRIS} />
-        <path d={`M${cx - band} ${iy - 7} A15.5 18.5 0 0 1 ${cx + band} ${iy - 7} Q${cx} ${iy - 13} ${cx - band} ${iy - 7}Z`} fill="#4f7d3c" />
-        <path d={`M${cx - 12} ${iy + 11} Q${cx} ${iy + 22} ${cx + 12} ${iy + 11} Q${cx} ${iy + 16} ${cx - 12} ${iy + 11}Z`} fill="#d3ec97" />
-        <ellipse cx={cx} cy={iy} rx={15.5} ry={18.5} fill="none" stroke="#3d5f2f" stroke-width={1.4} />
-        <ellipse data-part={`pupil-${side}`} cx={cx} cy={121} rx={7 * f.pupil} ry={11 * f.pupil} fill={PUPIL} />
-        <ellipse cx={cx + 6} cy={110} rx={5.6} ry={6.4} fill="#fff" />
-        <circle cx={cx - 6} cy={130} r={2.6} fill="#fff" />
+        <ellipse cx={cx} cy={iy} rx={IRIS_RX} ry={IRIS_RY} fill={IRIS} />
+        <path d={`M${r(cx - band)} ${bandY} A${IRIS_RX} ${IRIS_RY} 0 0 1 ${r(cx + band)} ${bandY} Q${cx} ${r(iy - 13 * sy)} ${r(cx - band)} ${bandY}Z`} fill="#4f7d3c" />
+        <path d={`M${r(cx - 12 * sx)} ${r(iy + 11 * sy)} Q${cx} ${r(iy + 22 * sy)} ${r(cx + 12 * sx)} ${r(iy + 11 * sy)} Q${cx} ${r(iy + 16 * sy)} ${r(cx - 12 * sx)} ${r(iy + 11 * sy)}Z`} fill="#d3ec97" />
+        <ellipse cx={cx} cy={iy} rx={IRIS_RX} ry={IRIS_RY} fill="none" stroke="#3d5f2f" stroke-width={1.4} />
+        <g transform={`translate(${cx} ${pupilY}) scale(${k}) translate(${-cx} ${-pupilY})`}>
+          <ellipse data-part={`pupil-${side}`} cx={cx} cy={pupilY} rx={7 * f.pupil} ry={11 * f.pupil} fill={PUPIL} />
+        </g>
+        <ellipse cx={r(cx + 6 * sx)} cy={r(iy - 10 * sy)} rx={r(5.6 * k * 1.1)} ry={r(6.4 * k * 1.1)} fill="#fff" />
+        <circle cx={r(cx - 6 * sx)} cy={r(iy + 10 * sy)} r={r(2.6 * k * 1.1)} fill="#fff" />
       </g>
       <path data-part={`lid-top-${side}`} d={up.fill} fill={CEL.fur} />
       <path data-part={`lid-bottom-${side}`} d={low.fill} fill={CEL.fur} />
-      <ellipse data-part={`eye-ring-${side}`} cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="none" stroke={INK} stroke-width={LWI} opacity={String(1 - up.closedOn)} />
-      <path data-part={`lash-${side}`} d={`M${cx - 22} ${EYE_Y - 2} C${cx - 20} ${EYE_Y - 22} ${cx + 20} ${EYE_Y - 22} ${cx + 22} ${EYE_Y - 2}`} fill="none" stroke={INK} stroke-width={LW * 1.25} stroke-linecap="round" opacity={String(1 - up.closedOn)} />
+      <ellipse data-part={`eye-ring-${side}`} cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="none" stroke={INK} stroke-width={LWI} opacity={String(ringOn(f.lidTop))} />
+      <path data-part={`lash-${side}`} d={`M${cx - 22} ${EYE_Y - 2} C${cx - 20} ${EYE_Y - 22} ${cx + 20} ${EYE_Y - 22} ${cx + 22} ${EYE_Y - 2}`} fill="none" stroke={INK} stroke-width={LW * 1.25} stroke-linecap="round" opacity={String(ringOn(f.lidTop))} />
       <path data-part={`lid-edge-${side}`} d={up.edge} fill="none" stroke={INK} stroke-width={2.8} stroke-linecap="round" opacity={up.edgeOn ? 1 : 0} />
       <path data-part={`lid-bedge-${side}`} d={low.edge} fill="none" stroke={INK} stroke-width={2.2} stroke-linecap="round" opacity={low.edgeOn ? 1 : 0} />
       <path data-part={`lid-closed-${side}`} d={up.closed} fill="none" stroke={INK} stroke-width={3.6} stroke-linecap="round" opacity={String(up.closedOn)} />
@@ -81,8 +90,8 @@ function FaceRig({ f, expr }: { f: Face; expr: Expression }) {
   const w = mouthW(f.smile, f.mouthOpen);
   return (
     <>
-      <g data-part="blush-l" opacity={f.blush * 0.6} dangerouslySetInnerHTML={{ __html: blush(96, 151, 16, 8, LWI * 0.8) }} />
-      <g data-part="blush-r" opacity={f.blush * 0.6} dangerouslySetInnerHTML={{ __html: blush(224, 151, 16, 8, LWI * 0.8) }} />
+      <g data-part="blush-l" opacity={blushOpacity(f.blush)} dangerouslySetInnerHTML={{ __html: blush(96, 151, 16, 8, LWI * 0.8) }} />
+      <g data-part="blush-r" opacity={blushOpacity(f.blush)} dangerouslySetInnerHTML={{ __html: blush(224, 151, 16, 8, LWI * 0.8) }} />
       <Eye side="l" cx={EYE_L} f={f} />
       <Eye side="r" cx={EYE_R} f={f} />
       <path data-part="brow-l" d="M100 90 Q116 83 132 89" fill="none" stroke={INK} stroke-width={4} stroke-linecap="round" transform={browTransform('L', f)} opacity={f.browShow} />

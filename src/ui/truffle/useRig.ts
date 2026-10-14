@@ -1,6 +1,6 @@
 import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
-import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, mouthW, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
+import { blushOpacity, browTransform, EXTRAS, EYE_L, EYE_R, GAZE_X, GAZE_Y, lowerLid, mouthPath, mouthW, PRESETS, ringOn, springStep, upperLid, type Expression, type Face } from './rig';
 import { cardCentre, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
 import { onSpeaking, settleIfSilent } from '../../audio/speaking';
 import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS, type Motion, type PawPose, type Reaction, type Track } from './timelines';
@@ -46,7 +46,7 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
   for (const [side, cx] of [['l', EYE_L], ['r', EYE_R]] as const) {
     const up = upperLid(cx, lidTop, f.lidArc);
     const low = lowerLid(cx, f.lidBottom);
-    set(`iris-${side}`, 'transform', `translate(${(pose.gx * 6).toFixed(2)} ${(pose.gy * 5).toFixed(2)})`);
+    set(`iris-${side}`, 'transform', `translate(${(pose.gx * GAZE_X).toFixed(2)} ${(pose.gy * GAZE_Y).toFixed(2)})`);
     set(`pupil-${side}`, 'rx', (7 * f.pupil).toFixed(2));
     set(`pupil-${side}`, 'ry', (11 * f.pupil).toFixed(2));
     set(`lid-top-${side}`, 'd', up.fill);
@@ -54,12 +54,12 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
     set(`lid-edge-${side}`, 'opacity', up.edgeOn ? 1 : 0);
     set(`lid-closed-${side}`, 'd', up.closed);
     set(`lid-closed-${side}`, 'opacity', up.closedOn.toFixed(3));
-    set(`lash-${side}`, 'opacity', (1 - up.closedOn).toFixed(3));
-    set(`eye-ring-${side}`, 'opacity', (1 - up.closedOn).toFixed(3)); // a shut eye is only its closed line
+    set(`lash-${side}`, 'opacity', ringOn(lidTop).toFixed(3));
+    set(`eye-ring-${side}`, 'opacity', ringOn(lidTop).toFixed(3)); // gone before the eye shuts: a shut eye is only its closed line
     set(`lid-bottom-${side}`, 'd', low.fill);
     set(`lid-bedge-${side}`, 'd', low.edge);
     set(`lid-bedge-${side}`, 'opacity', low.edgeOn ? 1 : 0);
-    set(`blush-${side}`, 'opacity', (f.blush * 0.6).toFixed(3));
+    set(`blush-${side}`, 'opacity', blushOpacity(f.blush).toFixed(3));
   }
   set('brow-l', 'transform', browTransform('L', f));
   set('brow-r', 'transform', browTransform('R', f));
