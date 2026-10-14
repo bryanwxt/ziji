@@ -53,6 +53,13 @@ export function ladderWord(id: string): Word | undefined {
   return cache!.byId.get(id);
 }
 
+/**
+ * Is this the id of a word the content no longer has? A ladder 词语 that left it (content audit 2026-10-15: 去世 blocked,
+ * 成千上万 gone). His cards, logs and takes for it stay in the database, never shown or asked (built-in characters never leave;
+ * a parent's word takes its progress with it when deleted).
+ */
+export const goneWord = (id: string): boolean => isLadderId(id) && !ladderWord(id);
+
 /** The ladder's 词语 he doesn't already have as one of his words (a list word 朋友 is learned once, as his: final review I7). */
 export function ladderWordsBesides(words: readonly Word[]): Word[] {
   const have = new Set(words.map((w) => w.text));

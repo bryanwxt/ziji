@@ -1,3 +1,4 @@
+import { goneWord } from '../content/ladder';
 import type { AnswerLog, CardKind, ReviewLog, Skill } from '../types';
 
 export const SKILLS: Skill[] = ['listening', 'reading', 'meaning', 'use', 'zibian', 'writing'];
@@ -28,8 +29,9 @@ export function skillAccuracy(logs: ReviewLog[], answers: AnswerLog[]): Record<S
 }
 
 /** The words missed most often in one skill, worst first. */
-export function topMissed(logs: ReviewLog[], answers: AnswerLog[], skill: Skill, limit = 5): { wordId: string; misses: number }[] {
+export function topMissed(logs: ReviewLog[], answers: AnswerLog[], skill: Skill, limit = 5, keep: (wordId: string) => boolean = (id) => !goneWord(id)): { wordId: string; misses: number }[] {
   const misses = new Map<string, number>();
-  for (const o of outcomes(logs, answers)) if (o.skill === skill && !o.correct) misses.set(o.wordId, (misses.get(o.wordId) ?? 0) + 1);
+  // never a word the content dropped (content audit 2026-10-15): it would take a place and show as its id
+  for (const o of outcomes(logs, answers)) if (o.skill === skill && !o.correct && keep(o.wordId)) misses.set(o.wordId, (misses.get(o.wordId) ?? 0) + 1);
   return [...misses].map(([wordId, n]) => ({ wordId, misses: n })).sort((a, b) => b.misses - a.misses).slice(0, limit);
 }
