@@ -2,15 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { clipKey } from '../../src/audio/clipKey';
 import { builtinWords, schoolTerm } from '../../src/content';
 import { buildInventory, clipIdFor, FIXED_LINES } from './inventory';
+import SAY_AS from '../../src/audio/sayAs.json';
 
 const jobs = buildInventory('test:voice@1/1');
 const keys = new Set(jobs.map((j) => j.key));
 
 describe('the clip inventory', () => {
-  it('every in-range character, by its taught reading, and its 组词', () => {
+  it('every in-range character, by its taught reading (or the 组词 it is said as), and its 组词', () => {
     const inRange = builtinWords(0).filter((w) => (w.level ?? 99) <= 3 || schoolTerm(w.text));
+    const saidAs = (SAY_AS as { words: Record<string, string[]> }).words;
     for (const w of inRange) {
-      expect(keys.has(clipKey(w.text, w.pinyin)), w.text).toBe(true);
+      if (saidAs[w.text]) {
+        for (const x of saidAs[w.text]!) expect(keys.has(x), x).toBe(true); // 爪 is said as 爪子: no clip of its own
+        expect(keys.has(clipKey(w.text, w.pinyin)), w.text).toBe(false);
+      } else expect(keys.has(clipKey(w.text, w.pinyin)), w.text).toBe(true);
       for (const e of w.examples ?? []) expect(keys.has(e.text), e.text).toBe(true);
     }
   });

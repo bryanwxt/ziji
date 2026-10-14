@@ -10,7 +10,8 @@ import { BLOCKED } from './blocked';
 import { HSK_WORDS } from './index';
 import { OTHER_READINGS } from './readingAllowlist';
 import { STORED_PINYIN } from './storedPinyin';
-import { sentenceReading } from './wordGate';
+import { readingOf, sentenceReading } from './wordGate';
+import { loneSpoken } from '../audio/speech';
 import { tiles } from './zuju';
 
 const rows = shownWords();
@@ -71,6 +72,21 @@ describe('every lone school 多音字 is said as its card teaches (scripts/gen-s
       const taught = cardReading.get(c.char)!;
       if (poly[c.char] !== taught) bad.push(`${c.char} ${taught}: not steered (${poly[c.char] ?? 'missing'})`);
       else if (!sayAs[c.char] && pinyin(c.char) !== taught && !unsure.includes(c.char)) bad.push(`${c.char} ${taught}: no twin, and a voice reads it ${pinyin(c.char)}`);
+    }
+    expect(bad).toEqual([]);
+  });
+});
+
+describe('a lone character no voice can be steered on is said as a word (爪 → 爪子)', () => {
+  it('each unsure character is said as a word with it, read there the way its card teaches', () => {
+    const { unsure } = SAY_AS as { unsure: string[] };
+    expect(unsure.length).toBeGreaterThan(0);
+    const bad: string[] = [];
+    for (const ch of unsure) {
+      const said = loneSpoken(ch, cardReading.get(ch));
+      const at = Array.from(said).indexOf(ch);
+      const syl = readingOf(said).split(' ')[at];
+      if (Array.from(said).length < 2 || at < 0 || !syl || !sameReading(ch, syl, cardReading.get(ch)!)) bad.push(`${ch} ${cardReading.get(ch)}: said as ${said} (${syl})`);
     }
     expect(bad).toEqual([]);
   });

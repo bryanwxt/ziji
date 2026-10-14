@@ -89,6 +89,20 @@ export function spokenAs(text: string, reading?: string): string {
   return sayAs[text] ?? text;
 }
 
+/**
+ * What is said for a line: a lone character no voice can be steered on (sayAs.json's `unsure`: 爪 is zhuǎ on his card, zhǎo
+ * to the voices) is said as its card's first 组词 instead (爪子), when it is wanted at its card's reading; so is each lone piece
+ * of a line built from pieces (写一写's "爪，爪子的，爪"). `avoid`: words it must not be said as, because they are the answer on
+ * screen (连一连's 切 joins 菜: it is said as 切开, not 切菜); with none left, the character is said alone. Else as it is.
+ */
+export function loneSpoken(text: string, reading?: string, avoid: readonly string[] = []): string {
+  const { poly, words } = SAY_AS as { poly: Record<string, string>; words?: Record<string, string[]> };
+  if (text.includes('，')) return text.split('，').map((part) => (Array.from(part.trim()).length === 1 ? loneSpoken(part, reading, avoid) : part)).join('，');
+  const t = text.trim();
+  if (reading && reading !== poly[t]) return text;
+  return words?.[t]?.find((w) => !avoid.includes(w)) ?? text;
+}
+
 let player: ClipPlayer = createClipPlayer({
   context: audioContext,
   load: (id) => fetch(clipUrl(id)).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`clip ${id}: ${r.status}`)))),
@@ -110,8 +124,9 @@ const ttsBusy = () => available() && (live.size > 0 || waiting !== null);
  * character is taught with, when the screen knows it. While he is being recorded it says nothing (final review C1): a peek or
  * a line on screen must never end up in his take.
  */
-export function speak(text: string, { queue = false, reading }: { queue?: boolean; reading?: string } = {}): void {
+export function speak(line: string, { queue = false, reading, avoid }: { queue?: boolean; reading?: string; avoid?: readonly string[] } = {}): void {
   if (recordingNow()) return;
+  const text = loneSpoken(line, reading, avoid);
   if (queue && (clipBusy || after.length > 0 || (ttsBusy() && clipPlan(text, reading)))) {
     after.push({ text, reading });
     return;
@@ -154,7 +169,7 @@ function drain(): void {
 /** Fetch a lesson's clips ahead, so they play at once and offline (the service worker keeps them). */
 export function prefetchWords(words: { text: string; pinyin?: string; examples?: { text: string }[] }[]): void {
   const ids = new Set<string>();
-  const add = (text: string, reading?: string) => { for (const s of clipPlan(text, reading) ?? []) if ('id' in s) ids.add(s.id); };
+  const add = (text: string, reading?: string) => { for (const s of clipPlan(loneSpoken(text, reading), reading) ?? []) if ('id' in s) ids.add(s.id); };
   for (const w of words) {
     add(w.text, w.pinyin);
     for (const e of w.examples ?? []) add(e.text);

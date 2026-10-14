@@ -62,7 +62,8 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
     // he hears what he picked: reading, not just matching shapes (parent, 2026-10-05), and at its reading in its own word (长 in
     // 长大 is zhǎng: content audit 2026-10-15); a decoy, in no word, at its card's
     const pair = board.pairs.find(([a]) => a === board.left[l]);
-    speak(board.left[l]!, { reading: pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!) });
+    // a character said as a word (爪 → 爪子) is never said as a word on the board: that would say the answer
+    speak(board.left[l]!, { reading: pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!), avoid: board.pairs.map(([a, b]) => a + b) });
     if (isTarget(l) && !target.current.pickedAt) target.current.pickedAt = performance.now();
   };
   const tapRight = (r: number) => {

@@ -12,6 +12,10 @@ import { ladderWords } from '../../src/content/ladder';
 import { halfReading, readingOf } from '../../src/content/wordGate';
 import { NEAR_MAX_HSK, nearWords } from '../../src/practice/pairs';
 import { clipId, engineText, type ClipJob, type ClipKind } from './inventory-lib';
+import SAY_AS from '../../src/audio/sayAs.json';
+
+/** Lone characters said as a 组词 instead (scripts/gen-say-as.ts `words`): they need no clip of their own at their card's reading. */
+const SAID_AS_WORD: Record<string, string[]> = (SAY_AS as { words?: Record<string, string[]> }).words ?? {};
 import { parseChapter } from '../../src/story/format';
 
 /** Lines said as they are (Settings' voice tests, 朗读's warm-up). */
@@ -54,7 +58,7 @@ export function buildInventory(voice: string): ClipJob[] {
   const ours = (t: string) => Array.from(t).every((c) => !isHan(c) || rangeChars.has(c));
 
   for (const w of inRange) {
-    add(w.text, w.pinyin, 'char', w.pinyin);
+    if (!SAID_AS_WORD[w.text]) add(w.text, w.pinyin, 'char', w.pinyin); // 爪 is said as 爪子 (speech.ts loneSpoken): its 组词's clip
     for (const e of w.examples ?? []) {
       add(e.text, e.pinyin, 'word');
       add(`${e.text}的`, `${e.pinyin} de`, 'word', undefined, { piece: true }); // 听写's "长，长城的，长"

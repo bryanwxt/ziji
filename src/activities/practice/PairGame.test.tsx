@@ -145,10 +145,10 @@ describe('each half is said at its reading in its own word (content audit 2026-1
   it("长 in 长大 is zhǎng, not its card's cháng; 切 in 切菜 qiē; the summary shows each word's own pinyin", () => {
     render(<PairGame board={zuci} kind="pair" kid={DEFAULT_KID} onDone={vi.fn()} />);
     fireEvent.click(tile('长'));
-    expect(vi.mocked(speak)).toHaveBeenLastCalledWith('长', { reading: 'zhǎng' });
+    expect(vi.mocked(speak)).toHaveBeenLastCalledWith('长', expect.objectContaining({ reading: 'zhǎng' }));
     fireEvent.click(tile('长'));
     fireEvent.click(tile('切'));
-    expect(vi.mocked(speak)).toHaveBeenLastCalledWith('切', { reading: 'qiē' });
+    expect(vi.mocked(speak)).toHaveBeenLastCalledWith('切', { reading: 'qiē', avoid: ['长大', '切菜', '月亮'] }); // never said as 切菜, its answer
     fireEvent.click(tile('亮')); // a miss: the sheet explains every pair
     join('切', '菜');
     join('长', '大');

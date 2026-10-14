@@ -105,3 +105,33 @@ describe('speak, clips and the iPad voice mixed (final review)', () => {
     off();
   });
 });
+
+describe('a lone character no voice can be steered on is said as its first 组词 (爪 → 爪子)', () => {
+  it('on the iPad voice: at its card reading, or with no reading given', () => {
+    speak('爪', { reading: 'zhuǎ' });
+    speak('爪', { queue: true });
+    expect(spoken).toEqual(['爪子', '爪子']);
+  });
+  it("on the clip path: the word's clip, so the character needs no clip of its own", () => {
+    setClipIndex({ v: 1, voice: 't', clips: { 爪子: 'z' } });
+    speak('爪', { reading: 'zhuǎ' });
+    expect(calls[0]!.steps).toEqual([{ id: 'z' }]);
+  });
+  it('in a dictation cue each lone piece is the word, and prefetch fetches the word', () => {
+    speak('爪，爪子的，爪', { reading: 'zhuǎ' });
+    expect(spoken).toEqual(['爪子，爪子的，爪子']);
+    setClipIndex({ v: 1, voice: 't', clips: { 爪子: 'z' } });
+    prefetchWords([{ text: '爪', pinyin: 'zhuǎ' }]);
+    expect(player.prefetch).toHaveBeenCalledWith(['z']);
+  });
+  it('never as a word that is the answer on screen: the next 组词, else the character alone', () => {
+    speak('切', { reading: 'qiē', avoid: ['切菜'] });
+    speak('爪', { reading: 'zhuǎ', avoid: ['爪子'], queue: true });
+    expect(spoken).toEqual(['切开', '爪']);
+  });
+  it('a character a voice can be steered on is said as before (调 → its twin)', () => {
+    speak('调', { reading: 'tiáo' });
+    expect(calls[0]!.steps).toEqual([{ id: 't' }]);
+  });
+});
+

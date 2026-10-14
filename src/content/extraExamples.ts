@@ -135,6 +135,9 @@ const WRITTEN: Record<string, ExtraExample[]> = {
   织: [['织毛衣', 'zhī máo yī', 'to knit a sweater'], ['织布', 'zhī bù', 'to weave cloth']], 挣: [['挣开', 'zhèng kāi', 'to break free']],
   漏: [['漏水', 'lòu shuǐ', 'to leak (water)']], 压: [['压扁', 'yā biǎn', 'to squash flat']],
   势: [['手势', 'shǒu shì', 'hand gesture']],
+  // characters no voice reads right on their own (gen-say-as's unsure list) are said as their first 组词: these had none
+  闷: [['闷热', 'mēn rè', 'hot and stuffy']], 哄: [['哄孩子', 'hǒng hái zi', 'to soothe a child']], 撇: [['一撇', 'yì piě', 'a left-falling stroke (丿)']],
+  勒: [['悬崖勒马', 'xuán yá lè mǎ', 'to stop before it is too late']],
   // his textbook's characters that HSK doesn't have (欢乐伙伴2.0 二上 L10, 三下 L12–13; spec 2026-10-11 §7)
   蚂: [['蚂蚁', 'mǎ yǐ', 'ant']],
   蚁: [['蚂蚁', 'mǎ yǐ', 'ant'], ['小蚂蚁', 'xiǎo mǎ yǐ', 'little ant']],

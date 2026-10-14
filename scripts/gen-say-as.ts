@@ -53,6 +53,15 @@ for (const [ch, r] of Object.entries(poly)) if (plain[r]) sayAs[ch] = plain[r];
 /** Steered characters with no twin whose taught reading isn't the one every dictionary gives it alone (爪 zhuǎ, 切 qiē): a voice
  *  may say them the other way, and no stand-in can stop it (the clip pipeline's spot-listen list). */
 const unsure = Object.entries(poly).filter(([ch, r]) => !sayAs[ch] && (disputed(ch) || pinyin(ch) !== r)).map(([ch]) => ch);
-writeFileSync(new URL('../src/audio/sayAs.json', import.meta.url), JSON.stringify({ sayAs, poly, plain, unsure }) + '\n');
+/** An unsure character said on its own is said as its card's first 组词 instead (爪 → 爪子): every card's 组词 say it as taught. */
+const byText = new Map(singles.map((w) => [w.text, w]));
+const words: Record<string, string[]> = {}; // first the 组词 it is said as, then others for when that one would give an answer away
+for (const ch of unsure) {
+  const found = (byText.get(ch)?.examples ?? []).filter((x) => Array.from(x.text).length > 1 && x.text.includes(ch)).map((x) => x.text);
+  if (found.length) words[ch] = found;
+}
+const wordless = unsure.filter((ch) => !words[ch]);
+if (wordless.length) throw new Error(`unsure characters with no 组词 to be said as: ${wordless.join('')} (add one to extraExamples.ts)`);
+writeFileSync(new URL('../src/audio/sayAs.json', import.meta.url), JSON.stringify({ sayAs, poly, plain, unsure, words }) + '\n');
 const missing = Object.entries(poly).filter(([ch]) => !sayAs[ch]);
 console.log(`polyphones ${Object.keys(poly).length}, said as a twin ${Object.keys(sayAs).length} (as themselves ${Object.entries(sayAs).filter(([c, t]) => c === t).length}); no twin: ${missing.map(([c, r]) => c + r).join(' ')}; unsure: ${unsure.join('')}`);
