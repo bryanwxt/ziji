@@ -9,6 +9,8 @@
     "preview": "vite preview --host",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:fast": "vitest run --exclude \"**/*.slow.test.*\"",
+    "test:changed": "vitest run --changed origin/main --exclude \"**/*.slow.test.*\"",
     "content": "tsx scripts/build-content.ts",
     "font": "tsx scripts/build-font.ts",
     "fit": "vite build && tsx scripts/fit-check.ts && tsx scripts/stage-cases.ts && tsx scripts/story-walk.ts",
