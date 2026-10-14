@@ -130,7 +130,7 @@ export const PRACTICE_RETRY_GAP = 4;
 export function startPractice(rec: SessionRecord, queue: PracticeItem[]): SessionRecord {
   const gone = new Set(rec.sentBack ?? []); // sent back to learn earlier in the lesson: none of its practice (review M1)
   const next: SessionRecord = { ...rec, practiceQueue: queue.filter((x) => !gone.has(x.wordId)), practiceIndex: 0, practiceElapsedMs: 0 };
-  return queue.length ? next : finishStep(next);
+  return next.practiceQueue!.length ? next : finishStep(next); // empty after the filter too: never a blank 练一练 (re-review N1)
 }
 
 export function currentPracticeItem(rec: SessionRecord): PracticeItem | null {

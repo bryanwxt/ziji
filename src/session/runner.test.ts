@@ -140,7 +140,7 @@ describe('ending a step once', () => {
   });
 });
 
-import { createFreePracticeRecord, currentPracticeItem, afterPracticeAnswer, skipPracticeItem, startPractice, PRACTICE_RETRY_GAP } from './runner';
+import { createFreePracticeRecord, currentPracticeItem, afterPracticeAnswer, sendBack, skipPracticeItem, startPractice, PRACTICE_RETRY_GAP } from './runner';
 import type { PracticeItem } from './round';
 
 const planOf = (over: Partial<SessionPlan> = {}): SessionPlan => ({ steps: ['newwords', 'practice'], reviewWordIds: ['b:a'], newWordIds: ['b:x', 'b:y'], flashTimeBoxMs: 0, practiceTimeBoxMs: 60_000, writeCandidates: [], writeCount: 0, ...over });
@@ -365,5 +365,13 @@ describe('写一写 does the 组词 work (production practice spec §3)', () => 
     expect(rec.meaningCredit).toBeUndefined();
     expect(rec.writeSkipped).toEqual(['r']);
     expect(currentWriteTask(rec)).toMatchObject({ wordId: 'w', pass: 'recall' });
+  });
+});
+
+describe('a practice round left empty by a word sent back to learn (re-review N1)', () => {
+  it('ends the step instead of freezing on an empty 练一练', () => {
+    const plan = { steps: ['practice', 'writing'], reviewWordIds: ['b:x'], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 } as unknown as SessionPlan;
+    const rec = startPractice(sendBack(createSessionRecord(plan, '2026-10-14', 0), 'b:x'), [{ wordId: 'b:x', rung: 1, ask: 'word', grades: 'meaning', retry: false }] as unknown as PracticeItem[]);
+    expect(currentStep(rec)).toBe('writing');
   });
 });
