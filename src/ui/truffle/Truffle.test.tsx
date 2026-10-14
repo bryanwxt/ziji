@@ -1,13 +1,36 @@
 import { render } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
-import { BODY, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, TRUFFLE_MOODS } from './parts';
-import { COSTUMES } from '../../fun/costumes';
-import { costumeLayer } from './costumes';
+import { BODY, CEL, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, TRUFFLE_MOODS } from './parts';
 import { Truffle } from './Truffle';
+import { LINE } from '../cel';
 
 const svg = (c: Element) => c.querySelector('svg.truffle')!;
 
 describe('Truffle', () => {
+  it('his eyes and lids use no clip-path; his neutral mouth is a small ω; joy throws outlined sparkles and shuts his eyes to ^', () => {
+    const neutral = render(<Truffle expression="neutral" />).container;
+    expect(svg(neutral).outerHTML).not.toMatch(/clip-path|clipPath/);
+    expect(neutral.querySelector('[data-part="mouth-w"]')!.getAttribute('opacity')).toBe('1');
+    expect(neutral.querySelector('[data-part="mouth"]')!.getAttribute('opacity')).toBe('0');
+    const joy = render(<Truffle expression="joy" />).container;
+    expect(joy.querySelector('[data-part="extra-joy"]')!.innerHTML).toContain(`stroke="${LINE}"`);
+    expect(joy.querySelector('[data-part="eye-line-top-l"]')!.getAttribute('opacity')).toBe('0'); // a shut eye is only its ^ line
+    expect(joy.querySelector('[data-part="eye-line-bottom-l"]')!.getAttribute('opacity')).toBe('0');
+    expect(joy.querySelector('[data-part="eye-shade-l"]')!.getAttribute('opacity')).toBe('0');
+    expect(joy.querySelector('[data-part="lid-closed-l"]')!.getAttribute('opacity')).toBe('1');
+    // row D: no fixed ring, lash or lid-edge strokes; a lash-weight top line and a thin bottom line in the eye line colour
+    expect(neutral.querySelector('[data-part^="eye-ring"], [data-part^="lash-"], [data-part^="lid-edge"], [data-part^="lid-bedge"]')).toBeNull();
+    const top = neutral.querySelector('[data-part="eye-line-top-l"]')!;
+    const bottom = neutral.querySelector('[data-part="eye-line-bottom-l"]')!;
+    expect([top.getAttribute('stroke'), top.getAttribute('stroke-width'), top.getAttribute('opacity')]).toEqual(['#3f3756', '3.5', '1']);
+    expect([bottom.getAttribute('stroke'), bottom.getAttribute('stroke-width')]).toEqual(['#3f3756', '1.8']);
+    const shade = neutral.querySelector('[data-part="eye-shade-l"]')!;
+    expect([shade.getAttribute('fill'), shade.getAttribute('opacity')]).toEqual(['#4a3f78', '0.17']);
+    expect(neutral.querySelector('[data-part="lid-closed-l"]')!.getAttribute('stroke-width')).toBe('3.5');
+    const grumpy = render(<Truffle expression="grumpy" />).container;
+    expect(grumpy.querySelector('[data-part="eye-line-top-l"]')!.getAttribute('d')).not.toBe('M118 118Z'); // a partial lid keeps its line
+    expect(grumpy.querySelector('[data-part="mouth-w"]')!.getAttribute('opacity')).toBe('0'); // a frown stays a frown
+  });
   it('is an image labelled 松露 with body, head and the requested face', () => {
     const { container } = render(<Truffle mood="wow" />);
     expect(svg(container).getAttribute('role')).toBe('img');
@@ -62,7 +85,7 @@ describe('Truffle', () => {
     const { COSTUMES } = await import('../../fun/costumes');
     for (const c of COSTUMES) {
       const { container, unmount } = render(<Truffle outfit={c.id} />);
-      expect(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('fill'), c.id).toMatch(/^url\(#truffle-.*-tf-fur\)$/); // his painted fur (3b)
+      expect(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('fill'), c.id).toBe(CEL.fur); // his flat fur (spec 2026-10-13 §7)
       unmount();
     }
   });
@@ -171,14 +194,27 @@ describe('Truffle onesie hood', () => {
 });
 
 describe('Truffle accessories v2', () => {
-  it('draws every accessory as ink art (never emoji text)', async () => {
+  it('draws every accessory as drawn art in his cel line (never emoji text, never the old ink)', async () => {
     const { ACCESSORY_IDS } = await import('../../fun/accessories');
     for (const id of ACCESSORY_IDS) {
       const { container, unmount } = render(<Truffle accessory={id} />);
       expect(container.querySelector('svg.truffle')?.getAttribute('data-accessory')).toBe(id);
       const art = [...container.querySelectorAll('.truffle__accessory')].map((g) => g.innerHTML).join('');
-      expect(art).toContain('stroke="#2a2630"');
+      expect(art).toContain(`stroke="${LINE}"`);
+      expect(art).not.toContain('#2a2630');
       expect(art).not.toMatch(/\p{Extended_Pictographic}/u);
+      unmount();
+    }
+  });
+  it('light cel (spec 2026-10-13 §7): no gradient and no clip-path anywhere on him, in any costume, accessory or power', async () => {
+    const { ACCESSORY_IDS } = await import('../../fun/accessories');
+    const { COSTUMES } = await import('../../fun/costumes');
+    const looks = [{}, ...COSTUMES.map((c) => ({ outfit: c.id })), ...ACCESSORY_IDS.map((a) => ({ accessory: a })), { power: 'fire', powerTier: 3 }];
+    for (const look of looks) {
+      const { container, unmount } = render(<Truffle mood="cheer" {...look} />);
+      const html = svg(container).outerHTML;
+      expect(html, JSON.stringify(look)).not.toMatch(/clip-path|clipPath|Gradient|url\(#/);
+      expect(html, JSON.stringify(look)).not.toMatch(/stroke="#2a2630" stroke-width="(3\.2|2\.4)"/); // the old ink outline (a black staff or robe may stay black)
       unmount();
     }
   });
@@ -263,18 +299,11 @@ describe('Truffle repainted (spec 3b §5)', () => {
   it('no hard black outline on his fur, chest or paws', () => {
     for (const art of [TORSO, BODY, PAW_L, PAW_R, TAIL, EAR_L, EAR_R, HEAD_SHAPE]) expect(art).not.toContain('#2a2630');
   });
-  it('two Truffles never share a gradient id, and each url(#…) resolves inside its own svg', () => {
-    const { container } = render(<div><Truffle /><div style="display:none"><Truffle outfit="tiger" /></div></div>);
-    const svgs = [...container.querySelectorAll('svg.truffle')];
-    const ids = svgs.map((x) => [...x.querySelectorAll('linearGradient, radialGradient')].map((g) => g.id));
-    expect(ids[0]!.length).toBeGreaterThan(0);
-    expect(ids[0]!.some((i) => ids[1]!.includes(i))).toBe(false);
-    for (const x of svgs) for (const m of x.outerHTML.matchAll(/url\(#([^)]+)\)/g)) expect(x.querySelector(`[id="${m[1]}"]`), m[1]).toBeTruthy();
-  });
-  it('with an ear-hiding hood and a costume tail, every url(#…) still resolves', () => {
-    const hood = COSTUMES.find((c) => costumeLayer(c.id)?.hidesEars && costumeLayer(c.id)?.tail)!;
-    const { container } = render(<Truffle outfit={hood.id} />);
-    const x = svg(container);
-    for (const m of x.outerHTML.matchAll(/url\(#([^)]+)\)/g)) expect(x.querySelector(`[id="${m[1]}"]`), m[1]).toBeTruthy();
+  it('his body is flat light cel: no gradient, and each part carries its own explicit shadow path', () => {
+    const { container } = render(<Truffle />);
+    expect(svg(container).outerHTML).not.toMatch(/Gradient|-tf-/); // (the eyes' clip-paths go in Task 10)
+    for (const part of [TORSO, TAIL, EAR_L, HEAD_SHAPE]) expect(part).toContain(`fill="${CEL.furSh}"`);
+    expect(PAW_L).toContain(`fill="${CEL.chestSh}"`);
+    for (const part of [TORSO, TAIL, EAR_L, EAR_R, HEAD_SHAPE]) expect(part).toContain('stroke="#706889"');
   });
 });

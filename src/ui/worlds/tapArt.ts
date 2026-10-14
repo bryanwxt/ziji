@@ -1,9 +1,10 @@
-/* Tap-fun art (spec §15): the 12 zodiac animals as small ink faces (drawn in a 48×48 box centred on 0,0),
- * a gem, a baby dinosaur and sprinkler spray. §13 ink rules; original drawings, no IP. */
+/* The 12 zodiac animals that come out of the paper boat, as small faces drawn in a 48×48 box centred on 0,0, in light cel
+ * (spec 2026-10-13 §7): the soft-violet line, flat fills. Original drawings, no IP. */
+import { LINE } from '../cel';
 
-const INK = '#2a2630';
-const S = `stroke="${INK}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"`;
-const eyes = (y = -2, gap = 7) => `<g fill="${INK}"><circle cx="${-gap}" cy="${y}" r="2.2"/><circle cx="${gap}" cy="${y}" r="2.2"/></g>`;
+const INK = LINE;
+const S = `stroke="${INK}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
+const eyes = (y = -2, gap = 7) => `<g fill="#3a3045"><circle cx="${-gap}" cy="${y}" r="2.2"/><circle cx="${gap}" cy="${y}" r="2.2"/></g>`;
 const cheeks = (y = 5) => `<g fill="#edb8c0" opacity=".8"><ellipse cx="-11" cy="${y}" rx="3" ry="2"/><ellipse cx="11" cy="${y}" rx="3" ry="2"/></g>`;
 const smile = (y = 6) => `<path d="M-3 ${y} q3 3 6 0" fill="none" ${S} stroke-width="2"/>`;
 const head = (fill: string, rx = 17, ry = 16) => `<ellipse cx="0" cy="0" rx="${rx}" ry="${ry}" fill="${fill}" ${S}/>`;
@@ -28,11 +29,18 @@ export const ANIMAL_FACES: Record<string, string> = {
     `<ellipse cx="-7" cy="-22" rx="5" ry="13" fill="#fffaf0" ${S}/><ellipse cx="7" cy="-22" rx="5" ry="13" fill="#fffaf0" ${S}/>` +
     `<ellipse cx="-7" cy="-21" rx="2" ry="8" fill="#edb8c0"/><ellipse cx="7" cy="-21" rx="2" ry="8" fill="#edb8c0"/>` +
     head('#fffaf0', 15, 14) + eyes(-1, 6) + cheeks(5) + `<path d="M-2 4 l2 2 l2 -2" fill="none" ${S} stroke-width="1.6"/>` + smile(8),
-  dragon:
-    `<path d="M-9 -14 l-5 -10 l7 5Z M9 -14 l5 -10 l-7 5Z" fill="#efc472" ${S}/>` + head('#9fcf90') +
-    `<path d="M-16 6 q-8 2 -10 8 M16 6 q8 2 10 8" fill="none" ${S} stroke-width="1.8"/>` + eyes(-3, 7) +
-    `<ellipse cx="0" cy="7" rx="8" ry="5" fill="#b8d8aa" ${S} stroke-width="1.8"/><g fill="${INK}"><circle cx="-3" cy="6" r="1.4"/><circle cx="3" cy="6" r="1.4"/></g>` +
-    `<path d="M-6 -16 l3 3 l3 -3 l3 3 l3 -3" fill="none" ${S} stroke-width="1.6"/>`,
+  dragon: // a long-snouted Chinese dragon (not a pig): antler horns, a flame mane, a scale ridge, long whiskers
+    `<path d="M-12 -11 L-21 -14 L-17 -8 L-24 -4 L-17 -1 L-23 5 L-13 4Z M12 -11 L21 -14 L17 -8 L24 -4 L17 -1 L23 5 L13 4Z" fill="#f7a07e" ${S}/>` +
+    `<path d="M-5 -12 Q-8 -18 -10 -25 M-8 -19 L-14 -21 M5 -12 Q8 -18 10 -25 M8 -19 L14 -21" fill="none" stroke="${INK}" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M-5 -12 Q-8 -18 -10 -25 M-8 -19 L-14 -21 M5 -12 Q8 -18 10 -25 M8 -19 L14 -21" fill="none" stroke="#efc472" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M-7 -11 L-4.5 -18 L-2 -13 L0 -21 L2 -13 L4.5 -18 L7 -11Z" fill="#f7a07e" ${S}/>` +
+    `<ellipse cx="0" cy="-4" rx="13" ry="10.5" fill="#9fcf90" ${S}/>` +
+    `<path d="M-4 -10 q2 2 4 0 q2 2 4 0" fill="none" stroke="#6fa865" stroke-width="1.2" stroke-linecap="round"/>` +
+    `<path d="M-10 -10 l5 1.5 M10 -10 l-5 1.5" fill="none" ${S}/>` + eyes(-5, 6) +
+    `<path d="M-8 8 C-15 5 -18 12 -24 8 M-8 12 C-14 15 -16 19 -22 21 M8 8 C15 5 18 12 24 8 M8 12 C14 15 16 19 22 21" fill="none" stroke="#e0a050" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<path d="M-7.5 -1 C-9.5 6 -9.5 12 -8 15.5 C-5 20 5 20 8 15.5 C9.5 12 9.5 6 7.5 -1 C4 -3 -4 -3 -7.5 -1Z" fill="#c5e4b0" ${S}/>` +
+    `<path d="M-4.5 9 q-2.5 -3.5 1 -4.5 M4.5 9 q2.5 -3.5 -1 -4.5" fill="none" ${S}/>` +
+    `<path d="M-5 15.5 Q0 18 5 15.5" fill="none" ${S}/>`,
   snake:
     `<path d="M-14 6 C-16 -14 16 -14 14 6 C12 14 -12 14 -14 6Z" fill="#b8d8aa" ${S}/>` +
     `<g fill="#86b67a"><circle cx="-6" cy="-6" r="2"/><circle cx="5" cy="-8" r="2"/><circle cx="0" cy="-2" r="1.6"/></g>` + eyes(0, 7) +
@@ -61,14 +69,3 @@ export const ANIMAL_FACES: Record<string, string> = {
     `<path d="M-14 -9 l-5 -10 l10 4Z M14 -9 l5 -10 l-10 4Z" fill="#edb8c0" ${S}/>` + head('#edb8c0') + eyes(-4, 7) +
     `<ellipse cx="0" cy="5" rx="7" ry="5" fill="#e6a3b0" ${S}/><g fill="${INK}"><ellipse cx="-2.5" cy="5" rx="1.4" ry="2"/><ellipse cx="2.5" cy="5" rx="1.4" ry="2"/></g>`,
 };
-
-export const GEM =
-  `<path d="M-12 -4 l6 -8 h12 l6 8 l-12 16Z" fill="#6ea4d4" ${S}/>` +
-  `<path d="M-12 -4 h24 M-6 -12 l2 8 l4 16 M6 -12 l-2 8 l-4 16" fill="none" ${S} stroke-width="1.6"/>` +
-  `<path d="M-3 -9 l2 -2" stroke="#fffaf0" stroke-width="2.4" stroke-linecap="round"/>`;
-
-export const BABY_DINO =
-  `<path d="M-14 12 C-16 -2 -6 -8 2 -6 C6 -14 16 -14 16 -6 C16 0 10 2 6 0 C8 6 8 12 6 12Z" fill="#9fcf90" ${S}/>` +
-  `<circle cx="10" cy="-8" r="1.8" fill="${INK}"/><path d="M12 -3 q-3 2 -6 0" fill="none" ${S} stroke-width="1.6"/>` +
-  `<path d="M-14 12 C-18 10 -22 12 -24 8 C-20 8 -18 6 -16 4" fill="#9fcf90" ${S}/>` +
-  `<path d="M-12 14 C-12 4 4 4 4 14Z" fill="#fffaf0" ${S}/><path d="M-12 14 l3 -4 l3 4 l3 -4 l3 4 l3 -4 l1 4" fill="none" ${S} stroke-width="1.6"/>`;

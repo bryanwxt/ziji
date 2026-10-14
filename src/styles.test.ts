@@ -108,8 +108,9 @@ describe('world tap fun never gets in the way', () => {
 });
 
 describe('scene texture', () => {
-  it('worlds, lesson strips and pictures get a grain overlay like Truffle\'s', () => {
-    expect(css).toMatch(/\.world-scene::after, \.grainy::after \{[^}]*mix-blend-mode: multiply/);
+  it('pictures get a grain overlay like Truffle\'s; the painted worlds carry their own (spec 2026-10-13 §5)', () => {
+    expect(css).toMatch(/\n\.grainy::after \{[^}]*mix-blend-mode: multiply/);
+    expect(css).not.toMatch(/\.world-scene::after/);
   });
 });
 
@@ -129,6 +130,13 @@ describe('adaptive layouts (spec §18)', () => {
     expect(adaptive).toMatch(/html:has\(\.screen--scroll\), html:has\(\.screen--scroll\) body \{ overflow: auto; \}/);
     expect(adaptive).toMatch(/\.screen--scroll \{[^}]*height: auto;[^}]*min-height: 100dvh;[^}]*overflow: visible;/);
   });
+  it('evening lights move only on Home, never behind a lesson, and never with reduced motion (spec 2026-10-13 §6)', () => {
+    expect(css).toMatch(/\.home \.world-anim--pulse \{ animation:/);
+    expect(css).toMatch(/\.home \.world-anim--twinkle \{ animation:/);
+    expect(css).toMatch(/\.home \.world-anim--sweep \{[^}]*animation:/);
+    expect(css).not.toMatch(/^\.world-anim--\w+ \{[^}]*animation:/m);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.home \.world-anim \{ animation: none; \} \}/);
+  });
   it('long lists scroll inside their own panel', () => {
     expect(adaptive).toMatch(/\.scroll-panel \{[^}]*flex: 1;[^}]*min-height: 0;[^}]*overflow-y: auto;/);
   });
@@ -146,7 +154,8 @@ describe('adaptive layouts (spec §18)', () => {
     expect(adaptive).toMatch(/:root \{ --band: 50vw; \}/);
     expect(adaptive).toMatch(/\.home__path \{[^}]*width: min\(100%, var\(--band\)\);/);
     expect(adaptive).toMatch(/\.home__cards \{ width: min\(100%, var\(--band\), 560px\);/);
-    expect(adaptive).toMatch(/\.world-scene \{ top: auto; height: min\(100%, 133\.33vw\);/); // never wider than the screen: no target cropped off
+    expect(adaptive).toMatch(/\.home \.world-scene \{ bottom: var\(--nav-h\); \}/); // the square painting covers Home above the nav (spec 2026-10-13 §5)
+    expect(adaptive).toMatch(/\.world-props \{ inset: 0 0 var\(--nav-h\) 0; height: calc\(100% - var\(--nav-h\)\); \}/); // the props share its box
     expect(adaptive).toMatch(/\.home__pet \{[^}]*position: absolute;[^}]*bottom: calc\(var\(--nav-h\)[^}]*left: 50%;/);
     expect(adaptive).toMatch(/\.tabbar \{ height: var\(--nav-h\);/);
     expect(adaptive).toMatch(/\.home \.home__cards, \.home \.home__path \{ pointer-events: none; \}/);
@@ -184,9 +193,6 @@ describe('adaptive layouts (spec §18)', () => {
   });
   it('a long self-introduction scrolls inside its card instead of pushing the buttons off an SE', () => {
     expect(css).toMatch(/\.langdu__script \{[^}]*max-height: [^;]*dvh[^}]*overflow-y: auto/);
-  });
-  it("the evening lantern string never runs across a lesson's progress bar on a landscape iPad", () => {
-    expect(css).toMatch(/@media \(orientation: landscape\) and \(min-height: 600px\) \{\s*\.screen:has\(\.lessonbar\) \[data-part="lanterns"\] \{ display: none; \}/);
   });
   it('labels on Home (the path names, Truffle\'s bubble) let a tap through to the world target under them', () => {
     expect(css).toMatch(/\.home \.path__row > \.path__name, \.home \.pet__bubble \{ pointer-events: none; \}/);

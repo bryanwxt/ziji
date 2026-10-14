@@ -76,13 +76,16 @@ describe('the animation loop (spec §4.1, review focus 1)', () => {
     const { container } = render(<Truffle alive expression="neutral" />);
     const ears = new Set<string>();
     const lids = new Set<string>();
+    const lines = new Set<string>(); // the eye line rides the lid as he blinks (row D): its path is repainted every frame
     for (let i = 0; i < 60 * 9; i++) {
       act(() => run(1));
       ears.add((container.querySelector('[data-part="ear-l"]') as SVGGElement).style.transform + (container.querySelector('[data-part="ear-r"]') as SVGGElement).style.transform);
       lids.add(container.querySelector('[data-part="lid-top-l"]')!.getAttribute('d') ?? '');
+      lines.add(container.querySelector('[data-part="eye-line-top-l"]')!.getAttribute('d') + '|' + container.querySelector('[data-part="eye-shade-l"]')!.getAttribute('d'));
     }
     expect(ears.size).toBeGreaterThan(1);
     expect(lids.size).toBeGreaterThan(1);
+    expect(lines.size).toBeGreaterThan(1);
   });
   it('final review I2: a new word: the lingering curious face clears when the question comes up (calm)', () => {
     const { container, rerender } = render(<Truffle alive expression="neutral" react={{ kind: 'newWord', key: 1 }} />);

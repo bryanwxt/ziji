@@ -32,7 +32,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest,woff2}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest,woff2}', 'worlds/*.webp'], // One River's paintings and thumbnails: the worlds work offline (spec 2026-10-13 §4)
         // the FSRS optimizer (SRS tuning spec §6.2) loads only when the parent taps Fit: never precached, runtime-cached below
         globIgnores: ['**/fsrs_browser*', '**/workerHelpers*'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,

@@ -1,6 +1,6 @@
 import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
-import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
+import { blushOpacity, browTransform, EXTRAS, EYE_L, EYE_R, eyeContour, GAZE_X, GAZE_Y, lowerLid, mouthPath, mouthW, PRESETS, ringOn, SHADE_ON, springStep, upperLid, type Expression, type Face } from './rig';
 import { cardCentre, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
 import { onSpeaking, settleIfSilent } from '../../audio/speaking';
 import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS, type Motion, type PawPose, type Reaction, type Track } from './timelines';
@@ -43,21 +43,32 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
     el.setAttribute(attr, v);
   };
   const lidTop = Math.min(1, f.lidTop + pose.blink * (1 - f.lidTop));
+  // the gaze spring overshoots full gaze (to about 1.18): past ±1 the iris would leave the white, which has no clip-path
+  const gx = Math.max(-1, Math.min(1, pose.gx));
+  const gy = Math.max(-1, Math.min(1, pose.gy));
   for (const [side, cx] of [['l', EYE_L], ['r', EYE_R]] as const) {
     const up = upperLid(cx, lidTop, f.lidArc);
     const low = lowerLid(cx, f.lidBottom);
-    set(`iris-${side}`, 'transform', `translate(${(pose.gx * 6).toFixed(2)} ${(pose.gy * 5).toFixed(2)})`);
+    set(`iris-${side}`, 'transform', `translate(${(gx * GAZE_X).toFixed(2)} ${(gy * GAZE_Y).toFixed(2)})`);
     set(`pupil-${side}`, 'rx', (7 * f.pupil).toFixed(2));
     set(`pupil-${side}`, 'ry', (11 * f.pupil).toFixed(2));
     set(`lid-top-${side}`, 'd', up.fill);
-    set(`lid-edge-${side}`, 'd', up.edge);
-    set(`lid-edge-${side}`, 'opacity', up.edgeOn ? 1 : 0);
     set(`lid-closed-${side}`, 'd', up.closed);
     set(`lid-closed-${side}`, 'opacity', up.closedOn.toFixed(3));
     set(`lid-bottom-${side}`, 'd', low.fill);
-    set(`lid-bedge-${side}`, 'd', low.edge);
-    set(`lid-bedge-${side}`, 'opacity', low.edgeOn ? 1 : 0);
-    set(`blush-${side}`, 'opacity', (f.blush * 0.6).toFixed(3));
+    // the eye line rides the visible white; it is gone before the eye shuts: a shut eye is only its closed line
+    const ring = ringOn(lidTop);
+    const line = eyeContour(cx, lidTop, f.lidArc, f.lidBottom);
+    set(`eye-line-top-${side}`, 'd', line.top);
+    set(`eye-line-bottom-${side}`, 'd', line.bottom);
+    set(`eye-shade-${side}`, 'd', line.shade);
+    set(`eye-line-top-${side}`, 'opacity', String(+ring.toFixed(3)));
+    set(`eye-line-bottom-${side}`, 'opacity', String(+ring.toFixed(3)));
+    set(`eye-shade-${side}`, 'opacity', String(+(SHADE_ON * ring).toFixed(3)));
+    // the white and iris fade with it, so a sliver of white under a nearly shut lid never shows without its line
+    set(`eye-white-${side}`, 'opacity', String(+ring.toFixed(3)));
+    set(`iris-${side}`, 'opacity', String(+ring.toFixed(3)));
+    set(`blush-${side}`, 'opacity', blushOpacity(f.blush).toFixed(3));
   }
   set('brow-l', 'transform', browTransform('L', f));
   set('brow-r', 'transform', browTransform('R', f));
@@ -66,6 +77,9 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
   const m = mouthPath(f.smile, f.mouthOpen);
   set('mouth', 'd', m.d);
   set('mouth', 'fill-opacity', m.fillOpacity.toFixed(3));
+  const w = mouthW(f.smile, f.mouthOpen);
+  set('mouth', 'opacity', (1 - w).toFixed(3));
+  set('mouth-w', 'opacity', w.toFixed(3));
   const earL = `transform-origin:100px 78px;transform:rotate(${(-(f.earL + pose.earL)).toFixed(2)}deg)`;
   const earR = `transform-origin:220px 78px;transform:rotate(${(f.earR + pose.earR).toFixed(2)}deg)`;
   for (const p of ['ear-l', 'ear-in-l']) set(p, 'style', earL);

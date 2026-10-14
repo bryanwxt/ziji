@@ -1,42 +1,49 @@
-// Evening in every world (spec 2026-10-04 §2): the day sky is swapped for a dusk sky with the moon and stars (under the land,
-// so hills, peaks and trees stay in front), then a dusk tint and warm lights that suit the world go over it.
+// Evening on One River (spec 2026-10-13 §5–6): the painting is never swapped. A dusk tint (multiply) at the world's own
+// strength, a moon where the sky shows, and the lights that belong in that world, all over the painting and under the props.
 import type { WorldId } from '../../fun/worlds';
-import { glow, lift, sky, star } from './kit/paper';
-import { P } from './kit/palette';
+import { RIVER } from './river';
 
-const moon = (pre: string) => `<g data-part="moon">${glow(`${pre}-ev-moon`, 300, 80, 56, P.lamp, 0.35)}<circle cx="300" cy="80" r="26" fill="${P.cream}"/><circle cx="291" cy="73" r="5" fill="${P.creamShade}"/><circle cx="309" cy="90" r="4" fill="${P.creamShade}"/></g>`;
-const stars = () => [star(60, 120, 7, P.lamp, 'star'), star(150, 170, 6, P.lamp, 'star'), star(210, 100, 8, P.lamp, 'star'), star(40, 60, 5, P.lamp, 'star'), star(250, 160, 5, P.lamp, 'star')].join('');
-const tint = (o = 0.16) => `<rect data-part="dusk" width="360" height="480" fill="${P.dusk}" opacity="${o}"/>`;
-const light = (id: string, x: number, y: number, r = 36) => glow(id, x, y, r, P.warm, 0.6);
+const DUSK = '#3d3a6b';
+const WARM = '#ffcf7a';
 
-const lantern = (pre: string, i: number, x: number, y: number) => `<g data-part="lantern">${light(`${pre}-ev-l${i}`, x, y, 28)}${lift(`<ellipse cx="${x}" cy="${y}" rx="8" ry="10" fill="${P.coral}"/>`)}<ellipse cx="${x}" cy="${y}" rx="4" ry="6" fill="${P.lamp}"/></g>`;
-const lanterns = (pre: string) => `<g data-part="lanterns"><path d="M0 210 Q90 234 180 216 T360 220" fill="none" stroke="${P.woodDark}" stroke-width="1.6"/>${lantern(pre, 1, 40, 226)}${lantern(pre, 2, 130, 226)}${lantern(pre, 3, 230, 222)}${lantern(pre, 4, 320, 224)}</g>`;
-const firefly = (pre: string, i: number, x: number, y: number) => `<g data-part="firefly">${glow(`${pre}-ev-f${i}`, x, y, 14, P.lamp, 0.8)}<circle cx="${x}" cy="${y}" r="2.4" fill="${P.lamp}"/></g>`;
-const lampPost = (pre: string, i: number, x: number, y: number) => `<g data-part="lamp">${light(`${pre}-ev-p${i}`, x, y - 60, 46)}${lift(`<rect x="${x - 2}" y="${y - 60}" width="4" height="60" fill="${P.stoneLow}"/><path d="M${x - 8} ${y - 60} h16 l-3 -10 h-10Z" fill="${P.stoneLow}"/>`)}<rect x="${x - 5}" y="${y - 68}" width="10" height="7" fill="${P.lamp}"/></g>`;
-const torch = (pre: string, i: number, x: number, y: number) => `<g data-part="torch">${light(`${pre}-ev-t${i}`, x, y - 14, 34)}${lift(`<rect x="${x - 3}" y="${y - 14}" width="6" height="14" fill="${P.wood}"/>`)}<rect x="${x - 5}" y="${y - 24}" width="10" height="10" fill="${P.orange}"/><rect x="${x - 3}" y="${y - 22}" width="6" height="6" fill="${P.lamp}"/></g>`;
-const jelly = (pre: string, i: number, x: number, y: number) => `<g data-part="jelly">${glow(`${pre}-ev-j${i}`, x, y, 26, P.lilac, 0.7)}<path d="M${x - 10} ${y} a10 9 0 0 1 20 0Z" fill="${P.lilac}"/><path d="M${x - 6} ${y} q-2 8 1 14 M${x} ${y} q2 8 -1 16 M${x + 6} ${y} q-2 8 1 14" stroke="${P.lilac}" stroke-width="1.6" fill="none"/></g>`;
+/** A soft round light: a radial gradient (never a filter). `id` must be unique on the page. */
+export const glow = (id: string, x: number, y: number, r: number, color = WARM, strength = 0.7) =>
+  `<defs><radialGradient id="${id}"><stop offset="0" stop-color="${color}" stop-opacity="${strength}"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></radialGradient></defs><circle cx="${x}" cy="${y}" r="${r}" fill="url(#${id})"/>`;
 
-const PREFIX: Record<WorldId, string> = { yard: 'yp', grass: 'gp', race: 'rp', blocks: 'bp', dino: 'dp', sea: 'sp', space: 'xp', pirate: 'ip' };
+const moon = (w: WorldId, x: number, y: number) =>
+  `<g data-part="moon">${glow(`${w}-moon`, x, y, 90, '#fff4c8', 0.45)}<circle cx="${x}" cy="${y}" r="34" fill="#fff8e1"/><path d="M${x + 6} ${y - 30} a34 34 0 0 1 0 60 a26 30 0 0 0 0 -60Z" fill="#efe2b8"/></g>`;
 
-/** The dusk sky that takes the day sky's place. The moon base is always night: it keeps its own sky. */
-export function eveningSky(world: WorldId, daySky: string): string {
-  const pre = PREFIX[world];
-  if (world === 'space') return daySky;
-  if (world === 'sea') return sky(`${pre}-ev-sky`, P.duskSea, P.duskSeaLow);
-  return sky(`${pre}-ev-sky`, P.duskTop, P.duskLow) + moon(pre) + stars();
-}
+/** Fireflies: a dot and its glow; they pulse (CSS, only on Home and never with reduced motion). */
+const fireflies = (w: WorldId, pts: [number, number][]) => pts.map(([x, y], i) =>
+  `<g data-part="firefly" class="world-anim world-anim--pulse" style="animation-delay:${(i * 0.37).toFixed(2)}s">${glow(`${w}-ff${i}`, x, y, 18, '#e9ff9a', 0.8)}<circle cx="${x}" cy="${y}" r="3.2" fill="#f6ffc4"/></g>`).join('');
+/** Warm glows over lit windows or lanterns the painting already has. */
+const glows = (w: WorldId, part: string, pts: [number, number, number][]) => pts.map(([x, y, r], i) => `<g data-part="${part}">${glow(`${w}-${part}${i}`, x, y, r)}</g>`).join('');
+/** A drawn street lamp, standing at (x, y). */
+const lamp = (w: WorldId, i: number, x: number, y: number) =>
+  `<g data-part="lamp">${glow(`${w}-lamp${i}`, x, y - 52, 44)}<path d="M${x} ${y} L${x} ${y - 48}" stroke="#706889" stroke-width="3" stroke-linecap="round"/><path d="M${x - 7} ${y - 48} h14 l-3 -8 h-8 Z" fill="#fff4c8" stroke="#706889" stroke-width="1.6" stroke-linejoin="round"/></g>`;
 
-/** The lights over the land: a dusk tint, then lamps, lanterns, fireflies or glows that belong in this world. */
-export function eveningLights(world: WorldId): string {
-  const pre = PREFIX[world];
-  switch (world) {
-    case 'yard': return tint() + lanterns(pre);
-    case 'grass': return tint() + firefly(pre, 1, 40, 330) + firefly(pre, 2, 70, 372) + firefly(pre, 3, 300, 340) + firefly(pre, 4, 332, 392) + firefly(pre, 5, 120, 420);
-    case 'race': return tint() + lampPost(pre, 1, 22, 400) + lampPost(pre, 2, 342, 396);
-    case 'blocks': return tint() + torch(pre, 1, 13, 402) + torch(pre, 2, 347, 402);
-    case 'dino': return tint() + `<g data-part="lava">${glow(`${pre}-ev-v`, 312, 186, 60, P.ember, 0.6)}${glow(`${pre}-ev-v2`, 312, 240, 70, P.warm, 0.3)}</g>`;
-    case 'sea': return tint(0.3) + jelly(pre, 1, 34, 300) + jelly(pre, 2, 326, 310) + jelly(pre, 3, 120, 270);
-    case 'space': return `<g data-part="window">${light(`${pre}-ev-w`, 324, 404, 30)}</g>${glow(`${pre}-ev-r`, 62, 340, 30, P.lamp, 0.45)}`;
-    case 'pirate': return tint() + `<g data-part="lamp">${light(`${pre}-ev-s`, 300, 280, 30)}<rect x="296" y="276" width="8" height="8" fill="${P.lamp}"/></g><path d="M282 318 h36 M290 326 h22 M296 334 h10" stroke="${P.lamp}" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>`;
-  }
+const r1 = (n: number) => +n.toFixed(1);
+/** Stars that twinkle (the night sky of 银河). */
+const twinkles = (pts: [number, number, number][]) => pts.map(([x, y, r], i) =>
+  `<path data-part="star" class="world-anim world-anim--twinkle" style="animation-delay:${(i * 0.53).toFixed(2)}s" d="M${x} ${r1(y - r)} Q${r1(x + r * 0.25)} ${r1(y - r * 0.25)} ${r1(x + r)} ${y} Q${r1(x + r * 0.25)} ${r1(y + r * 0.25)} ${x} ${r1(y + r)} Q${r1(x - r * 0.25)} ${r1(y + r * 0.25)} ${r1(x - r)} ${y} Q${r1(x - r * 0.25)} ${r1(y - r * 0.25)} ${x} ${r1(y - r)}Z" fill="#fffbe0"/>`).join('');
+
+/** Each world's lights (spec 2026-10-13 §6), placed by eye on its painting; each world's task fills in its own. */
+const LIGHTS: Record<WorldId, (w: WorldId) => string> = {
+  home: (w) => glows(w, 'window', [[230, 380, 60], [400, 440, 60], [930, 330, 70], [920, 520, 60]]) + lamp(w, 1, 440, 650) + lamp(w, 2, 790, 660),
+  rainforest: (w) => fireflies(w, [[150, 700], [260, 640], [380, 760], [620, 700], [780, 640], [860, 760], [500, 860], [90, 860]]),
+  bamboo: (w) => `<g data-part="moonlight">${glow(`${w}-mist`, 640, 650, 140, '#eaf0ff', 0.5)}</g>` + fireflies(w, [[120, 640], [250, 700], [380, 620], [880, 600], [930, 720], [160, 900]]),
+  terraces: (w) => glows(w, 'window', [[200, 395, 50]]) + fireflies(w, [[100, 700], [240, 760], [380, 820], [880, 700], [160, 900], [420, 640]]),
+  dino: (w) => `<g data-part="lava">${glow(`${w}-lava`, 855, 300, 110, '#ff6a3a', 0.75)}${glow(`${w}-lava2`, 855, 360, 150, '#ffb86b', 0.35)}<path d="M846 298 q-6 20 2 40 M864 300 q8 18 0 36" stroke="#ff8a4a" stroke-width="4" stroke-linecap="round" fill="none"/></g>`,
+  lantern: (w) => glows(w, 'lantern', [[40, 530, 50], [125, 515, 46], [310, 515, 36], [345, 512, 32], [380, 500, 30], [660, 500, 30], [760, 515, 40], [830, 520, 44], [885, 520, 44], [820, 390, 36], [870, 380, 36]]),
+  cove: (w) => `<g data-part="beam">${glow(`${w}-lamp`, 845, 285, 70, '#fff1b8', 0.9)}<g class="world-anim world-anim--sweep"><path d="M845 285 L260 320 L260 490 Z" fill="#ffe9a0" opacity=".14"/><path d="M845 285 L420 330 L420 450 Z" fill="#ffe9a0" opacity=".2"/><path d="M845 285 L600 305 L600 375 Z" fill="#fffbe0" opacity=".34"/></g></g>`,
+  milkyway: () => twinkles([[80, 70, 12], [910, 110, 13], [510, 260, 10], [650, 650, 9], [920, 690, 9], [610, 845, 10], [970, 965, 11], [312, 640, 10], [200, 140, 7]]),
+};
+/** The boat's lantern glows in every world. */
+const boatGlow = (w: WorldId) => { const b = RIVER[w].props.boat!; return `<g data-part="boat-lantern">${glow(`${w}-boat`, b.x + 29, b.y - 39, 36, '#ffb86b', 0.8)}</g>`; };
+
+/** What evening adds over the painting. */
+export function eveningOver(world: WorldId): string {
+  const r = RIVER[world];
+  const tint = r.dusk > 0 ? `<rect data-part="dusk" width="1000" height="1000" fill="${DUSK}" opacity="${r.dusk}" style="mix-blend-mode:multiply"/>` : '';
+  return tint + (r.moon ? moon(world, r.moon.x, r.moon.y) : '') + `<g data-part="lights">${LIGHTS[world](world)}${boatGlow(world)}</g>`;
 }

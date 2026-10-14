@@ -2,6 +2,7 @@ import { costumeById, type Costume } from '../../fun/costumes';
 import { BODY, belly, eyes, hood, INK, MUZZLE, num, pair, ropeTail, S, s2, shade, tint } from './costumeKit';
 import { MYTH_HOOD, MYTH_OUTFIT } from './mythCostumes';
 import { EYE_L, EYE_R, EYE_Y, FUR } from './rig';
+import { LWI } from '../cel';
 
 // Costume art in Truffle's viewBox (30 20 260 270). Ink outlines match the mascot (3.2px, round joins).
 // Redrawn 2026-10-06 (parent: some, like the zodiac ones, were hard to identify): each zodiac hood wears the animal's own
@@ -147,7 +148,7 @@ const OUTFIT: Record<string, (c: Costume) => Outfit> = {
     head: `<path d="M84 86 L190 108 M216 128 L252 140" stroke="${INK}" stroke-width="3.6" stroke-linecap="round"/><ellipse cx="${EYE_R}" cy="${EYE_Y}" rx="17" ry="15" fill="${INK}"/>` +
       `<path d="M66 76 C78 42 118 50 160 30 C202 50 242 42 254 76 C226 64 196 72 160 66 C124 72 94 64 66 76 Z" fill="#26232b" ${S}/>` +
       `<path d="M70 72 C96 62 124 68 160 62 C196 68 224 62 250 72" stroke="#e0b13a" stroke-width="3.5" fill="none" stroke-linecap="round"/>` +
-      `<circle cx="160" cy="48" r="9" fill="#fffdf7" ${s2}/><path d="M155 46 h3 M162 46 h3 M156 52 q4 3 8 0" stroke="${INK}" stroke-width="1.6" fill="none"/><path d="M150 60 L170 56 M150 56 L170 60" stroke="#fffdf7" stroke-width="3" stroke-linecap="round"/>`,
+      `<circle cx="160" cy="48" r="9" fill="#fffdf7" ${s2}/><path d="M155 46 h3 M162 46 h3 M156 52 q4 3 8 0" fill="none" ${s2}/><path d="M150 60 L170 56 M150 56 L170 60" stroke="#fffdf7" stroke-width="3" stroke-linecap="round"/>`,
   }),
   hero: () => ({
     back: `<path d="M112 192 C78 222 66 262 80 288 L240 288 C254 262 242 222 208 192 Z" fill="#d8262e" ${S}/>`,
@@ -167,7 +168,7 @@ const OUTFIT: Record<string, (c: Costume) => Outfit> = {
     };
   },
   raincoat: (c) => ({
-    body: tint(c.color) + `<path d="M160 196 L160 268" stroke="${INK}" stroke-width="2.4"/><circle cx="170" cy="214" r="3.5" fill="${INK}"/><circle cx="170" cy="236" r="3.5" fill="${INK}"/><circle cx="170" cy="256" r="3.5" fill="${INK}"/>` +
+    body: tint(c.color) + `<path d="M160 196 L160 268" stroke="${INK}" stroke-width="${LWI}"/><circle cx="170" cy="214" r="3.5" fill="${INK}"/><circle cx="170" cy="236" r="3.5" fill="${INK}"/><circle cx="170" cy="256" r="3.5" fill="${INK}"/>` +
       `<path d="M98 262 L82 200" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path d="M50 202 C52 172 112 172 114 202 C106 196 98 196 92 202 C86 196 78 196 72 202 C66 196 58 196 50 202 Z" fill="#3f8bff" ${S}/>`,
     head: `<path d="M56 74 C96 50 224 50 264 74 C232 66 88 66 56 74 Z" fill="${c.color}" ${S}/><path d="M108 66 C112 32 208 32 212 66 Z" fill="${c.color}" ${S}/>`,
   }),

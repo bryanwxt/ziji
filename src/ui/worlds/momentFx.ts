@@ -1,149 +1,175 @@
-// What each prop moment draws (spec 2026-10-04 §4.5): the prop moving in its own place, in the paper style (no ink outlines,
-// no filters), as SMIL in a fresh <svg> each time. With reduced motion nothing moves: things that appear only fade.
+// What each prop moment draws (spec 2026-10-13 §6; 2026-10-04 §4.5): the creature or thing moving in its own place, in light cel,
+// as SMIL in a fresh <svg> each time. With reduced motion nothing moves: things that appear only fade in and out.
 import type { WorldId } from '../../fun/worlds';
+import { sparkle } from '../cel';
 import type { Fx } from './moments';
-import { star } from './kit/paper';
-import { P } from './kit/palette';
-import { BOWL, BUTTERFLY, CHEST_BASE, CHEST_LID, CONE, EGG, FISH, FLAME, FOOD, KART, LEAF, LEAF_VEINS, PARROT_BODY, PARROT_WING, PROP_ART, ROCKET, SUB, YARN } from './kit/props';
-import { lift } from './kit/paper';
-import { RACE_TRACK } from './race';
-import { WORLD_ART } from './scenes';
-import { ANIMAL_FACES, BABY_DINO, GEM } from './tapArt';
+import { RIVER } from './river';
+import { BOAT, RIPPLE } from './creatures/boat';
+import { FROG, panda } from './creatures/bamboo';
+import { DRAGONFLY, DUCKS, KITE } from './creatures/terraces';
+import { KINGFISHER, otter } from './creatures/home';
+import { BUTTERFLY, HORNBILL, HORNBILL_FLY, MONKEY } from './creatures/rainforest';
+import { BABY_DINO, EGG_ART, PTEROSAUR, PUFF } from './creatures/dino';
+import { CRAB_ART, PARROT_BODY, PARROT_WING, STAR, X_ART } from './creatures/cove';
+import { magpie, SHOOTING } from './creatures/milkyway';
+import { KOI_ART, PEARL, SKY_LANTERN, lotus } from './creatures/lantern';
+import { ANIMAL_FACES } from './tapArt';
 
-/** How long each moment plays (ms); a tap during it is ignored. */
+/** How long each moment plays (ms); a tap he makes during it is ignored. */
 export const FX_MS: Record<Fx['kind'], number> = {
-  spray: 1200, munch: 1300, roll: 1400, bird: 2000, animal: 2200, flutter: 1600, lap: 2600, tip: 1200, crack: 500, scratch: 1000,
-  sparkle: 1400, wobble: 800, hop: 900, drops: 1400, bubbles: 1600, swim: 2000, launch: 4300, drift: 2400, dig: 1400, open: 1600, flap: 1400,
+  boat: 1400,
+  otters: 2400, dart: 1600, glide: 2600, swing: 2000, flutter: 1800,
+  roll: 2200, hop: 1200, paddle: 3000, dip: 2000, zip: 1600,
+  wobble: 800, hatchling: 900, soar: 2800, puff: 2000, bloom: 500, leap: 1400, rise: 3200,
+  dig: 1400, scuttle: 1800, flap: 1400, bridge: 3600, streak: 1400,
 };
-export const GEM_POP_MS = 1400; // the day's gem stays up even if he keeps tapping
 
-const fade = (dur: number) => `<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.8;1" dur="${dur}ms" fill="freeze"/>`;
-const move = (values: string, dur: number, keyTimes?: string) => `<animateTransform attributeName="transform" type="translate" additive="sum" values="${values}"${keyTimes ? ` keyTimes="${keyTimes}"` : ''} dur="${dur}ms" fill="freeze"/>`;
-const turn = (values: string, dur: number, keyTimes?: string) => `<animateTransform attributeName="transform" type="rotate" additive="sum" values="${values}"${keyTimes ? ` keyTimes="${keyTimes}"` : ''} dur="${dur}ms" fill="freeze"/>`;
-const at = (x: number, y: number, inner: string, cls = '') => `<g${cls ? ` class="${cls}"` : ''} transform="translate(${x} ${y})">${inner}</g>`;
+/** The day's pearl stays up even if he keeps tapping. */
+export const PEARL_MS = 1600;
+
+/** A boat that brings the day's zodiac animal stays up until the animal has risen and faded (its pop runs this long). */
+export const BOAT_FIND_MS = FX_MS.boat + 800;
+
+export const fade = (dur: number, begin = 0) => `<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.8;1" dur="${dur}ms"${begin ? ` begin="${begin}ms"` : ''} fill="freeze"/>`;
+export const move = (values: string, dur: number, keyTimes?: string, begin = 0) => `<animateTransform attributeName="transform" type="translate" additive="sum" values="${values}"${keyTimes ? ` keyTimes="${keyTimes}"` : ''} dur="${dur}ms"${begin ? ` begin="${begin}ms"` : ''} fill="freeze"/>`;
+export const turn = (values: string, dur: number, keyTimes?: string) => `<animateTransform attributeName="transform" type="rotate" additive="sum" values="${values}"${keyTimes ? ` keyTimes="${keyTimes}"` : ''} dur="${dur}ms" fill="freeze"/>`;
+export const at = (x: number, y: number, inner: string, cls = '') => `<g${cls ? ` class="${cls}"` : ''} transform="translate(${x} ${y})">${inner}</g>`;
 const rise = (from: number, dur: number, still: boolean) => (still ? fade(dur) : move(`0 ${from};0 0;0 0`, dur, '0;0.3;1') + fade(dur));
-const sparkle = (x: number, y: number, r: number, delay: number, dur: number) => `<g transform="translate(${x} ${y})" opacity="0">${star(0, 0, r, P.sun)}<animate attributeName="opacity" values="0;1;0" dur="${dur}ms" begin="${delay}ms" fill="freeze"/></g>`;
+export const glint = (x: number, y: number, r: number, delay: number, dur: number) => `<g transform="translate(${x} ${y})" opacity="0">${sparkle(0, 0, r, '#ffe27a', 1.4)}<animate attributeName="opacity" values="0;1;0" dur="${dur}ms" begin="${delay}ms" fill="freeze"/></g>`;
+
+type Draw = (fx: Fx, s: { x: number; y: number }, still: boolean, world: WorldId) => { svg: string; hide: string | null };
+const none = () => ({ svg: '', hide: null });
+
+const DRAW: Record<Fx['kind'], Draw> = {
+  boat: (fx, s, still, world) => {
+    const animal = fx.kind === 'boat' ? fx.animal : null;
+    // in 银河 the boat lifts off the silver river for a moment (spec 2026-10-13 §5); elsewhere it bobs
+    const path = world === 'milkyway' ? '0 0;0 -40;0 -64;0 -40;0 0' : '0 0;0 -7;0 0;0 -4;0 0';
+    const bob = still ? BOAT : `<g>${BOAT}${move(path, FX_MS.boat)}${turn('0;-4;3;-2;0', FX_MS.boat)}</g>`;
+    const rings = still ? '' : `<ellipse cx="0" cy="6" rx="40" ry="8" fill="none" stroke="#fff" stroke-width="2.4" opacity="0"><animate attributeName="rx" values="40;90" dur="${FX_MS.boat}ms" fill="freeze"/><animate attributeName="opacity" values="0.8;0" dur="${FX_MS.boat}ms" fill="freeze"/></ellipse>`;
+    // in 银河 the animal rides up with the lifting boat, so it rises out of the boat there too (never over its sail)
+    const lift = !still && world === 'milkyway' ? move(path, FX_MS.boat) : '';
+    const pop = animal ? `<g class="tap-pop" data-animal="${animal}" transform="translate(0 -84)"><circle r="30" fill="#fffdf7" stroke="#706889" stroke-width="2.2"/><g transform="scale(1.1)">${ANIMAL_FACES[animal] ?? ''}</g>${rise(40, BOAT_FIND_MS, still)}${lift}</g>` : '';
+    return { svg: at(s.x, s.y, RIPPLE + rings + bob + pop, 'tap-boat'), hide: '[data-prop="boat"]' };
+  },
+  otters: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, otter(0.6)), hide: '[data-prop="otter"]' };
+    const up = `<g>${otter(0.6)}${move('0 0;0 -16;0 -16;0 -16;0 20', FX_MS.otters, '0;0.2;0.5;0.8;1')}</g>`;
+    const friend = `<g opacity="0" transform="translate(-58 10) scale(0.85)">${otter(-0.6)}<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.8;1" dur="${FX_MS.otters}ms" fill="freeze"/>${move('0 30;0 -10;0 -10;0 30', FX_MS.otters, '0;0.25;0.75;1')}</g>`;
+    return { svg: at(s.x, s.y, friend + up, 'tap-otters'), hide: '[data-prop="otter"]' };
+  },
+  dart: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, KINGFISHER + glint(0, -40, 7, 0, 900)), hide: null };
+    const fly = `<g>${KINGFISHER}${move('0 0;-60 -30;-200 10;-60 -30;0 0', FX_MS.dart, '0;0.2;0.5;0.8;1')}</g>`;
+    return { svg: at(s.x, s.y, fly, 'tap-dart'), hide: '[data-prop="kingfisher"]' };
+  },
+  glide: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, HORNBILL + glint(-20, -60, 7, 0, 900)), hide: null };
+    const fly = `<g opacity="0">${HORNBILL_FLY}<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.45;0.5" dur="${FX_MS.glide}ms" fill="freeze"/>${move('0 0;-220 -60;-220 -60', FX_MS.glide, '0;0.45;1')}</g>`;
+    const back = `<g opacity="0">${HORNBILL_FLY}<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.5;0.55;1" dur="${FX_MS.glide}ms" fill="freeze"/>${move('180 -40;180 -40;0 0', FX_MS.glide, '0;0.5;1')}</g>`;
+    return { svg: at(s.x, s.y, fly + back, 'tap-glide'), hide: '[data-prop="hornbill"]' };
+  },
+  swing: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, MONKEY), hide: '[data-prop="monkey"]' };
+    return { svg: at(s.x, s.y, `<g>${MONKEY}<animateTransform attributeName="transform" type="rotate" values="0 -8 -94;24 -8 -94;-20 -8 -94;14 -8 -94;0 -8 -94" dur="${FX_MS.swing}ms" fill="freeze"/></g>`, 'tap-swing'), hide: '[data-prop="monkey"]' };
+  },
+  flutter: (_fx, s, still) => {
+    if (still) return none();
+    const wings = `<g>${BUTTERFLY}<animateTransform attributeName="transform" type="scale" values="1 1;0.4 1;1 1" dur="220ms" repeatCount="${Math.round(FX_MS.flutter / 220)}"/></g>`;
+    return { svg: at(s.x, s.y, `<g>${wings}<animateMotion dur="${FX_MS.flutter}ms" path="M0 0 C40 -60 90 -20 70 20 C50 50 10 30 0 0" fill="freeze"/></g>`, 'tap-butterfly'), hide: '[data-prop="butterfly"]' };
+  },
+  roll: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, panda(true)), hide: '[data-prop="panda"]' };
+    const munch = `<g>${panda(true)}<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.4;0.42" dur="${FX_MS.roll}ms" fill="freeze"/>${move('0 0;0 -3;0 0;0 -3;0 0', 880)}</g>`;
+    const over = `<g opacity="0">${panda(false)}<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.4;0.42;1" dur="${FX_MS.roll}ms" fill="freeze"/><animateTransform attributeName="transform" type="rotate" values="0 0 -40;0 0 -40;-360 0 -40" keyTimes="0;0.42;1" dur="${FX_MS.roll}ms" fill="freeze"/></g>`;
+    return { svg: at(s.x, s.y, munch + over, 'tap-roll'), hide: '[data-prop="panda"]' };
+  },
+  hop: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, FROG), hide: '[data-prop="frog"]' };
+    return { svg: at(s.x, s.y, `<g>${FROG}${move('0 0;20 -40;40 0;40 0;20 -30;0 0', FX_MS.hop, '0;0.2;0.4;0.6;0.8;1')}</g>`, 'tap-hop'), hide: '[data-prop="frog"]' };
+  },
+  paddle: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, DUCKS), hide: '[data-prop="ducks"]' };
+    return { svg: at(s.x, s.y, `<g>${DUCKS}${move('0 0;-40 30;-40 30;0 0', FX_MS.paddle, '0;0.45;0.55;1')}${turn('0;-2;2;-2;0', FX_MS.paddle)}</g>`, 'tap-paddle'), hide: '[data-prop="ducks"]' };
+  },
+  dip: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, KITE), hide: '[data-prop="kite"]' };
+    return { svg: at(s.x, s.y, `<g>${KITE}${move('0 0;20 30;-10 -20;0 0', FX_MS.dip)}<animateTransform attributeName="transform" type="rotate" additive="sum" values="0 0 -60;18 0 -60;-14 0 -60;0 0 -60" dur="${FX_MS.dip}ms" fill="freeze"/></g>`, 'tap-dip'), hide: '[data-prop="kite"]' };
+  },
+  zip: (_fx, s, still) => {
+    if (still) return none();
+    return { svg: at(s.x, s.y, `<g>${DRAGONFLY}${move('0 0;60 -20;60 -20;-30 -40;0 0', FX_MS.zip, '0;0.25;0.45;0.75;1')}</g>`, 'tap-zip'), hide: '[data-prop="dragonfly"]' };
+  },
+  wobble: (_fx, s, still) => ({ svg: at(s.x, s.y, `<g class="tap-egg">${EGG_ART}${still ? '' : turn('0 0 -10;-14 0 -10;12 0 -10;-8 0 -10;6 0 -10;0 0 -10', FX_MS.wobble)}</g>`), hide: '[data-prop="nest"] [data-part="egg"]' }),
+  hatchling: (_fx, s, still) => ({ svg: at(s.x + 12, s.y - 10, `<g class="tap-baby-dino is-hopping">${BABY_DINO}${still ? '' : move('0 0;0 -16;0 0;0 -8;0 0', FX_MS.hatchling)}</g>`), hide: null }), // the props layer leaves out its resting baby while this plays
+  soar: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, PTEROSAUR + glint(0, -60, 8, 0, 900)), hide: null };
+    return { svg: at(s.x, s.y, `<g>${PTEROSAUR}<animateMotion dur="${FX_MS.soar}ms" path="M0 0 C-80 -40 -200 -10 -240 30 C-180 60 -60 40 0 0" fill="freeze"/></g>`, 'tap-soar'), hide: '[data-prop="pterosaur"]' };
+  },
+  puff: (_fx, s, still) => {
+    const glow = `<ellipse cx="0" cy="-6" rx="34" ry="10" fill="#ff8a4a" opacity="0">${fade(FX_MS.puff)}</ellipse>`;
+    const smoke = `<g opacity="0">${PUFF}${still ? '' : move('0 0;6 -60', FX_MS.puff)}${fade(FX_MS.puff)}</g>`;
+    return { svg: at(s.x, s.y - 30, glow + smoke, 'tap-puff'), hide: null };
+  },
+  bloom: (fx, s, still) => {
+    const opened = fx.kind === 'bloom' ? fx.opened : 0;
+    const pearl = fx.kind === 'bloom' && fx.pearl ? `<g class="tap-pearl" transform="translate(0 -28)">${PEARL}${rise(20, PEARL_MS, still)}</g>` : '';
+    return { svg: at(s.x, s.y, `<g class="tap-petals" data-opened="${opened}">${lotus(opened)}</g>` + pearl), hide: '[data-prop="lotus"] [data-part="bud"]' };
+  },
+  leap: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, glint(0, -30, 8, 0, 900)), hide: null };
+    const arc = `<g>${KOI_ART}<animateMotion dur="${FX_MS.leap}ms" path="M20 10 C10 -70 -40 -70 -50 10" fill="freeze"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="${FX_MS.leap}ms" fill="freeze"/></g>`;
+    const splash = `<ellipse cx="-50" cy="-2" rx="10" ry="4" fill="none" stroke="#fff" stroke-width="2.4" opacity="0"><animate attributeName="rx" values="10;40" begin="${FX_MS.leap * 0.85}ms" dur="500ms" fill="freeze"/><animate attributeName="opacity" values="0.9;0" begin="${FX_MS.leap * 0.85}ms" dur="500ms" fill="freeze"/></ellipse>`;
+    return { svg: at(s.x, s.y, arc + splash, 'tap-leap'), hide: null };
+  },
+  rise: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, SKY_LANTERN + glint(0, -50, 7, 0, 900)), hide: null };
+    const up = `<g>${SKY_LANTERN}${move('0 0;-30 -240;-60 -480', FX_MS.rise)}<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.7;1" dur="${FX_MS.rise}ms" fill="freeze"/></g>`;
+    const back = `<g opacity="0">${SKY_LANTERN}<animate attributeName="opacity" values="0;1" begin="${FX_MS.rise}ms" dur="300ms" fill="freeze"/></g>`;
+    return { svg: at(s.x, s.y, up + back, 'tap-rise'), hide: '[data-prop="skylantern"]' };
+  },
+  dig: (fx, s, still) => {
+    const puffs = [[-14, -2, 5], [12, -6, 4.5], [-2, -10, 4]].map(([dx, dy, r]) => `<circle cx="${dx}" cy="${dy}" r="${r}" fill="#f1c9a8" stroke="#706889" stroke-width="1.2">${still ? '' : move(`0 0;${(dx as number) * 0.6} -12;${(dx as number) * 0.8} 0`, FX_MS.dig)}${fade(FX_MS.dig)}</circle>`).join('');
+    const prize = fx.kind === 'dig' && fx.star ? `<g class="tap-star" transform="translate(0 -30)">${STAR}${rise(24, FX_MS.dig, still)}</g>` : '';
+    return { svg: at(s.x, s.y, X_ART + puffs + prize, 'tap-dig'), hide: null };
+  },
+  scuttle: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, CRAB_ART), hide: '[data-prop="crab"]' };
+    return { svg: at(s.x, s.y, `<g>${CRAB_ART}${move('0 0;50 0;50 0;-30 0;0 0', FX_MS.scuttle, '0;0.3;0.45;0.8;1')}</g>`, 'tap-scuttle'), hide: '[data-prop="crab"]' };
+  },
+  flap: (_fx, s, still) => {
+    const wing = `<g>${PARROT_WING}${still ? '' : `<animateTransform attributeName="transform" type="rotate" values="0 4 -26;-34 4 -26;0 4 -26" dur="280ms" repeatCount="5"/>`}</g>`;
+    return { svg: at(s.x, s.y, `<g>${PARROT_BODY}${wing}${still ? '' : move('0 0;0 -5;0 0', 700) }</g>`, 'tap-parrot'), hide: '[data-prop="parrot"]' };
+  },
+  bridge: (_fx, s, still) => {
+    // a flock flies in over the silver river and holds an arch for a moment: the magpie bridge (鹊桥)
+    const n = 7;
+    const birds = Array.from({ length: n }, (_, i) => {
+      const t = i / (n - 1);
+      const x = 160 + t * 380;
+      const y = -120 - Math.sin(t * Math.PI) * 70;
+      const from = `${-200 - i * 30} ${-260 + i * 10}`;
+      return `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})" opacity="0"><g>${magpie(i % 2 === 0)}</g>${still ? '' : move(`${from};0 0;0 0`, FX_MS.bridge, '0;0.35;1', i * 60)}<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="${FX_MS.bridge}ms" begin="${i * 60}ms" fill="freeze"/></g>`;
+    }).join('');
+    return { svg: at(s.x, s.y, birds, 'tap-bridge'), hide: null };
+  },
+  streak: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, glint(0, -24, 14, 0, 900)), hide: null };
+    return { svg: at(s.x, s.y, `<g opacity="0">${SHOOTING}${move('60 -30;-260 130', FX_MS.streak)}<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.7;1" dur="${FX_MS.streak}ms" fill="freeze"/></g>`, 'tap-streak'), hide: null };
+  },
+};
+
+/** Which prop a moment plays on (the zodiac animal's on the boat in any world). */
+const PROP_OF: Record<Fx['kind'], string> = {
+  boat: 'boat',
+  otters: 'otter', dart: 'kingfisher', glide: 'hornbill', swing: 'monkey', flutter: 'butterfly',
+  roll: 'panda', hop: 'frog', paddle: 'ducks', dip: 'kite', zip: 'dragonfly',
+  wobble: 'nest', hatchling: 'nest', soar: 'pterosaur', puff: 'volcano', bloom: 'lotus', leap: 'koi', rise: 'skylantern',
+  dig: 'x', scuttle: 'crab', flap: 'parrot', bridge: 'magpies', streak: 'shootingstar',
+};
 
 /** The moment's art, and the scene part it stands in for while it plays (that part is hidden, then shown again). */
 export function momentFx(world: WorldId, fx: Fx, still: boolean): { svg: string; hide: string | null } {
-  const p = (name: string) => WORLD_ART[world].props[name]!;
-  const ms = FX_MS[fx.kind];
-  switch (fx.kind) {
-    case 'spray': {
-      const s = p('sprinkler');
-      const arcs = `<g fill="none" stroke="${P.skyDeep}" stroke-width="3" stroke-linecap="round"><path d="M0 0 q-14 -26 -30 -18"/><path d="M0 0 q-4 -32 -12 -34"/><path d="M0 0 q4 -32 12 -34"/><path d="M0 0 q14 -26 30 -18"/></g><g fill="${P.sea}"><circle cx="-32" cy="-14" r="2.6"/><circle cx="-13" cy="-36" r="2.6"/><circle cx="13" cy="-36" r="2.6"/><circle cx="32" cy="-14" r="2.6"/></g>`;
-      return { svg: at(s.x, s.y - 22, arcs + fade(ms), 'tap-spray'), hide: null }; // from the nozzle (phase A minor: it sprayed from the ground)
-    }
-    case 'munch': {
-      const b = p('bowl');
-      const food = still ? FOOD(5) : `<ellipse cx="0" cy="-4.5" rx="8" ry="2" fill="${P.brownFood}"><animate attributeName="rx" values="8;6.5;5" keyTimes="0;0.5;1" dur="${ms}ms" fill="freeze"/></ellipse>`;
-      const crumbs = still ? '' : `<g fill="${P.brownFood}"><circle cx="-10" cy="-10" r="1.4">${move('0 0;-4 -6;-6 2', ms)}</circle><circle cx="9" cy="-11" r="1.2">${move('0 0;5 -5;7 3', ms)}</circle></g>`;
-      return { svg: at(b.x, b.y, lift(BOWL) + food + crumbs, 'tap-bowl'), hide: '[data-prop="bowl"]' };
-    }
-    case 'roll': {
-      if (still) return { svg: '', hide: null };
-      const b = p('ball');
-      const ball = `<g>${lift(`<circle cx="0" cy="-9" r="9" fill="${P.red}"/>`)}<path d="M-8 -11 q8 -4 16 0" stroke="${P.white}" stroke-width="2" fill="none"/>${turn('0 0 -9;-280 0 -9;-280 0 -9;0 0 -9', ms, '0;0.4;0.55;1')}</g>`;
-      return { svg: at(b.x, b.y, `<g>${ball}${move('0 0;-46 0;-46 0;0 0', ms, '0;0.4;0.55;1')}</g>`, 'tap-ball'), hide: '[data-prop="ball"]' };
-    }
-    case 'bird': {
-      const h = p('birdhouse');
-      const bird = `<path d="M-7 0 C-7 -7 3 -8 6 -3 L11 -4 L7 0 C5 4 -5 5 -7 0Z" fill="${P.blue}"/><path d="M-2 -2 q4 -6 8 0" fill="${P.skyDeep}"/><circle cx="3" cy="-3" r="1.2" fill="${P.night}"/>`;
-      const path = still ? fade(ms) : move('0 0;0 -10;6 -26;6 -26;-60 -110', ms, '0;0.15;0.35;0.7;1') + fade(ms);
-      return { svg: at(h.x, h.y - 27, `<g>${bird}${path}</g>`, 'tap-bird'), hide: null };
-    }
-    case 'animal': {
-      const b = p('box');
-      const face = `<g class="tap-pop" data-animal="${fx.animal}" transform="translate(0 -40) scale(0.9)"><circle r="24" fill="${P.cream}"/>${ANIMAL_FACES[fx.animal] ?? ''}${rise(30, ms, still)}</g>`;
-      const box = still ? '' : `<g>${PROP_ART.box}${turn('0 0 0;-6 0 0;6 0 0;-3 0 0;0 0 0', 600)}</g>`;
-      return { svg: at(b.x, b.y, box + face), hide: still ? null : '[data-prop="box"]' };
-    }
-    case 'flutter': {
-      if (still) return { svg: '', hide: null };
-      const b = p('butterfly');
-      const wings = `<g>${lift(BUTTERFLY)}<animateTransform attributeName="transform" type="scale" values="1 1;0.4 1;1 1" dur="220ms" repeatCount="${Math.round(ms / 220)}"/></g>`;
-      return { svg: at(b.x, b.y - 26, `<g>${wings}<animateMotion dur="${ms}ms" path="M0 0 C-30 -40 -64 -10 -44 18 C-24 40 10 14 0 0" fill="freeze"/></g>`, 'tap-butterfly'), hide: '[data-prop="butterfly"]' };
-    }
-    case 'lap': {
-      if (still) return { svg: '', hide: null };
-      const k = p('kart');
-      const drive = `<g class="tap-kart" opacity="0"><g transform="translate(0 -14)">${lift(KART)}</g><animateMotion dur="${ms - 600}ms" begin="300ms" path="${RACE_TRACK}" rotate="auto" fill="freeze"/><animate attributeName="opacity" values="1;1;0" keyTimes="0;0.95;1" dur="${ms - 600}ms" begin="300ms" fill="freeze"/></g>`;
-      const back = `<g opacity="0">${at(k.x, k.y, PROP_ART.kart)}<animate attributeName="opacity" values="0;1" dur="300ms" begin="${ms - 300}ms" fill="freeze"/></g>`;
-      return { svg: drive + back, hide: '[data-prop="kart"]' };
-    }
-    case 'tip': {
-      if (still) return { svg: '', hide: null };
-      const c = p('cone');
-      return { svg: at(c.x, c.y, `<g>${lift(CONE)}${turn('0 -13 0;-80 -13 0;-80 -13 0;0 -13 0', ms, '0;0.3;0.6;1')}</g>`, 'tap-cone'), hide: '[data-prop="cone"]' };
-    }
-    case 'crack': {
-      const g = p('gem-block');
-      const lines = ['M-12 -30 l8 8 -4 6', 'M6 -32 l-6 10 5 6', 'M-8 -12 l6 -6 6 2'].slice(0, fx.cracks).map((d) => `<path class="tap-crack" d="${d}" fill="none" stroke="${P.white}" stroke-width="2.4" stroke-linecap="round"/>`).join('');
-      const gem = fx.gem ? `<g class="tap-gem" transform="translate(0 -52)">${GEM}${rise(24, GEM_POP_MS, still)}</g>` : '';
-      return { svg: at(g.x, g.y, lines + gem), hide: null };
-    }
-    case 'scratch': {
-      const s = p('post');
-      const marks = [-8, -1, 6].map((x, i) => `<path class="tap-scratch" d="M${x} -50 l4 14" stroke="${P.white}" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="16" stroke-dashoffset="${still ? 0 : 16}">${still ? '' : `<animate attributeName="stroke-dashoffset" values="16;0" dur="250ms" begin="${i * 220}ms" fill="freeze"/>`}</path>`).join('');
-      const chips = still ? '' : [-10, 4, 12].map((x, i) => `<rect x="${x}" y="-36" width="3" height="3" fill="${P.woodLight}">${move(`0 0;${(i - 1) * 8} 30`, 800)}${fade(800)}</rect>`).join('');
-      return { svg: at(s.x, s.y, marks + chips), hide: null };
-    }
-    case 'sparkle': {
-      const s = p('statue');
-      return { svg: at(s.x, s.y, [[-28, -40, 6, 0], [30, -64, 7, 250], [36, -20, 5, 500], [-6, -70, 5, 750]].map(([x, y, r, d]) => sparkle(x!, y!, r!, d!, 600)).join(''), 'tap-sparkle'), hide: null };
-    }
-    case 'wobble': {
-      const n = p('nest');
-      return { svg: at(n.x, n.y, `<g class="tap-egg">${lift(EGG)}${still ? '' : turn('0 0 0;-14 0 0;12 0 0;-8 0 0;6 0 0;0 0 0', ms)}</g>`), hide: '[data-prop="nest"] [data-part="egg"]' };
-    }
-    case 'hop': {
-      const n = p('nest');
-      return { svg: at(n.x + 10, n.y - 8, `<g class="tap-baby-dino is-hopping" transform="scale(0.9)">${BABY_DINO}${still ? '' : move('0 0;0 -14;0 0;0 -7;0 0', ms)}</g>`), hide: null }; // the props layer leaves out its resting baby while this plays
-    }
-    case 'drops': {
-      const l = p('leaf');
-      const sway = still ? lift(LEAF) + LEAF_VEINS : `<g>${lift(LEAF)}${LEAF_VEINS}${turn('0 0 0;-6 0 0;5 0 0;0 0 0', 900)}</g>`;
-      const drops = [[-36, -26, 0], [42, -22, 200], [6, -40, 400]].map(([x, y, d]) => `<path d="M${x} ${y} q-3 5 0 7 q3 -2 0 -7Z" fill="${P.skyDeep}" opacity="0"><animate attributeName="opacity" values="0;1;1;0" dur="900ms" begin="${d}ms" fill="freeze"/>${still ? '' : `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${-(y as number) - 4}" dur="900ms" begin="${d}ms" fill="freeze"/>`}</path>`).join('');
-      return { svg: at(l.x, l.y, sway + drops, 'tap-drops'), hide: still ? null : '[data-prop="leaf"]' };
-    }
-    case 'bubbles': {
-      const s = p('sub');
-      const bob = still ? '' : `<g transform="translate(0 -4)">${lift(SUB)}${move('0 0;0 -6;0 0;0 -4;0 0', ms)}</g>`;
-      const bubbles = [0, 1, 2, 3].map((i) => `<circle cx="${10 + (i % 2) * 6}" cy="-44" r="${3 + (i % 2)}" fill="none" stroke="${P.foam}" stroke-width="1.8" opacity="0"><animate attributeName="opacity" values="0;1;0" dur="${900 + i * 200}ms" begin="${i * 150}ms" fill="freeze"/>${still ? '' : `<animate attributeName="cy" values="-44;-100" dur="${900 + i * 200}ms" begin="${i * 150}ms" fill="freeze"/>`}</circle>`).join('');
-      return { svg: at(s.x, s.y, `<g class="tap-sub">${bob}</g>` + bubbles), hide: still ? null : '[data-prop="sub"]' };
-    }
-    case 'swim': {
-      if (still) return { svg: '', hide: null };
-      const f = p('fish');
-      const flip = `<animateTransform attributeName="transform" type="scale" values="1 1;1 1;-1 1;-1 1;1 1" keyTimes="0;0.45;0.5;0.95;1" dur="${ms}ms" fill="freeze"/>`;
-      return { svg: at(f.x, f.y - 30, `<g>${move('0 0;-60 -6;-60 -6;0 0', ms, '0;0.45;0.5;1')}<g>${lift(FISH)}${flip}</g></g>`, 'tap-fish'), hide: '[data-prop="fish"]' };
-    }
-    case 'launch': {
-      const r = p('rocket');
-      const lift_ = still ? fade(ms) : `<animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;0 -440;0 -440;0 0" keyTimes="0;0.4;0.55;1" begin="1500ms" dur="2800ms" fill="freeze"/>`;
-      return { svg: at(r.x, r.y - 6, `<g class="tap-rocket">${lift(ROCKET)}${FLAME}${lift_}</g>`), hide: '[data-prop="rocket"]' };
-    }
-    case 'drift': {
-      if (still) return { svg: '', hide: null };
-      const y = p('yarn');
-      return { svg: at(y.x, y.y - 40, `<g>${move('0 0;-10 -30;-4 -40;0 0', ms)}<g>${lift(YARN)}${turn('0;200;360', ms)}</g></g>`, 'tap-yarn'), hide: '[data-prop="yarn"]' };
-    }
-    case 'dig': {
-      const x = p('x');
-      const puffs = [[-14, -2, 4], [10, -6, 3.5], [-2, -8, 3]].map(([dx, dy, r]) => `<circle cx="${dx}" cy="${dy}" r="${r}" fill="${P.sandLow}">${still ? '' : move(`0 0;${(dx as number) * 0.6} -10;${(dx as number) * 0.8} 0`, ms)}${fade(ms)}</circle>`).join('');
-      const prize = fx.star ? `<g transform="translate(0 -26)">${star(0, 0, 12, P.sun)}${rise(20, ms, still)}</g>` : '';
-      return { svg: at(x.x, x.y, puffs + prize, 'tap-dig'), hide: null };
-    }
-    case 'open': {
-      const c = p('chest');
-      const lid = `<g>${CHEST_LID}${still ? '' : turn('0 -20 -20;-28 -20 -20;-28 -20 -20;0 -20 -20', ms, '0;0.25;0.75;1')}</g>`;
-      const shine = [[-6, -36, 5, 300], [8, -44, 6, 500], [0, -54, 4, 700]].map(([x, y, r, d]) => sparkle(x!, y!, r!, d!, 700)).join('');
-      return { svg: at(c.x, c.y, CHEST_BASE + lid + shine, 'tap-chest'), hide: '[data-prop="chest"]' };
-    }
-    case 'flap': {
-      const b = p('parrot');
-      const wing = `<g>${PARROT_WING}${still ? '' : `<animateTransform attributeName="transform" type="rotate" values="0 -4 -4;-30 -4 -4;0 -4 -4" dur="280ms" repeatCount="5"/>`}</g>`;
-      return { svg: at(b.x, b.y, `<g>${PARROT_BODY}${wing}${still ? '' : '<animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;0 -4;0 0" dur="700ms" repeatCount="2"/>'}</g>`, 'tap-parrot'), hide: '[data-prop="parrot"]' };
-    }
-  }
+  const s = RIVER[world].props[PROP_OF[fx.kind]]!;
+  return DRAW[fx.kind](fx, s, still, world);
 }

@@ -341,6 +341,7 @@ export interface KidState {
   outfit: string | null;
   worldsSeen: string[]; // journey worlds reached; never shrinks
   world: string | null; // the child's pick in the room; null = newest reached
+  riverNews: boolean; // his old paper worlds were just mapped onto One River: Home says so once (spec 2026-10-13 §8)
   reading: ReadingState;
   speakingLast: 'langdu' | 'story' | null; // which activity the speaking step ran last (they alternate)
   story: { next: number; told: number }; // 看图说话: next scene, stories told (drives starter fading)
@@ -364,6 +365,7 @@ export const DEFAULT_KID: KidState = {
   outfit: null,
   worldsSeen: [],
   world: null,
+  riverNews: false,
   reading: DEFAULT_READING,
   speakingLast: null,
   story: { next: 0, told: 0 },

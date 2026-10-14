@@ -24,7 +24,7 @@ export function findAnimal(f: Finds, today: string): { finds: Finds; animal: str
   return { finds: f, animal: found, isNew: false };
 }
 
-/** Three taps crack the block; the fourth pops a gem, once a day. `taps` counts this visit's taps. */
+/** The lotus: three taps open it; the fourth gives a pearl (counted in gems), once a day. `taps` counts this visit's taps. */
 export function tapGem(f: Finds, today: string, taps: number): { finds: Finds; cracks: number; gem: boolean } {
   const cracks = Math.min(taps, 3);
   if (taps >= 4 && f.lastGemDate !== today) return { finds: { ...f, gems: f.gems + 1, lastGemDate: today }, cracks, gem: true };

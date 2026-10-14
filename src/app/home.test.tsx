@@ -6,7 +6,7 @@ import { getKid, putCards, putWords, saveKid, saveReward, saveSession } from '..
 import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS, type SessionPlan } from '../types';
-import { HomeScreen } from './HomeScreen';
+import { HomeScreen, RIVER_NEWS } from './HomeScreen';
 import { CollectionScreen } from './CollectionScreen';
 import { powerFamilies } from '../fun/powers';
 import { Wardrobe } from './Wardrobe';
@@ -418,20 +418,37 @@ async function seedKnown(app: Awaited<ReturnType<typeof makeAppData>>, n: number
 }
 
 describe('HomeScreen journey', () => {
+  it('his paper worlds became the river: no arrival card, Truffle says so once (spec 2026-10-13 §8)', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass'] } as never });
+    await saveKid(app.db, app.kid!);
+    await seedKnown(app, 40);
+    const first = renderWithApp(<HomeScreen />, { ...app, kid: await getKid(app.db) });
+    await screen.findByText('今天的练习');
+    await waitFor(() => expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe(RIVER_NEWS));
+    expect(screen.queryByRole('dialog', { name: '新地方' })).toBeNull();
+    expect(document.querySelector('.world-scene')?.getAttribute('data-world')).toBe('rainforest');
+    await waitFor(async () => expect(await getKid(app.db)).toMatchObject({ worldsSeen: ['home', 'rainforest'], riverNews: false }));
+    first.unmount();
+    renderWithApp(<HomeScreen />, { ...app, kid: await getKid(app.db) });
+    await screen.findByText('今天的练习');
+    await new Promise((r) => setTimeout(r, 200));
+    expect(document.querySelector('.pet__bubble .sr-only')?.textContent).not.toBe(RIVER_NEWS);
+  });
   it('draws the newest reached world and Truffle says a line from it', async () => {
-    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass'] } });
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest'] } });
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
-    expect(document.querySelector('.world-scene')?.getAttribute('data-world')).toBe('grass');
-    expect(WORLD_LINES.grass).toContain(document.querySelector('.pet__bubble .sr-only')?.textContent); // every line is several characters, so the label carries one readable copy
+    expect(document.querySelector('.world-scene')?.getAttribute('data-world')).toBe('rainforest');
+    expect(WORLD_LINES.rainforest).toContain(document.querySelector('.pet__bubble .sr-only')?.textContent); // every line is several characters, so the label carries one readable copy
   });
-  it('an existing install at 61 known announces 赛车山 once and remembers it', async () => {
+  it('an existing install at 61 known announces 竹林 once and remembers it', async () => {
     const app = await makeAppData();
     await seedKnown(app, 61);
     const first = renderWithApp(<HomeScreen />, app);
     const card = await screen.findByRole('dialog', { name: '新地方' });
-    expect(card.textContent).toContain('到赛车山了！');
-    expect((await getKid(app.db))?.worldsSeen).toEqual(['yard', 'grass', 'race']);
+    expect(card.textContent).toContain('到竹林了！');
+    expect(card.querySelector('img.arrival__scene')?.getAttribute('src')).toBe('/worlds/bamboo.webp');
+    expect((await getKid(app.db))?.worldsSeen).toEqual(['home', 'rainforest', 'bamboo']);
     fireEvent.click(screen.getByText('走吧！'));
     expect(screen.queryByRole('dialog', { name: '新地方' })).toBeNull();
     first.unmount();
@@ -446,14 +463,14 @@ describe('HomeScreen journey', () => {
     renderWithApp(<HomeScreen />, app);
     await screen.findByRole('dialog', { name: '新地方' });
     const kid = (await getKid(app.db))!;
-    expect([kid.bonusStars, kid.ownedCostumes, kid.worldsSeen]).toEqual([7, ['tiger'], ['yard', 'grass', 'race']]);
+    expect([kid.bonusStars, kid.ownedCostumes, kid.worldsSeen]).toEqual([7, ['tiger'], ['home', 'rainforest', 'bamboo']]);
   });
   it('a lapse keeps the reached world', async () => {
-    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass', 'race'] } });
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest', 'bamboo'] } });
     await seedKnown(app, 40);
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
-    expect(document.querySelector('.world-scene')?.getAttribute('data-world')).toBe('race');
+    expect(document.querySelector('.world-scene')?.getAttribute('data-world')).toBe('bamboo');
     expect(screen.queryByRole('dialog', { name: '新地方' })).toBeNull();
   });
 });
@@ -478,7 +495,7 @@ describe('HomeScreen week and word of the day', () => {
 
 describe("Truffle's room places", () => {
   it('lists all eight worlds, picks a reached one, and shows how far the locked ones are', async () => {
-    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass', 'race'] } });
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest', 'bamboo'] } });
     renderWithApp(<Wardrobe />, app);
     fireEvent.click(await screen.findByRole('tab', { name: '地方' }));
     const places = [...document.querySelectorAll('button.place')];
@@ -487,7 +504,7 @@ describe("Truffle's room places", () => {
     expect(places[2]!.getAttribute('aria-pressed')).toBe('true'); // newest by default
     expect(places[3]!.textContent).toContain('100');
     fireEvent.click(places[1]!);
-    await waitFor(async () => expect((await getKid(app.db))?.world).toBe('grass'));
+    await waitFor(async () => expect((await getKid(app.db))?.world).toBe('rainforest'));
     expect(places[1]!.getAttribute('aria-pressed')).toBe('true');
   });
 });
@@ -505,32 +522,33 @@ describe('HomeScreen word of the day reading', () => {
 });
 
 describe('HomeScreen world tap fun', () => {
-  it("Truffle plays with his props: tapping his bowl, he munches, looking toward it, and says so (spec 2026-10-04 §4.5)", async () => {
+  it('tapping the paper boat finds an animal, saves it, and Truffle says so', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest'] } });
+    await saveKid(app.db, app.kid!);
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    fireEvent.click(document.querySelector('.world-props [aria-label="纸船"]')!);
+    await waitFor(async () => expect((await getKid(app.db))?.finds.animals).toEqual(['rat']));
+    expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('找到了！');
+  });
+  it("Truffle plays along: tapping the otter in the canal, he is excited, looks toward it and says so (spec 2026-10-13 §6)", async () => {
     const app = await makeAppData();
     await saveKid(app.db, app.kid!);
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
-    fireEvent.click(document.querySelector('.world-props [aria-label="小碗"]')!);
-    await waitFor(() => expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('好吃！'));
-    expect(document.querySelector('.home .truffle')?.getAttribute('data-expression')).toBe('content');
-    expect(document.querySelector('.home [data-part="headrot"]')?.getAttribute('transform')).toMatch(/^rotate\(-/); // the bowl is on his left
-  });
-  it('tapping the box in the tall grass finds an animal, saves it, and Truffle says so', async () => {
-    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass'] } });
-    await saveKid(app.db, app.kid!);
-    renderWithApp(<HomeScreen />, app);
-    await screen.findByText('今天的练习');
-    fireEvent.click(document.querySelector('.world-props [aria-label="纸箱"]')!);
-    await waitFor(async () => expect((await getKid(app.db))?.finds.animals).toEqual(['rat']));
-    expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('找到了！');
+    fireEvent.click(document.querySelector('.world-props [aria-label="水獭"]')!);
+    await waitFor(() => expect(document.querySelector('.pet__bubble .sr-only')?.textContent).toBe('水獭！'));
+    expect(document.querySelector('.home .truffle')?.getAttribute('data-expression')).toBe('surprised');
+    expect(document.querySelector('.home [data-part="headrot"]')?.getAttribute('transform')).toMatch(/^rotate\([1-9]/); // the otter is on his right
   });
 });
 
-describe('找到的动物 and the gem jar', () => {
+describe('找到的动物 and the pearl jar', () => {
   it('字卡 has an animals page: found ones named, the rest unknown', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, finds: { ...DEFAULT_KID.finds, animals: ['rat', 'ox'] } } });
     renderWithApp(<CollectionScreen />, app);
     fireEvent.click(await screen.findByRole('button', { name: '找到的动物' }));
+    expect(document.querySelector('.animals__note')?.textContent).toContain('在纸船里找一找！'); // the animals come out of the paper boat now
     const slots = [...document.querySelectorAll('.animal-slot')];
     expect(slots).toHaveLength(12);
     expect(slots.filter((s) => s.classList.contains('is-found')).map((s) => s.querySelector('.label__ch')?.textContent)).toEqual(['鼠', '牛']);
@@ -550,21 +568,21 @@ describe('找到的动物 and the gem jar', () => {
     }
     expect(document.querySelector('.scroll-panel .room__tabs, .scroll-panel .pet')).toBeNull();
   });
-  it("Truffle's room shows his gems in a jar", async () => {
+  it("Truffle's room shows his pearls (the gems data) in a jar", async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, finds: { ...DEFAULT_KID.finds, gems: 3 } } });
     renderWithApp(<Wardrobe />, app);
     fireEvent.click(await screen.findByRole('tab', { name: '地方' }));
-    expect(screen.getByText('3 颗宝石')).toBeTruthy();
-    expect(document.querySelectorAll('.gem-jar .gem')).toHaveLength(3);
+    expect(screen.getByText('3 颗珍珠')).toBeTruthy();
+    expect(document.querySelectorAll('.gem-jar .pearl')).toHaveLength(3);
   });
-  it('a full jar keeps every gem below the rim', async () => {
+  it('a full jar keeps every pearl below the rim', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, finds: { ...DEFAULT_KID.finds, gems: 30 } } });
     renderWithApp(<Wardrobe />, app);
     fireEvent.click(await screen.findByRole('tab', { name: '地方' }));
-    expect(screen.getByText('30 颗宝石')).toBeTruthy();
-    const ys = [...document.querySelectorAll('.gem-jar .gem')].map((g) => Number(/translate\([-\d.]+ ([-\d.]+)\)/.exec(g.getAttribute('transform')!)![1]));
+    expect(screen.getByText('30 颗珍珠')).toBeTruthy();
+    const ys = [...document.querySelectorAll('.gem-jar .pearl')].map((g) => Number(/translate\([-\d.]+ ([-\d.]+)\)/.exec(g.getAttribute('transform')!)![1]));
     expect(ys.length).toBeGreaterThan(0);
-    expect(Math.min(...ys) - 7).toBeGreaterThan(-38); // a gem is about 14 tall at this scale; the rim's lower edge is y -38
+    expect(Math.min(...ys) - 7).toBeGreaterThan(-38); // a pearl is about 13 tall at this scale; the rim's lower edge is y -38
   });
 });
 
@@ -608,7 +626,7 @@ describe('the reward goal on Home (spec 2026-10-04 §3, phase D)', () => {
 
 describe("today's stops on the world's path (phase D)", () => {
   it('the stops sit on the world itself, with no strip of path drawn behind them (parent, 2026-10-05: it read as a stray shape)', async () => {
-    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['yard', 'grass'] } });
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, worldsSeen: ['home', 'rainforest'] } });
     await saveKid(app.db, app.kid!);
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');

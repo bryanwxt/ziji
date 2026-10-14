@@ -24,7 +24,7 @@ import { WorldProps } from '../ui/worlds/WorldProps';
 import { dayMood } from '../ui/truffle/greeting';
 import { applyFind } from '../fun/finds';
 import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
-import { SCENE_VIEWBOX, SCENES } from '../ui/worlds/scenes';
+import { paintingHref } from '../ui/worlds/scene';
 import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId, resetWorlds } from '../fun/worlds';
 import { settleJourney } from '../placement/journey';
 import { TabBar } from '../ui/TabBar';
@@ -46,6 +46,8 @@ interface HomeData {
 const SLEEP_AFTER_MS = 20_000;
 /** What Truffle asks once the day's lesson is done (spec 2026-10-11 §4): the second lesson, offered softly. */
 const OFFER = '想再学一课吗？';
+/** What Truffle says once when the paper worlds have become One River (spec 2026-10-13 §8). */
+export const RIVER_NEWS = '我们的世界变成一条河了！';
 
 export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: number }) {
   const { db, now, go, kid, settings, refresh } = useApp();
@@ -96,9 +98,13 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       let changed = false;
       let arrived: ReturnType<typeof updateWorlds>['arrived'] | undefined;
       let mood: ReturnType<typeof dayMood> | null = null;
+      let river = false;
       const plan = (stored: KidState): KidState | null => {
         const u = updateWorlds(redo ? resetWorlds(stored, j.count) : stored, j.count);
         let next = u.kid;
+        // his paper worlds were just mapped onto the river (spec 2026-10-13 §8): Truffle says so once, with no arrival card
+        river = next.riverNews;
+        if (river) next = { ...next, riverNews: false };
         // once a day he shows how he feels about it (spec 2026-10-04 §4.6): a little sulk after days away, extra bouncy on a streak
         const greet = next.greetedOn !== day;
         mood = null;
@@ -109,7 +115,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         }
         changed = u.changed;
         arrived = u.arrived;
-        return u.changed || greet || redo ? next : null;
+        return u.changed || greet || redo || river ? next : null;
       };
       let saved = await updateKid(db, plan);
       if (!saved && kid && !(await getKid(db))) { // nothing stored yet: start from the one on screen
@@ -123,6 +129,12 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         setSaid(m === 'missed' ? '你去哪儿了？我好想你！' : '又见面了！');
         clearTimeout(saidTimer.current);
         saidTimer.current = setTimeout(() => setSaid(null), 2600);
+      }
+      if (river) { // the news wins over the day's greeting
+        setPropPlay((p) => ({ react: { kind: 'excited', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
+        setSaid(RIVER_NEWS);
+        clearTimeout(saidTimer.current);
+        saidTimer.current = setTimeout(() => setSaid(null), 3600);
       }
       setJourneyKid(saved);
       if (changed) setArrival(arrived!);
@@ -286,7 +298,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       {arrival && (
         <div class="arrival" role="dialog" aria-label="新地方">
           <div class="arrival__card">
-            <span class="grainy arrival__frame"><svg class="arrival__scene" viewBox={SCENE_VIEWBOX} preserveAspectRatio="xMidYMax slice" aria-hidden="true" dangerouslySetInnerHTML={{ __html: SCENES[arrival] }} /></span>
+            <img class="arrival__scene" src={paintingHref(arrival)} alt="" aria-hidden="true" />
             <h2><Label zh={`到${worldById(arrival)!.zh}了！`} /></h2>
             <button type="button" class="btn btn--primary btn--big" onClick={() => setArrival(null)}><Label zh="走吧！" /></button>
           </div>

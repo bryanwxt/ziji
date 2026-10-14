@@ -16,8 +16,8 @@ import { loadKnowledge } from './knowledge';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { currentWorld, WORLDS } from '../fun/worlds';
 import { journeyCount } from '../placement/journey';
-import { SCENES } from '../ui/worlds/scenes';
-import { GEM } from '../ui/worlds/tapArt';
+import { paintingHref } from '../ui/worlds/scene';
+import { PEARL } from '../ui/worlds/creatures/lantern';
 
 type RoomTab = 'outfits' | 'powers' | 'places';
 const ROOM_TABS: [RoomTab, string][] = [['outfits', '服装'], ['powers', '能力'], ['places', '地方']];
@@ -136,17 +136,17 @@ export function Wardrobe() {
           </div>
         ) : tab === 'places' ? (
           <div class="places scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
-            <div class="gem-jar" aria-label={`${k.finds.gems} 颗宝石`}>
+            <div class="gem-jar" aria-label={`${k.finds.gems} 颗珍珠`}>
               <svg class="gem-jar__glass" viewBox="-60 -70 120 140" aria-hidden="true">
                 <path d="M-40 -46 h80 v8 h-6 v86 a16 16 0 0 1 -16 16 h-36 a16 16 0 0 1 -16 -16 v-86 h-6Z" fill="#e4efff" stroke="#2a2630" stroke-width="3" stroke-linejoin="round" />
                 {Array.from({ length: Math.min(k.finds.gems, 24) }, (_, i) => (
-                  <g key={i} class="gem" transform={`translate(${-24 + (i % 4) * 16} ${46 - Math.floor(i / 4) * 14}) scale(0.55)`} dangerouslySetInnerHTML={{ __html: GEM }} />
+                  <g key={i} class="pearl" transform={`translate(${-24 + (i % 4) * 16} ${52 - Math.floor(i / 4) * 14}) scale(0.62)`} dangerouslySetInnerHTML={{ __html: PEARL }} />
                 ))}
               </svg>
-              <Label zh={`${k.finds.gems} 颗宝石`} />
+              <Label zh={`${k.finds.gems} 颗珍珠`} />
             </div>
             {WORLDS.map((w) => {
-              const reached = w.id === 'yard' || k.worldsSeen.includes(w.id);
+              const reached = w.id === 'home' || k.worldsSeen.includes(w.id);
               return (
                 <button
                   key={w.id}
@@ -156,7 +156,7 @@ export function Wardrobe() {
                   disabled={!reached}
                   onClick={() => void save({ ...k, world: w.id })}
                 >
-                  <span class="grainy place__frame"><svg class="place__thumb" viewBox="0 160 360 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true" dangerouslySetInnerHTML={{ __html: SCENES[w.id] }} /></span>
+                  <img class="place__thumb" src={paintingHref(w.id, true)} alt="" aria-hidden="true" />
                   <Label zh={w.zh} />
                   {!reached && (
                     <span class="place__lock"><InkIcon name="lock" size={20} /> <Label zh={`再学 ${Math.max(1, w.at - learned)} 个字`} /></span>

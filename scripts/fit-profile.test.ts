@@ -16,13 +16,13 @@ describe('buildFitProfile', () => {
     expect(passages[0]!.text.length).toBeGreaterThanOrEqual(160);
   });
   it('can be done for today (every Home card at once) and can switch activities and the world', async () => {
-    const p = readBackup(await buildFitProfile({ now: NOW, doneToday: true, activities: { writing: false }, world: 'blocks', speakingLast: 'story' }));
+    const p = readBackup(await buildFitProfile({ now: NOW, doneToday: true, activities: { writing: false }, world: 'terraces', speakingLast: 'story' }));
     const sessions = (p.file.stores.sessions ?? []) as { date: string; completed: boolean }[];
     expect(sessions.some((s) => s.date === '2026-10-06' && s.completed)).toBe(true);
     const kid = p.file.kid as { lastChestDate: string; world: string; worldsSeen: string[]; speakingLast: string };
     expect(kid.lastChestDate).toBe('2026-10-06');
-    expect(kid.world).toBe('blocks');
-    expect(kid.worldsSeen).toContain('blocks');
+    expect(kid.world).toBe('terraces');
+    expect(kid.worldsSeen).toContain('terraces');
     expect(kid.speakingLast).toBe('story');
     expect((p.file.settings as { activities: Record<string, boolean> }).activities.writing).toBe(false);
   });
