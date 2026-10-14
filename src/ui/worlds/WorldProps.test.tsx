@@ -11,8 +11,6 @@ vi.mock('../../audio/speech', () => ({ speak: vi.fn(), stopSpeaking: vi.fn() }))
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 const still = { on: false };
 vi.mock('../motion', () => ({ reducedMotion: () => still.on }));
-import { speak } from '../../audio/speech';
-import { playSfx } from '../../audio/sfx';
 
 const kid = (over: Partial<KidState> = {}): KidState => ({ ...DEFAULT_KID, finds: { ...DEFAULT_FINDS }, ...over });
 const tap = (label: string) => fireEvent.click(document.querySelector(`.world-props [aria-label="${label}"]`)!);

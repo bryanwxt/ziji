@@ -15,42 +15,42 @@ export interface RiverWorld {
 
 export const RIVER: Record<WorldId, RiverWorld> = {
   home: {
-    props: { boat: { x: 690, y: 880, w: 120, h: 90 } },
+    props: { boat: { x: 703, y: 832, w: 96, h: 60 } }, // on the canal's shaded strip above its wall; a tight box clears 宝箱 on a 1024 iPad
     dusk: 0.36,
     moon: { x: 640, y: 420 },
   },
   rainforest: {
-    props: { boat: { x: 690, y: 930, w: 120, h: 90 } },
+    props: { boat: { x: 690, y: 945, w: 120, h: 90 } },
     dusk: 0.36,
     moon: { x: 520, y: 380 },
   },
   bamboo: {
-    props: { boat: { x: 800, y: 770, w: 120, h: 90 } },
+    props: { boat: { x: 800, y: 770, w: 120, h: 90 } }, // the water inside the phone's crop lies under Home's path row, so the boat stays on the right
     dusk: 0.34,
     moon: { x: 640, y: 380 },
   },
   terraces: {
-    props: { boat: { x: 640, y: 950, w: 120, h: 90 } },
+    props: { boat: { x: 790, y: 950, w: 120, h: 90 } }, // mid-stream: the water near the bottom is right of the phone's crop
     dusk: 0.36,
     moon: { x: 620, y: 360 },
   },
   dino: {
-    props: { boat: { x: 720, y: 870, w: 120, h: 90 } },
+    props: { boat: { x: 845, y: 885, w: 120, h: 90 } }, // mid-river below the far bank: the water in the phone's crop is under Home's path
     dusk: 0.34,
     moon: { x: 380, y: 260 },
   },
   lantern: {
-    props: { boat: { x: 640, y: 880, w: 120, h: 90 } },
+    props: { boat: { x: 670, y: 880, w: 120, h: 90 } },
     dusk: 0.28,
     moon: { x: 560, y: 300 },
   },
   cove: {
-    props: { boat: { x: 680, y: 900, w: 120, h: 90 } },
+    props: { boat: { x: 690, y: 905, w: 120, h: 90 } },
     dusk: 0.22,
     moon: { x: 560, y: 260 },
   },
   milkyway: {
-    props: { boat: { x: 640, y: 900, w: 120, h: 90 } },
+    props: { boat: { x: 650, y: 925, w: 120, h: 90 } },
     dusk: 0,
     moon: null,
   },

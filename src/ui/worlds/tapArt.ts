@@ -29,11 +29,18 @@ export const ANIMAL_FACES: Record<string, string> = {
     `<ellipse cx="-7" cy="-22" rx="5" ry="13" fill="#fffaf0" ${S}/><ellipse cx="7" cy="-22" rx="5" ry="13" fill="#fffaf0" ${S}/>` +
     `<ellipse cx="-7" cy="-21" rx="2" ry="8" fill="#edb8c0"/><ellipse cx="7" cy="-21" rx="2" ry="8" fill="#edb8c0"/>` +
     head('#fffaf0', 15, 14) + eyes(-1, 6) + cheeks(5) + `<path d="M-2 4 l2 2 l2 -2" fill="none" ${S} stroke-width="1.6"/>` + smile(8),
-  dragon:
-    `<path d="M-9 -14 l-5 -10 l7 5Z M9 -14 l5 -10 l-7 5Z" fill="#efc472" ${S}/>` + head('#9fcf90') +
-    `<path d="M-16 6 q-8 2 -10 8 M16 6 q8 2 10 8" fill="none" ${S} stroke-width="1.8"/>` + eyes(-3, 7) +
-    `<ellipse cx="0" cy="7" rx="8" ry="5" fill="#b8d8aa" ${S} stroke-width="1.8"/><g fill="${INK}"><circle cx="-3" cy="6" r="1.4"/><circle cx="3" cy="6" r="1.4"/></g>` +
-    `<path d="M-6 -16 l3 3 l3 -3 l3 3 l3 -3" fill="none" ${S} stroke-width="1.6"/>`,
+  dragon: // a long-snouted Chinese dragon (not a pig): antler horns, a flame mane, a scale ridge, long whiskers
+    `<path d="M-12 -11 L-21 -14 L-17 -8 L-24 -4 L-17 -1 L-23 5 L-13 4Z M12 -11 L21 -14 L17 -8 L24 -4 L17 -1 L23 5 L13 4Z" fill="#f7a07e" ${S}/>` +
+    `<path d="M-5 -12 Q-8 -18 -10 -25 M-8 -19 L-14 -21 M5 -12 Q8 -18 10 -25 M8 -19 L14 -21" fill="none" stroke="${INK}" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M-5 -12 Q-8 -18 -10 -25 M-8 -19 L-14 -21 M5 -12 Q8 -18 10 -25 M8 -19 L14 -21" fill="none" stroke="#efc472" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M-7 -11 L-4.5 -18 L-2 -13 L0 -21 L2 -13 L4.5 -18 L7 -11Z" fill="#f7a07e" ${S}/>` +
+    `<ellipse cx="0" cy="-4" rx="13" ry="10.5" fill="#9fcf90" ${S}/>` +
+    `<path d="M-4 -10 q2 2 4 0 q2 2 4 0" fill="none" stroke="#6fa865" stroke-width="1.2" stroke-linecap="round"/>` +
+    `<path d="M-10 -10 l5 1.5 M10 -10 l-5 1.5" fill="none" ${S}/>` + eyes(-5, 6) +
+    `<path d="M-8 8 C-15 5 -18 12 -24 8 M-8 12 C-14 15 -16 19 -22 21 M8 8 C15 5 18 12 24 8 M8 12 C14 15 16 19 22 21" fill="none" stroke="#e0a050" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<path d="M-7.5 -1 C-9.5 6 -9.5 12 -8 15.5 C-5 20 5 20 8 15.5 C9.5 12 9.5 6 7.5 -1 C4 -3 -4 -3 -7.5 -1Z" fill="#c5e4b0" ${S}/>` +
+    `<path d="M-4.5 9 q-2.5 -3.5 1 -4.5 M4.5 9 q2.5 -3.5 -1 -4.5" fill="none" ${S}/>` +
+    `<path d="M-5 15.5 Q0 18 5 15.5" fill="none" ${S}/>`,
   snake:
     `<path d="M-14 6 C-16 -14 16 -14 14 6 C12 14 -12 14 -14 6Z" fill="#b8d8aa" ${S}/>` +
     `<g fill="#86b67a"><circle cx="-6" cy="-6" r="2"/><circle cx="5" cy="-8" r="2"/><circle cx="0" cy="-2" r="1.6"/></g>` + eyes(0, 7) +
