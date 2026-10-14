@@ -38,14 +38,14 @@ describe('One River anchors (spec 2026-10-13 §5)', () => {
   });
   it('the boats sit on the water where review placed them (fix round 0): a plan restating the old anchors must fail here', () => {
     expect(Object.fromEntries(WORLDS.map((w) => [w.id, RIVER[w.id].props.boat]))).toEqual({
-      home: { x: 703, y: 832, w: 96, h: 60 },
-      rainforest: { x: 690, y: 945, w: 120, h: 90 },
-      bamboo: { x: 800, y: 770, w: 120, h: 90 },
-      terraces: { x: 790, y: 950, w: 120, h: 90 },
-      dino: { x: 845, y: 885, w: 120, h: 90 },
+      home: { x: 703, y: 830, w: 96, h: 60 },
+      rainforest: { x: 700, y: 955, w: 100, h: 90 },
+      bamboo: { x: 862, y: 830, w: 100, h: 90 },
+      terraces: { x: 815, y: 940, w: 120, h: 90 },
+      dino: { x: 868, y: 945, w: 100, h: 90 },
       lantern: { x: 670, y: 880, w: 120, h: 90 },
-      cove: { x: 690, y: 905, w: 120, h: 90 },
-      milkyway: { x: 650, y: 925, w: 120, h: 90 },
+      cove: { x: 845, y: 955, w: 100, h: 90 },
+      milkyway: { x: 700, y: 950, w: 100, h: 90 },
     });
   });
   it('inCrop: a tap box wholly inside the crop, and the three screens crop as expected', () => {

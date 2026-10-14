@@ -15,27 +15,27 @@ export interface RiverWorld {
 
 export const RIVER: Record<WorldId, RiverWorld> = {
   home: {
-    props: { boat: { x: 703, y: 832, w: 96, h: 60 }, otter: { x: 860, y: 790, w: 80, h: 80 }, kingfisher: { x: 930, y: 690, w: 60, h: 50 } }, // on the canal's shaded strip above its wall; a tight box clears 宝箱 on a 1024 iPad
+    props: { boat: { x: 703, y: 830, w: 96, h: 60 }, otter: { x: 605, y: 815, w: 80, h: 80 }, kingfisher: { x: 930, y: 690, w: 60, h: 50 } }, // the boat and the otter float on the canal (inside the phone crop); the kingfisher is on the shaded strip above the far wall; tight boxes clear 宝箱 on a 1024 iPad
     dusk: 0.36,
     moon: { x: 640, y: 420 },
   },
   rainforest: {
-    props: { boat: { x: 690, y: 945, w: 120, h: 90 }, hornbill: { x: 880, y: 560, w: 80, h: 64 }, monkey: { x: 300, y: 470, w: 60, h: 96 }, butterfly: { x: 200, y: 860, w: 60, h: 60 } },
+    props: { boat: { x: 700, y: 955, w: 100, h: 90 }, hornbill: { x: 880, y: 560, w: 80, h: 64 }, monkey: { x: 300, y: 470, w: 60, h: 96 }, butterfly: { x: 200, y: 860, w: 60, h: 60 } },
     dusk: 0.36,
     moon: { x: 520, y: 380 },
   },
   bamboo: {
-    props: { boat: { x: 800, y: 770, w: 120, h: 90 }, panda: { x: 190, y: 850, w: 100, h: 100 }, frog: { x: 560, y: 820, w: 60, h: 50 } }, // the water inside the phone's crop lies under Home's path row, so the boat stays on the right
+    props: { boat: { x: 862, y: 830, w: 100, h: 90 }, panda: { x: 190, y: 850, w: 100, h: 100 }, frog: { x: 560, y: 820, w: 60, h: 50 } }, // the water inside the phone's crop lies under Home's path row, so the boat stays on the right
     dusk: 0.34,
     moon: { x: 640, y: 380 },
   },
   terraces: {
-    props: { boat: { x: 790, y: 950, w: 120, h: 90 }, ducks: { x: 650, y: 835, w: 110, h: 56 }, kite: { x: 300, y: 420, w: 70, h: 96 }, dragonfly: { x: 200, y: 880, w: 60, h: 56 } }, // mid-stream: the water near the bottom is right of the phone's crop
+    props: { boat: { x: 815, y: 940, w: 120, h: 90 }, ducks: { x: 650, y: 835, w: 110, h: 56 }, kite: { x: 300, y: 420, w: 70, h: 96 }, dragonfly: { x: 200, y: 880, w: 60, h: 56 } }, // mid-stream: the water near the bottom is right of the phone's crop
     dusk: 0.36,
     moon: { x: 620, y: 360 },
   },
   dino: {
-    props: { boat: { x: 845, y: 885, w: 120, h: 90 }, nest: { x: 300, y: 860, w: 90, h: 70 }, pterosaur: { x: 840, y: 525, w: 120, h: 56 }, volcano: { x: 850, y: 320, w: 120, h: 80 } }, // boat mid-river below the far bank: the water in the phone's crop is under Home's path
+    props: { boat: { x: 868, y: 945, w: 100, h: 90 }, nest: { x: 300, y: 860, w: 90, h: 70 }, pterosaur: { x: 840, y: 525, w: 120, h: 56 }, volcano: { x: 850, y: 320, w: 120, h: 80 } }, // boat mid-river below the far bank: the water in the phone's crop is under Home's path
     dusk: 0.34,
     moon: { x: 380, y: 260 },
   },
@@ -45,12 +45,12 @@ export const RIVER: Record<WorldId, RiverWorld> = {
     moon: { x: 560, y: 300 },
   },
   cove: {
-    props: { boat: { x: 690, y: 905, w: 120, h: 90 }, x: { x: 300, y: 870, w: 70, h: 56 }, crab: { x: 390, y: 950, w: 60, h: 50 }, parrot: { x: 115, y: 545, w: 56, h: 66 } },
+    props: { boat: { x: 845, y: 955, w: 100, h: 90 }, x: { x: 300, y: 870, w: 70, h: 56 }, crab: { x: 390, y: 950, w: 60, h: 50 }, parrot: { x: 115, y: 545, w: 56, h: 66 } },
     dusk: 0.22,
     moon: { x: 560, y: 260 },
   },
   milkyway: {
-    props: { boat: { x: 650, y: 925, w: 120, h: 90 }, magpies: { x: 190, y: 770, w: 120, h: 70 }, shootingstar: { x: 880, y: 525, w: 64, h: 52 } },
+    props: { boat: { x: 700, y: 950, w: 100, h: 90 }, magpies: { x: 190, y: 770, w: 120, h: 70 }, shootingstar: { x: 880, y: 525, w: 64, h: 52 } },
     dusk: 0,
     moon: null,
   },

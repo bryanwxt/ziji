@@ -36,11 +36,11 @@ const LIGHTS: Record<WorldId, (w: WorldId) => string> = {
   terraces: (w) => glows(w, 'window', [[200, 395, 50]]) + fireflies(w, [[100, 700], [240, 760], [380, 820], [880, 700], [160, 900], [420, 640]]),
   dino: (w) => `<g data-part="lava">${glow(`${w}-lava`, 855, 300, 110, '#ff6a3a', 0.75)}${glow(`${w}-lava2`, 855, 360, 150, '#ffb86b', 0.35)}<path d="M846 298 q-6 20 2 40 M864 300 q8 18 0 36" stroke="#ff8a4a" stroke-width="4" stroke-linecap="round" fill="none"/></g>`,
   lantern: (w) => glows(w, 'lantern', [[40, 530, 50], [125, 515, 46], [310, 515, 36], [345, 512, 32], [380, 500, 30], [660, 500, 30], [760, 515, 40], [830, 520, 44], [885, 520, 44], [820, 390, 36], [870, 380, 36]]),
-  cove: (w) => `<g data-part="beam">${glow(`${w}-lamp`, 845, 285, 70, '#fff1b8', 0.9)}<path class="world-anim world-anim--sweep" d="M845 285 L340 200 L340 330 Z" fill="#fff1b8" opacity=".28"/></g>`,
+  cove: (w) => `<g data-part="beam">${glow(`${w}-lamp`, 845, 285, 70, '#fff1b8', 0.9)}<defs><linearGradient id="${w}-beam" gradientUnits="userSpaceOnUse" x1="845" y1="285" x2="260" y2="400"><stop offset="0" stop-color="#ffe9a0" stop-opacity="0.85"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></linearGradient><linearGradient id="${w}-core" gradientUnits="userSpaceOnUse" x1="845" y1="285" x2="380" y2="375"><stop offset="0" stop-color="#fffbe0" stop-opacity="0.7"/><stop offset="1" stop-color="#fffbe0" stop-opacity="0"/></linearGradient></defs><g class="world-anim world-anim--sweep"><path d="M845 285 L260 320 L260 490 Z" fill="url(#${w}-beam)"/><path d="M845 285 L380 340 L380 410 Z" fill="url(#${w}-core)"/></g></g>`,
   milkyway: () => twinkles([[80, 70, 12], [910, 110, 13], [510, 260, 10], [650, 650, 9], [920, 690, 9], [610, 845, 10], [970, 965, 11], [312, 640, 10], [200, 140, 7]]),
 };
 /** The boat's lantern glows in every world. */
-const boatGlow = (w: WorldId) => { const b = RIVER[w].props.boat!; return `<g data-part="boat-lantern">${glow(`${w}-boat`, b.x + 34, b.y - 46, 40, '#ffb86b', 0.8)}</g>`; };
+const boatGlow = (w: WorldId) => { const b = RIVER[w].props.boat!; return `<g data-part="boat-lantern">${glow(`${w}-boat`, b.x + 29, b.y - 39, 36, '#ffb86b', 0.8)}</g>`; };
 
 /** What evening adds over the painting. */
 export function eveningOver(world: WorldId): string {
