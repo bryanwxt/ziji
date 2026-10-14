@@ -98,8 +98,10 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const readAt = new Map(recognise.filter((c) => c.passed).map((c) => [c.wordId, c.passed!]));
   const today = new Set(newWords.map((w) => w.id));
   const inClass = (w: Word) => { const at = classAt === null ? undefined : bookLesson(w); return at !== undefined && (at === classAt || at === classAt! - 1); };
+  // a word with no reading card (sent back to learn by its placement recheck) says nothing until 认新字 teaches it again (review M2)
+  const hasRead = new Set(recognise.map((c) => c.wordId));
   const sayIds = settings.sayCards === false ? [] : [
-    ...dueOf(say).map((c) => c.wordId),
+    ...dueOf(say).map((c) => c.wordId).filter((id) => hasRead.has(id)),
     ...active
       .filter((w) => readPassed.has(w.id) && !hasSay.has(w.id) && !today.has(w.id))
       .sort((a, b) => Number(inClass(b)) - Number(inClass(a)) || readAt.get(b.id)! - readAt.get(a.id)! || newWordOrder(a, b))
@@ -109,7 +111,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   // example and no Sentence card yet, the newest Read pass first. Never a word introduced today.
   const sentence = ofKind('sentence');
   const hasSentence = new Set(sentence.map((c) => c.wordId));
-  const canSentence = (id: string) => { const w = byId.get(id); return !!w && !today.has(id) && canAskRung(w, 'sentence'); };
+  const canSentence = (id: string) => { const w = byId.get(id); return !!w && !today.has(id) && hasRead.has(id) && canAskRung(w, 'sentence'); };
   const sentenceIds = [
     ...dueOf(sentence).map((c) => c.wordId),
     ...active
