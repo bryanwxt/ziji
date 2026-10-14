@@ -62,7 +62,8 @@ const INK = LINE;
 export const EXTRAS: Partial<Record<Expression, string>> = {
   curious: `<g transform="translate(236 40)"><rect width="34" height="34" rx="12" fill="#fffdf7" stroke="${INK}" stroke-width="2.4"/><text x="17" y="26" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="24" fill="${INK}">?</text></g>`,
   surprised: `<path d="M70 52 L80 64 M58 70 L72 76 M250 52 L240 64 M262 70 L248 76" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>`,
-  sleepy: `<text x="236" y="70" font-family="Nunito" font-weight="900" font-size="26" fill="${INK}">z</text><text x="256" y="48" font-family="Nunito" font-weight="900" font-size="18" fill="${INK}">z</text>`,
+  // the z's float just past his right ear (clear of it, inside the 30–290 viewBox)
+  sleepy: `<text x="256" y="74" font-family="Nunito" font-weight="900" font-size="26" fill="${INK}">z</text><text x="272" y="50" font-family="Nunito" font-weight="900" font-size="18" fill="${INK}">z</text>`,
   // joy's confetti is outlined four-point sparkles (spec 2026-10-13 §7)
   joy: sparkle(60, 74, 11, '#ffe27a', LWI * 0.7) + sparkle(266, 64, 13, '#ffe27a', LWI * 0.7) + sparkle(276, 112, 7, '#ffffff', LWI * 0.7) + sparkle(46, 116, 7, '#bfe6ff', LWI * 0.7),
 };
