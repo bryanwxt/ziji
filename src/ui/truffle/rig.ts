@@ -19,13 +19,14 @@ const LID_RX = EYE_RX + 1.2;
 const LID_RY = EYE_RY + 1.2;
 /** The eyes' own dark line (the lash, the outline, the brows), a little deeper than his body's line. */
 export const EYE_LINE = '#3f3756';
-/** How far the iris travels at full gaze (useRig: gx * GAZE_X across, gy * GAZE_Y down). */
-export const GAZE_X = 6;
-export const GAZE_Y = 5;
-/** The iris: sized so that at full gaze in any direction it stays inside the white with no clip-path (spec 2026-10-13 §7). */
-export const IRIS_RX = 13;
-export const IRIS_RY = 14.6;
+/** The iris: big, as in row C, centred in the white (spec 2026-10-13 §7). */
+export const IRIS_RX = 15;
+export const IRIS_RY = 18;
 export const IRIS_Y = EYE_Y;
+/** How far the iris travels at full gaze (useRig: gx * GAZE_X across, gy * GAZE_Y down): as far as the big iris can go and
+ *  stay inside the white in every direction, so it needs no clip-path (the head still turns and tilts toward what he looks at). */
+export const GAZE_X = 3.75;
+export const GAZE_Y = 3.5;
 /** The eye ring and lash fade out from lid 0.7 and are gone at 0.86, where the closed line takes over (no empty outlined eye). */
 export const ringOn = (lidTop: number) => Math.max(0, Math.min(1, (0.86 - lidTop) / 0.16));
 /** His blush's strength from the face's blush value: visible at rest, full when he glows (row C). */

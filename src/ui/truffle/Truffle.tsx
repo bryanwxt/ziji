@@ -58,7 +58,7 @@ function Eye({ side, cx, f }: { side: 'l' | 'r'; cx: number; f: Face }) {
   const bandY = r(iy - 7 * sy);
   const band = r(IRIS_RX * Math.sqrt(1 - (7 / 18.5) ** 2)); // the iris's half-width at the top of the band
   const pupilY = r(iy + sy);
-  const k = 0.8; // the pupil and catch-lights shrink with the iris
+  const k = sy; // the pupil and catch-lights scale with the iris
   return (
     <g data-part={`eye-${side}`}>
       <ellipse cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="#fffdf7" />
@@ -70,8 +70,8 @@ function Eye({ side, cx, f }: { side: 'l' | 'r'; cx: number; f: Face }) {
         <g transform={`translate(${cx} ${pupilY}) scale(${k}) translate(${-cx} ${-pupilY})`}>
           <ellipse data-part={`pupil-${side}`} cx={cx} cy={pupilY} rx={7 * f.pupil} ry={11 * f.pupil} fill={PUPIL} />
         </g>
-        <ellipse cx={r(cx + 6 * sx)} cy={r(iy - 10 * sy)} rx={r(5.6 * k * 1.1)} ry={r(6.4 * k * 1.1)} fill="#fff" />
-        <circle cx={r(cx - 6 * sx)} cy={r(iy + 10 * sy)} r={r(2.6 * k * 1.1)} fill="#fff" />
+        <ellipse cx={r(cx + 6 * sx)} cy={r(iy - 10 * sy)} rx={r(5.6 * k)} ry={r(6.4 * k)} fill="#fff" />
+        <circle cx={r(cx - 6 * sx)} cy={r(iy + 10 * sy)} r={r(2.6 * k)} fill="#fff" />
       </g>
       <path data-part={`lid-top-${side}`} d={up.fill} fill={CEL.fur} />
       <path data-part={`lid-bottom-${side}`} d={low.fill} fill={CEL.fur} />
