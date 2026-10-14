@@ -1,9 +1,7 @@
 // The word gate (content audit 2026-10-15): one place that decides which words a P2 child may meet and how each is read.
 // The build applies it where it can (scripts/build-content.ts keeps no blocked 组词 in builtin.json; scripts/gen-pinyin.ts
-// stores every written sentence's pinyin), and the surfaces the build can't reach ask it at runtime: the family row, the
+// snapshots every written sentence's pinyin for the tests), and the surfaces the build can't reach ask it at runtime: the family row, the
 // ladder, 连一连's near words, a meaning question's choices, 搭配 and the collection.
-import { pinyin } from 'pinyin-pro';
-import './pinyinFixes';
 import { BLOCKED, BLOCK_REASON } from './blocked';
 import { CHENGYU, chengyuPinyin } from './chengyu';
 import { DAPEI } from './dapei';
@@ -13,7 +11,7 @@ import s1a from './sentences/一上.json';
 import s1b from './sentences/一下.json';
 import s2a from './sentences/二上.json';
 import s2b from './sentences/二下.json';
-import { storedPinyin } from './storedPinyin';
+import { sentenceReading } from './storedPinyin';
 
 export { BLOCKED, BLOCK_REASON };
 
@@ -44,8 +42,7 @@ export function isChildWord(text: string): boolean {
   return (level !== undefined && level <= CHILD_HSK) || vettedWords().has(t);
 }
 
-/** pinyin-pro's reading in context, with the app's fixes: one syllable per Han character. */
-export const sentenceReading = (text: string): string => pinyin(text, { type: 'array', nonZh: 'removed' }).join(' ');
+export { sentenceReading };
 
 let known: Map<string, string> | null = null;
 /** Readings already checked: each card's own (with READING_FIXES) and every 组词 shown on a card (with EXAMPLE_FIXES). */
@@ -58,12 +55,12 @@ function knownReadings(): Map<string, string> {
 }
 
 /**
- * The one pinyin source for a shown word or sentence, one syllable per Han character: a fixed reading (EXAMPLE_FIXES), a
- * stored sentence reading (gen-pinyin), a card's or 组词's checked reading, a 成语's, else pinyin-pro in context.
+ * The one pinyin source for a shown word or sentence, one syllable per Han character: a fixed reading (EXAMPLE_FIXES), a card's
+ * or 组词's checked reading, a 成语's, else pinyin-pro in context with the app's fixes (a written sentence: storedPinyin.ts).
  */
 export function readingOf(text: string): string {
   const t = text.trim();
-  return EXAMPLE_FIXES[t] ?? storedPinyin(t) ?? knownReadings().get(t) ?? (CHENGYU.some((c) => c.text === t) ? chengyuPinyin(t) : undefined) ?? sentenceReading(t);
+  return EXAMPLE_FIXES[t] ?? knownReadings().get(t) ?? (CHENGYU.some((c) => c.text === t) ? chengyuPinyin(t) : undefined) ?? sentenceReading(t);
 }
 
 /**

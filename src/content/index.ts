@@ -80,12 +80,22 @@ export function builtinWords(now: number, course: Course = 'cl'): Word[] {
 }
 
 /** The 组词 a card shows, at the card's reading: ones written for the app first (extraExamples.ts: chosen for a P2 child), then the HSK list's. */
-function examplesFor(c: BuiltinChar): Example[] {
+function examplesFor(c: BuiltinChar, { onCard = true } = {}): Example[] {
   const fix = (e: Example) => (EXAMPLE_FIXES[e.text] ? { ...e, pinyin: EXAMPLE_FIXES[e.text]! } : e);
   const written = (EXTRA_EXAMPLES[c.char] ?? []).map(([text, pinyin]) => fix({ text, pinyin }));
-  const dropped = new Set((ZUCI_DROPS[c.char] ?? '').split(' '));
+  const dropped = new Set(onCard ? (ZUCI_DROPS[c.char] ?? '').split(' ') : []);
   const own = c.examples.map(fix).filter((e) => !BLOCKED.has(e.text) && !dropped.has(e.text) && !written.some((w) => w.text === e.text));
   return [...written, ...own].filter((e) => saysItAs(e, c.char, builtinReading(c)));
+}
+/**
+ * The 组词 a card leaves off (zuciPicks.ts ZUCI_DROPS: 马虎 on 虎, 四周 on 四) at its reading: still words of his ladder, only not
+ * shown on the card (review 2026-10-15: dropping them from the card had taken them off the ladder too).
+ */
+export function cardDroppedExamples(char: string): Example[] {
+  const c = builtinByChar.get(char);
+  if (!c || !ZUCI_DROPS[char]) return [];
+  const shown = new Set(examplesFor(c).map((e) => e.text));
+  return examplesFor(c, { onCard: false }).filter((e) => !shown.has(e.text));
 }
 
 /**
@@ -99,7 +109,10 @@ export const READING_FIXES: Record<string, string> = {
   // jobs lesson, a mouse 钻进 a hole, 抹布 for cleaning, 仔细). 觉: 二下 L13 reads 睡觉 (jiào), the first lesson that has it;
   // 觉得 (jué, HCL's write list in the same lesson) shows its own pinyin wherever it appears
   卜: 'bo', 应: 'yīng', 炸: 'zhá', 种: 'zhòng', 钻: 'zuān', 抹: 'mā', 仔: 'zǐ', 觉: 'jiào',
+  勒: 'lēi', // review 2026-10-15: 勒紧, not the lè of 悬崖勒马
 };
+/** Cards whose reading changed with content 1.12: his Say and Hear rungs on them were earned at the old one (readingMigration.ts). */
+export const READINGS_CHANGED_1_12 = [...'卜应炸种钻抹仔觉勒'];
 /** A built-in character's reading as his lessons teach it. */
 export const builtinReading = (c: BuiltinChar): string => READING_FIXES[c.char] ?? c.pinyin;
 /** 组词 readings the source data gets wrong (包子's 子 is 轻声). */
@@ -113,10 +126,11 @@ export const MEANING_FIXES: Record<string, string> = {
   // with the content audit's readings (2026-10-15)
   卜: '(in 萝卜: radish)', 应: 'should; ought to', 炸: 'to fry (in oil)', 种: 'to plant; to grow', 钻: 'to squeeze into; to burrow',
   抹: 'to wipe (抹布: a cleaning cloth)', 仔: 'careful (in 仔细)', 觉: 'sleep (in 睡觉)',
+  勒: 'to tie tight; to strap',
 };
 export const EXAMPLE_FIXES: Record<string, string> = {
   ...SWEEP_PINYIN,
-  包子: 'bāo zi',
+  包子: 'bāo zi', 种植: 'zhòng zhí', // 种植 is planting (zhòng); pinyin-pro reads zhǒng (review 2026-10-15)
   // 儿化: the 儿 joins the syllable before it (nǎr), written as its own "r" so each character keeps a slot (content sweep)
   哪儿: 'nǎ r', 那儿: 'nà r', 这儿: 'zhè r', 一块儿: 'yí kuài r', 玩儿: 'wán r', 好玩儿: 'hǎo wán r', 男孩儿: 'nán hái r',
   女孩儿: 'nǚ hái r', 鸟儿: 'niǎo r', 画儿: 'huà r', 味儿: 'wèi r', 聊天儿: 'liáo tiān r', 贪玩儿: 'tān wán r', 打盹儿: 'dǎ dǔn r',

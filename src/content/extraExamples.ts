@@ -129,7 +129,7 @@ const WRITTEN: Record<string, ExtraExample[]> = {
   趟: [['一趟', 'yí tàng', 'one trip'], ['走一趟', 'zǒu yí tàng', 'to make a trip']],
   踢: [['踢球', 'tī qiú', 'to kick a ball; to play football'], ['踢足球', 'tī zú qiú', 'to play football']],
   蹲: [['蹲下', 'dūn xià', 'to squat down'], ['蹲着', 'dūn zhe', 'squatting']],
-  // the content audit (2026-10-15) blocked every 组词 these had: everyday ones instead (死 血 婚 啤 媒 醉 舰 哲 济 宣 资 keep none
+  // the content audit (2026-10-15) blocked every 组词 these had: everyday ones instead (死 血 肝 婚 啤 媒 醉 舰 哲 济 宣 资 keep none
   // — every word with them is about death, blood, marriage, drink, the media, war, philosophy, the economy or propaganda)
   帅: [['很帅', 'hěn shuài', 'very handsome; cool']], 郎: [['牛郎', 'niú láng', 'the Cowherd (in the folk tale)']],
   织: [['织毛衣', 'zhī máo yī', 'to knit a sweater'], ['织布', 'zhī bù', 'to weave cloth']], 挣: [['挣开', 'zhèng kāi', 'to break free']],
@@ -137,7 +137,7 @@ const WRITTEN: Record<string, ExtraExample[]> = {
   势: [['手势', 'shǒu shì', 'hand gesture']],
   // characters no voice reads right on their own (gen-say-as's unsure list) are said as their first 组词: these had none
   闷: [['闷热', 'mēn rè', 'hot and stuffy']], 哄: [['哄孩子', 'hǒng hái zi', 'to soothe a child']], 撇: [['一撇', 'yì piě', 'a left-falling stroke (丿)']],
-  勒: [['悬崖勒马', 'xuán yá lè mǎ', 'to stop before it is too late']],
+  勒: [['勒紧', 'lēi jǐn', 'to tie tight']], // lēi, the reading a child meets (review 2026-10-15)
   // his textbook's characters that HSK doesn't have (欢乐伙伴2.0 二上 L10, 三下 L12–13; spec 2026-10-11 §7)
   蚂: [['蚂蚁', 'mǎ yǐ', 'ant']],
   蚁: [['蚂蚁', 'mǎ yǐ', 'ant'], ['小蚂蚁', 'xiǎo mǎ yǐ', 'little ant']],

@@ -4,12 +4,18 @@
 import { pinyin } from 'pinyin-pro';
 import { describe, expect, it } from 'vitest';
 import SAY_AS from '../audio/sayAs.json';
-import { NEAR_MAX_HSK, nearWords } from '../practice/pairs';
-import { cardReading, isHan, sameReading, school, schoolSet, shownSentenceRows, shownSentences, shownWords } from '../test/contentSurfaces';
+import { NEAR_MAX_HSK, nearWords, OPPOSITES, zuciBoard } from '../practice/pairs';
+import { mulberry32 } from '../lib/random';
+import { writingCue } from '../activities/writing/cue';
+import { familyBoard } from '../practice/family';
+import { ZUCI_BOARD_ON_MAIN } from '../test/zuciOnMain';
+import { cardReading, isHan, wordByChar, sameReading, school, schoolSet, shownSentenceRows, shownSentences, shownWords } from '../test/contentSurfaces';
 import { BLOCKED } from './blocked';
 import { HSK_WORDS } from './index';
 import { OTHER_READINGS } from './readingAllowlist';
-import { STORED_PINYIN } from './storedPinyin';
+import stored from './sentencePinyin.json'; // the snapshot (test-only: not shipped)
+
+const STORED_PINYIN = (stored as { sentences: Record<string, string> }).sentences;
 import { readingOf, sentenceReading } from './wordGate';
 import { loneSpoken } from '../audio/speech';
 import { tiles } from './zuju';
@@ -31,16 +37,20 @@ describe('one reading per school character (content audit 2026-10-15)', () => {
   for (const [k, ws] of Object.entries(OTHER_READINGS)) allowed.set(k, new Set(ws.split(' ')));
   it('every shown word says each school character the way its card does, or is a listed other reading', () => {
     const bad = new Set<string>();
+    const used = new Set<string>();
     for (const r of rows) {
       const cs = Array.from(r.word).filter(isHan);
       const syl = r.py.trim().split(/\s+/);
       if (syl.length !== cs.length) { bad.add(`${r.word} "${r.py}": pinyin doesn't line up (${r.surface})`); continue; }
       cs.forEach((ch, i) => {
         if (!schoolSet.has(ch) || sameReading(ch, syl[i]!, cardReading.get(ch)!)) return;
+        used.add(`${ch} ${syl[i]}|${r.word}`);
         if (!allowed.get(`${ch} ${syl[i]}`)?.has(r.word)) bad.add(`${ch} (card ${cardReading.get(ch)}) is ${syl[i]} in ${r.word} (${r.surface}, ${r.via})`);
       });
     }
     expect([...bad]).toEqual([]);
+    // and no entry outlives its word: one the gate took away (肝脏, 钻空子) leaves the list too
+    expect([...allowed].flatMap(([k, ws]) => [...ws].filter((w) => !used.has(`${k}|${w}`)).map((w) => `${k}: ${w}`))).toEqual([]);
   });
   it('a sentence for a school character says it the way its card does (炸 zhá: 炸鸡, not 气球炸了)', () => {
     const bad: string[] = [];
@@ -92,6 +102,36 @@ describe('a lone character no voice can be steered on is said as a word (爪 →
   });
 });
 
+describe('a character said as its word never says an answer (review 2026-10-15)', () => {
+  it('找一家人: an unsure character is never said as a word on its board', () => {
+    const { unsure } = SAY_AS as { unsure: string[] };
+    const readable = new Set(school.map((c) => c.char));
+    const bad: string[] = [];
+    for (const ch of unsure) {
+      const w = wordByChar.get(ch);
+      for (let seed = 1; w && seed <= 20; seed++) {
+        const b = familyBoard(w, readable, mulberry32(seed));
+        if (b && b.tiles.includes(loneSpoken(ch, b.reading, b.tiles))) bad.push(`${ch}: ${b.tiles.join(' ')}`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+});
+
+describe('readings the review caught (2026-10-15)', () => {
+  it('种植 is zhòng zhí, and 种\'s 写一写 cue says its word at zhòng', () => {
+    expect(readingOf('种植')).toBe('zhòng zhí');
+    expect(sentenceReading('种植')).toBe('zhòng zhí');
+    const piece = writingCue(wordByChar.get('种')!).speech.split('，').find((p) => p.length > 1)!;
+    const at = Array.from(piece).indexOf('种');
+    expect(sentenceReading(piece).split(' ')[at]).toBe('zhòng');
+  });
+  it('a lone unsure character is never said as a word that ends in a 连一连 right-hand tile', () => {
+    expect(loneSpoken('茄', 'qié', [], ['子'])).toBe('番茄');
+    expect(loneSpoken('茄', 'qié', [], ['茄', '子'])).toBe('茄'); // every word of it ends so: alone
+  });
+});
+
 describe('stored sentence pinyin (src/content/sentencePinyin.json: npm run pinyin)', () => {
   it('covers every sentence written for the app, and only those', () => {
     const want = new Set(shownSentences());
@@ -104,9 +144,12 @@ describe('stored sentence pinyin (src/content/sentencePinyin.json: npm run pinyi
   });
 });
 
-/** Two characters of opposite meaning: as a word they are a pair (男女, 前后), not something a child names. 东西 (a thing) is not one. */
-const OPPOSITES = ['男女', '前后', '南北', '买卖', '早晚', '黑白', '大小', '多少', '左右', '上下', '来去', '开关', '高低', '长短', '冷热', '远近',
-  '快慢', '问答', '内外', '出入', '好坏', '真假', '日夜', '先后', '胜负', '得失', '生死', '收支', '动静', '老少', '新旧', '轻重', '进出', '有无', '是非'];
+describe('连一连 after the content audit (review 2026-10-15)', () => {
+  it('every school character that had a 组词 board on main still has one (死 keeps no 组词: every word with it is about death)', () => {
+    const lost = Array.from(ZUCI_BOARD_ON_MAIN).filter((c) => c !== '死' && ![1, 2, 3].some((seed) => zuciBoard(wordByChar.get(c)!, mulberry32(seed))));
+    expect(lost).toEqual([]);
+  });
+});
 
 describe('连一连 near words (content audit 2026-10-15: 男女 came from an HSK 7 card asking for level 8)', () => {
   const pool = nearWords(99);
@@ -115,6 +158,7 @@ describe('连一连 near words (content audit 2026-10-15: 男女 came from an HS
     expect(pool.length).toBeGreaterThan(100);
   });
   it('never a pair of opposites', () => {
-    expect(pool.filter((w) => OPPOSITES.includes(w))).toEqual([]);
+    expect(pool.filter((w) => OPPOSITES.has(w))).toEqual([]);
+    expect(OPPOSITES.has('左右')).toBe(true); // a word again (review 2026-10-15), never a near pair
   });
 });

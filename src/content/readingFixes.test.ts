@@ -5,9 +5,9 @@ import { trapReadings } from '../activities/flashcards/pinyinTraps';
 import { mulberry32 } from '../lib/random';
 import { makeWord } from '../test/fixtures';
 
-/** HSK 1–6 characters every 组词 of which is blocked (content audit 2026-10-15): death, blood, marriage, drink, the media, war,
+/** HSK 1–6 characters every 组词 of which is blocked (content audit 2026-10-15): death, blood, the liver, marriage, drink, the media, war,
  *  philosophy, the economy, propaganda. */
-const NO_ZUCI = new Set([...'死血婚啤媒醉舰哲济宣资']);
+const NO_ZUCI = new Set([...'死血肝婚啤媒醉舰哲济宣资']);
 const words = builtinWords(0);
 const byText = new Map(words.map((w) => [w.text, w]));
 
@@ -45,7 +45,7 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     const moe = (await import('./moe2024.json')).default;
     const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES, EXTRA_EXAMPLES, [...BLOCKED], moe, ZUCI_DROPS])).digest('hex').slice(0, 16);
     // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
-    const PINNED: Record<string, string> = { '1.12': '1d13ac15fa99405c' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes; 1.7 the content sweep; 1.8 the second sweep; 1.9 school order; 1.10 HCL writing lists; 1.11 蚂蚁拇狐狸 and readable 组词 (spec 2026-10-11 §7); 1.12 the content audit (2026-10-15)
+    const PINNED: Record<string, string> = { '1.12': '400434a3bb4f92f9' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes; 1.7 the content sweep; 1.8 the second sweep; 1.9 school order; 1.10 HCL writing lists; 1.11 蚂蚁拇狐狸 and readable 组词 (spec 2026-10-11 §7); 1.12 the content audit (2026-10-15)
     expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
   });
   it('了 means what it does when read le, not "clear, to finish"', async () => {

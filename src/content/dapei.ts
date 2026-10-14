@@ -10,7 +10,7 @@ export interface Dapei { verb: string; noun: string; wrong: [string, string, str
 const d = (verb: string, noun: string, wrong: string): Dapei => ({ verb, noun, wrong: wrong.split(' ') as [string, string, string] });
 
 // content audit 2026-10-15: 还书/还钱 (huán) and 背书包 (bēi) left — on the 还 (hái) and 背 (bèi) cards they taught another reading;
-// dapeiQuestion now asks only pairs that say the verb the way its card does
+// 打扫教室 left too (review: it read 教 jiào beside the jiāo card); dapeiQuestion now asks only pairs that say the verb the way its card does
 export const DAPEI: readonly Dapei[] = [
   d('穿', '衣服', '牙 饭 歌'), d('穿', '鞋', '水 书 舞'), d('戴', '帽子', '饭 牙 球'), d('戴', '眼镜', '水 歌 饭'),
   d('吃', '饭', '歌 舞 鞋'), d('吃', '水果', '歌 舞 鞋'), d('吃', '药', '歌 舞 鞋'), d('喝', '水', '歌 鞋 舞'),
@@ -43,7 +43,7 @@ export const DAPEI: readonly Dapei[] = [
   d('洗', '碗', '歌 字 舞'), d('洗', '头', '歌 字 舞'), d('洗', '澡', '歌 字 舞'), d('洗', '苹果', '歌 字 舞'),
   d('过', '年', '牙 歌 鞋'), d('过', '节', '牙 歌 鞋'), d('拍', '手', '牙 歌 饭'), d('种', '菜', '牙 歌 鞋'),
   d('送', '花', '牙 雨 舞'), d('养', '小狗', '雨 歌 饭'), d('养', '花', '雨 歌 牙'), d('养', '鱼', '雨 歌 牙'),
-  d('喂', '小鸟', '雨 歌 字'), d('打扫', '教室', '雨 歌 舞'), d('整理', '房间', '雨 歌 舞'), d('准备', '晚饭', '雨 牙 鞋'),
+  d('喂', '小鸟', '雨 歌 字'), d('整理', '房间', '雨 歌 舞'), d('准备', '晚饭', '雨 牙 鞋'),
   d('参观', '学校', '雨 牙 鞋'), d('借', '本子', '雨 牙 舞'), d('交', '作业', '雨 牙 舞'),
   d('带', '雨伞', '牙 歌 舞'), d('讲', '笑话', '牙 鞋 饭'), d('说', '汉语', '牙 鞋 饭'), d('说', '英语', '牙 鞋 饭'),
   d('说', '谢谢', '牙 鞋 饭'), d('说', '对不起', '牙 鞋 饭'), d('生', '病', '牙 鞋 歌'), d('帮', '妈妈', '雨 歌 牙'),

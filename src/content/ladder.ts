@@ -3,7 +3,7 @@
 // word's progress lives on its cards (ids `w:<text>:<kind>`).
 import type { Level, Word } from '../types';
 import { glossFor } from './glossary';
-import { builtinWords, HSK_WORDS, schoolTerm } from './index';
+import { builtinWords, cardDroppedExamples, HSK_WORDS, schoolTerm } from './index';
 import { isChildWord, readingOf } from './wordGate';
 
 export const ladderId = (text: string): string => `w:${text}`;
@@ -16,7 +16,7 @@ function build(now: number): Word[] {
   const rankOf = new Map(chars.map((w) => [w.text, w.rank!]));
   const levelOf = new Map(chars.map((w) => [w.text, w.level ?? 7]));
   const found = new Map<string, string>(); // text → pinyin
-  for (const c of chars) for (const e of c.examples ?? []) if (Array.from(e.text).length > 1 && !found.has(e.text)) found.set(e.text, e.pinyin);
+  for (const c of chars) for (const e of [...(c.examples ?? []), ...cardDroppedExamples(c.text)]) if (Array.from(e.text).length > 1 && !found.has(e.text)) found.set(e.text, e.pinyin);
   for (const [text, level] of HSK_WORDS) if (level <= 3 && Array.from(text).length > 1 && !found.has(text) && isChildWord(text)) found.set(text, readingOf(text));
   const rows: { text: string; py: string; last: number; meaning: string }[] = [];
   for (const [text, py] of found) {

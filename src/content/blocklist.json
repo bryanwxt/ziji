@@ -1,5 +1,5 @@
 {
- "source": "content audit 2026-10-15 (blocklist.csv): words a P2 child should never meet on any surface, with why",
+ "source": "content audit 2026-10-15 (blocklist.csv): words a P2 child should never meet on any surface, with why; review 2026-10-15: 左右 三角 长跑 跑道 千克 药片 unblocked, ten more blocked",
  "words": {
   "休克": "medical/death/body",
   "伤势": "medical/death/body",
@@ -125,7 +125,6 @@
   "动静": "coordinated opposite pair / fragment (男女-type)",
   "南北": "coordinated opposite pair / fragment (男女-type)",
   "好坏": "coordinated opposite pair / fragment (男女-type)",
-  "左右": "coordinated opposite pair / fragment (男女-type)",
   "师生": "coordinated opposite pair / fragment (男女-type)",
   "得失": "coordinated opposite pair / fragment (男女-type)",
   "收支": "coordinated opposite pair / fragment (男女-type)",
@@ -391,7 +390,6 @@
   "顺差": "adult world (money, jobs, admin)",
   "驾照": "adult world (money, jobs, admin)",
   "万分": "abstract adult vocabulary, meaningless to a 7-year-old",
-  "三角": "abstract adult vocabulary, meaningless to a 7-year-old",
   "不宜": "abstract adult vocabulary, meaningless to a 7-year-old",
   "不满": "abstract adult vocabulary, meaningless to a 7-year-old",
   "不管": "abstract adult vocabulary, meaningless to a 7-year-old",
@@ -430,7 +428,6 @@
   "利益": "abstract adult vocabulary, meaningless to a 7-year-old",
   "前沿": "abstract adult vocabulary, meaningless to a 7-year-old",
   "动摇": "abstract adult vocabulary, meaningless to a 7-year-old",
-  "千克": "abstract adult vocabulary, meaningless to a 7-year-old",
   "半岛": "abstract adult vocabulary, meaningless to a 7-year-old",
   "危害": "abstract adult vocabulary, meaningless to a 7-year-old",
   "危机": "abstract adult vocabulary, meaningless to a 7-year-old",
@@ -581,7 +578,6 @@
   "脱离": "abstract adult vocabulary, meaningless to a 7-year-old",
   "自我": "abstract adult vocabulary, meaningless to a 7-year-old",
   "苗头": "abstract adult vocabulary, meaningless to a 7-year-old",
-  "药片": "abstract adult vocabulary, meaningless to a 7-year-old",
   "薄弱": "abstract adult vocabulary, meaningless to a 7-year-old",
   "装备": "abstract adult vocabulary, meaningless to a 7-year-old",
   "西班牙语": "abstract adult vocabulary, meaningless to a 7-year-old",
@@ -593,7 +589,6 @@
   "贵族": "abstract adult vocabulary, meaningless to a 7-year-old",
   "趋势": "abstract adult vocabulary, meaningless to a 7-year-old",
   "跑车": "abstract adult vocabulary, meaningless to a 7-year-old",
-  "跑道": "abstract adult vocabulary, meaningless to a 7-year-old",
   "身份": "abstract adult vocabulary, meaningless to a 7-year-old",
   "软件": "abstract adult vocabulary, meaningless to a 7-year-old",
   "软弱": "abstract adult vocabulary, meaningless to a 7-year-old",
@@ -604,7 +599,6 @@
   "透露": "abstract adult vocabulary, meaningless to a 7-year-old",
   "造纸术": "abstract adult vocabulary, meaningless to a 7-year-old",
   "野蛮": "abstract adult vocabulary, meaningless to a 7-year-old",
-  "长跑": "abstract adult vocabulary, meaningless to a 7-year-old",
   "阴影": "abstract adult vocabulary, meaningless to a 7-year-old",
   "阵容": "abstract adult vocabulary, meaningless to a 7-year-old",
   "陈旧": "abstract adult vocabulary, meaningless to a 7-year-old",
@@ -621,6 +615,17 @@
   "骨干": "abstract adult vocabulary, meaningless to a 7-year-old",
   "高压": "abstract adult vocabulary, meaningless to a 7-year-old",
   "麻木": "abstract adult vocabulary, meaningless to a 7-year-old",
-  "鼓动": "abstract adult vocabulary, meaningless to a 7-year-old"
+  "鼓动": "abstract adult vocabulary, meaningless to a 7-year-old",
+  "肝脏": "medical/death/body",
+  "兴奋剂": "medical/death/body",
+  "轰炸": "violent/military/weapons",
+  "间谍": "violent/military/weapons",
+  "惩处": "bureaucratic/political/legal",
+  "嗜好": "abstract adult vocabulary, meaningless to a 7-year-old",
+  "应酬": "adult world (money, jobs, admin)",
+  "钻空子": "unkind (exploiting a loophole)",
+  "佛教": "religion: neutral but abstract for a 7-year-old (parent can add it back)",
+  "基督教": "religion: neutral but abstract for a 7-year-old (parent can add it back)",
+  "宗教": "religion: neutral but abstract for a 7-year-old (parent can add it back)"
  }
 }

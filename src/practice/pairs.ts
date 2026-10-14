@@ -36,13 +36,17 @@ export const PRODUCTIVE: ReadonlySet<string> = new Set([...'不没一二三四�
 
 /** The near pool's ceiling (content audit 2026-10-15): an HSK 7 school character asked for level 8, which was every word. */
 export const NEAR_MAX_HSK = 3;
+/** Two characters of opposite meaning: as a word they are a pair (男女, 左右), not something to join on a board. 东西 (a thing) is not one. */
+export const OPPOSITES: ReadonlySet<string> = new Set(['男女', '前后', '南北', '买卖', '早晚', '黑白', '大小', '多少', '左右', '上下', '来去', '开关', '高低',
+  '长短', '冷热', '远近', '快慢', '问答', '内外', '出入', '好坏', '真假', '日夜', '先后', '胜负', '得失', '生死', '收支', '动静', '老少', '新旧', '轻重', '进出',
+  '有无', '是非']);
 let nearPool: [string, number][] | null = null;
 /**
  * The two-character child words (wordGate) of HSK 1–3 that avoid PRODUCTIVE characters and aren't doubled (妈妈), in list
  * order, up to a level (never above NEAR_MAX_HSK); worked out once (a round asks each word's board many times).
  */
 export function nearWords(upTo: number): string[] {
-  nearPool ??= TWO_CHAR.filter(([w, lvl]) => { const c = Array.from(w); return lvl <= NEAR_MAX_HSK && c[0] !== c[1] && !c.some((ch) => PRODUCTIVE.has(ch)) && isChildWord(w); });
+  nearPool ??= TWO_CHAR.filter(([w, lvl]) => { const c = Array.from(w); return lvl <= NEAR_MAX_HSK && c[0] !== c[1] && !c.some((ch) => PRODUCTIVE.has(ch)) && !OPPOSITES.has(w) && isChildWord(w); });
   return nearPool.filter(([, lvl]) => lvl <= Math.min(upTo, NEAR_MAX_HSK)).map(([w]) => w);
 }
 
