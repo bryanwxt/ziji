@@ -2,7 +2,7 @@
 // has, what each moment does, and the daily finds they host. The find rules are unchanged (src/fun/finds.ts); only where they
 // happen moved: the zodiac animal comes out of the paper boat, the gem is the lotus's pearl, the egg is in 恐龙谷, the dig in 海湾.
 import type { Sfx } from '../../audio/sfx';
-import { findAnimal } from '../../fun/finds';
+import { findAnimal, tapEgg, tapGem } from '../../fun/finds';
 import type { WorldId } from '../../fun/worlds';
 import type { KidState } from '../../types';
 import type { ReactionKind } from '../truffle/timelines';
@@ -11,7 +11,8 @@ import type { ReactionKind } from '../truffle/timelines';
 export type Fx =
   | { kind: 'boat'; animal: string | null }
   | { kind: 'otters' } | { kind: 'dart' } | { kind: 'glide' } | { kind: 'swing' } | { kind: 'flutter' }
-  | { kind: 'roll' } | { kind: 'hop' } | { kind: 'paddle' } | { kind: 'dip' } | { kind: 'zip' };
+  | { kind: 'roll' } | { kind: 'hop' } | { kind: 'paddle' } | { kind: 'dip' } | { kind: 'zip' }
+  | { kind: 'wobble' } | { kind: 'hatchling' } | { kind: 'soar' } | { kind: 'puff' } | { kind: 'bloom'; opened: number; pearl: boolean } | { kind: 'leap' } | { kind: 'rise' };
 
 /**
  * A prop and its moment. `auto` moments also start by themselves on Home now and then (never ones that hold a find); `tap` is
@@ -27,8 +28,8 @@ export const MOMENTS: Record<WorldId, PropMoment[]> = {
   rainforest: [BOAT, { prop: 'hornbill', label: '犀鸟', auto: true, tap: true }, { prop: 'monkey', label: '猴子', auto: true, tap: false }, { prop: 'butterfly', label: '蝴蝶', auto: true, tap: true }],
   bamboo: [BOAT, { prop: 'panda', label: '熊猫', auto: true, tap: true }, { prop: 'frog', label: '青蛙', auto: true, tap: true }],
   terraces: [BOAT, { prop: 'ducks', label: '鸭子', auto: true, tap: true }, { prop: 'kite', label: '风筝', auto: true, tap: false }, { prop: 'dragonfly', label: '蜻蜓', auto: true, tap: true }],
-  dino: [BOAT],
-  lantern: [BOAT],
+  dino: [BOAT, { prop: 'nest', label: '恐龙蛋', auto: false, tap: true }, { prop: 'pterosaur', label: '翼龙', auto: true, tap: true }, { prop: 'volcano', label: '火山', auto: true, tap: true }],
+  lantern: [BOAT, { prop: 'lotus', label: '荷花', auto: false, tap: true }, { prop: 'koi', label: '锦鲤', auto: true, tap: true }, { prop: 'skylantern', label: '孔明灯', auto: true, tap: true }],
   cove: [BOAT],
   milkyway: [BOAT],
 };
@@ -63,7 +64,19 @@ export function runMoment(world: WorldId, prop: string, kid: KidState, today: st
     case 'terraces:ducks': return { fx: { kind: 'paddle' }, react: 'watch', say: '鸭妈妈和鸭宝宝！' };
     case 'terraces:kite': return { fx: { kind: 'dip' }, react: 'excited', say: '飞高高！' };
     case 'terraces:dragonfly': return { fx: { kind: 'zip' }, react: 'pounce' };
+    case 'dino:nest': {
+      if (f.dinoHatched) return { fx: { kind: 'hatchling' }, react: 'excited', say: '你好，小恐龙！' };
+      const next = tapEgg(f);
+      return { fx: { kind: 'wobble' }, react: 'watch', ...(next !== f ? { kid: { ...kid, finds: next } } : {}) };
+    }
+    case 'dino:pterosaur': return { fx: { kind: 'soar' }, react: 'watch', say: '翼龙！' };
+    case 'dino:volcano': return { fx: { kind: 'puff' }, react: 'flinch', say: '哇！' };
+    case 'lantern:lotus': {
+      const r = tapGem(f, today, lotusTaps);
+      return { fx: { kind: 'bloom', opened: r.cracks, pearl: r.gem }, react: r.gem ? 'excited' : 'watch', ...(r.gem ? { kid: { ...kid, finds: r.finds }, say: '珍珠！' } : {}) };
+    }
+    case 'lantern:koi': return { fx: { kind: 'leap' }, react: 'pounce', say: '鱼跳起来了！' };
+    case 'lantern:skylantern': return { fx: { kind: 'rise' }, react: 'watch', say: '飞走了！' };
   }
-  void lotusTaps;
   throw new Error(`no moment for ${world}:${prop}`);
 }

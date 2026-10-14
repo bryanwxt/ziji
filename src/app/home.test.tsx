@@ -543,7 +543,7 @@ describe('HomeScreen world tap fun', () => {
   });
 });
 
-describe('找到的动物 and the gem jar', () => {
+describe('找到的动物 and the pearl jar', () => {
   it('字卡 has an animals page: found ones named, the rest unknown', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, finds: { ...DEFAULT_KID.finds, animals: ['rat', 'ox'] } } });
     renderWithApp(<CollectionScreen />, app);
@@ -567,21 +567,21 @@ describe('找到的动物 and the gem jar', () => {
     }
     expect(document.querySelector('.scroll-panel .room__tabs, .scroll-panel .pet')).toBeNull();
   });
-  it("Truffle's room shows his gems in a jar", async () => {
+  it("Truffle's room shows his pearls (the gems data) in a jar", async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, finds: { ...DEFAULT_KID.finds, gems: 3 } } });
     renderWithApp(<Wardrobe />, app);
     fireEvent.click(await screen.findByRole('tab', { name: '地方' }));
-    expect(screen.getByText('3 颗宝石')).toBeTruthy();
-    expect(document.querySelectorAll('.gem-jar .gem')).toHaveLength(3);
+    expect(screen.getByText('3 颗珍珠')).toBeTruthy();
+    expect(document.querySelectorAll('.gem-jar .pearl')).toHaveLength(3);
   });
-  it('a full jar keeps every gem below the rim', async () => {
+  it('a full jar keeps every pearl below the rim', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, finds: { ...DEFAULT_KID.finds, gems: 30 } } });
     renderWithApp(<Wardrobe />, app);
     fireEvent.click(await screen.findByRole('tab', { name: '地方' }));
-    expect(screen.getByText('30 颗宝石')).toBeTruthy();
-    const ys = [...document.querySelectorAll('.gem-jar .gem')].map((g) => Number(/translate\([-\d.]+ ([-\d.]+)\)/.exec(g.getAttribute('transform')!)![1]));
+    expect(screen.getByText('30 颗珍珠')).toBeTruthy();
+    const ys = [...document.querySelectorAll('.gem-jar .pearl')].map((g) => Number(/translate\([-\d.]+ ([-\d.]+)\)/.exec(g.getAttribute('transform')!)![1]));
     expect(ys.length).toBeGreaterThan(0);
-    expect(Math.min(...ys) - 7).toBeGreaterThan(-38); // a gem is about 14 tall at this scale; the rim's lower edge is y -38
+    expect(Math.min(...ys) - 7).toBeGreaterThan(-38); // a pearl is about 13 tall at this scale; the rim's lower edge is y -38
   });
 });
 

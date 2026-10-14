@@ -69,14 +69,3 @@ export const ANIMAL_FACES: Record<string, string> = {
     `<path d="M-14 -9 l-5 -10 l10 4Z M14 -9 l5 -10 l-10 4Z" fill="#edb8c0" ${S}/>` + head('#edb8c0') + eyes(-4, 7) +
     `<ellipse cx="0" cy="5" rx="7" ry="5" fill="#e6a3b0" ${S}/><g fill="${INK}"><ellipse cx="-2.5" cy="5" rx="1.4" ry="2"/><ellipse cx="2.5" cy="5" rx="1.4" ry="2"/></g>`,
 };
-
-export const GEM =
-  `<path d="M-12 -4 l6 -8 h12 l6 8 l-12 16Z" fill="#6ea4d4" ${S}/>` +
-  `<path d="M-12 -4 h24 M-6 -12 l2 8 l4 16 M6 -12 l-2 8 l-4 16" fill="none" ${S} stroke-width="1.6"/>` +
-  `<path d="M-3 -9 l2 -2" stroke="#fffaf0" stroke-width="2.4" stroke-linecap="round"/>`;
-
-export const BABY_DINO =
-  `<path d="M-14 12 C-16 -2 -6 -8 2 -6 C6 -14 16 -14 16 -6 C16 0 10 2 6 0 C8 6 8 12 6 12Z" fill="#9fcf90" ${S}/>` +
-  `<circle cx="10" cy="-8" r="1.8" fill="${INK}"/><path d="M12 -3 q-3 2 -6 0" fill="none" ${S} stroke-width="1.6"/>` +
-  `<path d="M-14 12 C-18 10 -22 12 -24 8 C-20 8 -18 6 -16 4" fill="#9fcf90" ${S}/>` +
-  `<path d="M-12 14 C-12 4 4 4 4 14Z" fill="#fffaf0" ${S}/><path d="M-12 14 l3 -4 l3 4 l3 -4 l3 4 l3 -4 l1 4" fill="none" ${S} stroke-width="1.6"/>`;

@@ -29,7 +29,9 @@ const LIGHTS: Record<WorldId, (w: WorldId) => string> = {
   rainforest: (w) => fireflies(w, [[150, 700], [260, 640], [380, 760], [620, 700], [780, 640], [860, 760], [500, 860], [90, 860]]),
   bamboo: (w) => `<g data-part="moonlight">${glow(`${w}-mist`, 640, 650, 140, '#eaf0ff', 0.5)}</g>` + fireflies(w, [[120, 640], [250, 700], [380, 620], [880, 600], [930, 720], [160, 900]]),
   terraces: (w) => glows(w, 'window', [[200, 395, 50]]) + fireflies(w, [[100, 700], [240, 760], [380, 820], [880, 700], [160, 900], [420, 640]]),
-  dino: () => '', lantern: () => '', cove: () => '', milkyway: () => '',
+  dino: (w) => `<g data-part="lava">${glow(`${w}-lava`, 855, 300, 110, '#ff6a3a', 0.75)}${glow(`${w}-lava2`, 855, 360, 150, '#ffb86b', 0.35)}<path d="M846 298 q-6 20 2 40 M864 300 q8 18 0 36" stroke="#ff8a4a" stroke-width="4" stroke-linecap="round" fill="none"/></g>`,
+  lantern: (w) => glows(w, 'lantern', [[40, 530, 50], [125, 515, 46], [310, 515, 36], [345, 512, 32], [380, 500, 30], [660, 500, 30], [760, 515, 40], [830, 520, 44], [885, 520, 44], [820, 390, 36], [870, 380, 36]]),
+  cove: () => '', milkyway: () => '',
 };
 /** The boat's lantern glows in every world. */
 const boatGlow = (w: WorldId) => { const b = RIVER[w].props.boat!; return `<g data-part="boat-lantern">${glow(`${w}-boat`, b.x + 34, b.y - 46, 40, '#ffb86b', 0.8)}</g>`; };

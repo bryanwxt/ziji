@@ -5,6 +5,8 @@ import { FROG, panda } from './creatures/bamboo';
 import { DRAGONFLY, DUCKS, KITE } from './creatures/terraces';
 import { KINGFISHER, otter } from './creatures/home';
 import { BUTTERFLY, HORNBILL, MONKEY } from './creatures/rainforest';
+import { NEST_ART, PTEROSAUR } from './creatures/dino';
+import { KOI_GLIMPSE, PAD_ART, SKY_LANTERN, lotus } from './creatures/lantern';
 import { RIVER } from './river';
 
 /** Each world's props at rest; each world's task adds its creatures beside the boat. */
@@ -13,8 +15,8 @@ export const PROP_ART: Record<WorldId, Record<string, string>> = {
   rainforest: { boat: RIPPLE + BOAT, hornbill: HORNBILL, monkey: MONKEY, butterfly: BUTTERFLY },
   bamboo: { boat: RIPPLE + BOAT, panda: panda(), frog: FROG },
   terraces: { boat: RIPPLE + BOAT, ducks: DUCKS, kite: KITE, dragonfly: DRAGONFLY },
-  dino: { boat: RIPPLE + BOAT },
-  lantern: { boat: RIPPLE + BOAT },
+  dino: { boat: RIPPLE + BOAT, nest: NEST_ART, pterosaur: PTEROSAUR, volcano: '' }, // the painting draws the volcano: its prop is only the tap and the puff
+  lantern: { boat: RIPPLE + BOAT, lotus: PAD_ART + `<g data-part="bud">${lotus(0)}</g>`, koi: KOI_GLIMPSE, skylantern: SKY_LANTERN },
   cove: { boat: RIPPLE + BOAT },
   milkyway: { boat: RIPPLE + BOAT },
 };

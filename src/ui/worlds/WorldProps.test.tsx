@@ -163,4 +163,20 @@ describe('WorldProps on One River (spec 2026-10-13 §6; 2026-10-04 §4.5)', () =
     expect(playSfx).not.toHaveBeenCalled();
     vi.mocked(Math.random).mockRestore();
   });
+  it("the lotus opens over three taps, then shows the day's pearl; yesterday's taps don't count today (review focus 3)", () => {
+    const onKid = vi.fn();
+    const { rerender } = render(<WorldProps world="lantern" {...props({ onKid })} />);
+    for (let i = 1; i <= 2; i++) { tap('荷花'); act(() => { vi.advanceTimersByTime(600); }); }
+    expect(document.querySelector('.tap-petals')!.getAttribute('data-opened')).toBe('2');
+    rerender(<WorldProps world="lantern" {...props({ onKid, today: '2026-10-07' })} />);
+    for (let i = 1; i <= 3; i++) { tap('荷花'); act(() => { vi.advanceTimersByTime(600); }); }
+    expect(onKid).not.toHaveBeenCalled();
+    tap('荷花');
+    expect(onKid).toHaveBeenCalledWith(expect.objectContaining({ finds: expect.objectContaining({ gems: 1 }) }));
+    expect(document.querySelector('.tap-pearl')).toBeTruthy();
+  });
+  it('the hatched baby dinosaur waits by the nest in 恐龙谷', () => {
+    render(<WorldProps world="dino" {...props({ kid: kid({ finds: { ...DEFAULT_FINDS, eggTapped: true, dinoHatched: true } }) })} />);
+    expect(document.querySelector('.world-props .tap-baby-dino')).toBeTruthy();
+  });
 });

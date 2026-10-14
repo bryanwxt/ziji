@@ -43,4 +43,24 @@ describe('One River moments (spec 2026-10-13 §6)', () => {
     expect(runMoment('bamboo', 'panda', kid(), DAY, 0)).toMatchObject({ fx: { kind: 'roll' }, react: 'munch', sfx: 'munch', later: { say: '哈哈，打滚了！' } });
     expect(MOMENTS.terraces.find((m) => m.prop === 'kite')).toMatchObject({ auto: true, tap: false });
   });
+  it('the lotus opens over three taps, and the fourth shows the day\'s pearl (the gem rule)', () => {
+    for (let n = 1; n <= 3; n++) {
+      const o = runMoment('lantern', 'lotus', kid(), DAY, n);
+      expect(o.fx).toEqual({ kind: 'bloom', opened: n, pearl: false });
+      expect(o.kid).toBeUndefined();
+    }
+    const pop = runMoment('lantern', 'lotus', kid(), DAY, 4);
+    expect(pop.fx).toMatchObject({ kind: 'bloom', pearl: true });
+    expect(pop.kid!.finds.gems).toBe(1);
+    expect(pop.say).toBe('珍珠！');
+    expect(runMoment('lantern', 'lotus', pop.kid!, DAY, 5).kid).toBeUndefined();
+  });
+  it('the egg in 恐龙谷 remembers the tap; once hatched the baby hops', () => {
+    const o = runMoment('dino', 'nest', kid(), DAY, 0);
+    expect(o.fx).toEqual({ kind: 'wobble' });
+    expect(o.kid!.finds.eggTapped).toBe(true);
+    expect(runMoment('dino', 'nest', o.kid!, DAY, 0).kid).toBeUndefined();
+    const hatched = runMoment('dino', 'nest', kid({ finds: { ...DEFAULT_FINDS, eggTapped: true, dinoHatched: true } }), DAY, 0);
+    expect(hatched).toMatchObject({ fx: { kind: 'hatchling' }, say: '你好，小恐龙！' });
+  });
 });
