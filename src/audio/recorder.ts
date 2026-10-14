@@ -1,5 +1,5 @@
 import { average, rmsLevel } from '../langdu/loudness';
-import { MIC_TIMEOUT_MS, micPermission, MicDeniedError, MicStartError, MicTimeoutError, MicUnsupportedError } from './micErrors';
+import { MIC_PROMPT_TIMEOUT_MS, MIC_TIMEOUT_MS, micPermission, MicDeniedError, MicStartError, MicTimeoutError, MicUnsupportedError } from './micErrors';
 import { openMeterContext } from './meter';
 
 export const MAX_RECORDING_MS = 60_000;
@@ -38,12 +38,12 @@ function openMic(): Promise<MediaStream> {
       },
     );
     void micPermission().then((state) => {
-      if (settled || state === 'prompt') return;
+      if (settled) return;
       timer = setTimeout(() => {
         if (settled) return;
         settled = true;
         reject(new MicTimeoutError());
-      }, MIC_TIMEOUT_MS);
+      }, state === 'prompt' ? MIC_PROMPT_TIMEOUT_MS : MIC_TIMEOUT_MS);
     });
   });
 }

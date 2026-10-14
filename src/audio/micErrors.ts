@@ -2,6 +2,8 @@
 export type MicStage = 'getUserMedia' | 'MediaRecorder' | 'start' | 'timeout';
 
 export const MIC_TIMEOUT_MS = 10_000;
+/** the permission question is on screen: give him time to decide, but never leave the button waiting for good */
+export const MIC_PROMPT_TIMEOUT_MS = 30_000;
 
 /** An Error or a DOMException (not always an Error subclass): its name and message. */
 function errorLike(e: unknown): { name: string; message: string } | null {

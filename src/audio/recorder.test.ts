@@ -142,14 +142,16 @@ describe('opening the microphone (mic fix 2026-10-14)', () => {
     await startRecording(() => {}, () => {}, { meterCtx: ctx as unknown as AudioContext }).catch(() => {});
     expect(ctx.close).not.toHaveBeenCalled(); // the retry will use it
   });
-  it('the permission question still on screen: no time limit while he decides', async () => {
+  it('the permission question still on screen: a long wait while he decides, but never stuck for good', async () => {
     vi.useFakeTimers();
     vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(() => new Promise(() => {})) }, permissions: { query: async () => ({ state: 'prompt' }) } });
     vi.stubGlobal('MediaRecorder', recorderClass());
-    let failed = false;
-    startRecording(() => {}).catch(() => { failed = true; });
+    let failed: unknown = null;
+    startRecording(() => {}).catch((e) => { failed = e; });
     await vi.advanceTimersByTimeAsync(15_000);
-    expect(failed).toBe(false);
+    expect(failed).toBe(null);
+    await vi.advanceTimersByTimeAsync(16_000);
+    expect(failed).toBeInstanceOf(MicTimeoutError);
   });
   it('no way to record at all is its own error', async () => {
     vi.stubGlobal('navigator', {});
