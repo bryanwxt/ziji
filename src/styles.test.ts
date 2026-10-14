@@ -130,6 +130,11 @@ describe('adaptive layouts (spec §18)', () => {
     expect(adaptive).toMatch(/html:has\(\.screen--scroll\), html:has\(\.screen--scroll\) body \{ overflow: auto; \}/);
     expect(adaptive).toMatch(/\.screen--scroll \{[^}]*height: auto;[^}]*min-height: 100dvh;[^}]*overflow: visible;/);
   });
+  it('evening lights move only on Home, never behind a lesson, and never with reduced motion (spec 2026-10-13 §6)', () => {
+    expect(css).toMatch(/\.home \.world-anim--pulse \{ animation:/);
+    expect(css).not.toMatch(/^\.world-anim--\w+ \{[^}]*animation:/m);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.home \.world-anim \{ animation: none; \} \}/);
+  });
   it('long lists scroll inside their own panel', () => {
     expect(adaptive).toMatch(/\.scroll-panel \{[^}]*flex: 1;[^}]*min-height: 0;[^}]*overflow-y: auto;/);
   });

@@ -1,5 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { speak } from '../../audio/speech';
 import { playSfx } from '../../audio/sfx';
 import { DEFAULT_FINDS } from '../../fun/finds';
 import { WORLDS } from '../../fun/worlds';
@@ -178,5 +179,24 @@ describe('WorldProps on One River (spec 2026-10-13 §6; 2026-10-04 §4.5)', () =
   it('the hatched baby dinosaur waits by the nest in 恐龙谷', () => {
     render(<WorldProps world="dino" {...props({ kid: kid({ finds: { ...DEFAULT_FINDS, eggTapped: true, dinoHatched: true } }) })} />);
     expect(document.querySelector('.world-props .tap-baby-dino')).toBeTruthy();
+  });
+  it('a moment that starts by itself never speaks out loud or makes a sound; the parrot\'s hello is a bubble line', () => {
+    vi.mocked(speak).mockClear();
+    vi.mocked(playSfx).mockClear();
+    const onSay = vi.fn();
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // the last of 海湾's: the parrot
+    render(<WorldProps world="cove" {...props({ onSay, autoEvery: 1000 })} />);
+    act(() => { vi.advanceTimersByTime(1600); });
+    expect(onSay).toHaveBeenCalledWith('你好！');
+    expect(speak).not.toHaveBeenCalled();
+    expect(playSfx).not.toHaveBeenCalled();
+    vi.mocked(Math.random).mockRestore();
+  });
+  it('a tap during the dig is ignored (review focus 1)', () => {
+    const onKid = vi.fn();
+    render(<WorldProps world="cove" {...props({ onKid })} />);
+    tap('宝藏');
+    tap('宝藏');
+    expect(onKid).toHaveBeenCalledTimes(1);
   });
 });

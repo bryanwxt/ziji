@@ -7,6 +7,8 @@ import { FROG, panda } from '../../src/ui/worlds/creatures/bamboo';
 import { DRAGONFLY, DUCKS, KITE } from '../../src/ui/worlds/creatures/terraces';
 import { BABY_DINO, NEST_ART, PTEROSAUR, PUFF } from '../../src/ui/worlds/creatures/dino';
 import { KOI_ART, KOI_GLIMPSE, PAD_ART, PEARL, SKY_LANTERN, lotus } from '../../src/ui/worlds/creatures/lantern';
+import { CRAB_ART, PARROT, STAR, X_ART } from '../../src/ui/worlds/creatures/cove';
+import { MAGPIE_PAIR, SHOOTING, TWINKLE, magpie } from '../../src/ui/worlds/creatures/milkyway';
 import { ANIMAL_FACES } from '../../src/ui/worlds/tapArt';
 
 export const CREATURES: [string, string][] = [
@@ -14,4 +16,5 @@ export const CREATURES: [string, string][] = [
   ['otter', otter()], ['otter look', otter(0.6)], ['kingfisher', KINGFISHER], ['hornbill', HORNBILL], ['hornbill flying', HORNBILL_FLY], ['monkey', MONKEY], ['butterfly', BUTTERFLY],
   ['panda', panda()], ['panda chewing', panda(true)], ['frog', FROG], ['ducks', DUCKS], ['kite', KITE], ['dragonfly', DRAGONFLY],
   ['egg nest', NEST_ART], ['baby dino', BABY_DINO], ['pterosaur', PTEROSAUR], ['volcano puff', PUFF], ['lotus bud', PAD_ART + lotus(0)], ['lotus 2', PAD_ART + lotus(2)], ['lotus + pearl', PAD_ART + lotus(3) + `<g transform="translate(0 -28)">${PEARL}</g>`], ['koi at rest', KOI_GLIMPSE], ['koi leaping', KOI_ART], ['sky lantern', SKY_LANTERN],
+  ['X', X_ART], ['star', `<g transform="translate(0 -30)">${STAR}</g>`], ['crab', CRAB_ART], ['parrot', PARROT], ['magpies resting', MAGPIE_PAIR], ['magpie flying', `<g transform="translate(0 -40)">${magpie()}</g>`], ['shooting star', `<g transform="translate(-30 -10)">${SHOOTING}</g>`], ['twinkle', TWINKLE],
 ];

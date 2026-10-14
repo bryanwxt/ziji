@@ -59,4 +59,11 @@ describe('One River anchors (spec 2026-10-13 §5)', () => {
     expect(inCrop({ x: 500, y: 400, w: 120, h: 90 }, cropFor(CROPS.landscape))).toBe(false); // its top (310) is above a landscape crop
     expect(inCrop(RIVER.home.props.boat!, phone)).toBe(true); // 家门口's boat is its only prop a phone shows
   });
+  it('every world keeps a prop he can tap in each crop', () => {
+    for (const w of WORLDS) for (const [crop, aspect] of Object.entries(CROPS)) {
+      const c = cropFor(aspect);
+      const tappable = MOMENTS[w.id].filter((m) => m.tap && inCrop(RIVER[w.id].props[m.prop]!, c));
+      expect(tappable.length, `${w.id} ${crop}`).toBeGreaterThan(0);
+    }
+  });
 });

@@ -45,12 +45,12 @@ export const RIVER: Record<WorldId, RiverWorld> = {
     moon: { x: 560, y: 300 },
   },
   cove: {
-    props: { boat: { x: 690, y: 905, w: 120, h: 90 } },
+    props: { boat: { x: 690, y: 905, w: 120, h: 90 }, x: { x: 300, y: 870, w: 70, h: 56 }, crab: { x: 390, y: 950, w: 60, h: 50 }, parrot: { x: 115, y: 545, w: 56, h: 66 } },
     dusk: 0.22,
     moon: { x: 560, y: 260 },
   },
   milkyway: {
-    props: { boat: { x: 650, y: 925, w: 120, h: 90 } },
+    props: { boat: { x: 650, y: 925, w: 120, h: 90 }, magpies: { x: 190, y: 770, w: 120, h: 70 }, shootingstar: { x: 880, y: 525, w: 64, h: 52 } },
     dusk: 0,
     moon: null,
   },

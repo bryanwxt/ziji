@@ -23,6 +23,11 @@ const lamp = (w: WorldId, i: number, x: number, y: number) =>
   `<g data-part="lamp">${glow(`${w}-lamp${i}`, x, y - 52, 44)}<path d="M${x} ${y} L${x} ${y - 48}" stroke="#706889" stroke-width="3" stroke-linecap="round"/><path d="M${x - 7} ${y - 48} h14 l-3 -8 h-8 Z" fill="#fff4c8" stroke="#706889" stroke-width="1.6" stroke-linejoin="round"/></g>`;
 
 
+const r1 = (n: number) => +n.toFixed(1);
+/** Stars that twinkle (the night sky of 银河). */
+const twinkles = (pts: [number, number, number][]) => pts.map(([x, y, r], i) =>
+  `<path data-part="star" class="world-anim world-anim--twinkle" style="animation-delay:${(i * 0.53).toFixed(2)}s" d="M${x} ${r1(y - r)} Q${r1(x + r * 0.25)} ${r1(y - r * 0.25)} ${r1(x + r)} ${y} Q${r1(x + r * 0.25)} ${r1(y + r * 0.25)} ${x} ${r1(y + r)} Q${r1(x - r * 0.25)} ${r1(y + r * 0.25)} ${r1(x - r)} ${y} Q${r1(x - r * 0.25)} ${r1(y - r * 0.25)} ${x} ${r1(y - r)}Z" fill="#fffbe0"/>`).join('');
+
 /** Each world's lights (spec 2026-10-13 §6), placed by eye on its painting; each world's task fills in its own. */
 const LIGHTS: Record<WorldId, (w: WorldId) => string> = {
   home: (w) => glows(w, 'window', [[230, 380, 60], [400, 440, 60], [930, 330, 70], [920, 520, 60]]) + lamp(w, 1, 440, 650) + lamp(w, 2, 790, 660),
@@ -31,7 +36,8 @@ const LIGHTS: Record<WorldId, (w: WorldId) => string> = {
   terraces: (w) => glows(w, 'window', [[200, 395, 50]]) + fireflies(w, [[100, 700], [240, 760], [380, 820], [880, 700], [160, 900], [420, 640]]),
   dino: (w) => `<g data-part="lava">${glow(`${w}-lava`, 855, 300, 110, '#ff6a3a', 0.75)}${glow(`${w}-lava2`, 855, 360, 150, '#ffb86b', 0.35)}<path d="M846 298 q-6 20 2 40 M864 300 q8 18 0 36" stroke="#ff8a4a" stroke-width="4" stroke-linecap="round" fill="none"/></g>`,
   lantern: (w) => glows(w, 'lantern', [[40, 530, 50], [125, 515, 46], [310, 515, 36], [345, 512, 32], [380, 500, 30], [660, 500, 30], [760, 515, 40], [830, 520, 44], [885, 520, 44], [820, 390, 36], [870, 380, 36]]),
-  cove: () => '', milkyway: () => '',
+  cove: (w) => `<g data-part="beam">${glow(`${w}-lamp`, 845, 285, 70, '#fff1b8', 0.9)}<path class="world-anim world-anim--sweep" d="M845 285 L340 200 L340 330 Z" fill="#fff1b8" opacity=".28"/></g>`,
+  milkyway: () => twinkles([[80, 70, 12], [910, 110, 13], [510, 260, 10], [650, 650, 9], [920, 690, 9], [610, 845, 10], [970, 965, 11], [312, 640, 10], [200, 140, 7]]),
 };
 /** The boat's lantern glows in every world. */
 const boatGlow = (w: WorldId) => { const b = RIVER[w].props.boat!; return `<g data-part="boat-lantern">${glow(`${w}-boat`, b.x + 34, b.y - 46, 40, '#ffb86b', 0.8)}</g>`; };

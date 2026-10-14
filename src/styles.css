@@ -1611,3 +1611,12 @@ button.langdu__sentence { cursor: pointer; }
   .family-sum__row { flex-wrap: nowrap; }
   .family-sum__row.is-missed [lang="en"] { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* ===== One River: evening lights that move (spec 2026-10-13 §6) — on Home only: behind a lesson the world stays still ===== */
+.world-anim { transform-box: view-box; }
+.home .world-anim--pulse { animation: world-pulse 2.6s ease-in-out infinite; }
+.home .world-anim--twinkle { animation: world-pulse 3.2s ease-in-out infinite; }
+.home .world-anim--sweep { transform-origin: 845px 285px; animation: world-sweep 6s ease-in-out infinite alternate; }
+@keyframes world-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes world-sweep { from { transform: rotate(-12deg); } to { transform: rotate(14deg); } }
+@media (prefers-reduced-motion: reduce) { .home .world-anim { animation: none; } }

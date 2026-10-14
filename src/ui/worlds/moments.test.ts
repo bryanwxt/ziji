@@ -63,4 +63,37 @@ describe('One River moments (spec 2026-10-13 §6)', () => {
     const hatched = runMoment('dino', 'nest', kid({ finds: { ...DEFAULT_FINDS, eggTapped: true, dinoHatched: true } }), DAY, 0);
     expect(hatched).toMatchObject({ fx: { kind: 'hatchling' }, say: '你好，小恐龙！' });
   });
+  it('every world has the boat and 1–3 creatures or things, each with a moment', () => {
+    for (const w of WORLDS) {
+      const m = MOMENTS[w.id];
+      expect(m[0]!.prop, w.id).toBe('boat');
+      expect(m.length, w.id).toBeGreaterThanOrEqual(3);
+      expect(m.length, w.id).toBeLessThanOrEqual(4);
+      for (const x of m) expect(() => runMoment(w.id, x.prop, kid(), DAY, 1), `${w.id}:${x.prop}`).not.toThrow();
+    }
+  });
+  it('a moment that starts by itself never gives a find, and every world has one', () => {
+    for (const w of WORLDS) {
+      expect(MOMENTS[w.id].some((m) => m.auto), w.id).toBe(true);
+      for (const x of MOMENTS[w.id].filter((m) => m.auto)) for (let taps = 1; taps <= 5; taps++) expect(runMoment(w.id, x.prop, kid(), DAY, taps).kid, `${w.id}:${x.prop}`).toBeUndefined();
+    }
+  });
+  it('a prop Home covers on some screens only plays by itself; every world keeps one to tap', () => {
+    for (const w of WORLDS) {
+      for (const m of MOMENTS[w.id].filter((x) => !x.tap)) expect(m.auto, `${w.id}:${m.prop}`).toBe(true);
+      expect(MOMENTS[w.id].some((m) => m.tap), w.id).toBe(true);
+    }
+  });
+  it('the X in 海湾 gives one bonus star a day, then Truffle just digs', () => {
+    const o = runMoment('cove', 'x', kid({ bonusStars: 2 }), DAY, 0);
+    expect(o.fx).toEqual({ kind: 'dig', star: true });
+    expect(o.kid).toMatchObject({ bonusStars: 3, finds: { lastDigDate: DAY } });
+    const again = runMoment('cove', 'x', o.kid!, DAY, 0);
+    expect(again.kid).toBeUndefined();
+    expect(again.say).toBe('挖呀挖！');
+  });
+  it('the finds live only where the spec puts them', () => {
+    const hosts = WORLDS.flatMap((w) => MOMENTS[w.id].filter((m) => !m.auto).map((m) => `${w.id}:${m.prop}`)).filter((h) => !h.endsWith(':boat'));
+    expect(hosts).toEqual(['dino:nest', 'lantern:lotus', 'cove:x']);
+  });
 });

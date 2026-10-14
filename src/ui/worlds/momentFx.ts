@@ -10,6 +10,8 @@ import { DRAGONFLY, DUCKS, KITE } from './creatures/terraces';
 import { KINGFISHER, otter } from './creatures/home';
 import { BUTTERFLY, HORNBILL, HORNBILL_FLY, MONKEY } from './creatures/rainforest';
 import { BABY_DINO, EGG_ART, PTEROSAUR, PUFF } from './creatures/dino';
+import { CRAB_ART, PARROT_BODY, PARROT_WING, STAR, X_ART } from './creatures/cove';
+import { magpie, SHOOTING } from './creatures/milkyway';
 import { KOI_ART, PEARL, SKY_LANTERN, lotus } from './creatures/lantern';
 import { ANIMAL_FACES } from './tapArt';
 
@@ -19,6 +21,7 @@ export const FX_MS: Record<Fx['kind'], number> = {
   otters: 2400, dart: 1600, glide: 2600, swing: 2000, flutter: 1800,
   roll: 2200, hop: 1200, paddle: 3000, dip: 2000, zip: 1600,
   wobble: 800, hatchling: 900, soar: 2800, puff: 2000, bloom: 500, leap: 1400, rise: 3200,
+  dig: 1400, scuttle: 1800, flap: 1400, bridge: 3600, streak: 1400,
 };
 
 /** The day's pearl stays up even if he keeps tapping. */
@@ -125,6 +128,35 @@ const DRAW: Record<Fx['kind'], Draw> = {
     const back = `<g opacity="0">${SKY_LANTERN}<animate attributeName="opacity" values="0;1" begin="${FX_MS.rise}ms" dur="300ms" fill="freeze"/></g>`;
     return { svg: at(s.x, s.y, up + back, 'tap-rise'), hide: '[data-prop="skylantern"]' };
   },
+  dig: (fx, s, still) => {
+    const puffs = [[-14, -2, 5], [12, -6, 4.5], [-2, -10, 4]].map(([dx, dy, r]) => `<circle cx="${dx}" cy="${dy}" r="${r}" fill="#f1c9a8" stroke="#706889" stroke-width="1.2">${still ? '' : move(`0 0;${(dx as number) * 0.6} -12;${(dx as number) * 0.8} 0`, FX_MS.dig)}${fade(FX_MS.dig)}</circle>`).join('');
+    const prize = fx.kind === 'dig' && fx.star ? `<g class="tap-star" transform="translate(0 -30)">${STAR}${rise(24, FX_MS.dig, still)}</g>` : '';
+    return { svg: at(s.x, s.y, X_ART + puffs + prize, 'tap-dig'), hide: null };
+  },
+  scuttle: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, CRAB_ART), hide: '[data-prop="crab"]' };
+    return { svg: at(s.x, s.y, `<g>${CRAB_ART}${move('0 0;50 0;50 0;-30 0;0 0', FX_MS.scuttle, '0;0.3;0.45;0.8;1')}</g>`, 'tap-scuttle'), hide: '[data-prop="crab"]' };
+  },
+  flap: (_fx, s, still) => {
+    const wing = `<g>${PARROT_WING}${still ? '' : `<animateTransform attributeName="transform" type="rotate" values="0 4 -26;-34 4 -26;0 4 -26" dur="280ms" repeatCount="5"/>`}</g>`;
+    return { svg: at(s.x, s.y, `<g>${PARROT_BODY}${wing}${still ? '' : move('0 0;0 -5;0 0', 700) }</g>`, 'tap-parrot'), hide: '[data-prop="parrot"]' };
+  },
+  bridge: (_fx, s, still) => {
+    // a flock flies in over the silver river and holds an arch for a moment: the magpie bridge (鹊桥)
+    const n = 7;
+    const birds = Array.from({ length: n }, (_, i) => {
+      const t = i / (n - 1);
+      const x = 160 + t * 380;
+      const y = -120 - Math.sin(t * Math.PI) * 70;
+      const from = `${-200 - i * 30} ${-260 + i * 10}`;
+      return `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})" opacity="0"><g>${magpie(i % 2 === 0)}</g>${still ? '' : move(`${from};0 0;0 0`, FX_MS.bridge, '0;0.35;1', i * 60)}<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="${FX_MS.bridge}ms" begin="${i * 60}ms" fill="freeze"/></g>`;
+    }).join('');
+    return { svg: at(s.x, s.y, birds, 'tap-bridge'), hide: null };
+  },
+  streak: (_fx, s, still) => {
+    if (still) return { svg: at(s.x, s.y, glint(0, -24, 14, 0, 900)), hide: null };
+    return { svg: at(s.x, s.y, `<g opacity="0">${SHOOTING}${move('60 -30;-260 130', FX_MS.streak)}<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.7;1" dur="${FX_MS.streak}ms" fill="freeze"/></g>`, 'tap-streak'), hide: null };
+  },
 };
 
 /** Which prop a moment plays on (the zodiac animal's on the boat in any world). */
@@ -133,6 +165,7 @@ const PROP_OF: Record<Fx['kind'], string> = {
   otters: 'otter', dart: 'kingfisher', glide: 'hornbill', swing: 'monkey', flutter: 'butterfly',
   roll: 'panda', hop: 'frog', paddle: 'ducks', dip: 'kite', zip: 'dragonfly',
   wobble: 'nest', hatchling: 'nest', soar: 'pterosaur', puff: 'volcano', bloom: 'lotus', leap: 'koi', rise: 'skylantern',
+  dig: 'x', scuttle: 'crab', flap: 'parrot', bridge: 'magpies', streak: 'shootingstar',
 };
 
 /** The moment's art, and the scene part it stands in for while it plays (that part is hidden, then shown again). */

@@ -6,6 +6,8 @@ import { DRAGONFLY, DUCKS, KITE } from './creatures/terraces';
 import { KINGFISHER, otter } from './creatures/home';
 import { BUTTERFLY, HORNBILL, MONKEY } from './creatures/rainforest';
 import { NEST_ART, PTEROSAUR } from './creatures/dino';
+import { CRAB_ART, PARROT, X_ART } from './creatures/cove';
+import { MAGPIE_PAIR, TWINKLE } from './creatures/milkyway';
 import { KOI_GLIMPSE, PAD_ART, SKY_LANTERN, lotus } from './creatures/lantern';
 import { RIVER } from './river';
 
@@ -17,8 +19,8 @@ export const PROP_ART: Record<WorldId, Record<string, string>> = {
   terraces: { boat: RIPPLE + BOAT, ducks: DUCKS, kite: KITE, dragonfly: DRAGONFLY },
   dino: { boat: RIPPLE + BOAT, nest: NEST_ART, pterosaur: PTEROSAUR, volcano: '' }, // the painting draws the volcano: its prop is only the tap and the puff
   lantern: { boat: RIPPLE + BOAT, lotus: PAD_ART + `<g data-part="bud">${lotus(0)}</g>`, koi: KOI_GLIMPSE, skylantern: SKY_LANTERN },
-  cove: { boat: RIPPLE + BOAT },
-  milkyway: { boat: RIPPLE + BOAT },
+  cove: { boat: RIPPLE + BOAT, x: X_ART, crab: CRAB_ART, parrot: PARROT },
+  milkyway: { boat: RIPPLE + BOAT, magpies: MAGPIE_PAIR, shootingstar: TWINKLE },
 };
 
 /** A prop in its place, tagged with its name so a moment can hide it while it plays. */
