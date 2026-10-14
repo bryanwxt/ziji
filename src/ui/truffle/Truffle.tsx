@@ -1,6 +1,6 @@
 import type { JSX } from 'preact';
 import { useRef } from 'preact/hooks';
-import { blush, LINE, LW, LWI } from '../cel';
+import { blush, LINE, LWI } from '../cel';
 import { reducedMotion } from '../motion';
 import { useRig } from './useRig';
 import type { PawPose } from './timelines';
@@ -9,7 +9,7 @@ import { accessoryLayer } from './accessories';
 import { costumeLayer } from './costumes';
 import { CEL, EAR_IN_L, EAR_IN_R, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, type TruffleMood } from './parts';
 import { powerLayer } from './powers';
-import { blushOpacity, browTransform, EXTRAS, EYE_L, EYE_LINE, EYE_R, EYE_RX, EYE_RY, EYE_Y, FUR, IRIS_RX, IRIS_RY, IRIS_Y, ringOn, lowerLid, MOOD_EXPRESSION, MOUTH_W, mouthPath, mouthW, PRESETS, upperLid, type Expression, type Face } from './rig';
+import { blushOpacity, browTransform, EXTRAS, EYE_L, EYE_LINE, EYE_LINE_BOTTOM, EYE_LINE_TOP, EYE_R, EYE_RX, EYE_RY, EYE_Y, eyeContour, FUR, IRIS_RX, IRIS_RY, IRIS_Y, ringOn, lowerLid, MOOD_EXPRESSION, SHADE, SHADE_ON, MOUTH_W, mouthPath, mouthW, PRESETS, upperLid, type Expression, type Face } from './rig';
 import type { Reaction } from './timelines';
 
 export type { TruffleMood } from './parts';
@@ -44,12 +44,15 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 /**
  * One anime eye (spec 2026-10-13 §7): a taller white, an iris with a dark upper band and a pale lower crescent, a dark pupil and
- * two catch-lights, the outline and a heavy upper lash, then the fur lids over it. No clip-paths: the iris never leaves the white
+ * two catch-lights, a lilac lid shadow, the fur lids, then the eye line (row D): a lash-weight top and a thin bottom that follow
+ * the visible white, so no line is ever drawn over covered eye. No clip-paths: the iris never leaves the white
  * (it moves at most GAZE_X across and GAZE_Y down, its gaze clamped to ±1, inside the room the ellipse leaves), and each lid is drawn only inside the eye.
  */
 function Eye({ side, cx, f }: { side: 'l' | 'r'; cx: number; f: Face }) {
   const up = upperLid(cx, f.lidTop, f.lidArc);
   const low = lowerLid(cx, f.lidBottom);
+  const line = eyeContour(cx, f.lidTop, f.lidArc, f.lidBottom);
+  const ring = ringOn(f.lidTop);
   const iy = IRIS_Y;
   // the iris's parts, laid out on its own size (it was drawn 15.5 × 18.5; sx, sy scale those offsets to IRIS_RX × IRIS_RY)
   const sx = IRIS_RX / 15.5;
@@ -61,8 +64,8 @@ function Eye({ side, cx, f }: { side: 'l' | 'r'; cx: number; f: Face }) {
   const k = sy; // the pupil and catch-lights scale with the iris
   return (
     <g data-part={`eye-${side}`}>
-      <ellipse cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="#fffdf7" />
-      <g data-part={`iris-${side}`}>
+      <ellipse data-part={`eye-white-${side}`} cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="#fffdf7" opacity={String(ring)} />
+      <g data-part={`iris-${side}`} opacity={String(ring)}>
         <ellipse cx={cx} cy={iy} rx={IRIS_RX} ry={IRIS_RY} fill={IRIS} />
         <path d={`M${r(cx - band)} ${bandY} A${IRIS_RX} ${IRIS_RY} 0 0 1 ${r(cx + band)} ${bandY} Q${cx} ${r(iy - 13 * sy)} ${r(cx - band)} ${bandY}Z`} fill="#4f7d3c" />
         <path d={`M${r(cx - 12 * sx)} ${r(iy + 11 * sy)} Q${cx} ${r(iy + 22 * sy)} ${r(cx + 12 * sx)} ${r(iy + 11 * sy)} Q${cx} ${r(iy + 16 * sy)} ${r(cx - 12 * sx)} ${r(iy + 11 * sy)}Z`} fill="#d3ec97" />
@@ -73,13 +76,12 @@ function Eye({ side, cx, f }: { side: 'l' | 'r'; cx: number; f: Face }) {
         <ellipse cx={r(cx + 6 * sx)} cy={r(iy - 10 * sy)} rx={r(5.6 * k)} ry={r(6.4 * k)} fill="#fff" />
         <circle cx={r(cx - 6 * sx)} cy={r(iy + 10 * sy)} r={r(2.6 * k)} fill="#fff" />
       </g>
+      <path data-part={`eye-shade-${side}`} d={line.shade} fill={SHADE} opacity={String(+(SHADE_ON * ring).toFixed(3))} />
       <path data-part={`lid-top-${side}`} d={up.fill} fill={CEL.fur} />
       <path data-part={`lid-bottom-${side}`} d={low.fill} fill={CEL.fur} />
-      <ellipse data-part={`eye-ring-${side}`} cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="none" stroke={INK} stroke-width={LWI} opacity={String(ringOn(f.lidTop))} />
-      <path data-part={`lash-${side}`} d={`M${cx - 22} ${EYE_Y - 2} C${cx - 20} ${EYE_Y - 22} ${cx + 20} ${EYE_Y - 22} ${cx + 22} ${EYE_Y - 2}`} fill="none" stroke={INK} stroke-width={LW * 1.25} stroke-linecap="round" opacity={String(ringOn(f.lidTop))} />
-      <path data-part={`lid-edge-${side}`} d={up.edge} fill="none" stroke={INK} stroke-width={2.8} stroke-linecap="round" opacity={up.edgeOn ? 1 : 0} />
-      <path data-part={`lid-bedge-${side}`} d={low.edge} fill="none" stroke={INK} stroke-width={2.2} stroke-linecap="round" opacity={low.edgeOn ? 1 : 0} />
-      <path data-part={`lid-closed-${side}`} d={up.closed} fill="none" stroke={INK} stroke-width={3.6} stroke-linecap="round" opacity={String(up.closedOn)} />
+      <path data-part={`eye-line-bottom-${side}`} d={line.bottom} fill="none" stroke={INK} stroke-width={EYE_LINE_BOTTOM} stroke-linecap="round" stroke-linejoin="round" opacity={String(ring)} />
+      <path data-part={`eye-line-top-${side}`} d={line.top} fill="none" stroke={INK} stroke-width={EYE_LINE_TOP} stroke-linecap="round" stroke-linejoin="round" opacity={String(ring)} />
+      <path data-part={`lid-closed-${side}`} d={up.closed} fill="none" stroke={INK} stroke-width={EYE_LINE_TOP} stroke-linecap="round" opacity={String(up.closedOn)} />
     </g>
   );
 }

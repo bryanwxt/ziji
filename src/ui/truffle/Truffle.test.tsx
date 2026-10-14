@@ -14,9 +14,21 @@ describe('Truffle', () => {
     expect(neutral.querySelector('[data-part="mouth"]')!.getAttribute('opacity')).toBe('0');
     const joy = render(<Truffle expression="joy" />).container;
     expect(joy.querySelector('[data-part="extra-joy"]')!.innerHTML).toContain(`stroke="${LINE}"`);
-    expect(joy.querySelector('[data-part="eye-ring-l"]')!.getAttribute('opacity')).toBe('0'); // a shut eye is only its ^ line
-    expect(joy.querySelector('[data-part="lash-l"]')!.getAttribute('opacity')).toBe('0');
+    expect(joy.querySelector('[data-part="eye-line-top-l"]')!.getAttribute('opacity')).toBe('0'); // a shut eye is only its ^ line
+    expect(joy.querySelector('[data-part="eye-line-bottom-l"]')!.getAttribute('opacity')).toBe('0');
+    expect(joy.querySelector('[data-part="eye-shade-l"]')!.getAttribute('opacity')).toBe('0');
+    expect(joy.querySelector('[data-part="lid-closed-l"]')!.getAttribute('opacity')).toBe('1');
+    // row D: no fixed ring, lash or lid-edge strokes; a lash-weight top line and a thin bottom line in the eye line colour
+    expect(neutral.querySelector('[data-part^="eye-ring"], [data-part^="lash-"], [data-part^="lid-edge"], [data-part^="lid-bedge"]')).toBeNull();
+    const top = neutral.querySelector('[data-part="eye-line-top-l"]')!;
+    const bottom = neutral.querySelector('[data-part="eye-line-bottom-l"]')!;
+    expect([top.getAttribute('stroke'), top.getAttribute('stroke-width'), top.getAttribute('opacity')]).toEqual(['#3f3756', '3.5', '1']);
+    expect([bottom.getAttribute('stroke'), bottom.getAttribute('stroke-width')]).toEqual(['#3f3756', '1.8']);
+    const shade = neutral.querySelector('[data-part="eye-shade-l"]')!;
+    expect([shade.getAttribute('fill'), shade.getAttribute('opacity')]).toEqual(['#4a3f78', '0.17']);
+    expect(neutral.querySelector('[data-part="lid-closed-l"]')!.getAttribute('stroke-width')).toBe('3.5');
     const grumpy = render(<Truffle expression="grumpy" />).container;
+    expect(grumpy.querySelector('[data-part="eye-line-top-l"]')!.getAttribute('d')).not.toBe('M118 118Z'); // a partial lid keeps its line
     expect(grumpy.querySelector('[data-part="mouth-w"]')!.getAttribute('opacity')).toBe('0'); // a frown stays a frown
   });
   it('is an image labelled 松露 with body, head and the requested face', () => {

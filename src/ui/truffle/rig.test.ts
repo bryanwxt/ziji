@@ -1,7 +1,7 @@
 // src/ui/truffle/rig.test.ts
 import { describe, expect, it } from 'vitest';
 import { TRUFFLE_MOODS } from './parts';
-import { blushOpacity, clampFace, EXTRAS, EYE_RX, EYE_RY, EYE_Y, GAZE_X, GAZE_Y, IRIS_RX, IRIS_RY, IRIS_Y, lowerLid, mouthPath, MOOD_EXPRESSION, PRESETS, ringOn, springStep, upperLid, type Expression } from './rig';
+import { blushOpacity, clampFace, EXTRAS, EYE_RX, EYE_RY, EYE_Y, eyeContour, GAZE_X, GAZE_Y, IRIS_RX, IRIS_RY, IRIS_Y, lowerLid, mouthPath, MOOD_EXPRESSION, PRESETS, ringOn, springStep, upperLid, type Expression } from './rig';
 import { paint, REST_POSE } from './useRig';
 
 describe("Truffle's face model (spec 2026-10-04 §4.1)", () => {
@@ -28,7 +28,7 @@ describe("Truffle's face model (spec 2026-10-04 §4.1)", () => {
   });
   it('a fully closed upper lid covers the eye and shows only the closed line', () => {
     const open = upperLid(118, 0, 0);
-    expect(open.edgeOn).toBe(false);
+    expect(open.fill).toBe('M118 118Z'); // an open lid draws nothing
     expect(open.closedOn).toBe(0);
     const shut = upperLid(118, 1, 1);
     expect(shut.closedOn).toBe(1);
@@ -44,7 +44,6 @@ describe("Truffle's face model (spec 2026-10-04 §4.1)", () => {
   });
   it('a happy lower lid rises in the middle (a smile squint)', () => {
     const l = lowerLid(118, 0.5);
-    expect(l.edgeOn).toBe(true);
     expect(l.fill).toContain('Q118 ');
   });
   it('the mouth only fills when it opens', () => {
@@ -95,7 +94,7 @@ describe('clip-free iris (spec 2026-10-13 §7)', () => {
     paint(els, PRESETS.neutral, { ...REST_POSE, gx: 0.5, gy: -0.5 }, {});
     expect(attrs['iris-l transform']).toBe(`translate(${(0.5 * GAZE_X).toFixed(2)} ${(-0.5 * GAZE_Y).toFixed(2)})`); // inside ±1 it is unchanged
   });
-  it('the eye ring and lash fade out as the lid closes, gone before the lid is shut, so no frame shows an empty outlined eye', () => {
+  it('the eye line fades out as the lid closes, gone before the lid is shut, so no frame shows an empty outlined eye', () => {
     expect(ringOn(0)).toBe(1);
     expect(ringOn(0.5)).toBe(1); // proud, grumpy keep their outline
     expect(ringOn(0.7)).toBe(1);
@@ -108,5 +107,102 @@ describe('clip-free iris (spec 2026-10-13 §7)', () => {
     expect(blushOpacity(PRESETS.neutral.blush)).toBeGreaterThanOrEqual(0.6);
     expect(blushOpacity(1)).toBe(1);
     expect(blushOpacity(0)).toBe(0);
+  });
+});
+
+describe('the eye line follows the visible white (row D, spec 2026-10-13 §7)', () => {
+  type P = [number, number];
+  const pts = (d: string): P[] => [...d.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
+  const eyeTop = (cx: number, x: number) => EYE_Y - EYE_RY * Math.sqrt(Math.max(0, 1 - ((x - cx) / EYE_RX) ** 2));
+  /** The lid edge (M xl y Q cx ctl xr y) at x: its control point is centred, so x runs linearly along it. */
+  const edgeAt = (edge: string, x: number) => {
+    const [[xl, y], [, c], [xr]] = pts(edge);
+    if (x < xl || x > xr) return null;
+    const t = (x - xl) / (xr - xl);
+    return y + 2 * t * (1 - t) * (c - y);
+  };
+  const cases: [string, number, number, number][] = [
+    ['lid 0', 0, 0, 0], ['lid 0.3', 0.3, 0, 0], ['lid 0.5', 0.5, 0, 0], ['lid 0.8', 0.8, 0, 0],
+    ...(['grumpy', 'proud', 'determined', 'happy', 'embarrassed'] as Expression[]).map((e) => [e, PRESETS[e].lidTop, PRESETS[e].lidArc, PRESETS[e].lidBottom] as [string, number, number, number]),
+  ];
+  it('never draws over covered eye: the top line is on or below both the eye and the upper lid edge, the bottom line on or above the lower lid', () => {
+    for (const cx of [118, 202]) for (const [name, lidTop, lidArc, lidBottom] of cases) {
+      const c = eyeContour(cx, lidTop, lidArc, lidBottom);
+      const top = pts(c.top);
+      const bot = pts(c.bottom);
+      expect(top.length, name).toBeGreaterThan(10);
+      expect(bot.length, name).toBeGreaterThan(10);
+      const up = upperLid(cx, lidTop, lidArc);
+      const low = lowerLid(cx, lidBottom);
+      for (const [x, y] of top) {
+        expect(((x - cx) / EYE_RX) ** 2 + ((y - EYE_Y) / EYE_RY) ** 2, `${name} top inside the eye`).toBeLessThanOrEqual(1.01);
+        expect(y, `${name} top below the eye's top at ${x}`).toBeGreaterThanOrEqual(eyeTop(cx, x) - 0.05);
+        const e = lidTop > 0.02 ? edgeAt(up.edge, x) : null;
+        if (e !== null) expect(y, `${name} top on or below the lid edge at ${x}`).toBeGreaterThanOrEqual(e - 0.05);
+      }
+      for (const [x, y] of bot) {
+        expect(((x - cx) / EYE_RX) ** 2 + ((y - EYE_Y) / EYE_RY) ** 2, `${name} bottom inside the eye`).toBeLessThanOrEqual(1.01);
+        const e = lidBottom > 0 ? edgeAt(low.edge, x) : null;
+        if (e !== null) expect(y, `${name} bottom on or above the lower lid at ${x}`).toBeLessThanOrEqual(e + 0.05);
+      }
+      // the two lines meet at the corners and the top never dips below the bottom
+      expect(top[0], name).toEqual(bot[0]);
+      expect(top[top.length - 1], name).toEqual(bot[bot.length - 1]);
+    }
+  });
+  it('an open eye is not flattened: with no lids the line is the whole eye ellipse', () => {
+    const c = eyeContour(118, 0, 0, 0);
+    const top = pts(c.top);
+    const bot = pts(c.bottom);
+    expect(Math.min(...top.map((p) => p[1]))).toBeCloseTo(EYE_Y - EYE_RY, 1);
+    expect(Math.max(...bot.map((p) => p[1]))).toBeCloseTo(EYE_Y + EYE_RY, 1);
+    expect(top[0][0]).toBeCloseTo(118 - EYE_RX, 1);
+    expect(top[top.length - 1][0]).toBeCloseTo(118 + EYE_RX, 1);
+    for (const [x, y] of top) expect(y).toBeCloseTo(eyeTop(118, x), 1);
+    // a lid near 0 is no lid: the eye stays round
+    expect(Math.min(...pts(eyeContour(118, 0.01, 0, 0).top).map((p) => p[1]))).toBeCloseTo(EYE_Y - EYE_RY, 1);
+    // and so is the fur: an open lid draws nothing over the white
+    expect(upperLid(118, 0, 0).fill).toBe('M118 118Z');
+  });
+  it('the lilac lid shadow lies on the white, under the top line, at most 6 deep', () => {
+    const c = eyeContour(118, 0.3, 0, 0);
+    const shade = pts(c.shade);
+    const top = pts(c.top);
+    const minTop = Math.min(...top.map((p) => p[1]));
+    expect(shade.length).toBeGreaterThan(10);
+    for (const [, y] of shade) expect(y).toBeGreaterThanOrEqual(minTop - 0.05);
+    for (const [x, y] of shade) {
+      const above = top.reduce((a, b) => (Math.abs(b[0] - x) < Math.abs(a[0] - x) ? b : a));
+      expect(y - above[1]).toBeLessThanOrEqual(6.5);
+    }
+  });
+  it('a shut eye has no eye line at all: its paths are empty points at the eye', () => {
+    const c = eyeContour(118, 1, 1, 0);
+    expect(c.top).toBe('M118 118Z');
+    expect(c.bottom).toBe('M118 118Z');
+    expect(c.shade).toBe('M118 118Z');
+  });
+  it('the closed line takes over cleanly: the eye line is gone by 0.86, the closed line only comes after, never both at once', () => {
+    const attrs: Record<string, string> = {};
+    const els = (part: string) => ({ setAttribute: (a: string, v: string) => { attrs[`${part} ${a}`] = v; } }) as unknown as Element;
+    for (let i = 0; i <= 100; i++) {
+      const lidTop = i / 100;
+      paint(els, { ...PRESETS.neutral, lidTop }, REST_POSE, {});
+      const line = Number(attrs['eye-line-top-l opacity']);
+      const low = Number(attrs['eye-line-bottom-l opacity']);
+      const shade = Number(attrs['eye-shade-l opacity']);
+      const closed = Number(attrs['lid-closed-l opacity']);
+      expect(line, `${lidTop}`).toBe(low);
+      expect(line * closed, `${lidTop}: never both`).toBe(0);
+      if (lidTop <= 0.7) expect([line, closed], `${lidTop}`).toEqual([1, 0]);
+      if (lidTop >= 0.86) expect(line, `${lidTop}`).toBe(0);
+      if (lidTop > 0.87) expect(closed, `${lidTop}`).toBeGreaterThan(0);
+      expect(shade, `${lidTop}`).toBeCloseTo(0.17 * line, 2);
+      // the white and iris fade with the line: a sliver of white below a nearly shut lid is never left without its outline
+      expect(Number(attrs['eye-white-l opacity']), `${lidTop}`).toBe(line);
+      expect(Number(attrs['iris-l opacity']), `${lidTop}`).toBe(line);
+      // while the line shows, it is a real outline (never an empty path over a shut eye)
+      if (line > 0) expect(attrs['eye-line-top-l d'], `${lidTop}`).not.toMatch(/^M118 118Z$/);
+    }
   });
 });

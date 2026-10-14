@@ -19,6 +19,12 @@ const LID_RX = EYE_RX + 1.2;
 const LID_RY = EYE_RY + 1.2;
 /** The eyes' own dark line (the lash, the outline, the brows), a little deeper than his body's line. */
 export const EYE_LINE = '#3f3756';
+/** Row D's eye line: a lash-weight top (and the closed line), a thin bottom. */
+export const EYE_LINE_TOP = 3.5;
+export const EYE_LINE_BOTTOM = 1.8;
+/** The lilac lid shadow on the white under the top line, and its strength with the line fully on. */
+export const SHADE = '#4a3f78';
+export const SHADE_ON = 0.17;
 /** The iris: big, as in row C, centred in the white (spec 2026-10-13 §7). */
 export const IRIS_RX = 15;
 export const IRIS_RY = 18;
@@ -27,7 +33,7 @@ export const IRIS_Y = EYE_Y;
  *  stay inside the white in every direction, so it needs no clip-path (the head still turns and tilts toward what he looks at). */
 export const GAZE_X = 3.75;
 export const GAZE_Y = 3.5;
-/** The eye ring and lash fade out from lid 0.7 and are gone at 0.86, where the closed line takes over (no empty outlined eye). */
+/** The eye line, its lid shadow, the white and the iris fade out from lid 0.7 and are gone at 0.86, where the closed line takes over (no empty outlined eye, no unlined sliver of white). */
 export const ringOn = (lidTop: number) => Math.max(0, Math.min(1, (0.86 - lidTop) / 0.16));
 /** His blush's strength from the face's blush value: visible at rest, full when he glows (row C). */
 export const blushOpacity = (b: number) => Math.sqrt(Math.max(0, Math.min(1, b)));
@@ -83,44 +89,101 @@ const fullEye = (cx: number) => `M${f2(cx - LID_RX)} ${EYE_Y} A${LID_RX} ${LID_R
 /** No lid: an empty path at the eye's centre (a point at 0,0 would stretch his bounding box). */
 const none = (cx: number) => `M${cx} ${EYE_Y}Z`;
 
+/** The upper lid's geometry: its edge runs from (xl, y) to (xr, y), sagging by `curve` (a quadratic, control at y + curve). */
+function upperGeom(cx: number, lidTop: number, lidArc: number) {
+  const cl = Math.max(0, (lidTop - 0.86) / 0.14);
+  const eT = 95 + lidTop * 47 + cl * 6;
+  const curve = (6 - lidTop * 3 - lidArc * 22) * (1 - cl);
+  const top = EYE_Y - LID_RY;
+  const bottom = EYE_Y + LID_RY;
+  const y = Math.min(Math.max(eT, top + 0.5), bottom - 0.5);
+  const w = halfWidth(y);
+  // a lid near 0 is no lid: the open eye stays round (spec 2026-10-13 §7, row D)
+  return { cl, eT, curve, y, xl: cx - w, xr: cx + w, active: lidTop > 0.02 && eT > top, shut: eT >= bottom };
+}
+function lowerGeom(cx: number, lidBottom: number) {
+  const eB = 141 - lidBottom * 20;
+  const up = lidBottom * 12;
+  const y = Math.min(eB, EYE_Y + LID_RY - 0.5);
+  const w = halfWidth(y);
+  return { up, y, xl: cx - w, xr: cx + w, active: lidBottom > 0 };
+}
+
 /**
  * The upper lid: bows down when relaxed, up into a ^ when happy; fully closed it covers the eye and a curved line remains. The
  * lid is the part of the eye above its edge, bounded by the eye's own ellipse, so it needs no clip-path (spec 2026-10-13 §7):
  * the lid logic (eT, curve, closed) is unchanged.
  */
 export function upperLid(cx: number, lidTop: number, lidArc: number) {
-  const cl = Math.max(0, (lidTop - 0.86) / 0.14);
-  const eT = 95 + lidTop * 47 + cl * 6;
-  const curve = (6 - lidTop * 3 - lidArc * 22) * (1 - cl);
+  const g = upperGeom(cx, lidTop, lidArc);
   const yy = 127 - lidArc * 3;
   const bend = 4 - lidArc * 18;
-  const top = EYE_Y - LID_RY;
-  const bottom = EYE_Y + LID_RY;
-  const y = Math.min(Math.max(eT, top + 0.5), bottom - 0.5);
-  const w = halfWidth(y);
-  const [xl, xr] = [f2(cx - w), f2(cx + w)];
-  const ctl = f2(y + curve);
+  const [xl, xr, y] = [f2(g.xl), f2(g.xr), f2(g.y)];
+  const ctl = f2(g.y + g.curve);
   return {
-    fill: eT >= bottom ? fullEye(cx) : eT <= top ? none(cx) : `M${xl} ${f2(y)} A${LID_RX} ${LID_RY} 0 ${y > EYE_Y ? 1 : 0} 1 ${xr} ${f2(y)} Q${cx} ${ctl} ${xl} ${f2(y)}Z`,
-    edge: `M${xl} ${f2(y)} Q${cx} ${ctl} ${xr} ${f2(y)}`,
-    edgeOn: lidTop > 0.06 && lidTop < 0.9,
+    fill: g.shut ? fullEye(cx) : !g.active ? none(cx) : `M${xl} ${y} A${LID_RX} ${LID_RY} 0 ${g.y > EYE_Y ? 1 : 0} 1 ${xr} ${y} Q${cx} ${ctl} ${xl} ${y}Z`,
+    edge: `M${xl} ${y} Q${cx} ${ctl} ${xr} ${y}`,
     closed: `M${cx - 19} ${yy} Q${cx} ${yy + bend} ${cx + 19} ${yy}`,
-    closedOn: cl,
+    closedOn: g.cl,
   };
 }
 /** The lower lid rises in the middle: a smile squint (bounded by the eye's ellipse, like the upper lid). */
 export function lowerLid(cx: number, lidBottom: number) {
-  const eB = 141 - lidBottom * 20;
-  const up = lidBottom * 12;
-  const bottom = EYE_Y + LID_RY;
-  const y = Math.min(eB, bottom - 0.5);
-  const w = halfWidth(y);
-  const [xl, xr] = [f2(cx - w), f2(cx + w)];
+  const g = lowerGeom(cx, lidBottom);
+  const [xl, xr, y] = [f2(g.xl), f2(g.xr), f2(g.y)];
   return {
-    fill: lidBottom <= 0 ? none(cx) : `M${xl} ${f2(y)} A${LID_RX} ${LID_RY} 0 ${y < EYE_Y ? 1 : 0} 0 ${xr} ${f2(y)} Q${cx} ${f2(y - up)} ${xl} ${f2(y)}Z`,
-    edge: `M${xl} ${f2(y)} Q${cx} ${f2(y - up)} ${xr} ${f2(y)}`,
-    edgeOn: lidBottom > 0.05,
+    fill: !g.active ? none(cx) : `M${xl} ${y} A${LID_RX} ${LID_RY} 0 ${g.y < EYE_Y ? 1 : 0} 0 ${xr} ${y} Q${cx} ${f2(g.y - g.up)} ${xl} ${y}Z`,
+    edge: `M${xl} ${y} Q${cx} ${f2(g.y - g.up)} ${xr} ${y}`,
   };
+}
+
+type Pt = [number, number];
+/** How deep the lilac lid shadow falls on the white under the top line (row D). */
+const SHADE_DEPTH = 6;
+const CONTOUR_N = 60;
+const poly = (p: Pt[]) => 'M' + p.map(([x, y]) => `${f2(x)} ${f2(y)}`).join(' L');
+/**
+ * The eye line (row D, spec 2026-10-13 §7) follows the visible white: its top is the lower of the eye's top and the upper lid's
+ * edge, its bottom the higher of the eye's bottom and the lower lid's edge, so it is never drawn over covered eye. Sampled as
+ * two open paths that meet at the corners, plus the lilac shadow under the top line; all empty when the eye is shut.
+ */
+export function eyeContour(cx: number, lidTop: number, lidArc: number, lidBottom: number): { top: string; bottom: string; shade: string } {
+  const u = upperGeom(cx, lidTop, lidArc);
+  const l = lowerGeom(cx, lidBottom);
+  const eTop = (x: number) => EYE_Y - EYE_RY * Math.sqrt(Math.max(0, 1 - ((x - cx) / EYE_RX) ** 2));
+  const eBot = (x: number) => 2 * EYE_Y - eTop(x);
+  const top = (x: number) => {
+    if (u.shut) return Infinity;
+    if (!u.active) return eTop(x);
+    if (x >= u.xl && x <= u.xr) { const t = (x - u.xl) / (u.xr - u.xl); return Math.max(eTop(x), u.y + 2 * t * (1 - t) * u.curve); }
+    return u.y > EYE_Y ? Infinity : eTop(x); // past the lid's ends: covered below the middle, open above it
+  };
+  const bot = (x: number) => {
+    if (!l.active || x < l.xl || x > l.xr) return eBot(x);
+    const t = (x - l.xl) / (l.xr - l.xl);
+    return Math.min(eBot(x), l.y - 2 * t * (1 - t) * l.up);
+  };
+  const gap = (x: number) => bot(x) - top(x);
+  const xs = Array.from({ length: CONTOUR_N + 1 }, (_, i) => cx - EYE_RX + (2 * EYE_RX * i) / CONTOUR_N);
+  const vis = xs.map((x) => gap(x) > 0.2);
+  const i0 = vis.indexOf(true);
+  const i1 = vis.lastIndexOf(true);
+  if (i0 < 0 || i1 - i0 < 2) return { top: none(cx), bottom: none(cx), shade: none(cx) };
+  // where the white begins and ends between two samples
+  const corner = (out: number, inn: number) => { for (let k = 0; k < 24; k++) { const m = (out + inn) / 2; if (gap(m) > 0.2) inn = m; else out = m; } return inn; };
+  const xa = i0 > 0 ? corner(xs[i0 - 1], xs[i0]) : xs[0];
+  const xb = i1 < CONTOUR_N ? corner(xs[i1 + 1], xs[i1]) : xs[CONTOUR_N];
+  const X = [xa, ...xs.slice(i0, i1 + 1).filter((x) => x > xa && x < xb), xb];
+  const T: Pt[] = X.map((x) => [x, top(x)]);
+  const B: Pt[] = X.map((x) => [x, bot(x)]);
+  // the two lines meet at the corners
+  const n = X.length - 1;
+  const a: Pt = [xa, (T[0][1] + B[0][1]) / 2];
+  const b: Pt = [xb, (T[n][1] + B[n][1]) / 2];
+  T[0] = B[0] = a;
+  T[n] = B[n] = b;
+  const band = T.map(([x, y], i) => [x, Math.min(B[i][1], y + SHADE_DEPTH)] as Pt).reverse();
+  return { top: poly(T), bottom: poly(B), shade: poly([...T, ...band]) + 'Z' };
 }
 /** His small "ω" (spec 2026-10-13 §7): shown while the mouth is shut and not frowning; the open mouth takes over as it opens. */
 export const MOUTH_W = 'M160 152 L160 157 M150 160 C153 164 158 164 160 157.5 C162 164 167 164 170 160';
