@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { readErrorLog } from '../app/errorLog';
+import { LastMicFailure } from './MicTest';
 import { localDateKey } from '../lib/date';
 import { saveTextFile } from '../lib/files';
 import { applyBackup, BackupError, exportBackup, readBackup, type BackupPreview } from '../store/backup';
@@ -94,7 +95,8 @@ export function BackupPanel() {
       </section>
       <section class="panel">
         <h2>Error log</h2>
-        <p>Up to 20 recent problems the app hit after starting (each time it showed your child a restart screen). Kept on this device only; save the file to send it on.</p>
+        <p>Up to 20 recent problems the app hit after starting (each time it showed your child a restart screen, or the microphone didn't start). Kept on this device only; save the file to send it on.</p>
+        <LastMicFailure />
         {errorLog.length === 0 ? (
           <p>No errors recorded.</p>
         ) : (

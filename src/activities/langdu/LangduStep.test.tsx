@@ -9,6 +9,7 @@ vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }))
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 
 import { recordingSupported, startRecording } from '../../audio/recorder';
+import { MicDeniedError } from '../../audio/micErrors';
 import { speak, stopSpeaking } from '../../audio/speech';
 
 const question = { q: '我爱谁？', choices: ['老师', '妈妈', '小马'] as [string, string, string], answer: 1 as const };
@@ -162,7 +163,7 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
   });
 
   it('a microphone refused in the warm-up is not asked for again to read', async () => {
-    vi.mocked(startRecording).mockRejectedValue(new Error('denied'));
+    vi.mocked(startRecording).mockRejectedValue(new MicDeniedError());
     render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup onDone={vi.fn()} />);
     await act(async () => { fireEvent.click(screen.getByText('开始录音')); });
     await waitFor(() => expect(screen.getByText('麦克风没有打开。我们下次再录！')).toBeTruthy());

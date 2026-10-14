@@ -11,6 +11,7 @@ vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
 vi.mock('../ui/confetti', () => ({ celebrate: vi.fn() }));
 vi.mock('../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
 import { recordingSupported, startRecording } from '../audio/recorder';
+import { MicDeniedError } from '../audio/micErrors';
 
 const words = builtinWords(0);
 /** 很 has a sentence-bank example (今天很热。); the others don't */
@@ -59,11 +60,12 @@ describe('说一句 in a lesson (production practice spec §4)', () => {
     await waitFor(async () => expect((await allCards(app.db)).find((c) => c.id === 'b:很:sentence')).toBeTruthy());
   });
   it('a refused microphone drops it, and 练一练 carries on with taps', async () => {
-    vi.mocked(startRecording).mockRejectedValue(new Error('denied'));
+    vi.mocked(startRecording).mockRejectedValue(new MicDeniedError());
     const app = await setup();
     renderWithApp(<SessionScreen free={false} />, app);
     await untilSentence();
     fireEvent.click(screen.getByText('开始录音'));
+    fireEvent.click(await screen.findByText('继续', { selector: '.sheet .btn:not([disabled]) *' }));
     await waitFor(async () => {
       const rec = (await getSession(app.db, '2026-10-02'))!;
       expect(rec.practiceQueue!.slice(rec.practiceIndex).some((x) => x.ask === 'sentence')).toBe(false);

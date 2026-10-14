@@ -291,6 +291,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .mic-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--orange-edge); }
 .mic-btn.is-recording { background: var(--surface); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 7px 0 var(--line); }
+.mic-btn:disabled { opacity: 0.75; cursor: progress; }
+.mic-btn__wait { display: block; font-size: 32px; line-height: 1; min-height: 1.6em; padding-top: 0.3em; letter-spacing: 0.1em; } /* about the Label's height, so the button doesn't jump while the mic opens */
 .rec-dot { width: 22px; height: 22px; border-radius: 50%; background: #ef4444; animation: pulse 1s infinite; display: inline-block; }
 @keyframes pulse { 50% { opacity: 0.3; transform: scale(0.8); } }
 

@@ -10,6 +10,7 @@ import { TIER_LABEL, voiceTier } from '../audio/voiceTier';
 import { ONESIES, type ZodiacId } from '../fun/costumes';
 import { introLines } from '../langdu/intro';
 import { AsrTest } from './AsrTest';
+import { MicTest } from './MicTest';
 import { seedBuiltinWords, updateSettings } from '../store/repo';
 import { builtinWords, type Course } from '../content';
 import type { ActivityKind, OralInfo, Settings } from '../types';
@@ -131,6 +132,11 @@ export function SettingsPanel() {
           朗读 Read aloud
         </label>
         <p class="hint">The last step of every lesson (about 3 minutes): the iPad reads today's text a sentence at a time, he reads it alone while it records, compares the two, and answers one question. Each text is read 3 days; on its first day he warms up with his self-introduction. His takes come to Listen &amp; confirm. Off: no 朗读 step.</p>
+      </div>
+      <div class="field">
+        <label>Microphone</label>
+        <p class="hint">Records 2 seconds, then Play it back lets you hear them. If the iPad asks, tap Allow. Use it when his takes are missing.</p>
+        <MicTest />
       </div>
       <details class="field">
         <summary>Advanced: test speech recognition (for future auto-hints on misread characters)</summary>

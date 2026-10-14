@@ -11,6 +11,7 @@ vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
 vi.mock('../ui/confetti', () => ({ celebrate: vi.fn() }));
 vi.mock('../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
 import { recordingSupported, startRecording } from '../audio/recorder';
+import { MicDeniedError } from '../audio/micErrors';
 vi.mock('../session/say', async (orig) => {
   const real = await orig<typeof import('../session/say')>();
   return { ...real, recordSayTake: vi.fn(real.recordSayTake) };
@@ -62,12 +63,14 @@ describe('Say cards in a lesson (spec 2026-10-11 §3, §4)', () => {
     const rec = (await getSession(app.db, '2026-10-02'))!;
     expect(rec.practiceQueue!.filter((x) => x.ask === 'say').length).toBeGreaterThan(0);
   });
-  it('a refused microphone drops the rest of the lesson’s Say cards', async () => {
-    vi.mocked(startRecording).mockRejectedValue(new Error('denied'));
+  it('a refused microphone shows the note with 继续, then drops the rest of the lesson’s Say cards', async () => {
+    vi.mocked(startRecording).mockRejectedValue(new MicDeniedError());
     const app = await setup();
     renderWithApp(<SessionScreen free={false} />, app);
     await untilSay();
     fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('麦克风没有打开。我们下次再录！'); // said, never a silent skip
+    fireEvent.click(await screen.findByText('继续', { selector: '.sheet .btn:not([disabled]) *' }));
     await waitFor(async () => {
       const rec = (await getSession(app.db, '2026-10-02'))!;
       expect(rec.practiceQueue!.slice(rec.practiceIndex).some((x) => x.ask === 'say')).toBe(false);
@@ -76,6 +79,19 @@ describe('Say cards in a lesson (spec 2026-10-11 §3, §4)', () => {
     // 练一练 carries on with taps
     await waitFor(() => expect(document.querySelector('.say')).toBeNull());
     await waitFor(() => expect(document.querySelector('.choice:not([disabled])')).toBeTruthy(), { timeout: 4000 });
+  });
+  it('a passing failure is tried again, then 再试一次: nothing is dropped (mic fix 2026-10-14)', async () => {
+    vi.mocked(startRecording).mockRejectedValue(new DOMException('busy', 'NotReadableError'));
+    const app = await setup();
+    renderWithApp(<SessionScreen free={false} />, app);
+    await untilSay();
+    const before = (await getSession(app.db, '2026-10-02'))!.practiceQueue!.filter((x) => x.ask === 'say').length;
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('再试一次', {}, { timeout: 2000 });
+    expect(startRecording).toHaveBeenCalledTimes(2);
+    expect(document.querySelector('.say')).toBeTruthy();
+    expect(screen.queryByText('麦克风没有打开。我们下次再录！')).toBeNull();
+    expect((await getSession(app.db, '2026-10-02'))!.practiceQueue!.filter((x) => x.ask === 'say').length).toBe(before);
   });
   it('a take that fails to save never leaves him stuck: the rest of the Say cards go and 练一练 carries on (final review I1)', async () => {
     vi.mocked(recordSayTake).mockRejectedValueOnce(new Error('QuotaExceededError'));
@@ -113,13 +129,14 @@ async function untilLangdu() {
 
 describe('a microphone refused on a Say card (spec 2026-10-12 §3)', () => {
   it('朗读 later in the lesson does not ask for it again', async () => {
-    vi.mocked(startRecording).mockRejectedValue(new Error('denied'));
+    vi.mocked(startRecording).mockRejectedValue(new MicDeniedError());
     const app = await setup();
     await updateSettings(app.db, { activities: { newwords: false, practice: true, writing: false, speaking: true }, langdu: true });
     await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
     renderWithApp(<SessionScreen free={false} />, app);
     await untilSay();
     fireEvent.click(screen.getByText('开始录音'));
+    fireEvent.click(await screen.findByText('继续', { selector: '.sheet .btn:not([disabled]) *' }));
     await waitFor(() => expect(document.querySelector('.say')).toBeNull());
     await untilLangdu();
     expect(await screen.findByText('麦克风没有打开。我们下次再录！')).toBeTruthy(); // the warm-up says so…

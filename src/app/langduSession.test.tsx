@@ -105,6 +105,27 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     expect((await getKid(app.db))!.reading).toMatchObject({ days: 2, warmups: 1 });
   });
 
+  it('no take (the mic refused): the passage day is not counted (review M-6)', async () => {
+    const { startRecording } = await import('../audio/recorder');
+    const { MicDeniedError } = await import('../audio/micErrors');
+    vi.mocked(startRecording).mockRejectedValueOnce(new MicDeniedError());
+    const app = await setup();
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { passageId: 'pp:1', days: 1, extra: 0, lastDay: '2026-10-04', lastRead: { 'pp:1': '2026-10-04' }, warmups: 1 } });
+    renderWithApp(<SessionScreen free={false} />, app);
+    await screen.findByText('我爱爸爸，我爱妈妈。');
+    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。'));
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
+    fireEvent.click(btn('开始朗读'));
+    fireEvent.click(screen.getByText('开始录音'));
+    await screen.findByText('麦克风没有打开。我们下次再录！');
+    fireEvent.click(btn('读完了'));
+    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    await waitFor(async () => expect((await getKid(app.db))!.speakingLast).toBe('langdu'));
+    expect((await getKid(app.db))!.reading).toMatchObject({ days: 1, lastDay: '2026-10-04' });
+  });
+
   it('his answer to the meaning question is kept with his take, for the parent', async () => {
     const app = await setup();
     const question: PassageQuestion = { q: '我爱谁？', choices: ['老师', '妈妈', '小马'], answer: 1 };

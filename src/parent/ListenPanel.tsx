@@ -15,6 +15,9 @@ import { listParentPassages, listRecordings } from '../store/repo';
 import type { Recording, Word } from '../types';
 import { SpeakButton } from '../ui/SpeakButton';
 import { MisreadText } from './MisreadText';
+import { micFailureLine } from './MicTest';
+import { readMicFailure } from '../audio/micFailure';
+import { localDateKey } from '../lib/date';
 
 export type PassageTexts = ReadonlyMap<string, { title: string; text: string }>;
 
@@ -119,6 +122,11 @@ export function ListenPanel({ onReviewed }: { onReviewed?: () => void }) {
   const [texts, setTexts] = useState<PassageTexts>(new Map());
   const [error, setError] = useState(false);
   const busy = useRef(new Set<string>()); // a double tap on ✓ or Done reviews a take once
+  // the mic didn't start for him today: why there may be fewer takes, and how to fix it (mic fix 2026-10-14)
+  const [micToday] = useState(() => {
+    const f = readMicFailure();
+    return f && f.origin !== 'test' && localDateKey(new Date(f.at)) === localDateKey(now()) ? f : null; // his lessons only, not a parent's test
+  });
   const reload = async () => {
     const [recs, parent] = await Promise.all([listRecordings(db), listParentPassages(db)]);
     const waiting = waitingTakes(recs);
@@ -158,6 +166,7 @@ export function ListenPanel({ onReviewed }: { onReviewed?: () => void }) {
     <section class="panel listen">
       <h2>Listen & confirm</h2>
       <p class="muted">He read words aloud in 练一练, said sentences with words (说一句), and read today's text in 朗读. A word: play his take, then the model: ✓ if he said it right, ✗ if not; it counts as “can say” after ✓ on two different days, and ✗ brings it back soon. A sentence: play his take; the model sentence is one way to say it. ✓ if his own sentence uses the word sensibly, ✗ if not, or if he only repeated the model sentence; ✓ on two different days counts as “can use”. A text: play his take and the model, tap any character he misread (it comes up in practice), then Done.</p>
+      {micToday && <p class="warning listen__mic">{micFailureLine(micToday, 'today')}</p>}
       {error && <p class="muted" role="alert">Something went wrong reading or saving the takes. Try again.</p>}
       {takes ? (
         <ListenRows takes={takes} words={words} texts={texts} onJudge={(r, v) => void settle(r, () => reviewTake(db, r.id, v, now()))} onDone={(r, marks) => void settle(r, () => finishPassageReview(db, r, marks, now()))} />

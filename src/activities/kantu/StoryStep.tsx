@@ -44,7 +44,7 @@ function Starter({ text, told }: { text: string; told: number }) {
 function StoryScreen({ scene, screen, told, kid, last, blocked, onNext }: { scene: Scene; screen: Screen; told: number; kid: KidState; last: boolean; blocked: boolean; onNext: (r: FinishedRecording | null, micBlocked: boolean) => void }) {
   const rec = useRecorder(blocked);
   const [heardModel, setHeardModel] = useState(false);
-  const tried = rec.state === 'done' || rec.state === 'blocked';
+  const tried = rec.state === 'done' || rec.state === 'blocked' || (rec.state === 'ready' && rec.failed); // the mic failed twice: he may go on
   useEffect(() => {
     if (screen.kind !== 'whole') speak(screen.question);
   }, []);
