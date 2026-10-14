@@ -11,7 +11,7 @@ import { MicDeniedError } from '../audio/micErrors';
 import { clearMicFailure, type MicFailure } from '../audio/micFailure';
 
 const failure = (at: number, over: Partial<MicFailure> = {}): MicFailure => ({
-  at, stage: 'getUserMedia', name: 'NotAllowedError', message: '', kind: 'denied', mime: 'audio/mp4', mp4: true, webm: false, standalone: true, permission: 'denied', visibility: 'visible', ...over,
+  at, stage: 'getUserMedia', name: 'NotAllowedError', message: '', kind: 'denied', mime: 'audio/mp4', mp4: true, webm: false, standalone: true, permission: 'denied', visibility: 'visible', origin: 'lesson', ...over,
 });
 const keep = (f: MicFailure) => localStorage.setItem('ziji-mic-failure', JSON.stringify(f));
 
@@ -32,6 +32,12 @@ describe('the microphone, for the parent (mic fix 2026-10-14)', () => {
     expect(line.textContent).toContain('permission denied (Home-Screen app)');
     expect(line.textContent).toContain('Settings › Apps › Safari › Microphone');
   });
+  it('a failure from Test microphone is not his lesson: Listen & confirm leaves it out', async () => {
+    keep(failure(new Date(2026, 9, 2, 8, 15).getTime(), { origin: 'test' }));
+    renderWithApp(<ListenPanel />, await makeAppData());
+    await screen.findByText('Listen & confirm');
+    expect(screen.queryByText(/Mic didn't start today/)).toBeNull();
+  });
   it('an old failure is not news on Listen & confirm, but Backup keeps the last one by the error log', async () => {
     keep(failure(new Date(2026, 9, 1, 18).getTime(), { kind: 'transient', stage: 'timeout', name: 'TimeoutError' }));
     const app = await makeAppData();
@@ -46,10 +52,14 @@ describe('the microphone, for the parent (mic fix 2026-10-14)', () => {
     const cancel = vi.fn();
     const stop = vi.fn(async () => ({ blob: new Blob(['abc']), mime: 'audio/mp4', durationSec: 2 }));
     vi.mocked(startRecording).mockResolvedValue({ stop, cancel });
+    keep(failure(1));
     render(<MicTest recordMs={20} />);
     fireEvent.click(screen.getByRole('button', { name: 'Test microphone' }));
     await screen.findByText(/Mic works ✓/);
     expect(stop).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem('ziji-mic-failure')).toBeNull(); // it works now: the old failure goes
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled(); // nothing plays by itself
+    fireEvent.click(screen.getByRole('button', { name: 'Play it back' }));
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalled();
   });
   it('Test microphone shows why it failed, with the fix', async () => {
@@ -58,7 +68,7 @@ describe('the microphone, for the parent (mic fix 2026-10-14)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Test microphone' }));
     const msg = await screen.findByRole('alert');
     expect(msg.textContent).toContain('permission denied');
-    expect(msg.textContent).toContain('Microphone → Ask or Allow');
-    await waitFor(() => expect(localStorage.getItem('ziji-mic-failure')).toContain('NotAllowedError'));
+    expect(msg.textContent).toContain('(iPadOS 17) → Ask or Allow');
+    await waitFor(() => expect(localStorage.getItem('ziji-mic-failure')).toContain('"origin":"test"'));
   });
 });

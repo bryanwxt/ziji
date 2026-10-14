@@ -1,18 +1,19 @@
 /** The last time the microphone didn't start, with the iPad's state then: kept on this device for the parent (mic fix 2026-10-14). */
-import { MicDeniedError, MicStartError, type MicStage } from './micErrors';
+import { micPermission, MicDeniedError, MicStartError, MicUnsupportedError, type MicStage } from './micErrors';
 
 export interface MicFailure {
   at: number;
   stage: MicStage;
   name: string;
   message: string;
-  kind: 'denied' | 'transient';
+  kind: 'denied' | 'transient' | 'unsupported';
   mime: string; // the format a recording would have used
   mp4: boolean; // MediaRecorder.isTypeSupported('audio/mp4')
   webm: boolean;
   standalone: boolean; // opened from the Home Screen
   permission: string; // navigator.permissions' answer for the microphone, or 'unknown'
   visibility: string; // document.visibilityState
+  origin: 'lesson' | 'test'; // his lesson, or the parent's Test microphone
 }
 
 const KEY = 'ziji-mic-failure';
@@ -34,17 +35,8 @@ function standalone(): boolean {
   }
 }
 
-async function permission(): Promise<string> {
-  try {
-    const status = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-    return status.state;
-  } catch {
-    return 'unknown'; // older Safari has no microphone permission query
-  }
-}
-
 /** Keeps this failure as the last one; never throws. */
-export async function recordMicFailure(err: unknown, at: number = Date.now()): Promise<MicFailure> {
+export async function recordMicFailure(err: unknown, origin: MicFailure['origin'] = 'lesson', at: number = Date.now()): Promise<MicFailure> {
   const mp4 = supports('audio/mp4');
   const webm = supports('audio/webm');
   const failure: MicFailure = {
@@ -52,13 +44,14 @@ export async function recordMicFailure(err: unknown, at: number = Date.now()): P
     stage: err instanceof MicStartError ? err.stage : 'start',
     name: (err as { name?: string } | null)?.name ?? 'Error',
     message: typeof (err as { message?: unknown } | null)?.message === 'string' ? (err as { message: string }).message : String(err),
-    kind: err instanceof MicDeniedError ? 'denied' : 'transient',
+    kind: err instanceof MicDeniedError ? 'denied' : err instanceof MicUnsupportedError ? 'unsupported' : 'transient',
     mime: mp4 ? 'audio/mp4' : webm ? 'audio/webm' : '',
     mp4,
     webm,
     standalone: standalone(),
-    permission: await permission(),
+    permission: await micPermission(),
     visibility: typeof document === 'undefined' ? 'unknown' : document.visibilityState,
+    origin,
   };
   try {
     localStorage.setItem(KEY, JSON.stringify(failure));
@@ -85,20 +78,28 @@ export function clearMicFailure(): void {
   }
 }
 
+const SETTINGS_PATH = 'Settings › Apps › Safari › Microphone (iPadOS 18) or Settings › Safari › Microphone (iPadOS 17)';
+
 /** Plain words for the parent: what happened, and what to do about it. */
 export function describeMicFailure(f: MicFailure): { what: string; fix: string } {
+  if (f.kind === 'unsupported') {
+    return {
+      what: "This iPad/browser can't record",
+      fix: 'Open ZiJi in Safari (or from its Home-Screen icon) and keep iPadOS up to date; other browsers on the iPad may not allow recording.',
+    };
+  }
   if (f.kind === 'denied') {
     return {
       what: `permission denied (${f.standalone ? 'Home-Screen app' : 'in Safari'})`,
       fix: f.standalone
-        ? 'On the iPad: Settings › Apps › Safari › Microphone → Ask or Allow, then reopen ZiJi and tap Allow. (A Home-Screen app asks again each time it opens; one "Don\'t Allow" blocks the mic until ZiJi is closed and reopened.)'
-        : 'On the iPad: Settings › Apps › Safari › Microphone → Ask or Allow (or tap ᴀA in the address bar › Website Settings › Microphone), then reload ZiJi and tap Allow.',
+        ? `On the iPad: ${SETTINGS_PATH} → Ask or Allow, then reopen ZiJi and tap Allow. (A Home-Screen app asks again each time it opens; one "Don't Allow" blocks the mic until ZiJi is closed and reopened.)`
+        : `On the iPad: ${SETTINGS_PATH} → Ask or Allow (or tap the page menu at the left of the address bar › Website Settings › Microphone), then reload ZiJi and tap Allow.`,
     };
   }
   if (f.stage === 'timeout') {
     return {
-      what: 'no answer from the microphone within 10 seconds (the "Allow microphone" question may have been left open)',
-      fix: 'Tap the mic again and answer Allow. If no question appears, close ZiJi fully (swipe it away) and reopen it.',
+      what: 'no answer from the microphone within 10 seconds',
+      fix: 'Tap the mic again and answer Allow if the iPad asks. If nothing appears, close ZiJi fully (swipe it away) and reopen it.',
     };
   }
   return {

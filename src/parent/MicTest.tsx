@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { recordingSupported, startRecording, type ActiveRecording } from '../audio/recorder';
-import { describeMicFailure, readMicFailure, recordMicFailure, type MicFailure } from '../audio/micFailure';
+import { clearMicFailure, describeMicFailure, readMicFailure, recordMicFailure, type MicFailure } from '../audio/micFailure';
+import { MicUnsupportedError } from '../audio/micErrors';
 import { stopSpeaking } from '../audio/speech';
 import { logError } from '../app/errorLog';
 
@@ -12,7 +13,7 @@ export function micFailureLine(f: MicFailure, when: string): string {
   return `Mic didn't start ${when}: ${what}. ${fix}`;
 }
 
-/** Settings › Test microphone (mic fix 2026-10-14): asks for the mic, records ~2 s, plays it back, and says whether it works. */
+/** Settings › Test microphone (mic fix 2026-10-14): asks for the mic, records ~2 s, says whether it works; Play it back plays it. */
 export function MicTest({ recordMs = 2000 }: { recordMs?: number }) {
   const [state, setState] = useState<TestState>({ kind: 'idle' });
   const active = useRef<ActiveRecording | null>(null);
@@ -36,7 +37,7 @@ export function MicTest({ recordMs = 2000 }: { recordMs?: number }) {
     setState({ kind: 'recording' });
     stopSpeaking();
     try {
-      if (!recordingSupported()) throw new Error('this browser cannot record audio');
+      if (!recordingSupported()) throw new MicUnsupportedError();
       const rec = await startRecording(() => {});
       if (!mounted.current) return rec.cancel();
       active.current = rec;
@@ -46,14 +47,13 @@ export function MicTest({ recordMs = 2000 }: { recordMs?: number }) {
       if (!mounted.current) return;
       if (!take.blob.size) return setState({ kind: 'empty' });
       url.current = URL.createObjectURL(take.blob);
-      const a = new Audio(url.current);
-      audio.current = a;
-      void a.play().catch(() => {}); // a play refused here still leaves the result standing
+      audio.current = new Audio(url.current);
+      clearMicFailure(); // the mic works: an old failure is no longer news
       setState({ kind: 'ok' });
     } catch (e) {
       active.current = null;
       logError(e);
-      const failure = await recordMicFailure(e);
+      const failure = await recordMicFailure(e, 'test');
       if (mounted.current) setState({ kind: 'failed', failure });
     }
   };
@@ -63,7 +63,12 @@ export function MicTest({ recordMs = 2000 }: { recordMs?: number }) {
       <button type="button" class="small-btn" disabled={state.kind === 'recording'} onClick={() => void run()}>
         {state.kind === 'recording' ? 'Recording… say something' : 'Test microphone'}
       </button>
-      {state.kind === 'ok' && <p role="status" class="mic-test__ok">Mic works ✓ — you should hear the 2-second test play back now.</p>}
+      {state.kind === 'ok' && (
+        <>
+          <p role="status" class="mic-test__ok">Mic works ✓ — it recorded 2 seconds. Tap Play it back to hear them.</p>
+          <button type="button" class="small-btn" onClick={() => { if (audio.current) { audio.current.currentTime = 0; void audio.current.play().catch(() => {}); } }}>Play it back</button>
+        </>
+      )}
       {state.kind === 'empty' && <p role="alert" class="warning">The mic opened but recorded nothing. Close ZiJi fully (swipe it away), reopen it and test again.</p>}
       {state.kind === 'failed' && <p role="alert" class="warning">{micFailureLine(state.failure, 'just now')}</p>}
     </div>
@@ -80,7 +85,7 @@ export function LastMicFailure() {
       <strong>Last microphone problem</strong> ({new Date(f.at).toLocaleString()}): {what}. {fix}
       <br />
       <small>
-        Details: {f.stage}, {f.name}{f.message ? ` “${f.message}”` : ''}; permission {f.permission}; {f.standalone ? 'Home-Screen app' : 'Safari'}; page {f.visibility}; format {f.mime || 'none'} (mp4 {f.mp4 ? 'yes' : 'no'}, webm {f.webm ? 'yes' : 'no'}).
+        Details: {f.origin === 'test' ? 'Test microphone' : 'a lesson'}; {f.stage}, {f.name}{f.message ? ` “${f.message}”` : ''}; permission {f.permission}; {f.standalone ? 'Home-Screen app' : 'Safari'}; page {f.visibility}; format {f.mime || 'none'} (mp4 {f.mp4 ? 'yes' : 'no'}, webm {f.webm ? 'yes' : 'no'}).
       </small>
     </p>
   );

@@ -125,7 +125,7 @@ export function ListenPanel({ onReviewed }: { onReviewed?: () => void }) {
   // the mic didn't start for him today: why there may be fewer takes, and how to fix it (mic fix 2026-10-14)
   const [micToday] = useState(() => {
     const f = readMicFailure();
-    return f && localDateKey(new Date(f.at)) === localDateKey(now()) ? f : null;
+    return f && f.origin !== 'test' && localDateKey(new Date(f.at)) === localDateKey(now()) ? f : null; // his lessons only, not a parent's test
   });
   const reload = async () => {
     const [recs, parent] = await Promise.all([listRecordings(db), listParentPassages(db)]);

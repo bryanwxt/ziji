@@ -135,7 +135,7 @@ export function SettingsPanel() {
       </div>
       <div class="field">
         <label>Microphone</label>
-        <p class="hint">Records 2 seconds and plays them back. If the iPad asks, tap Allow. Use it when his takes are missing.</p>
+        <p class="hint">Records 2 seconds, then Play it back lets you hear them. If the iPad asks, tap Allow. Use it when his takes are missing.</p>
         <MicTest />
       </div>
       <details class="field">
