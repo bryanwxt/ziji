@@ -137,7 +137,7 @@ describe('the eye line follows the visible white (row D, spec 2026-10-13 §7)', 
       for (const [x, y] of top) {
         expect(((x - cx) / EYE_RX) ** 2 + ((y - EYE_Y) / EYE_RY) ** 2, `${name} top inside the eye`).toBeLessThanOrEqual(1.01);
         expect(y, `${name} top below the eye's top at ${x}`).toBeGreaterThanOrEqual(eyeTop(cx, x) - 0.05);
-        const e = lidTop > 0.02 ? edgeAt(up.edge, x) : null;
+        const e = edgeAt(up.edge, x);
         if (e !== null) expect(y, `${name} top on or below the lid edge at ${x}`).toBeGreaterThanOrEqual(e - 0.05);
       }
       for (const [x, y] of bot) {
@@ -182,27 +182,48 @@ describe('the eye line follows the visible white (row D, spec 2026-10-13 §7)', 
     expect(c.bottom).toBe('M118 118Z');
     expect(c.shade).toBe('M118 118Z');
   });
-  it('the closed line takes over cleanly: the eye line is gone by 0.86, the closed line only comes after, never both at once', () => {
+  it('the closed line cross-fades in as the open eye fades out: every frame from 0.7 to 1 shows a line', () => {
     const attrs: Record<string, string> = {};
     const els = (part: string) => ({ setAttribute: (a: string, v: string) => { attrs[`${part} ${a}`] = v; } }) as unknown as Element;
+    const at = (lidTop: number) => {
+      paint(els, { ...PRESETS.neutral, lidTop }, REST_POSE, {});
+      return { line: Number(attrs['eye-line-top-l opacity']), low: Number(attrs['eye-line-bottom-l opacity']), shade: Number(attrs['eye-shade-l opacity']), closed: Number(attrs['lid-closed-l opacity']), white: Number(attrs['eye-white-l opacity']), iris: Number(attrs['iris-l opacity']), d: attrs['eye-line-top-l d'] };
+    };
     for (let i = 0; i <= 100; i++) {
       const lidTop = i / 100;
-      paint(els, { ...PRESETS.neutral, lidTop }, REST_POSE, {});
-      const line = Number(attrs['eye-line-top-l opacity']);
-      const low = Number(attrs['eye-line-bottom-l opacity']);
-      const shade = Number(attrs['eye-shade-l opacity']);
-      const closed = Number(attrs['lid-closed-l opacity']);
-      expect(line, `${lidTop}`).toBe(low);
-      expect(line * closed, `${lidTop}: never both`).toBe(0);
-      if (lidTop <= 0.7) expect([line, closed], `${lidTop}`).toEqual([1, 0]);
-      if (lidTop >= 0.86) expect(line, `${lidTop}`).toBe(0);
-      if (lidTop > 0.87) expect(closed, `${lidTop}`).toBeGreaterThan(0);
-      expect(shade, `${lidTop}`).toBeCloseTo(0.17 * line, 2);
+      const o = at(lidTop);
+      expect(o.line, `${lidTop}`).toBe(o.low);
+      if (lidTop <= 0.7) expect([o.line, o.closed], `${lidTop}`).toEqual([1, 0]);
+      if (lidTop >= 0.86) expect([o.line, o.closed], `${lidTop}`).toEqual([0, 1]);
+      if (lidTop >= 0.7) expect(o.line + o.closed, `${lidTop}: the eye never vanishes mid-blink`).toBeGreaterThanOrEqual(0.99);
+      expect(o.shade, `${lidTop}`).toBeCloseTo(0.17 * o.line, 2);
       // the white and iris fade with the line: a sliver of white below a nearly shut lid is never left without its outline
-      expect(Number(attrs['eye-white-l opacity']), `${lidTop}`).toBe(line);
-      expect(Number(attrs['iris-l opacity']), `${lidTop}`).toBe(line);
-      // while the line shows, it is a real outline (never an empty path over a shut eye)
-      if (line > 0) expect(attrs['eye-line-top-l d'], `${lidTop}`).not.toMatch(/^M118 118Z$/);
+      expect(o.white, `${lidTop}`).toBe(o.line);
+      expect(o.iris, `${lidTop}`).toBe(o.line);
+      if (o.line > 0) expect(o.d, `${lidTop}`).not.toMatch(/^M118 118Z$/);
     }
+    for (const lidTop of [0.8, 0.86, 0.9]) {
+      const o = at(lidTop);
+      expect(Math.max(o.line, o.closed), `${lidTop}: a line at half strength or more`).toBeGreaterThanOrEqual(0.5);
+    }
+  });
+  it('the top fur cap eases in with the lid from 0: its depth never jumps between frames', () => {
+    // how far the visible white's top sits below the eye's own top, at the eye's centre (x = cx is sample 30 of 60)
+    const cap = (lidTop: number) => {
+      const top = pts(eyeContour(118, lidTop, 0, 0).top);
+      const mid = top.reduce((a, b) => (Math.abs(b[0] - 118) < Math.abs(a[0] - 118) ? b : a));
+      return mid[1] - (EYE_Y - EYE_RY);
+    };
+    expect(cap(0)).toBeCloseTo(0, 1);
+    let prev = cap(0);
+    for (let i = 1; i <= 40; i++) {
+      const c = cap(i * 0.0025);
+      expect(c - prev, `lid ${i * 0.0025}`).toBeLessThan(0.5);
+      expect(c, `lid ${i * 0.0025}`).toBeGreaterThanOrEqual(prev - 1e-6);
+      prev = c;
+    }
+    expect(cap(0.1)).toBeGreaterThan(2); // by then the cap is the lid's own
+    // the fur fill eases in the same way: nothing at 0, and continuous just after
+    expect(upperLid(118, 0, 0).fill).toBe('M118 118Z');
   });
 });

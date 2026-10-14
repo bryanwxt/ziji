@@ -33,7 +33,8 @@ export const IRIS_Y = EYE_Y;
  *  stay inside the white in every direction, so it needs no clip-path (the head still turns and tilts toward what he looks at). */
 export const GAZE_X = 3.75;
 export const GAZE_Y = 3.5;
-/** The eye line, its lid shadow, the white and the iris fade out from lid 0.7 and are gone at 0.86, where the closed line takes over (no empty outlined eye, no unlined sliver of white). */
+/** The eye line, its lid shadow, the white and the iris fade out from lid 0.7 and are gone at 0.86, while the closed line fades in over
+ *  the same span (closedOn = 1 − ringOn): no empty outlined eye, no unlined sliver of white, and the eye never vanishes mid-blink. */
 export const ringOn = (lidTop: number) => Math.max(0, Math.min(1, (0.86 - lidTop) / 0.16));
 /** His blush's strength from the face's blush value: visible at rest, full when he glows (row C). */
 export const blushOpacity = (b: number) => Math.sqrt(Math.max(0, Math.min(1, b)));
@@ -89,17 +90,20 @@ const fullEye = (cx: number) => `M${f2(cx - LID_RX)} ${EYE_Y} A${LID_RX} ${LID_R
 /** No lid: an empty path at the eye's centre (a point at 0,0 would stretch his bounding box). */
 const none = (cx: number) => `M${cx} ${EYE_Y}Z`;
 
+/** How far the lid has to close before its fur cap is fully its own (it grows from nothing over lid 0 → CAP_IN). */
+const CAP_IN = 0.08;
 /** The upper lid's geometry: its edge runs from (xl, y) to (xr, y), sagging by `curve` (a quadratic, control at y + curve). */
 function upperGeom(cx: number, lidTop: number, lidArc: number) {
   const cl = Math.max(0, (lidTop - 0.86) / 0.14);
-  const eT = 95 + lidTop * 47 + cl * 6;
-  const curve = (6 - lidTop * 3 - lidArc * 22) * (1 - cl);
   const top = EYE_Y - LID_RY;
   const bottom = EYE_Y + LID_RY;
+  // at lid 0 there is no lid (the open eye stays round, row D); its cap eases in over lid 0 → CAP_IN so it never pops in a frame
+  const ease = Math.min(1, lidTop / CAP_IN);
+  const eT = top + (95 + lidTop * 47 + cl * 6 - top) * ease;
+  const curve = (6 - lidTop * 3 - lidArc * 22) * (1 - cl) * ease;
   const y = Math.min(Math.max(eT, top + 0.5), bottom - 0.5);
   const w = halfWidth(y);
-  // a lid near 0 is no lid: the open eye stays round (spec 2026-10-13 §7, row D)
-  return { cl, eT, curve, y, xl: cx - w, xr: cx + w, active: lidTop > 0.02 && eT > top, shut: eT >= bottom };
+  return { cl, eT, curve, y, xl: cx - w, xr: cx + w, active: eT > top, shut: eT >= bottom };
 }
 function lowerGeom(cx: number, lidBottom: number) {
   const eB = 141 - lidBottom * 20;
@@ -124,7 +128,7 @@ export function upperLid(cx: number, lidTop: number, lidArc: number) {
     fill: g.shut ? fullEye(cx) : !g.active ? none(cx) : `M${xl} ${y} A${LID_RX} ${LID_RY} 0 ${g.y > EYE_Y ? 1 : 0} 1 ${xr} ${y} Q${cx} ${ctl} ${xl} ${y}Z`,
     edge: `M${xl} ${y} Q${cx} ${ctl} ${xr} ${y}`,
     closed: `M${cx - 19} ${yy} Q${cx} ${yy + bend} ${cx + 19} ${yy}`,
-    closedOn: g.cl,
+    closedOn: 1 - ringOn(lidTop), // cross-fades in as the open eye fades out: a line shows in every frame of a blink
   };
 }
 /** The lower lid rises in the middle: a smile squint (bounded by the eye's ellipse, like the upper lid). */
