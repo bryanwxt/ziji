@@ -117,19 +117,6 @@
 ]
 },
 {
-"word": "出丑",
-"s": [
-{
-"zh": "我怕在台上出丑。",
-"en": "I am afraid of making a fool of myself on stage."
-},
-{
-"zh": "别笑他，谁都会出丑。",
-"en": "Don't laugh at him, everyone gets embarrassed sometimes."
-}
-]
-},
-{
 "word": "新",
 "s": [
 {
@@ -936,19 +923,6 @@
 ]
 },
 {
-"word": "体贴",
-"s": [
-{
-"zh": "姐姐很体贴妈妈。",
-"en": "My big sister is very caring towards Mum."
-},
-{
-"zh": "我的好朋友很体贴。",
-"en": "My good friend is very considerate."
-}
-]
-},
-{
 "word": "祝福",
 "s": [
 {
@@ -1387,19 +1361,6 @@
 {
 "zh": "杯子里有果汁。",
 "en": "There is fruit juice in the cup."
-}
-]
-},
-{
-"word": "干杯",
-"s": [
-{
-"zh": "生日快乐，我们一起干杯！",
-"en": "Happy birthday, let's say cheers together!"
-},
-{
-"zh": "爸爸和叔叔干杯。",
-"en": "Dad and Uncle clink their glasses."
 }
 ]
 },
@@ -1998,19 +1959,6 @@
 {
 "zh": "我坐在课室的一角。",
 "en": "I sit in a corner of the classroom."
-}
-]
-},
-{
-"word": "三角",
-"s": [
-{
-"zh": "我画了一个三角。",
-"en": "I drew a triangle."
-},
-{
-"zh": "我有一把三角尺。",
-"en": "I have a triangle ruler."
 }
 ]
 },
@@ -3120,19 +3068,6 @@
 ]
 },
 {
-"word": "手脚",
-"s": [
-{
-"zh": "洗好手脚再上床。",
-"en": "Wash your hands and feet before bed."
-},
-{
-"zh": "天太冷，我的手脚都冷了。",
-"en": "It is so cold that my hands and feet are cold."
-}
-]
-},
-{
 "word": "答应",
 "s": [
 {
@@ -3747,12 +3682,12 @@
 "word": "炸",
 "s": [
 {
-"zh": "气球炸了，弟弟哭了。",
-"en": "The balloon burst and my little brother cried."
+"zh": "我最喜欢吃炸鸡。",
+"en": "I like fried chicken best."
 },
 {
-"zh": "气球太大，一下就炸了。",
-"en": "The balloon was too big and it popped at once."
+"zh": "爸爸买了一大包炸鸡。",
+"en": "Dad bought a big bag of fried chicken."
 }
 ]
 },
@@ -4316,19 +4251,6 @@
 ]
 },
 {
-"word": "病床",
-"s": [
-{
-"zh": "病床上的奶奶在笑。",
-"en": "Grandma is smiling in her hospital bed."
-},
-{
-"zh": "医生站在病床边。",
-"en": "The doctor stands beside the hospital bed."
-}
-]
-},
-{
 "word": "护照",
 "s": [
 {
@@ -4475,12 +4397,12 @@
 "word": "种",
 "s": [
 {
-"zh": "这种花好香。",
-"en": "This kind of flower smells nice."
+"zh": "奶奶在家里种菜。",
+"en": "Grandma grows vegetables at home."
 },
 {
-"zh": "我喜欢这种饼干。",
-"en": "I like this kind of biscuit."
+"zh": "我们一起去种树。",
+"en": "We go to plant trees together."
 }
 ]
 },
@@ -5001,19 +4923,6 @@
 {
 "zh": "得了，别再说了。",
 "en": "That's enough, don't say any more."
-}
-]
-},
-{
-"word": "非得",
-"s": [
-{
-"zh": "你非得现在去吗？",
-"en": "Do you really have to go now?"
-},
-{
-"zh": "弟弟非得要那个红球。",
-"en": "My little brother insists on having that red ball."
 }
 ]
 },

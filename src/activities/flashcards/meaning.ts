@@ -1,5 +1,5 @@
-import { pinyin } from 'pinyin-pro';
 import { HSK_WORDS } from '../../content';
+import { isChildWord, readingOf } from '../../content/wordGate';
 import { chengyuOf, idiomWrongs, isIdiomWord } from '../../content/chengyu';
 import { mulberry32 } from '../../lib/random';
 import { BLANK, bankFor, fillGap } from '../../content/sentenceBank';
@@ -107,7 +107,8 @@ const hskByLength = new Map<number, Choice[]>();
 function hskChoices(length: number): Choice[] {
   let list: Choice[] | undefined = hskByLength.get(length);
   if (!list) {
-    list = [...HSK_WORDS].filter(([t]) => t.length === length).map(([text, level]) => ({ text, level, pinyin: pinyin(text) }));
+    // child words only (content audit 2026-10-15): a wrong choice is still a word he reads
+    list = [...HSK_WORDS].filter(([t]) => t.length === length && isChildWord(t)).map(([text, level]) => ({ text, level, pinyin: readingOf(text) }));
     hskByLength.set(length, list);
   }
   return list;

@@ -1,4 +1,4 @@
-import { builtinReading, builtinWordId } from '../content';
+import { builtinReading, builtinWordId, builtinWords } from '../content';
 import { isEarned } from '../srs/scheduler';
 import type { Knowledge } from '../stats/stats';
 import type { BuiltinChar } from '../types';
@@ -14,6 +14,12 @@ export interface CharCard {
   gold: boolean; // can read *and* write it
   rarity: 'common' | 'rare';
 }
+
+let shown: Map<string, string | null> | null = null;
+/** The 组词 a card shows first (content audit 2026-10-15): the card's own, cleaned list — never the raw data's first, which
+ *  skipped the written 组词, the blocklist and the reading check (调查 on the tiáo card, 心脏 on 脏). */
+const firstExample = (char: string): string | null =>
+  (shown ??= new Map(builtinWords(0).map((w) => [w.text, w.examples?.[0]?.text ?? null]))).get(char) ?? null;
 
 /** Memory strength from FSRS stability (days). */
 export function starsFor(stability: number): 1 | 2 | 3 {
@@ -38,7 +44,7 @@ export function collectionCards(builtin: BuiltinChar[], know: Knowledge): CharCa
       return {
         char: c.char,
         pinyin: builtinReading(c),
-        example: c.examples[0]?.text ?? null,
+        example: firstExample(c.char),
         power: powerOf(c),
         caught,
         stars: caught && rec ? starsFor(rec.fsrs.stability) : 0,

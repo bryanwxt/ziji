@@ -523,9 +523,9 @@ describe('a 成语 on the 认新字 card (spec 2026-10-05 §2.1, phase C)', () =
   });
   it('shows the 成语 with its pinyin, English and a sentence', async () => {
     const { builtinIdiom, chengyuOf } = await import('../../content/chengyu');
-    const yan = pool.find((w) => w.text === '颜')!;
+    const se = pool.find((w) => w.text === '色')!; // 颜's card now lists 五颜六色 among its 组词 (容颜 left with the content audit)
     const idiom = builtinIdiom('五颜六色')!;
-    render(<FlashcardStep {...base} word={yan} idiom={idiom} item={{ wordId: yan.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    render(<FlashcardStep {...base} word={se} idiom={idiom} item={{ wordId: se.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     const box = document.querySelector('.intro__idiom')!;
     expect(box.querySelector('.label')!.getAttribute('data-zh')).toBe('五颜六色');
     expect([...box.querySelectorAll('.label__py')].map((e) => e.textContent)).toEqual(['wǔ', 'yán', 'liù', 'sè']); // each syllable over its own character

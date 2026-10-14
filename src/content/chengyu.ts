@@ -10,6 +10,7 @@ export interface Chengyu { text: string; meaning: string; sentences: string[] }
 
 const c = (text: string, meaning: string, ...sentences: string[]): Chengyu => ({ text, meaning, sentences });
 
+// 成千上万 and 哭笑不得 left the list with the content audit (2026-10-15, blocked: too abstract or adult for him)
 export const CHENGYU: readonly Chengyu[] = [
   // hardest character at level 1
   c('不知不觉', 'without noticing', '我们不知不觉玩到了晚上。'),
@@ -32,14 +33,12 @@ export const CHENGYU: readonly Chengyu[] = [
   c('必不可少', 'absolutely needed', '每天喝水是必不可少的。'),
   c('不相上下', 'about the same, evenly matched', '哥哥和弟弟跑得不相上下。'),
   c('不由自主', "can't help doing it", '他不由自主笑了起来。'),
-  c('成千上万', 'tens of thousands', '天上有成千上万的星星。'),
   c('吃喝玩乐', 'eat, drink and have fun', '放假不能只吃喝玩乐。'),
   c('合情合理', 'fair and sensible', '老师的安排很合情合理。'),
   c('忽高忽低', 'now high, now low', '那只小鸟飞得忽高忽低。'),
   c('欢声笑语', 'happy voices and laughter', '教室里都是欢声笑语。'),
   c('或多或少', 'more or less', '大家或多或少都喜欢玩。'),
   c('可想而知', 'as you can imagine', '他没有复习，结果可想而知。'),
-  c('哭笑不得', "not know whether to laugh or cry", '弟弟做的事让我哭笑不得。'),
   c('理所当然', 'only natural, of course', '帮助别人是理所当然的事。'),
   c('没完没了', 'endless, on and on', '外面的雨下得没完没了。'),
   c('千方百计', 'in every possible way', '他千方百计想赢比赛。'),

@@ -23,6 +23,13 @@ describe('collection', () => {
     const cards = collectionCards(BUILTIN, summarize(builtinWords(0), []));
     expect(cards.find((c) => c.char === '了')?.pinyin).toBe('le');
   });
+  it("shows the card's own first 组词, never the raw data's (content audit 2026-10-15: 调查 on the tiáo card, 心脏 on 脏)", () => {
+    const know = summarize(builtinWords(0), [makeCard('b:脏', 'recognise', new Date(2026, 9, 20), true), makeCard('b:调', 'recognise', new Date(2026, 9, 20), true)]);
+    const cards = collectionCards(BUILTIN, know);
+    expect(cards.find((c) => c.char === '调')?.example).toBe('空调');
+    expect(cards.find((c) => c.char === '脏')?.example).toBe('弄脏');
+    expect(cards.find((c) => c.char === '人')?.example).toBe('大人'); // not 人口
+  });
   it('shows the HSK levels he is working in: every caught card, and backs up to one level past his highest', () => {
     const lv = (c: string) => BUILTIN.find((b) => b.char === c)!.level;
     const hsk4 = BUILTIN.find((b) => b.level === 4)!.char;

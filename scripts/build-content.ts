@@ -1,8 +1,10 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { pinyin } from 'pinyin-pro';
+import '../src/content/pinyinFixes'; // 组词 read with the app's fixes (教书 jiāo, 切菜 qiē), like every other reading it shows
 import { buildBuiltin, buildWordDictionary, parseHskSections, type MmahEntry, type SchoolLesson } from './content-lib';
 import moe from '../src/content/moe2024.json';
+import { BLOCKED } from '../src/content/blocked';
 
 const SOURCES = {
   charlist: 'https://raw.githubusercontent.com/elkmovie/hsk30/main/charlist.txt',
@@ -37,6 +39,7 @@ const chars = buildBuiltin({
   dictionary,
   pinyinOf: (text) => pinyin(text, { type: 'array' }).join(' '),
   school: (moe as { lessons: SchoolLesson[] }).lessons, // spec 2026-10-11 §7: every listed character, and 组词 he can read
+  blocked: BLOCKED, // the word gate at build time (content audit 2026-10-15): a blocked word is never a card's 组词
 }, skipped);
 
 const body = chars.map((c) => '  ' + JSON.stringify(c)).join(',\n');

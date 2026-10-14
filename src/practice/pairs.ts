@@ -1,8 +1,9 @@
 // The pairing boards for the 词语 rung (spec 2026-10-05 §3.2): three pairs to join, one of them the word's own. No two halves
 // from different pairs may make a word too, so a right answer can never be marked wrong. A 组词 board also has two decoy halves
 // that pair with nothing (production practice spec §5), so the last pair can't be had by elimination.
-import { builtinWords, HSK_WORDS } from '../content';
+import { BUILTIN, builtinReading, builtinWords, HSK_WORDS } from '../content';
 import { DAPEI } from '../content/dapei';
+import { isChildWord, readingOf } from '../content/wordGate';
 import { shuffle, type Rng } from '../lib/random';
 import type { Word } from '../types';
 
@@ -33,16 +34,16 @@ function board(target: [string, string], extras: [string, string][], fits: (l: s
 /** Characters that make a word with almost anything (不远, 两下, 走上…): never in a board's extra pairs, where they'd fit across. */
 export const PRODUCTIVE: ReadonlySet<string> = new Set([...'不没一二三四五六七八九十两几大小好有是在上下人子们的了很走想爱会能要去来说看多少天头心中高长出开']);
 
-const nearCache = new Map<number, string[]>();
-let plain: [string, number][] | null = null;
-/** The two-character HSK words up to a level that avoid PRODUCTIVE characters and aren't doubled (妈妈), in list order; worked out once per level (a round asks each word's board many times). */
-function nearWords(upTo: number): string[] {
-  let out = nearCache.get(upTo);
-  if (!out) {
-    plain ??= TWO_CHAR.filter(([w]) => { const c = Array.from(w); return c[0] !== c[1] && !c.some((ch) => PRODUCTIVE.has(ch)); });
-    nearCache.set(upTo, (out = plain.filter(([, lvl]) => lvl <= upTo).map(([w]) => w)));
-  }
-  return out;
+/** The near pool's ceiling (content audit 2026-10-15): an HSK 7 school character asked for level 8, which was every word. */
+export const NEAR_MAX_HSK = 3;
+let nearPool: [string, number][] | null = null;
+/**
+ * The two-character child words (wordGate) of HSK 1–3 that avoid PRODUCTIVE characters and aren't doubled (妈妈), in list
+ * order, up to a level (never above NEAR_MAX_HSK); worked out once (a round asks each word's board many times).
+ */
+export function nearWords(upTo: number): string[] {
+  nearPool ??= TWO_CHAR.filter(([w, lvl]) => { const c = Array.from(w); return lvl <= NEAR_MAX_HSK && c[0] !== c[1] && !c.some((ch) => PRODUCTIVE.has(ch)) && isChildWord(w); });
+  return nearPool.filter(([, lvl]) => lvl <= Math.min(upTo, NEAR_MAX_HSK)).map(([w]) => w);
 }
 
 /**
@@ -58,7 +59,8 @@ export function zuciBoard(word: Word, rng: Rng, known?: ReadonlySet<string>): Pa
   const near = nearWords((word.level ?? 3) + 1).filter((w) => w !== own);
   const familiar = known ? near.filter((w) => Array.from(w).every((ch) => known.has(ch))) : [];
   const pool = familiar.length >= 6 ? familiar : near;
-  const fits = (l: string, r: string) => HSK_WORDS.has(l + r) || (word.examples ?? []).some((e) => e.text === l + r);
+  // a built-in 组词 counts too (一份 is one of 份's): a cross pair that makes one is a right answer marked wrong
+  const fits = (l: string, r: string) => HSK_WORDS.has(l + r) || isExample(l + r) || (word.examples ?? []).some((e) => e.text === l + r);
   const made = board([a, b], shuffle(pool, rng).map((w) => Array.from(w) as [string, string]), fits, rng);
   return made && withDecoys(made, pool, fits, rng);
 }
@@ -85,12 +87,23 @@ function withDecoys(b: PairBoard, pool: string[], fits: (l: string, r: string) =
   return { ...b, left: [...b.left.slice(0, at), left, ...b.left.slice(at)], right: [...b.right.slice(0, at), right, ...b.right.slice(at)], decoys: [left, right] };
 }
 
+const cardReading = new Map(BUILTIN.map((c) => [c.char, builtinReading(c)]));
+/** Does the pair say its verb the way the verb's card does (content audit 2026-10-15: 还书 is huán, on the hái card)? A verb of
+ *  more than one character, or one without a card, has nothing to check against. */
+function saysVerbAsCard(verb: string, noun: string): boolean {
+  const at = cardReading.get(verb);
+  if (!at || Array.from(verb).length !== 1) return true;
+  const said = readingOf(verb + noun).split(' ')[0] ?? '';
+  const flat = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return said === at || (flat(said) === said && said === flat(at));
+}
+
 /** A 搭配 question: the verb, its partner and the partner's three written wrong partners, shuffled. */
 export interface DapeiQuestion { verb: string; noun: string; options: string[] }
 
 /** 搭配 (final review C2): one of the word's own 搭配, asked as "which goes with it?", with wrong partners written for it. */
 export function dapeiQuestion(word: Word, rng: Rng): DapeiQuestion | null {
-  const mine = DAPEI.filter((x) => x.verb === word.text);
+  const mine = DAPEI.filter((x) => x.verb === word.text && saysVerbAsCard(x.verb, x.noun));
   if (!mine.length) return null;
   const x = shuffle(mine, rng)[0]!;
   return { verb: x.verb, noun: x.noun, options: shuffle([x.noun, ...x.wrong], rng) };
