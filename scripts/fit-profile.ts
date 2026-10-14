@@ -58,7 +58,9 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
     await putCards(db, [{ id: `${baochi.id}:write`, wordId: baochi.id, kind: 'write', fsrs: { ...seededKnownCard(o.now), due: new Date(t - 86_400_000) } }]); // due: written first
   }
   const placed = [...words.slice(0, 80), ...school].map((w) => w.id);
-  await applyPlacement(db, { readingIds: placed, understandingIds: placed.slice(0, 40), missed: [], reading: 0, understanding: 0 }, o.now);
+  await applyPlacement(db, { readingIds: placed, askedIds: [], missed: [], readsUpTo: '一上' }, o.now);
+  // 40 of them understood: placement places no meaning as known (spec 2026-10-14), so the profile seeds it, as the old check did
+  await putCards(db, placed.slice(0, 40).map((wordId) => ({ id: `${wordId}:meaning`, wordId, kind: 'meaning' as const, fsrs: seededKnownCard(o.now, 7), passed: t })));
   await updateSettings(db, {
     pinHash: o.pin === false ? null : o.pinCode ? await hashPin(o.pinCode) : 'fit-check',
     placementDone: o.placementDone ?? true,

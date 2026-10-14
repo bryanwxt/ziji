@@ -70,6 +70,7 @@ export interface CardRecord {
   fsrs: FsrsCard;
   passed?: number; // when its rung passed: two days' right first answers (spec 2026-10-06 §3.2), or earned before the ladder
   guess?: true; // a placement guess (spec 2026-10-06 §3.5): its next rung waits for a real answer to confirm it (final review I1)
+  placed?: true; // a recognise card placement put there, not yet rechecked (spec 2026-10-14): its first recheck missed sends it back to learn
 }
 
 export interface ReviewLog {
@@ -82,6 +83,7 @@ export interface ReviewLog {
   correct: boolean;
   responseMs?: number;
   misses?: number;
+  placedCheck?: true; // the first recheck of a placed card (spec 2026-10-14), for the parent's count of rechecks
   source?: 'use' | 'write'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use), or from a 组词 written in 写一写 (production practice spec §3)
   // the card as it was before this review (SRS tuning spec §4); logs written before it have none
   state?: State; // New, Learning, Review or Relearning
@@ -117,15 +119,26 @@ export interface LadderEntry {
 }
 
 /** The last placement check's two levels (band indexes, -1 = none) and the words he missed. */
+/** A placement result (spec 2026-10-14): he reads up to a school term (null: none), from `tested` characters asked; `assumed` were placed unasked. */
 export interface PlacementResult {
+  at: number;
+  readsUpTo: string | null; // 一上 … 三下
+  tested: number;
+  assumed: number;
+  missed: string[];
+  /** known characters the journey starts from: what placement found (worlds count what he learns after it). */
+  worldBase?: number;
+}
+/** A result saved by the band check before 2026-10-14: band indexes, -1 none. Loads as it is; the parent sees it read-only. */
+export interface LegacyPlacementResult {
   at: number;
   reading: number;
   understanding: number;
-  listening?: number; // band index of his listening level, -1 none (spec 2026-10-06 §3.5); absent before 2c
+  listening?: number; // absent before 2c
   missed: string[];
-  /** known characters the journey starts from: what placement found (worlds count what he learns after it). Missing on older saves. */
-  worldBase?: number;
+  worldBase?: number; // missing on older saves
 }
+export const isLegacyPlacement = (r: PlacementResult | LegacyPlacementResult): r is LegacyPlacementResult => !('readsUpTo' in r);
 
 /** The parent can switch each of these on or off (spec 2026-10-05 §7). */
 export type ActivityKind = 'newwords' | 'practice' | 'writing' | 'speaking';
@@ -295,7 +308,7 @@ export interface Settings {
   contentCourse?: Course; // the course the stored built-in words were written for; absent: 'cl' (written before courses)
   voiceURI?: string | null; // the parent's pick of Mandarin voice; null/absent: the clearest the iPad has
   recordedVoice?: boolean; // speak with the generated clips (Kokoro); absent/false: the iPad/iPhone voice (parent 2026-10-08: the clips sounded worse)
-  placementResult?: PlacementResult;
+  placementResult?: PlacementResult | LegacyPlacementResult;
   storyProgress?: { chapter: number; readOn?: string; setupDone?: boolean; payoffDone?: boolean }; // the Word Thief chapters (spec 2026-10-07 3c §3)
   storyOn?: boolean; // the Word Thief story around lessons (spec 2026-10-11 §3): off unless true; no parent switch yet. Not `story` (看图说话)
   sayCards?: boolean; // Say cards in 练一练 (spec 2026-10-11 §4): on unless false

@@ -10,7 +10,7 @@ import { journeyCount, settleJourney } from './journey';
 
 // Worlds come from characters learned in the app, not ones placement found he knew (parent, 2026-10-05: a P2 placement
 // of ~500 unlocked all eight worlds on day one).
-const readOnly = (readingIds: string[]) => ({ readingIds, understandingIds: [], missed: [], reading: 0, understanding: -1 });
+const readOnly = (readingIds: string[]) => ({ readingIds, askedIds: [], missed: [], readsUpTo: '一上' });
 const known = async (db: Awaited<ReturnType<typeof freshDb>>) => summarize(builtinWords(0), await allCards(db)).known;
 
 describe('the journey counts what he learns after placement', () => {
