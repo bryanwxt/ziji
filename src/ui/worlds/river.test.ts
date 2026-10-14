@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { WORLDS } from '../../fun/worlds';
 import { MOMENTS } from './moments';
-import { cropFor, RIVER } from './river';
+import { CROPS, cropFor, inCrop, RIVER } from './river';
 
 describe('One River anchors (spec 2026-10-13 §5)', () => {
   it('every world has the paper boat, and its props are its moments', () => {
@@ -35,5 +35,28 @@ describe('One River anchors (spec 2026-10-13 §5)', () => {
     for (const w of WORLDS) { const m = RIVER[w.id].moon; if (m) expect(m.y, w.id).toBeLessThan(500); }
     expect(RIVER.milkyway.moon).toBeNull();
     expect(RIVER.milkyway.dusk).toBe(0);
+  });
+  it('the boats sit on the water where review placed them (fix round 0): a plan restating the old anchors must fail here', () => {
+    expect(Object.fromEntries(WORLDS.map((w) => [w.id, RIVER[w.id].props.boat]))).toEqual({
+      home: { x: 703, y: 832, w: 96, h: 60 },
+      rainforest: { x: 690, y: 945, w: 120, h: 90 },
+      bamboo: { x: 800, y: 770, w: 120, h: 90 },
+      terraces: { x: 790, y: 950, w: 120, h: 90 },
+      dino: { x: 845, y: 885, w: 120, h: 90 },
+      lantern: { x: 670, y: 880, w: 120, h: 90 },
+      cove: { x: 690, y: 905, w: 120, h: 90 },
+      milkyway: { x: 650, y: 925, w: 120, h: 90 },
+    });
+  });
+  it('inCrop: a tap box wholly inside the crop, and the three screens crop as expected', () => {
+    const phone = cropFor(CROPS.phone);
+    expect(phone.x0).toBeCloseTo(247.4, 1);
+    expect(phone.x1).toBeCloseTo(752.6, 1);
+    expect(cropFor(CROPS.landscape).y0).toBeCloseTo(376.3, 1);
+    expect(cropFor(CROPS.portrait).x0).toBeCloseTo(91.5, 1);
+    expect(inCrop({ x: 500, y: 900, w: 120, h: 90 }, phone)).toBe(true);
+    expect(inCrop({ x: 700, y: 900, w: 120, h: 90 }, phone)).toBe(false); // its right edge (760) is off a phone
+    expect(inCrop({ x: 500, y: 400, w: 120, h: 90 }, cropFor(CROPS.landscape))).toBe(false); // its top (310) is above a landscape crop
+    expect(inCrop(RIVER.home.props.boat!, phone)).toBe(true); // 家门口's boat is its only prop a phone shows
   });
 });

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FINDS } from '../../fun/finds';
 import { WORLDS } from '../../fun/worlds';
 import { DEFAULT_KID, type KidState } from '../../types';
+import { BOAT_FIND_MS } from './momentFx';
 import { MOMENTS } from './moments';
 import { WorldProps } from './WorldProps';
 import { WorldScene } from './WorldScene';
@@ -44,6 +45,21 @@ describe('WorldProps on One River (spec 2026-10-13 §6; 2026-10-04 §4.5)', () =
     expect(onKid).not.toHaveBeenCalled();
     expect(document.querySelector('.tap-boat')).toBeTruthy();
     expect(document.querySelector('.tap-pop')).toBeNull();
+  });
+  it('the zodiac animal stays up for its whole rise, then goes (fix round 1)', () => {
+    render(<WorldProps world="home" {...props()} />);
+    tap('纸船');
+    act(() => { vi.advanceTimersByTime(1500); });
+    expect(document.querySelector('.tap-pop[data-animal="rat"]')).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(BOAT_FIND_MS - 1500); });
+    expect(document.querySelector('.tap-pop')).toBeNull();
+  });
+  it('with reduced motion the zodiac animal also stays up for its whole fade', () => {
+    still.on = true;
+    render(<WorldProps world="home" {...props()} />);
+    tap('纸船');
+    act(() => { vi.advanceTimersByTime(1500); });
+    expect(document.querySelector('.tap-pop[data-animal="rat"]')).toBeTruthy();
   });
   it('a tap during a moment is ignored (review focus 1)', () => {
     const onKid = vi.fn();

@@ -12,6 +12,9 @@ export const FX_MS: Record<Fx['kind'], number> = {
   boat: 1400,
 };
 
+/** A boat that brings the day's zodiac animal stays up until the animal has risen and faded (its pop runs this long). */
+export const BOAT_FIND_MS = FX_MS.boat + 800;
+
 export const fade = (dur: number, begin = 0) => `<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.8;1" dur="${dur}ms"${begin ? ` begin="${begin}ms"` : ''} fill="freeze"/>`;
 export const move = (values: string, dur: number, keyTimes?: string, begin = 0) => `<animateTransform attributeName="transform" type="translate" additive="sum" values="${values}"${keyTimes ? ` keyTimes="${keyTimes}"` : ''} dur="${dur}ms"${begin ? ` begin="${begin}ms"` : ''} fill="freeze"/>`;
 export const turn = (values: string, dur: number, keyTimes?: string) => `<animateTransform attributeName="transform" type="rotate" additive="sum" values="${values}"${keyTimes ? ` keyTimes="${keyTimes}"` : ''} dur="${dur}ms" fill="freeze"/>`;
@@ -29,7 +32,9 @@ const DRAW: Record<Fx['kind'], Draw> = {
     const path = world === 'milkyway' ? '0 0;0 -40;0 -64;0 -40;0 0' : '0 0;0 -7;0 0;0 -4;0 0';
     const bob = still ? BOAT : `<g>${BOAT}${move(path, FX_MS.boat)}${turn('0;-4;3;-2;0', FX_MS.boat)}</g>`;
     const rings = still ? '' : `<ellipse cx="0" cy="6" rx="40" ry="8" fill="none" stroke="#fff" stroke-width="2.4" opacity="0"><animate attributeName="rx" values="40;90" dur="${FX_MS.boat}ms" fill="freeze"/><animate attributeName="opacity" values="0.8;0" dur="${FX_MS.boat}ms" fill="freeze"/></ellipse>`;
-    const pop = animal ? `<g class="tap-pop" data-animal="${animal}" transform="translate(0 -84)"><circle r="30" fill="#fffdf7" stroke="#706889" stroke-width="2.2"/><g transform="scale(1.1)">${ANIMAL_FACES[animal] ?? ''}</g>${rise(40, FX_MS.boat + 800, still)}</g>` : '';
+    // in 银河 the animal rides up with the lifting boat, so it rises out of the boat there too (never over its sail)
+    const lift = !still && world === 'milkyway' ? move(path, FX_MS.boat) : '';
+    const pop = animal ? `<g class="tap-pop" data-animal="${animal}" transform="translate(0 -84)"><circle r="30" fill="#fffdf7" stroke="#706889" stroke-width="2.2"/><g transform="scale(1.1)">${ANIMAL_FACES[animal] ?? ''}</g>${rise(40, BOAT_FIND_MS, still)}${lift}</g>` : '';
     return { svg: at(s.x, s.y, RIPPLE + rings + bob + pop, 'tap-boat'), hide: '[data-prop="boat"]' };
   },
 };

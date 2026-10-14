@@ -5,7 +5,7 @@ import type { WorldId } from '../../fun/worlds';
 import type { KidState } from '../../types';
 import { reducedMotion } from '../motion';
 import type { ReactionKind } from '../truffle/timelines';
-import { FX_MS, momentFx } from './momentFx';
+import { BOAT_FIND_MS, FX_MS, momentFx } from './momentFx';
 import { MOMENTS, runMoment, type Fx, type Outcome } from './moments';
 import { RIVER } from './river';
 import { SCENE_VIEWBOX } from './scene';
@@ -80,7 +80,7 @@ export function WorldProps({ world, kid, today, onKid, onSay, onReact, autoEvery
     busy.current = true;
     // SVG animations run on their outermost <svg>'s clock: each moment gets a fresh <svg> (keyed), so it always plays from its start
     setFx({ svg, run: ++run.current, kind: o.fx.kind });
-    const ms = FX_MS[o.fx.kind];
+    const ms = o.fx.kind === 'boat' && o.fx.animal ? BOAT_FIND_MS : FX_MS[o.fx.kind]; // the find stays up for its whole rise
     later(ms, () => {
       busy.current = false;
       show();

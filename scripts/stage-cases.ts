@@ -319,7 +319,6 @@ for (const size of SIZES) {
     const shown = await page.evaluate(() => { const r = document.querySelector('.world-scene svg')!.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !!document.querySelector('.world-props .tap'); });
     if (!shown) problems.push(`river ${w.id} ${time} ${name}: the world or its props did not draw`);
   }
-  await page.setViewportSize({ width: 1480, height: 540 });
   await page.setViewportSize({ width: 1000, height: 640 });
   await page.goto(`file://${dir}/index.html?case=bursts`);
   await page.waitForTimeout(300);
