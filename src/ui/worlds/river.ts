@@ -17,7 +17,7 @@ export const RIVER: Record<WorldId, RiverWorld> = {
   home: {
     props: { boat: { x: 712, y: 812, w: 80, h: 60 }, otter: { x: 795, y: 822, w: 80, h: 80 }, kingfisher: { x: 930, y: 690, w: 60, h: 50 } }, // the boat and the otter float on the canal (inside the phone crop); the kingfisher is on the shaded strip above the far wall; tight boxes clear 宝箱 on a 1024 iPad
     dusk: 0.36,
-    moon: { x: 640, y: 420 },
+    moon: { x: 560, y: 412 }, // in the clear sky left of the big tree, whole inside the landscape crop (its top is 376)
   },
   rainforest: {
     props: { boat: { x: 700, y: 955, w: 100, h: 90 }, hornbill: { x: 880, y: 560, w: 80, h: 64 }, monkey: { x: 300, y: 470, w: 60, h: 96 }, butterfly: { x: 200, y: 860, w: 60, h: 60 } },
