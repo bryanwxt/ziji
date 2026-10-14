@@ -1,6 +1,6 @@
 import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
-import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
+import { browTransform, EXTRAS, EYE_L, EYE_R, lowerLid, mouthPath, mouthW, PRESETS, springStep, upperLid, type Expression, type Face } from './rig';
 import { cardCentre, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
 import { onSpeaking, settleIfSilent } from '../../audio/speaking';
 import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS, type Motion, type PawPose, type Reaction, type Track } from './timelines';
@@ -54,6 +54,8 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
     set(`lid-edge-${side}`, 'opacity', up.edgeOn ? 1 : 0);
     set(`lid-closed-${side}`, 'd', up.closed);
     set(`lid-closed-${side}`, 'opacity', up.closedOn.toFixed(3));
+    set(`lash-${side}`, 'opacity', (1 - up.closedOn).toFixed(3));
+    set(`eye-ring-${side}`, 'opacity', (1 - up.closedOn).toFixed(3)); // a shut eye is only its closed line
     set(`lid-bottom-${side}`, 'd', low.fill);
     set(`lid-bedge-${side}`, 'd', low.edge);
     set(`lid-bedge-${side}`, 'opacity', low.edgeOn ? 1 : 0);
@@ -66,6 +68,9 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
   const m = mouthPath(f.smile, f.mouthOpen);
   set('mouth', 'd', m.d);
   set('mouth', 'fill-opacity', m.fillOpacity.toFixed(3));
+  const w = mouthW(f.smile, f.mouthOpen);
+  set('mouth', 'opacity', (1 - w).toFixed(3));
+  set('mouth-w', 'opacity', w.toFixed(3));
   const earL = `transform-origin:100px 78px;transform:rotate(${(-(f.earL + pose.earL)).toFixed(2)}deg)`;
   const earR = `transform-origin:220px 78px;transform:rotate(${(f.earR + pose.earR).toFixed(2)}deg)`;
   for (const p of ['ear-l', 'ear-in-l']) set(p, 'style', earL);

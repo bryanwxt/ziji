@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
-import { useId, useRef } from 'preact/hooks';
+import { useRef } from 'preact/hooks';
+import { blush, LINE, LW, LWI } from '../cel';
 import { reducedMotion } from '../motion';
 import { useRig } from './useRig';
 import type { PawPose } from './timelines';
@@ -8,8 +9,7 @@ import { accessoryLayer } from './accessories';
 import { costumeLayer } from './costumes';
 import { CEL, EAR_IN_L, EAR_IN_R, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, type TruffleMood } from './parts';
 import { powerLayer } from './powers';
-import { cleanId } from './paint';
-import { browTransform, EXTRAS, EYE_L, EYE_R, EYE_Y, FUR, lowerLid, MOOD_EXPRESSION, mouthPath, PRESETS, upperLid, type Expression, type Face } from './rig';
+import { browTransform, EXTRAS, EYE_L, EYE_LINE, EYE_R, EYE_RX, EYE_RY, EYE_Y, FUR, lowerLid, MOOD_EXPRESSION, MOUTH_W, mouthPath, mouthW, PRESETS, upperLid, type Expression, type Face } from './rig';
 import type { Reaction } from './timelines';
 
 export type { TruffleMood } from './parts';
@@ -37,53 +37,58 @@ interface Props {
   onPart?: (part: 'head' | 'body' | 'tail', e: PointerEvent) => void;
 }
 
-const INK = '#3f3756'; // soft, never black ink (spec 3b §2); pupils keep their own dark
-const PUPIL = '#2f2a36';
+const INK = EYE_LINE;
+const PUPIL = '#241e30';
+const IRIS = '#93c25c';
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-/** One eye: white, iris and pupil (clipped to the eye), outline, then the lids over it (spec 2026-10-04 §4.1). */
-function Eye({ side, cx, f, id }: { side: 'l' | 'r'; cx: number; f: Face; id: string }) {
+/**
+ * One anime eye (spec 2026-10-13 §7): a taller white, an iris with a dark upper band and a pale lower crescent, a dark pupil and
+ * two catch-lights, the outline and a heavy upper lash, then the fur lids over it. No clip-paths: the iris never leaves the white
+ * (it moves at most 6 across and 5 down, inside the room the ellipse leaves), and each lid is drawn only inside the eye.
+ */
+function Eye({ side, cx, f }: { side: 'l' | 'r'; cx: number; f: Face }) {
   const up = upperLid(cx, f.lidTop, f.lidArc);
   const low = lowerLid(cx, f.lidBottom);
+  const iy = EYE_Y + 2;
+  const band = 14.3; // the iris's half-width 7 above its centre
   return (
     <g data-part={`eye-${side}`}>
-      <clipPath id={`${id}-in-${side}`}><circle cx={cx} cy={EYE_Y} r={21} /></clipPath>
-      <clipPath id={`${id}-lid-${side}`}><circle cx={cx} cy={EYE_Y} r={23.8} /></clipPath>
-      <circle cx={cx} cy={EYE_Y} r={22} fill="#fffdf7" />
-      <g clip-path={`url(#${id}-in-${side})`}>
-        <g data-part={`iris-${side}`}>
-          <circle cx={cx} cy={120} r={17} fill="#9cc56a" />
-          <circle cx={cx - 5} cy={114} r={9} fill="#c6e39a" opacity={0.6} />
-          <ellipse data-part={`pupil-${side}`} cx={cx} cy={121} rx={7 * f.pupil} ry={11 * f.pupil} fill={PUPIL} />
-          <circle cx={cx + 6} cy={113} r={4} fill="#fff" />
-        </g>
+      <ellipse cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="#fffdf7" />
+      <g data-part={`iris-${side}`}>
+        <ellipse cx={cx} cy={iy} rx={15.5} ry={18.5} fill={IRIS} />
+        <path d={`M${cx - band} ${iy - 7} A15.5 18.5 0 0 1 ${cx + band} ${iy - 7} Q${cx} ${iy - 13} ${cx - band} ${iy - 7}Z`} fill="#4f7d3c" />
+        <path d={`M${cx - 12} ${iy + 11} Q${cx} ${iy + 22} ${cx + 12} ${iy + 11} Q${cx} ${iy + 16} ${cx - 12} ${iy + 11}Z`} fill="#d3ec97" />
+        <ellipse cx={cx} cy={iy} rx={15.5} ry={18.5} fill="none" stroke="#3d5f2f" stroke-width={1.4} />
+        <ellipse data-part={`pupil-${side}`} cx={cx} cy={121} rx={7 * f.pupil} ry={11 * f.pupil} fill={PUPIL} />
+        <ellipse cx={cx + 6} cy={110} rx={5.6} ry={6.4} fill="#fff" />
+        <circle cx={cx - 6} cy={130} r={2.6} fill="#fff" />
       </g>
-      <circle cx={cx} cy={EYE_Y} r={22} fill="none" stroke={INK} stroke-width={2.6} />
-      <g clip-path={`url(#${id}-lid-${side})`}>
-        <path data-part={`lid-top-${side}`} d={up.fill} fill={CEL.fur} />
-        <path data-part={`lid-bottom-${side}`} d={low.fill} fill={CEL.fur} />
-      </g>
-      <g clip-path={`url(#${id}-in-${side})`}>
-        <path data-part={`lid-edge-${side}`} d={up.edge} fill="none" stroke={INK} stroke-width={2.8} stroke-linecap="round" opacity={up.edgeOn ? 1 : 0} />
-        <path data-part={`lid-bedge-${side}`} d={low.edge} fill="none" stroke={INK} stroke-width={2.4} stroke-linecap="round" opacity={low.edgeOn ? 1 : 0} />
-      </g>
+      <path data-part={`lid-top-${side}`} d={up.fill} fill={CEL.fur} />
+      <path data-part={`lid-bottom-${side}`} d={low.fill} fill={CEL.fur} />
+      <ellipse data-part={`eye-ring-${side}`} cx={cx} cy={EYE_Y} rx={EYE_RX} ry={EYE_RY} fill="none" stroke={INK} stroke-width={LWI} opacity={String(1 - up.closedOn)} />
+      <path data-part={`lash-${side}`} d={`M${cx - 22} ${EYE_Y - 2} C${cx - 20} ${EYE_Y - 22} ${cx + 20} ${EYE_Y - 22} ${cx + 22} ${EYE_Y - 2}`} fill="none" stroke={INK} stroke-width={LW * 1.25} stroke-linecap="round" opacity={String(1 - up.closedOn)} />
+      <path data-part={`lid-edge-${side}`} d={up.edge} fill="none" stroke={INK} stroke-width={2.8} stroke-linecap="round" opacity={up.edgeOn ? 1 : 0} />
+      <path data-part={`lid-bedge-${side}`} d={low.edge} fill="none" stroke={INK} stroke-width={2.2} stroke-linecap="round" opacity={low.edgeOn ? 1 : 0} />
       <path data-part={`lid-closed-${side}`} d={up.closed} fill="none" stroke={INK} stroke-width={3.6} stroke-linecap="round" opacity={String(up.closedOn)} />
     </g>
   );
 }
 
 /** The face rig drawn for one expression's values; the live loop (useRig) repaints the same parts. */
-function FaceRig({ f, expr, id }: { f: Face; expr: Expression; id: string }) {
+function FaceRig({ f, expr }: { f: Face; expr: Expression }) {
   const m = mouthPath(f.smile, f.mouthOpen);
+  const w = mouthW(f.smile, f.mouthOpen);
   return (
     <>
-      <ellipse data-part="blush-l" cx={96} cy={150} rx={18} ry={10} fill="#ff9d8a" opacity={f.blush * 0.6} />
-      <ellipse data-part="blush-r" cx={224} cy={150} rx={18} ry={10} fill="#ff9d8a" opacity={f.blush * 0.6} />
-      <Eye side="l" cx={EYE_L} f={f} id={id} />
-      <Eye side="r" cx={EYE_R} f={f} id={id} />
+      <g data-part="blush-l" opacity={f.blush * 0.6} dangerouslySetInnerHTML={{ __html: blush(96, 151, 16, 8, LWI * 0.8) }} />
+      <g data-part="blush-r" opacity={f.blush * 0.6} dangerouslySetInnerHTML={{ __html: blush(224, 151, 16, 8, LWI * 0.8) }} />
+      <Eye side="l" cx={EYE_L} f={f} />
+      <Eye side="r" cx={EYE_R} f={f} />
       <path data-part="brow-l" d="M100 90 Q116 83 132 89" fill="none" stroke={INK} stroke-width={4} stroke-linecap="round" transform={browTransform('L', f)} opacity={f.browShow} />
       <path data-part="brow-r" d="M188 89 Q204 83 220 90" fill="none" stroke={INK} stroke-width={4} stroke-linecap="round" transform={browTransform('R', f)} opacity={f.browShow} />
-      <path data-part="mouth" d={m.d} fill="#8a3d4c" fill-opacity={m.fillOpacity} stroke={INK} stroke-width={2.6} stroke-linejoin="round" stroke-linecap="round" />
+      <path data-part="mouth" d={m.d} fill="#7d3348" fill-opacity={m.fillOpacity} stroke={LINE} stroke-width={LWI} stroke-linejoin="round" stroke-linecap="round" opacity={String(1 - w)} />
+      <path data-part="mouth-w" d={MOUTH_W} fill="none" stroke={LINE} stroke-width={LWI} stroke-linejoin="round" stroke-linecap="round" opacity={String(w)} />
       {Object.entries(EXTRAS).map(([e, art]) => (
         <g key={e} data-part={`extra-${e}`} opacity={e === expr ? '1' : '0'} dangerouslySetInnerHTML={{ __html: art! }} />
       ))}
@@ -93,7 +98,6 @@ function FaceRig({ f, expr, id }: { f: Face; expr: Expression; id: string }) {
 
 /** Truffle 松露: his drawing cut into parts and posed by the face rig (spec 2026-10-04 §4.1). */
 export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, size = 160, lookAt = 0, label = '松露', bounce = false, power = null, powerTier = 0, outfit = null, expression, alive = false, calm = false, react = null, onPart }: Props) {
-  const id = cleanId(`truffle-${useId()}`);
   const a11y = label === null ? { 'aria-hidden': 'true' as const } : { role: 'img' as const, 'aria-label': label };
   const expr = expression ?? MOOD_EXPRESSION[mood];
   const svgRef = useRef<SVGSVGElement>(null);
@@ -148,7 +152,7 @@ export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, siz
               {ears && <g data-part="ear-in-r" style={`transform-origin:220px 78px;transform:rotate(${f.earR}deg)`} dangerouslySetInnerHTML={{ __html: EAR_IN_R }} />}
             </g>
             <g class={`truffle__face truffle__face--${mood}`}>
-              <FaceRig f={f} expr={drawnExpr} id={id} />
+              <FaceRig f={f} expr={drawnExpr} />
             </g>
             {wear && <g class="truffle__outfit-head" dangerouslySetInnerHTML={{ __html: wear.head }} />}
             {acc?.face && <g class="truffle__accessory truffle__accessory--face" dangerouslySetInnerHTML={{ __html: acc.face }} />}

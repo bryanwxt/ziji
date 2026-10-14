@@ -2,10 +2,23 @@ import { render } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { BODY, CEL, EAR_L, EAR_R, HEAD_SHAPE, PAW_L, PAW_R, TAIL, TORSO, TRUFFLE_MOODS } from './parts';
 import { Truffle } from './Truffle';
+import { LINE } from '../cel';
 
 const svg = (c: Element) => c.querySelector('svg.truffle')!;
 
 describe('Truffle', () => {
+  it('his eyes and lids use no clip-path; his neutral mouth is a small ω; joy throws outlined sparkles and shuts his eyes to ^', () => {
+    const neutral = render(<Truffle expression="neutral" />).container;
+    expect(svg(neutral).outerHTML).not.toMatch(/clip-path|clipPath/);
+    expect(neutral.querySelector('[data-part="mouth-w"]')!.getAttribute('opacity')).toBe('1');
+    expect(neutral.querySelector('[data-part="mouth"]')!.getAttribute('opacity')).toBe('0');
+    const joy = render(<Truffle expression="joy" />).container;
+    expect(joy.querySelector('[data-part="extra-joy"]')!.innerHTML).toContain(`stroke="${LINE}"`);
+    expect(joy.querySelector('[data-part="eye-ring-l"]')!.getAttribute('opacity')).toBe('0'); // a shut eye is only its ^ line
+    expect(joy.querySelector('[data-part="lash-l"]')!.getAttribute('opacity')).toBe('0');
+    const grumpy = render(<Truffle expression="grumpy" />).container;
+    expect(grumpy.querySelector('[data-part="mouth-w"]')!.getAttribute('opacity')).toBe('0'); // a frown stays a frown
+  });
   it('is an image labelled 松露 with body, head and the requested face', () => {
     const { container } = render(<Truffle mood="wow" />);
     expect(svg(container).getAttribute('role')).toBe('img');

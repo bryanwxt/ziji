@@ -1,4 +1,5 @@
 // src/ui/truffle/rig.ts
+import { LINE, LWI, sparkle } from '../cel';
 import type { TruffleMood } from './parts';
 
 /** Truffle's face as continuous values (spec 2026-10-04 §4.1): every part springs toward a preset, so expressions blend. */
@@ -11,6 +12,13 @@ export interface Face {
 export const EYE_L = 118;
 export const EYE_R = 202;
 export const EYE_Y = 118;
+/** His eyes (spec 2026-10-13 §7): a taller ellipse; the lids are drawn just past it, so its outline covers their edge. */
+export const EYE_RX = 21;
+export const EYE_RY = 23;
+const LID_RX = EYE_RX + 1.2;
+const LID_RY = EYE_RY + 1.2;
+/** The eyes' own dark line (the lash, the outline, the brows), a little deeper than his body's line. */
+export const EYE_LINE = '#3f3756';
 export const FUR = '#a9a4ab'; // flat fur, for art that can't use his gradient (costumes' bare arms)
 
 const base: Face = { lidTop: 0, lidBottom: 0, lidArc: 0, pupil: 1, browY: 0, browAngle: 0, browShow: 0, browAsym: 0, smile: 0.25, mouthOpen: 0, earL: 0, earR: 0, blush: 0.45, tilt: 0 };
@@ -30,13 +38,14 @@ export const PRESETS: Record<Expression, Face> = {
 /** The moods every screen already passes, as presets (spec §4.1). */
 export const MOOD_EXPRESSION: Record<TruffleMood, Expression> = { sulk: 'grumpy', neutral: 'neutral', pleased: 'happy', side: 'curious', content: 'content', wow: 'surprised', cheer: 'joy', sleepy: 'sleepy' };
 
-const INK = '#4a4250'; // a soft dark, never black ink (spec 3b §2)
+const INK = LINE;
 /** Small marks that come with some expressions (faded in and out with them). Drawn, never emoji. */
 export const EXTRAS: Partial<Record<Expression, string>> = {
   curious: `<g transform="translate(236 40)"><rect width="34" height="34" rx="12" fill="#fffdf7" stroke="${INK}" stroke-width="2.4"/><text x="17" y="26" text-anchor="middle" font-family="Nunito" font-weight="900" font-size="24" fill="${INK}">?</text></g>`,
   surprised: `<path d="M70 52 L80 64 M58 70 L72 76 M250 52 L240 64 M262 70 L248 76" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>`,
   sleepy: `<text x="236" y="70" font-family="Nunito" font-weight="900" font-size="26" fill="${INK}">z</text><text x="256" y="48" font-family="Nunito" font-weight="900" font-size="18" fill="${INK}">z</text>`,
-  joy: `<circle cx="44" cy="70" r="5" fill="#7fdc7a"/><rect x="266" y="60" width="9" height="9" rx="2" fill="#ffc94a" transform="rotate(20 270 64)"/><circle cx="282" cy="106" r="4" fill="#ff7f6a"/><rect x="30" y="104" width="8" height="8" rx="2" fill="#7fb8ff" transform="rotate(-15 34 108)"/>`,
+  // joy's confetti is outlined four-point sparkles (spec 2026-10-13 §7)
+  joy: sparkle(60, 74, 11, '#ffe27a', LWI * 0.7) + sparkle(266, 64, 13, '#ffe27a', LWI * 0.7) + sparkle(276, 112, 7, '#ffffff', LWI * 0.7) + sparkle(46, 116, 7, '#bfe6ff', LWI * 0.7),
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -55,27 +64,55 @@ export function springStep(cur: number, vel: number, target: number, stiffness =
   return [cur + v, v];
 }
 
-/** The upper lid: bows down when relaxed, up into a ^ when happy; fully closed it covers the eye and a curved ink line remains. */
+const f2 = (n: number) => +n.toFixed(2);
+/** Where a lid line at height y meets the lid ellipse round the eye: its half-width (0 at the top or bottom). */
+const halfWidth = (y: number) => LID_RX * Math.sqrt(Math.max(0, 1 - ((y - EYE_Y) / LID_RY) ** 2));
+const fullEye = (cx: number) => `M${f2(cx - LID_RX)} ${EYE_Y} A${LID_RX} ${LID_RY} 0 1 1 ${f2(cx + LID_RX)} ${EYE_Y} A${LID_RX} ${LID_RY} 0 1 1 ${f2(cx - LID_RX)} ${EYE_Y}Z`;
+/** No lid: an empty path at the eye's centre (a point at 0,0 would stretch his bounding box). */
+const none = (cx: number) => `M${cx} ${EYE_Y}Z`;
+
+/**
+ * The upper lid: bows down when relaxed, up into a ^ when happy; fully closed it covers the eye and a curved line remains. The
+ * lid is the part of the eye above its edge, bounded by the eye's own ellipse, so it needs no clip-path (spec 2026-10-13 §7):
+ * the lid logic (eT, curve, closed) is unchanged.
+ */
 export function upperLid(cx: number, lidTop: number, lidArc: number) {
   const cl = Math.max(0, (lidTop - 0.86) / 0.14);
   const eT = 95 + lidTop * 47 + cl * 6;
   const curve = (6 - lidTop * 3 - lidArc * 22) * (1 - cl);
   const yy = 127 - lidArc * 3;
   const bend = 4 - lidArc * 18;
+  const top = EYE_Y - LID_RY;
+  const bottom = EYE_Y + LID_RY;
+  const y = Math.min(Math.max(eT, top + 0.5), bottom - 0.5);
+  const w = halfWidth(y);
+  const [xl, xr] = [f2(cx - w), f2(cx + w)];
+  const ctl = f2(y + curve);
   return {
-    fill: `M${cx - 26} 90 L${cx + 26} 90 L${cx + 26} ${eT} Q${cx} ${eT + curve} ${cx - 26} ${eT}Z`,
-    edge: `M${cx - 26} ${eT} Q${cx} ${eT + curve} ${cx + 26} ${eT}`,
+    fill: eT >= bottom ? fullEye(cx) : eT <= top ? none(cx) : `M${xl} ${f2(y)} A${LID_RX} ${LID_RY} 0 ${y > EYE_Y ? 1 : 0} 1 ${xr} ${f2(y)} Q${cx} ${ctl} ${xl} ${f2(y)}Z`,
+    edge: `M${xl} ${f2(y)} Q${cx} ${ctl} ${xr} ${f2(y)}`,
     edgeOn: lidTop > 0.06 && lidTop < 0.9,
     closed: `M${cx - 19} ${yy} Q${cx} ${yy + bend} ${cx + 19} ${yy}`,
     closedOn: cl,
   };
 }
-/** The lower lid rises in the middle: a smile squint. */
+/** The lower lid rises in the middle: a smile squint (bounded by the eye's ellipse, like the upper lid). */
 export function lowerLid(cx: number, lidBottom: number) {
   const eB = 141 - lidBottom * 20;
   const up = lidBottom * 12;
-  return { fill: `M${cx - 26} 146 L${cx + 26} 146 L${cx + 26} ${eB} Q${cx} ${eB - up} ${cx - 26} ${eB}Z`, edge: `M${cx - 26} ${eB} Q${cx} ${eB - up} ${cx + 26} ${eB}`, edgeOn: lidBottom > 0.05 };
+  const bottom = EYE_Y + LID_RY;
+  const y = Math.min(eB, bottom - 0.5);
+  const w = halfWidth(y);
+  const [xl, xr] = [f2(cx - w), f2(cx + w)];
+  return {
+    fill: lidBottom <= 0 ? none(cx) : `M${xl} ${f2(y)} A${LID_RX} ${LID_RY} 0 ${y < EYE_Y ? 1 : 0} 0 ${xr} ${f2(y)} Q${cx} ${f2(y - up)} ${xl} ${f2(y)}Z`,
+    edge: `M${xl} ${f2(y)} Q${cx} ${f2(y - up)} ${xr} ${f2(y)}`,
+    edgeOn: lidBottom > 0.05,
+  };
 }
+/** His small "ω" (spec 2026-10-13 §7): shown while the mouth is shut and not frowning; the open mouth takes over as it opens. */
+export const MOUTH_W = 'M160 152 L160 157 M150 160 C153 164 158 164 160 157.5 C162 164 167 164 170 160';
+export const mouthW = (smile: number, open: number) => Math.max(0, Math.min(1, 1 - open * 4)) * Math.max(0, Math.min(1, smile * 4));
 /** The mouth: corners rise with the smile; it opens into a pink shape. */
 export function mouthPath(smile: number, open: number) {
   const cy = 165 - smile * 3;

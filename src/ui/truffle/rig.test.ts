@@ -31,8 +31,15 @@ describe("Truffle's face model (spec 2026-10-04 §4.1)", () => {
     expect(open.closedOn).toBe(0);
     const shut = upperLid(118, 1, 1);
     expect(shut.closedOn).toBe(1);
-    expect(Number(/L144 ([\d.]+) Q/.exec(shut.fill)![1])).toBeGreaterThanOrEqual(142); // the lid's lower edge reaches the bottom of the eye (y 140)
+    expect(shut.fill).toMatch(/^M95\.8 118 A22\.2 24\.2 0 1 1 140\.2 118 A/); // shut, the lid is the whole eye
     expect(shut.closed).toMatch(/^M99 /); // a ^ line across the eye
+  });
+  it('the lids stay inside the eye (no clip-path, spec 2026-10-13 §7): every point of a lid edge is on or in the eye', () => {
+    for (const lidTop of [0, 0.2, 0.42, 0.5, 0.7, 0.86, 0.95]) for (const arc of [-0.25, 0, 0.4, 1]) {
+      const pts = [...upperLid(118, lidTop, arc).edge.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
+      const [[x0, y0], , [x1, y1]] = pts as [number, number][];
+      for (const [x, y] of [[x0, y0], [x1, y1]] as [number, number][]) expect(((x - 118) / 22.2) ** 2 + ((y - 118) / 24.2) ** 2, `${lidTop} ${arc}`).toBeLessThanOrEqual(1.001);
+    }
   });
   it('a happy lower lid rises in the middle (a smile squint)', () => {
     const l = lowerLid(118, 0.5);
@@ -54,5 +61,11 @@ describe("Truffle's face model (spec 2026-10-04 §4.1)", () => {
     expect(p('joy').lidArc).toBeGreaterThan(0.5);
     expect(p('surprised').pupil).toBeLessThan(0.8);
     expect(p('grumpy').smile).toBeLessThan(0);
+  });
+});
+describe('clip-free lids (spec 2026-10-13 §7)', () => {
+  it('an open lid draws nothing, and never a point away from the eye (it would stretch his box)', () => {
+    for (const d of [lowerLid(118, 0).fill, upperLid(202, 0, 0).fill]) for (const m of d.matchAll(/M(-?[\d.]+) (-?[\d.]+)/g)) expect(Math.abs(Number(m[1]) - (d.includes('202') ? 202 : 118))).toBeLessThan(30);
+    expect(lowerLid(118, 0).fill).toBe('M118 118Z');
   });
 });
