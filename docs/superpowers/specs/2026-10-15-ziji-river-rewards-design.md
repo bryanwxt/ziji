@@ -79,6 +79,7 @@ Every prize must reach v3 (`docs/worlds/costumes/standard-v3.png`):
 - Headgear reaches both edges of the head, and the crown stays visible.
 - His face stays readable.
 - Held props move with his paw. The rig gets `pawL`/`pawR` costume slots (`docs/worlds/costumes/rig-slot.diff`).
+- Footwear and an animal's own feet replace his paws, never sit under them (parent 2026-10-16): they go in the `feetL`/`feetR` slots, drawn in his paws' place, so each foot is one foot. Since his front paws are his only limbs, a raised paw shows the boot or foot.
 
 ### 5.2 The set
 

@@ -267,3 +267,18 @@ export const poleFlag = (cx: number, cy: number, deg: number, len: number, hoist
     `<path d="${edge}" fill="${celShade('#fffdf7')}"/>` + cloth(x0, x1) + `<path d="${edge}" fill="none" ${s2}/>` +
     `<circle cx="${len + 2}" cy="0" r="4.4" fill="#f2c230" ${s2}/></g>`;
 };
+
+// ---- feet (parent 2026-10-16): footwear and an animal's feet are drawn in his paws' place (CostumeLayer.feetL/feetR), so each
+// foot is one foot, never his paw standing on a boot. Draw the left one with `f` = identity; `feet` mirrors it for the right.
+type Flip = (x: number) => number;
+export const feet = (draw: (f: Flip) => string) => ({ feetL: draw((x) => x), feetR: draw(mx) });
+/** The light's anchor for a foot: its upper left, on either side. */
+const footLight = (f: Flip) => Math.min(f(116), f(160)) + 8;
+/** A boot in his paw's place: a rounded upper, a flat sole at y 286. */
+export const BOOT = (f: Flip) =>
+  `M${f(116)} 272 C${f(116)} 262 ${f(126)} 257 ${f(138)} 257 C${f(150)} 257 ${f(160)} 262 ${f(160)} 272 L${f(160)} 281 C${f(160)} 284 ${f(158)} 286 ${f(154)} 286 L${f(122)} 286 C${f(118)} 286 ${f(116)} 284 ${f(116)} 281 Z`;
+export const boot = (f: Flip, fill: string, sh = celShade(fill)) => cel(BOOT(f), fill, footLight(f), 262, 0.9, sh);
+/** An animal's own foot in his paw's place: a round pad with three toe lines, in the animal's colour. */
+export const animalFoot = (f: Flip, fill: string, toes = celShade(fill)) =>
+  cel(`M${f(114)} 274 C${f(114)} 263 ${f(126)} 258 ${f(138)} 258 C${f(150)} 258 ${f(162)} 263 ${f(162)} 274 C${f(162)} 282 ${f(152)} 285 ${f(138)} 285 C${f(124)} 285 ${f(114)} 282 ${f(114)} 274 Z`, fill, footLight(f), 262, 0.9) +
+  `<path d="M${f(128)} 276 L${f(128)} 284 M${f(138)} 277 L${f(138)} 285 M${f(148)} 276 L${f(148)} 284" fill="none" stroke="${toes}" stroke-width="2" stroke-linecap="round"/>`;

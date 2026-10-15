@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { costumeById, inChest } from '../../fun/costumes';
 import { LINE } from '../cel';
-import { cel, celShade, gloveR, heldPole, PAW_R_D } from './costumeKit';
+import { cel, celShade, CREAM_PAW, gloveR, heldPole, PAW_L_D, PAW_R_D } from './costumeKit';
 import { costumeLayer } from './costumes';
 import { V3 } from './v3';
 
@@ -74,6 +74,34 @@ describe('v3 costumes (rewards spec §5.1)', () => {
     for (const [id, make] of RULES) {
       expect(inChest(costumeById(id)!), id).toBe(true);
       expect(costumeLayer(id), id).toEqual(make());
+    }
+  });
+});
+
+describe('feet: footwear and an animal\'s feet replace his paws, never sit under them (parent 2026-10-16)', () => {
+  const FEET = ['astronaut', 'football', 'soldier', 'mecha', 'carbot', 'otter', 'panda', 'frog', 'duck', 'penguin'];
+  it('each draws its own feet in his paws\' place', () => {
+    for (const id of FEET) {
+      const l = V3[id]!();
+      expect(l.feetL, id).toBeTruthy();
+      expect(l.feetR, id).toBeTruthy();
+    }
+  });
+  it('nothing on the body below his paws: no second pair of feet under them', () => {
+    for (const id of FEET) {
+      const body = V3[id]!().body;
+      expect(Math.max(...points(body).map(([, y]) => y)), id).toBeLessThanOrEqual(278);
+      for (const m of body.matchAll(/<ellipse cx="[\d.]+" cy="([\d.]+)" rx="[\d.]+" ry="([\d.]+)"/g)) expect(Number(m[1]) + Number(m[2]), id).toBeLessThanOrEqual(278);
+    }
+  });
+  it('no cream paw or paw-toed glove shows over a foot', () => {
+    for (const id of FEET) {
+      const l = V3[id]!();
+      for (const art of [l.pawL ?? '', l.pawR ?? '', l.feetL ?? '', l.feetR ?? '']) {
+        expect(art, id).not.toContain(CREAM_PAW);
+        expect(art, id).not.toContain(PAW_L_D);
+        expect(art, id).not.toContain(PAW_R_D);
+      }
     }
   });
 });

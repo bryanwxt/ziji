@@ -3,7 +3,7 @@
 //
 // Held props sit out to his right (or low on his left) so they clear his face in every paw move: the wave turns his right paw
 // up and 20° toward his face, so anything held in it must stay right of x ≈ 230 once turned (the WebKit face probe checks it).
-import { cel, celShade, CREAM_PAW, gloveL, gloveR, heldPole, hi, INK, num, oval, pair, PAW_L_D, PAW_R_D, pawOverL, pawOverR, poleFlag, rope, S, s2, star, tint } from './costumeKit';
+import { boot, cel, celShade, CREAM_PAW, feet, gloveL, gloveR, heldPole, hi, INK, num, oval, pair, PAW_L_D, PAW_R_D, pawOverL, pawOverR, poleFlag, rope, S, s2, star, tint } from './costumeKit';
 import type { CostumeLayer } from './costumes';
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -11,7 +11,7 @@ const GOLD = '#f2c230';
 
 // ---------------------------------------------------------------------------------------------------------------------------
 // 1. 宇航员 astronaut: a white space helmet round his whole head with a clear visor over his face, a radio antenna and side
-//    pods; a white space suit with mission patches and a chest control box; the life-support pack behind; grey gloves and boots.
+//    pods; a white space suit with mission patches and a chest control box; the life-support pack behind; grey moon boots.
 //    (Told apart by the helmet ring.)
 const SUIT = '#f2f4f8';
 const SUIT_GREY = '#d9dde6';
@@ -32,9 +32,7 @@ const astronaut = (): CostumeLayer => ({
     `<path d="M138 243 L182 243" stroke="#8a93a6" stroke-width="3" stroke-linecap="round"/><circle cx="182" cy="230" r="3" fill="#3f6fd6"/>` +
     // the mission patches: blue on his left shoulder, orange on his right
     `<circle cx="108" cy="222" r="10" fill="#3f6fd6" ${s2}/><path d="${star(108, 222, 6)}" fill="#fffdf7"/>` +
-    `<path d="M204 214 L222 214 L222 230 L204 230 Z" fill="#ff8a3d" ${s2}/><path d="M207 222 L219 222" stroke="#fffdf7" stroke-width="2.4"/>` +
-    // the moon boots on his own feet: each under its gloved paw, a thick sole showing round it (never beside it: four feet)
-    pair((f) => `<ellipse cx="${f(138)}" cy="271" rx="21" ry="11" fill="${SUIT_GREY}" ${S}/><path d="M${f(120)} 276 C${f(130)} 281 ${f(146)} 281 ${f(156)} 276" fill="none" stroke="${celShade(SUIT_GREY)}" stroke-width="2.4"/>`),
+    `<path d="M204 214 L222 214 L222 230 L204 230 Z" fill="#ff8a3d" ${s2}/><path d="M207 222 L219 222" stroke="#fffdf7" stroke-width="2.4"/>`,
   head:
     // the helmet: its ring (shadow, lit, line), the side pods, a blue stripe over the top, then the clear visor
     `<path d="${HELM} ${VISOR_HOLE}" fill="${celShade(SUIT)}"/>` +
@@ -47,8 +45,9 @@ const astronaut = (): CostumeLayer => ({
     `<path d="${oval(160, 124, 100, 70)}" fill="#bfe0ff" fill-opacity=".2" ${S}/>` +
     hi('M80 96 C88 78 104 66 124 60', 6, 0.7) + hi('M136 57 L146 56', 5, 0.6) +
     hi('M70 52 C82 40 98 33 116 30', 5, 0.6),
-  pawL: gloveL(SUIT_GREY),
-  pawR: gloveR(SUIT_GREY),
+  // the moon boots in his paws' place: grey, a thick sole and a blue band
+  ...feet((f) => boot(f, SUIT_GREY) + `<path d="M${f(117)} 279 L${f(159)} 279" stroke="${celShade(SUIT_GREY)}" stroke-width="2.6"/>` +
+    `<path d="M${f(119)} 266 C${f(130)} 262 ${f(146)} 262 ${f(157)} 266" fill="none" stroke="#3f6fd6" stroke-width="3.4" stroke-linecap="round"/>`),
   hidesEars: true,
 });
 
@@ -259,6 +258,9 @@ const police = (): CostumeLayer => ({
 //    collar and number 7, green shorts, black boots on his feet; the football under his left paw. (Yellow, and the ball.)
 const JERSEY = '#ffcc2e';
 const PITCH = '#2fae5a';
+/** His football boots, in his paws' place: black, a white stripe, studs. */
+const FOOTBALL_BOOTS = feet((f) => boot(f, '#2d2a33', '#18161c') + `<path d="M${f(118)} 279 L${f(158)} 279" stroke="#fffdf7" stroke-width="2.4"/>` +
+  [124, 136, 148].map((x) => `<path d="M${f(x)} 286 L${f(x)} 289" stroke="#2d2a33" stroke-width="3" stroke-linecap="round"/>`).join(''));
 const football = (): CostumeLayer => ({
   back: '',
   body: tint(JERSEY) +
@@ -269,11 +271,7 @@ const football = (): CostumeLayer => ({
     num('7', 160, 234, PITCH) + hi('M110 206 C104 214 102 222 102 230', 3, 0.4) +
     // green shorts round his middle, down to the suit's own bottom edge (no legs out at the sides: they read as two more feet)
     cel('M98 246 C128 256 192 256 222 246 C221 251 219 255 216 258 C200 276 120 276 104 258 C101 255 99 251 98 246 Z', PITCH, 110, 252, 0.9) +
-    `<path d="M160 256 L160 272" stroke="${celShade(PITCH)}" stroke-width="2.4"/>` +
-    // black boots with a white stripe and studs, on his own feet: each under its paw, the boot showing round and below it
-    pair((f) => `<path d="M${f(116)} 274 C${f(116)} 266 ${f(126)} 262 ${f(138)} 262 C${f(150)} 262 ${f(160)} 266 ${f(160)} 274 L${f(160)} 281 C${f(160)} 284 ${f(158)} 286 ${f(154)} 286 L${f(122)} 286 C${f(118)} 286 ${f(116)} 284 ${f(116)} 281 Z" fill="#2d2a33" ${s2}/>` +
-      `<path d="M${f(118)} 279 L${f(158)} 279" stroke="#fffdf7" stroke-width="2.4"/>` +
-      [124, 136, 148].map((x) => `<path d="M${f(x)} 286 L${f(x)} 289" stroke="#2d2a33" stroke-width="3" stroke-linecap="round"/>`).join('')),
+    `<path d="M160 256 L160 272" stroke="${celShade(PITCH)}" stroke-width="2.4"/>`,
   head:
     // the sweatband: right across his forehead, the white stripe along it; it never grows over his crown
     `<path d="M54 92 C92 56 228 56 266 92 L266 108 C228 72 92 72 54 108 Z" fill="${PITCH}" ${S}/>` +
@@ -285,8 +283,9 @@ const football = (): CostumeLayer => ({
     `<path d="M112 247 L119 252 L116 260 L108 260 L105 252 Z" fill="#2d2a33"/>` +
     `<path d="M95 248 L100 250 L100 257 L95 260 M129 248 L124 250 L124 257 L129 260 M106 237 L112 240 L118 237" fill="#2d2a33" ${s2}/>` +
     `<path d="M112 247 L112 240 M119 252 L124 250 M116 260 L119 267 M108 260 L105 267 M105 252 L100 250" stroke="${INK}" stroke-width="1.6"/></g>` +
-    pawOverL,
+    FOOTBALL_BOOTS.feetL,
   pawR: '',
+  ...FOOTBALL_BOOTS,
   hidesEars: false,
 });
 
@@ -433,6 +432,9 @@ const camo = (seed: number, x0: number, x1: number, y0: number, y1: number, insi
 };
 const inEllipse = (cx: number, cy: number, rx: number, ry: number) => (x: number, y: number) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
 const SOLDIER_HELM = 'M52 112 C46 62 98 26 160 26 C222 26 274 62 268 112 C262 106 252 100 240 96 C200 86 120 86 80 96 C68 100 58 106 52 112 Z';
+/** His black army boots, in his paws' place: laces, a sole. */
+const ARMY_BOOTS = feet((f) => boot(f, '#2d2a33', '#18161c') + `<path d="M${f(118)} 281 L${f(158)} 281" stroke="#4a4552" stroke-width="2.4"/>` +
+  `<path d="M${f(130)} 263 L${f(146)} 263 M${f(129)} 268 L${f(147)} 268 M${f(129)} 273 L${f(147)} 273" stroke="#8a8399" stroke-width="1.8" stroke-linecap="round"/>`);
 const soldier = (): CostumeLayer => ({
   back: '',
   body: tint(ARMY) +
@@ -450,10 +452,7 @@ const soldier = (): CostumeLayer => ({
     // the water bottle on his right hip: its olive cover, the black cap, the strap over the belt
     `<path d="M104 246 L104 238" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>` +
     cel('M88 254 C86 244 92 238 100 238 L110 238 C118 238 122 244 120 254 L118 270 C117 276 113 278 108 278 L100 278 C95 278 91 276 90 270 Z', '#5f6e30', 94, 244, 0.88) +
-    `<path d="M96 232 L112 232 L112 240 L96 240 Z" fill="#2d2a33" ${s2}/><path d="M92 256 L116 256" stroke="${WEBBING}" stroke-width="3"/>` +
-    // black boots with their laces on his own feet: each under its paw, showing round and below it
-    pair((f) => `<path d="M${f(116)} 274 C${f(116)} 264 ${f(126)} 260 ${f(138)} 260 C${f(150)} 260 ${f(160)} 264 ${f(160)} 274 L${f(160)} 281 C${f(160)} 284 ${f(158)} 286 ${f(154)} 286 L${f(122)} 286 C${f(118)} 286 ${f(116)} 284 ${f(116)} 281 Z" fill="#2d2a33" ${s2}/>` +
-      `<path d="M${f(118)} 281 L${f(158)} 281" stroke="#4a4552" stroke-width="2.4"/>`),
+    `<path d="M96 232 L112 232 L112 240 L96 240 Z" fill="#2d2a33" ${s2}/><path d="M92 256 L116 256" stroke="${WEBBING}" stroke-width="3"/>`,
   head:
     // the helmet right across his head in pixel camo, its rim, then the chin straps down his cheeks
     cel(SOLDIER_HELM, ARMY, 100, 44, 0.94) +
@@ -472,8 +471,9 @@ const soldier = (): CostumeLayer => ({
         const a = (i * 2 * Math.PI) / 5;
         return `<circle cx="${(cx + 2.9 * Math.cos(a)).toFixed(1)}" cy="${(15 + 2.9 * Math.sin(a)).toFixed(1)}" r="1" fill="#fffdf7"/>`;
       }).join('');
-  }) + pawOverR,
+  }) + ARMY_BOOTS.feetR,
   pawL: '',
+  ...ARMY_BOOTS,
   hidesEars: true,
 });
 

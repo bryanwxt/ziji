@@ -1,6 +1,6 @@
 // The river onesies (rewards spec 2026-10-15 §5.2): the creatures of One River's worlds, each a hood with the animal's own face,
 // its body and tail, to the v3 standard (docs/worlds/costumes/standard-v3.png). otter and panda are the parent-approved samples.
-import { belly, cel, celShade, DARK, eyes, gloveL, gloveR, hi, hood, pair, PAW_L_D, PAW_R_D, rope, S, s2, tint } from './costumeKit';
+import { animalFoot, belly, cel, celShade, DARK, eyes, feet, gloveL, gloveR, hi, hood, pair, PAW_L_D, PAW_R_D, rope, S, s2, tint } from './costumeKit';
 import type { CostumeLayer } from './costumes';
 
 
@@ -12,9 +12,7 @@ const otter = (): CostumeLayer => ({
   back: '',
   body: tint(OTTER) +
     // the cream throat and chest, from under the chin to the belly
-    cel('M126 194 C142 204 178 204 194 194 C208 214 208 254 188 264 C170 272 150 272 132 264 C112 254 112 214 126 194 Z', OTTER_CREAM, 140, 206, 0.92) +
-    // the otter's dark feet: under his brown-gloved paws, so each paw and foot is one (beside them they were two more feet)
-    pair((f) => `<ellipse cx="${f(138)}" cy="270" rx="20" ry="10" fill="${OTTER}" ${S}/>`),
+    cel('M126 194 C142 204 178 204 194 194 C208 214 208 254 188 264 C170 272 150 272 132 264 C112 254 112 214 126 194 Z', OTTER_CREAM, 140, 206, 0.92),
   head: pair((f) => `<circle cx="${f(98)}" cy="44" r="15" fill="${OTTER}" ${S}/><circle cx="${f(98)}" cy="45" r="7" fill="#6a452b"/>`) +
     hood(OTTER) +
     // a pale brow above the eyes, then the face: eyes, two puffy cream whisker pads, a big dark nose, whiskers
@@ -24,8 +22,8 @@ const otter = (): CostumeLayer => ({
     `<path d="M150 55 Q160 51 170 55 Q168 63 160 65 Q152 63 150 55 Z" fill="${DARK}"/><ellipse cx="156" cy="55.5" rx="2.6" ry="1.4" fill="#fff" opacity=".8"/>`,
   // the otter's tail: long, thick at the root, tapering, flat
   tail: cel('M206 236 C232 240 258 232 272 204 C282 222 274 246 254 258 C238 266 220 264 206 258 Z', OTTER, 230, 238, 0.86),
-  pawR: gloveR(OTTER),
-  pawL: gloveL(OTTER),
+  // the otter's own feet in his paws' place (one foot each, never a paw on a foot: parent 2026-10-16)
+  ...feet((f) => animalFoot(f, OTTER)),
   hidesEars: true,
 });
 
@@ -36,9 +34,8 @@ const BLK = '#3d3845';
 const panda = (): CostumeLayer => ({
   back: '',
   body: tint(PANDA) + belly('#ffffff') +
-    // black arms down both sides, and the black feet he sits on under his black paws (out at the sides they were two more)
+    // black arms down both sides (its black feet are in his paws' place)
     pair((f) => `<path d="M${f(112)} 188 C${f(94)} 200 ${f(86)} 226 ${f(92)} 250 C${f(100)} 256 ${f(112)} 254 ${f(118)} 246 C${f(116)} 226 ${f(120)} 208 ${f(134)} 196 Z" fill="${BLK}" ${S}/>`) +
-    pair((f) => `<ellipse cx="${f(138)}" cy="269" rx="22" ry="12" fill="${BLK}" ${S}/>`) +
     hi('M100 210 C98 222 98 232 100 240', 3, 0.25),
   head: pair((f) => `<circle cx="${f(88)}" cy="44" r="20" fill="${BLK}" ${S}/>` + hi(`M${f(78)} 36 C${f(82)} 31 ${f(88)} 29 ${f(92)} 30`, 3, 0.3)) +
     hood(PANDA) +
@@ -48,8 +45,7 @@ const panda = (): CostumeLayer => ({
     }) +
     `<path d="M150 64 Q160 60 170 64 Q168 72 160 74 Q152 72 150 64 Z" fill="${BLK}"/><path d="M160 74 L160 79 M152 80 Q156 84 160 79 Q164 84 168 80" fill="none" ${s2}/>`,
   tail: `<circle cx="222" cy="250" r="13" fill="${PANDA}" ${S}/>`,
-  pawL: gloveL(BLK),
-  pawR: gloveR(BLK),
+  ...feet((f) => animalFoot(f, BLK, '#6a6478')),
   hidesEars: true,
 });
 
@@ -73,9 +69,7 @@ const FROG_BELLY = '#e4f5b8';
 const frog = (): CostumeLayer => ({
   back: '',
   body: tint(FROG) + belly(FROG_BELLY) +
-    pair((f) => `<circle cx="${f(104)}" cy="214" r="6" fill="${celShade(FROG)}"/><circle cx="${f(110)}" cy="240" r="4.5" fill="${celShade(FROG)}"/>`) +
-    // webbed feet under his green paws: three toes splayed out below each (out at his sides they were two more feet)
-    pair((f) => `<path d="M${f(122)} 266 L${f(114)} 283 L${f(127)} 278 L${f(138)} 287 L${f(149)} 278 L${f(162)} 283 L${f(154)} 266 Z" fill="${FROG}" ${S}/>`),
+    pair((f) => `<circle cx="${f(104)}" cy="214" r="6" fill="${celShade(FROG)}"/><circle cx="${f(110)}" cy="240" r="4.5" fill="${celShade(FROG)}"/>`),
   head: hood(FROG) +
     // each eye is a dome on the hood's top, lit from the upper left on both sides
     pair((f) => cel(`M${f(116)} 54 C${f(116)} 26 ${f(160)} 26 ${f(160)} 54 C${f(160)} 70 ${f(116)} 70 ${f(116)} 54 Z`, FROG, Math.min(f(116), f(160)) + 10, 34, 0.88) +
@@ -83,8 +77,9 @@ const frog = (): CostumeLayer => ({
     `<path d="M128 66 Q160 80 192 66" fill="none" stroke="${celShade(FROG)}" stroke-width="3.4" stroke-linecap="round"/>` +
     pair((f) => `<ellipse cx="${f(112)}" cy="68" rx="6" ry="4" fill="#ff9d8a" opacity=".5"/>`),
   tail: '', // a frog has none: his own is hidden
-  pawL: gloveL(FROG),
-  pawR: gloveR(FROG),
+  // webbed feet in his paws' place: three toes splayed out below each
+  ...feet((f) => cel(`M${f(123)} 263 C${f(128)} 256 ${f(148)} 256 ${f(153)} 263 L${f(162)} 283 L${f(149)} 278 L${f(138)} 287 L${f(127)} 278 L${f(114)} 283 Z`, FROG, Math.min(f(114), f(162)) + 10, 262, 0.9) +
+    `<path d="M${f(132)} 268 L${f(127)} 278 M${f(144)} 268 L${f(149)} 278" fill="none" stroke="${celShade(FROG)}" stroke-width="2" stroke-linecap="round"/>`),
   hidesEars: true,
 });
 
@@ -126,9 +121,7 @@ const duck = (): CostumeLayer => ({
   back: '',
   body: tint(DUCK) + belly('#fff4c2') +
     pair((f) => cel(`M${f(114)} 192 C${f(96)} 204 ${f(90)} 228 ${f(98)} 250 C${f(108)} 246 ${f(118)} 236 ${f(124)} 222 C${f(128)} 210 ${f(126)} 198 ${f(120)} 192 Z`, DUCK, f(114) < 160 ? 104 : 196, 202, 0.9) +
-      `<path d="M${f(102)} 236 L${f(110)} 232 M${f(100)} 244 L${f(108)} 240" fill="none" ${s2}/>`) +
-    // webbed feet, three toes each, turned out: under his paws, so each paw stands in its foot (beside them: four feet)
-    pair((f) => cel(`M${f(126)} 264 C${f(118)} 266 ${f(110)} 272 ${f(106)} 280 L${f(118)} 279 L${f(122)} 287 L${f(134)} 281 L${f(142)} 288 L${f(150)} 279 C${f(156)} 276 ${f(156)} 266 ${f(146)} 263 Z`, DUCK_BILL, f(108) < 160 ? 114 : 206, 268, 0.88)),
+      `<path d="M${f(102)} 236 L${f(110)} 232 M${f(100)} 244 L${f(108)} 240" fill="none" ${s2}/>`),
   head: hood(DUCK) +
     // the tuft: three little feathers standing on the crown
     `<path d="M156 46 C144 40 138 32 141 25 C150 26 158 34 156 46 Z M164 46 C176 40 182 32 179 25 C170 26 162 34 164 46 Z" fill="${DUCK}" ${s2}/>` +
@@ -139,6 +132,8 @@ const duck = (): CostumeLayer => ({
     `<path d="M138 68 Q160 72 182 68" fill="none" stroke="${celShade(DUCK_BILL)}" stroke-width="1.8" stroke-linecap="round"/>` +
     `<circle cx="152" cy="62" r="1.8" fill="${DARK}"/><circle cx="168" cy="62" r="1.8" fill="${DARK}"/>`,
   tail: cel('M208 246 C222 240 230 228 232 210 C240 216 242 228 236 238 C246 232 252 222 252 212 C260 230 250 254 214 256 Z', DUCK, 222, 236, 0.88),
+  // webbed feet, three toes each, turned out, in his paws' place
+  ...feet((f) => cel(`M${f(126)} 262 C${f(118)} 266 ${f(110)} 272 ${f(106)} 280 L${f(118)} 279 L${f(122)} 287 L${f(134)} 281 L${f(142)} 288 L${f(150)} 279 C${f(156)} 276 ${f(158)} 266 ${f(150)} 261 C${f(144)} 257 ${f(132)} 257 ${f(126)} 262 Z`, DUCK_BILL, Math.min(f(106), f(158)) + 10, 264, 0.88)),
   hidesEars: true,
 });
 

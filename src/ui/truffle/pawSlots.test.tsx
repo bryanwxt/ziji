@@ -2,10 +2,12 @@ import { render } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('./v3', () => ({
   V3: {
+    astronaut: () => ({ back: '', body: '', head: '', feetL: '<path data-t="boot-l" d="M116 272 L160 272"/>', feetR: '<path data-t="boot-r" d="M160 272 L204 272"/>', hidesEars: false }),
     chef: () => ({ back: '', body: '<path d="M110 190 L210 190"/>', head: '<path d="M60 90 L260 90"/>', pawL: '<circle data-t="glove-l" cx="138" cy="266" r="4"/>', pawR: '<circle data-t="prop-r" cx="200" cy="230" r="9"/>', hidesEars: false }),
   },
 }));
 import { Truffle } from './Truffle';
+import { PAW_L, PAW_R } from './parts';
 
 describe('costume paw slots (rewards spec §5.1; docs/worlds/costumes/rig-slot.diff)', () => {
   it("a costume's pawL/pawR art is drawn inside each paw's group, after the paw", () => {
@@ -27,5 +29,17 @@ describe('costume paw slots (rewards spec §5.1; docs/worlds/costumes/rig-slot.d
   });
   it('costumes without paw art leave the paws as they were', () => {
     expect(render(<Truffle outfit="tiger" />).container.querySelector('.truffle__outfit-paw')).toBeNull();
+  });
+  it('feet (footwear, an animal\'s feet) replace his own paws inside each paw group, so a foot is one foot (parent 2026-10-16)', () => {
+    const { container } = render(<Truffle outfit="astronaut" paws={{ lx: 0, ly: 0, lr: 0, rx: 4, ry: -62, rr: -12 }} />);
+    const l = container.querySelector('[data-part="paw-l"]')!;
+    const r = container.querySelector('[data-part="paw-r"]')!;
+    expect(l.querySelector('[data-t="boot-l"]')).toBeTruthy();
+    expect(r.querySelector('[data-t="boot-r"]')).toBeTruthy(); // it rides the raised paw
+    expect(l.innerHTML).not.toContain(PAW_L.slice(0, 60));
+    expect(r.innerHTML).not.toContain(PAW_R.slice(0, 60));
+  });
+  it('without feet his own paws are drawn', () => {
+    expect(render(<Truffle outfit="chef" />).container.querySelector('[data-part="paw-l"]')!.innerHTML).toContain(PAW_L.slice(0, 60));
   });
 });
