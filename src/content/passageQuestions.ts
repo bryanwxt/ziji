@@ -181,7 +181,7 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
   ],
   p28: [
     { q: '火灾的时候，我们要怎么做？', choices: ['走楼梯', '坐电梯', '坐上消防车'], answer: 0, sentence: 2 },
-    { q: '叔叔还让我们做什么？', choices: ['坐上消防车', '坐电梯', '走楼梯'], answer: 0, sentence: 3 },
+    { q: '叔叔让我们坐上什么？', choices: ['消防车', '电梯', '楼梯'], answer: 0, sentence: 3 },
   ],
   p29: [
     { q: '我忘了带什么？', choices: ['雨伞', '雨鞋', '雨衣'], answer: 0, sentence: 1 },
@@ -212,7 +212,7 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '大家说我的风筝怎么样？', choices: ['很好看', '很好玩', '很有趣'], answer: 0, sentence: 4 },
   ],
   p36: [
-    { q: '小文搭什么？', choices: ['船头', '船尾', '大海'], answer: 0, sentence: 2 },
+    { q: '小文搭什么？', choices: ['船头', '船尾', '小朋友'], answer: 0, sentence: 2 },
     { q: '谁说这条船可以开到大海去？', choices: ['妈妈', '小文', '我'], answer: 0, sentence: 5 },
   ],
   p37: [
@@ -240,7 +240,7 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '谁最喜欢香肠？', choices: ['我', '爸爸', '妈妈'], answer: 0, sentence: 5 },
   ],
   p43: [
-    { q: '谁带我们去海里游泳？', choices: ['爸爸', '哥哥', '妈妈'], answer: 0, sentence: 4 },
+    { q: '谁和我一起捡贝壳？', choices: ['哥哥', '妈妈', '爸爸'], answer: 0, sentence: 2 },
     { q: '我把最好看的贝壳送给了谁？', choices: ['妈妈', '哥哥', '爸爸'], answer: 0, sentence: 5 },
   ],
   p44: [
@@ -248,11 +248,11 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '从那天起，我洗脸时怎么做？', choices: ['把水关小', '把水关上', '拿去浇花'], answer: 0, sentence: 3 },
   ],
   p45: [
-    { q: '种萝卜的爷爷先叫谁来帮忙？', choices: ['老奶奶', '小猪', '小老鼠'], answer: 0, sentence: 1 },
+    { q: '萝卜长得怎么样？', choices: ['很大很白', '很大很红', '很小很白'], answer: 0, sentence: 0 },
     { q: '最后，谁跑来帮忙？', choices: ['小老鼠', '小猪', '小猫'], answer: 0, sentence: 4 },
   ],
   p46: [
-    { q: '那只动物的耳朵怎么样？', choices: ['很大', '很小', '很长'], answer: 0, sentence: 2 },
+    { q: '那只动物的耳朵是什么样的？', choices: ['像兔子的', '像小猪的', '像小狗的'], answer: 0, sentence: 2 },
     { q: '谁说想要一只会说话的动物？', choices: ['妹妹', '妈妈', '我'], answer: 0, sentence: 4 },
   ],
   p47: [
@@ -273,10 +273,10 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
   ],
   p51: [
     { q: '谁的衣服上有金色的花？', choices: ['拉吉', '阿里', '我'], answer: 0, sentence: 2 },
-    { q: '谁说“我们都是好朋友”？', choices: ['老师', '阿里', '拉吉'], answer: 0, sentence: 4 },
+    { q: '第二天，班上怎么样？', choices: ['很热闹', '很漂亮', '很好玩'], answer: 0, sentence: 1 },
   ],
   p52: [
-    { q: '谁折的船最漂亮？', choices: ['妹妹', '小华', '爷爷'], answer: 0, sentence: 3 },
+    { q: '谁折的船最小？', choices: ['爷爷', '小华', '妹妹'], answer: 0, sentence: 3 },
     { q: '谁坐在窗前，一点也不开心？', choices: ['小华', '妹妹', '爷爷'], answer: 0, sentence: 1 },
   ],
   p53: [

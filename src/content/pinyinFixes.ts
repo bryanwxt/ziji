@@ -29,5 +29,7 @@ customPinyin({
   // 长着 (growing) zhǎng, 漂亮 piào liang (it read piāo liàng after 一条)
   一块一块地: 'yí kuài yí kuài de', 一滴一滴: 'yì dī yì dī', 一条一条: 'yì tiáo yì tiáo', 弄得: 'nòng de', 飞得: 'fēi de',
   排得: 'pái de', 学得: 'xué de', 妹妹选: 'mèi mei xuǎn', 中国衣服: 'zhōng guó yī fu', 漂亮: 'piào liang', 长着: 'zhǎng zhe',
+  // Task 9's review: the neutral tone in 眼睛, 时候 and 星星 (they read yǎn jīng, shí hòu, xīng xīng)
+  眼睛: 'yǎn jing', 时候: 'shí hou', 星星: 'xīng xing',
   炸鸡: 'zhá jī', 油炸: 'yóu zhá', 种植: 'zhòng zhí', 种花的: 'zhòng huā de', 勒紧: 'lēi jǐn', // 种花的: 写一写's piece (never 种花 alone)
 });

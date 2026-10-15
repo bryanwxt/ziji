@@ -65,6 +65,10 @@ describe('meaning questions (spec 2026-10-15 §6)', () => {
     expect(topWord('婆婆在家。婆婆做饭。我很高兴。')).toBe('婆婆'); // not an HSK word, still repeated
     expect(topWord('爸爸买炒面。我吃炒面。炒面很香。')).toBe('炒面');
   });
+  it('rule 4: a side-by-side pair never breaks a real word’s lead, and never cuts across a word', () => {
+    expect(topWord('妹妹折的船最大。妹妹折的船最好。')).toBe('妹妹'); // 船最 twice is no word: 妹妹 still leads
+    expect(topWord('我的纸飞机，你的纸飞机，他的纸飞机。')).toBe('飞机'); // 纸飞 cuts 飞机 in two
+  });
   it('rule 5: the answer is not the only choice sharing characters with the passage (a child matching characters picks it)', () => {
     expect(flags({ q: '我家有什么人？', choices: ['姐姐和弟弟', '奶奶和爷爷', '哥哥和妹妹'], answer: 2, sentence: 0 })).toContain('x1 "我家有什么人？": only the answer shares characters with the passage');
     expect(flags({ q: '我家有什么人？', choices: ['哥哥和弟弟', '姐姐和妹妹', '哥哥和妹妹'], answer: 2, sentence: 0 })).toEqual([]);

@@ -54,25 +54,30 @@ const han = (s: string) => Array.from(s).filter((ch) => HAN.test(ch));
 
 /** The passage's most frequent word, when one word alone leads and occurs twice or more: an answer equal to it needs no reading
  *  (rule 4). A word is a tile of two characters or more, in the dictionary or not (婆婆), or two content characters side by side
- *  that the tiles split (炒面), unless it is only part of a longer word seen as often. A tie leads nothing (爸爸 and 妈妈 twice
- *  each: either may fairly be asked). */
+ *  that the tiles split (炒面), unless it is only part of a longer word seen as often. A pair is only ever two one-character
+ *  tiles side by side (纸飞 cuts 飞机, so it is no pair), and a tile wins a tie with a pair (船最 twice never breaks 妹妹's lead:
+ *  a pair is a guess at a word, a tile is one). Otherwise a tie leads nothing (爸爸 and 妈妈 twice each: either may fairly be
+ *  asked). */
 export function topWord(text: string): string | null {
   const words = new Set<string>();
-  for (const t of tiles(text)) {
-    const core = t.replace(PUNCT_RE, '').replace(PARTICLES_RE, '');
-    if (Array.from(core).length > 1) words.add(core);
-  }
+  const pairs = new Set<string>();
+  const cores = tiles(text).map((t) => t.replace(PUNCT_RE, '').replace(PARTICLES_RE, ''));
+  for (const core of cores) if (Array.from(core).length > 1) words.add(core);
+  // each character's tile, so a pair is taken only from two adjacent one-character tiles
+  const tileOf: number[] = [];
+  tiles(text).forEach((t, i) => Array.from(t).forEach(() => tileOf.push(i)));
+  const single = (i: number) => Array.from(cores[tileOf[i]!]!).length === 1;
   const chars = Array.from(text);
   for (let i = 0; i + 1 < chars.length; i++) {
     const [a, b] = [chars[i]!, chars[i + 1]!];
-    if (HAN.test(a) && HAN.test(b) && !FUNCTION_CHARS.has(a) && !FUNCTION_CHARS.has(b)) words.add(a + b);
+    if (HAN.test(a) && HAN.test(b) && !FUNCTION_CHARS.has(a) && !FUNCTION_CHARS.has(b) && single(i) && single(i + 1) && !words.has(a + b)) pairs.add(a + b);
   }
   const seen = (w: string) => text.split(w).length - 1;
-  const count = [...words]
-    .map((w) => [w, seen(w)] as const)
+  const count = [...words, ...pairs]
+    .map((w) => [w, seen(w), pairs.has(w)] as const)
     .filter(([w, n], _, all) => !all.some(([v, m]) => v.length > w.length && v.includes(w) && m === n));
-  const [best, next] = count.sort((a, b) => b[1] - a[1]);
-  return best && best[1] >= 2 && (!next || next[1] < best[1]) ? best[0] : null;
+  const [best, next] = count.sort((a, b) => b[1] - a[1] || Number(a[2]) - Number(b[2]));
+  return best && best[1] >= 2 && (!next || next[1] < best[1] || (!best[2] && next[2])) ? best[0] : null;
 }
 
 /**
