@@ -1,5 +1,5 @@
-// A character's word family (spec 2026-10-12 §5): the words with it that he can read, for the 认新字 card's 「一家人」 row and
-// the 找一家人 question. From its 组词, the word ladder's 词语 and the HSK list; static content, worked out on demand.
+// A character's word family (spec 2026-10-12 §5): the words with it that he can read, for the 找一家人 question (the 认新字 card's
+// 「一家人」 row was removed 2026-10-15: it repeated the 组词). From its 组词, the word ladder's 词语 and the HSK list; static content, worked out on demand.
 import type { Example, Word } from '../types';
 import { glossFor } from './glossary';
 import { builtinWords, HSK_WORDS, isHan, suitableExample, wordsWithChar } from './index';

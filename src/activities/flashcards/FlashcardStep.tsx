@@ -27,7 +27,6 @@ import { boundPair, inBoundSense, kidGlossReading } from '../../content/kidGloss
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 import type { Idiom } from '../../content/chengyu';
-import { familyOf, type FamilyWord } from '../../content/family';
 import { NONE_OF_THESE, noneChoices, noneDecoyChoices } from '../../practice/noneOfThese';
 
 export interface FlashResult {
@@ -59,17 +58,13 @@ interface Props {
   idiom?: Idiom | null;
   /** 认新字: the word's lesson in his book, 「课本 二下·17」 or 「补 一上·5」 (spec 2026-10-11 §9); none for a listed word */
   lessonTag?: string | null;
-  /** the characters he reads (know.knownChars): the 认新字 card's 「一家人」 row (spec 2026-10-12 §5) */
-  knownChars?: ReadonlySet<string>;
   /** 练一练: a 组词 gap or English meaning asked without its answer, 「都不对」 right (production practice spec §5) */
   noneOfThese?: 'answer' | 'decoy';
 }
 
-const NO_CHARS: ReadonlySet<string> = new Set();
-
 type Phase = 'intro' | 'quiz' | 'feedback';
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null, knownChars = NO_CHARS, noneOfThese }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null, noneOfThese }: Props) {
   // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
   const pair = boundPair(word.text);
   // none: the right answer is left out and 都不对 is right; real: the right answer itself, shown after (production practice spec §5)
@@ -210,7 +205,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
         truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} calm={phase === 'quiz'} react={react} /></div>}
         sheet={sheet}
       >
-        {phase === 'intro' ? <Intro word={word} idiom={idiom} tag={lessonTag} known={knownChars} /> : (
+        {phase === 'intro' ? <Intro word={word} idiom={idiom} tag={lessonTag} /> : (
           <>
             <div class="flash__prompt">
               {quiz.cue ? (
@@ -267,7 +262,10 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
 function CentredSentence({ text }: { text: string }) {
   const m = text.match(/^(.*?)([。！？!?.]+)$/u);
   if (!m) return <>{text}</>;
-  return <>{m[1]}<span class="hang">{m[2]}</span></>;
+  // the hanging mark is an inline block, a place the line could break: its last character goes with it, so 。 never starts a line
+  const body = Array.from(m[1]!);
+  const last = body.pop() ?? '';
+  return <>{body.join('')}<span class="nowrap">{last}<span class="hang">{m[2]}</span></span></>;
 }
 
 /**
@@ -275,8 +273,10 @@ function CentredSentence({ text }: { text: string }) {
  * button to its right, its English underneath.
  */
 function WordRow({ zh, py, en, mark, class: cls, textClass }: { zh: string; py?: string; en?: string | null; mark?: [number, number]; class: string; textClass?: string }) {
+  // a sentence (more than a 成语's worth): on a phone it may wrap, so its button sits beside it in the row, never on it (parent 2026-10-15)
+  const long = Array.from(zh).length > 8;
   return (
-    <div class={`word-row ${cls}`} lang="zh">
+    <div class={`word-row ${cls}${long ? ' word-row--long' : ''}`} lang="zh">
       <div class="word-row__line">
         <span class={`hanzi word-row__zh${textClass ? ` ${textClass}` : ''}`}><Label zh={zh} py={py} mark={mark} fade /></span>
         <SpeakButton text={zh} small />
@@ -352,21 +352,7 @@ export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
   return idioms.find((i) => !shown.some((t) => t.includes(i.text)) && inBoundSense(word.text, i.text)) ?? null;
 }
 
-/**
- * The 认新字 card's 「一家人」 row (spec 2026-10-12 §5): up to four of the character's family he can read, ones the card doesn't
- * already show first; none when fewer than two qualify, or for a 词语.
- */
-export function familyRow(word: Word, known: ReadonlySet<string>): FamilyWord[] {
-  if (Array.from(word.text).length !== 1) return [];
-  const all = familyOf(word.text, known, word.pinyin);
-  if (all.length < 2) return [];
-  const shown = shownOnCard(word);
-  const onCard = (f: FamilyWord) => shown.some((t) => t.includes(f.text));
-  return [...all.filter((f) => !onCard(f)), ...all.filter(onCard)].slice(0, 4);
-}
-
-function Intro({ word, idiom, tag = null, known }: { word: Word; idiom: Idiom | null; tag?: string | null; known: ReadonlySet<string> }) {
-  const family = familyRow(word, known);
+function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; tag?: string | null }) {
   // never the one the usage line already shows; all of them feed the meaning questions
   const { line, listed } = cardRows(word, idiom);
   const pair = boundPair(word.text);
@@ -380,8 +366,8 @@ function Intro({ word, idiom, tag = null, known }: { word: Word; idiom: Idiom | 
             // a bound character (parent 2026-10-15): its pair leads, the character marked in it, and the character alone beside
             // the speak button, so he knows it by itself too
             <div class="intro__char intro__char--bound">
-              <div class="pinyin pinyin--later">{kidGlossReading(pair)}</div>
-              <div class="hanzi hanzi--xl hanzi--long hanzi--pair" style={`--len:${Array.from(pair).length}`}><BoundWord pair={pair} ch={word.text} /></div>
+              {/* each syllable over its own character (parent 2026-10-15: one centred string drifted off wide characters) */}
+              <div class="hanzi hanzi--xl hanzi--long hanzi--pair intro__word" style={`--len:${Array.from(pair).length}`}><Label zh={pair} py={kidGlossReading(pair)} mark={[Array.from(pair).indexOf(word.text), 1]} /></div>
               <div class="intro__bound">
                 <span class="intro__alone" lang="zh" aria-label={`${word.text} ${word.pinyin}`}><span class="hanzi">{word.text}</span><small class="pinyin pinyin--later">{word.pinyin}</small></span>
                 <SpeakButton text={pair} />
@@ -390,9 +376,14 @@ function Intro({ word, idiom, tag = null, known }: { word: Word; idiom: Idiom | 
           ) : (
             <div class="intro__char">
               {/* the character first; its pinyin 2 s later (spec 2026-10-12 §4, Chung 2003) */}
-              <div class="pinyin pinyin--later">{word.pinyin}</div>
-              {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
-              <div class={`hanzi hanzi--xl${long ? ' hanzi--long' : ''}`} style={long ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
+              {/* a school 成语 or 词语 shrinks to one line (final review I3), each syllable over its own character (parent
+                  2026-10-15: "yǔ yī" as one centred string drifted off 雨衣's wide characters) */}
+              {long ? <div class="hanzi hanzi--xl hanzi--long intro__word" style={`--len:${Array.from(word.text).length}`}><Label zh={word.text} py={word.pinyin} /></div> : (
+                <>
+                  <div class="pinyin pinyin--later">{word.pinyin}</div>
+                  <div class="hanzi hanzi--xl">{word.text}</div>
+                </>
+              )}
               <SpeakButton text={word.text} />
             </div>
           )}
@@ -424,19 +415,6 @@ function Intro({ word, idiom, tag = null, known }: { word: Word; idiom: Idiom | 
           <div class="intro__group">
             {line && <UsageLine word={word} en={glossFor(line.full)} />}
             {listed.map((e) => <WordRow key={e.text} class="example" zh={e.text} py={e.pinyin} en={glossFor(e.text)} mark={markOf(e.text, word.text)} />)}
-          </div>
-        )}
-        {family.length > 0 && ( // his words of its family, after the 词语 and before the 成语 (spec 2026-10-12 §5)
-          <div class="intro__group family" lang="zh">
-            <p class="family__title"><Label zh="一家人" /></p>
-            <div class="family__words">
-              {family.map((f) => (
-                <span key={f.text} class="family__word">
-                  <span class="hanzi"><Label zh={f.text} py={f.pinyin} mark={markOf(f.text, word.text)} fade /></span>
-                  <SpeakButton text={f.text} small />
-                </span>
-              ))}
-            </div>
           </div>
         )}
         {idiom && inBoundSense(word.text, idiom.text) && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows

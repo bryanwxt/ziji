@@ -7,8 +7,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { builtinWords } from '../../content';
 import { createEmptyCard, State } from 'ts-fsrs';
 import { DEFAULT_KID } from '../../types';
-import { FlashcardStep , introIdiom, introSpoken, shownOnCard, familyRow } from './FlashcardStep';
+import { FlashcardStep , introIdiom, introSpoken, shownOnCard } from './FlashcardStep';
 import { makeWord } from '../../test/fixtures';
+import { ladderWords } from '../../content/ladder';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
@@ -696,23 +697,33 @@ describe('a miss says why (spec 2026-10-12 §3)', () => {
   });
 });
 
-describe('「一家人」 on the new-word card (spec 2026-10-12 §5)', () => {
+describe('the new-word card has no 「一家人」 row (parent 2026-10-15: it repeated the 组词 and made the card too tall)', () => {
   const sheng = pool.find((x) => x.text === '生')!;
-  it('up to four family words, ones the card does not already show first', () => {
-    expect(familyRow(sheng, new Set('男女气先日')).map((f) => f.text)).toEqual(['生气', '先生', '生日', '男生']); // the card shows 男生, 女生
-    expect(familyRow(makeWord('朋友'), new Set('男女气先日'))).toEqual([]);
+  it('a character with family words shows its 组词 rows and no family row', () => {
+    render(<FlashcardStep {...base} word={sheng} item={{ wordId: sheng.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const rows = [...document.querySelectorAll('.intro .label')].map((l) => l.getAttribute('data-zh')).filter((t) => t && t.length > 1 && t !== '认新字');
+    expect(shownOnCard(sheng).length).toBeGreaterThan(0);
+    for (const t of shownOnCard(sheng)) expect(rows).toContain(t); // the 组词 rows are exactly what the card lists
+    expect(document.querySelector('.family, .family__word, .family__title')).toBeNull();
+    expect(document.querySelector('.intro')!.textContent).not.toContain('一家人');
   });
-  it('the row sits after the 词语, before the 成语, each word with a speak button', () => {
-    render(<FlashcardStep {...base} word={sheng} item={{ wordId: sheng.id, isNew: true, retry: false }} voice={false} knownChars={new Set('男女气先日')} onDone={vi.fn()} />);
-    const row = document.querySelector('.intro .family')!;
-    expect(row.querySelector('.family__title')!.textContent).toContain('一家人');
-    expect([...row.querySelectorAll('.family__word .label')].map((l) => l.getAttribute('data-zh'))).toEqual(['生气', '先生', '生日', '男生']);
-    expect(row.querySelectorAll('.family__word .speak')).toHaveLength(4);
-    const groups = [...document.querySelectorAll('.intro__group')];
-    expect(groups.indexOf(row)).toBeGreaterThan(groups.findIndex((g) => g.querySelector('.usage, .example')));
+});
+
+describe('phone layout of the 认新字 card (parent 2026-10-15)', () => {
+  it('puts each syllable of a word over its own character, not one centred string', () => {
+    const w = ladderWords().find((x) => x.text === '保持')!;
+    render(<FlashcardStep {...base} word={w} pool={[...pool, w]} item={{ wordId: w.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const head = document.querySelector('.intro__head .intro__word .label')!;
+    expect([...head.querySelectorAll('.label__cell')].map((c) => [c.querySelector('.label__py')!.textContent, c.querySelector('.label__ch')!.textContent])).toEqual([['bǎo', '保'], ['chí', '持']]);
+    expect(document.querySelector('.intro__head .pinyin')).toBeNull();
   });
-  it('hidden when fewer than two qualify', () => {
-    render(<FlashcardStep {...base} word={sheng} item={{ wordId: sheng.id, isNew: true, retry: false }} voice={false} knownChars={new Set('男')} onDone={vi.fn()} />);
-    expect(document.querySelector('.family')).toBeNull();
+
+  it('marks a long usage line so a phone puts its speak button beside it, and keeps its 。 on the last character', () => {
+    const w = ladderWords().find((x) => x.text === '保持')!;
+    render(<FlashcardStep {...base} word={w} pool={[...pool, w]} item={{ wordId: w.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const row = document.querySelector('.intro .usage')!;
+    expect(row.classList.contains('word-row--long')).toBe(true);
+    const last = [...row.querySelectorAll('.label__nb')].pop()!;
+    expect(last.textContent).toContain('净。');
   });
 });

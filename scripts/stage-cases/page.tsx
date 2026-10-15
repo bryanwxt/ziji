@@ -352,19 +352,27 @@ else if (which === 'fade-peek') {
   // pinyin fades over characters he reads (spec 2026-10-12 §4): the long clue sentence, every character read; stage-cases.ts peeks
   render(screen(<PinyinFade known={new Set(Array.from(clue.before + clue.word + clue.after))} on><UseQuestion item={clue} kid={DEFAULT_KID} onAnswer={() => {}} onNext={() => {}} /></PinyinFade>), app);
 }
-else if (which === 'intro-family') {
-  // 「一家人」 on the 认新字 card with its 成语 too (spec 2026-10-12 §5): the fullest card
+else if (which === 'intro-full') {
+  // the 认新字 card with its 组词 rows and a 成语 too: the tallest intro card (the 一家人 row is gone, parent 2026-10-15)
   const words = builtinWords(0);
   const w = words.find((x) => x.text === '生')!;
-  render(screen(<PinyinFade known={new Set('男女气先日')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} knownChars={new Set('男女气先日')} onDone={() => {}} /></PinyinFade>), app);
+  render(screen(<PinyinFade known={new Set('男女气先日')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} onDone={() => {}} /></PinyinFade>), app);
+}
+else if (which === 'intro-raincoat' || which === 'intro-usage' || which === 'intro-usage-long') {
+  // the parent's iPhone (2026-10-15): 雨衣 with its catch-up tag (pinyin over each character, 补 not clipped); 保持's usage line
+  // and the longest one (本来), whose 。 must not start a line and whose speak button must not sit on the text
+  const all = [...builtinWords(0), ...ladderWords()];
+  const w = all.find((x) => x.text === (which === 'intro-raincoat' ? '雨衣' : which === 'intro-usage' ? '保持' : '本来'))!;
+  const tag = which === 'intro-raincoat' ? '补 一上·1' : '课本 二下·17';
+  render(screen(<PinyinFade known={new Set('我们要教室干净他住在北京后来到这里')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={all} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} lessonTag={tag} onDone={() => {}} /></PinyinFade>), app);
 }
 else if (which === 'intro-bound' || which === 'intro-bound-full' || which === 'intro-bound-long') {
-  // a bound character's 认新字 card (parent 2026-10-15): 番 led by 番茄; 丽 with a 成语 and a 一家人 row (the fullest); 幼 led
+  // a bound character's 认新字 card (parent 2026-10-15): 番 led by 番茄; 丽 with a 成语 (the fullest); 幼 led
   // by a three-character pair (幼儿园)
   const words = builtinWords(0);
   const w = words.find((x) => x.text === (which === 'intro-bound' ? '番' : which === 'intro-bound-full' ? '丽' : '幼'))!;
   const known = new Set(words.slice(0, 1200).map((x) => x.text));
-  render(screen(<PinyinFade known={known} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} knownChars={known} onDone={() => {}} /></PinyinFade>), app);
+  render(screen(<PinyinFade known={known} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} onDone={() => {}} /></PinyinFade>), app);
 }
 else if (which === 'hear-bound' || which === 'hear-bound-read' || which === 'hear-bound-long') {
   // an English question on a bound character (parent 2026-10-15): it asks about 番茄 (or 幼儿园), heard or read
