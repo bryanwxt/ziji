@@ -28,7 +28,7 @@ const NEVER_LONE: Record<string, string> = {
   'activities/kantu/StoryStep.tsx: screen.model': 'a model sentence',
   'activities/kantu/StoryStep.tsx: w': "a scene's word",
   'activities/langdu/LangduStep.tsx: sentences[answerAt]!': 'a sentence',
-  'activities/langdu/LangduStep.tsx: lines.thanks': 'a line',
+  'activities/langdu/LangduStep.tsx: thanksLine': 'the warm-up thank-you line',
   'langdu/useModelReader.ts: list.current[i]!': 'a sentence',
   'activities/flashcards/FlashcardStep.tsx: text': "the card's 组词 and usage line (introSpoken)",
   'activities/flashcards/FlashcardStep.tsx: quiz.cue.kind === \'sentence\' ? `${quiz.cue.before}，，${quiz.cue.after}` : quiz.cue.full': 'a cue line',
