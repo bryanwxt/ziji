@@ -37,6 +37,8 @@ customPinyin({
   越长越高: 'yuè zhǎng yuè gāo', 倒上水: 'dào shàng shuǐ', 一件一件: 'yí jiàn yí jiàn', 一本一本: 'yì běn yì běn',
   裤子: 'kù zi', 裙子: 'qún zi', 箱子: 'xiāng zi', 爸爸的: 'bà ba de', 妈妈打开: 'mā ma dǎ kāi', 东西: 'dōng xi', 有意思: 'yǒu yì si',
   只留下: 'zhǐ liú xià',
+  // Task 10's review: 背 (carrying) bēi, 这种 (this kind) zhǒng, 妈妈 before 走 keeps its neutral tone
+  背上书包: 'bēi shàng shū bāo', 这种: 'zhè zhǒng', 妈妈走: 'mā ma zǒu',
   // Task 11: the neutral tone 现代汉语词典 marks as required (and Singapore's textbooks print), for word cards and passages alike;
   // left toned where the dictionary marks it optional or usage varies: 这里 那里 哪里 心里 知道 照顾 关系 打扫
   朋友: 'péng you', 衣服: 'yī fu', 早上: 'zǎo shang', 晚上: 'wǎn shang', 护士: 'hù shi', 告诉: 'gào su', 明白: 'míng bai',

@@ -292,7 +292,7 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '从那天起，我每天晚上做什么？', choices: ['准备好书包', '穿好衣服', '背上书包'], answer: 0, sentence: 6 },
   ],
   p56: [
-    { q: '回家以后，我对着什么练？', choices: ['镜子', '老师', '同学'], answer: 0, sentence: 4 },
+    { q: '回家以后，我对着什么喊？', choices: ['镜子', '老师', '同学'], answer: 0, sentence: 4 },
     { q: '放学后，班长要做什么？', choices: ['关好门窗', '收作业本', '喊“起立”'], answer: 0, sentence: 3 },
   ],
   p57: [
@@ -325,10 +325,10 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
   ],
   p64: [
     { q: '谁先看见水坑里的月亮？', choices: ['小猴子', '大猴子', '老猴子'], answer: 0, sentence: 0 },
-    { q: '最后，大家发现月亮在哪里？', choices: ['天上', '水坑里', '树下'], answer: 0, sentence: 5 },
+    { q: '谁往天上一看，笑了？', choices: ['老猴子', '小猴子', '大猴子'], answer: 0, sentence: 5 },
   ],
   p65: [
-    { q: '爸爸的裤子怎么样？', choices: ['长长的', '短短的', '小小的'], answer: 0, sentence: 2 },
+    { q: '谁的裙子短短的？', choices: ['妹妹', '小美', '妈妈'], answer: 0, sentence: 2 },
     { q: '什么挂歪了？', choices: ['裤子', '裙子', '袜子'], answer: 0, sentence: 3 },
   ],
   p66: [
@@ -336,8 +336,8 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '做好的架子有一点歪，我怎么做？', choices: ['放一本小书', '把书架搬走', '请爸爸再做'], answer: 0, sentence: 5 },
   ],
   p67: [
-    { q: '老师说，我的什么越来越好了？', choices: ['字', '画', '身体'], answer: 0, sentence: 3 },
-    { q: '我画了什么送给外婆？', choices: ['一棵大树', '一朵大花', '一只小狗'], answer: 0, sentence: 5 },
+    { q: '老师说，我的什么越来越好了？', choices: ['字', '画', '身体'], answer: 0, sentence: 2 },
+    { q: '我画了什么送给外婆？', choices: ['一棵大树', '一朵大花', '一只小狗'], answer: 0, sentence: 4 },
   ],
   p68: [
     { q: '种豆芽的时候，哪一件事不用做？', choices: ['晒太阳', '浇一点水', '泡一个晚上'], answer: 0, sentence: 5 },
@@ -348,7 +348,7 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '谁什么也没带？', choices: ['小狗', '小兔', '小猴'], answer: 0, sentence: 3 },
   ],
   p70: [
-    { q: '爸爸教我，手要怎么样？', choices: ['放松一点', '看着上面', '往上一扔'], answer: 0, sentence: 2 },
+    { q: '球为什么总是扔不进篮里？', choices: ['我太矮了', '球太重了', '风太大了'], answer: 0, sentence: 1 },
     { q: '球进了，爸爸做了什么？', choices: ['把我举起来', '拍拍我的头', '跟我拍手'], answer: 0, sentence: 5 },
   ],
   p71: [
