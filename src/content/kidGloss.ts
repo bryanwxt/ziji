@@ -47,3 +47,29 @@ export const isBound = (char: string): boolean => char in BOUND;
 export const boundChars = (): string[] => Object.keys(BOUND);
 /** What an English-meaning question shows or says for a word: a bound character's pair, else the word itself. */
 export const askedAs = (text: string): string => BOUND[text] ?? text;
+
+/**
+ * 组词 in a bound character's pair sense that don't contain the pair (parent 2026-10-15: 番's card showed 一番 "a round of"
+ * right under "tomato"). A bound character's card, collection tile and 写一写 cue show only 组词 that contain its pair or are
+ * listed here; its other senses (公司 for 司, 一番 for 番) never show beside it. Reviewable: add a word that keeps the pair's
+ * sense, with nothing else to change.
+ */
+export const BOUND_SAME_SENSE: Readonly<Record<string, readonly string[]>> = {
+  巴: ['大巴'], 师: ['教师'], 阳: ['阳光'], 今: ['今年', '今后'], 华: ['华人', '中华'], 巾: ['围巾'], 怎: ['怎样'],
+  乐: ['欢乐', '吃喝玩乐'], 孩: ['男孩儿', '女孩儿'], 校: ['校园', '校长'], 习: ['学习', '复习'], 伴: ['陪伴'], 吉: ['吉祥'],
+  婆: ['婆婆'], 卷: ['卷子'], 戏: ['马戏'], 特: ['特点', '特色'], 医: ['医院', '中医', '西医'], 贩: ['商贩'],
+  健: ['健身'], 幸: ['不幸'], 觉: ['午觉'], 厌: ['厌烦'], 英: ['英语'], 迎: ['迎接'], 静: ['冷静', '平静'],
+  趣: ['乐趣', '兴趣'], 旅: ['旅客', '旅游'], 艺: ['工艺', '文艺'], 误: ['失误'], 歉: ['道歉'], 赛: ['决赛', '参赛'],
+  裤: ['短裤'], 猴: ['小猴'], 蚊: ['蚊帐'], 厨: ['厨师'], 滩: ['沙滩'], 虽: ['虽说'], 仍: ['仍旧'], 勤: ['勤快'],
+  检: ['体检'], 永: ['永久', '永不'], 植: ['种植'], 视: ['影视'], 谅: ['体谅'], 彩: ['色彩', '丰富多彩'], 颜: ['五颜六色'],
+  互: ['相互'], 已: ['早已'], 丽: ['亮丽', '华丽', '风和日丽'], 助: ['助手'], 需: ['必需'], 或: ['或是'],
+  // 成语 in the pair's sense (the card's 成语 row)
+  耳: ['耳目一新'], 朋: ['亲朋好友'], 兴: ['兴高采烈'], 应: ['应有尽有'], 易: ['轻易', '轻而易举'], 始: ['自始至终'],
+  知: ['众所周知'], 突: ['突如其来'], 世: ['举世闻名'], 必: ['必不可少'],
+};
+/** May `text` (a 组词 or usage line) show beside `char`? Always for an unbound character; for a bound one only in its pair's
+ *  sense: it contains the pair, or BOUND_SAME_SENSE lists it. */
+export function inBoundSense(char: string, text: string): boolean {
+  const pair = BOUND[char];
+  return !pair || text.includes(pair) || (BOUND_SAME_SENSE[char] ?? []).includes(text);
+}

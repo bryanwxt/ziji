@@ -23,7 +23,7 @@ import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { LookAlikeWhy, PinyinWhy, RadicalHint } from '../../ui/stage/WhyLine';
 import { firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor, questionMeaning } from '../../content/glossary';
-import { boundPair, kidGlossReading } from '../../content/kidGloss';
+import { boundPair, inBoundSense, kidGlossReading } from '../../content/kidGloss';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 import type { Idiom } from '../../content/chengyu';
@@ -323,16 +323,17 @@ function extraWords(line: ReturnType<typeof usageLine>, _idiom?: Idiom | null): 
 function cardRows(word: Word, idiom?: Idiom | null): { line: ReturnType<typeof usageLine>; listed: NonNullable<Word['examples']> } {
   const pair = boundPair(word.text);
   const usage = usageLine(word);
-  const line = usage && usage.full !== pair ? usage : null;
+  // a bound character's rows keep its pair's sense (kidGloss.ts inBoundSense): 番 never shows 一番 "a round of"
+  const line = usage && usage.full !== pair && inBoundSense(word.text, usage.full) ? usage : null;
   const room = pair ? (line ? 0 : 1) : extraWords(line, idiom);
-  const listed = (word.examples ?? []).filter((e) => e.text !== pair && !line?.full.includes(e.text)).slice(0, room);
+  const listed = (word.examples ?? []).filter((e) => e.text !== pair && inBoundSense(word.text, e.text) && !line?.full.includes(e.text)).slice(0, room);
   return { line, listed };
 }
 
 /** The lines the 认新字 card reads after its character (a bound one's pair): the usage line, the listed 组词, then its 成语. */
 export function introSpoken(word: Word, idiom: Idiom | null): string[] {
   const { line, listed } = cardRows(word, idiom);
-  const shownIdiom = idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) ? [idiom.text] : [];
+  const shownIdiom = idiom && inBoundSense(word.text, idiom.text) && !shownOnCard(word).some((t) => t.includes(idiom.text)) ? [idiom.text] : [];
   return [...(line ? [line.full] : []), ...listed.map((e) => e.text), ...shownIdiom];
 }
 
@@ -347,7 +348,8 @@ export function shownOnCard(word: Word): string[] {
 /** The card's 成语: the first one the card doesn't already show, so nothing is shown twice (parent, 2026-10-05: 四面八方 twice on 八). */
 export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
   const shown = shownOnCard(word);
-  return idioms.find((i) => !shown.some((t) => t.includes(i.text))) ?? null;
+  // a bound character's 成语 keeps its pair's sense too (kidGloss.ts inBoundSense)
+  return idioms.find((i) => !shown.some((t) => t.includes(i.text)) && inBoundSense(word.text, i.text)) ?? null;
 }
 
 /**
@@ -437,7 +439,7 @@ function Intro({ word, idiom, tag = null, known }: { word: Word; idiom: Idiom | 
             </div>
           </div>
         )}
-        {idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows
+        {idiom && inBoundSense(word.text, idiom.text) && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows
           <div class="intro__group intro__idiom">
             <WordRow class="example example--idiom" zh={idiom.text} py={idiom.pinyin} en={idiom.meaning} mark={markOf(idiom.text, word.text)} />
             {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi"><CentredSentence text={idiom.sentences[0]} /></p>}

@@ -1,5 +1,6 @@
 import type { Example, Word } from '../../types';
 import { hanChars } from '../../content';
+import { boundPair, inBoundSense, kidGlossReading } from '../../content/kidGloss';
 import { syllableTone } from '../flashcards/distractors';
 import { KID_MEANING } from './meanings';
 import { meaningCue } from '../flashcards/meaning';
@@ -15,7 +16,11 @@ export interface WritingCue {
 /** What tells a child which character to write when several share the same sound. */
 /** The example word to show for a character: one that uses this reading, preferring one where it appears once. */
 export function pickExample(word: Word): { example: Example; once: boolean } | null {
-  const usable = (word.examples ?? []).filter((e) => e.text.length > word.text.length && e.text.includes(word.text) && sameReading(e, word));
+  // a bound character is cued in its pair's sense (番，番茄的，番; 负，欺负的，负), never another (一番, 负责)
+  const pair = boundPair(word.text);
+  const own = word.examples ?? [];
+  const withPair = pair && !own.some((e) => e.text === pair) ? [{ text: pair, pinyin: kidGlossReading(pair)! }, ...own] : own;
+  const usable = withPair.filter((e) => e.text.length > word.text.length && e.text.includes(word.text) && sameReading(e, word) && inBoundSense(word.text, e.text));
   const single = (e: Example) => e.text.split(word.text).length === 2;
   // a word where it keeps its full tone first (说话 over 笑话 for 话): the voice says a 轻声 lightly, and he writes from its sound
   const ranked = [...usable].sort((a, b) => Number(single(b)) - Number(single(a)) || Number(keepsTone(b, word)) - Number(keepsTone(a, word)));

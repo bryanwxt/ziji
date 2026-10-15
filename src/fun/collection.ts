@@ -15,11 +15,12 @@ export interface CharCard {
   rarity: 'common' | 'rare';
 }
 
+import { boundPair } from '../content/kidGloss';
 let shown: Map<string, string | null> | null = null;
 /** The 组词 a card shows first (content audit 2026-10-15): the card's own, cleaned list — never the raw data's first, which
  *  skipped the written 组词, the blocklist and the reading check (调查 on the tiáo card, 心脏 on 脏). */
 const firstExample = (char: string): string | null =>
-  (shown ??= new Map(builtinWords(0).map((w) => [w.text, w.examples?.[0]?.text ?? null]))).get(char) ?? null;
+  (shown ??= new Map(builtinWords(0).map((w) => [w.text, boundPair(w.text) ?? w.examples?.[0]?.text ?? null]))).get(char) ?? null; // a bound character's: its pair
 
 /** Memory strength from FSRS stability (days). */
 export function starsFor(stability: number): 1 | 2 | 3 {

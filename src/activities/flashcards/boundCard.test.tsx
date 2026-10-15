@@ -6,11 +6,16 @@ vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
 vi.mock('../../ui/motion', () => ({ burst: vi.fn(), flyAlong: vi.fn(async () => {}), reducedMotion: () => false }));
 import { speak } from '../../audio/speech';
 import { builtinWords } from '../../content';
-import { boundChars, boundPair, kidGloss } from '../../content/kidGloss';
+import { BOUND_SAME_SENSE, boundChars, boundPair, isBound, kidGloss } from '../../content/kidGloss';
+import { idiomsFor } from '../../content/chengyu';
+import { pickExample } from '../writing/cue';
+import { collectionCards } from '../../fun/collection';
+import BUILTIN from '../../content/builtin.json';
+import type { BuiltinChar } from '../../types';
 import { ladderWords } from '../../content/ladder';
 import { DEFAULT_KID, type Word } from '../../types';
 import { firstSense } from './distractors';
-import { FlashcardStep, introSpoken } from './FlashcardStep';
+import { FlashcardStep, introIdiom, introSpoken } from './FlashcardStep';
 
 const pool: Word[] = [...builtinWords(0), ...ladderWords()];
 const byText = new Map(builtinWords(0).map((w) => [w.text, w]));
@@ -35,8 +40,44 @@ describe('a bound character\'s 认新字 card (番 / 番茄)', () => {
     expect(speak).toHaveBeenLastCalledWith('番茄');
     expect(introSpoken(fan, null)).not.toContain('番茄');
     const rows = [...document.querySelectorAll('.intro__group .label')].map((e) => e.getAttribute('data-zh'));
-    expect(rows.length).toBeGreaterThan(0);
-    expect(rows).not.toContain('番茄');
+    expect(rows).toEqual([]); // its only other 组词 is 一番, another sense: no 组词 row at all
+  });
+
+  it('番 shows no 组词 in another sense: 一番 "a round of" never sits under "tomato"', () => {
+    render(<FlashcardStep {...base} word={fan} item={{ wordId: fan.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    expect(document.body.textContent).not.toContain('一番');
+    expect(document.body.textContent).not.toContain('a round of');
+    expect(introSpoken(fan, null)).not.toContain('一番');
+    expect(pickExample(fan)?.example.text).toBe('番茄'); // 写一写: 番，番茄的，番
+  });
+
+  it("no bound card shows a 组词, usage line or 成语 outside its pair's sense (only words with the pair, or BOUND_SAME_SENSE's)", () => {
+    const bad: string[] = [];
+    for (const ch of boundChars()) {
+      const w = byText.get(ch)!;
+      const pair = boundPair(ch)!;
+      const ok = (t: string) => t.includes(pair) || (BOUND_SAME_SENSE[ch] ?? []).includes(t);
+      const idiom = introIdiom(w, idiomsFor(w, 6, builtinWords(0)));
+      render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: true, retry: false }} voice={false} idiom={idiom} onDone={vi.fn()} />);
+      const rows = [...document.querySelectorAll('.intro__group:not(.family) .label')].map((e) => e.getAttribute('data-zh')!).filter((t) => /\p{Script=Han}/u.test(t));
+      for (const t of rows) if (!ok(t)) bad.push(`${ch} (${pair}): ${t}`);
+      for (const t of introSpoken(w, idiom)) if (!ok(t)) bad.push(`${ch} (${pair}) says ${t}`);
+      const cue = pickExample(w)?.example.text;
+      if (cue && !ok(cue)) bad.push(`${ch} (${pair}) 写一写 cue ${cue}`);
+      cleanup();
+    }
+    expect(bad).toEqual([]);
+    // the allowlist only names bound characters, and its words contain their character
+    for (const [ch, ws] of Object.entries(BOUND_SAME_SENSE)) {
+      expect(isBound(ch), ch).toBe(true);
+      for (const t of ws) expect(t.includes(ch), t).toBe(true);
+    }
+  });
+
+  it('the collection tile shows a bound character with its pair', () => {
+    const chars = (BUILTIN as unknown as { chars: BuiltinChar[] }).chars.filter((c) => c.char === '番');
+    const [tile] = collectionCards(chars, { knownChars: new Set('番'), cardsById: new Map() } as never);
+    expect(tile!.example).toBe('番茄');
   });
 
   it('an unbound character keeps its own card', () => {
