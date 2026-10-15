@@ -23,5 +23,7 @@ customPinyin({
   干嘛: 'gàn má', 干农活: 'gàn nóng huó', 以为: 'yǐ wéi', 头发放: 'tóu fa fàng',
   高高兴兴地: 'gāo gāo xìng xìng de', 大大地: 'dà dà de', 高兴地: 'gāo xìng de', 很快地: 'hěn kuài de', 仔细地: 'zǐ xì de',
   远远地: 'yuǎn yuǎn de', 紧紧地: 'jǐn jǐn de', 尽情地: 'jìn qíng de', 伤心地: 'shāng xīn de', 快乐地: 'kuài lè de',
+  // our 二上 passages (Task 8): 婆婆家 jiā (it read pó pó jia), 子 neutral in 鞋子 and 池子, 高兴得 de, 一个一个 yí gè yí gè
+  婆婆家: 'pó po jiā', 鞋子: 'xié zi', 池子: 'chí zi', 高兴得: 'gāo xìng de', 一个一个: 'yí gè yí gè',
   炸鸡: 'zhá jī', 油炸: 'yóu zhá', 种植: 'zhòng zhí', 种花的: 'zhòng huā de', 勒紧: 'lēi jǐn', // 种花的: 写一写's piece (never 种花 alone)
 });

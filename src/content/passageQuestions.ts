@@ -149,4 +149,62 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '水中有八只什么？', choices: ['斑马', '青蛙', '水牛'], answer: 1, sentence: 5 },
     { q: '谁和狮子一起喝水？', choices: ['大象', '斑马', '水牛'], answer: 0, sentence: 9 },
   ],
+
+  // our own 二上 passages (spec 2026-10-15 §2.2, Task 8)
+  p21: [
+    { q: '谁又亲切又美丽？', choices: ['新老师', '新朋友', '同学'], answer: 0, sentence: 2 },
+    { q: '第一天，老师帮我们找什么？', choices: ['座位', '课文', '朋友'], answer: 0, sentence: 3 },
+  ],
+  p22: [
+    { q: '舞狮在哪里？', choices: ['楼下', '门上', '婆婆家'], answer: 0, sentence: 3 },
+    { q: '谁给了我一个红包？', choices: ['婆婆', '爸爸', '妈妈'], answer: 0, sentence: 5 },
+  ],
+  p23: [
+    { q: '我把什么放到桌上？', choices: ['碗和筷子', '茶和杯子', '书和笔'], answer: 0, sentence: 1 },
+    { q: '谁尝了妈妈做的鸡？', choices: ['王叔叔', '王阿姨', '我'], answer: 0, sentence: 3 },
+  ],
+  p24: [
+    { q: '大树下开着什么颜色的花？', choices: ['红的和黄的', '白的和蓝的', '绿的和白的'], answer: 0, sentence: 3 },
+    { q: '小鸟是什么颜色的？', choices: ['黑的', '白的', '黄的'], answer: 0, sentence: 5 },
+  ],
+  p25: [
+    { q: '音乐室在哪里？', choices: ['三楼', '二楼', '一楼'], answer: 0, sentence: 3 },
+    { q: '我们问谁音乐室在哪里？', choices: ['班长', '老师', '好朋友'], answer: 0, sentence: 2 },
+  ],
+  p26: [
+    { q: '谁骑在最前面？', choices: ['哥哥', '姐姐', '我'], answer: 0, sentence: 1 },
+    { q: '我们最后骑到了哪里？', choices: ['公园', '小桥', '路口'], answer: 0, sentence: 4 },
+  ],
+  p27: [
+    { q: '爸爸去买什么？', choices: ['炒面', '冰水', '鸡蛋'], answer: 0, sentence: 2 },
+    { q: '到了那里，我们先做什么？', choices: ['找座位', '买冰水', '吃炒面'], answer: 0, sentence: 1 },
+  ],
+  p28: [
+    { q: '火灾的时候，我们要怎么做？', choices: ['走楼梯', '坐电梯', '坐上消防车'], answer: 0, sentence: 2 },
+    { q: '什么又大又长？', choices: ['消防车', '电梯', '楼梯'], answer: 0, sentence: 1 },
+  ],
+  p29: [
+    { q: '我忘了带什么？', choices: ['雨伞', '雨鞋', '雨衣'], answer: 0, sentence: 1 },
+    { q: '谁来接我？', choices: ['妈妈', '老师', '同学'], answer: 0, sentence: 4 },
+  ],
+  p30: [
+    { q: '小蚂蚁怎么回到池边？', choices: ['爬上叶子', '飞过来', '喝水'], answer: 0, sentence: 2 },
+    { q: '下大雨了，小蚂蚁请蜜蜂去什么地方？', choices: ['它的窝', '池子', '花丛'], answer: 0, sentence: 4 },
+  ],
+  p31: [
+    { q: '我为什么想尝一尝？', choices: ['咖啡很香', '我很饿了', '爷爷要我喝'], answer: 0, sentence: 2 },
+    { q: '爷爷给我买了什么？', choices: ['一杯牛奶', '一杯黑咖啡', '一杯糖水'], answer: 0, sentence: 5 },
+  ],
+  p32: [
+    { q: '谁对我说“别怕”？', choices: ['护士阿姨', '医生', '妈妈'], answer: 0, sentence: 2 },
+    { q: '回家后，谁每天照顾我？', choices: ['爸爸', '妈妈', '护士阿姨'], answer: 0, sentence: 4 },
+  ],
+  p33: [
+    { q: '谁得了第二？', choices: ['黄队', '红队', '蓝队'], answer: 0, sentence: 4 },
+    { q: '最后，谁得了第一？', choices: ['红队', '蓝队', '黄队'], answer: 0, sentence: 5 },
+  ],
+  p34: [
+    { q: '我把绿豆放在什么上？', choices: ['纸巾', '杯子', '叶子'], answer: 0, sentence: 1 },
+    { q: '过了三天，绿豆长出了什么？', choices: ['小芽', '绿叶', '红花'], answer: 0, sentence: 2 },
+  ],
 };

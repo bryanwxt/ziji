@@ -6,7 +6,7 @@ import { BUILTIN, PASSAGES } from '../src/content';
 import moe from '../src/content/moe2024.json';
 import { PASSAGE_QUESTIONS } from '../src/content/passageQuestions';
 import type { Passage, PassageQuestion } from '../src/types';
-import { checkContent, checkPassageQuestions, questionProblems, topWord } from './check-content';
+import { checkContent, checkOwnPassages, checkPassageQuestions, questionProblems, topWord, wordProblems } from './check-content';
 
 const dataDir = join(process.cwd(), 'node_modules', 'hanzi-writer-data');
 const hasStrokeFile = (ch: string) => existsSync(join(dataDir, `${ch}.json`));
@@ -80,5 +80,47 @@ describe('meaning questions (spec 2026-10-15 §6)', () => {
     expect(checkPassageQuestions([p], { x1: [ok, ok] })).toContain('x1: the same question twice');
     expect(checkPassageQuestions([p], { x1: [ok, { ...other, sentence: 1 }] })).toContain('x1: both questions are answered by sentence 1');
     expect(checkPassageQuestions([p], { x1: [ok, { ...other, sentence: 0 }], x9: [ok, other] })).toEqual(['x9: questions for no passage']);
+  });
+});
+describe('our passages (spec 2026-10-15 §2.2)', () => {
+  it('every one passes: its term, the word gate, no duplicates; the new ones every writing rule', () => {
+    expect(checkOwnPassages(PASSAGES)).toEqual([]);
+  });
+  // drafted for this plan and measured: each passes as written
+  const p21: Passage = { id: 'p21', title: '新学年', text: '新学年开始了，我读二年级了。我们的班很大，有三十个同学。新老师又亲切又美丽。第一天，她帮我们找座位，还教我们读新的课文。下课了，我和新朋友一起去操场玩。', term: '二上', source: 'ziji', words: [{ text: '年级', gloss: 'grade, year (school)' }, { text: '座位', gloss: 'seat' }, { text: '操场', gloss: 'playground, field' }] };
+  const p33: Passage = { id: 'p33', title: '放风筝', text: '星期天，天气很好，我跟爸爸去公园放风筝。我的风筝是一只老鹰，又大又漂亮。风一吹，老鹰就飞上了天。旁边的小朋友都跑过来看，一群人围着我们。大家说：“你的风筝真好看！”我高兴得笑了。', term: '二下', source: 'ziji', words: [{ text: '风筝', gloss: 'kite' }, { text: '老鹰', gloss: 'eagle' }] };
+  const p49: Passage = { id: 'p49', title: '迟到了', text: '今天早上，闹钟没有响，我起床晚了。我赶快穿好衣服，背上书包，跑去车站。可是巴士刚刚开走了。我只好走路去学校。我对老师说：“对不起，我迟到了。”老师说：“没关系，明天要准时。”从那天起，我每天晚上都准备好书包，再也没有迟到过。', term: '三上', source: 'ziji', words: [{ text: '迟到', gloss: 'be late' }, { text: '准时', gloss: 'on time' }, { text: '赶快', gloss: 'quickly' }] };
+  it('the new ones are not held to the first twenty\'s 30–80 characters and HSK 1–2', () => {
+    expect(checkContent(BUILTIN, [p21, p33, p49], hasStrokeFile)).toEqual([]);
+    expect(checkContent(BUILTIN, [{ ...p49, id: 'p20' }], hasStrokeFile)).toEqual(expect.arrayContaining([expect.stringMatching(/^p20: \d+ characters, expected 30–80$/)]));
+  });
+  it('three drafts, one a term, pass every rule', () => {
+    expect(checkOwnPassages([p21, p33, p49])).toEqual([]);
+  });
+  it('length, sentences and term', () => {
+    expect(checkOwnPassages([{ ...p21, text: '新学年开始了。我读二年级了。' }])).toContain('p21: 12 characters, expected 50–110');
+    expect(checkOwnPassages([{ ...p21, text: p21.text.replace(/。/g, '，').replace(/，$/, '。') }])).toContain('p21: 1 sentences, expected 3–7');
+    expect(checkOwnPassages([{ ...p21, term: '二下' }])).toContain('p21: stored term 二下, levels at 二上');
+  });
+  it('coverage: at most 3 characters beyond the term, each from the next term', () => {
+    expect(checkOwnPassages([{ ...p21, text: p21.text.replace('操场', '鬱場') }])).toContain('p21: 鬱場 not taught by 二下');
+  });
+  it('at least 6 characters first taught in its term', () => {
+    expect(checkOwnPassages([{ ...p33, text: p33.text.replace('一群人围着我们', '大家看着我们').replace('我跟爸爸', '我和爸爸') }])).toContain('p33: 4 characters first taught in 二下 (筝鹰漂吹), expected 6');
+  });
+  it('the word gate: no blocked word, no adult word unless it is a 生词', () => {
+    expect(wordProblems('他们去参加婚礼。')).toContain('婚礼: blocked (romantic/dating/marriage)');
+    expect(wordProblems('我们一家人。')).toEqual(['一家人: not a word for a P2 child (HSK 7)']);
+    expect(wordProblems('我们一家人。', ['一家人'])).toEqual([]);
+    expect(wordProblems('新学年开始了，我们十个人一天读一本书。')).toEqual([]); // not dictionary words: 十个人, 一天
+  });
+  it('生词: 1–4, in the passage, from the term, with a kid gloss that matches the app’s', () => {
+    expect(checkOwnPassages([{ ...p21, words: [] }])).toContain('p21: 0 生词, expected 1–4');
+    expect(checkOwnPassages([{ ...p21, words: [{ text: '星星', gloss: 'star' }] }])).toEqual(expect.arrayContaining(['p21: 生词 星星 is not in the passage', 'p21: 生词 星星 has no character first taught in 二上']));
+    expect(checkOwnPassages([{ ...p21, words: [{ text: '座位', gloss: 'a place where you sit down' }] }])).toEqual(expect.arrayContaining(['p21: 生词 座位 gloss "a place where you sit down": 6 words (at most 4)', 'p21: 生词 座位 gloss "a place where you sit down" differs from its kid gloss "seat"']));
+  });
+  it('no duplicate text, no two sentences opening alike', () => {
+    expect(checkOwnPassages([p21, { ...p21, id: 'p22' }])).toContain('p22: the same text as p21');
+    expect(checkOwnPassages([p49, { ...p33, id: 'p34', text: '今天早上，闹钟没有响，' + p33.text }])).toContain('p34: "今天早上，闹钟没有响，星期天，天气很好，我跟爸爸去公园放风筝。" opens like a sentence of p49');
   });
 });

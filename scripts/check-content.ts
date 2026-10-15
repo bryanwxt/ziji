@@ -1,7 +1,11 @@
 import type { BuiltinChar, Passage, PassageQuestion } from '../src/types';
-import { HSK_WORDS } from '../src/content';
+import { HSK_WORDS, MOE_TERMS, schoolTerm } from '../src/content';
+import { BLOCK_REASON, BLOCKED } from '../src/content/blocked';
+import { glossProblems, kidGloss } from '../src/content/kidGloss';
 import { allowedChars } from '../src/content/understand';
+import { isChildWord } from '../src/content/wordGate';
 import { tiles } from '../src/content/zuju';
+import { passageTerm } from '../src/langdu/level';
 import { splitSentences } from '../src/langdu/sentences';
 
 const HAN = /\p{Script=Han}/u;
@@ -27,8 +31,8 @@ export function checkContent(chars: BuiltinChar[], passages: Passage[], hasStrok
   for (const ch of new Set(Array.from(listed))) if (HAN.test(ch) && !seen.has(ch)) problems.push(`${ch}: on his school list but not built in`);
   const easy = new Set(chars.filter((c) => c.level <= 2).map((c) => c.char));
   const ids = new Set<string>();
-  // our own passages only: the Global Storybooks chunks are levelled by the import (scripts/storybooks/lib.ts)
-  for (const p of passages.filter((x) => x.source === 'ziji')) {
+  // our own first twenty only: p21 on are held to checkOwnPassages' writing rules, the Global Storybooks chunks to the import's
+  for (const p of passages.filter((x) => x.source === 'ziji' && !(Number(x.id.slice(1)) >= NEW_FROM))) {
     if (ids.has(p.id)) problems.push(`duplicate passage ${p.id}`);
     ids.add(p.id);
     const han = Array.from(p.text).filter((ch) => HAN.test(ch));
@@ -122,5 +126,81 @@ export function checkPassageQuestions(passages: Passage[], questions: Readonly<R
     for (const q of qs) problems.push(...questionProblems(p, q));
   }
   for (const id of Object.keys(questions)) if (!passages.some((p) => p.id === id)) problems.push(`${id}: questions for no passage`);
+  return problems;
+}
+
+/** The words of a passage a P2 child may meet (spec 2026-10-15 §2.2, word gate): word by word as the content gate reads it, a
+ *  blocked word never; a dictionary word of two characters or more only if the gate allows it or the passage teaches it (生词). */
+export function wordProblems(text: string, taught: readonly string[] = []): string[] {
+  const out: string[] = [];
+  for (const s of splitSentences(text)) {
+    for (const t of tiles(s)) {
+      const bare = t.replace(PUNCT_RE, '');
+      const core = bare.replace(PARTICLES_RE, '');
+      if (BLOCKED.has(bare) || BLOCKED.has(core)) out.push(`${core}: blocked (${BLOCK_REASON.get(core) ?? BLOCK_REASON.get(bare)})`);
+      else if (Array.from(core).length > 1 && HSK_WORDS.has(core) && !isChildWord(core) && !taught.includes(core)) out.push(`${core}: not a word for a P2 child (HSK ${HSK_WORDS.get(core)})`);
+    }
+  }
+  return out;
+}
+
+/** Our new passages' terms and their numbers (spec 2026-10-15 §2.2, D4). */
+export const OWN_TERMS = ['二上', '二下', '三上'];
+export const NEW_FROM = 21; // p21 on: the 40 written for the library; p01–p20 keep checkContent's older rules
+const OPENING = 8; // two sentences starting with the same 8 characters are near-duplicates
+
+/**
+ * Our passages (spec 2026-10-15 §2.2): each levels at its stored term; the word gate; no duplicate text or sentence opening.
+ * The new ones (p21 on) also: 50–110 characters in 3–7 sentences, at 二上/二下/三上, ≥ 6 different characters first taught in
+ * their term, ≥ 95% of characters taught by the term with ≤ 3 others, each from the next term, and 1–4 生词 from the term, each
+ * with a kid gloss.
+ */
+export function checkOwnPassages(passages: Passage[]): string[] {
+  const problems: string[] = [];
+  const own = passages.filter((p) => p.source === 'ziji');
+  const texts = new Map<string, string>();
+  const openings = new Map<string, string>();
+  for (const p of own) {
+    if (texts.has(p.text)) problems.push(`${p.id}: the same text as ${texts.get(p.text)}`);
+    texts.set(p.text, p.id);
+    const term = passageTerm(p.text, p.names);
+    if (p.term !== term) problems.push(`${p.id}: stored term ${p.term}, levels at ${term ?? 'none'}`);
+    for (const w of wordProblems(p.text, (p.words ?? []).map((x) => x.text))) problems.push(`${p.id}: ${w}`);
+    for (const s of splitSentences(p.text)) {
+      const open = han(s).slice(0, OPENING).join('');
+      if (open.length < OPENING) continue;
+      const other = openings.get(open);
+      if (other && other !== p.id) problems.push(`${p.id}: "${s}" opens like a sentence of ${other}`);
+      openings.set(open, p.id);
+    }
+    if (Number(p.id.slice(1)) < NEW_FROM) continue;
+    const chars = han(p.text);
+    const n = splitSentences(p.text).length;
+    if (chars.length < 50 || chars.length > 110) problems.push(`${p.id}: ${chars.length} characters, expected 50–110`);
+    if (n < 3 || n > 7) problems.push(`${p.id}: ${n} sentences, expected 3–7`);
+    if (!OWN_TERMS.includes(p.term)) {
+      problems.push(`${p.id}: term ${p.term}, expected one of ${OWN_TERMS.join(' ')}`);
+      continue;
+    }
+    const allowed = allowedChars(p.term);
+    const outside = [...new Set(chars.filter((c) => !allowed.has(c)))];
+    const covered = chars.filter((c) => allowed.has(c)).length / chars.length;
+    if (covered < 0.95) problems.push(`${p.id}: ${Math.round(covered * 100)}% of its characters taught by ${p.term}, expected 95%`);
+    if (outside.length > 3) problems.push(`${p.id}: ${outside.length} characters beyond ${p.term} (${outside.join('')}), at most 3`);
+    const next = MOE_TERMS[MOE_TERMS.indexOf(p.term) + 1];
+    const far = outside.filter((c) => schoolTerm(c) !== next);
+    if (far.length) problems.push(`${p.id}: ${far.join('')} not taught by ${next}`);
+    const termChars = [...new Set(chars.filter((c) => schoolTerm(c) === p.term))];
+    if (termChars.length < 6) problems.push(`${p.id}: ${termChars.length} characters first taught in ${p.term} (${termChars.join('')}), expected 6`);
+    const words = p.words ?? [];
+    if (words.length < 1 || words.length > 4) problems.push(`${p.id}: ${words.length} 生词, expected 1–4`);
+    for (const w of words) {
+      if (!p.text.includes(w.text)) problems.push(`${p.id}: 生词 ${w.text} is not in the passage`);
+      if (!han(w.text).some((c) => schoolTerm(c) === p.term)) problems.push(`${p.id}: 生词 ${w.text} has no character first taught in ${p.term}`);
+      for (const g of glossProblems(w.gloss)) problems.push(`${p.id}: 生词 ${w.text} gloss "${w.gloss}": ${g}`);
+      const known = kidGloss(w.text);
+      if (known !== undefined && known !== w.gloss) problems.push(`${p.id}: 生词 ${w.text} gloss "${w.gloss}" differs from its kid gloss "${known}"`);
+    }
+  }
   return problems;
 }
