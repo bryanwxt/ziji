@@ -23,6 +23,8 @@ import { Stage } from '../../src/ui/stage/Stage';
 import { Pet } from '../../src/ui/Pet';
 import { Truffle } from '../../src/ui/truffle/Truffle';
 import { COSTUMES } from '../../src/fun/costumes';
+import { costumeById } from '../../src/fun/costumes';
+import { SHEET_CELL_HEIGHT, SHEET_COLUMNS } from './faceProbe';
 import { Label } from '../../src/ui/Label';
 import { PairGame } from '../../src/activities/practice/PairGame';
 import { BuildSentence } from '../../src/activities/practice/BuildSentence';
@@ -152,6 +154,25 @@ else if (which === 'costumes') {
   render(
     <div style="display:grid;grid-template-columns:repeat(8,150px);gap:6px;padding:8px;background:#fbf6ea;font:600 13px sans-serif;text-align:center">
       {COSTUMES.map((c) => <div key={c.id}><Truffle mood="cheer" outfit={c.id} size={140} /><div>{c.zh}</div></div>)}
+    </div>,
+    app,
+  );
+}
+else if (which === 'costume-sheet') {
+  // the v3 contact sheet (rewards spec §5.1; compare with docs/worlds/costumes/standard-v3.png): idle at 220 px, the 64 px
+  // Wardrobe tile, and cheering at 220 px with his right paw up (the props ride the paw)
+  const ids = (new URLSearchParams(location.search).get('ids') ?? '').split(',').filter(Boolean);
+  const raised = PAW_TRACKS.raise(400)!;
+  render(
+    <div style={`display:grid;grid-template-columns:repeat(${SHEET_COLUMNS}, 232px);gap:8px;padding:8px;background:#fbf6ea;font:600 13px sans-serif;text-align:center`}>
+      {ids.map((id) => (
+        <div key={id} data-costume={id} style={`height:${SHEET_CELL_HEIGHT - 8}px`}>
+          <figure data-row="idle" style="margin:0"><Truffle expression="neutral" outfit={id} size={220} label={null} /></figure>
+          <figure data-row="tile" style="margin:0"><Truffle mood="content" outfit={id} size={64} label={null} /></figure>
+          <figure data-row="cheer" style="margin:0"><Truffle expression="joy" paws={raised} outfit={id} size={220} label={null} /></figure>
+          <div>{costumeById(id)?.zh ?? id}</div>
+        </div>
+      ))}
     </div>,
     app,
   );

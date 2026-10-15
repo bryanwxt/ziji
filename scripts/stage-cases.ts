@@ -5,15 +5,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { webkit } from 'playwright-core';
 import { chaptersShim } from './stage-cases/shim';
+import { bundleStagePage } from './stage-cases/bundle';
 import { storyWalk } from './story-walk';
 import { textChecks } from './text-checks';
 import { WORLDS } from '../src/fun/worlds';
 
-const dir = join(tmpdir(), `ziji-stage-cases-${process.pid}`);
-mkdirSync(dir, { recursive: true });
-await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, plugins: [chaptersShim], jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.woff': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"./"' }, logLevel: 'error' });
-cpSync('public/worlds', join(dir, 'worlds'), { recursive: true }); // the paintings, next to the page (spec 2026-10-13 §5)
-writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
+const dir = await bundleStagePage();
 
 /** Anything in the lesson card cut off by the card's own box (the same probe as the clue case), and the phone typography checks
  *  (text-checks.ts: pinyin over its character, no line led by 。, no speak button on text, no clipped tag). */

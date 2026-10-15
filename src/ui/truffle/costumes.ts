@@ -3,6 +3,7 @@ import { BODY, belly, eyes, hood, INK, MUZZLE, num, pair, ropeTail, S, s2, shade
 import { MYTH_HOOD, MYTH_OUTFIT } from './mythCostumes';
 import { EYE_L, EYE_R, EYE_Y, FUR } from './rig';
 import { LWI } from '../cel';
+import { V3 } from './v3';
 
 // Costume art in Truffle's viewBox (30 20 260 270). Ink outlines match the mascot (3.2px, round joins).
 // Redrawn 2026-10-06 (parent: some, like the zodiac ones, were hard to identify): each zodiac hood wears the animal's own
@@ -217,10 +218,14 @@ const OUTFIT: Record<string, (c: Costume) => Outfit> = {
   }),
 };
 
+/** A costume's layers: behind him, over his body, on his head, his tail's replacement, and art inside each paw (rewards spec §5.1). */
+export interface CostumeLayer { back: string; body: string; head: string; tail?: string; pawL?: string; pawR?: string; hidesEars: boolean }
+
 /** The layers for a costume id, or null for unknown ids (ignored, never worn). `tail` replaces his own tail (it swishes with it). */
-export function costumeLayer(id: string | null | undefined): { back: string; body: string; head: string; tail?: string; hidesEars: boolean } | null {
+export function costumeLayer(id: string | null | undefined): CostumeLayer | null {
   const c = costumeById(id);
   if (!c) return null;
+  const v3 = V3[c.id]; if (v3) return v3();
   if (c.kind === 'onesie') {
     const a: Animal & { back?: string } = (ANIMAL[c.id] ?? MYTH_HOOD[c.id])!(c);
     return {
