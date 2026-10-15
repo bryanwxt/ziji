@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { Rating } from 'ts-fsrs';
 import { freshDb, makeCard, makeWord } from '../test/fixtures';
-import { DEFAULT_SETTINGS, DEFAULT_KID } from '../types';
+import { DEFAULT_SETTINGS, DEFAULT_KID, type KidState } from '../types';
+import { EMPTY_METER } from '../fun/meter';
 import {
   addAnswer, answersSince,
   addRecording, addReviewLog, allCards, allWords, deleteWord, getKid, getSettings, listRecordings,
@@ -236,5 +237,16 @@ describe('hear cards', () => {
     await addReviewLog(db, { cardId: 'b:门:hear', wordId: 'b:门', kind: 'hear', at: 1, rating: 3, correct: true });
     await addReviewLog(db, { cardId: 'b:大:hear', wordId: 'b:大', kind: 'hear', at: 2, rating: 3, correct: true });
     expect((await logsForCard(db, 'b:门:hear')).map((l) => l.wordId)).toEqual(['b:门']);
+  });
+});
+describe('river meter migration (rewards spec §6)', () => {
+  it('an older kid record starts with an empty meter and no bank; owned costumes, stars and the chest date are untouched', () => {
+    const { meter: _gone, ...old } = { ...DEFAULT_KID, ownedCostumes: ['zeus', 'tiger'], bonusStars: 9, lastChestDate: '2026-10-14' };
+    const kid = normalizeKid(old as Partial<KidState>)!;
+    expect(kid.meter).toEqual(EMPTY_METER);
+    expect(kid.bank).toBe(0);
+    expect(kid.ownedCostumes).toEqual(['zeus', 'tiger']);
+    expect(kid.bonusStars).toBe(9);
+    expect(kid.lastChestDate).toBe('2026-10-14');
   });
 });

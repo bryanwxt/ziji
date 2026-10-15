@@ -1,6 +1,7 @@
 import { migrateWorldId, OLD_WORLDS, WORLDS, type WorldId } from '../fun/worlds';
 import { nextRung, type Rung } from '../session/ladder';
 import { normalizeFinds } from '../fun/finds';
+import { normalizeBank, normalizeMeter } from '../fun/meter';
 import { migrateAccessory } from '../fun/accessories';
 import { DEFAULT_KID, DEFAULT_READING, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type ReadingState, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
 import type { AppDb } from './db';
@@ -41,6 +42,8 @@ export function normalizeKid(raw: Partial<KidState> | null | undefined): KidStat
     speakingLast: kid.speakingLast === 'langdu' || kid.speakingLast === 'story' ? kid.speakingLast : null,
     story: normalizeStory(kid.story),
     finds: normalizeFinds(kid.finds),
+    meter: normalizeMeter(kid.meter),
+    bank: normalizeBank(kid.bank),
   };
 }
 
