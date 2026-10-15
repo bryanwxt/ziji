@@ -188,8 +188,8 @@ describe('Truffle onesie hood', () => {
     const hooded = render(<Truffle outfit="tiger" />);
     expect(hooded.container.querySelector('.truffle__head')!.innerHTML).not.toContain('M74 92');
     hooded.unmount();
-    const chef = render(<Truffle outfit="chef" />);
-    expect(chef.container.querySelector('.truffle__head')!.innerHTML).toContain('M74 92');
+    const banded = render(<Truffle outfit="football" />); // a sweatband: his ears show above it
+    expect(banded.container.querySelector('.truffle__head')!.innerHTML).toContain('M74 92');
   });
 });
 

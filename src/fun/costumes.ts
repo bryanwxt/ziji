@@ -59,10 +59,12 @@ export const ANIMALS: Costume[] = [
   an('owl', '猫头鹰', 'māo tóu yīng', '#7a6a9a'), an('tigercub', '小老虎', 'xiǎo lǎo hǔ', '#f2f0fa'), an('bunny', '小白兔', 'xiǎo bái tù', '#fffefa'),
 ];
 
-/** Jobs (spec §5.2). The rest are added with their full-body art (Task 10). */
+/** Jobs, drawn full-body (spec §5.2). `football` keeps its id and is now 足球员, in a yellow jersey. */
 export const JOBS: Costume[] = [
-  j('astronaut', '宇航员', 'yǔ háng yuán', '#f2f4f8'), j('chef', '厨师', 'chú shī', '#fffdf7'), j('wizard', '魔法师', 'mó fǎ shī', '#7b5cd6'),
-  j('pirate', '海盗', 'hǎi dào', '#2f4a7a'), j('football', '足球员', 'zú qiú yuán', '#d8262e'),
+  j('astronaut', '宇航员', 'yǔ háng yuán', '#f2f4f8'), j('chef', '厨师', 'chú shī', '#fffdf7'), j('firefighter', '消防员', 'xiāo fáng yuán', '#d8302a'),
+  j('doctor', '医生', 'yī shēng', '#49b8a8'), j('pilot', '飞行员', 'fēi xíng yuán', '#9a6338'), j('police', '警察', 'jǐng chá', '#2a3f7a'),
+  j('football', '足球员', 'zú qiú yuán', '#ffcc2e'), j('wizard', '魔法师', 'mó fǎ shī', '#7b5cd6'), j('pirate', '海盗', 'hǎi dào', '#2d2a33'),
+  j('hawker', '小贩', 'xiǎo fàn', '#2f74c9'),
 ];
 
 /** Chinese myths, and the fortune cat and the lion dance. */

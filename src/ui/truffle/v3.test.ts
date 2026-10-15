@@ -99,3 +99,23 @@ describe('the favourite onesies (rewards spec §5.2)', () => {
     expect(V3.bunny!().pawR).toContain('#ff9f43');
   });
 });
+
+describe('the jobs, full-body (rewards spec §5.2)', () => {
+  it('all ten are drawn and on the 职业 shelf', () => {
+    const ids = ['astronaut', 'chef', 'firefighter', 'doctor', 'pilot', 'police', 'football', 'wizard', 'pirate', 'hawker'];
+    for (const id of ids) {
+      expect(V3[id], id).toBeTypeOf('function');
+      expect(costumeById(id), id).toMatchObject({ set: 'job', kind: 'outfit' });
+    }
+  });
+  it("the pirate's eye patch is up on his hat, never over an eye (his face stays readable)", () => {
+    expect(V3.pirate!().head).not.toMatch(/<ellipse cx="202" cy="118"/);
+  });
+  it("the chef's spoon and the wizard's star staff ride his paws, no longer drawn on his body", () => {
+    const chef = V3.chef!();
+    expect(chef.pawL).toContain('#c98f55');
+    expect(chef.body).not.toContain('#c98f55');
+    expect(V3.wizard!().pawR).toContain('#8a5a3c');
+    expect(V3.wizard!().body).not.toContain('M100 262 L76 214');
+  });
+});

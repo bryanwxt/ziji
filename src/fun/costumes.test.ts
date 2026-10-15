@@ -116,6 +116,7 @@ describe('telling the onesies apart (parent, 2026-10-06; rewards spec §5.1: one
   /** Lookalike pairs; each costume task adds its own (only pairs whose costumes exist are checked). */
   const PAIRS: [string, string][] = [['ox', 'horse'], ['ox', 'monkey'], ['ox', 'dog'], ['horse', 'monkey'], ['horse', 'dog'], ['monkey', 'dog'], ['dragon', 'snake'], ['rabbit', 'goat'], ['koi', 'crab'],
     ['tigercub', 'tiger'], ['babydino', 'dragon'], ['pterosaur', 'dragon'], ['pterosaur', 'babydino'], ['magpie', 'hornbill'], ['penguin', 'hornbill'], ['parrot', 'magpie'], ['shark', 'rat'], ['owl', 'otter'], ['unicorn', 'rabbit'],
+    ['football', 'firefighter'], ['police', 'pirate'], ['police', 'hawker'],
   ];
   it('the lookalikes never share a colour', () => {
     for (const [a, b] of PAIRS) {
