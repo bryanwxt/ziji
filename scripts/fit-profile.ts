@@ -3,6 +3,7 @@ import 'fake-indexeddb/auto';
 import { builtinWords } from '../src/content';
 import { makeParentWords } from '../src/content/parseWordList';
 import { COSTUMES } from '../src/fun/costumes';
+import { EMPTY_METER, type Meter } from '../src/fun/meter';
 import { ACCESSORIES } from '../src/fun/pet';
 import { WORLDS, type WorldId } from '../src/fun/worlds';
 import { localDateKey } from '../src/lib/date';
@@ -30,6 +31,8 @@ export interface FitProfileOptions {
   writeSentence?: boolean; // 写一写 opens on 保持, whose cue is a long class sentence
   reviewHistory?: boolean; // four months of reviews (~1,700 training items): Skills shows retention and Fit can run (SRS tuning spec §9)
   ownsAll?: boolean; // every costume and accessory owned: the chest gives stars (sweep: that prize was never screenshotted)
+  meter?: Partial<Meter>; // the river meter as a test wants it (rewards spec §3); its day is today
+  bank?: number;
 }
 
 const LONG_PASSAGE =
@@ -87,6 +90,8 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
       speakingLast: o.speakingLast ?? null,
       lastChestDate: o.doneToday ? today : null,
       bonusStars: 3,
+      ...(o.meter ? { meter: { ...EMPTY_METER, day: today, ...o.meter } } : {}),
+      ...(o.bank ? { bank: o.bank } : {}),
       ...(o.ownsAll ? { ownedCostumes: COSTUMES.map((c) => c.id), ownedAccessories: [...ACCESSORIES] } : {}),
     });
   }

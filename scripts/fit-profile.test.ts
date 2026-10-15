@@ -37,4 +37,10 @@ describe('buildFitProfile', () => {
     const kid = p.file.kid as Parameters<typeof openChest>[0];
     expect(openChest(kid, '2026-10-06').result.kind).toBe('stars');
   });
+  it('can seed the river meter and the bank (rewards spec §3)', async () => {
+    const p = readBackup(await buildFitProfile({ now: NOW, doneToday: true, meter: { halves: 1, chestsToday: 1 }, bank: 1 }));
+    const kid = p.file.kid as { meter: { halves: number; chestsToday: number; owed: number; lesson: number | null }; bank: number };
+    expect(kid.meter).toMatchObject({ halves: 1, chestsToday: 1, owed: 0, lesson: null });
+    expect(kid.bank).toBe(1);
+  });
 });

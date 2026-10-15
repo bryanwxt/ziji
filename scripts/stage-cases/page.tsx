@@ -93,9 +93,10 @@ if (which?.startsWith('alive') || which === 'moments') {
 /** One live Truffle on a lesson stage; the check calls window.react('right') to make him react (spec 2026-10-04 §4, §6). */
 function Alive({ calm }: { calm: boolean }) {
   const [react, setReact] = useState<Reaction | null>(null);
+  const outfit = new URLSearchParams(location.search).get('outfit'); // a costume with paw props (rewards spec §7: still within 8 ms)
   (window as unknown as { react: (kind: Reaction['kind']) => void }).react = (kind) => setReact((r) => ({ kind, key: (r?.key ?? 0) + 1 }));
   return screen(
-    <Stage activity="flash" truffle={<Pet kid={DEFAULT_KID} size={180} alive calm={calm} react={react} />} sheet={<FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />}>
+    <Stage activity="flash" truffle={<Pet kid={{ ...DEFAULT_KID, outfit }} size={180} alive calm={calm} react={react} />} sheet={<FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />}>
       <div style="width:200px;height:200px" />
     </Stage>,
   );
