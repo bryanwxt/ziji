@@ -132,9 +132,10 @@ const firefighter = (): CostumeLayer => ({
     cel('M136 88 L134 50 C134 36 146 28 160 28 C174 28 186 36 186 50 L184 88 C176 84 144 84 136 88 Z', FIRE_GOLD, 148, 40, 0.88) +
     `<path d="M142 82 L141 52 C141 42 150 36 160 36 C170 36 179 42 179 52 L178 82" fill="none" stroke="#c8962a" stroke-width="1.8"/>` +
     `<circle cx="160" cy="60" r="12" fill="${FIRE}" ${s2}/><path d="M160 51 C166 57 166 63 160 69 C154 63 154 57 160 51 Z" fill="${FIRE_GOLD}"/>`,
-  // the hose comes up from the ground (past the bottom of his box, so it never ends in the air), into a red-and-brass nozzle,
-  // and a fan of water sprays from it
-  pawR: rope('M188 270 C196 300 236 306 250 420', '#e8c05a', 13) +
+  // a short hose: from a coil at his feet, up into a red-and-brass nozzle, and a fan of water sprays from it. It rides his paw,
+  // so it stays short and close (a long hose swung far below him when he cheered)
+  pawR: rope('M186 270 C190 282 206 284 222 278 C240 272 248 256 236 250 C224 244 212 256 220 268 C226 278 246 280 262 274', '#e8c05a', 9) +
+    `<g transform="translate(262 274) rotate(-20)"><path d="M-2 -7 L10 -7 L10 7 L-2 7 Z" fill="#d9a83a" ${s2}/><path d="M4 -7 L4 7" stroke="#b08530" stroke-width="1.6"/></g>` +
     `<g transform="translate(186 260) rotate(-24) scale(.82)">` +
     `<path d="M48 -6 L132 -34 Q144 0 132 34 L48 6 Z" fill="#bfe6ff" fill-opacity=".85" stroke="#7fc0ea" stroke-width="2" stroke-linejoin="round"/>` +
     `<path d="M50 0 L136 0 M52 -3 L130 -20 M52 3 L130 20" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>` +

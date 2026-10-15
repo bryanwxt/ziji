@@ -108,6 +108,17 @@ describe('the jobs, full-body (rewards spec §5.2)', () => {
       expect(costumeById(id), id).toMatchObject({ set: 'job', kind: 'outfit' });
     }
   });
+  it("the firefighter's hose stays by him, coiled at his feet, never trailing off his box (it rides his paw when he cheers)", () => {
+    const hose = [...V3.firefighter!().pawR!.matchAll(/ d="([^"]*)" fill="none" stroke="#e8c05a"/g)].map((m) => m[1]!);
+    expect(hose.length).toBeGreaterThan(0);
+    for (const d of hose) {
+      const n = (d.match(/-?\d*\.?\d+/g) ?? []).map(Number);
+      for (let i = 0; i + 1 < n.length; i += 2) {
+        expect(n[i], d).toBeLessThanOrEqual(276);
+        expect(n[i + 1], d).toBeLessThanOrEqual(284);
+      }
+    }
+  });
   it("the pirate's eye patch is up on his hat, never over an eye (his face stays readable)", () => {
     expect(V3.pirate!().head).not.toMatch(/<ellipse cx="202" cy="118"/);
   });
