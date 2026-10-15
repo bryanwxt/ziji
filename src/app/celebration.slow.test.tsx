@@ -18,6 +18,14 @@ const plan = (steps: StepKind[]): SessionPlan => ({ steps, reviewWordIds: [], ne
 const finished = (date: string, steps: StepKind[]) => ({ ...createSessionRecord(plan(steps), date, 0), completed: true, completedSteps: steps });
 
 const hold = () => new Promise((r) => setTimeout(r, 1300));
+/** Taps 继续 until `text` shows: the river (and, from Task 5, the goals) come before the powers and badges. */
+async function continueTo(text: string) {
+  for (let i = 0; i < 6 && !screen.queryByText(text); i++) {
+    fireEvent.click(screen.getByText('继续'));
+    await new Promise((r) => setTimeout(r, 30));
+  }
+  return screen.findByText(text);
+}
 
 async function setup(date: string, steps: StepKind[]) {
   const app = await makeAppData();
@@ -47,7 +55,7 @@ describe('Celebration chest', () => {
     await setup('2026-10-02', ['flashcards']);
     fireEvent.click(screen.getByText('继续'));
     const chest = await screen.findByRole('button', { name: '按住打开宝箱' });
-    const above = () => { const out: string[] = []; for (let e = document.querySelector('.chest-slot')!.previousElementSibling; e; e = e.previousElementSibling) out.unshift(e.tagName + '.' + e.className.split(' ')[0]); return out; };
+    const above = () => { const out: string[] = []; for (let e = document.querySelector('.chest-slot')!.previousElementSibling; e; e = e.previousElementSibling) out.unshift(`${e.tagName}.${(e.getAttribute('class') ?? '').split(' ')[0]}`); return out; };
     const closed = above();
     fireEvent(chest, new Event('pointerdown', { bubbles: true }));
     await hold();
@@ -105,8 +113,7 @@ describe('Celebration power-up', () => {
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
-    fireEvent.click(screen.getByText('继续'));
-    expect(await screen.findByText('新能力！')).toBeTruthy();
+    await continueTo('新能力！');
     expect(screen.getByText('按住，变身！')).toBeTruthy();
     expect(document.querySelector('svg.truffle')?.getAttribute('data-tier')).toBe('0');
     fireEvent(screen.getByRole('button', { name: '按住，变身！' }), new Event('pointerdown', { bubbles: true }));
@@ -127,8 +134,7 @@ describe('Celebration power-up, several powers at once', () => {
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
-    fireEvent.click(screen.getByText('继续'));
-    await screen.findByText('新能力！');
+    await continueTo('新能力！');
     expect(document.querySelector('.power-intro')?.textContent).toContain('火');
     expect(screen.queryByText('继续')).toBeNull();
     fireEvent(screen.getByRole('button', { name: '按住，变身！' }), new Event('pointerdown', { bubbles: true }));
@@ -145,8 +151,7 @@ describe('Celebration power-up, several powers at once', () => {
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
-    fireEvent.click(screen.getByText('继续'));
-    await screen.findByText('新能力！');
+    await continueTo('新能力！');
     app.db.close();
     fireEvent(screen.getByRole('button', { name: '按住，变身！' }), new Event('pointerdown', { bubbles: true }));
     await hold();
@@ -175,8 +180,7 @@ describe('Celebration power-up in costume', () => {
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02', ownedCostumes: ['tiger'], outfit: 'tiger', ownedAccessories: ['scarf'], wearing: 'scarf' });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
-    fireEvent.click(screen.getByText('继续'));
-    await screen.findByText('新能力！');
+    await continueTo('新能力！');
     expect(document.querySelector('.celebrate svg.truffle')?.getAttribute('data-outfit')).toBe('tiger');
     expect(document.querySelector('.celebrate .truffle__accessory')).toBeTruthy();
   });

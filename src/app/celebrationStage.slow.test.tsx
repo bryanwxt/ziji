@@ -41,6 +41,7 @@ describe('the celebration on the stage (spec 2026-10-04 §3, §4.4, phase D)', (
     await setup();
     fireEvent.click(screen.getByText('继续'));
     await screen.findByRole('button', { name: '按住打开宝箱' });
+    await waitFor(() => expect((screen.getByRole('button', { name: '按住打开宝箱' }) as HTMLButtonElement).disabled).toBe(false), { timeout: 2000 });
     expect(document.querySelector('.celebrate__watch svg.truffle')?.getAttribute('data-react')).toBe('excited');
     const chest = screen.getByRole('button', { name: '按住打开宝箱' });
     fireEvent(chest, new Event('pointerdown', { bubbles: true }));
@@ -53,6 +54,7 @@ describe('the celebration on the stage (spec 2026-10-04 §3, §4.4, phase D)', (
     await setup(false, true);
     fireEvent.click(screen.getByText('继续'));
     await screen.findByRole('button', { name: '按住打开宝箱' });
+    await waitFor(() => expect((screen.getByRole('button', { name: '按住打开宝箱' }) as HTMLButtonElement).disabled).toBe(false), { timeout: 2000 });
     const before = document.querySelector('.celebrate__watch svg.truffle')!.getAttribute('data-react-key');
     fireEvent(screen.getByRole('button', { name: '按住打开宝箱' }), new Event('pointerdown', { bubbles: true }));
     await waitFor(() => expect(document.querySelector('.prize')).toBeTruthy(), { timeout: 3000 });

@@ -106,11 +106,6 @@ export const prizeGroup = (x: Costume): Exclude<PrizeGroup, 'accessory'> => (x.s
 /** New clothes still in the chest (the chest goal, spec §4). */
 export const costumesLeft = (kid: KidState): number => CHEST_COSTUMES.filter((x) => !kid.ownedCostumes.includes(x.id)).length;
 
-/** Call only after today's daily (not free-play) session is complete. Task 4 replaces this with the meter's owed chests. */
-export function canOpenChest(kid: KidState, today: string): boolean {
-  return kid.lastChestDate !== today;
-}
-
 type Prize = Exclude<ChestResult, { kind: 'stars' }>;
 
 /**
