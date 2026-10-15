@@ -178,17 +178,33 @@ describe('finishing 朗读 always ends the lesson (final review I4, I6)', () => 
     expect(kid.bonusStars).toBe(0);
     expect(kid.reading.history['pp:1']?.reads).toBe(1);
   });
+  it('the read is saved onto his state as stored, in one go: a change saved meanwhile (a find, a star) is kept', async () => {
+    const app = await setup();
+    renderWithApp(<SessionScreen free={false} />, app);
+    await warmUp();
+    await listenAndRead();
+    const stale = (await getKid(app.db))!;
+    await saveKid(app.db, { ...stale, bonusStars: 5 }); // saved elsewhere (Home, a prop tap) after this step last read his state
+    const get = app.db.get.bind(app.db);
+    app.db.get = ((store: string, ...rest: unknown[]) => (store === 'kid' ? Promise.resolve(stale) : (get as (...a: unknown[]) => unknown)(store, ...rest))) as typeof app.db.get;
+    fireEvent.click(btn('完成'));
+    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    app.db.get = get;
+    const kid = (await getKid(app.db))!;
+    expect(kid.bonusStars).toBe(5);
+    expect(kid.reading.history['pp:1']?.reads).toBe(1);
+  });
   it("his state can't be read when 朗读 ends: the lesson still reaches its celebration", async () => {
     const app = await setup();
     renderWithApp(<SessionScreen free={false} />, app);
     await warmUp();
     await listenAndRead();
-    const get = app.db.get.bind(app.db);
+    const transaction = app.db.transaction.bind(app.db);
     let failed = false;
-    app.db.get = ((store: string, ...rest: unknown[]) => {
-      if (store === 'kid' && !failed) { failed = true; return Promise.reject(new Error('read failed')); } // once: the 朗读 save
-      return (get as (...a: unknown[]) => unknown)(store, ...rest);
-    }) as typeof app.db.get;
+    app.db.transaction = ((store: string, ...rest: unknown[]) => {
+      if (store === 'kid' && !failed) { failed = true; throw new Error('read failed'); } // once: the 朗读 save (updateKid)
+      return (transaction as (...a: unknown[]) => unknown)(store, ...rest);
+    }) as typeof app.db.transaction;
     fireEvent.click(btn('完成'));
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     expect(failed).toBe(true);

@@ -152,6 +152,13 @@ describe('看图说话 parked: the path matches what the lesson does', () => {
     await screen.findByText('今天的练习');
     expect(names()).not.toContain('看图说话');
   });
+  it('a 多读一遍 today leaves no 朗读 stop the lesson would skip (nothing else to read)', async () => {
+    const app = await makeAppData({ settings: LANGDU, kid: { ...DEFAULT_KID, speakingLast: 'story', reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 1, lastRead: '2026-10-06', rest: 3, q: 0 } } } }, now: () => new Date(2026, 9, 6, 18) });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(names()).not.toContain('朗读');
+  });
   it('a 朗读 he read today stays on the path, named 朗读', async () => {
     const app = await makeAppData({ settings: LANGDU, kid: { ...DEFAULT_KID, speakingLast: 'langdu', reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 1, lastRead: '2026-10-06', rest: 3, q: 1 } } } }, now: () => new Date(2026, 9, 6, 18) });
     await saveSession(app.db, { ...createSessionRecord(plan, '2026-10-06', 0), completed: true, completedSteps: ['flashcards', 'speaking'] });

@@ -23,8 +23,13 @@ export const daysBetween = (from: string, to: string): number => Math.round((par
 
 export const entryOf = (r: ReadingHistory, id: string): PassageHistory => r.history[id] ?? NO_HISTORY;
 export const isRetired = (e: PassageHistory): boolean => e.rest > RETIRE_AFTER;
-/** Read or skipped in the last 3 days, today included. */
-export const inGap = (e: PassageHistory, today: string): boolean => [e.lastRead, e.lastSkipped].some((d) => !!d && daysBetween(d, today) < GAP_DAYS);
+/** Read or skipped in the last 3 days, today included. A date after today (a clock that ran ahead) is no gap. */
+export const inGap = (e: PassageHistory, today: string): boolean =>
+  [e.lastRead, e.lastSkipped].some((d) => {
+    if (!d) return false;
+    const since = daysBetween(d, today);
+    return since >= 0 && since < GAP_DAYS;
+  });
 
 /** Days past due (≥ 0: due); null for a passage never read, or retired. */
 export function overdue(e: PassageHistory, today: string): number | null {
@@ -53,6 +58,8 @@ export function nextRest(rest: number, well: boolean): number {
  *  the gap and the reads only. A lesson read moves the question turn on and says whether it was new or a revisit. */
 export function afterRead(r: ReadingHistory, id: string, today: string, how: ReadHow): ReadingHistory {
   const e = entryOf(r, id);
+  // a second lesson read of it today (two tabs): one more read, no second climb, turn or kind
+  if (how !== 'extra' && e.reads > 0 && e.lastRead === today) return { ...r, history: { ...r.history, [id]: { ...e, reads: e.reads + 1 } } };
   const first = e.reads === 0;
   const rest = first ? REST_LADDER[0] : how === 'extra' ? e.rest : nextRest(e.rest, how === 'well');
   const entry: PassageHistory = { ...e, reads: e.reads + 1, lastRead: today, rest, q: how === 'extra' ? e.q : e.q + 1 };
@@ -65,12 +72,14 @@ export function afterSkip(r: ReadingHistory, id: string, today: string): Reading
   return { ...r, history: { ...r.history, [id]: { ...e, lastSkipped: today, skips: (e.skips ?? 0) + 1 } } };
 }
 
-/** The parent marked ≥ 2 misreads: due again 3 days after the review (replaces the old extra day). A retired passage comes back. */
+/** The parent marked ≥ 2 misreads: due again 3 days after the review (replaces the old extra day). A retired passage comes back.
+ *  A review so long after the read that the rest would pass RETIRE_AFTER dates the rest from the review instead. */
 export function restFromReview(r: ReadingHistory, id: string, reviewDay: string): ReadingHistory {
   const e = r.history[id];
   if (!e?.reads || !e.lastRead) return r;
   const rest = Math.max(0, daysBetween(e.lastRead, reviewDay)) + REST_LADDER[0];
-  return { ...r, history: { ...r.history, [id]: { ...e, rest } } };
+  const entry = rest > RETIRE_AFTER ? { ...e, lastRead: reviewDay, rest: REST_LADDER[0] } : { ...e, rest };
+  return { ...r, history: { ...r.history, [id]: entry } };
 }
 
 export const warmupDue = (r: ReadingHistory, today: string): boolean => !r.lastWarmup || daysBetween(r.lastWarmup, today) >= WARMUP_EVERY;

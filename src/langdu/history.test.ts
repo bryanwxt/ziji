@@ -43,6 +43,13 @@ describe('rest after a read (spec 2026-10-15 §4, D6)', () => {
   it('a first read in 多读一遍 rests 3 days and leaves the first question for next time', () => {
     expect(entryOf(afterRead(H0, 'p02', '2026-10-15', 'extra'), 'p02')).toEqual({ reads: 1, lastRead: '2026-10-15', rest: 3, q: 0 });
   });
+  it('a second lesson read of the same passage the same day (two tabs) counts the read only: no second climb', () => {
+    const r = reads(H0, 'p01', ['2026-10-01', '2026-10-04']); // rest 7, q 2, a revisit
+    const twice = afterRead({ ...r, lastKind: 'new' }, 'p01', '2026-10-04', 'well');
+    expect(entryOf(twice, 'p01')).toEqual({ reads: 3, lastRead: '2026-10-04', rest: 7, q: 2 });
+    expect(twice.lastKind).toBe('new');
+    expect(entryOf(afterRead(r, 'p01', '2026-10-04', 'not-well'), 'p01')).toMatchObject({ reads: 3, rest: 7, q: 2 });
+  });
   it('a lesson read records whether it was new or a revisit', () => {
     const r = afterRead(H0, 'p01', '2026-10-01', 'well');
     expect(r.lastKind).toBe('new');
@@ -65,6 +72,10 @@ describe('the 3-day gap and due revisits', () => {
   it('never within 3 days of the last read, the same day included', () => {
     expect(['2026-10-15', '2026-10-16', '2026-10-17'].map((d) => inGap(entryOf(r, 'p01'), d))).toEqual([true, true, true]);
     expect(inGap(entryOf(r, 'p01'), '2026-10-18')).toBe(false);
+  });
+  it('a read dated in the future (a clock that ran ahead) is no gap', () => {
+    expect(inGap(entryOf(afterRead(H0, 'p01', '2026-10-20', 'well'), 'p01'), '2026-10-15')).toBe(false);
+    expect(inGap(entryOf(afterSkip(H0, 'p01', '2026-10-20'), 'p01'), '2026-10-15')).toBe(false);
   });
   it('due once its rest has passed; overdue counts the days since', () => {
     expect(overdue(entryOf(r, 'p01'), '2026-10-17')).toBe(-1);
@@ -95,6 +106,13 @@ describe("the parent's misread marks (spec 2026-10-15 §4)", () => {
     expect(entryOf(r, 'p01').lastRead).toBe('2026-10-11');
     const retired: ReadingHistory = { ...H0, history: { p02: { reads: 5, lastRead: '2026-10-01', rest: RETIRED_REST, q: 5 } } };
     expect(isRetired(entryOf(restFromReview(retired, 'p02', '2026-10-02'), 'p02'))).toBe(false);
+  });
+  it('a review long after the read (70 days) still brings the passage back, due 3 days after the review', () => {
+    const retired: ReadingHistory = { ...H0, history: { p02: { reads: 5, lastRead: '2026-08-01', rest: RETIRED_REST, q: 5 } } };
+    const e = entryOf(restFromReview(retired, 'p02', '2026-10-10'), 'p02');
+    expect(e).toEqual({ reads: 5, lastRead: '2026-10-10', rest: 3, q: 5 });
+    expect(isRetired(e)).toBe(false);
+    expect(overdue(e, '2026-10-13')).toBe(0);
   });
   it('a passage never read is left alone', () => {
     expect(restFromReview(H0, 'p01', '2026-10-13')).toBe(H0);

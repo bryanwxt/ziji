@@ -50,7 +50,7 @@ import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, sendBack, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
-import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
+import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
 import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
@@ -464,15 +464,14 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         }
       }
       try {
-        const fresh = (await getKid(db)) ?? kid;
-        // every read counts, a take or none: an unrecorded 读完了 moves the passage on too (spec 2026-10-15 §1 cause 4)
-        const read = afterRead(fresh.reading, reading.passage.id, reading.day, readHow({ extra: false, asked: !!reading.passage.question, meaning: r.meaning }));
-        await saveKid(db, {
-          ...fresh,
-          reading: reading.warmup ? afterWarmup(read, reading.day, !!r.intro) : read,
-          speakingLast: 'langdu',
-          bonusStars: fresh.bonusStars + (bonus ? 1 : 0),
-        });
+        // every read counts, a take or none: an unrecorded 读完了 moves the passage on too (spec 2026-10-15 §1 cause 4); applied to
+        // his state as stored, in one transaction, so a change saved meanwhile (a find, a star) is kept
+        const how = readHow({ extra: false, asked: !!reading.passage.question, meaning: r.meaning });
+        const change = (fresh: KidState): KidState => {
+          const read = afterRead(fresh.reading, reading.passage.id, reading.day, how);
+          return { ...fresh, reading: reading.warmup ? afterWarmup(read, reading.day, !!r.intro) : read, speakingLast: 'langdu', bonusStars: fresh.bonusStars + (bonus ? 1 : 0) };
+        };
+        if (!(await updateKid(db, change))) await saveKid(db, change(kid)); // nothing stored yet: start from the lesson's copy
       } catch (err) {
         logError(err); // his state couldn't be saved: the lesson still ends, with no bonus
         bonus = false;

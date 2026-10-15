@@ -172,10 +172,11 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const world = currentWorld(k);
   const canRead = settings.langdu && !!pickPassage(k.reading, readingPool(data.parentPassages, PASSAGES, { readable: data.know.knownChars, classTerm: null }), today);
   // what the speaking stop is today: what he did, once done; otherwise what comes next (朗读 while 看图说话 is parked, or nothing to read)
-  // 看图说话 parked: the stop is 朗读 when there's something to read (or he read today), and left off the path otherwise (the lesson skips it)
+  // 看图说话 parked: the stop is 朗读 when there's something to read (or today's lesson read), and left off the path otherwise (the
+  // lesson skips it). A 多读一遍 read alone is no lesson read: the step must be done today too.
   const speakingKind = settings.story
     ? todaySession?.completedSteps.includes('speaking') ? k.speakingLast ?? 'story' : nextSpeaking(k.speakingLast, canRead, true)
-    : canRead || readToday(k.reading, today) ? 'langdu' : null;
+    : canRead || (!!todaySession?.completedSteps.includes('speaking') && readToday(k.reading, today)) ? 'langdu' : null;
   const steps = (todaySession?.plan.steps ?? stepsOn(settings)).filter((s) => s !== 'speaking' || speakingKind !== null);
   const nodes = pathNodes(steps, todaySession?.completedSteps ?? [], chestOpened, doneToday);
   const wotdWord = wotd ? data.know.wordsById.get(`b:${wotd}`) : undefined;
