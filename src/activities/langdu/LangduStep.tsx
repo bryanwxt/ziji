@@ -5,9 +5,11 @@ import { playSfx } from '../../audio/sfx';
 import { speak } from '../../audio/speech';
 import { introLines } from '../../langdu/intro';
 import type { LangduPassage } from '../../langdu/pool';
+import { shuffleQuestion } from '../../langdu/questions';
 import { answeringSentence, readLimitMs, splitSentences } from '../../langdu/sentences';
 import { betterTake } from '../../langdu/stars';
 import { useModelReader } from '../../langdu/useModelReader';
+import type { Rng } from '../../lib/random';
 import type { KidState, OralInfo } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
@@ -35,13 +37,15 @@ interface Props {
   micBlocked?: boolean;
   /** the stage cases open a part directly */
   startAt?: LangduPart;
+  /** shuffles the question's choices at each showing (spec 2026-10-15 §6); tests and the stage cases pass a seeded one */
+  rng?: Rng;
   onDone: (r: LangduResult) => void;
 }
 
 const BUBBLE: Record<LangduPart, string> = { warmup: '你好！', listen: '听我读！', read: '大声读！', compare: '比一比！', meaning: '想一想！' };
 
 /** 朗读 (spec 2026-10-12 §3): warm-up on day 1 → listen and follow → read alone → compare, one re-read → one meaning question. */
-export function LangduStep({ passage, oral, kid, withWarmup, extra = false, micBlocked = false, startAt, onDone }: Props) {
+export function LangduStep({ passage, oral, kid, withWarmup, extra = false, micBlocked = false, startAt, rng = Math.random, onDone }: Props) {
   const [part, setPart] = useState<LangduPart>(startAt ?? (withWarmup ? 'warmup' : 'listen'));
   const sentences = useMemo(() => splitSentences(passage.text), [passage.text]);
   const model = useModelReader(sentences);
@@ -51,7 +55,8 @@ export function LangduStep({ passage, oral, kid, withWarmup, extra = false, micB
   const [picked, setPicked] = useState<number | null>(null);
   const takeAudio = useRef<HTMLAudioElement>(null);
   const lines = useMemo(() => introLines(oral), [oral]);
-  const question = extra ? undefined : passage.question;
+  // the choices in a new order each time it is shown: the right one's place is never learnt (spec 2026-10-15 §6)
+  const question = useMemo(() => (extra || !passage.question ? undefined : shuffleQuestion(passage.question, rng)), [passage.question, extra]);
   // a microphone refused in the warm-up isn't asked for again to read
   const readBlocked = read.state === 'blocked' || (intro.state === 'blocked' && read.state === 'ready');
   const latest = takes[takes.length - 1] ?? null;

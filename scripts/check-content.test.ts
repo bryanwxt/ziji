@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { BUILTIN, PASSAGES } from '../src/content';
 import moe from '../src/content/moe2024.json';
 import { PASSAGE_QUESTIONS } from '../src/content/passageQuestions';
-import { checkContent, checkPassageQuestions } from './check-content';
+import type { Passage, PassageQuestion } from '../src/types';
+import { checkContent, checkPassageQuestions, questionProblems, topWord } from './check-content';
 
 const dataDir = join(process.cwd(), 'node_modules', 'hanzi-writer-data');
 const hasStrokeFile = (ch: string) => existsSync(join(dataDir, `${ch}.json`));
@@ -24,18 +25,48 @@ describe('built-in content', () => {
     expect(problems).toContain('x: uses 惜 outside levels 1–2'); // 惜 is HSK 5
   });
 });
-describe('meaning questions (spec 2026-10-12 §3)', () => {
-  const easy = new Set(BUILTIN.filter((c) => c.level <= 2).map((c) => c.char));
-  it('every built-in passage has one: 谁/哪/什么/为什么, three choices, the right one among them, a real answering sentence, easy characters', () => {
-    expect(checkPassageQuestions(PASSAGES.filter((p) => p.source === 'ziji'), PASSAGE_QUESTIONS, easy)).toEqual([]); // Global Storybooks' questions come in Task 5
+describe('meaning questions (spec 2026-10-15 §6)', () => {
+  it('every built-in passage has two, each passing every rule', () => {
+    expect(checkPassageQuestions(PASSAGES, PASSAGE_QUESTIONS)).toEqual([]);
   });
-  it('flags a missing question, a right answer outside the choices, a bad sentence and a hard character', () => {
-    const p = PASSAGES.slice(0, 2);
-    const q = PASSAGE_QUESTIONS.p01!;
-    expect(checkPassageQuestions(p, { p01: q }, easy)).toContain('p02: no meaning question');
-    expect(checkPassageQuestions(p.slice(0, 1), { p01: { ...q, answer: 3 as never } }, easy)).toContain('p01: the right answer is not among the choices');
-    expect(checkPassageQuestions(p.slice(0, 1), { p01: { ...q, sentence: 9 } }, easy)).toContain('p01: answering sentence 9 is not one of its 3 sentences');
-    expect(checkPassageQuestions(p.slice(0, 1), { p01: { ...q, choices: ['爸爸', '妈妈', '鬱'] } }, easy)).toContain('p01: question uses 鬱 in neither the passage nor levels 1–2');
-    expect(checkPassageQuestions(p.slice(0, 1), { p01: { ...q, q: '老师好吗？' } }, easy)).toContain('p01: the question asks none of 谁 哪 什么 为什么');
+  const p: Passage = { id: 'x1', title: '我的家', text: '我家有五个人：爸爸、妈妈、哥哥、妹妹和我。爸爸是医生，妈妈是老师。我很爱我的家。', term: '一下', source: 'ziji' };
+  const ok: PassageQuestion = { q: '谁是老师？', choices: ['爸爸', '妈妈', '哥哥'], answer: 1, sentence: 1 };
+  const other: PassageQuestion = { q: '爸爸做什么工作？', choices: ['医生', '老师', '妹妹'], answer: 0, sentence: 1 };
+  const flags = (q: PassageQuestion) => questionProblems(p, q);
+  it('a fair question passes', () => {
+    expect(flags(ok)).toEqual([]);
+  });
+  it('shape: what it asks, three different choices, the right one among them, a real answering sentence', () => {
+    expect(flags({ ...ok, q: '老师好吗？' })).toContain('x1 "老师好吗？": asks none of 谁 哪 什么 为什么 怎么样');
+    expect(flags({ ...ok, choices: ['爸爸', '爸爸', '哥哥'] })).toContain('x1 "谁是老师？": needs three different choices');
+    expect(flags({ ...ok, answer: 3 as never })).toContain('x1 "谁是老师？": the right answer is not among the choices');
+    expect(flags({ ...ok, sentence: 9 })).toContain('x1 "谁是老师？": answering sentence 9 is not one of its 3 sentences');
+  });
+  it("characters he knows: each from the passage or his book's lists through the passage's term", () => {
+    expect(flags({ ...ok, choices: ['爸爸', '妈妈', '鬱'] })).toContain('x1 "谁是老师？": uses 鬱 in neither the passage nor the lists through 一下');
+    expect(flags({ ...ok, q: '谁是老师？岁', choices: ['爸爸', '妈妈', '哥哥'] })).toContain('x1 "谁是老师？岁": uses 岁 in neither the passage nor the lists through 一下'); // 岁 is HSK 1, but taught in 二上
+    expect(questionProblems({ ...p, term: '二上' }, { ...ok, q: '谁是老师？岁' })).toEqual([]);
+  });
+  it('rule 1: all three choices in the passage, or none', () => {
+    expect(flags({ ...ok, choices: ['爸爸', '妈妈', '姐姐'] })).toContain('x1 "谁是老师？": some choices are in the passage and some not (all or none)');
+  });
+  it('rule 2: choice lengths within 2 characters', () => {
+    expect(flags({ ...ok, choices: ['爸', '妈妈', '我的哥哥'] })).toContain('x1 "谁是老师？": choice lengths 1/2/4 differ by more than 2');
+  });
+  it("rule 3: the question doesn't give away the answer's characters (function characters aside)", () => {
+    expect(flags({ ...ok, q: '谁是妈老师？' })).toContain('x1 "谁是妈老师？": the question gives away 妈 from its answer');
+    expect(flags({ q: '我爱谁？', choices: ['我的家', '我的妈', '我的爸'], answer: 0, sentence: 2 })).not.toContain('x1 "我爱谁？": the question gives away 我 from its answer');
+  });
+  it("rule 4: the answer is not the passage's most frequent word (a tie leads nothing)", () => {
+    expect(topWord(p.text)).toBeNull(); // 爸爸 and 妈妈 twice each
+    const dad: Passage = { ...p, id: 'x2', text: '爸爸在家。爸爸看书。妈妈做饭。爸爸很高兴。' };
+    expect(topWord(dad.text)).toBe('爸爸');
+    expect(questionProblems(dad, { q: '谁在看书？', choices: ['爸爸', '妈妈', '我'], answer: 0, sentence: 1 })).toContain('x2 "谁在看书？": the answer 爸爸 is the passage\'s most frequent word');
+  });
+  it('two different questions per passage, about different sentences, and none for a passage that is not there', () => {
+    expect(checkPassageQuestions([p], { x1: [ok] })).toContain('x1: 1 meaning questions, expected 2');
+    expect(checkPassageQuestions([p], { x1: [ok, ok] })).toContain('x1: the same question twice');
+    expect(checkPassageQuestions([p], { x1: [ok, { ...other, sentence: 1 }] })).toContain('x1: both questions are answered by sentence 1');
+    expect(checkPassageQuestions([p], { x1: [ok, { ...other, sentence: 0 }], x9: [ok, other] })).toEqual(['x9: questions for no passage']);
   });
 });

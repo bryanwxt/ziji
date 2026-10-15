@@ -261,6 +261,15 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     expect(screen.queryByText('大声一点！')).toBeNull();
   });
 
+  it('shows the choices shuffled each time; the right one stays right (spec 2026-10-15 §6)', async () => {
+    render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup={false} rng={() => 0} onDone={vi.fn()} />);
+    await toCompare();
+    fireEvent.click(button('下一步'));
+    const shown = [...document.querySelectorAll('.langdu__choices .choice')].map((b) => [...b.querySelectorAll('.label__ch')].map((c) => c.textContent).join(''));
+    expect(shown).toEqual(['妈妈', '小马', '老师']); // stored 老师 妈妈 小马
+    fireEvent.click(button('妈妈'));
+    expect(await screen.findByText('对了！')).toBeTruthy();
+  });
   it('missing self-introduction details: just 老师好！', () => {
     render(<LangduStep passage={passage} oral={{ ...oral, school: '' }} kid={DEFAULT_KID} withWarmup onDone={vi.fn()} />);
     expect(screen.getByText('老师好！')).toBeTruthy();

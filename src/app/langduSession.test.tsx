@@ -5,6 +5,7 @@ import { speak } from '../audio/speech';
 import { addRecording, getKid, listRecordings, saveKid, saveParentPassage, updateSettings } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS, type PassageQuestion } from '../types';
+import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { SessionScreen } from './SessionScreen';
 
 vi.mock('../audio/speech', () => ({ prefetchWords: vi.fn(), stopSpeaking: vi.fn(), speak: vi.fn(), primeSpeech: vi.fn() }));
@@ -135,6 +136,23 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     expect(screen.queryByText('我爱爸爸，我爱妈妈。')).toBeNull();
   });
 
+  it("a revisit asks the passage's other question (spec 2026-10-15 §6)", async () => {
+    const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });
+    await updateSettings(app.db, { activities: speakingOnly, langdu: true });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { p01: { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
+    renderWithApp(<SessionScreen free={false} />, app);
+    await screen.findByText('我的家'); // p01, due: after a new passage comes a revisit
+    for (let i = 0; i < 3; i++) {
+      act(() => setSpeaking(true));
+      act(() => setSpeaking(false));
+    }
+    await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
+    fireEvent.click(btn('开始朗读'));
+    fireEvent.click(screen.getByText('开始录音'));
+    fireEvent.click(await screen.findByText('停止'));
+    fireEvent.click(await screen.findByText('下一步'));
+    expect(await screen.findByText(PASSAGE_QUESTIONS.p01![1]!.q)).toBeTruthy();
+  });
   it('his answer to the meaning question is kept with his take, for the parent', async () => {
     const app = await setup();
     const question: PassageQuestion = { q: '我爱谁？', choices: ['老师', '妈妈', '小马'], answer: 1 };
