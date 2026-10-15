@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 朗读 stops repeating itself: each passage keeps a reading history with spaced rest (never within 3 days; 3 → 7 → 18 → 45 days while read well, then retired), an unrecorded 「读完了」 counts as a read, the library grows to 105 levelled passages (45 Global Storybooks chunks with their pictures and credits, 20 old and 40 new ZiJi passages), each revisit asks a different shuffled question, and 「下一篇」 lets him swap a passage twice a step.
+**Goal:** 朗读 stops repeating itself: each passage keeps a reading history with spaced rest (never within 3 days; 3 → 7 → 18 → 45 days while read well, then retired), an unrecorded 「读完了」 counts as a read, the library grows to 88 levelled passages (15 Global Storybooks passages with their pictures and credits, 20 old and 53 new ZiJi passages; the plan first said 105: 45 and 40), each revisit asks a different shuffled question, and 「下一篇」 lets him swap a passage twice a step.
 
 **Architecture:** Pure pieces first: `src/langdu/history.ts` (per-passage history: rest ladder, 3-day gap, warm-up, misread reset, the one-off move from the 3-day cycle) and `src/langdu/pick.ts` (the picking order over candidates that carry a fit). The lesson, 多读一遍, Home and Listen & confirm move onto them (Task 2, which also fixes the unrecorded read). A build-time importer (`scripts/storybooks/`, `scripts/import-storybooks.ts`) vendors Global Storybooks at a pinned commit, chunks and levels the stories with `src/langdu/level.ts`, writes `src/content/storybooks.json` and one WebP per passage. Levelling against his readable set K (known characters plus his class's 识读字) feeds the pool; questions become two per passage, asked in turn and shuffled; `LangduStep` splits into a warm-up shell and per-passage parts so 「下一篇」 can swap the passage under a kept warm-up; credits and a read-only Library land in the parent area; then the 40 new passages, term by term, under an extended content check.
 
@@ -24,10 +24,10 @@
 - **Global Storybooks source:** `github.com/global-asp/sbc-source` folder `zh/` pinned at **`be28dab`** (`be28dab38ac55e8eb2185edb6631b11615d02185`, 2026-06-08); images from `global-asp/gsn-imagebank` pinned at **`0df4097`** (`0df409752c86adc92685816e19e6085c4e4496f1`). No runtime fetch. Chunks of **40–110** characters, page-aligned, a short tail merged into the previous chunk; chunks beyond **三上** dropped; a story dropped when **fewer than half** its chunks survive (and, by Ruling, when its first chunk doesn't, or a chunk holds a blocked word). CC BY-NC stories **included** (D1): 0002, 0003, 0009, 0030, 0067, 0112, 0120, 0129, 0231, 0234, 0271.
 - **Edits are light only** (D2): Singapore usage (一点儿 → 一点), typos, the wrong-script 馬. Names kept, always shown with pinyin, left out of the level count. A changed story shows 「有改动」/"adapted".
 - **Credit line** on Listen, small type: 「故事：Global Storybooks · 文 … · 图 … · 译 … · CC BY 3.0 · 有改动」; tapping opens parent-facing details with links to the licence and the source; never on Read or Question. **Parent › Credits**: one Global Storybooks / African Storybook entry with each included story's title, author, illustrator, translator, licence and "adapted"; "Read-aloud passages were written for this app." becomes **"Passages marked ZiJi were written for this app."**
-- **Own passages:** **40 new** (二上 **12**, 二下 **16**, 三上 **12**), ids **p21–p60**; each **50–110** characters, **3–7** sentences, an everyday Singapore scene or a short fable; **≥ 6** different characters first taught in its term; coverage **≥ 95%** in `allowedChars(term)` with **≤ 3** distinct characters outside, each within the **next** term; every multi-character word passes the word gate, nothing from `BLOCKED`; up to **4** 生词 with kid glosses (`glossProblems` clean); pinyin snapshotted by `npm run pinyin`; no duplicate text or near-duplicate sentence opening.
+- **Own passages:** **53 new** (二上 **14**, 二下 **20**, 三上 **19**, by the controller's rulings; the spec and D4 said 40: 12, 16, 12), ids **p21–p73** (二上 p21–p34, 二下 p35–p54, 三上 p55–p73); each **50–110** characters, **3–7** sentences, an everyday Singapore scene or a short fable; **≥ 6** different characters first taught in its term; coverage **≥ 95%** in `allowedChars(term)` with **≤ 3** distinct characters outside, each within the **next** term; every multi-character word passes the word gate, nothing from `BLOCKED`; up to **4** 生词 with kid glosses (`glossProblems` clean); pinyin snapshotted by `npm run pinyin`; no duplicate text or near-duplicate sentence opening.
 - **Auto-stop:** the read limit is **`max(60 s, 0.8 s × characters)`**.
 - **State:** `ReadingHistory = { history: Record<id, { reads, lastRead, rest, lastSkipped?, skips?, q }>; lastKind: 'new' | 'revisit' | null; lastWarmup: string | null; warmups: number }`. The old `passageId`, `days`, `extra`, `lastDay`, `lastRead` move over once (§8). Recordings and the Listen & confirm queue are unchanged; old passage IDs stay valid.
-- **IDs:** own `p01`…`p60`; imported `gsb:<story>-<chunk>`, e.g. `gsb:0001-1`.
+- **IDs:** own `p01`…`p80` (p01–p73 used); imported `gsb:<story>-<chunk>`, e.g. `gsb:0001-1`.
 - TypeScript lib is **ES2022**: no `findLastIndex` / `toSorted`; `Array.prototype.at` and `??=` are fine.
 - Test files: `*.test.ts` run in node, `*.test.tsx` in jsdom, `*.slow.test.tsx` are the slow ones (`npm run test:fast` skips them).
 - Screenshots in **WebKit** via playwright-core (the iPad is Safari). If WebKit is missing, stop and ask the user before `npx playwright-core install webkit` (~100 MB).
@@ -62,7 +62,7 @@
 - Ruling: K's class lesson is `classLessonAt(now, settings)`; null (no calendar for the year) leaves K = `knownChars` and no term pre-filter. Rendered tests that need "nothing to read" set `now` in **2025** (outside the calendar) instead of relying on an empty pool — cost if wrong: none.
 - Ruling: the word gate for passages works on `tiles()` (the content gate's own segmentation), with punctuation and trailing particles (了吗吧呢的得着过啊呀) stripped: a tile that is BLOCKED fails; a multi-character HSK word must pass `isChildWord` unless it is one of the passage's 生词; tiles that are not dictionary words (一天, 十个, doubled characters) pass. Measured on drafts: pinyin-pro segmentation and raw `isChildWord` flag every 「开始了」「一天」 — cost if wrong: a rare HSK 5+ word slips through as a non-dictionary tile.
 - Ruling: 生词 glosses live on the passage (`words: [{ text, gloss }]` in `passages.json`, spec §8), checked by `glossProblems`; when `kidGloss.json` already glosses the word, the passage's gloss must equal it — spec §2.2 named kidGloss.json, §8 the inline shape; inline needs no TSV round trip and the equality keeps one English per word — cost if wrong: none.
-- Ruling: an own passage's stored `term` must equal `passageTerm`, and for p21–p60 it must also be the term its task writes for — a 三上 passage needs about one token in ten from 三上 to level there, which "≥ 6 term characters" alone doesn't guarantee (measured: a draft with 8 三上 tokens of 96 levelled 二上; 11 of 90 levelled 三上) — cost if wrong: harder writing.
+- Ruling: an own passage's stored `term` must equal `passageTerm`, and for p21 on it must also be the term its task writes for — a 三上 passage needs about one token in ten from 三上 to level there, which "≥ 6 term characters" alone doesn't guarantee (measured: a draft with 8 三上 tokens of 96 levelled 二上; 11 of 90 levelled 三上) — cost if wrong: harder writing.
 - Ruling: questions are `Record<id, PassageQuestion[]>`; a read asks `questions[q % n]` where `q` is the history's turn before the read; `q` moves on after each lesson read — cost if wrong: none.
 - Ruling: the shuffle runs once per showing (`useMemo` in the passage parts) with `Math.random`; `LangduStep` takes an optional `rng` for tests and stage cases — cost if wrong: none.
 - Ruling: the "most frequent noun" proxy is the passage's most frequent multi-character dictionary tile, counted only when it occurs twice or more; function characters are 的了是在吗呢吧着过得地和也都很就还又我你他她它们个一不有 — measured: 15 of the 20 existing questions fail the new rules (mixed in/out choices, a given-away 做, 弟弟/奶奶 as the top word) and are rewritten in Task 5 — cost if wrong: a fair question rejected.
@@ -105,7 +105,7 @@
 | `scripts/storybooks/` (new: `zh/`, `manifest.json`, `SOURCE.md`, `lib.ts` + test, `fetch.ts`) | vendored stories; parse, edit, chunk, level, credit | 3 |
 | `scripts/import-storybooks.ts` (new) | writes `src/content/storybooks.json`, `public/passages/*.webp` | 3 |
 | `src/content/index.ts`, `sentenceSources.ts`, `src/test/contentSurfaces.ts`, `sentencePinyin.json` | `PASSAGES` = own + imported; passage sentences on the content gate | 4 |
-| `src/content/passages.json` | term/source on p01–p20; p12's 一家人 → 全家; p21–p60 | 3, 8, 9, 10 |
+| `src/content/passages.json` | term/source on p01–p20; p12's 一家人 → 全家; p21–p73 | 3, 8, 9, 10 |
 | `src/content/passageQuestions.ts` | two questions per passage | 5, 8, 9, 10 |
 | `scripts/check-content.ts` (+ test) | guess-proof question checks; own-passage checks; word gate | 4, 5, 8 |
 | `scripts/review-passages.ts` (new) | the passages review CSV | 8 |
@@ -2802,12 +2802,12 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 8: Our passages — the writing check, and 二上 (p21–p32)
+### Task 8: Our passages — the writing check, and 二上 (p21–p34)
 
 **Files:**
 - Modify: `scripts/check-content.ts` (+ test) (`wordProblems`, `OWN_TERMS`, `NEW_FROM`, `checkOwnPassages`)
 - Create: `scripts/review-passages.ts`
-- Modify: `src/content/passages.json` (p12's 一家人 → 全家; p21–p32), `src/content/passageQuestions.ts` (two each for p21–p32), `src/content/sentencePinyin.json` (`npm run pinyin`)
+- Modify: `src/content/passages.json` (p12's 一家人 → 全家; p21–p34), `src/content/passageQuestions.ts` (two each for p21–p34), `src/content/sentencePinyin.json` (`npm run pinyin`)
 
 **Interfaces:**
 - Consumes: `tiles`, `BLOCKED`, `BLOCK_REASON`, `isChildWord`, `HSK_WORDS`, `MOE_TERMS`, `schoolTerm`, `allowedChars` (`src/content/understand.ts`), `glossProblems`, `kidGloss`, `passageTerm` (Task 3), `splitSentences`; the question check (Task 5).
@@ -2988,9 +2988,9 @@ console.log(`${lines.length - 1} passages written to ${out}`);
 Run: `npx vitest run scripts/check-content.test.ts -t "our passages" && npx tsc --noEmit`
 Expected: PASS; no type errors.
 
-- [ ] **Step 4: Write the twelve 二上 passages**
+- [ ] **Step 4: Write the fourteen 二上 passages** (the controller's ruling: 14, not 12)
 
-Add p21–p32 to `src/content/passages.json`, one object a line, each `{"id","title","text","term":"二上","source":"ziji","words":[{"text","gloss"}…]}`. p21 is the measured draft from the test above (text, title 新学年, words 年级/座位/操场 with the glosses shown). For the rest, the scene and the 二上 characters to build it on (`moe2024.json` 二上, each lesson's new 识读字):
+Add p21–p34 to `src/content/passages.json`, one object a line, each `{"id","title","text","term":"二上","source":"ziji","words":[{"text","gloss"}…]}`. p21 is the measured draft from the test above (text, title 新学年, words 年级/座位/操场 with the glosses shown). For the rest, the scene and the 二上 characters to build it on (`moe2024.json` 二上, each lesson's new 识读字):
 
 | id | title | scene | 二上 characters to use (≥ 6) |
 |---|---|---|---|
@@ -3023,7 +3023,7 @@ How each passage is checked:
 - [ ] **Step 5: Run everything and write the review sheet**
 
 Run: `npx tsc --noEmit && npx vitest run && npx tsx scripts/review-passages.ts /tmp/passages-review.csv`
-Expected: all pass; `12 passages written to /tmp/passages-review.csv` (read it once more: each passage with its 生词 and both questions, the right choice in brackets).
+Expected: all pass; `14 passages written to /tmp/passages-review.csv` (read it once more: each passage with its 生词 and both questions, the right choice in brackets).
 
 - [ ] **Step 6: Commit**
 
@@ -3036,18 +3036,18 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 9: Our passages — 二下 (p33–p48)
+### Task 9: Our passages — 二下 (p35–p54)
 
 **Files:**
-- Modify: `src/content/passages.json` (p33–p48), `src/content/passageQuestions.ts` (two each), `src/content/sentencePinyin.json`, `src/content/pinyinFixes.ts` (only if a reading is wrong)
+- Modify: `src/content/passages.json` (p35–p54), `src/content/passageQuestions.ts` (two each), `src/content/sentencePinyin.json`, `src/content/pinyinFixes.ts` (only if a reading is wrong)
 
 **Interfaces:**
 - Consumes: `checkOwnPassages`, `wordProblems`, `checkPassageQuestions`, `scripts/review-passages.ts` (Tasks 5, 8), `passageTerm`.
-- Produces: sixteen passages with `"term":"二下"`, ids p33–p48.
+- Produces: twenty passages with `"term":"二下"`, ids p35–p54 (the controller's ruling: 20, not 16).
 
 - [ ] **Step 1: Add the measured draft and run the check**
 
-Add p33 exactly as the test's draft (title 放风筝, words 风筝 = kite, 老鹰 = eagle) with two questions, run `npx vitest run scripts/check-content.test.ts`, expect PASS.
+Add the test's draft p33 exactly, as **p35** (title 放风筝, words 风筝 = kite, 老鹰 = eagle) with two questions, run `npx vitest run scripts/check-content.test.ts`, expect PASS.
 
 - [ ] **Step 2: Write the other fifteen**
 
@@ -3079,7 +3079,7 @@ The five checks of Task 8 Step 4 — term (`二下`), coverage and 生词 (`-t "
 - [ ] **Step 4: Run everything and refresh the review sheet**
 
 Run: `npx tsc --noEmit && npx vitest run && npx tsx scripts/review-passages.ts /tmp/passages-review.csv`
-Expected: all pass; `28 passages written`.
+Expected: all pass; `34 passages written` (14 二上 + 20 二下, as written).
 
 - [ ] **Step 5: Commit**
 
@@ -3092,18 +3092,18 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 10: Our passages — 三上 (p49–p60)
+### Task 10: Our passages — 三上 (p55–p73)
 
 **Files:**
-- Modify: `src/content/passages.json` (p49–p60), `src/content/passageQuestions.ts` (two each), `src/content/sentencePinyin.json`, `src/content/pinyinFixes.ts` (only if a reading is wrong)
+- Modify: `src/content/passages.json` (p55–p73), `src/content/passageQuestions.ts` (two each), `src/content/sentencePinyin.json`, `src/content/pinyinFixes.ts` (only if a reading is wrong)
 
 **Interfaces:**
 - Consumes: as Task 9.
-- Produces: twelve passages with `"term":"三上"`, ids p49–p60. With them the library holds 60 passages of ours and 45 from Global Storybooks.
+- Produces: nineteen passages with `"term":"三上"`, ids p55–p73 (the controller's ruling: 19, not 12). With them the library holds 73 passages of ours and 15 from Global Storybooks (Tasks 3–4 kept whole stories only), 88 in all.
 
 - [ ] **Step 1: Add the measured draft and run the check**
 
-Add p49 exactly as the test's draft (title 迟到了, words 迟到 = be late, 准时 = on time, 赶快 = quickly) with two questions; `npx vitest run scripts/check-content.test.ts` passes.
+Add the test's draft p49 exactly, as **p55** (title 迟到了, words 迟到 = be late, 准时 = on time, 赶快 = quickly) with two questions; `npx vitest run scripts/check-content.test.ts` passes.
 
 - [ ] **Step 2: Write the other eleven**
 
@@ -3131,7 +3131,9 @@ The five checks of Task 8 Step 4 (term `三上`) and the **content review: read 
 - [ ] **Step 4: Run everything and refresh the review sheet**
 
 Run: `npx tsc --noEmit && npx vitest run && npx tsx scripts/review-passages.ts /tmp/passages-review.csv`
-Expected: all pass; `40 passages written`. The Library (parent area) now lists 105 passages.
+Expected: all pass; `53 passages written`. The Library (parent area) now lists 88 passages.
+
+As written (Task 10): p55 迟到了, p56 当班长, p57 新同学, p58 坐巴士, p59 小树长大了, p60 看画展, p61 足球比赛, p62 花盆碎了, p63 做灯笼 (中秋 can't be written: 秋 is on no list, so 「八月十五」), p64 猴子和月亮, p65 晒衣服, p66 休息日 (a diary), and seven more: p67 给外婆的信 (a letter), p68 种豆芽 (a how-to), p69 小熊过生日 (a fable), p70 打篮球, p71 沉下去了吗 (a science lesson), p72 装行李, p73 掉牙了. The table's ids above are the plan's original numbering.
 
 - [ ] **Step 5: Commit**
 

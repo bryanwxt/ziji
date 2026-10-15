@@ -31,5 +31,11 @@ customPinyin({
   排得: 'pái de', 学得: 'xué de', 妹妹选: 'mèi mei xuǎn', 中国衣服: 'zhōng guó yī fu', 漂亮: 'piào liang', 长着: 'zhǎng zhe',
   // Task 9's review: the neutral tone in 眼睛, 时候 and 星星 (they read yǎn jīng, shí hòu, xīng xīng)
   眼睛: 'yǎn jing', 时候: 'shí hou', 星星: 'xīng xing',
+  // our 三上 passages (Task 10): 得 after a verb de, 地 after 好好 de, 种 (planting) zhòng, 长 (growing) zhǎng, 倒 (pouring) dào,
+  // 一 in 一X一X before a fourth or third tone, 子 neutral in 裤子 裙子 箱子, 东西 (things) dōng xi, 意思 si, 只 (only) zhǐ
+  玩得: 'wán de', 急得: 'jí de', 晒得: 'shài de', 好好地: 'hǎo hǎo de', 种了: 'zhòng le', 种好了: 'zhòng hǎo le', 种到: 'zhòng dào',
+  越长越高: 'yuè zhǎng yuè gāo', 倒上水: 'dào shàng shuǐ', 一件一件: 'yí jiàn yí jiàn', 一本一本: 'yì běn yì běn',
+  裤子: 'kù zi', 裙子: 'qún zi', 箱子: 'xiāng zi', 爸爸的: 'bà ba de', 妈妈打开: 'mā ma dǎ kāi', 东西: 'dōng xi', 有意思: 'yǒu yì si',
+  只留下: 'zhǐ liú xià',
   炸鸡: 'zhá jī', 油炸: 'yóu zhá', 种植: 'zhòng zhí', 种花的: 'zhòng huā de', 勒紧: 'lēi jǐn', // 种花的: 写一写's piece (never 种花 alone)
 });

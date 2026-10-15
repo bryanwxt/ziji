@@ -287,4 +287,80 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '第二次，我学会了什么？', choices: ['用脚踢水', '用手推水', '走进水里'], answer: 0, sentence: 3 },
     { q: '谁说“别怕，我在你身边”？', choices: ['爸爸', '妈妈', '我'], answer: 0, sentence: 2 },
   ],
+  p55: [
+    { q: '我跑到车站的时候，巴士怎么样了？', choices: ['已经开走', '还没有来', '停在那里'], answer: 0, sentence: 2 },
+    { q: '从那天起，我每天晚上做什么？', choices: ['准备好书包', '穿好衣服', '背上书包'], answer: 0, sentence: 6 },
+  ],
+  p56: [
+    { q: '回家以后，我对着什么练？', choices: ['镜子', '老师', '同学'], answer: 0, sentence: 4 },
+    { q: '放学后，班长要做什么？', choices: ['关好门窗', '收作业本', '喊“起立”'], answer: 0, sentence: 3 },
+  ],
+  p57: [
+    { q: '老师让新同学坐在哪里？', choices: ['我的旁边', '老师旁边', '窗户旁边'], answer: 0, sentence: 3 },
+    { q: '谁先说“你好”？', choices: ['我', '李小云', '老师'], answer: 0, sentence: 4 },
+  ],
+  p58: [
+    { q: '车上，谁站起来让奶奶坐？', choices: ['大哥哥', '我', '司机'], answer: 0, sentence: 2 },
+    { q: '快到站了，奶奶让我做什么？', choices: ['按一下铃', '把门打开', '拿好篮子'], answer: 0, sentence: 4 },
+  ],
+  p59: [
+    { q: '小树刚种下的时候，比谁还矮？', choices: ['我', '爸爸', '朋友们'], answer: 0, sentence: 1 },
+    { q: '叶子后来变成了什么颜色？', choices: ['深绿的', '浅绿的', '黄黄的'], answer: 0, sentence: 2 },
+  ],
+  p60: [
+    { q: '我最喜欢哪一张画？', choices: ['大熊猫', '大海', '高楼'], answer: 0, sentence: 2 },
+    { q: '看完画，妈妈看什么？', choices: ['杂志', '故事书', '画'], answer: 0, sentence: 3 },
+  ],
+  p61: [
+    { q: '谁跌倒了？', choices: ['小华', '小文', '我'], answer: 0, sentence: 3 },
+    { q: '小华站起来以后，说了什么？', choices: ['没关系', '对不起', '是我的错'], answer: 0, sentence: 5 },
+  ],
+  p62: [
+    { q: '我在哪里拍球？', choices: ['家门口', '楼下', '学校'], answer: 0, sentence: 0 },
+    { q: '陈奶奶让我帮她做什么？', choices: ['把花种好', '把盆买来', '把地扫好'], answer: 0, sentence: 4 },
+  ],
+  p63: [
+    { q: '姐姐为什么在纸上开小洞？', choices: ['让光照出来', '让风吹进来', '让纸好看点'], answer: 0, sentence: 2 },
+    { q: '谁把灯笼吊在窗前？', choices: ['爸爸', '姐姐', '我'], answer: 0, sentence: 3 },
+  ],
+  p64: [
+    { q: '谁先看见水坑里的月亮？', choices: ['小猴子', '大猴子', '老猴子'], answer: 0, sentence: 0 },
+    { q: '最后，大家发现月亮在哪里？', choices: ['天上', '水坑里', '树下'], answer: 0, sentence: 5 },
+  ],
+  p65: [
+    { q: '爸爸的裤子怎么样？', choices: ['长长的', '短短的', '小小的'], answer: 0, sentence: 2 },
+    { q: '什么挂歪了？', choices: ['裤子', '裙子', '袜子'], answer: 0, sentence: 3 },
+  ],
+  p66: [
+    { q: '我本来想做什么？', choices: ['看电视', '去游泳', '去画画'], answer: 0, sentence: 2 },
+    { q: '做好的架子有一点歪，我怎么做？', choices: ['放一本小书', '把书架搬走', '请爸爸再做'], answer: 0, sentence: 5 },
+  ],
+  p67: [
+    { q: '老师说，我的什么越来越好了？', choices: ['字', '画', '身体'], answer: 0, sentence: 3 },
+    { q: '我画了什么送给外婆？', choices: ['一棵大树', '一朵大花', '一只小狗'], answer: 0, sentence: 5 },
+  ],
+  p68: [
+    { q: '种豆芽的时候，哪一件事不用做？', choices: ['晒太阳', '浇一点水', '泡一个晚上'], answer: 0, sentence: 5 },
+    { q: '什么时候，豆芽就长出来了？', choices: ['三四天后', '一个晚上', '第二天'], answer: 0, sentence: 6 },
+  ],
+  p69: [
+    { q: '小猴送了什么？', choices: ['饼干', '鲜花', '蛋糕'], answer: 0, sentence: 1 },
+    { q: '谁什么也没带？', choices: ['小狗', '小兔', '小猴'], answer: 0, sentence: 3 },
+  ],
+  p70: [
+    { q: '爸爸教我，手要怎么样？', choices: ['放松一点', '看着上面', '往上一扔'], answer: 0, sentence: 2 },
+    { q: '球进了，爸爸做了什么？', choices: ['把我举起来', '拍拍我的头', '跟我拍手'], answer: 0, sentence: 5 },
+  ],
+  p71: [
+    { q: '我先说什么会沉下去？', choices: ['西瓜和石头', '木块和石头', '木块和西瓜'], answer: 0, sentence: 2 },
+    { q: '最后，西瓜怎么样？', choices: ['没有沉下去', '马上沉了下去', '会沉下去'], answer: 0, sentence: 5 },
+  ],
+  p72: [
+    { q: '箱子为什么盖不上？', choices: ['装得太多', '箱子太小', '箱子坏了'], answer: 0, sentence: 3 },
+    { q: '我拿出了什么？', choices: ['足球', '小熊', '衣服'], answer: 0, sentence: 5 },
+  ],
+  p73: [
+    { q: '牙松了，我只能吃什么？', choices: ['软软的东西', '硬的东西', '一口面包'], answer: 0, sentence: 1 },
+    { q: '我在镜子里看见了什么？', choices: ['一个小洞', '一个小盒子', '一口面包'], answer: 0, sentence: 4 },
+  ],
 };
