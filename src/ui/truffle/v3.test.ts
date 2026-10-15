@@ -94,6 +94,15 @@ describe('feet: footwear and an animal\'s feet replace his paws, never sit under
       for (const m of body.matchAll(/<ellipse cx="[\d.]+" cy="([\d.]+)" rx="[\d.]+" ry="([\d.]+)"/g)) expect(Number(m[1]) + Number(m[2]), id).toBeLessThanOrEqual(278);
     }
   });
+  it('a raised paw wears a mitt or glove in the costume\'s colour, never a boot (parent 2026-10-16)', () => {
+    for (const id of FEET) {
+      const l = V3[id]!();
+      expect(l.mittL, id).toBeTruthy();
+      expect(l.mittR, id).toBeTruthy();
+      for (const art of [l.mittL!, l.mittR!]) expect(art, id).not.toContain(CREAM_PAW);
+      for (const art of [l.pawL ?? '', l.pawR ?? '']) expect(art.includes(l.feetL!) || art.includes(l.feetR!), id).toBe(false); // closing over a prop is overL/overR
+    }
+  });
   it('no cream paw or paw-toed glove shows over a foot', () => {
     for (const id of FEET) {
       const l = V3[id]!();

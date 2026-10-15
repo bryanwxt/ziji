@@ -59,6 +59,8 @@ export const TRACKS = {
 /** Where his front paws are (spec 2026-10-04 §4.6): offsets from where they sit at his feet, in svg units, and a turn in degrees. */
 export interface PawPose { lx: number; ly: number; lr: number; rx: number; ry: number; rr: number }
 export const PAW_REST: PawPose = { lx: 0, ly: 0, lr: 0, rx: 0, ry: 0, rr: 0 };
+/** A paw off the ground (a wave, a clap, a swat; not kneading): it shows a costume's mitt, not its boot (parent 2026-10-16). */
+export const pawRaised = (dx: number, dy: number) => dy < -12 || Math.abs(dx) > 20;
 type PawKey = [ms: number, p: Partial<PawPose>, ease?: (k: number) => number];
 const PAW_KEYS = ['lx', 'ly', 'lr', 'rx', 'ry', 'rr'] as const;
 /** A paw move from keyframes, like track(); it starts and ends with the paws at his feet. */

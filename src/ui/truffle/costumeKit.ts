@@ -282,3 +282,5 @@ export const boot = (f: Flip, fill: string, sh = celShade(fill)) => cel(BOOT(f),
 export const animalFoot = (f: Flip, fill: string, toes = celShade(fill)) =>
   cel(`M${f(114)} 274 C${f(114)} 263 ${f(126)} 258 ${f(138)} 258 C${f(150)} 258 ${f(162)} 263 ${f(162)} 274 C${f(162)} 282 ${f(152)} 285 ${f(138)} 285 C${f(124)} 285 ${f(114)} 282 ${f(114)} 274 Z`, fill, footLight(f), 262, 0.9) +
   `<path d="M${f(128)} 276 L${f(128)} 284 M${f(138)} 277 L${f(138)} 285 M${f(148)} 276 L${f(148)} 284" fill="none" stroke="${toes}" stroke-width="2" stroke-linecap="round"/>`;
+/** While a paw is raised it wears a glove or mitt in the costume's colour, never its boot held up (CostumeLayer.mittL/mittR). */
+export const mitts = (fill: string) => ({ mittL: gloveL(fill), mittR: gloveR(fill) });

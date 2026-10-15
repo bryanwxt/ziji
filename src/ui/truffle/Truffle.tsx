@@ -3,7 +3,7 @@ import { useRef } from 'preact/hooks';
 import { blush, LINE, LWI } from '../cel';
 import { reducedMotion } from '../motion';
 import { useRig } from './useRig';
-import type { PawPose } from './timelines';
+import { pawRaised, type PawPose } from './timelines';
 import { POWERS, type PowerId } from '../../fun/powers';
 import { accessoryLayer } from './accessories';
 import { costumeLayer } from './costumes';
@@ -107,6 +107,20 @@ function FaceRig({ f, expr }: { f: Face; expr: Expression }) {
   );
 }
 
+/**
+ * A paw's own art: his paw, or a costume's feet (parent 2026-10-16) — its boot or foot while the paw rests and its mitt while
+ * it is raised, both drawn and one shown (the rig flips `display` as the paw goes up or down; see paint in useRig).
+ */
+function feetOrPaw(key: string, foot: string | undefined, mitt: string | undefined, paw: string, up: boolean) {
+  if (!foot) return paw ? <g dangerouslySetInnerHTML={{ __html: paw }} /> : null;
+  return (
+    <>
+      <g data-part={`foot-${key}`} display={up ? 'none' : 'inline'} dangerouslySetInnerHTML={{ __html: foot }} />
+      <g data-part={`mitt-${key}`} display={up ? 'inline' : 'none'} dangerouslySetInnerHTML={{ __html: mitt ?? paw }} />
+    </>
+  );
+}
+
 /** Truffle 松露: his drawing cut into parts and posed by the face rig (spec 2026-10-04 §4.1). */
 export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, size = 160, lookAt = 0, label = '松露', bounce = false, power = null, powerTier = 0, outfit = null, expression, alive = false, calm = false, react = null, onPart }: Props) {
   const a11y = label === null ? { 'aria-hidden': 'true' as const } : { role: 'img' as const, 'aria-label': label };
@@ -123,6 +137,8 @@ export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, siz
   const tier = Math.max(0, Math.min(3, Math.floor(powerTier))) as 0 | 1 | 2 | 3;
   const layer = power && tier > 0 && isPower(power) ? powerLayer(power, tier as 1 | 2 | 3) : null;
   const ears = !wear?.hidesEars;
+  const upL = !!paws && pawRaised(paws.lx, paws.ly);
+  const upR = !!paws && pawRaised(paws.rx, paws.ry);
   const part = (p: 'head' | 'body' | 'tail') => (onPart ? { onPointerDown: (e: JSX.TargetedPointerEvent<SVGGElement>) => onPart(p, e as unknown as PointerEvent) } : {});
   return (
     <svg
@@ -173,13 +189,15 @@ export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, siz
         {/* his front paws, in front of his head (spec 2026-10-04 §4.6): at rest at his feet; they wave, knead and cover his eyes.
             A costume's paw art (a glove, a held prop: rewards spec §5.1) is drawn inside each paw's group, so it moves with the paw;
             its feet (boots, an animal's feet) are drawn instead of the paw, so a foot is never a paw on a boot (parent 2026-10-16) */}
-        <g class="truffle__paw" data-part="paw-l" transform={paws ? `translate(${paws.lx} ${paws.ly}) rotate(${paws.lr} 138 266)` : undefined} {...part('body')}>
-          <g dangerouslySetInnerHTML={{ __html: wear?.feetL ?? PAW_L }} />
+        <g class="truffle__paw" data-part="paw-l" data-raised={upL ? '1' : ''} transform={paws ? `translate(${paws.lx} ${paws.ly}) rotate(${paws.lr} 138 266)` : undefined} {...part('body')}>
+          {feetOrPaw('l', wear?.feetL, wear?.mittL, PAW_L, upL)}
           {wear?.pawL && <g class="truffle__outfit-paw" dangerouslySetInnerHTML={{ __html: wear.pawL }} />}
+          {wear?.overL && feetOrPaw('l-over', wear.feetL, wear.mittL, '', upL)}
         </g>
-        <g class="truffle__paw" data-part="paw-r" transform={paws ? `translate(${paws.rx} ${paws.ry}) rotate(${paws.rr} 182 266)` : undefined} {...part('body')}>
-          <g dangerouslySetInnerHTML={{ __html: wear?.feetR ?? PAW_R }} />
+        <g class="truffle__paw" data-part="paw-r" data-raised={upR ? '1' : ''} transform={paws ? `translate(${paws.rx} ${paws.ry}) rotate(${paws.rr} 182 266)` : undefined} {...part('body')}>
+          {feetOrPaw('r', wear?.feetR, wear?.mittR, PAW_R, upR)}
           {wear?.pawR && <g class="truffle__outfit-paw" dangerouslySetInnerHTML={{ __html: wear.pawR }} />}
+          {wear?.overR && feetOrPaw('r-over', wear.feetR, wear.mittR, '', upR)}
           {/* a held item (brush, lantern, kite, balloon, wand) is in this paw: it moves with it, so a raised paw never leaves another behind */}
           {acc?.over && <g class="truffle__accessory truffle__accessory--over" dangerouslySetInnerHTML={{ __html: acc.over }} />}
         </g>

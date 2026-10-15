@@ -1,6 +1,6 @@
 // His favourite onesies (rewards spec 2026-10-15 §5.2), to the v3 standard (docs/worlds/costumes/standard-v3.png): each a hood
 // with the animal's own face, its body and tail, in light cel. penguin is the plan's worked example.
-import { belly, cel, celShade, DARK, eyes, feet, gloveL, gloveR, hi, hood, pair, pawOverR, rope, ropeTail, S, s2, tint } from './costumeKit';
+import { belly, cel, celShade, DARK, eyes, feet, mitts, gloveL, gloveR, hi, hood, pair, pawOverR, rope, ropeTail, S, s2, tint } from './costumeKit';
 import type { CostumeLayer } from './costumes';
 
 /** A circle as an explicit cubic path (so a round piece can be a `cel` piece, its shadow a rim on the lower right). */
@@ -144,6 +144,7 @@ const penguin = (): CostumeLayer => ({
   tail: `<path d="M208 256 L230 262 L212 270 Z" fill="${PG_CAP}" ${S}/>`,
   // orange feet in his paws' place: flat, three toes
   ...feet((f) => cel(`M${f(118)} 278 C${f(118)} 266 ${f(128)} 259 ${f(138)} 259 C${f(148)} 259 ${f(158)} 266 ${f(158)} 278 L${f(156)} 285 L${f(148)} 281 L${f(138)} 287 L${f(128)} 281 L${f(120)} 285 Z`, '#ff9f43', Math.min(f(118), f(158)) + 8, 263, 0.9)),
+  ...mitts(PG_CAP),
   hidesEars: true,
 });
 

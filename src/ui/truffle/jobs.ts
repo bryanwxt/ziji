@@ -3,7 +3,7 @@
 //
 // Held props sit out to his right (or low on his left) so they clear his face in every paw move: the wave turns his right paw
 // up and 20° toward his face, so anything held in it must stay right of x ≈ 230 once turned (the WebKit face probe checks it).
-import { boot, cel, celShade, CREAM_PAW, feet, gloveL, gloveR, heldPole, hi, INK, num, oval, pair, PAW_L_D, PAW_R_D, pawOverL, pawOverR, poleFlag, rope, S, s2, star, tint } from './costumeKit';
+import { boot, cel, celShade, CREAM_PAW, feet, mitts, gloveL, gloveR, heldPole, hi, INK, num, oval, pair, PAW_L_D, PAW_R_D, pawOverL, pawOverR, poleFlag, rope, S, s2, star, tint } from './costumeKit';
 import type { CostumeLayer } from './costumes';
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -48,6 +48,7 @@ const astronaut = (): CostumeLayer => ({
   // the moon boots in his paws' place: grey, a thick sole and a blue band
   ...feet((f) => boot(f, SUIT_GREY) + `<path d="M${f(117)} 279 L${f(159)} 279" stroke="${celShade(SUIT_GREY)}" stroke-width="2.6"/>` +
     `<path d="M${f(119)} 266 C${f(130)} 262 ${f(146)} 262 ${f(157)} 266" fill="none" stroke="#3f6fd6" stroke-width="3.4" stroke-linecap="round"/>`),
+  ...mitts(SUIT_GREY),
   hidesEars: true,
 });
 
@@ -282,10 +283,11 @@ const football = (): CostumeLayer => ({
     cel(oval(112, 254, 19, 19), '#fffdf7', 104, 244, 0.9, '#d9d4cc') +
     `<path d="M112 247 L119 252 L116 260 L108 260 L105 252 Z" fill="#2d2a33"/>` +
     `<path d="M95 248 L100 250 L100 257 L95 260 M129 248 L124 250 L124 257 L129 260 M106 237 L112 240 L118 237" fill="#2d2a33" ${s2}/>` +
-    `<path d="M112 247 L112 240 M119 252 L124 250 M116 260 L119 267 M108 260 L105 267 M105 252 L100 250" stroke="${INK}" stroke-width="1.6"/></g>` +
-    FOOTBALL_BOOTS.feetL,
+    `<path d="M112 247 L112 240 M119 252 L124 250 M116 260 L119 267 M108 260 L105 267 M105 252 L100 250" stroke="${INK}" stroke-width="1.6"/></g>`,
   pawR: '',
   ...FOOTBALL_BOOTS,
+  ...mitts(JERSEY),
+  overL: true,
   hidesEars: false,
 });
 
@@ -471,9 +473,11 @@ const soldier = (): CostumeLayer => ({
         const a = (i * 2 * Math.PI) / 5;
         return `<circle cx="${(cx + 2.9 * Math.cos(a)).toFixed(1)}" cy="${(15 + 2.9 * Math.sin(a)).toFixed(1)}" r="1" fill="#fffdf7"/>`;
       }).join('');
-  }) + ARMY_BOOTS.feetR,
+  }),
   pawL: '',
   ...ARMY_BOOTS,
+  ...mitts(ARMY),
+  overR: true,
   hidesEars: true,
 });
 

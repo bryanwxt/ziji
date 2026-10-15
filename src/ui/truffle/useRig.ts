@@ -3,14 +3,14 @@ import { useEffect, useRef } from 'preact/hooks';
 import { blushOpacity, browTransform, EXTRAS, EYE_L, EYE_R, eyeContour, GAZE_X, GAZE_Y, lowerLid, mouthPath, mouthW, PRESETS, ringOn, SHADE_ON, springStep, upperLid, type Expression, type Face } from './rig';
 import { cardCentre, gazeToward, idleExtras, isDoubleBlink, nextBlinkMs, nextEarFlickMs } from './behaviour';
 import { onSpeaking, settleIfSilent } from '../../audio/speaking';
-import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS, type Motion, type PawPose, type Reaction, type Track } from './timelines';
+import { PAW_REST, PAW_TRACKS, pawRaised, REACTIONS, REST, TRACKS, type Motion, type PawPose, type Reaction, type Track } from './timelines';
 
 type Key = keyof Face;
 const KEYS = ['lidTop', 'lidBottom', 'lidArc', 'pupil', 'browY', 'browAngle', 'browShow', 'browAsym', 'smile', 'mouthOpen', 'earL', 'earR', 'blush', 'tilt'] as const satisfies readonly Key[];
 const EXTRA_KEYS = Object.keys(EXTRAS) as Expression[];
 
 /** The extra state the loop paints besides the face: where he looks and how the body is posed. */
-export interface Pose { gx: number; gy: number; tilt: number; headY: number; rig: string; body: string; tail: string; blink: number; earL: number; earR: number; pawL: string; pawR: string; shadow?: string }
+export interface Pose { gx: number; gy: number; tilt: number; headY: number; rig: string; body: string; tail: string; blink: number; earL: number; earR: number; pawL: string; pawR: string; shadow?: string; raisedL?: boolean; raisedR?: boolean }
 export const REST_POSE: Pose = { gx: 0, gy: 0, tilt: 0, headY: 0, rig: '', body: '', tail: '', blink: 0, earL: 0, earR: 0, pawL: '', pawR: '' };
 
 /** A paw's transform from its offsets (around where it sits at his feet), or none at rest. */
@@ -30,17 +30,19 @@ const CARRY_MS = 160;
 /** Paints a face and pose onto Truffle's parts (the same geometry the markup was drawn with). */
 export function paint(els: (part: string) => Element | null, f: Face, pose: Pose, extras: Record<string, number>, memo?: WeakMap<Element, Record<string, string>>) {
   // a value already there is not written again: a still frame costs no style or layout work (sweep)
-  const set = (part: string, attr: string, value: string | number) => {
+  /** Writes the value; false when it was already there (or the part is missing). */
+  const set = (part: string, attr: string, value: string | number): boolean => {
     const el = els(part);
-    if (!el) return;
+    if (!el) return false;
     const v = String(value);
     if (memo) {
       let seen = memo.get(el);
       if (!seen) memo.set(el, (seen = {}));
-      if (seen[attr] === v) return;
+      if (seen[attr] === v) return false;
       seen[attr] = v;
     }
     el.setAttribute(attr, v);
+    return true;
   };
   const lidTop = Math.min(1, f.lidTop + pose.blink * (1 - f.lidTop));
   // the gaze spring overshoots full gaze (to about 1.18): past ±1 the iris would leave the white, which has no clip-path
@@ -93,6 +95,15 @@ export function paint(els: (part: string) => Element | null, f: Face, pose: Pose
   set('tail', 'style', `transform-origin:214px 246px;${pose.tail ? `transform:${pose.tail}` : ''}`);
   set('paw-l', 'transform', pose.pawL);
   set('paw-r', 'transform', pose.pawR);
+  // a raised paw wears its costume's mitt, a resting one its boot or foot (parent 2026-10-16); the layers are looked up only
+  // when the paw goes up or down, so a still frame (or a costume without feet) costs nothing more
+  for (const [side, up] of [['l', !!pose.raisedL], ['r', !!pose.raisedR]] as const) {
+    if (!set(`paw-${side}`, 'data-raised', up ? '1' : '')) continue;
+    for (const over of ['', '-over']) {
+      set(`foot-${side}${over}`, 'display', up ? 'none' : 'inline');
+      set(`mitt-${side}${over}`, 'display', up ? 'inline' : 'none');
+    }
+  }
   for (const e of EXTRA_KEYS) set(`extra-${e}`, 'opacity', (extras[e] ?? 0).toFixed(3));
 }
 
@@ -316,6 +327,7 @@ export function useRig(svgRef: RefObject<SVGSVGElement>, opts: RigOptions) {
         gx: g.x, gy: g.y, tilt: m.shake + Math.max(-1, Math.min(1, lookAt)) * 4, headY: lag.current.y - br * 0.7,
         rig: rigTransform(m, shimmer), body, tail, blink, earL: flickL, earR: flickR,
         pawL: pawTransform(pw.lx, pw.ly, pw.lr, 138), pawR: pawTransform(pw.rx, pw.ry, pw.rr, 182),
+        raisedL: pawRaised(pw.lx, pw.ly), raisedR: pawRaised(pw.rx, pw.ry),
         shadow: m.y < -0.5 ? `translate(160 279) scale(${Math.max(0.55, 1 + m.y / 110).toFixed(3)}) translate(-160 -279)` : '',
       };
       // talking: the mouth opens and closes while the iPad speaks; the face itself is untouched, so it settles when speech ends

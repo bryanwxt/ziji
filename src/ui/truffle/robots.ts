@@ -1,7 +1,7 @@
 // His robots (his ask, 2026-10-15), to the v3 standard (rewards spec §5.1): Truffle's own mecha and car-robot, in the genre's
 // feel but no show's: no V-fin, no twin eye slits, no show's colour blocks or emblems. Each changes his whole silhouette, has
 // one dominant colour and holds its signature thing in a paw slot (out to his right, or low on his left, clear of his face).
-import { boot, cel, celRing, celShade, feet, heldPole, hi, INK, oval, pair, poleFlag, S, s2, tint } from './costumeKit';
+import { boot, cel, celRing, celShade, feet, mitts, heldPole, hi, INK, oval, pair, poleFlag, S, s2, tint } from './costumeKit';
 import type { CostumeLayer } from './costumes';
 
 const STEEL = '#5b5f6e';
@@ -57,14 +57,16 @@ const mecha = (): CostumeLayer => ({
   // the round energy shield on his left paw: an orange rim, a white face and the glowing core
   pawL: cel(oval(98, 238, 27, 27), MECHA, 86, 226, 0.9) +
     `<circle cx="98" cy="238" r="19" fill="${ARMOUR}" ${s2}/><path d="M98 226 L108 238 L98 250 L88 238 Z" fill="${CORE}" ${s2}/><circle cx="96" cy="235" r="2.4" fill="${GLOW}"/>` +
-    hi('M78 230 C80 222 86 216 94 214', 3, 0.6) + MECHA_BOOTS.feetL,
+    hi('M78 230 C80 222 86 216 94 214', 3, 0.6),
   // a short beam blade out to his right: the steel hilt in his paw, the glowing blade
   pawR: heldPole(186, 262, -40, 8, 22, STEEL, 9) +
     `<g transform="translate(186 262) rotate(-40)">` +
     `<path d="M24 0 L76 0" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M24 0 L76 0" stroke="${CORE}" stroke-width="11.4" stroke-linecap="round"/>` +
-    `<path d="M26 -1 L74 -1" stroke="${GLOW}" stroke-width="4.4" stroke-linecap="round"/><path d="M18 -9 L18 9" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M18 -8 L18 8" stroke="#ffd23f" stroke-width="4.4" stroke-linecap="round"/></g>` +
-    MECHA_BOOTS.feetR,
+    `<path d="M26 -1 L74 -1" stroke="${GLOW}" stroke-width="4.4" stroke-linecap="round"/><path d="M18 -9 L18 9" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M18 -8 L18 8" stroke="#ffd23f" stroke-width="4.4" stroke-linecap="round"/></g>`,
   ...MECHA_BOOTS,
+  ...mitts(STEEL), // his armour gauntlets
+  overL: true,
+  overR: true,
   hidesEars: true,
 });
 
@@ -121,8 +123,10 @@ const carbot = (): CostumeLayer => ({
     const [cw, ch] = [(x1 - x0) / 4, 36 / 5];
     for (let i = 0; i < 4; i++) for (let j = 0; j < 5; j++) if ((i + j) % 2) out.push(`<path d="M${(x0 + i * cw).toFixed(1)} ${(j * ch).toFixed(1)} L${(x0 + (i + 1) * cw).toFixed(1)} ${(j * ch).toFixed(1)} L${(x0 + (i + 1) * cw).toFixed(1)} ${((j + 1) * ch).toFixed(1)} L${(x0 + i * cw).toFixed(1)} ${((j + 1) * ch).toFixed(1)} Z" fill="${TYRE}"/>`);
     return out.join('');
-  }) + CAR_BOOTS.feetR,
+  }),
   ...CAR_BOOTS,
+  ...mitts(SILVER), // his chrome gauntlets
+  overR: true,
   hidesEars: true,
 });
 

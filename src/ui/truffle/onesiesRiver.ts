@@ -1,6 +1,6 @@
 // The river onesies (rewards spec 2026-10-15 §5.2): the creatures of One River's worlds, each a hood with the animal's own face,
 // its body and tail, to the v3 standard (docs/worlds/costumes/standard-v3.png). otter and panda are the parent-approved samples.
-import { animalFoot, belly, cel, celShade, DARK, eyes, feet, gloveL, gloveR, hi, hood, pair, PAW_L_D, PAW_R_D, rope, S, s2, tint } from './costumeKit';
+import { animalFoot, belly, cel, celShade, DARK, eyes, feet, mitts, gloveL, gloveR, hi, hood, pair, PAW_L_D, PAW_R_D, rope, S, s2, tint } from './costumeKit';
 import type { CostumeLayer } from './costumes';
 
 
@@ -24,6 +24,7 @@ const otter = (): CostumeLayer => ({
   tail: cel('M206 236 C232 240 258 232 272 204 C282 222 274 246 254 258 C238 266 220 264 206 258 Z', OTTER, 230, 238, 0.86),
   // the otter's own feet in his paws' place (one foot each, never a paw on a foot: parent 2026-10-16)
   ...feet((f) => animalFoot(f, OTTER)),
+  ...mitts(OTTER),
   hidesEars: true,
 });
 
@@ -46,6 +47,7 @@ const panda = (): CostumeLayer => ({
     `<path d="M150 64 Q160 60 170 64 Q168 72 160 74 Q152 72 150 64 Z" fill="${BLK}"/><path d="M160 74 L160 79 M152 80 Q156 84 160 79 Q164 84 168 80" fill="none" ${s2}/>`,
   tail: `<circle cx="222" cy="250" r="13" fill="${PANDA}" ${S}/>`,
   ...feet((f) => animalFoot(f, BLK, '#6a6478')),
+  ...mitts(BLK),
   hidesEars: true,
 });
 
@@ -80,6 +82,7 @@ const frog = (): CostumeLayer => ({
   // webbed feet in his paws' place: three toes splayed out below each
   ...feet((f) => cel(`M${f(123)} 263 C${f(128)} 256 ${f(148)} 256 ${f(153)} 263 L${f(162)} 283 L${f(149)} 278 L${f(138)} 287 L${f(127)} 278 L${f(114)} 283 Z`, FROG, Math.min(f(114), f(162)) + 10, 262, 0.9) +
     `<path d="M${f(132)} 268 L${f(127)} 278 M${f(144)} 268 L${f(149)} 278" fill="none" stroke="${celShade(FROG)}" stroke-width="2" stroke-linecap="round"/>`),
+  ...mitts(FROG),
   hidesEars: true,
 });
 
@@ -134,6 +137,7 @@ const duck = (): CostumeLayer => ({
   tail: cel('M208 246 C222 240 230 228 232 210 C240 216 242 228 236 238 C246 232 252 222 252 212 C260 230 250 254 214 256 Z', DUCK, 222, 236, 0.88),
   // webbed feet, three toes each, turned out, in his paws' place
   ...feet((f) => cel(`M${f(126)} 262 C${f(118)} 266 ${f(110)} 272 ${f(106)} 280 L${f(118)} 279 L${f(122)} 287 L${f(134)} 281 L${f(142)} 288 L${f(150)} 279 C${f(156)} 276 ${f(158)} 266 ${f(150)} 261 C${f(144)} 257 ${f(132)} 257 ${f(126)} 262 Z`, DUCK_BILL, Math.min(f(106), f(158)) + 10, 264, 0.88)),
+  ...mitts(DUCK),
   hidesEars: true,
 });
 
