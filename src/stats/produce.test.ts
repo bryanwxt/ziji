@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeCard, makeWord } from '../test/fixtures';
 import type { CardRecord, ReviewLog } from '../types';
-import { closestToProduce, lessonStars, produceChars, producedBetween, producedLine } from './produce';
+import { closestToProduce, lessonStars, oneDayAway, produceChars, producedBetween, producedLine } from './produce';
 
 const at = (d: number, h = 9) => new Date(2026, 9, d, h).getTime();
 const passed = (wordId: string, kind: 'write' | 'say' | 'recognise', when: number): CardRecord => ({ ...makeCard(wordId, kind, new Date(2026, 10, 1)), passed: when });
@@ -40,6 +40,10 @@ describe('closest (spec 2026-10-11 §5)', () => {
   it('at most three', () => {
     const ids = ['b:森', 'b:林', 'b:木', 'w:森林'];
     expect(closestToProduce(ids.map((id) => card(id, 'write')), ids.map((id, i) => write(id, i + 1)), wordOf)).toHaveLength(3);
+  });
+  it('oneDayAway: each word once, with the skill and its day (rewards spec §4: the can-write-tomorrow goals)', () => {
+    const cards = [card('b:森', 'write'), card('b:林', 'say')];
+    expect(oneDayAway(cards, [write('b:森', 3), say('b:林', 4)], wordOf)).toEqual([{ text: '林', kind: 'say', at: at(4) }, { text: '森', kind: 'write', at: at(3) }]);
   });
 });
 
