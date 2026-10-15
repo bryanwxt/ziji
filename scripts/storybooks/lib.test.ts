@@ -65,6 +65,7 @@ describe('importStory', () => {
   });
   it('a chunk with a word from the blocklist is dropped like a chunk beyond 三上 (D2 allows no rewording)', () => {
     expect(blockedIn('孩子们说：“我们不是傻瓜。”')).toEqual(['傻瓜']);
+    expect(blockedIn('兔子朝着河马大喊：“该死的河马！”')).toEqual(['该死']); // a curse: 0111's opening (excluded on theme)
     const blocked = '我们不是傻瓜。'.repeat(10);
     expect(importStory('9006_好.md', md('好', [EASY, blocked, EASY]), entry).passages.map((p) => p.id)).toEqual(['gsb:9006-1', 'gsb:9006-3']);
   });
@@ -90,8 +91,8 @@ describe('the vendored stories (scripts/storybooks/zh at be28dab)', () => {
   it('storybooks.json is exactly what the import makes of them (deterministic, nothing hand-edited)', () => {
     expect(importAll(manifest, files.map((file) => ({ file, md: readFileSync(`scripts/storybooks/zh/${file}`, 'utf8') }))).flatMap((s) => s.passages)).toEqual(passages);
   });
-  it('about 45 passages, all read by 三上, each credited and licensed, each with its picture within budget', () => {
-    expect(passages.length).toBeGreaterThanOrEqual(40);
+  it('about 40 passages, all read by 三上, each credited and licensed, each with its picture within budget', () => {
+    expect(passages.length).toBeGreaterThanOrEqual(35);
     expect(passages.length).toBeLessThanOrEqual(50);
     expect(passages.filter((p) => termIndex(p.term) < 0 || termIndex(p.term) > termIndex('三上'))).toEqual([]);
     expect(passages.filter((p) => !p.credit || !['CC BY 3.0', 'CC BY 4.0', 'CC BY-NC 3.0'].includes(p.credit.licence) || !p.credit.text || !p.credit.translation)).toEqual([]);
@@ -105,6 +106,11 @@ describe('the vendored stories (scripts/storybooks/zh at be28dab)', () => {
   });
   it("the CC BY 4.0 stories are the nine Global ASP's master index gives 4.0 (global-asp/global-asp MASTER.md at 54c9b23; the site agrees)", () => {
     expect(Object.entries(manifest).filter(([, e]) => e.licence === 'CC BY 4.0').map(([id]) => id)).toEqual(['0027', '0089', '0110', '0201', '0243', '0262', '0296', '0315', '0324']);
+  });
+  it('the stories excluded on theme stay out: 0072 (revenge, blood), 0111 (该死, revenge), 0342 (punishment)', () => {
+    expect(Object.entries(manifest).filter(([, e]) => e.include === false).map(([id]) => id)).toEqual(['0072', '0111', '0342']);
+    expect(passages.filter((p) => ['0072', '0111', '0342'].includes(p.story!.id))).toEqual([]);
+    expect(passages).toHaveLength(38); // 0111 out on theme; 0315 out: 富人 (blocked) is in every part once 富人的 counts
   });
   it('every edited story is marked adapted, and only those', () => {
     const edited = new Set(Object.entries(manifest).filter(([, e]) => e.edits?.length).map(([id]) => id));

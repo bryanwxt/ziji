@@ -1,8 +1,7 @@
 // Global Storybooks Chinese → 朗读 passages (spec 2026-10-15 §2.1): parse a story's Markdown, apply the manifest's light edits,
 // cut its pages into passages of 40–110 characters, level each, and keep the stories he can read by 三上.
 import { hanChars } from '../../src/content';
-import { BLOCKED } from '../../src/content/blocked';
-import { tiles } from '../../src/content/zuju';
+import { blockedWordsIn } from '../../src/content/zuju';
 import { passageTerm, termIndex } from '../../src/langdu/level';
 import { splitSentences } from '../../src/langdu/sentences';
 import type { Passage, PassageCredit } from '../../src/types';
@@ -54,7 +53,7 @@ export function applyEdits(pages: string[], edits: readonly Edit[] = []): string
 /** Words of the blocklist in a text, word by word as the content gate reads it (src/content/contentGate.test.ts). D2 allows no
  *  rewording, so a chunk with one is dropped like a chunk beyond 三上. */
 export function blockedIn(text: string): string[] {
-  return splitSentences(text).flatMap((s) => tiles(s).map((t) => t.replace(/[，。！？、；：]/g, '')).filter((t) => BLOCKED.has(t)));
+  return splitSentences(text).flatMap(blockedWordsIn);
 }
 
 export interface Chunk { firstPage: number; text: string }

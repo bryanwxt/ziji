@@ -2,10 +2,18 @@
 import { describe, expect, it } from 'vitest';
 import { makeWord } from '../test/fixtures';
 import { SENTENCE_BANK } from './sentenceBank';
-import { MAX_TILES, MIN_TILES, pickZuju, tiles, zujuFor } from './zuju';
+import { blockedWordsIn, MAX_TILES, MIN_TILES, pickZuju, tiles, zujuFor } from './zuju';
 import { mulberry32 } from '../lib/random';
 
 describe('组句 (spec 2026-10-05 §3.2 rung 4, §6)', () => {
+  it('a blocked word is one tile even when no dictionary has it, so the content gate sees it (该死, 吃醋, 颗粒)', () => {
+    expect(tiles('该死的河马！')).toEqual(['该死的', '河', '马！']);
+  });
+  it('finds the blocked words of a sentence tile by tile, with the punctuation and particles a tile carries left off', () => {
+    expect(blockedWordsIn('该死的河马！')).toEqual(['该死']);
+    expect(blockedWordsIn('你是傻瓜吗？我们不是傻瓜。')).toEqual(['傻瓜', '傻瓜']);
+    expect(blockedWordsIn('我爱河马。')).toEqual([]);
+  });
   it('cuts a sentence into word tiles: the longest word first', () => {
     expect(tiles('我和哥哥都喜欢打球。')).toEqual(['我', '和', '哥哥', '都', '喜欢', '打球。']);
   });

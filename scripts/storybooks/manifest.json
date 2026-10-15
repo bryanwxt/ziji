@@ -16,7 +16,7 @@
   "0089": {"level": 2, "licence": "CC BY 4.0", "names": ["卡莱", "肯尼亚"]},
   "0095": {"level": 2, "names": ["赞玛"]},
   "0110": {"level": 3, "licence": "CC BY 4.0", "names": ["旺加里", "马塔伊", "肯尼亚"]},
-  "0111": {"level": 2, "names": []},
+  "0111": {"level": 2, "include": false, "why": "该死的河马 (a curse) and a revenge ending (报了仇): the same ground as 0072", "names": []},
   "0112": {"level": 1, "names": []},
   "0120": {"level": 1, "names": ["图丽", "安娜", "凯茜", "萨玛", "巴巴", "萨内蕾", "塔波", "腾巴"]},
   "0129": {"level": 1, "names": []},

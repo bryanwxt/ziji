@@ -18,7 +18,7 @@ import stored from './sentencePinyin.json'; // the snapshot (test-only: not ship
 const STORED_PINYIN = (stored as { sentences: Record<string, string> }).sentences;
 import { readingOf, sentenceReading } from './wordGate';
 import { loneSpoken } from '../audio/speech';
-import { tiles } from './zuju';
+import { blockedWordsIn } from './zuju';
 
 const rows = shownWords();
 
@@ -27,7 +27,7 @@ describe('no blocked word is reachable (content audit 2026-10-15)', () => {
     expect([...new Set(rows.filter((r) => BLOCKED.has(r.word)).map((r) => `${r.word} (${r.surface}, ${r.via})`))]).toEqual([]);
   });
   it('in any sentence written for the app, word by word', () => {
-    const bad = shownSentenceRows().flatMap(({ s, surface }) => tiles(s).map((t) => t.replace(/[，。！？、；：]/g, '')).filter((t) => BLOCKED.has(t)).map((t) => `${t} in ${s} (${surface})`));
+    const bad = shownSentenceRows().flatMap(({ s, surface }) => blockedWordsIn(s).map((t) => `${t} in ${s} (${surface})`));
     expect(bad).toEqual([]);
   });
 });
