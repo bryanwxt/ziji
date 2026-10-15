@@ -37,6 +37,11 @@ describe('a Say card (spec 2026-10-11 §3)', () => {
     expect(document.body.textContent).not.toContain('sēn');
     expect(screen.getByText('继续').closest('button')!.disabled).toBe(true); // nothing to go on with before a take
   });
+  it('a bound character is read in its pair, the character marked (番 → 番茄, parent 2026-10-15)', () => {
+    render(<SayCard word={makeWord('番', { id: 'b:番', pinyin: 'fān' })} kid={DEFAULT_KID} onDone={vi.fn()} />);
+    expect(document.querySelector('[data-q]')!.textContent).toBe('番茄');
+    expect(document.querySelector('[data-q] .bound__ch')!.textContent).toBe('番');
+  });
   it('he records; the model plays right after; 继续 hands over the take', async () => {
     const onDone = vi.fn();
     render(<SayCard word={sen} kid={DEFAULT_KID} onDone={onDone} />);

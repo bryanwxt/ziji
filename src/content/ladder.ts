@@ -2,7 +2,7 @@
 // words, each arriving just after the last of its characters in school order. Static content: never stored or paused; a
 // word's progress lives on its cards (ids `w:<text>:<kind>`).
 import type { Level, Word } from '../types';
-import { glossFor } from './glossary';
+import { dictionaryGloss, glossFor } from './glossary';
 import { builtinWords, cardDroppedExamples, HSK_WORDS, schoolTerm } from './index';
 import { isChildWord, readingOf } from './wordGate';
 
@@ -23,8 +23,9 @@ function build(now: number): Word[] {
     const cs = Array.from(text);
     if (!cs.every((c) => rankOf.has(c))) continue; // a character outside his range
     if (py.trim().split(/\s+/).length !== cs.length) continue; // pinyin that doesn't line up can't be checked or said
-    const meaning = glossFor(text);
-    if (!meaning) continue; // a word with no meaning can't be heard or read for meaning
+    // membership stays the dictionary's (a kid gloss adds no word to his ladder); the English is the kid gloss where written
+    if (!dictionaryGloss(text)) continue; // a word with no meaning can't be heard or read for meaning
+    const meaning = glossFor(text)!;
     rows.push({ text, py, last: Math.max(...cs.map((c) => rankOf.get(c)!)), meaning });
   }
   rows.sort((a, b) => a.last - b.last || (HSK_WORDS.get(a.text) ?? 9) - (HSK_WORDS.get(b.text) ?? 9) || a.text.length - b.text.length || (a.text < b.text ? -1 : 1));

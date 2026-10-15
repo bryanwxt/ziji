@@ -18,7 +18,7 @@ describe('familyOf: words of a character he can read (spec 2026-10-12 §5)', () 
     expect(texts('门', '口出大串五花八')).toEqual(['门口', '出门', '大门', '串门', '五花八门']);
   });
   it('a word in the examples, the ladder and the HSK list comes once, with its pinyin and English', () => {
-    expect(familyOf('门', new Set('口'))).toEqual([{ text: '门口', pinyin: 'mén kǒu', en: 'doorway; gate' }]);
+    expect(familyOf('门', new Set('口'))).toEqual([{ text: '门口', pinyin: 'mén kǒu', en: 'doorway, at the door' }]); // its kid gloss
     const around = wordsAround('门').map((x) => x.text);
     expect(new Set(around).size).toBe(around.length);
     expect(around.every((t) => Array.from(t).length >= 2 && t.includes('门'))).toBe(true);

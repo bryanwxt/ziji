@@ -65,7 +65,7 @@ async function setup(voice = false) {
   return app;
 }
 
-const introWord = () => document.querySelector('.intro .hanzi--xl')?.textContent ?? null;
+const introWord = () => document.querySelector('.intro__card')?.getAttribute('data-word') ?? null; // a bound character's card leads with its pair
 
 async function learnCurrentWord() {
   fireEvent.click(await screen.findByText('我记住了！'));

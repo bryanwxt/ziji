@@ -4,10 +4,11 @@ import { chengyuOf } from './chengyu';
 import data from './glossary.json';
 import { EXTRA_GLOSS } from './extraExamples';
 import { SWEEP_GLOSSES } from './sweepFixes';
+import { kidGloss } from './kidGloss';
+import { noEnglishQuestion } from './grammarWords';
 
 const entries = (data as { entries: Record<string, string> }).entries;
 
-/** A short English gloss for a built-in character or 组词 (from CC-CEDICT, CC BY-SA 4.0), shown on the 认字 card only. */
 /** English the dictionary gets wrong or lacks for words a card shows (content sweep, parent 2026-10-05). */
 export const GLOSS_FIXES: Record<string, string> = {
   ...SWEEP_GLOSSES,
@@ -30,10 +31,31 @@ export function cleanGloss(gloss: string): string | undefined {
   return senses.length ? senses.join('; ') : undefined;
 }
 const dictionary = (text: string): string | undefined => (entries[text] === undefined ? undefined : cleanGloss(entries[text]));
-export const glossFor = (text: string): string | undefined => GLOSS_FIXES[text] ?? dictionary(text) ?? EXTRA_GLOSS[text]; // then the 组词 written for the app
+/** The dictionary's English (cleaned, with the sweep's fixes): the parent's detail, and the fallback beyond his school lists. */
+export const dictionaryGloss = (text: string): string | undefined => GLOSS_FIXES[text] ?? dictionary(text) ?? EXTRA_GLOSS[text]; // then the 组词 written for the app
+/** English for a character or 词语 wherever the child reads it: its kid gloss (kidGloss.json), else the dictionary's. */
+export const glossFor = (text: string): string | undefined => kidGloss(text) ?? dictionaryGloss(text);
 
-/** The character's English on the 认字 card: a fixed meaning first (了 le), then its everyday sense at its reading, then the stored meaning; a school word's own meaning, else the 成语 list's. */
+/** A built-in word's dictionary meaning: a fixed meaning first (了 le), then its everyday sense at its reading, then the stored
+ *  meaning. The parent's detail beside the kid gloss. */
+export function dictionaryMeaning(word: Word): string | undefined {
+  if (word.source !== 'builtin') return word.meaning ?? chengyuOf(word.text)?.meaning;
+  return MEANING_FIXES[word.text] ?? dictionaryGloss(word.text) ?? word.meaning;
+}
+
+/** The English on the 认字 card and everywhere else he reads a word's meaning: a built-in word's kid gloss, else its dictionary
+ *  meaning; a school word's own meaning, else the 成语 list's. */
 export function cardMeaning(word: Word): string | undefined {
   if (word.source !== 'builtin') return word.meaning ?? chengyuOf(word.text)?.meaning; // a school 成语 in the list
-  return MEANING_FIXES[word.text] ?? glossFor(word.text) ?? word.meaning;
+  return kidGloss(word.text) ?? dictionaryMeaning(word);
+}
+
+/**
+ * The English an English-meaning question asks (hear, 这个词是什么意思, placement 听一听) or offers as a wrong choice: a built-in
+ * word's kid gloss only (never the dictionary's: parent 2026-10-15), a school word's own meaning; never a grammar word's
+ * (grammarWords.ts). None: the word takes no English question, and its ladder skips the Hear rung.
+ */
+export function questionMeaning(word: Word): string | undefined {
+  if (noEnglishQuestion(word.text)) return undefined;
+  return word.source === 'builtin' ? kidGloss(word.text) : cardMeaning(word);
 }

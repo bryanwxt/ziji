@@ -1368,7 +1368,7 @@ button.langdu__sentence { cursor: pointer; }
 .understand__choices { grid-template-columns: 1fr; }
 .understand__choice { font-family: var(--font, system-ui); font-size: 19px; font-weight: 700; text-align: left; line-height: 1.3; padding: 12px 16px; min-height: 56px; }
 @media (max-width: 599px) { .understand__choice { font-size: 17px; padding: 10px 12px; } }
-@media (max-width: 599px) and (max-height: 700px) { .understand__choice { font-size: 16px; padding: 8px 10px; min-height: 48px; } } /* iPhone SE with the sheet open: the longest meaning still fits (CI WebKit, wider Linux fonts) */
+@media (max-width: 599px) and (max-height: 700px) { .understand__choice { font-size: 16px; padding: 8px 10px; min-height: 52px; } } /* iPhone SE with the sheet open: the tap minimum, and the longest meaning still fits (CI WebKit, wider Linux fonts) */
 @media (min-width: 600px) { .understand__choice { min-height: 64px; } } /* an iPad's main-action tap target (WebKit sweep) */
 
 /* Granny Dragon (spec 2026-10-07 3b §6): mirrored she faces the other way; talking opens and closes her mouth. Reduced motion: still. */
@@ -1628,3 +1628,15 @@ button.langdu__sentence { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .home .world-anim { animation: none; } }
 /* among English meanings, 都不对 takes the English options' size so it doesn't shout over them */
 .stage .choices--english .choice.choice--none { font-size: clamp(20px, 2.8vh, 26px); }
+
+/* A bound character (parent 2026-10-15): its 认新字 card and English questions lead with its pair (番茄), the character he
+   learns picked out in it; the character alone sits small beside the speak button, so he knows it by itself too. */
+.bound__ch { color: var(--orange-ink); text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 0.06em; text-underline-offset: 0.12em; }
+.intro__bound { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 2px; }
+.intro__alone { display: inline-flex; align-items: baseline; gap: 6px; padding: 0 12px; border-radius: 12px; border: 2px solid var(--gold-edge); background: var(--gold-soft); color: var(--ink); }
+.intro__alone .hanzi { font-family: var(--hanzi); font-size: 40px; line-height: 1.25; }
+.intro__alone .pinyin { font-size: 16px; font-weight: 700; color: var(--ink-soft); }
+@media (max-width: 599px) { .intro__alone .hanzi { font-size: 32px; } .intro__bound { gap: 10px; } }
+/* the 成语 card's character shrinks on a short screen (above); its pair does too, the pair's own sizing being more specific */
+@media (max-height: 820px) { .intro .intro__card--idiom .hanzi--xl.hanzi--pair { font-size: min(var(--hanzi-xl), 96px, calc(68vw / var(--len)), calc(420px / var(--len))); } }
+@media (max-height: 700px) { .intro .intro__card--idiom .hanzi--xl.hanzi--pair { font-size: min(var(--hanzi-xl), 56px, calc(68vw / var(--len))); } }

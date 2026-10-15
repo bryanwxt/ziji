@@ -18,10 +18,12 @@ import { Pet } from '../../ui/Pet';
 import type { TruffleMood } from '../../ui/truffle/Truffle';
 import type { Reaction } from '../../ui/truffle/timelines';
 import { SpeakButton } from '../../ui/SpeakButton';
+import { BoundWord } from '../../ui/BoundWord';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { LookAlikeWhy, PinyinWhy, RadicalHint } from '../../ui/stage/WhyLine';
 import { firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
-import { cardMeaning, glossFor } from '../../content/glossary';
+import { cardMeaning, glossFor, questionMeaning } from '../../content/glossary';
+import { boundPair, inBoundSense, kidGlossReading } from '../../content/kidGloss';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 import type { Idiom } from '../../content/chengyu';
@@ -68,6 +70,8 @@ const NO_CHARS: ReadonlySet<string> = new Set();
 type Phase = 'intro' | 'quiz' | 'feedback';
 
 export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null, knownChars = NO_CHARS, noneOfThese }: Props) {
+  // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
+  const pair = boundPair(word.text);
   // none: the right answer is left out and 都不对 is right; real: the right answer itself, shown after (production practice spec §5)
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null; none: boolean; showsNone: boolean; real: string } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
@@ -85,12 +89,14 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       const options = meaningChoices(word, pool, rng);
       if (options) {
         const hear = ask === 'hear' && voice; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
-        const real = firstSense(cardMeaning(word)!);
+        const real = firstSense(questionMeaning(word)!);
         return { listen: hear, cue: null, answer: noneOfThese === 'answer' ? NONE_OF_THESE : real, options: pickOptions(options, real), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead', none: noneOfThese === 'answer', showsNone: !!noneOfThese, real };
       }
     }
-    const five = pickLookAlikes(word, pool, rng);
-    const lookAlikes = five.length ? five : pickCharacterDistractors(word, pool, rng);
+    // a bound character is heard as its pair (番茄): its pair's other character is never a wrong choice (蚂蚁 said, 蚁 offered)
+    const inPair = (w: Word) => !!pair && w.text !== word.text && pair.includes(w.text);
+    const five = pickLookAlikes(word, pool, rng).filter((w) => !inPair(w));
+    const lookAlikes = five.length ? five : pickCharacterDistractors(word, pool, rng).filter((w) => !inPair(w));
     const listen = voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
     const answer = listen ? word.text : word.pinyin;
     const wrong = listen ? lookAlikes.map((w) => w.text) : fiveOrThree(pickPinyinDistractors(word, pool, rng, MANY_WRONG));
@@ -183,7 +189,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           // a 都不对 question shows the real answer, right or wrong (production practice spec §5)
           detail={result.correct && !quiz.none ? undefined : (
             <>
-              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={quiz.mode || choice === NONE_OF_THESE ? null : quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
+              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? kidGlossReading(pair) : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={quiz.mode || choice === NONE_OF_THESE ? null : quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
               {/* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
                   find the character → the look-alike part; its reading → the kind of pinyin slip */}
               {result.correct ? null
@@ -223,8 +229,12 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                 </div>
               ) : (
                 <>
-                  {quiz.listen ? <SpeakButton text={word.text} reading={word.pinyin} big /> : <div class="hanzi hanzi--q" data-q>{word.text}</div>}
-                  {phase === 'feedback' && <UsageLine word={word} />}
+                  {quiz.listen ? <SpeakButton text={quiz.mode && pair ? pair : word.text} reading={quiz.mode && pair ? undefined : word.pinyin} big />
+                    // an English question on a bound character asks about its pair, the character picked out in it; never the lone character
+                    : quiz.mode && pair ? <div class="hanzi hanzi--q hanzi--pair" data-q style={`--len:${Array.from(pair).length}`}><BoundWord pair={pair} ch={word.text} /></div>
+                    : <div class="hanzi hanzi--q" data-q>{word.text}</div>}
+                  {/* a bound character's English question already shows its pair: no second 番茄 under it */}
+                  {phase === 'feedback' && !(quiz.mode && pair && usageLine(word)?.full === pair) && <UsageLine word={word} />}
                 </>
               )}
             </div>
@@ -306,25 +316,40 @@ function extraWords(line: ReturnType<typeof usageLine>, _idiom?: Idiom | null): 
   return line ? 1 : 2;
 }
 
-/** The lines the 认新字 card reads after its character: the usage line, the listed 组词, then its 成语 when it shows one. */
-export function introSpoken(word: Word, idiom: Idiom | null): string[] {
-  const line = usageLine(word);
-  const listed = (word.examples ?? []).filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom)).map((e) => e.text);
-  const shownIdiom = idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) ? [idiom.text] : [];
-  return [...(line ? [line.full] : []), ...listed, ...shownIdiom];
+/**
+ * The 认新字 card's 词语 rows: its usage line and the 组词 listed with it. A bound character's card leads with its pair (番茄),
+ * so neither row repeats it, and one row is enough below it.
+ */
+function cardRows(word: Word, idiom?: Idiom | null): { line: ReturnType<typeof usageLine>; listed: NonNullable<Word['examples']> } {
+  const pair = boundPair(word.text);
+  const usage = usageLine(word);
+  // a bound character's rows keep its pair's sense (kidGloss.ts inBoundSense): 番 never shows 一番 "a round of"
+  const line = usage && usage.full !== pair && inBoundSense(word.text, usage.full) ? usage : null;
+  const room = pair ? (line ? 0 : 1) : extraWords(line, idiom);
+  const listed = (word.examples ?? []).filter((e) => e.text !== pair && inBoundSense(word.text, e.text) && !line?.full.includes(e.text)).slice(0, room);
+  return { line, listed };
 }
 
-/** What the 认新字 card shows beside a 成语: its usage line and the 组词 listed with it (a 成语 can be either: 八's is 四面八方). */
-export function shownOnCard(word: Word): string[] {
-  const line = usageLine(word);
-  const listed = (word.examples ?? []).filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, {} as Idiom)).map((e) => e.text);
-  return [line?.full, ...listed].filter((t): t is string => !!t);
+/** The lines the 认新字 card reads after its character (a bound one's pair): the usage line, the listed 组词, then its 成语. */
+export function introSpoken(word: Word, idiom: Idiom | null): string[] {
+  const { line, listed } = cardRows(word, idiom);
+  const shownIdiom = idiom && inBoundSense(word.text, idiom.text) && !shownOnCard(word).some((t) => t.includes(idiom.text)) ? [idiom.text] : [];
+  return [...(line ? [line.full] : []), ...listed.map((e) => e.text), ...shownIdiom];
 }
+
+/** What the 认新字 card shows beside a 成语: a bound character's pair, its usage line and the 组词 listed with it (a 成语 can be
+ *  either: 八's is 四面八方). */
+export function shownOnCard(word: Word): string[] {
+  const { line, listed } = cardRows(word, {} as Idiom);
+  return [boundPair(word.text), line?.full, ...listed.map((e) => e.text)].filter((t): t is string => !!t);
+}
+
 
 /** The card's 成语: the first one the card doesn't already show, so nothing is shown twice (parent, 2026-10-05: 四面八方 twice on 八). */
 export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
   const shown = shownOnCard(word);
-  return idioms.find((i) => !shown.some((t) => t.includes(i.text))) ?? null;
+  // a bound character's 成语 keeps its pair's sense too (kidGloss.ts inBoundSense)
+  return idioms.find((i) => !shown.some((t) => t.includes(i.text)) && inBoundSense(word.text, i.text)) ?? null;
 }
 
 /**
@@ -342,22 +367,35 @@ export function familyRow(word: Word, known: ReadonlySet<string>): FamilyWord[] 
 
 function Intro({ word, idiom, tag = null, known }: { word: Word; idiom: Idiom | null; tag?: string | null; known: ReadonlySet<string> }) {
   const family = familyRow(word, known);
-  const line = usageLine(word);
-  const long = Array.from(word.text).length > 1;
   // never the one the usage line already shows; all of them feed the meaning questions
-  const listed = (word.examples ?? []).filter((e) => !line?.full.includes(e.text)).slice(0, extraWords(line, idiom));
+  const { line, listed } = cardRows(word, idiom);
+  const pair = boundPair(word.text);
+  const long = Array.from(pair ?? word.text).length > 1;
   return (
     <div class="intro">
-      <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`}>
+      <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`} data-word={word.text}>
         {tag && <p class="intro__tag" lang="zh">{tag}</p>}
         <div class="intro__head">
-          <div class="intro__char">
-            {/* the character first; its pinyin 2 s later (spec 2026-10-12 §4, Chung 2003) */}
-            <div class="pinyin pinyin--later">{word.pinyin}</div>
-            {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
-            <div class={`hanzi hanzi--xl${long ? ' hanzi--long' : ''}`} style={long ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
-            <SpeakButton text={word.text} />
-          </div>
+          {pair ? (
+            // a bound character (parent 2026-10-15): its pair leads, the character marked in it, and the character alone beside
+            // the speak button, so he knows it by itself too
+            <div class="intro__char intro__char--bound">
+              <div class="pinyin pinyin--later">{kidGlossReading(pair)}</div>
+              <div class="hanzi hanzi--xl hanzi--long hanzi--pair" style={`--len:${Array.from(pair).length}`}><BoundWord pair={pair} ch={word.text} /></div>
+              <div class="intro__bound">
+                <span class="intro__alone" lang="zh" aria-label={`${word.text} ${word.pinyin}`}><span class="hanzi">{word.text}</span><small class="pinyin pinyin--later">{word.pinyin}</small></span>
+                <SpeakButton text={pair} />
+              </div>
+            </div>
+          ) : (
+            <div class="intro__char">
+              {/* the character first; its pinyin 2 s later (spec 2026-10-12 §4, Chung 2003) */}
+              <div class="pinyin pinyin--later">{word.pinyin}</div>
+              {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
+              <div class={`hanzi hanzi--xl${long ? ' hanzi--long' : ''}`} style={long ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
+              <SpeakButton text={word.text} />
+            </div>
+          )}
         </div>
         {cardMeaning(word) && <p class="intro__en" lang="en">{cardMeaning(word)}</p>}
         {hanChars(word.text).length <= 2 && hanChars(word.text).map((ch) => { // a 成语's four characters' parts would crowd the card
@@ -401,7 +439,7 @@ function Intro({ word, idiom, tag = null, known }: { word: Word; idiom: Idiom | 
             </div>
           </div>
         )}
-        {idiom && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows
+        {idiom && inBoundSense(word.text, idiom.text) && !shownOnCard(word).some((t) => t.includes(idiom.text)) && ( // the 组词 first, then the 成语 (parent, 2026-10-05: a card showed only a 成语); never one it already shows
           <div class="intro__group intro__idiom">
             <WordRow class="example example--idiom" zh={idiom.text} py={idiom.pinyin} en={idiom.meaning} mark={markOf(idiom.text, word.text)} />
             {idiom.sentences[0] && <p class="intro__idiom-sentence hanzi"><CentredSentence text={idiom.sentences[0]} /></p>}

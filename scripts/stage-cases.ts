@@ -83,7 +83,7 @@ for (const size of SIZES) {
   if (Math.abs(neutral - good) > 2) problems.push(`${size.name} sheet: the card shrinks ${Math.round(neutral - good)}px when feedback appears`);
   // 练一练's new questions: pairing, 组句 (also with every tile placed, its longest) and 钓鱼
   mkdirSync('fit-shots/stage-cases', { recursive: true });
-  for (const c of ['pair', 'match', 'build', 'fish', 'hear', 'hear-long', 'hear-read']) {
+  for (const c of ['pair', 'match', 'build', 'fish', 'hear', 'hear-long', 'hear-read', 'hear-bound', 'hear-bound-read', 'hear-bound-long']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(300);
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
@@ -211,6 +211,14 @@ for (const size of SIZES) {
     if (phone ? shown !== 0 && shown < 2 : shown < 2) problems.push(`${size.name} intro-family: ${shown} 一家人 words showing`);
     if (!phone && (await page.$$('.family__word')).length < 2) problems.push(`${size.name} intro-family: no 一家人 row`);
     problems.push(...(await cardClipped(page, `${size.name} intro-family`)));
+  }
+  // a bound character's 认新字 card (parent 2026-10-15): the pair, the character alone and the speak button all on the card
+  for (const c of ['intro-bound', 'intro-bound-full', 'intro-bound-long']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(2400); // its pinyin comes 2 s after the character
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    for (const sel of ['.hanzi--pair', '.bound__ch', '.intro__alone', '.intro__bound .speak']) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
   }
   {
     await page.goto(`file://${dir}/index.html?case=family`);

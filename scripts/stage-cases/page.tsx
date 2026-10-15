@@ -48,7 +48,7 @@ import { builtinWords, PASSAGES } from '../../src/content';
 import { LangduStep, type LangduPart } from '../../src/activities/langdu/LangduStep';
 import { PASSAGE_QUESTIONS } from '../../src/content/passageQuestions';
 import { ladderWords } from '../../src/content/ladder';
-import { cardMeaning } from '../../src/content/glossary';
+import { questionMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
 import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
@@ -280,7 +280,7 @@ else if (which === 'hear' || which === 'hear-long' || which === 'hear-read') {
   // with the longest English, hear-read the same as a read-for-meaning question
   const lw = ladderWords();
   const pool = [...builtinWords(0), ...lw];
-  const longest = [...lw].sort((a, b) => (cardMeaning(b)?.length ?? 0) - (cardMeaning(a)?.length ?? 0));
+  const longest = lw.filter((x) => questionMeaning(x)).sort((a, b) => questionMeaning(b)!.length - questionMeaning(a)!.length); // the longest English a question asks (kid glosses)
   const w = which === 'hear' ? builtinWords(0).find((x) => x.text === '门')! : longest[0]!;
   const near = which === 'hear' ? pool : [w, ...longest.slice(1, 4)];
   render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'hear-read' ? 'meaningRead' : 'hear'} word={w} pool={near} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
@@ -358,6 +358,20 @@ else if (which === 'intro-family') {
   const w = words.find((x) => x.text === '生')!;
   render(screen(<PinyinFade known={new Set('男女气先日')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} knownChars={new Set('男女气先日')} onDone={() => {}} /></PinyinFade>), app);
 }
+else if (which === 'intro-bound' || which === 'intro-bound-full' || which === 'intro-bound-long') {
+  // a bound character's 认新字 card (parent 2026-10-15): 番 led by 番茄; 丽 with a 成语 and a 一家人 row (the fullest); 幼 led
+  // by a three-character pair (幼儿园)
+  const words = builtinWords(0);
+  const w = words.find((x) => x.text === (which === 'intro-bound' ? '番' : which === 'intro-bound-full' ? '丽' : '幼'))!;
+  const known = new Set(words.slice(0, 1200).map((x) => x.text));
+  render(screen(<PinyinFade known={known} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} knownChars={known} onDone={() => {}} /></PinyinFade>), app);
+}
+else if (which === 'hear-bound' || which === 'hear-bound-read' || which === 'hear-bound-long') {
+  // an English question on a bound character (parent 2026-10-15): it asks about 番茄 (or 幼儿园), heard or read
+  const pool = [...builtinWords(0), ...ladderWords()];
+  const w = builtinWords(0).find((x) => x.text === (which === 'hear-bound-long' ? '幼' : '番'))!;
+  render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'hear-bound' ? 'hear' : 'meaningRead'} word={w} pool={pool} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
+}
 else if (which === 'family') {
   // 找一家人 (spec 2026-10-12 §5): 生 among 星星, 出去, 在家, 坏人
   const w = builtinWords(0).find((x) => x.text === '生')!;
@@ -396,7 +410,7 @@ else if (which === 'none-word' || which === 'none-meaning') {
     const w = words.find((x) => wordCue(x) && x.text === '河') ?? words.find((x) => wordCue(x))!;
     render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false, mode: 'meaning' }} ask="word" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} noneOfThese="answer" onDone={() => {}} />), app);
   } else {
-    const longest = [...lw].sort((a, b) => (cardMeaning(b)?.length ?? 0) - (cardMeaning(a)?.length ?? 0));
+    const longest = lw.filter((x) => questionMeaning(x)).sort((a, b) => questionMeaning(b)!.length - questionMeaning(a)!.length); // the longest English a question asks (kid glosses)
     render(screen(<FlashcardStep item={{ wordId: longest[0]!.id, isNew: false, retry: false }} ask="meaningRead" word={longest[0]!} pool={longest.slice(0, 4)} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} noneOfThese="answer" onDone={() => {}} />), app);
   }
 }

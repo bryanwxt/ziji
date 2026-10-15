@@ -13,6 +13,7 @@ import { halfReading, readingOf } from '../../src/content/wordGate';
 import { NEAR_MAX_HSK, nearWords } from '../../src/practice/pairs';
 import { clipId, engineText, type ClipJob, type ClipKind } from './inventory-lib';
 import SAY_AS from '../../src/audio/sayAs.json';
+import { boundPair, kidGlossReading } from '../../src/content/kidGloss';
 
 /** Lone characters said as a 组词 instead (scripts/gen-say-as.ts `words`): they need no clip of their own at their card's reading. */
 const SAID_AS_WORD: Record<string, string[]> = (SAY_AS as { words?: Record<string, string[]> }).words ?? {};
@@ -63,6 +64,9 @@ export function buildInventory(voice: string): ClipJob[] {
       add(e.text, e.pinyin, 'word');
       add(`${e.text}的`, `${e.pinyin} de`, 'word', undefined, { piece: true }); // 听写's "长，长城的，长"
     }
+    // a bound character is said as its pair (番 → 番茄, speech.ts loneSpoken): the pair's clip, whether or not the card lists it
+    const pair = boundPair(w.text);
+    if (pair) add(pair, kidGlossReading(pair) ?? readingOf(pair), 'word');
   }
   for (const b of SENTENCE_BANK) {
     if (!ours(b.word)) continue;

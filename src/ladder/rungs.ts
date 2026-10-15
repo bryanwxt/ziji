@@ -4,7 +4,7 @@
 // Sentence (production practice spec §4): he says a sentence with the word, confirmed the same way: "can use".
 import { meaningCue } from '../activities/flashcards/meaning';
 import { localDateKey } from '../lib/date';
-import { cardMeaning } from '../content/glossary';
+import { cardMeaning, questionMeaning } from '../content/glossary';
 import { bankFor } from '../content/sentenceBank';
 import { sentencesFor } from '../content/understand';
 import type { CardKind, ReviewLog, Word } from '../types';
@@ -63,12 +63,13 @@ export function sayDays(logs: ReviewLog[], cardId: string, kind: TakeRung = 'say
 /** The Say (or Sentence) rung passes on two separate days with a confirmed take. */
 export const sayPassed = (logs: ReviewLog[], cardId: string, kind: TakeRung = 'say'): boolean => sayDays(logs, cardId, kind).length >= PASS_DAYS;
 
-/** Whether a rung can be asked of this word: hearing needs its English (he picks the meaning), using a question to use it in, a
- *  sentence a sentence-bank example to pattern on; reading and saying always. */
+/** Whether a rung can be asked of this word: hearing needs its English question (he picks the meaning: a kid gloss, never a
+ *  grammar word's, glossary.ts questionMeaning), using a question to use it in, a sentence a sentence-bank example to pattern
+ *  on; reading and saying always. A word with no English question climbs from Read (record.ts beginNewWord). */
 export function canAskRung(word: Word, rung: RungKind): boolean {
   if (rung === 'say') return true;
   if (rung === 'sentence') return !!bankFor(word.text);
-  if (rung === 'hear') return !!cardMeaning(word);
+  if (rung === 'hear') return !!questionMeaning(word);
   if (rung === 'understand') return !!cardMeaning(word) && sentencesFor(word.text).length >= 2; // a sentence he hears (plan 2b)
   return rung !== 'use' || meaningCue(word) !== null;
 }

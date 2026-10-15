@@ -1,6 +1,6 @@
 import { firstSense, meaningChoices, pickPinyinDistractors } from '../activities/flashcards/distractors';
 import { schoolTerm } from '../content';
-import { cardMeaning } from '../content/glossary';
+import { questionMeaning } from '../content/glossary';
 import { ladderWords } from '../content/ladder';
 import { canAskRung } from '../ladder/rungs';
 import { shuffle, type Rng } from '../lib/random';
@@ -30,7 +30,7 @@ export function buildQuestion(style: Style, word: Word, pool: Word[], rng: Rng, 
     return wrong.length >= 3 ? { style, wordId: word.id, charId, text: word.text, answer: word.pinyin, options: shuffle([word.pinyin, ...wrong.slice(0, 3)], rng) } : null;
   }
   const options = canAskRung(word, 'hear') ? meaningChoices(word, pool, rng) : null;
-  return options ? { style, wordId: word.id, charId, text: word.text, answer: firstSense(cardMeaning(word)!), options } : null;
+  return options ? { style, wordId: word.id, charId, text: word.text, answer: firstSense(questionMeaning(word)!), options } : null;
 }
 
 /** Words to hear for a term's characters: each character, and the ladder 词语 it completes (a 词语's rank is its newest character's + k/1000). */

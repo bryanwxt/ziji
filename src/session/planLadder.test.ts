@@ -8,6 +8,9 @@ import { ladderWords } from '../content/ladder';
 const now = new Date('2026-10-06T09:00:00');
 const settings = { ...DEFAULT_SETTINGS, newPerDay: 8 };
 
+/** School characters with a kid gloss (a hear card is asked only of a word with an English question). */
+const SCHOOL = Array.from('衣鱼雨二五耳牙口人木土马八巴你我也他弟爸她妈父母女儿力河禾立米合气和哥几七句可去日石子字车四十士只尺是书出自己它吃山羊毛草');
+
 describe('planning on the word ladder (spec 2026-10-06 §3)', () => {
   it('ladder words come in their order, right after their characters', () => {
     const lw = ladderWords()[0]!;
@@ -46,7 +49,7 @@ describe('planning on the word ladder (spec 2026-10-06 §3)', () => {
     expect(plan.hearReviewIds).toEqual([]);
   });
   it('at most HEAR_REVIEW_CAP hear reviews a lesson', () => {
-    const ws = Array.from({ length: HEAR_REVIEW_CAP + 5 }, (_, i) => makeWord(`字${i}`, { meaning: `meaning ${i}` }));
+    const ws = Array.from({ length: HEAR_REVIEW_CAP + 5 }, (_, i) => makeWord(SCHOOL[i]!, { id: `b:字${i}` }));
     const cards = ws.map((w) => makeCard(w.id, 'hear', new Date('2026-10-01')));
     expect(buildSessionPlan({ cards, words: ws, settings, now }).hearReviewIds).toHaveLength(HEAR_REVIEW_CAP);
   });
