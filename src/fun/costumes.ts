@@ -53,6 +53,10 @@ export const ANIMALS: Costume[] = [
   an('otter', '水獭', 'shuǐ tǎ', '#93643f'), an('panda', '熊猫', 'xióng māo', '#fbfaf6'), an('hornbill', '犀鸟', 'xī niǎo', '#3d3845'),
   an('frog', '青蛙', 'qīng wā', '#7cc84a'), an('duck', '鸭子', 'yā zi', '#ffd84a'), an('dragonfly', '蜻蜓', 'qīng tíng', '#3fb6c8'),
   an('koi', '锦鲤', 'jǐn lǐ', '#fffaf2'), an('crab', '螃蟹', 'páng xiè', '#d8382e'), an('parrot', '鹦鹉', 'yīng wǔ', '#2f8fd6'),
+  // his favourites (Task 9)
+  an('babydino', '小恐龙', 'xiǎo kǒng lóng', '#8f6fd6'), an('pterosaur', '翼龙', 'yì lóng', '#c96f9a'), an('magpie', '喜鹊', 'xǐ què', '#2a4f8f'),
+  an('penguin', '企鹅', 'qǐ é', '#c7ccd6'), an('shark', '鲨鱼', 'shā yú', '#4f7fb8'), an('unicorn', '独角兽', 'dú jiǎo shòu', '#cdb0f2'),
+  an('owl', '猫头鹰', 'māo tóu yīng', '#7a6a9a'), an('tigercub', '小老虎', 'xiǎo lǎo hǔ', '#f2f0fa'), an('bunny', '小白兔', 'xiǎo bái tù', '#fffefa'),
 ];
 
 /** Jobs (spec §5.2). The rest are added with their full-body art (Task 10). */

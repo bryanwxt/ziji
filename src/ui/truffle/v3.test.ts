@@ -87,3 +87,15 @@ describe('the river onesies (rewards spec §5.2)', () => {
     }
   });
 });
+
+describe('the favourite onesies (rewards spec §5.2)', () => {
+  it('are drawn and on the 动物 shelf', () => {
+    for (const id of ['babydino', 'pterosaur', 'magpie', 'penguin', 'shark', 'unicorn', 'owl', 'tigercub', 'bunny']) {
+      expect(V3[id], id).toBeTypeOf('function');
+      expect(costumeById(id), id).toMatchObject({ set: 'animal', kind: 'onesie' });
+    }
+  });
+  it('the bunny carries its carrot in its right paw (told from the zodiac 兔 by it and its lop ears)', () => {
+    expect(V3.bunny!().pawR).toContain('#ff9f43');
+  });
+});
