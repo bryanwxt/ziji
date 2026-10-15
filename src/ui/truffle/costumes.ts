@@ -35,14 +35,7 @@ const ANIMAL: Record<string, (c: Costume) => Animal> = {
     tail: ropeTail('M210 250 C240 258 266 240 262 210 C260 198 252 194 246 196', c.color, 10) +
       `<path d="M232 254 L236 244 M252 244 L248 236 M262 222 L254 220" stroke="#3a2a20" stroke-width="5" stroke-linecap="round"/>`,
   }),
-  rabbit: (c) => ({
-    // tall ears rising from the top of the hood in a V (in front of it, so all of each ear shows)
-    front: pair((f) => {
-      const a = f(88) < 160 ? -50 : 50;
-      return `<ellipse cx="${f(88)}" cy="46" rx="12" ry="28" transform="rotate(${a} ${f(88)} 46)" fill="${c.color}" ${S}/><ellipse cx="${f(88)}" cy="47" rx="5" ry="19" transform="rotate(${a} ${f(88)} 47)" fill="#f6c2cc"/>`;
-    }) + eyes(22, 58) + `<path d="M154 68 L166 68 L160 75 Z" fill="#f08aa0" ${s2}/>`,
-    tail: `<circle cx="226" cy="236" r="17" fill="${c.color}" ${S}/><circle cx="220" cy="230" r="5" fill="#fff"/>`,
-  }),
+  // rabbit: drawn by the v3 bunny (onesiesFavourite.ts), the one rabbit (parent 2026-10-15)
   dragon: () => ({
     behind: pair((f) => ropeTail(`M${f(104)} 60 C${f(96)} 44 ${f(88)} 36 ${f(76)} 30 M${f(92)} 44 L${f(76)} 48`, '#ffc94a', 4.5)),
     front: [116, 138, 160, 182, 204].map((x, i) => {

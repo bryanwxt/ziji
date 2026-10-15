@@ -317,4 +317,5 @@ const bunny = (): CostumeLayer => ({
   hidesEars: true,
 });
 
-export const FAVOURITE_ONESIES: Record<string, () => CostumeLayer> = { babydino, pterosaur, magpie, penguin, shark, unicorn, owl, tigercub, bunny };
+// the bunny is the zodiac 兔 (parent 2026-10-15: one rabbit, the cuter one): it draws under the zodiac id
+export const FAVOURITE_ONESIES: Record<string, () => CostumeLayer> = { babydino, pterosaur, magpie, penguin, shark, unicorn, owl, tigercub, rabbit: bunny };

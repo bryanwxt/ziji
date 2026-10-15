@@ -38,7 +38,11 @@ export function normalizeKid(raw: Partial<KidState> | null | undefined): KidStat
   const picked = migrateWorldId(kid.world);
   const world = picked && worldsSeen.includes(picked) ? picked : null;
   const moved = rawWorlds.some((w) => typeof w === 'string' && Object.hasOwn(OLD_WORLDS, w) && !WORLDS.some((x) => x.id === w));
-  return { ...kid, ownedAccessories: owned, wearing: migrateAccessory(typeof kid.wearing === 'string' ? kid.wearing : null), worldsSeen, world, riverNews: kid.riverNews === true || moved, reading: normalizeReading(kid.reading),
+  // one rabbit (parent 2026-10-15): a won 小白兔 is the zodiac 兔, which now wears its look
+  const toRabbit = (id: string) => (id === 'bunny' ? 'rabbit' : id);
+  const ownedCostumes = [...new Set((Array.isArray(kid.ownedCostumes) ? kid.ownedCostumes : []).map(toRabbit))];
+  const outfit = typeof kid.outfit === 'string' ? toRabbit(kid.outfit) : null;
+  return { ...kid, ownedCostumes, outfit, ownedAccessories: owned, wearing: migrateAccessory(typeof kid.wearing === 'string' ? kid.wearing : null), worldsSeen, world, riverNews: kid.riverNews === true || moved, reading: normalizeReading(kid.reading),
     speakingLast: kid.speakingLast === 'langdu' || kid.speakingLast === 'story' ? kid.speakingLast : null,
     story: normalizeStory(kid.story),
     finds: normalizeFinds(kid.finds),
