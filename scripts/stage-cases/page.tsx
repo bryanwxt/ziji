@@ -358,6 +358,14 @@ else if (which === 'intro-full') {
   const w = words.find((x) => x.text === '生')!;
   render(screen(<PinyinFade known={new Set('男女气先日')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} onDone={() => {}} /></PinyinFade>), app);
 }
+else if (which === 'intro-raincoat' || which === 'intro-usage' || which === 'intro-usage-long') {
+  // the parent's iPhone (2026-10-15): 雨衣 with its catch-up tag (pinyin over each character, 补 not clipped); 保持's usage line
+  // and the longest one (本来), whose 。 must not start a line and whose speak button must not sit on the text
+  const all = [...builtinWords(0), ...ladderWords()];
+  const w = all.find((x) => x.text === (which === 'intro-raincoat' ? '雨衣' : which === 'intro-usage' ? '保持' : '本来'))!;
+  const tag = which === 'intro-raincoat' ? '补 一上·1' : '课本 二下·17';
+  render(screen(<PinyinFade known={new Set('我们要教室干净他住在北京后来到这里')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={all} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} lessonTag={tag} onDone={() => {}} /></PinyinFade>), app);
+}
 else if (which === 'intro-bound' || which === 'intro-bound-full' || which === 'intro-bound-long') {
   // a bound character's 认新字 card (parent 2026-10-15): 番 led by 番茄; 丽 with a 成语 (the fullest); 幼 led
   // by a three-character pair (幼儿园)

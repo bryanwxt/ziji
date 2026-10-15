@@ -5,9 +5,10 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { webkit, type Browser, type Page } from 'playwright-core';
 import { WORLDS } from '../src/fun/worlds';
 import { buildFitProfile, type FitProfileOptions } from './fit-profile';
+import { textChecks } from './text-checks';
 import type { ActivityKind } from '../src/types';
 
-const PORT = 4174;
+const PORT = Number(process.env.FIT_PORT ?? 4174); // FIT_PORT: another worktree's sweep may hold 4174
 const BASE = `http://127.0.0.1:${PORT}/`;
 const OUT = 'fit-shots';
 const AFTERNOON = new Date(2026, 9, 6, 16, 0);
@@ -207,6 +208,7 @@ async function check(page: Page, size: Size, flow: string, step: number) {
   ]));
   const sig = await page.evaluate(signature);
   const problems = await page.evaluate(probe, { main: MAIN, scrollers: SCROLLERS });
+  problems.push(...(await page.evaluate(textChecks))); // pinyin over its character, no line led by 。, no speak button on text, no clipped tag
   problems.push(...(await stageChecks(page, size, flow, step)));
   mkdirSync(`${OUT}/${size.name}`, { recursive: true });
   await page.screenshot({ path: `${OUT}/${size.name}/${flow}-${String(step).padStart(2, '0')}.png` });

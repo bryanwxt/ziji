@@ -133,8 +133,13 @@ export function CollectionScreen() {
             <div class="zika-grid">
               {myWords.map((w) => (
                 <button key={w.id} type="button" class="zika" aria-label={w.text} onClick={() => speak(w.text)}>
-                  <span class="zika__py">{w.pinyin}</span>
-                  <span class="zika__char hanzi" style={{ fontSize: w.text.length > 2 ? '28px' : '44px' }}>{w.text}</span>
+                  {/* each syllable over its own character, as on the lesson cards (parent 2026-10-15) */}
+                  {Array.from(w.text).length > 1 ? <span class="zika__char zika__word hanzi" style={{ fontSize: w.text.length > 2 ? '28px' : '44px' }}><Label zh={w.text} py={w.pinyin} /></span> : (
+                    <>
+                      <span class="zika__py">{w.pinyin}</span>
+                      <span class="zika__char hanzi" style={{ fontSize: '44px' }}>{w.text}</span>
+                    </>
+                  )}
                 </button>
               ))}
             </div>

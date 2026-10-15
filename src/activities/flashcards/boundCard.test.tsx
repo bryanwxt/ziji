@@ -30,9 +30,11 @@ describe('a bound character\'s 认新字 card (番 / 番茄)', () => {
   it('leads with the pair, 番 picked out in it, its pinyin over it, the pair\'s English, and 番 alone beside the speak button', () => {
     render(<FlashcardStep {...base} word={fan} item={{ wordId: fan.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     const head = document.querySelector('.intro__head')!;
-    expect(head.querySelector('.hanzi--pair')!.textContent).toBe('番茄');
-    expect([...head.querySelectorAll('.bound__ch')].map((e) => e.textContent)).toEqual(['番']);
-    expect(head.querySelector('.pinyin')!.textContent).toBe('fān qié');
+    const pair = head.querySelector('.hanzi--pair .label')!;
+    expect(pair.getAttribute('data-zh')).toBe('番茄');
+    expect([...head.querySelectorAll('.hanzi--pair .label__cell--mark .label__ch')].map((e) => e.textContent)).toEqual(['番']);
+    // each syllable over its own character (parent 2026-10-15), not one centred string
+    expect([...pair.querySelectorAll('.label__cell')].map((c) => [c.querySelector('.label__py')!.textContent, c.querySelector('.label__ch')!.textContent])).toEqual([['fān', '番'], ['qié', '茄']]);
     expect(head.querySelector('.intro__alone .hanzi')!.textContent).toBe('番');
     expect(document.querySelector('.intro__en')!.textContent).toBe('tomato');
     // the speak button says the pair; the card says it once, never again in its 词语 rows

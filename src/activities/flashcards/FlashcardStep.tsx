@@ -262,7 +262,10 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
 function CentredSentence({ text }: { text: string }) {
   const m = text.match(/^(.*?)([。！？!?.]+)$/u);
   if (!m) return <>{text}</>;
-  return <>{m[1]}<span class="hang">{m[2]}</span></>;
+  // the hanging mark is an inline block, a place the line could break: its last character goes with it, so 。 never starts a line
+  const body = Array.from(m[1]!);
+  const last = body.pop() ?? '';
+  return <>{body.join('')}<span class="nowrap">{last}<span class="hang">{m[2]}</span></span></>;
 }
 
 /**
@@ -270,8 +273,10 @@ function CentredSentence({ text }: { text: string }) {
  * button to its right, its English underneath.
  */
 function WordRow({ zh, py, en, mark, class: cls, textClass }: { zh: string; py?: string; en?: string | null; mark?: [number, number]; class: string; textClass?: string }) {
+  // a sentence (more than a 成语's worth): on a phone it may wrap, so its button sits beside it in the row, never on it (parent 2026-10-15)
+  const long = Array.from(zh).length > 8;
   return (
-    <div class={`word-row ${cls}`} lang="zh">
+    <div class={`word-row ${cls}${long ? ' word-row--long' : ''}`} lang="zh">
       <div class="word-row__line">
         <span class={`hanzi word-row__zh${textClass ? ` ${textClass}` : ''}`}><Label zh={zh} py={py} mark={mark} fade /></span>
         <SpeakButton text={zh} small />
@@ -361,8 +366,8 @@ function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; t
             // a bound character (parent 2026-10-15): its pair leads, the character marked in it, and the character alone beside
             // the speak button, so he knows it by itself too
             <div class="intro__char intro__char--bound">
-              <div class="pinyin pinyin--later">{kidGlossReading(pair)}</div>
-              <div class="hanzi hanzi--xl hanzi--long hanzi--pair" style={`--len:${Array.from(pair).length}`}><BoundWord pair={pair} ch={word.text} /></div>
+              {/* each syllable over its own character (parent 2026-10-15: one centred string drifted off wide characters) */}
+              <div class="hanzi hanzi--xl hanzi--long hanzi--pair intro__word" style={`--len:${Array.from(pair).length}`}><Label zh={pair} py={kidGlossReading(pair)} mark={[Array.from(pair).indexOf(word.text), 1]} /></div>
               <div class="intro__bound">
                 <span class="intro__alone" lang="zh" aria-label={`${word.text} ${word.pinyin}`}><span class="hanzi">{word.text}</span><small class="pinyin pinyin--later">{word.pinyin}</small></span>
                 <SpeakButton text={pair} />
@@ -371,9 +376,14 @@ function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; t
           ) : (
             <div class="intro__char">
               {/* the character first; its pinyin 2 s later (spec 2026-10-12 §4, Chung 2003) */}
-              <div class="pinyin pinyin--later">{word.pinyin}</div>
-              {/* a school 成语 or 词语 shrinks to one line (final review I3) */}
-              <div class={`hanzi hanzi--xl${long ? ' hanzi--long' : ''}`} style={long ? `--len:${Array.from(word.text).length}` : undefined}>{word.text}</div>
+              {/* a school 成语 or 词语 shrinks to one line (final review I3), each syllable over its own character (parent
+                  2026-10-15: "yǔ yī" as one centred string drifted off 雨衣's wide characters) */}
+              {long ? <div class="hanzi hanzi--xl hanzi--long intro__word" style={`--len:${Array.from(word.text).length}`}><Label zh={word.text} py={word.pinyin} /></div> : (
+                <>
+                  <div class="pinyin pinyin--later">{word.pinyin}</div>
+                  <div class="hanzi hanzi--xl">{word.text}</div>
+                </>
+              )}
               <SpeakButton text={word.text} />
             </div>
           )}

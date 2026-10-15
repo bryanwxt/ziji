@@ -9,6 +9,7 @@ import { createEmptyCard, State } from 'ts-fsrs';
 import { DEFAULT_KID } from '../../types';
 import { FlashcardStep , introIdiom, introSpoken, shownOnCard } from './FlashcardStep';
 import { makeWord } from '../../test/fixtures';
+import { ladderWords } from '../../content/ladder';
 
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
@@ -705,5 +706,24 @@ describe('the new-word card has no 「一家人」 row (parent 2026-10-15: it re
     for (const t of shownOnCard(sheng)) expect(rows).toContain(t); // the 组词 rows are exactly what the card lists
     expect(document.querySelector('.family, .family__word, .family__title')).toBeNull();
     expect(document.querySelector('.intro')!.textContent).not.toContain('一家人');
+  });
+});
+
+describe('phone layout of the 认新字 card (parent 2026-10-15)', () => {
+  it('puts each syllable of a word over its own character, not one centred string', () => {
+    const w = ladderWords().find((x) => x.text === '保持')!;
+    render(<FlashcardStep {...base} word={w} pool={[...pool, w]} item={{ wordId: w.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const head = document.querySelector('.intro__head .intro__word .label')!;
+    expect([...head.querySelectorAll('.label__cell')].map((c) => [c.querySelector('.label__py')!.textContent, c.querySelector('.label__ch')!.textContent])).toEqual([['bǎo', '保'], ['chí', '持']]);
+    expect(document.querySelector('.intro__head .pinyin')).toBeNull();
+  });
+
+  it('marks a long usage line so a phone puts its speak button beside it, and keeps its 。 on the last character', () => {
+    const w = ladderWords().find((x) => x.text === '保持')!;
+    render(<FlashcardStep {...base} word={w} pool={[...pool, w]} item={{ wordId: w.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const row = document.querySelector('.intro .usage')!;
+    expect(row.classList.contains('word-row--long')).toBe(true);
+    const last = [...row.querySelectorAll('.label__nb')].pop()!;
+    expect(last.textContent).toContain('净。');
   });
 });

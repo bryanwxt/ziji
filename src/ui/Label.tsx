@@ -16,6 +16,28 @@ const BLANK = '＿';
 /** The text as a screen reader should say it: a blank is 空格, not "full-width low line". */
 export const spokenBlanks = (zh: string) => zh.replaceAll(BLANK, '空格');
 
+/** Punctuation that closes: it never starts a line (。，！？、；：」』）…). */
+const CLOSING = /^[。，、；：！？…—～·」』）》〉】〕”’)\]}!?,.;:%]/u;
+/** Punctuation that opens: it never ends a line (「『（《“). */
+const OPENING = /[「『（《〈【〔“‘(\[{]$/u;
+const HAN = /^\p{Script=Han}/u;
+
+/**
+ * Which cells must share a line, as runs of cell indices (parent 2026-10-15: 。 alone under 我们要保持教室干净, 个 alone after
+ * 1017): closing punctuation stays with what it closes, opening punctuation with what it opens, and a number with the measure
+ * word after it (14 个). Every other cell is a run of its own, so the line still breaks between characters.
+ */
+export function nobreakGroups(cells: readonly string[]): number[][] {
+  const out: number[][] = [];
+  cells.forEach((c, i) => {
+    const prev = cells[i - 1];
+    const join = prev !== undefined && (CLOSING.test(c.trimStart()) || OPENING.test(prev.trimEnd()) || (/\d$/.test(prev.trimEnd()) && HAN.test(c)));
+    if (join) out[out.length - 1]!.push(i);
+    else out.push([i]);
+  });
+  return out;
+}
+
 let labels = 0; // each Label's own number: one peek shows at a time across the lesson screen
 
 /** Chinese text with each syllable shown small directly above its own character, for a P2 reader. */
@@ -36,7 +58,7 @@ export function Label({ zh, py: given, pinyinFor, mark, fade = false, peek = tru
   const own = useRef(0);
   if (!own.current) own.current = ++labels;
   const showFor = pinyinFor ?? (fade && fader ? fader.show : undefined);
-  const { cells, py } = useMemo(() => {
+  const { cells, py, groups } = useMemo(() => {
     const out: Cell[] = [];
     const all = pinyin(zh, { type: 'all' });
     const ctx = given?.trim().split(/\s+/);
@@ -62,28 +84,30 @@ export function Label({ zh, py: given, pinyinFor, mark, fade = false, peek = tru
     }
     // data-py: the syllables shown plus any numbers or Latin text, without punctuation
     const py = out.map((c) => (c.zh ? (c.hidden ? '' : c.py) : !c.blank && /[\p{L}\p{N}]/u.test(c.ch) ? c.ch.trim() : '')).filter(Boolean).join(' ');
-    return { cells: out, py };
+    return { cells: out, py, groups: nobreakGroups(out.map((c) => c.ch)) };
   }, [zh, given, showFor]);
   const canPeek = fade && peek && !pinyinFor && !!fader;
   const open = canPeek ? fader!.peeked : null;
   const peeked = open && open.label === own.current ? open.cell : -1;
   let han = -1;
   const marked = (c: Cell) => !!mark && !!c.zh && (++han, han >= mark[0] && han < mark[0] + mark[1]);
+  const cell = (i: number) => {
+    const c = cells[i]!;
+    // a faded syllable peeks for 3 s when tapped, and is said (spec 2026-10-12 §4); a peek never grades anything
+    const tap = c.hidden && canPeek ? () => { fader!.peek(own.current, i); speak(c.ch, { reading: c.py }); } : undefined;
+    return (
+      <span key={i} class={`${c.blank ? 'label__cell label__cell--blank' : c.zh ? 'label__cell label__cell--zh' : 'label__cell'}${marked(c) ? ' label__cell--mark' : ''}${c.hidden ? ' label__cell--hidden' : ''}${i === peeked ? ' label__cell--peek' : ''}`} onClick={tap}>
+        <small class="label__py" aria-hidden="true">{c.hidden && i !== peeked ? '' : c.py}</small>
+        <span class="label__ch">{c.ch}</span>
+      </span>
+    );
+  };
   return (
     <span class="label" data-py={py} data-zh={zh}>
       {/* one cell already reads as the whole text; several get a single readable copy so 你好 isn't read 你…好 */}
       {cells.length > 1 && <span class="sr-only">{spokenBlanks(zh)}</span>}
       <span class="label__cells" aria-hidden={cells.length > 1 ? 'true' : undefined}>
-        {cells.map((c, i) => {
-          // a faded syllable peeks for 3 s when tapped, and is said (spec 2026-10-12 §4); a peek never grades anything
-          const tap = c.hidden && canPeek ? () => { fader!.peek(own.current, i); speak(c.ch, { reading: c.py }); } : undefined;
-          return (
-            <span key={i} class={`${c.blank ? 'label__cell label__cell--blank' : c.zh ? 'label__cell label__cell--zh' : 'label__cell'}${marked(c) ? ' label__cell--mark' : ''}${c.hidden ? ' label__cell--hidden' : ''}${i === peeked ? ' label__cell--peek' : ''}`} onClick={tap}>
-              <small class="label__py" aria-hidden="true">{c.hidden && i !== peeked ? '' : c.py}</small>
-              <span class="label__ch">{c.ch}</span>
-            </span>
-          );
-        })}
+        {groups.map((g) => (g.length === 1 ? cell(g[0]!) : <span key={g[0]} class="label__nb">{g.map(cell)}</span>))}
       </span>
     </span>
   );

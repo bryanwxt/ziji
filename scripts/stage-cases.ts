@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { webkit } from 'playwright-core';
 import { chaptersShim } from './stage-cases/shim';
 import { storyWalk } from './story-walk';
+import { textChecks } from './text-checks';
 import { WORLDS } from '../src/fun/worlds';
 
 const dir = join(tmpdir(), `ziji-stage-cases-${process.pid}`);
@@ -14,8 +15,10 @@ await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdi
 cpSync('public/worlds', join(dir, 'worlds'), { recursive: true }); // the paintings, next to the page (spec 2026-10-13 §5)
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
 
-/** Anything in the lesson card cut off by the card's own box (the same probe as the clue case). */
-const cardClipped = (page: import('playwright-core').Page, name: string, scrolls = '') => page.evaluate(([n, s]) => {
+/** Anything in the lesson card cut off by the card's own box (the same probe as the clue case), and the phone typography checks
+ *  (text-checks.ts: pinyin over its character, no line led by 。, no speak button on text, no clipped tag). */
+const cardClipped = async (page: import('playwright-core').Page, name: string, scrolls = '') => [...(await cardBox(page, name, scrolls)), ...(await page.evaluate(textChecks)).map((p) => `${name}: ${p}`)];
+const cardBox = (page: import('playwright-core').Page, name: string, scrolls = '') => page.evaluate(([n, s]) => {
   const card = document.querySelector('.stage__card')?.getBoundingClientRect();
   if (!card) return [`${n}: no lesson card`];
   for (const el of document.querySelectorAll('.stage__card *')) {
@@ -54,6 +57,7 @@ const problems: string[] = [];
 const browser = await webkit.launch();
 for (const size of SIZES) {
   const page = await browser.newPage({ viewport: { width: size.width, height: size.height } });
+  await page.addInitScript({ content: 'window.__name = (f) => f;' }); // tsx (esbuild keepNames) wraps in-page helpers in __name()
   // a wrong answer on a bank item with a long clue: nothing in the card is cut off, the prompt never slides under the tiles
   await page.goto(`file://${dir}/index.html?case=clue`);
   if (!(await page.$('.stage__card')) || (await page.evaluate(() => getComputedStyle(document.querySelector('.stage')!).display)) !== 'grid') { problems.push(`${size.name}: the stage did not render with the app's styles`); await page.close(); continue; }
@@ -210,12 +214,21 @@ for (const size of SIZES) {
     if (await page.$('.family, .family__word')) problems.push(`${size.name} intro-full: a 一家人 row is back on the card`);
     problems.push(...(await cardClipped(page, `${size.name} intro-full`)));
   }
+  // the parent's iPhone (2026-10-15): 雨衣's pinyin over each character and its 补 tag whole; 保持's and the longest usage line
+  // with no 。 starting a line and the speak button off the text (cardClipped runs text-checks.ts)
+  for (const c of ['intro-raincoat', 'intro-usage', 'intro-usage-long']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(2400); // its pinyin comes 2 s after the character
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    for (const sel of ['.intro__tag', '.intro__word .label__cell--zh', ...(c === 'intro-raincoat' ? [] : ['.intro .usage .speak'])]) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+  }
   // a bound character's 认新字 card (parent 2026-10-15): the pair, the character alone and the speak button all on the card
   for (const c of ['intro-bound', 'intro-bound-full', 'intro-bound-long']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(2400); // its pinyin comes 2 s after the character
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
-    for (const sel of ['.hanzi--pair', '.bound__ch', '.intro__alone', '.intro__bound .speak']) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
+    for (const sel of ['.hanzi--pair', '.hanzi--pair .label__cell--mark', '.intro__alone', '.intro__bound .speak']) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
   }
   {
