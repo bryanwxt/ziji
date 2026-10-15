@@ -1,3 +1,10 @@
+import { PASSAGES } from '../content';
+import { LICENCE_URL } from '../langdu/credit';
+import type { PassageCredit } from '../types';
+
+/** Each Global Storybooks story the app reads from, once (spec 2026-10-15 §2.1), in story order. */
+const STORIES: PassageCredit[] = [...new Map(PASSAGES.filter((p) => p.credit).map((p) => [p.story!.id, p.credit!])).values()];
+
 export function Credits() {
   return (
     <section class="panel">
@@ -10,7 +17,18 @@ export function Credits() {
         <li>pinyin-pro, ts-fsrs, Preact — MIT License. idb, canvas-confetti — ISC License.</li>
         <li>Lucide icons — ISC License (portions MIT, from Feather).</li>
         <li>Fonts: LXGW WenKai 霞鹜文楷 and Nunito — SIL Open Font License 1.1.</li>
-        <li>Read-aloud passages were written for this app.</li>
+        <li>Passages marked ZiJi were written for this app.</li>
+        <li>
+          Read-aloud stories and their pictures from <a href="https://global-asp.github.io/storybooks-chinese/" target="_blank" rel="noopener noreferrer">Global Storybooks</a> (African Storybook), each under its own licence; "adapted" ones have small wording changes:
+          <ul class="credits__stories">
+            {STORIES.map((c) => (
+              <li key={c.source}>
+                {c.title} — text {c.text}, illustration {c.illustration}, translation {c.translation} — <a href={LICENCE_URL[c.licence]} target="_blank" rel="noopener noreferrer">{c.licence}</a>
+                {c.adapted ? ', adapted' : ''}
+              </li>
+            ))}
+          </ul>
+        </li>
       </ul>
     </section>
   );

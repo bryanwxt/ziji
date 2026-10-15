@@ -358,6 +358,20 @@ describe('the Listen screen of a library passage (spec 2026-10-15 §2, §5, §7)
     expect(cell('卡').classList.contains('label__cell--hidden')).toBe(false); // a name
     expect(cell('七').classList.contains('label__cell--hidden')).toBe(true);
   });
+  it('the credit line under the passage on Listen only; tapping it shows the licence and the source (spec 2026-10-15 §2.1)', async () => {
+    const credit = { title: '和植物聊天的卡莱', text: 'Ursula Nafula', illustration: 'Jesse Breytenbach', translation: 'Vicky Liu', licence: 'CC BY 4.0' as const, adapted: true, source: 'https://github.com/global-asp/sbc-source/blob/be28dab38ac55e8eb2185edb6631b11615d02185/zh/0089.md' };
+    render(<LangduStep passage={{ ...gsb, credit }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.langdu__credit summary')!.textContent).toBe('故事：Global Storybooks · 文 Ursula Nafula · 图 Jesse Breytenbach · 译 Vicky Liu · CC BY 4.0 · 有改动');
+    expect(document.querySelector('.langdu__credit a')).toBeNull(); // the details are laid out only once opened
+    const details = document.querySelector<HTMLDetailsElement>('.langdu__credit')!;
+    details.open = true;
+    fireEvent(details, new Event('toggle'));
+    await waitFor(() => expect([...document.querySelectorAll('.langdu__credit a')].map((a) => a.getAttribute('href'))).toEqual(['https://creativecommons.org/licenses/by/4.0/', credit.source]));
+    modelReads(2);
+    fireEvent.click(button('开始朗读'));
+    await waitFor(() => expect(document.querySelector('.mic-btn')).toBeTruthy());
+    expect(document.querySelector('.langdu__credit')).toBeNull();
+  });
   it("the warm-up's take survives a swap: the next passage starts at Listen and the take is reported at the end", async () => {
     const onDone = vi.fn();
     const view = render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup onSwap={vi.fn()} onDone={onDone} />);

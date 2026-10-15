@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { FinishedRecording } from '../../audio/recorder';
 import { playSfx } from '../../audio/sfx';
 import { speak } from '../../audio/speech';
+import { creditLine, LICENCE_URL } from '../../langdu/credit';
 import { introLines } from '../../langdu/intro';
 import type { LangduPassage } from '../../langdu/pool';
 import { shuffleQuestion } from '../../langdu/questions';
@@ -10,7 +11,7 @@ import { answeringSentence, readLimitMs, splitSentences } from '../../langdu/sen
 import { betterTake } from '../../langdu/stars';
 import { useModelReader } from '../../langdu/useModelReader';
 import type { Rng } from '../../lib/random';
-import type { KidState, OralInfo, PassageWord } from '../../types';
+import type { KidState, OralInfo, PassageCredit, PassageWord } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Label } from '../../ui/Label';
@@ -208,6 +209,7 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
           <KeepPinyin chars={nameChars}>
             <Sentences sentences={sentences} current={model.current} onTap={(i) => replay(i, model.heardAll)} />
           </KeepPinyin>
+          {passage.credit && <Credit credit={passage.credit} />}
         </div>
       </Stage>
     );
@@ -289,6 +291,22 @@ function Picture({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   return <img class="langdu__pic" src={`${import.meta.env.BASE_URL}${src}`} alt="" onError={() => setFailed(true)} />;
+}
+
+/** The story's credit, on Listen only (spec 2026-10-15 §2.1): one quiet line; tapping it opens the details for a parent. */
+function Credit({ credit }: { credit: PassageCredit }) {
+  const [open, setOpen] = useState(false); // the details are only laid out once opened (WebKit lays out a closed one's body)
+  return (
+    <details class="langdu__credit" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary>{creditLine(credit)}</summary>
+      {open && (
+        <p>
+          “{credit.title}”, Global Storybooks (African Storybook), {credit.licence}{credit.adapted ? ', adapted for ZiJi' : ''}.{' '}
+          <a href={LICENCE_URL[credit.licence]} target="_blank" rel="noopener noreferrer">Licence</a> · <a href={credit.source} target="_blank" rel="noopener noreferrer">Source</a>
+        </p>
+      )}
+    </details>
+  );
 }
 
 /** 生词 under the title (spec 2026-10-15 §2.2): each word with its pinyin and kid gloss. */

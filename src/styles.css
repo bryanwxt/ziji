@@ -1300,6 +1300,14 @@ button.langdu__sentence { cursor: pointer; }
 .langdu__words { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; font-size: 18px; }
 .langdu__words li { display: inline-flex; align-items: flex-end; gap: 6px; }
 .langdu__gloss { color: var(--ink-soft); font-size: 15px; }
+.langdu__credit { max-width: 100%; font-size: 16px; color: var(--ink-soft); text-align: center; } /* the sweep's floor for Chinese text: 16px; quiet by colour and one line */
+.langdu__credit summary { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* one line until tapped */
+.langdu__credit[open] summary { white-space: normal; }
+.langdu__credit p { margin: 4px 0 0; }
+.langdu__credit a { color: inherit; }
+/* the parent's Library (spec 2026-10-15 §9): its own scroll, so a long list never pushes the page */
+.library__scroll { flex: none; max-height: 60dvh; overflow: auto; }
+.library__table { font-size: 16px; } /* titles and terms are Chinese: never under 16px */
 .langdu__next { flex: none; min-height: 52px; padding: 6px 18px; font-size: 20px; }
 .langdu__head .langdu__title { min-width: 0; width: auto; flex: 0 1 auto; font-size: clamp(20px, 3.2dvh, 32px); } /* beside its picture: smaller, so a long title fits a phone */
 .langdu__head .label__cells { flex-wrap: wrap; } /* a long title wraps beside its picture */
