@@ -283,6 +283,27 @@ export interface ReadingState {
 
 export const DEFAULT_READING: ReadingState = { passageId: null, days: 0, extra: 0, lastDay: null, lastRead: {}, warmups: 0 };
 
+/** One passage's 朗读 history (spec 2026-10-15 §4): due again `rest` days after `lastRead`; `q` the next question's turn. */
+export interface PassageHistory {
+  reads: number;
+  lastRead: string | null;
+  rest: number;
+  lastSkipped?: string; // 下一篇 swapped it out that day: the 3-day gap applies
+  skips?: number; // 下一篇 swaps, for the parent ("often skipped" at 3)
+  q: number;
+}
+
+/** 朗读 progress (spec 2026-10-15 §4): each passage's history, the kind of the last lesson read (new and revisit take turns),
+ *  the day the warm-up last ran, and warm-ups recorded. */
+export interface ReadingHistory {
+  history: Record<string, PassageHistory>;
+  lastKind: 'new' | 'revisit' | null;
+  lastWarmup: string | null;
+  warmups: number;
+}
+
+export const EMPTY_READING: ReadingHistory = { history: {}, lastKind: null, lastWarmup: null, warmups: 0 };
+
 /** The parent's correction of where his class is (spec 2026-10-11 §4): the lesson on the day it was set. */
 export interface ClassLessonSetting { term: string; lesson: number; setAt: number }
 
