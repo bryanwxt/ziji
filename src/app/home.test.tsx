@@ -9,6 +9,7 @@ import { DEFAULT_KID, DEFAULT_SETTINGS, type SessionPlan } from '../types';
 import { HomeScreen, RIVER_NEWS } from './HomeScreen';
 import { CollectionScreen } from './CollectionScreen';
 import { powerFamilies } from '../fun/powers';
+import { EMPTY_METER } from '../fun/meter';
 import { Wardrobe } from './Wardrobe';
 import { WORLD_LINES } from '../fun/worlds';
 
@@ -695,5 +696,29 @@ describe('字卡 filters (parent, 2026-10-05: changing the filter seemed to do n
     panel.scrollTop = 900;
     fireEvent.click(screen.getByText('全部'));
     expect(panel.scrollTop).toBe(0);
+  });
+});
+
+describe('Home: the river meter on the reward card (rewards spec §3)', () => {
+  it('shows the boat where the meter is, with no parent goal too', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, meter: { ...EMPTY_METER, halves: 1, chestsToday: 1, day: '2026-10-02', lesson: 1 } } });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(document.querySelector('.reward-card svg.river--mini')?.getAttribute('data-halves')).toBe('1');
+    expect(document.querySelector('.reward-card .goal__body')).toBeNull(); // no parent goal: the card is the meter alone
+  });
+  it("a new day's boat has yesterday's banked halves in it", async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, meter: { ...EMPTY_METER, chestsToday: 2, day: '2026-10-01', lesson: 1 }, bank: 1 } });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(document.querySelector('.reward-card svg.river--mini')?.getAttribute('data-halves')).toBe('1');
+  });
+  it("the parent's goal sits beside the meter", async () => {
+    const app = await makeAppData();
+    await saveReward(app.db, { id: 'g', title: 'Ice cream', emoji: '🍦', metric: 'stars', target: 10, createdAt: 0, claimedAt: null });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(document.querySelector('.reward-card svg.river--mini')).toBeTruthy();
+    expect(document.querySelector('.reward-card .goal__body')?.textContent).toContain('我的奖励');
   });
 });

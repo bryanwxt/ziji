@@ -820,6 +820,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__cards .goal__body { flex-direction: row; align-items: center; gap: 10px; }
 .home__cards .goal__body .progress { flex: 1; min-width: 60px; }
 .home__cards .goal__count { white-space: nowrap; }
+/* the reward card (rewards spec §3): the small river meter first, the parent's goal beside it */
+.reward-card__meter { display: inline-flex; align-items: center; }
+.home__cards .reward-card .river--mini { width: 116px; }
 .home__cards .done-card { justify-content: space-between; padding: 8px 10px 8px 16px; }
 .home__cards .done-today { font-size: 22px; }
 .home__cards .wotd { flex-direction: row; justify-content: center; gap: 14px; padding: 8px 12px; transform: rotate(-1deg); }
