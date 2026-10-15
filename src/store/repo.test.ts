@@ -155,8 +155,12 @@ describe('plan 8 data', () => {
     const db = await freshDb();
     await db.put('settings', { ...DEFAULT_SETTINGS, oral: undefined } as never, 'main');
     expect((await getSettings(db)).oral).toEqual({ name: '', age: '', school: '', className: '', customIntro: '' });
-    expect(normalizeKid({ petName: '松露' } as never)?.reading).toEqual({ passageId: null, days: 0, extra: 0, lastDay: null, lastRead: {}, warmups: 0 });
+    expect(normalizeKid({ petName: '松露' } as never)?.reading).toEqual({ history: {}, lastKind: null, lastWarmup: null, warmups: 0 });
     expect(normalizeKid({ reading: 'x' } as never)?.reading.warmups).toBe(0);
+  });
+  it('an old 3-day cycle in a stored or restored record reads as history (spec 2026-10-15 §8)', () => {
+    const reading = { passageId: 'p03', days: 2, extra: 0, lastDay: '2026-10-14', lastRead: { p01: '2026-10-08', p03: '2026-10-14' }, warmups: 4 };
+    expect(normalizeKid({ reading } as never)?.reading).toEqual({ history: { p01: { reads: 1, lastRead: '2026-10-08', rest: 3, q: 1 }, p03: { reads: 2, lastRead: '2026-10-14', rest: 3, q: 1 } }, lastKind: null, lastWarmup: '2026-10-14', warmups: 4 });
   });
 });
 

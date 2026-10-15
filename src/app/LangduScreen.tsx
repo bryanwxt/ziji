@@ -2,11 +2,13 @@ import { X } from 'lucide-preact';
 import { useEffect, useState } from 'preact/hooks';
 import { LangduStep, type LangduResult } from '../activities/langdu/LangduStep';
 import { PASSAGES } from '../content';
-import { pickPassage, readingPool, type ReadingPassage } from '../langdu/cycle';
+import { afterRead } from '../langdu/history';
+import { pickPassage } from '../langdu/pick';
+import { readingPool, type ReadingPassage } from '../langdu/pool';
 import { tidyPassageTakes } from '../langdu/review';
 import { localDateKey } from '../lib/date';
 import { newId } from '../lib/id';
-import { keepRecording, getKid, getSettings, listParentPassages } from '../store/repo';
+import { keepRecording, getKid, getSettings, listParentPassages, updateKid } from '../store/repo';
 import { DEFAULT_KID, type KidState, type OralInfo } from '../types';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { PinyinFade, type KnownReadings } from '../ui/pinyinFade';
@@ -18,7 +20,7 @@ import { loadKnowledge } from './knowledge';
 
 interface Loaded { passage: ReadingPassage | null; oral: OralInfo; kid: KidState; knownChars: Set<string>; knownReadings: KnownReadings; fadePinyin: boolean }
 
-/** 多读一遍 from Home (spec 2026-10-12 §3): today's passage — listen, read, compare — no warm-up, no question, no stars, no cycle day. */
+/** 多读一遍 from Home (spec 2026-10-15 §5): a passage by the same order as the lesson's, never one read today — listen, read, compare — no warm-up, no question, no stars; it counts as a read for the gap ('extra'). */
 export function LangduScreen() {
   const { db, now, go } = useApp();
   const [state, setState] = useState<Loaded | null>(null);
@@ -27,7 +29,7 @@ export function LangduScreen() {
     void (async () => {
       const [know, kid, parent, settings] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db)]);
       const k = kid ?? DEFAULT_KID;
-      const passage = pickPassage(k.reading, readingPool(parent, PASSAGES, know.knownChars), localDateKey(now()));
+      const passage = pickPassage(k.reading, readingPool(parent, PASSAGES, { readable: know.knownChars, classTerm: null }), localDateKey(now()));
       setState({ passage, oral: settings.oral, kid: k, knownChars: know.knownChars, knownReadings: know.knownReadings, fadePinyin: settings.fadePinyin !== false });
     })();
   }, []);
@@ -47,6 +49,11 @@ export function LangduScreen() {
       } catch (err) {
         logError(err);
       }
+    }
+    try {
+      await updateKid(db, (k) => ({ ...k, reading: afterRead(k.reading, passage.id, localDateKey(now()), 'extra') })); // a take or none
+    } catch (err) {
+      logError(err);
     }
     go({ name: 'home' });
   };

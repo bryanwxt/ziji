@@ -47,7 +47,7 @@ describe('speaking step alternation', () => {
     const kid = (await getKid(app.db))!;
     expect(kid.story).toEqual({ next: 1, told: 1 });
     expect(kid.speakingLast).toBe('story');
-    expect(kid.reading.days).toBe(0); // a story day is not a 朗读 day
+    expect(kid.reading.history).toEqual({}); // a story day is not a 朗读 day
     const recs = await listRecordings(app.db);
     expect(recs).toHaveLength(8);
     expect(recs.filter((r) => r.prompt.kind === 'story')).toHaveLength(6);

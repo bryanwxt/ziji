@@ -23,7 +23,9 @@ import { recordingSupported, type FinishedRecording } from '../audio/recorder';
 import { SayCard, type SayResult, type SaySkip } from '../activities/say/SayCard';
 import { SentenceCard } from '../activities/say/SentenceCard';
 import { recordSayTake, recordSentenceTake } from '../session/say';
-import { pickPassage, readingPool, finishDay, isFirstDay, type ReadingPassage } from '../langdu/cycle';
+import { afterRead, afterWarmup, readHow, warmupDue } from '../langdu/history';
+import { pickPassage } from '../langdu/pick';
+import { readingPool, type ReadingPassage } from '../langdu/pool';
 import { newestByPassage, tidyPassageTakes } from '../langdu/review';
 import { earnsBonus } from '../langdu/stars';
 import { burst } from '../ui/motion';
@@ -79,6 +81,9 @@ function levelOf(know: Knowledge): number {
   return l;
 }
 
+/** Today's 朗读: the passage, whether the warm-up runs (warmupDue), and the lesson's date key. */
+interface LangduSpeaking { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; warmup: boolean; day: string }
+
 interface Loaded {
   rec: SessionRecord;
   know: Knowledge;
@@ -88,7 +93,7 @@ interface Loaded {
   fadePinyin: boolean; // settings.fadePinyin as the lesson loaded (spec 2026-10-12 §4): absent = on
   choose: UseItem[] | null; // built when 选一选 starts, so it knows what he missed earlier in the lesson
   wrapup: UseItem[] | null; // built when 用一用 starts, from today's recalls
-  speaking: { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; firstDay: boolean; day: string } | { kind: 'story'; scene: Scene } | null;
+  speaking: LangduSpeaking | { kind: 'story'; scene: Scene } | null;
   confusions: Map<string, string[]>; // look-alikes he picked, per word (钓鱼, spec 2026-10-05 §3.4)
   slow: SlowLines; // his slow line per tap kind, worked out once as the lesson loads (SRS tuning spec §3.2)
 }
@@ -141,9 +146,9 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           // lesson planned before 朗读 was parked passes its stop by
           // one date key for the whole step, the lesson's own: begun before midnight and finished after, it is still that day's
           const day = rec.date;
-          const passage = settings.langdu ? pickPassage(k.reading, readingPool(parentPassages, PASSAGES, know.knownChars), day) : null;
+          const passage = settings.langdu ? pickPassage(k.reading, readingPool(parentPassages, PASSAGES, { readable: know.knownChars, classTerm: null }), day) : null;
           const kind = nextSpeaking(k.speakingLast, !!passage, settings.story);
-          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage, oral: settings.oral, firstDay: isFirstDay(k.reading, passage.id, day), day };
+          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage, oral: settings.oral, warmup: warmupDue(k.reading, day), day };
           return kind === 'story' ? { kind: 'story' as const, scene: sceneFor(k.story) } : null;
         })(),
       });
@@ -434,12 +439,12 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     })();
 
   /**
-   * Save the warm-up and the kept read (with his answer), count the cycle day, tidy old passage takes, and give a bonus star for
-   * beating the last lesson read. Whatever fails on the way, the lesson goes on to its end (final review I4): no bonus at worst.
+   * Save the warm-up and the kept read (with his answer), count the read in his history — recorded or not (spec 2026-10-15 §1
+   * cause 4) — tidy old passage takes, and give a bonus star for beating the last lesson read. Whatever fails on the way, the lesson goes on to its end (final review I4): no bonus at worst.
    */
   const onLangduDone = (r: LangduResult) =>
     once(async () => {
-      const reading = state.speaking as { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; firstDay: boolean; day: string };
+      const reading = state.speaking as LangduSpeaking;
       const at = now();
       if (r.intro) await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'intro' }, ...r.intro });
       let bonus = false;
@@ -460,10 +465,11 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       }
       try {
         const fresh = (await getKid(db)) ?? kid;
+        // every read counts, a take or none: an unrecorded 读完了 moves the passage on too (spec 2026-10-15 §1 cause 4)
+        const read = afterRead(fresh.reading, reading.passage.id, reading.day, readHow({ extra: false, asked: !!reading.passage.question, meaning: r.meaning }));
         await saveKid(db, {
           ...fresh,
-          // no take (the mic refused or failing): the passage day isn't counted, so he reads it again next time (review M-6)
-          reading: { ...(r.read ? finishDay(fresh.reading, reading.passage.id, reading.day) : fresh.reading), warmups: fresh.reading.warmups + (r.intro ? 1 : 0) },
+          reading: reading.warmup ? afterWarmup(read, reading.day, !!r.intro) : read,
           speakingLast: 'langdu',
           bonusStars: fresh.bonusStars + (bonus ? 1 : 0),
         });
@@ -570,7 +576,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <ComponentsStep key="components" items={state.round} kid={kid} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
-        <LangduStep passage={state.speaking.passage} oral={state.speaking.oral} kid={kid} withWarmup={state.speaking.firstDay} micBlocked={micRefused} onDone={(r) => void onLangduDone(r)} />
+        <LangduStep passage={state.speaking.passage} oral={state.speaking.oral} kid={kid} withWarmup={state.speaking.warmup} micBlocked={micRefused} onDone={(r) => void onLangduDone(r)} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'story' && (
         <StoryStep scene={state.speaking.scene} told={kid.story.told} kid={kid} onDone={(r) => void onStoryDone(r)} />

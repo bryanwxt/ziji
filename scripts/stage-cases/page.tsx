@@ -346,7 +346,7 @@ else if (which?.startsWith('langdu-')) {
   const part = (which === 'langdu-read-blocked' ? 'read' : which.slice('langdu-'.length)) as LangduPart;
   render(screen(
     <PinyinFade known={new Set()} on>
-      <LangduStep passage={{ ...p, source: 'builtin', question: PASSAGE_QUESTIONS[p.id] }} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup startAt={part} micBlocked={which === 'langdu-read-blocked'} onDone={() => {}} />
+      <LangduStep passage={{ ...p, question: PASSAGE_QUESTIONS[p.id] }} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup startAt={part} micBlocked={which === 'langdu-read-blocked'} onDone={() => {}} />
     </PinyinFade>,
   ), app);
   if (part === 'listen') setTimeout(() => setSpeaking(true), 50);

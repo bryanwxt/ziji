@@ -3,7 +3,8 @@ import { nextRung, type Rung } from '../session/ladder';
 import { normalizeFinds } from '../fun/finds';
 import { normalizeBank, normalizeMeter } from '../fun/meter';
 import { migrateAccessory } from '../fun/accessories';
-import { DEFAULT_KID, DEFAULT_READING, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type ReadingState, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
+import { migrateReading } from '../langdu/history';
+import { DEFAULT_KID, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
 import type { AppDb } from './db';
 
 const MAIN = 'main';
@@ -42,7 +43,7 @@ export function normalizeKid(raw: Partial<KidState> | null | undefined): KidStat
   const toRabbit = (id: string) => (id === 'bunny' ? 'rabbit' : id);
   const ownedCostumes = [...new Set((Array.isArray(kid.ownedCostumes) ? kid.ownedCostumes : []).map(toRabbit))];
   const outfit = typeof kid.outfit === 'string' ? toRabbit(kid.outfit) : null;
-  return { ...kid, ownedCostumes, outfit, ownedAccessories: owned, wearing: migrateAccessory(typeof kid.wearing === 'string' ? kid.wearing : null), worldsSeen, world, riverNews: kid.riverNews === true || moved, reading: normalizeReading(kid.reading),
+  return { ...kid, ownedCostumes, outfit, ownedAccessories: owned, wearing: migrateAccessory(typeof kid.wearing === 'string' ? kid.wearing : null), worldsSeen, world, riverNews: kid.riverNews === true || moved, reading: migrateReading(kid.reading),
     speakingLast: kid.speakingLast === 'langdu' || kid.speakingLast === 'story' ? kid.speakingLast : null,
     story: normalizeStory(kid.story),
     finds: normalizeFinds(kid.finds),
@@ -210,15 +211,6 @@ export async function saveReward(db: AppDb, g: RewardGoal): Promise<void> {
 }
 
 export const deleteReward = (db: AppDb, id: string) => db.delete('rewards', id);
-
-function normalizeReading(r: unknown): ReadingState {
-  if (!r || typeof r !== 'object') return { ...DEFAULT_READING, lastRead: {} };
-  const x = r as Partial<ReadingState>;
-  const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0);
-  const str = (v: unknown) => (typeof v === 'string' ? v : null);
-  const lastRead = x.lastRead && typeof x.lastRead === 'object' ? Object.fromEntries(Object.entries(x.lastRead).filter(([, d]) => typeof d === 'string')) : {};
-  return { passageId: str(x.passageId), days: num(x.days), extra: num(x.extra), lastDay: str(x.lastDay), lastRead, warmups: num(x.warmups) };
-}
 
 export async function listParentPassages(db: AppDb): Promise<ParentPassage[]> {
   return (await db.getAll('passages')).sort((a, b) => a.createdAt - b.createdAt);

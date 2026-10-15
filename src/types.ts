@@ -225,7 +225,7 @@ export interface Recording {
   durationSec: number;
   level?: number; // average loudness (RMS 0..1) while reading; older recordings have none
   misread?: string[]; // characters the parent confirmed he misread
-  extraDayGiven?: boolean; // its marks have given the passage its one extra day (never a second, however often re-marked)
+  extraDayGiven?: boolean; // its marks have acted on the passage (≥ 2 marks: due 3 days after the review, spec 2026-10-15 §4), once per take; named for the old extra day
   review?: 'ok' | 'no'; // a Say or 说一句 take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
   meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
   cardBefore?: CardSnapshot; // a Say or 说一句 take: its card as it was when he recorded (SRS tuning spec §4), for the verdict's log
@@ -270,18 +270,6 @@ export interface OralInfo {
   className: string;
   customIntro: string;
 }
-
-/** 朗读 progress: the passage in its 3-day cycle, and warm-ups recorded (for pinyin fading). */
-export interface ReadingState {
-  passageId: string | null;
-  days: number;
-  extra: number;
-  lastDay: string | null;
-  lastRead: Record<string, string>;
-  warmups: number;
-}
-
-export const DEFAULT_READING: ReadingState = { passageId: null, days: 0, extra: 0, lastDay: null, lastRead: {}, warmups: 0 };
 
 /** One passage's 朗读 history (spec 2026-10-15 §4): due again `rest` days after `lastRead`; `q` the next question's turn. */
 export interface PassageHistory {
@@ -380,7 +368,7 @@ export interface KidState {
   worldsSeen: string[]; // journey worlds reached; never shrinks
   world: string | null; // the child's pick in the room; null = newest reached
   riverNews: boolean; // his old paper worlds were just mapped onto One River: Home says so once (spec 2026-10-13 §8)
-  reading: ReadingState;
+  reading: ReadingHistory;
   speakingLast: 'langdu' | 'story' | null; // which activity the speaking step ran last (they alternate)
   story: { next: number; told: number }; // 看图说话: next scene, stories told (drives starter fading)
   finds: Finds; // tap fun in the journey worlds
@@ -406,7 +394,7 @@ export const DEFAULT_KID: KidState = {
   worldsSeen: [],
   world: null,
   riverNews: false,
-  reading: DEFAULT_READING,
+  reading: EMPTY_READING,
   speakingLast: null,
   story: { next: 0, told: 0 },
   finds: DEFAULT_FINDS,

@@ -61,26 +61,26 @@ async function readThrough() {
 }
 
 describe('daily 朗读 step', () => {
-  it('runs the warm-up and today\'s passage, saves both recordings, and counts one cycle day', async () => {
+  it('runs the warm-up and today\'s passage, saves both recordings, and counts the read and the warm-up', async () => {
     const app = await setup();
     renderWithApp(<SessionScreen free={false} />, app);
     await readThrough();
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     const kid = (await getKid(app.db))!;
-    expect(kid.reading).toMatchObject({ passageId: 'pp:1', days: 1, lastDay: '2026-10-05', warmups: 1 });
+    expect(kid.reading).toEqual({ history: { 'pp:1': { reads: 1, lastRead: '2026-10-05', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-05', warmups: 1 });
     const recs = await listRecordings(app.db);
     expect(recs.map((r) => r.prompt.kind).sort()).toEqual(['intro', 'passage']);
     expect(recs.find((r) => r.prompt.kind === 'passage')!.level).toBe(0.1);
   });
 
-  it('a full storage still finishes the 朗读 step and counts the day', async () => {
+  it('a full storage still finishes the 朗读 step and counts the read', async () => {
     const app = await setup();
     const put = app.db.put.bind(app.db);
     app.db.put = ((store: string, ...rest: unknown[]) => (store === 'recordings' ? Promise.reject(new DOMException('full', 'QuotaExceededError')) : (put as (...a: unknown[]) => unknown)(store, ...rest))) as typeof app.db.put;
     renderWithApp(<SessionScreen free={false} />, app);
     await readThrough();
     expect(await screen.findByText('太棒了！')).toBeTruthy();
-    expect((await getKid(app.db))!.reading.days).toBe(1);
+    expect((await getKid(app.db))!.reading.history['pp:1']?.reads).toBe(1);
   });
 
   it('a louder read than last time earns a bonus star; the first read of a passage does not', async () => {
@@ -93,24 +93,24 @@ describe('daily 朗读 step', () => {
 });
 
 describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
-  it('after day 1 of a passage: no warm-up, straight to listening; only the read is saved', async () => {
+  it('a warm-up 1 day ago: no warm-up, straight to listening; only the read is saved, and a revisit read well rests 7 days', async () => {
     const app = await setup();
-    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { passageId: 'pp:1', days: 1, extra: 0, lastDay: '2026-10-04', lastRead: { 'pp:1': '2026-10-04' }, warmups: 1 } });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
     renderWithApp(<SessionScreen free={false} />, app);
     await listenAndRead();
     expect(screen.queryByText('老师好！')).toBeNull();
     fireEvent.click(btn('完成'));
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     expect((await listRecordings(app.db)).map((r) => r.prompt.kind)).toEqual(['passage']);
-    expect((await getKid(app.db))!.reading).toMatchObject({ days: 2, warmups: 1 });
+    expect((await getKid(app.db))!.reading).toMatchObject({ history: { 'pp:1': { reads: 2, lastRead: '2026-10-05', rest: 7, q: 2 } }, lastKind: 'revisit', lastWarmup: '2026-10-04', warmups: 1 });
   });
 
-  it('no take (the mic refused): the passage day is not counted (review M-6)', async () => {
+  it('no take (the mic refused): the read still counts, so the passage moves on (spec 2026-10-15 §1 cause 4)', async () => {
     const { startRecording } = await import('../audio/recorder');
     const { MicDeniedError } = await import('../audio/micErrors');
     vi.mocked(startRecording).mockRejectedValueOnce(new MicDeniedError());
     const app = await setup();
-    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { passageId: 'pp:1', days: 1, extra: 0, lastDay: '2026-10-04', lastRead: { 'pp:1': '2026-10-04' }, warmups: 1 } });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
     renderWithApp(<SessionScreen free={false} />, app);
     await screen.findByText('我爱爸爸，我爱妈妈。');
     await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。'));
@@ -123,7 +123,16 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     fireEvent.click(btn('读完了'));
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     await waitFor(async () => expect((await getKid(app.db))!.speakingLast).toBe('langdu'));
-    expect((await getKid(app.db))!.reading).toMatchObject({ days: 1, lastDay: '2026-10-04' });
+    expect((await getKid(app.db))!.reading.history['pp:1']).toMatchObject({ reads: 2, lastRead: '2026-10-05' });
+  });
+
+  it('a second lesson the same day reads a different passage (D7)', async () => {
+    const app = await setup();
+    await saveParentPassage(app.db, { id: 'pp:2', title: '我的猫', text: '我爱我的猫。', createdAt: 2 });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-05', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-05', warmups: 1 } });
+    renderWithApp(<SessionScreen free={false} />, app);
+    expect(await screen.findByText('我爱我的猫。')).toBeTruthy();
+    expect(screen.queryByText('我爱爸爸，我爱妈妈。')).toBeNull();
   });
 
   it('his answer to the meaning question is kept with his take, for the parent', async () => {
@@ -155,7 +164,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
 });
 
 describe('finishing 朗读 always ends the lesson (final review I4, I6)', () => {
-  it("his recordings can't be read for the bonus check: no bonus, the day still counts and the lesson is celebrated", async () => {
+  it("his recordings can't be read for the bonus check: no bonus, the read still counts and the lesson is celebrated", async () => {
     const app = await setup();
     await addRecording(app.db, { id: 'old', createdAt: 1, prompt: { kind: 'passage', passageId: 'pp:1' }, blob: new Blob(['o']), mime: 'audio/mp4', durationSec: 5, level: 0.05 });
     renderWithApp(<SessionScreen free={false} />, app);
@@ -167,7 +176,7 @@ describe('finishing 朗读 always ends the lesson (final review I4, I6)', () => 
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     const kid = (await getKid(app.db))!;
     expect(kid.bonusStars).toBe(0);
-    expect(kid.reading.days).toBe(1);
+    expect(kid.reading.history['pp:1']?.reads).toBe(1);
   });
   it("his state can't be read when 朗读 ends: the lesson still reaches its celebration", async () => {
     const app = await setup();
@@ -184,7 +193,7 @@ describe('finishing 朗读 always ends the lesson (final review I4, I6)', () => 
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     expect(failed).toBe(true);
   });
-  it('a lesson begun before midnight and finished after counts its cycle day on the lesson\'s date (one date key)', async () => {
+  it('a lesson begun before midnight and finished after counts its read on the lesson\'s date (one date key)', async () => {
     let t = new Date(2026, 9, 5, 23, 58);
     const app = await setup(() => t);
     renderWithApp(<SessionScreen free={false} />, app);
@@ -193,7 +202,7 @@ describe('finishing 朗读 always ends the lesson (final review I4, I6)', () => 
     t = new Date(2026, 9, 6, 0, 1);
     fireEvent.click(btn('完成'));
     expect(await screen.findByText('太棒了！')).toBeTruthy();
-    expect((await getKid(app.db))!.reading).toMatchObject({ passageId: 'pp:1', days: 1, lastDay: '2026-10-05', lastRead: { 'pp:1': '2026-10-05' } });
+    expect((await getKid(app.db))!.reading).toMatchObject({ history: { 'pp:1': { reads: 1, lastRead: '2026-10-05' } }, lastWarmup: '2026-10-05' });
   });
   it("the bonus compares with the passage's last lesson take, not a 多读一遍 take after it", async () => {
     const app = await setup();

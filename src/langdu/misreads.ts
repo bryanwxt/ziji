@@ -1,19 +1,19 @@
-import { addExtraDay } from './cycle';
 import { getCard, getWord, putCards, putWords, updateKid, updateRecording } from '../store/repo';
 import type { AppDb } from '../store/db';
 import type { Recording } from '../types';
+import { localDateKey } from '../lib/date';
+import { MISREADS_FOR_REST, restFromReview } from './history';
 
 /**
  * The parent confirmed which characters he misread in a 朗读 recording: each becomes a priority word
- * (an existing card is due now; otherwise the built-in word jumps to the front of new words), and the
- * passage gets one extra day if it is still today's passage.
+ * (an existing card is due now; otherwise the built-in word jumps to the front of new words), and with 2 or more marks the
+ * passage is due again 3 days after this review (spec 2026-10-15 §4), once per take.
  */
 export async function applyMisreads(db: AppDb, recording: Recording, chars: string[], now: Date): Promise<{ updated: number; notInApp: string[] }> {
   const before = new Set(recording.misread ?? []);
-  // the passage's extra day comes with the first marks only: saving again, or unmarking and marking again, doesn't add another
-  const giveDay = chars.length > 0 && before.size === 0 && !recording.extraDayGiven && recording.prompt.kind === 'passage';
-  // (marks saved before the flag existed got their day then)
-  await updateRecording(db, { ...recording, misread: chars, ...(giveDay || recording.extraDayGiven || before.size > 0 ? { extraDayGiven: true } : {}) });
+  // once per take: saving again, or unmarking and marking again, doesn't act a second time (extraDayGiven: "its marks have acted")
+  const act = chars.length >= MISREADS_FOR_REST && !recording.extraDayGiven && recording.prompt.kind === 'passage';
+  await updateRecording(db, { ...recording, misread: chars, ...(act || recording.extraDayGiven ? { extraDayGiven: true } : {}) });
   let updated = 0;
   const notInApp: string[] = [];
   for (const ch of chars) {
@@ -47,9 +47,9 @@ export async function applyMisreads(db: AppDb, recording: Recording, chars: stri
     const back = listedAt === misreadMark ? misreadPrev : listedAt;
     await putWords(db, [back == null ? rest : { ...rest, listedAt: back }]);
   }
-  if (giveDay && recording.prompt.kind === 'passage') {
+  if (act && recording.prompt.kind === 'passage') {
     const passageId = recording.prompt.passageId;
-    await updateKid(db, (kid) => ({ ...kid, reading: addExtraDay(kid.reading, passageId) }));
+    await updateKid(db, (kid) => ({ ...kid, reading: restFromReview(kid.reading, passageId, localDateKey(now)) }));
   }
   return { updated, notInApp };
 }

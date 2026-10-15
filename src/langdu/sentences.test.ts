@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PASSAGES } from '../content';
-import { answeringSentence, splitSentences } from './sentences';
+import { answeringSentence, readLimitMs, splitSentences } from './sentences';
 
 describe('splitSentences (spec 2026-10-12 §3)', () => {
   it('splits at 。！？ only: commas and 、 never split', () => {
@@ -40,5 +40,12 @@ describe('answeringSentence', () => {
     expect(answeringSentence({ choices: ['老师', '妈妈', '小马'], answer: 1 }, s)).toBe(1);
     expect(answeringSentence({ choices: ['老师', '外婆', '小马'], answer: 1 }, s)).toBe(-1);
     expect(answeringSentence({ choices: ['老师', '妈妈', '小马'], answer: 1, sentence: 9 }, s)).toBe(1); // out of range: found instead
+  });
+});
+
+describe('readLimitMs (spec 2026-10-15 §8)', () => {
+  it('a minute at least; 0.8 s a character for a long passage', () => {
+    expect(readLimitMs('我爱妈妈。'.repeat(10))).toBe(60_000);
+    expect(readLimitMs('我'.repeat(110))).toBe(88_000);
   });
 });

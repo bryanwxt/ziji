@@ -6,7 +6,7 @@ import { builtinWords } from '../content';
 import { makeCard } from '../test/fixtures';
 import { createSessionRecord } from '../session/runner';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
-import { DEFAULT_KID, DEFAULT_SETTINGS } from '../types';
+import { DEFAULT_KID, DEFAULT_SETTINGS, EMPTY_READING } from '../types';
 import { HomeScreen } from './HomeScreen';
 import { LangduScreen } from './LangduScreen';
 import { speak } from '../audio/speech';
@@ -27,13 +27,13 @@ afterEach(() => act(() => setSpeaking(false)));
 
 const btn = (t: string) => screen.getByText(t).closest('button') as HTMLButtonElement;
 
-const kid = { ...DEFAULT_KID, reading: { passageId: 'pp:1', days: 1, extra: 0, lastDay: '2026-10-01', lastRead: { 'pp:1': '2026-10-01' }, warmups: 3 } };
+const kid = { ...DEFAULT_KID, reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-09-25', rest: 3, q: 1 } }, lastKind: 'new' as const, lastWarmup: '2026-09-25', warmups: 3 } };
 
 /** 朗读 is parked by default (parent, 2026-10-05); these tests switch it on. */
 const LANGDU = { ...DEFAULT_SETTINGS, placementDone: true, langdu: true };
 
 describe('朗读 extra rounds', () => {
-  it("Home's 多读一遍 button opens an extra round of today's passage; it saves the read but leaves the cycle and stars alone", async () => {
+  it("Home's 多读一遍 button opens an extra round; it saves the read and counts it for the gap, leaving rest, turn and stars alone", async () => {
     const app = await makeAppData({ settings: LANGDU, kid, now: () => new Date(2026, 9, 2, 17) });
     await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
     await saveKid(app.db, kid);
@@ -59,7 +59,7 @@ describe('朗读 extra rounds', () => {
     expect(recs).toHaveLength(1);
     expect(recs[0]!.prompt).toEqual({ kind: 'passage', passageId: 'pp:1', extra: true }); // tagged: never the queue's take (final review I6)
     const after = (await getKid(app.db))!;
-    expect(after.reading.days).toBe(1);
+    expect(after.reading.history['pp:1']).toEqual({ reads: 2, lastRead: '2026-10-02', rest: 3, q: 1 });
     expect(after.bonusStars).toBe(0);
   });
 
@@ -82,6 +82,15 @@ describe('朗读 extra rounds', () => {
     await screen.findByRole('button', { name: '听我的' });
     fireEvent.click(btn('完成'));
     await waitFor(() => expect(app.go).toHaveBeenLastCalledWith({ name: 'home' }));
+  });
+
+  it('多读一遍 reads another passage than the one read today (D7)', async () => {
+    const app = await makeAppData({ settings: LANGDU, kid, now: () => new Date(2026, 9, 2, 17) });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    await saveParentPassage(app.db, { id: 'pp:2', title: '我的猫', text: '我爱我的猫。', createdAt: 2 });
+    await saveKid(app.db, { ...kid, reading: { ...kid.reading, history: { 'pp:1': { reads: 1, lastRead: '2026-10-02', rest: 3, q: 1 } } } });
+    renderWithApp(<LangduScreen />, app);
+    expect(await screen.findByText('我爱我的猫。')).toBeTruthy();
   });
 
   it('no 多读一遍 button when there is nothing to read', async () => {
@@ -144,7 +153,7 @@ describe('看图说话 parked: the path matches what the lesson does', () => {
     expect(names()).not.toContain('看图说话');
   });
   it('a 朗读 he read today stays on the path, named 朗读', async () => {
-    const app = await makeAppData({ settings: LANGDU, kid: { ...DEFAULT_KID, speakingLast: 'langdu', reading: { ...DEFAULT_KID.reading, lastDay: '2026-10-06' } }, now: () => new Date(2026, 9, 6, 18) });
+    const app = await makeAppData({ settings: LANGDU, kid: { ...DEFAULT_KID, speakingLast: 'langdu', reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 1, lastRead: '2026-10-06', rest: 3, q: 1 } } } }, now: () => new Date(2026, 9, 6, 18) });
     await saveSession(app.db, { ...createSessionRecord(plan, '2026-10-06', 0), completed: true, completedSteps: ['flashcards', 'speaking'] });
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');

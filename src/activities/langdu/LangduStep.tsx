@@ -3,9 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { FinishedRecording } from '../../audio/recorder';
 import { playSfx } from '../../audio/sfx';
 import { speak } from '../../audio/speech';
-import type { ReadingPassage } from '../../langdu/cycle';
 import { introLines } from '../../langdu/intro';
-import { answeringSentence, splitSentences } from '../../langdu/sentences';
+import type { LangduPassage } from '../../langdu/pool';
+import { answeringSentence, readLimitMs, splitSentences } from '../../langdu/sentences';
 import { betterTake } from '../../langdu/stars';
 import { useModelReader } from '../../langdu/useModelReader';
 import type { KidState, OralInfo } from '../../types';
@@ -16,7 +16,7 @@ import { Pet } from '../../ui/Pet';
 import { BlockedNote, MicButton, useRecorder } from '../shared/recording';
 
 export interface LangduResult {
-  intro: FinishedRecording | null; // the warm-up, day 1 only
+  intro: FinishedRecording | null; // the warm-up, when it ran (warmupDue)
   read: FinishedRecording | null; // the better of his takes; null when the microphone was blocked or missing
   meaning: { correct: boolean; picked: string } | null; // null: no question (an extra round, a parent text without one)
 }
@@ -24,10 +24,10 @@ export interface LangduResult {
 export type LangduPart = 'warmup' | 'listen' | 'read' | 'compare' | 'meaning';
 
 interface Props {
-  passage: ReadingPassage;
+  passage: LangduPassage;
   oral: OralInfo;
   kid: KidState;
-  /** day 1 of this passage (isFirstDay): the self-introduction first */
+  /** the warm-up is due (warmupDue): the self-introduction first */
   withWarmup: boolean;
   /** 多读一遍 from Home: listen, read and compare only */
   extra?: boolean;
@@ -46,7 +46,7 @@ export function LangduStep({ passage, oral, kid, withWarmup, extra = false, micB
   const sentences = useMemo(() => splitSentences(passage.text), [passage.text]);
   const model = useModelReader(sentences);
   const intro = useRecorder(micBlocked);
-  const read = useRecorder(micBlocked);
+  const read = useRecorder(micBlocked, readLimitMs(passage.text)); // long passages get longer (spec 2026-10-15 §8)
   const [takes, setTakes] = useState<FinishedRecording[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
   const takeAudio = useRef<HTMLAudioElement>(null);

@@ -12,7 +12,9 @@ import { streak, totalStars, weekDays } from '../stats/stats';
 import { pickExample } from '../activities/writing/cue';
 import { WeekStrip } from './WeekStrip';
 import { allSessions, getKid, listParentPassages, listRewards, saveKid, updateKid } from '../store/repo';
-import { pickPassage, readingPool } from '../langdu/cycle';
+import { readToday } from '../langdu/history';
+import { pickPassage } from '../langdu/pick';
+import { readingPool } from '../langdu/pool';
 import { nextSpeaking } from '../kantu/flow';
 import { PASSAGES } from '../content';
 import { DEFAULT_KID, type KidState, type ParentPassage, type RewardGoal, type SessionRecord } from '../types';
@@ -168,12 +170,12 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
     date: today,
   });
   const world = currentWorld(k);
-  const canRead = settings.langdu && !!pickPassage(k.reading, readingPool(data.parentPassages, PASSAGES, data.know.knownChars), today);
+  const canRead = settings.langdu && !!pickPassage(k.reading, readingPool(data.parentPassages, PASSAGES, { readable: data.know.knownChars, classTerm: null }), today);
   // what the speaking stop is today: what he did, once done; otherwise what comes next (朗读 while 看图说话 is parked, or nothing to read)
   // 看图说话 parked: the stop is 朗读 when there's something to read (or he read today), and left off the path otherwise (the lesson skips it)
   const speakingKind = settings.story
     ? todaySession?.completedSteps.includes('speaking') ? k.speakingLast ?? 'story' : nextSpeaking(k.speakingLast, canRead, true)
-    : canRead || k.reading.lastDay === today ? 'langdu' : null;
+    : canRead || readToday(k.reading, today) ? 'langdu' : null;
   const steps = (todaySession?.plan.steps ?? stepsOn(settings)).filter((s) => s !== 'speaking' || speakingKind !== null);
   const nodes = pathNodes(steps, todaySession?.completedSteps ?? [], chestOpened, doneToday);
   const wotdWord = wotd ? data.know.wordsById.get(`b:${wotd}`) : undefined;
