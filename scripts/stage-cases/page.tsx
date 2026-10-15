@@ -22,8 +22,7 @@ import { FeedbackSheet } from '../../src/ui/stage/FeedbackSheet';
 import { Stage } from '../../src/ui/stage/Stage';
 import { Pet } from '../../src/ui/Pet';
 import { Truffle } from '../../src/ui/truffle/Truffle';
-import { COSTUMES } from '../../src/fun/costumes';
-import { costumeById } from '../../src/fun/costumes';
+import { COSTUMES, costumeById } from '../../src/fun/costumes';
 import { SHEET_CELL_HEIGHT, SHEET_COLUMNS } from './faceProbe';
 import { Label } from '../../src/ui/Label';
 import { PairGame } from '../../src/activities/practice/PairGame';
@@ -53,7 +52,7 @@ import { ladderWords } from '../../src/content/ladder';
 import { questionMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
-import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
+import { PAW_TRACKS, type PawPose, type Reaction } from '../../src/ui/truffle/timelines';
 import { ListenRows } from '../../src/parent/ListenPanel';
 import type { Recording } from '../../src/types';
 import { PinyinFade } from '../../src/ui/pinyinFade';
@@ -176,6 +175,19 @@ else if (which === 'costume-sheet') {
     </div>,
     app,
   );
+  // the probe's other paw poses (every PAW_TRACKS move, frame by frame: costume-sheet.ts), one 220 px figure per costume, drawn
+  // over the sheet after its screenshot: elementFromPoint only sees what is on screen
+  (window as unknown as { __sheetPose: (paws: PawPose, row: string) => void }).__sheetPose = (paws, row) =>
+    render(
+      <div style={`display:grid;grid-template-columns:repeat(${SHEET_COLUMNS}, 232px);gap:8px;padding:8px;background:#fbf6ea`}>
+        {ids.map((id) => (
+          <div key={id} data-costume={id}>
+            <figure data-row={row} style="margin:0"><Truffle expression="joy" paws={paws} outfit={id} size={220} label={null} /></figure>
+          </div>
+        ))}
+      </div>,
+      app,
+    );
 }
 else if (which?.startsWith('story-') && which !== 'story-page') {
   // the 3c reader on its own (spec 2026-10-07 3c §4): setup page, Granny's lines, 听一听, the rescued words
