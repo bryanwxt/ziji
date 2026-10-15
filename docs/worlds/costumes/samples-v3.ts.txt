@@ -1,0 +1,235 @@
+// Costume probe (2026-10-15): six costumes redrawn to the zodiac onesies' standard: each changes his whole silhouette, has one
+// strong colour, and carries one big thing a child knows it by. Same layers as costumeLayer() (back, body, head, tail), plus
+// pawL / pawR: drawn inside each paw's group, after the paw, so a held prop (hose, wok, staff, rabbit) and gloves move with it.
+import { crescent } from '../cel';
+import { belly, celShade, DARK, eyes, hood, INK, pair, ropeTail, S, s2, tint } from './costumeKit';
+
+export interface CostumeLayer { back: string; body: string; head: string; tail?: string; pawL?: string; pawR?: string; hidesEars: boolean }
+
+/** His paws' outlines (parts.ts G.pawL / G.pawR), for gloves and for a paw closing over a held thing. */
+const PAW_L_D = 'M122 262 C120 276 154 278 154 266 C154 258 124 254 122 262Z';
+const PAW_R_D = 'M198 262 C200 276 166 278 166 266 C166 258 196 254 198 262Z';
+const glove = (d: string, fill: string, toes: string) => `<path d="${d}" fill="${fill}" ${s2}/><path d="${toes}" fill="none" stroke="${celShade(fill)}" stroke-width="1.6" stroke-linecap="round"/>`;
+const gloveL = (fill: string) => glove(PAW_L_D, fill, 'M132 264 L132 270 M142 264 L142 270');
+const gloveR = (fill: string) => glove(PAW_R_D, fill, 'M178 264 L178 270 M188 264 L188 270');
+const CREAM_PAW = '#fbf5ea';
+
+/**
+ * A cel piece (spec §7): its flat fill, its one hard shadow, then the line. The shadow is the piece itself in its shadow tone
+ * with the lit fill on top shrunk toward (ax, ay), a point near its upper left: what is left is a rim on the side away from the
+ * light. Explicit paths only (no clip-path); exact for any piece that is star-shaped about (ax, ay).
+ */
+const cel = (d: string, fill: string, ax: number, ay: number, k = 0.9, sh = celShade(fill)) =>
+  `<path d="${d}" fill="${sh}"/><path d="${d}" fill="${fill}" transform="translate(${ax} ${ay}) scale(${k}) translate(${-ax} ${-ay})"/><path d="${d}" fill="none" ${S}/>`;
+/** A soft white highlight stroke on the lit side. */
+const hi = (d: string, w = 4, o = 0.5) => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity="${o}" stroke-width="${w}" stroke-linecap="round"/>`;
+/** A thick stroked band with an ink edge (a ribbon, a hose, a staff). */
+const rope = (d: string, color: string, w: number) => ropeTail(d, color, w);
+
+/**
+ * COSTUME RULE (parent, 2026-10-15): headgear reaches both edges of the head; the crown of the head stays visible. A helmet's
+ * brim, a headband, a circlet or a fall of hair runs right across his head to its outline on both sides (x ≈ 54–266 at the brow,
+ * the cheek tufts at y 100–146), so no grey head shows beyond either end; but a band or circlet never grows into a cap over his
+ * crown. Ears: as each design wants (out over a band, tucked under a helmet or hair).
+ */
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 1. 水獭 otter onesie: brown hood with small round ears and the otter's whiskered face, a cream throat, its thick flat tail.
+const OTTER = '#93643f';
+const OTTER_CREAM = '#f6e3c4';
+const otter = (): CostumeLayer => ({
+  back: '',
+  body: tint(OTTER) +
+    // the cream throat and chest, from under the chin to the belly
+    cel('M126 194 C142 204 178 204 194 194 C208 214 208 254 188 264 C170 272 150 272 132 264 C112 254 112 214 126 194 Z', OTTER_CREAM, 140, 206, 0.92) +
+    // brown gloves and feet: the otter's own dark paws
+    pair((f) => `<ellipse cx="${f(110)}" cy="262" rx="20" ry="13" fill="${OTTER}" ${S}/>`),
+  head: pair((f) => `<circle cx="${f(98)}" cy="44" r="15" fill="${OTTER}" ${S}/><circle cx="${f(98)}" cy="45" r="7" fill="#6a452b"/>`) +
+    hood(OTTER) +
+    // a pale brow above the eyes, then the face: eyes, two puffy cream whisker pads, a big dark nose, whiskers
+    eyes(28, 48, 5.5) +
+    pair((f) => `<ellipse cx="${f(148)}" cy="66" rx="14" ry="10" fill="${OTTER_CREAM}" ${S}/><circle cx="${f(144)}" cy="66" r="1.4" fill="${DARK}"/><circle cx="${f(150)}" cy="70" r="1.4" fill="${DARK}"/><circle cx="${f(152)}" cy="64" r="1.4" fill="${DARK}"/>` +
+      `<path d="M${f(134)} 63 L${f(108)} 58 M${f(134)} 68 L${f(106)} 70 M${f(135)} 73 L${f(110)} 80" fill="none" ${s2}/>`) +
+    `<path d="M150 55 Q160 51 170 55 Q168 63 160 65 Q152 63 150 55 Z" fill="${DARK}"/><ellipse cx="156" cy="55.5" rx="2.6" ry="1.4" fill="#fff" opacity=".8"/>`,
+  // the otter's tail: long, thick at the root, tapering, flat
+  tail: cel('M206 236 C232 240 258 232 272 204 C282 222 274 246 254 258 C238 266 220 264 206 258 Z', OTTER, 230, 238, 0.86),
+  pawR: gloveR(OTTER),
+  pawL: gloveL(OTTER),
+  hidesEars: true,
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 2. 熊猫 panda onesie: white hood with black ears and eye patches; black arms, legs and paws.
+const PANDA = '#fbfaf6';
+const BLK = '#3d3845';
+const panda = (): CostumeLayer => ({
+  back: '',
+  body: tint(PANDA) + belly('#ffffff') +
+    // black arms down both sides and the black legs he sits on
+    pair((f) => `<path d="M${f(112)} 188 C${f(94)} 200 ${f(86)} 226 ${f(92)} 250 C${f(100)} 256 ${f(112)} 254 ${f(118)} 246 C${f(116)} 226 ${f(120)} 208 ${f(134)} 196 Z" fill="${BLK}" ${S}/>`) +
+    pair((f) => `<ellipse cx="${f(112)}" cy="264" rx="26" ry="15" fill="${BLK}" ${S}/>`) +
+    hi('M100 210 C98 222 98 232 100 240', 3, 0.25),
+  head: pair((f) => `<circle cx="${f(88)}" cy="44" r="20" fill="${BLK}" ${S}/>` + hi(`M${f(78)} 36 C${f(82)} 31 ${f(88)} 29 ${f(92)} 30`, 3, 0.3)) +
+    hood(PANDA) +
+    pair((f) => {
+      const a = f(0) === 0 ? 28 : -28;
+      return `<ellipse cx="${f(134)}" cy="54" rx="13" ry="17" transform="rotate(${a} ${f(134)} 54)" fill="${BLK}"/><circle cx="${f(135)}" cy="53" r="4.6" fill="#fff"/><circle cx="${f(135)}" cy="54" r="2.6" fill="${BLK}"/>`;
+    }) +
+    `<path d="M150 64 Q160 60 170 64 Q168 72 160 74 Q152 72 150 64 Z" fill="${BLK}"/><path d="M160 74 L160 79 M152 80 Q156 84 160 79 Q164 84 168 80" fill="none" ${s2}/>`,
+  tail: `<circle cx="222" cy="250" r="13" fill="${PANDA}" ${S}/>`,
+  pawL: gloveL(BLK),
+  pawR: gloveR(BLK),
+  hidesEars: true,
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 3. 消防员 firefighter: a red helmet with a wide brim and a gold front shield, a red coat with yellow bands, and a hose
+//    spraying water from his right paw (it rises with the paw).
+const FIRE = '#d8302a';
+const FIRE_GOLD = '#f2c230';
+const BAND_Y = '#ffd23f';
+const bandAt = (y: number, w = 13) =>
+  `<path d="M90 ${y} C130 ${y + 8} 190 ${y + 8} 230 ${y} L231 ${y + w} C190 ${y + w + 8} 130 ${y + w + 8} 89 ${y + w} Z" fill="${BAND_Y}" ${S}/>` +
+  `<path d="M92 ${y + w / 2} C130 ${y + w / 2 + 8} 190 ${y + w / 2 + 8} 228 ${y + w / 2}" fill="none" stroke="#e9eef5" stroke-width="3"/>`;
+const firefighter = (): CostumeLayer => ({
+  back: '',
+  body: tint(FIRE) + bandAt(220) + bandAt(246, 12) +
+    // a tall collar and the coat's front clasps
+    pair((f) => `<path d="M${f(116)} 186 L${f(148)} 198 L${f(146)} 212 L${f(110)} 200 Z" fill="${FIRE}" ${S}/>`) +
+    `<path d="M160 204 L160 270" stroke="${INK}" stroke-width="1.8"/>` + [212, 240, 264].map((y) => `<rect x="153" y="${y - 3}" width="14" height="6" rx="2" fill="#2d2a33"/>`).join(''),
+  head:
+    // the dome, then the wide brim sweeping down at the sides, then the gold shield standing on the front
+    cel('M60 98 C56 50 104 22 160 22 C216 22 264 50 260 98 Z', FIRE, 120, 40, 0.9) +
+    `<path d="M160 26 L160 50" stroke="${celShade(FIRE)}" stroke-width="6" stroke-linecap="round"/>` +
+    hi('M86 70 C94 50 112 38 134 33', 6, 0.45) +
+    cel('M34 112 C28 92 56 80 80 84 C112 74 208 74 240 84 C264 80 292 92 286 112 C280 124 266 122 258 108 C250 100 240 96 232 94 C204 88 116 88 88 94 C80 96 70 100 62 108 C54 122 40 124 34 112 Z', FIRE, 100, 82, 0.92) +
+    cel('M136 88 L134 50 C134 36 146 28 160 28 C174 28 186 36 186 50 L184 88 C176 84 144 84 136 88 Z', FIRE_GOLD, 148, 40, 0.88) +
+    `<path d="M142 82 L141 52 C141 42 150 36 160 36 C170 36 179 42 179 52 L178 82" fill="none" stroke="#c8962a" stroke-width="1.8"/>` +
+    `<circle cx="160" cy="60" r="12" fill="${FIRE}" ${s2}/><path d="M160 51 C166 57 166 63 160 69 C154 63 154 57 160 51 Z" fill="${FIRE_GOLD}"/>`,
+  // the hose comes up from the ground (past the bottom of his box, so it never ends in the air), into a red-and-brass nozzle,
+  // and a fan of water sprays from it
+  pawR: rope('M188 270 C196 300 236 306 250 420', '#e8c05a', 13) +
+    `<g transform="translate(186 260) rotate(-52)">` +
+    `<path d="M48 -6 L132 -34 Q144 0 132 34 L48 6 Z" fill="#bfe6ff" fill-opacity=".85" stroke="#7fc0ea" stroke-width="2" stroke-linejoin="round"/>` +
+    `<path d="M50 0 L136 0 M52 -3 L130 -20 M52 3 L130 20" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>` +
+    [[146, -20, 5], [150, 6, 6], [142, 30, 4.5], [160, -6, 4], [124, -42, 4]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#bfe6ff" stroke="#7fc0ea" stroke-width="1.6"/>`).join('') +
+    `<path d="M-6 -10 L30 -8 L30 8 L-6 10 Z" fill="${FIRE}" ${S}/><path d="M30 -8 L48 -6 L48 6 L30 8 Z" fill="#d9a83a" ${S}/><path d="M12 9 L8 24 L18 24 L22 9" fill="#2d2a33" ${s2}/>` +
+    `</g>` + gloveR('#3f3b47'),
+  pawL: gloveL('#3f3b47'),
+  hidesEars: true,
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 4. 小贩 Singapore hawker: a white singlet under a blue apron, a towel headband knotted at the side, the shoulder towel,
+//    and a big wok of noodles in flames.
+const APRON = '#2f74c9';
+const TOWEL = '#fffdf7';
+const hawker = (): CostumeLayer => ({
+  back: '',
+  body: tint(TOWEL) +
+    cel('M130 194 L190 194 L194 220 C208 226 216 238 218 256 C200 276 120 276 102 256 C104 238 112 226 126 220 Z', APRON, 140, 204, 0.9) +
+    `<path d="M126 220 C112 218 100 214 94 210 M194 220 C208 218 220 214 226 210" fill="none" stroke="${APRON}" stroke-width="4" stroke-linecap="round"/>` +
+    `<path d="M142 232 L178 232 L176 252 C166 256 154 256 144 252 Z" fill="none" stroke="#e8f0fb" stroke-width="2.4" stroke-linejoin="round"/>` +
+    // the towel over his shoulder, red-striped at its end
+    `<path d="M98 194 C108 186 124 186 134 192 L130 246 L104 246 Z" fill="${TOWEL}" ${S}/><path d="M104 232 L130 232 M104 238 L130 238" stroke="#d8302a" stroke-width="2.6"/>`,
+  head:
+    // a towel tied round his forehead from one edge of his head to the other, its knot and two ends sticking out at the side
+    `<path d="M54 94 C92 54 228 54 266 94 L264 110 C226 70 94 70 56 110 Z" fill="${TOWEL}" ${S}/>` +
+    `<path d="M62 100 C98 64 222 64 258 100" fill="none" stroke="#d8302a" stroke-width="2"/>` +
+    `<path d="M266 98 C276 86 286 80 290 82 C288 92 282 100 274 106 Z" fill="${TOWEL}" ${S}/><path d="M268 110 C278 110 288 116 290 126 C280 126 272 122 266 118 Z" fill="${TOWEL}" ${S}/>` +
+    `<ellipse cx="264" cy="104" rx="8" ry="11" fill="${TOWEL}" ${S}/>`,
+  // the wok in his right paw: flames lick up round it, noodles fly out of it
+  pawR:
+    `<path d="M204 228 C194 206 206 196 208 180 C216 194 222 188 224 172 C232 188 238 182 246 160 C252 182 262 180 268 168 C274 190 290 204 284 228 Z" fill="#ff8a3d" ${S}/>` +
+    `<path d="M216 226 C212 212 220 206 222 196 C228 206 234 202 238 190 C242 204 252 202 256 194 C260 208 272 214 270 226 Z" fill="#ffd23f"/>` +
+    [`M226 222 C222 204 236 196 230 178`, `M240 222 C244 200 254 196 250 176`, `M254 222 C262 206 270 204 268 188`].map((d) => `<path d="${d}" fill="none" stroke="${INK}" stroke-width="6.4" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#ffe69a" stroke-width="3.4" stroke-linecap="round"/>`).join('') +
+    `<path d="M188 262 L210 240" stroke="${INK}" stroke-width="9" stroke-linecap="round"/><path d="M188 262 L210 240" stroke="#8a5a3c" stroke-width="5" stroke-linecap="round"/>` +
+    cel('M200 222 L288 222 C284 248 264 260 244 260 C224 260 204 248 200 222 Z', '#4a4552', 214, 226, 0.9) +
+    `<ellipse cx="244" cy="222" rx="44" ry="7" fill="#2f2b36" ${S}/>` + hi('M210 232 C214 242 222 250 232 254', 3, 0.35) +
+    `<path d="${PAW_R_D}" fill="${CREAM_PAW}" ${s2}/><path d="M178 264 L178 270 M188 264 L188 270" fill="none" ${s2}/>`,
+  // the wok spatula in his left paw
+  pawL: `<path d="M136 264 L92 206" stroke="${INK}" stroke-width="8.6" stroke-linecap="round"/><path d="M136 264 L92 206" stroke="#8a5a3c" stroke-width="5" stroke-linecap="round"/>` +
+    `<path d="M92 206 L100 200" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>` +
+    cel('M74 204 C68 190 80 178 92 182 L108 194 C104 206 88 214 74 204 Z', '#b9bcc6', 84, 190, 0.86) +
+    `<path d="${PAW_L_D}" fill="${CREAM_PAW}" ${s2}/><path d="M132 264 L132 270 M142 264 L142 270" fill="none" ${s2}/>`,
+  hidesEars: false,
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 5. 孙悟空 Sun Wukong: a golden circlet, two long pheasant plumes, a gold tunic with a red scarf and a tiger-skin skirt,
+//    a monkey's tail, the somersault cloud under him, and the 金箍棒 in his paw (it rises with the paw).
+const WK = '#f5b82e';
+const WK_RED = '#d8302a';
+const GOLD = '#f2c230';
+const plume = (f: (x: number) => number) => {
+  // a long pheasant plume (雉鸡翎) from the circlet, sweeping up and out: wide at the root, tapering to a fine tip
+  const d = `M${f(132)} 74 C${f(118)} 30 ${f(88)} 10 ${f(40)} 24 C${f(36)} 28 ${f(42)} 30 ${f(48)} 30 C${f(90)} 26 ${f(110)} 46 ${f(146)} 74 Z`;
+  const bars = [[118, 50, 124, 44], [104, 36, 110, 30], [88, 28, 92, 22], [70, 26, 72, 20]].map(([a, b, c, e]) =>
+    `<path d="M${f(a!)} ${b} L${f(c!)} ${e}" stroke="${WK_RED}" stroke-width="3.4" stroke-linecap="round"/>`).join('');
+  return `<path d="${d}" fill="${GOLD}" ${S}/>` + bars;
+};
+const wukong = (): CostumeLayer => ({
+  // the somersault cloud he stands on
+  back: cel('M44 282 C30 278 32 258 50 258 C50 240 76 236 86 250 C92 236 116 236 120 252 L200 252 C204 236 228 236 234 250 C244 236 270 240 270 258 C288 258 290 278 276 282 Z', '#fff7e6', 60, 250, 0.92) +
+    `<path d="M58 270 C58 262 68 262 68 268 M252 270 C252 262 262 262 262 268" fill="none" stroke="#f0b35a" stroke-width="2.6" stroke-linecap="round"/>`,
+  body: tint(WK) +
+    // the tiger-skin skirt
+    `<path d="M100 238 L220 238 L226 262 C190 276 130 276 94 262 Z" fill="#ffa53d" ${S}/>` +
+    [106, 132, 158, 184, 208].map((x) => `<path d="M${x} 242 L${x + 6} 258 L${x + 12} 242 Z" fill="#3a2a20"/>`).join('') +
+    `<path d="M98 232 C130 242 190 242 222 232 L222 242 C190 252 130 252 98 242 Z" fill="${WK_RED}" ${S}/>` +
+    // the red scarf round his neck, its ends flying
+    `<path d="M104 194 C130 212 190 212 216 194 L220 208 C190 228 130 228 100 208 Z" fill="${WK_RED}" ${S}/>` +
+    `<path d="M196 214 C210 222 222 236 236 238 C226 228 222 222 212 212 Z" fill="${WK_RED}" ${S}/>`,
+  head: pair(plume) +
+    // the circlet: a gold band right across his head, edge to edge, a cloud-scroll at the brow and a curl at each end
+    `<path d="M56 96 C96 58 224 58 264 96 L262 108 C222 70 98 70 58 108 Z" fill="${GOLD}" ${S}/>` +
+    `<path d="M148 66 C146 56 154 50 160 56 C166 50 174 56 172 66 Z" fill="${GOLD}" ${S}/><circle cx="160" cy="62" r="3" fill="${WK_RED}"/>` +
+    pair((f) => `<path d="M${f(60)} 106 C${f(46)} 108 ${f(42)} 94 ${f(52)} 92 C${f(60)} 92 ${f(60)} 102 ${f(54)} 102" fill="none" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M${f(60)} 106 C${f(46)} 108 ${f(42)} 94 ${f(52)} 92 C${f(60)} 92 ${f(60)} 102 ${f(54)} 102" fill="none" stroke="${GOLD}" stroke-width="4.5" stroke-linecap="round"/>`),
+  tail: ropeTail('M210 250 C244 256 268 232 258 208 C252 194 234 196 236 210 C238 220 250 218 248 210', '#a06a3c', 7),
+  // the staff: a long red rod with gold ends, through his paw
+  pawR: `<g transform="translate(182 262) rotate(-40)">` +
+    `<path d="M-118 0 L122 0" stroke="${INK}" stroke-width="${12 + 2 * 2.8}" stroke-linecap="round"/><path d="M-118 0 L122 0" stroke="${WK_RED}" stroke-width="12" stroke-linecap="round"/>` +
+    `<path d="M-118 0 L-96 0 M100 0 L122 0" stroke="${GOLD}" stroke-width="12" stroke-linecap="round"/><path d="M-96 -6 L-96 6 M100 -6 L100 6" stroke="${INK}" stroke-width="1.8"/>` +
+    `<path d="M-90 -3.5 L94 -3.5" stroke="#fff" stroke-opacity=".35" stroke-width="2.5" stroke-linecap="round"/></g>` +
+    `<path d="${PAW_R_D}" fill="${CREAM_PAW}" ${s2}/><path d="M178 264 L178 270 M188 264 L188 270" fill="none" ${s2}/>`,
+  hidesEars: false,
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 6. 嫦娥 Chang'e: a long pale-pink robe with wide sleeves, a rose ribbon floating out at both sides, dark hair in two tall
+//    loops, a crescent moon behind her, and the jade rabbit in her paw.
+const CE = '#f8cfe0';
+const CE_ROSE = '#e8799f';
+const HAIR = '#3d3646';
+const change = (): CostumeLayer => ({
+  back: `<path d="${crescent(70, 66, 34, 34, 15, -11)}" fill="#fff0b3" ${S}/>` +
+    pair((f) => rope(`M${f(112)} 198 C${f(64)} 190 ${f(46)} 216 ${f(56)} 240 C${f(66)} 262 ${f(52)} 278 ${f(36)} 282`, CE_ROSE, 10)),
+  body:
+    // wide sleeves, then the long flared robe over them
+    pair((f) => `<path d="M${f(112)} 192 C${f(86)} 202 ${f(70)} 232 ${f(66)} 262 C${f(80)} 272 ${f(102)} 270 ${f(114)} 258 C${f(108)} 236 ${f(112)} 214 ${f(122)} 200 Z" fill="${CE}" ${S}/>`) +
+    cel('M114 186 C100 206 92 240 82 284 C130 292 190 292 238 284 C228 240 220 206 206 186 Z', CE, 130, 196, 0.9) +
+    // the crossed collar, the high sash and its ends
+    `<path d="M140 190 L160 214 L180 190" fill="none" stroke="#fffdf7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M106 216 C130 224 190 224 214 216 L215 228 C190 236 130 236 105 228 Z" fill="${CE_ROSE}" ${S}/>` +
+    `<path d="M156 230 L150 270 L158 268 L162 232 Z M164 230 L172 270 L164 270 L160 232 Z" fill="${CE_ROSE}" ${s2}/>`,
+  head:
+    // two tall loops of hair, long locks down past his cheeks, then the hair over his head (his ears tucked under it), a flower pin
+    pair((f) => { const a = f(0) === 0 ? -20 : 20; return `<ellipse cx="${f(124)}" cy="42" rx="15" ry="21" transform="rotate(${a} ${f(124)} 42)" fill="none" stroke="${INK}" stroke-width="${13 + 5.6}"/><ellipse cx="${f(124)}" cy="42" rx="15" ry="21" transform="rotate(${a} ${f(124)} 42)" fill="none" stroke="${HAIR}" stroke-width="13"/>`; }) +
+    pair((f) => `<path d="M${f(54)} 104 C${f(36)} 140 ${f(40)} 186 ${f(62)} 210 C${f(74)} 200 ${f(80)} 190 ${f(86)} 182 C${f(74)} 158 ${f(72)} 132 ${f(78)} 108 Z" fill="${HAIR}" ${S}/>`) +
+    cel('M50 124 C36 70 92 30 160 30 C228 30 284 70 270 124 C258 104 242 92 228 86 C206 76 184 76 160 84 C136 76 114 76 92 86 C78 92 62 104 50 124 Z', HAIR, 110, 44, 0.9) +
+    `<path d="M160 36 L160 88" stroke="#5a5266" stroke-width="2" stroke-linecap="round"/>` +
+    hi('M86 70 C100 52 120 42 142 38', 5, 0.25) +
+    `<circle cx="196" cy="48" r="10" fill="#ff9fbf" ${s2}/><circle cx="196" cy="48" r="3.6" fill="${GOLD}"/><path d="M204 54 L232 70" stroke="${GOLD}" stroke-width="3.5" stroke-linecap="round"/><circle cx="232" cy="74" r="3.4" fill="#fffdf7" ${s2}/>`,
+  // the jade rabbit, sitting in her paw (it rises with the paw)
+  pawR:
+    `<ellipse cx="200" cy="216" rx="6.5" ry="17" transform="rotate(-14 200 216)" fill="#fffdf7" ${S}/><ellipse cx="200" cy="217" rx="2.6" ry="11" transform="rotate(-14 200 217)" fill="#f6b6c2"/>` +
+    `<ellipse cx="214" cy="216" rx="6.5" ry="17" transform="rotate(16 214 216)" fill="#fffdf7" ${S}/><ellipse cx="214" cy="217" rx="2.6" ry="11" transform="rotate(16 214 217)" fill="#f6b6c2"/>` +
+    `<ellipse cx="200" cy="252" rx="22" ry="17" fill="#fffdf7" ${S}/>` +
+    `<circle cx="206" cy="234" r="14" fill="#fffdf7" ${S}/><circle cx="202" cy="232" r="2.2" fill="#d8302a"/><circle cx="212" cy="232" r="2.2" fill="#d8302a"/><path d="M205 238 L209 238 L207 240.5 Z" fill="#f08aa0"/>` +
+    `<path d="${PAW_R_D}" fill="${CREAM_PAW}" ${s2}/><path d="M178 264 L178 270 M188 264 L188 270" fill="none" ${s2}/>`,
+  hidesEars: true,
+});
+
+export const NEW_COSTUMES: Record<string, CostumeLayer> = {
+  otter: otter(), panda: panda(), firefighter: firefighter(), hawker: hawker(), wukong: wukong(), change: change(),
+};
