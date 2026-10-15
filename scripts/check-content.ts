@@ -31,10 +31,11 @@ export function checkContent(chars: BuiltinChar[], passages: Passage[], hasStrok
   for (const ch of new Set(Array.from(listed))) if (HAN.test(ch) && !seen.has(ch)) problems.push(`${ch}: on his school list but not built in`);
   const easy = new Set(chars.filter((c) => c.level <= 2).map((c) => c.char));
   const ids = new Set<string>();
-  // our own first twenty only: p21 on are held to checkOwnPassages' writing rules, the Global Storybooks chunks to the import's
-  for (const p of passages.filter((x) => x.source === 'ziji' && !(Number(x.id.slice(1)) >= NEW_FROM))) {
+  for (const p of passages.filter((x) => x.source === 'ziji')) {
     if (ids.has(p.id)) problems.push(`duplicate passage ${p.id}`);
     ids.add(p.id);
+    // the length and HSK 1–2 rules hold our own first twenty only: p21 on are held to checkOwnPassages' writing rules
+    if (Number(p.id.slice(1)) >= NEW_FROM) continue;
     const han = Array.from(p.text).filter((ch) => HAN.test(ch));
     if (han.length < 30 || han.length > 80) problems.push(`${p.id}: ${han.length} characters, expected 30–80`);
     const outside = [...new Set(han.filter((ch) => !easy.has(ch)))];
@@ -51,15 +52,26 @@ const PUNCT_RE = /[，。！？、；：“”‘’「」『』…—]/g;
 const PARTICLES_RE = /[了吗吧呢的得着过啊呀]+$/u;
 const han = (s: string) => Array.from(s).filter((ch) => HAN.test(ch));
 
-/** The passage's most frequent dictionary word, when one word alone leads and occurs twice or more: an answer equal to it needs
- *  no reading (rule 4). A tie leads nothing (爸爸 and 妈妈 twice each: either may fairly be asked). */
+/** The passage's most frequent word, when one word alone leads and occurs twice or more: an answer equal to it needs no reading
+ *  (rule 4). A word is a tile of two characters or more, in the dictionary or not (婆婆), or two content characters side by side
+ *  that the tiles split (炒面), unless it is only part of a longer word seen as often. A tie leads nothing (爸爸 and 妈妈 twice
+ *  each: either may fairly be asked). */
 export function topWord(text: string): string | null {
-  const count = new Map<string, number>();
+  const words = new Set<string>();
   for (const t of tiles(text)) {
     const core = t.replace(PUNCT_RE, '').replace(PARTICLES_RE, '');
-    if (Array.from(core).length > 1 && HSK_WORDS.has(core)) count.set(core, (count.get(core) ?? 0) + 1);
+    if (Array.from(core).length > 1) words.add(core);
   }
-  const [best, next] = [...count].sort((a, b) => b[1] - a[1]);
+  const chars = Array.from(text);
+  for (let i = 0; i + 1 < chars.length; i++) {
+    const [a, b] = [chars[i]!, chars[i + 1]!];
+    if (HAN.test(a) && HAN.test(b) && !FUNCTION_CHARS.has(a) && !FUNCTION_CHARS.has(b)) words.add(a + b);
+  }
+  const seen = (w: string) => text.split(w).length - 1;
+  const count = [...words]
+    .map((w) => [w, seen(w)] as const)
+    .filter(([w, n], _, all) => !all.some(([v, m]) => v.length > w.length && v.includes(w) && m === n));
+  const [best, next] = count.sort((a, b) => b[1] - a[1]);
   return best && best[1] >= 2 && (!next || next[1] < best[1]) ? best[0] : null;
 }
 

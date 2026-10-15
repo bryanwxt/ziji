@@ -62,6 +62,8 @@ describe('meaning questions (spec 2026-10-15 §6)', () => {
     const dad: Passage = { ...p, id: 'x2', text: '爸爸在家。爸爸看书。妈妈做饭。爸爸很高兴。' };
     expect(topWord(dad.text)).toBe('爸爸');
     expect(questionProblems(dad, { q: '谁在看书？', choices: ['爸爸', '妈妈', '我'], answer: 0, sentence: 1 })).toContain('x2 "谁在看书？": the answer 爸爸 is the passage\'s most frequent word');
+    expect(topWord('婆婆在家。婆婆做饭。我很高兴。')).toBe('婆婆'); // not an HSK word, still repeated
+    expect(topWord('爸爸买炒面。我吃炒面。炒面很香。')).toBe('炒面');
   });
   it('rule 5: the answer is not the only choice sharing characters with the passage (a child matching characters picks it)', () => {
     expect(flags({ q: '我家有什么人？', choices: ['姐姐和弟弟', '奶奶和爷爷', '哥哥和妹妹'], answer: 2, sentence: 0 })).toContain('x1 "我家有什么人？": only the answer shares characters with the passage');
@@ -93,6 +95,9 @@ describe('our passages (spec 2026-10-15 §2.2)', () => {
   it('the new ones are not held to the first twenty\'s 30–80 characters and HSK 1–2', () => {
     expect(checkContent(BUILTIN, [p21, p33, p49], hasStrokeFile)).toEqual([]);
     expect(checkContent(BUILTIN, [{ ...p49, id: 'p20' }], hasStrokeFile)).toEqual(expect.arrayContaining([expect.stringMatching(/^p20: \d+ characters, expected 30–80$/)]));
+  });
+  it('a duplicate id is flagged among the new ones too', () => {
+    expect(checkContent(BUILTIN, [p21, { ...p33, id: 'p21' }], hasStrokeFile)).toContain('duplicate passage p21');
   });
   it('three drafts, one a term, pass every rule', () => {
     expect(checkOwnPassages([p21, p33, p49])).toEqual([]);
