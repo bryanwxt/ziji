@@ -14,6 +14,8 @@ const INITIAL_SWAPS: Record<string, string[]> = { j: ['z', 'zh'], q: ['c', 'ch']
 const FINAL_SWAPS: [string, string][] = [['ie', 'ia'], ['uo', 'ou'], ['in', 'ing'], ['an', 'ang'], ['en', 'eng'], ['ian', 'iang'], ['un', 'ong']];
 /** Every toneless syllable the app knows: a swap must land on a real syllable. */
 const VALID = new Set(BUILTIN.flatMap((c) => c.pinyin.split(' ').map((s) => syllableTone(s).base)));
+/** A toneless syllable some built-in character is read with (lü, zhang): a near-miss reading must be a real one. */
+export const isSyllable = (base: string): boolean => VALID.has(base);
 
 /** A toneless syllable's initial and final: zhang → ['zh', 'ang']; one with no initial has '' (an → ['', 'an']). */
 export function splitSyllable(base: string): [string, string] {
