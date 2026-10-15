@@ -85,7 +85,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const [arrived, setArrived] = useState(still); // the boat has reached the chest: it shows and can be opened
   // mastery stars (spec 2026-10-11 §5); a lesson finished before them shows the stars its steps earned
   const stars = rec.free ? 0 : rec.stars ?? starsOf(rec.completedSteps);
-  const movedAt = useRef(0); // when the phase last changed: a double tap on 继续 moves one phase
+  const movedAt = useRef(-Infinity); // when the phase last changed (performance.now: a clock change or a fixed Date never blocks 继续): a double tap moves one phase
 
   useEffect(() => {
     celebrate();
@@ -106,10 +106,13 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
         if (m.owed > 0) for (let i = 0; i < m.owed; i++) order.push('chest');
         else order.push('river');
       }
-      // up to three things he is close to, after the stars and the chest (rewards spec §4); never on free play
+      // up to three things he is close to, after the stars and the chest (rewards spec §4); never on free play. They show after
+      // the chests, so they count from him as the chests leave him (the pick is seeded by the day: it is what open() will give)
+      let afterChests = kidNow;
+      for (let i = 0; i < m.owed; i++) afterChests = openChest(afterChests, rec.date).kid;
       const goals: Goal[] = facts
         ? await Promise.race([
-            facts.then((f) => almostThere(kidNow, know, { ...f, counted: !!fill?.counted }, now())).catch(() => []),
+            facts.then((f) => almostThere(afterChests, know, { ...f, counted: !!fill?.counted }, now())).catch(() => []),
             new Promise<Goal[]>((r) => setTimeout(() => r([]), GOALS_WAIT_MS)),
           ])
         : [];
@@ -166,8 +169,8 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     await saveKid(db, next);
   };
   const advance = async () => {
-    if (Date.now() - movedAt.current < TAP_GAP_MS) return;
-    movedAt.current = Date.now();
+    if (performance.now() - movedAt.current < TAP_GAP_MS) return;
+    movedAt.current = performance.now();
     const next = at + 1;
     const nextPhase = seq.order[next];
     if (!nextPhase) {

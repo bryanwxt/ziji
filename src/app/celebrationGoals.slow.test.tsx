@@ -1,6 +1,7 @@
-import { fireEvent, screen } from '@testing-library/preact';
+import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { BUILTIN, builtinWords } from '../content';
+import { CHEST_COSTUMES } from '../fun/costumes';
 import { powerFamilies } from '../fun/powers';
 import { createSessionRecord } from '../session/runner';
 import { addReviewLog, putCards, putWords, saveKid } from '../store/repo';
@@ -56,6 +57,21 @@ describe('almost there on the Celebration (rewards spec §4)', () => {
     expect(document.querySelector('.celebrate__line')).toBeNull();
     await continueTo('快到了！');
     expect(lines()[0]).toBe('明天再写对『鱼』，就会写了！');
+  });
+  it("the chest goal counts the clothes left after this Celebration's chest, not before it (final sweep)", async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    await saveKid(app.db, DEFAULT_KID); // the day's first lesson: one chest, whose first prize is a onesie
+    renderWithApp(<Celebration rec={finished()} />, app);
+    await screen.findByText('太棒了！');
+    fireEvent.click(screen.getByText('继续'));
+    const btn = (await screen.findByRole('button', { name: '按住打开宝箱' })) as HTMLButtonElement;
+    await waitFor(() => expect(btn.disabled).toBe(false));
+    fireEvent(btn, new Event('pointerdown', { bubbles: true }));
+    await screen.findByText('松露有新衣服了！', {}, { timeout: 3000 });
+    await new Promise((r) => setTimeout(r, 320));
+    await continueTo('快到了！');
+    expect(lines()).toContain(`宝箱里还有 ${CHEST_COSTUMES.length - 1} 件新衣服`);
   });
   it('free play: no goals', async () => {
     const app = await makeAppData();
