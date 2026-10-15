@@ -95,6 +95,14 @@ describe('normalizeKid', () => {
   });
 });
 
+describe('normalizeKid one rabbit (parent 2026-10-15)', () => {
+  it('a won 小白兔 becomes the zodiac 兔, worn or not, never listed twice', () => {
+    const k = normalizeKid({ petName: '松露', ownedCostumes: ['bunny', 'rabbit', 'otter'], outfit: 'bunny' } as never)!;
+    expect(k.ownedCostumes).toEqual(['rabbit', 'otter']);
+    expect(k.outfit).toBe('rabbit');
+  });
+});
+
 describe('normalizeKid accessories v2', () => {
   it('maps old emoji accessories to the new ones and drops unknown values', async () => {
     const db = await freshDb();

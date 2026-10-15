@@ -132,7 +132,8 @@ describe('Truffle powers', () => {
 describe('Truffle costumes', () => {
   it('a zodiac onesie has the animal\'s own tail in his tail\'s place (it swishes with his), and its face on the hood', async () => {
     const { ONESIES } = await import('../../fun/costumes');
-    for (const c of ONESIES) {
+    const { V3 } = await import('./v3');
+    for (const c of ONESIES.filter((o) => !V3[o.id])) { // 兔 is drawn by the v3 bunny (parent 2026-10-15)
       const { container, unmount } = render(<Truffle outfit={c.id} />);
       const tail = container.querySelector('[data-part="tail"]')!;
       expect(tail.innerHTML, c.id).not.toBe(render(<Truffle />).container.querySelector('[data-part="tail"]')!.innerHTML);

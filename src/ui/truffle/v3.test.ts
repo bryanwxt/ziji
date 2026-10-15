@@ -89,14 +89,19 @@ describe('the river onesies (rewards spec §5.2)', () => {
 });
 
 describe('the favourite onesies (rewards spec §5.2)', () => {
+  it('the bunny is the zodiac 兔 (parent 2026-10-15: one rabbit)', () => {
+    expect(V3.rabbit, 'rabbit').toBeTypeOf('function');
+    expect(costumeById('rabbit')).toMatchObject({ set: 'zodiac', kind: 'onesie' });
+    expect(costumeById('bunny')).toBeFalsy();
+  });
   it('are drawn and on the 动物 shelf', () => {
-    for (const id of ['babydino', 'pterosaur', 'magpie', 'penguin', 'shark', 'unicorn', 'owl', 'tigercub', 'bunny']) {
+    for (const id of ['babydino', 'pterosaur', 'magpie', 'penguin', 'shark', 'unicorn', 'owl', 'tigercub']) {
       expect(V3[id], id).toBeTypeOf('function');
       expect(costumeById(id), id).toMatchObject({ set: 'animal', kind: 'onesie' });
     }
   });
-  it('the bunny carries its carrot in its right paw (told from the zodiac 兔 by it and its lop ears)', () => {
-    expect(V3.bunny!().pawR).toContain('#ff9f43');
+  it('the zodiac 兔 is the lop-eared bunny with its carrot in its right paw (parent 2026-10-15: one rabbit)', () => {
+    expect(V3.rabbit!().pawR).toContain('#ff9f43');
   });
 });
 

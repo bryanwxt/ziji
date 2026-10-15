@@ -8,7 +8,7 @@ import type { ZodiacId } from '../types';
 
 export type { ZodiacId };
 /** The new onesies (rewards spec 2026-10-15 §5.2): river creatures and his favourites. */
-export type AnimalId = 'otter' | 'hornbill' | 'panda' | 'frog' | 'duck' | 'dragonfly' | 'babydino' | 'pterosaur' | 'koi' | 'crab' | 'parrot' | 'magpie' | 'penguin' | 'shark' | 'unicorn' | 'owl' | 'tigercub' | 'bunny';
+export type AnimalId = 'otter' | 'hornbill' | 'panda' | 'frog' | 'duck' | 'dragonfly' | 'babydino' | 'pterosaur' | 'koi' | 'crab' | 'parrot' | 'magpie' | 'penguin' | 'shark' | 'unicorn' | 'owl' | 'tigercub';
 /** Jobs, drawn full-body. `football` keeps its id (owned ones stay owned) and is now 足球员. */
 export type JobId = 'astronaut' | 'chef' | 'firefighter' | 'doctor' | 'pilot' | 'police' | 'football' | 'wizard' | 'pirate' | 'hawker';
 export type ChineseId = 'wukong' | 'nezha' | 'change' | 'houyi' | 'caishen' | 'luckycat' | 'liondance';
@@ -42,12 +42,12 @@ const an = shelf('animal', 'onesie');
 export const ONESIES: Costume[] = [
   // colours kept apart, so the lookalikes (ox/horse/monkey/dog, dragon/snake, rabbit/goat) never share one (parent, 2026-10-06)
   o('rat', '鼠', 'shǔ', '#9d9cad'), o('ox', '牛', 'niú', '#f7f4ee'), o('tiger', '虎', 'hǔ', '#ffa53d'),
-  o('rabbit', '兔', 'tù', '#fdf6f9'), o('dragon', '龙', 'lóng', '#3fae66'), o('snake', '蛇', 'shé', '#b4cf4a'),
+  o('rabbit', '兔', 'tù', '#fffefa'), o('dragon', '龙', 'lóng', '#3fae66'), o('snake', '蛇', 'shé', '#b4cf4a'),
   o('horse', '马', 'mǎ', '#c77b3f'), o('goat', '羊', 'yáng', '#e6d3a3'), o('monkey', '猴', 'hóu', '#6b4a3a'),
   o('rooster', '鸡', 'jī', '#e0533c'), o('dog', '狗', 'gǒu', '#e8c27a'), o('pig', '猪', 'zhū', '#ffb3c7'),
 ];
 
-/** The 18 new onesies, added with their art (Tasks 8–9). */
+/** The 17 new onesies, added with their art (Tasks 8–9); the bunny became the zodiac 兔 (parent 2026-10-15). */
 export const ANIMALS: Costume[] = [
   // the river creatures (Task 8)
   an('otter', '水獭', 'shuǐ tǎ', '#93643f'), an('panda', '熊猫', 'xióng māo', '#fbfaf6'), an('hornbill', '犀鸟', 'xī niǎo', '#3d3845'),
@@ -56,7 +56,7 @@ export const ANIMALS: Costume[] = [
   // his favourites (Task 9)
   an('babydino', '小恐龙', 'xiǎo kǒng lóng', '#8f6fd6'), an('pterosaur', '翼龙', 'yì lóng', '#c96f9a'), an('magpie', '喜鹊', 'xǐ què', '#2a4f8f'),
   an('penguin', '企鹅', 'qǐ é', '#c7ccd6'), an('shark', '鲨鱼', 'shā yú', '#4f7fb8'), an('unicorn', '独角兽', 'dú jiǎo shòu', '#cdb0f2'),
-  an('owl', '猫头鹰', 'māo tóu yīng', '#7a6a9a'), an('tigercub', '小老虎', 'xiǎo lǎo hǔ', '#f2f0fa'), an('bunny', '小白兔', 'xiǎo bái tù', '#fffefa'),
+  an('owl', '猫头鹰', 'māo tóu yīng', '#7a6a9a'), an('tigercub', '小老虎', 'xiǎo lǎo hǔ', '#f2f0fa'),
 ];
 
 /** Jobs, drawn full-body (spec §5.2). `football` keeps its id and is now 足球员, in a yellow jersey. */

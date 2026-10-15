@@ -128,19 +128,19 @@ describe('telling the onesies apart (parent, 2026-10-06; rewards spec §5.1: one
   });
 });
 
-describe('the chest holds 63 prizes, and they last (rewards spec §5.2–5.3)', () => {
-  it('47 costumes and 16 accessories', () => {
-    expect(CHEST_COSTUMES).toHaveLength(47);
-    expect(ONESIES.length + ANIMALS.length).toBe(30);
+describe('the chest holds 62 prizes, and they last (rewards spec §5.2–5.3)', () => {
+  it('46 costumes and 16 accessories', () => {
+    expect(CHEST_COSTUMES).toHaveLength(46);
+    expect(ONESIES.length + ANIMALS.length).toBe(29);
     expect(JOBS).toHaveLength(10);
     expect(CHINESE).toHaveLength(7);
-    expect(CHEST_COSTUMES.length + ACCESSORIES.length).toBe(63);
+    expect(CHEST_COSTUMES.length + ACCESSORIES.length).toBe(62);
   });
-  it('at ≤2 chests a day, however many lessons, they last at least 32 days', () => {
+  it('at ≤2 chests a day, however many lessons, they last at least 31 days (62 prizes)', () => {
     let kid: KidState = { ...DEFAULT_KID };
     let prizes = 0;
     let days = 0;
-    while (prizes < 63) {
+    while (prizes < 62) {
       const d = day(days);
       for (const [i, kind] of (['first', 'extra', 'extra', 'extra', 'extra'] as const).entries()) kid = fillMeter(kid, { kind, day: d, key: days * 10 + i }).kid;
       while (kid.meter.owed > 0) {
@@ -150,6 +150,6 @@ describe('the chest holds 63 prizes, and they last (rewards spec §5.2–5.3)', 
       }
       days++;
     }
-    expect(days).toBeGreaterThanOrEqual(32);
+    expect(days).toBeGreaterThanOrEqual(31);
   });
 });

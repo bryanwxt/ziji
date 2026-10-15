@@ -85,7 +85,7 @@ Every prize must reach v3 (`docs/worlds/costumes/standard-v3.png`):
 | Group | Items |
 |---|---|
 | Zodiac onesies (keep) | 鼠 牛 虎 兔 龙 蛇 马 羊 猴 鸡 狗 猪 |
-| New onesies (18) | 水獭 otter, 犀鸟 hornbill, 熊猫 panda, 青蛙 frog, 鸭子 duck, 蜻蜓 dragonfly, 小恐龙 baby dino, 翼龙 pterosaur, 锦鲤 koi, 螃蟹 crab, 鹦鹉 parrot, 喜鹊 magpie, 企鹅 penguin, 鲨鱼 shark, 独角兽 unicorn, 猫头鹰 owl, 小老虎 tiger cub, 小白兔 bunny |
+| New onesies (17; 小白兔 became the zodiac 兔's look, parent 2026-10-15) | 水獭 otter, 犀鸟 hornbill, 熊猫 panda, 青蛙 frog, 鸭子 duck, 蜻蜓 dragonfly, 小恐龙 baby dino, 翼龙 pterosaur, 锦鲤 koi, 螃蟹 crab, 鹦鹉 parrot, 喜鹊 magpie, 企鹅 penguin, 鲨鱼 shark, 独角兽 unicorn, 猫头鹰 owl, 小老虎 tiger cub, 小白兔 bunny |
 | Jobs (10, redrawn as full-body) | 宇航员 astronaut, 厨师 chef, 消防员 firefighter, 医生 doctor, 飞行员 pilot, 警察 police officer, 足球员 footballer, 魔法师 wizard, 海盗 pirate, 小贩 hawker |
 | Chinese myths (7, redrawn) | 孙悟空, 哪吒, 嫦娥, 后羿, 财神, 招财猫, 舞狮 |
 | Accessories (16) | Kept as they are |
