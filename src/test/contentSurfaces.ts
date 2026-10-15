@@ -45,7 +45,7 @@ export function shownWords(): ShownWord[] {
     const pe = pickExample(w);
     if (pe) add(pe.example.text, pe.example.pinyin, '写一写 cue', ch);
     const fam = familyOf(ch, inScope, cardReading.get(ch));
-    fam.forEach((f) => add(f.text, f.pinyin, '一家人', ch));
+    if (fam.length >= 2) fam.forEach((f) => add(f.text, f.pinyin, '找一家人', ch)); // the two he must find
     if (fam.length >= 2) for (const d of familyDistractors(ch, inScope)) add(d.text, d.pinyin, '找一家人 distractor', ch);
     const board = zuciBoard(w, mulberry32(1));
     if (board) add(board.target.join(''), undefined, '连一连 own', ch);

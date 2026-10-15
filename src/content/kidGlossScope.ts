@@ -24,7 +24,7 @@ export function kidGlossScope(): ScopeWord[] {
     seen.add(e.text);
     out.push({ text: e.text, reading: e.pinyin, kind: 'shown', term: schoolTerm(c.text)!, dictionary: dictionaryGloss(e.text) });
   }
-  // a 一家人 row or 找一家人 choice made only of school characters (family.ts): English he reads on the card
+  // a 找一家人 choice made only of school characters (family.ts): English he reads on the card
   const school = new Set(chars.map((c) => c.text));
   for (const c of chars) for (const f of wordsAround(c.text)) {
     if (seen.has(f.text) || !Array.from(f.text).every((x) => school.has(x)) || !dictionaryGloss(f.text)) continue;

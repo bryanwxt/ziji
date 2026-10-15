@@ -180,7 +180,7 @@ for (const size of SIZES) {
       problems.push(...(await cardClipped(page, `${size.name} ${c} wrong`)));
     }
   }
-  // cards that teach (spec 2026-10-12 §7): the why-sheets, a faded sentence with a peek, the 一家人 row, the family question
+  // cards that teach (spec 2026-10-12 §7): the why-sheets, a faded sentence with a peek, the family question
   for (const [c, wrong] of [['why-look', '.choice:text-is("睛")'], ['why-pinyin', '.choice:text-is("qīng")']] as const) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(300);
@@ -202,15 +202,13 @@ for (const size of SIZES) {
     problems.push(...(await cardClipped(page, `${size.name} fade-peek`)));
   }
   {
-    await page.goto(`file://${dir}/index.html?case=intro-family`);
+    await page.goto(`file://${dir}/index.html?case=intro-full`);
     await page.waitForTimeout(2400); // its pinyin comes 2 s after the character
-    await page.screenshot({ path: `fit-shots/stage-cases/intro-family-${size.name}.png` });
-    // this is the fullest card (a 成语 too): a short phone drops the 一家人 row on purpose, every iPad shows at least two words
-    const shown = await page.$$eval('.family__word', (ws) => ws.filter((w) => { const r = w.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length);
-    const phone = size.width < 600;
-    if (phone ? shown !== 0 && shown < 2 : shown < 2) problems.push(`${size.name} intro-family: ${shown} 一家人 words showing`);
-    if (!phone && (await page.$$('.family__word')).length < 2) problems.push(`${size.name} intro-family: no 一家人 row`);
-    problems.push(...(await cardClipped(page, `${size.name} intro-family`)));
+    await page.screenshot({ path: `fit-shots/stage-cases/intro-full-${size.name}.png` });
+    // the tallest intro card (组词 rows and a 成语): the character, its speak button and every row sit inside the card on every size
+    for (const sel of ['.intro .speak', '.intro__group.intro__idiom']) if (!(await page.$(sel))) problems.push(`${size.name} intro-full: no ${sel}`);
+    if (await page.$('.family, .family__word')) problems.push(`${size.name} intro-full: a 一家人 row is back on the card`);
+    problems.push(...(await cardClipped(page, `${size.name} intro-full`)));
   }
   // a bound character's 认新字 card (parent 2026-10-15): the pair, the character alone and the speak button all on the card
   for (const c of ['intro-bound', 'intro-bound-full', 'intro-bound-long']) {

@@ -59,7 +59,7 @@ describe('a bound character\'s 认新字 card (番 / 番茄)', () => {
       const ok = (t: string) => t.includes(pair) || (BOUND_SAME_SENSE[ch] ?? []).includes(t);
       const idiom = introIdiom(w, idiomsFor(w, 6, builtinWords(0)));
       render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: true, retry: false }} voice={false} idiom={idiom} onDone={vi.fn()} />);
-      const rows = [...document.querySelectorAll('.intro__group:not(.family) .label')].map((e) => e.getAttribute('data-zh')!).filter((t) => /\p{Script=Han}/u.test(t));
+      const rows = [...document.querySelectorAll('.intro__group .label')].map((e) => e.getAttribute('data-zh')!).filter((t) => /\p{Script=Han}/u.test(t));
       for (const t of rows) if (!ok(t)) bad.push(`${ch} (${pair}): ${t}`);
       for (const t of introSpoken(w, idiom)) if (!ok(t)) bad.push(`${ch} (${pair}) says ${t}`);
       const cue = pickExample(w)?.example.text;
