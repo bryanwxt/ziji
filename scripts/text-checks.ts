@@ -76,10 +76,14 @@ export function textChecks(): string[] {
   const speaks = [...document.querySelectorAll('.speak')].filter((s) => !hidden(s) && rectOf(s));
   // a character's own box; a line-end ！ or 。 by its half slot, where its ink is (its box runs on into the empty right half)
   const glyphs = [...document.querySelectorAll('.label__ch')].filter((g) => !hidden(g) && (g.textContent ?? '').trim()).map((g) => ({ r: rectOf(g.closest('.label__cell--zh') || !g.parentElement ? g : g.parentElement), text: g.textContent ?? '', el: g as Element }));
+  // a button in a modal over a page only meets that modal's text: what's under the backdrop isn't "under the button"
+  const layer = (e: Element | null) => { for (; e; e = e.parentElement) if (getComputedStyle(e).position === 'fixed') return e; return null; };
   for (const s of speaks) {
     const a = s.getBoundingClientRect();
+    const sl = layer(s);
     for (const g of [...glyphs, ...lineRects]) {
       if (!g.r || s.contains(g.el)) continue;
+      if (g.el && layer(g.el) !== sl) continue;
       const w = Math.min(a.right, g.r.right) - Math.max(a.left, g.r.left), h = Math.min(a.bottom, g.r.bottom) - Math.max(a.top, g.r.top);
       if (w > 3 && h > 3) { out.add(`speak button on text: ${short(g.text)}`); break; }
     }
