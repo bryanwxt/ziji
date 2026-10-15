@@ -83,8 +83,32 @@ export function questionProblems(p: Passage, q: PassageQuestion, known: Readonly
   const leak = [...new Set(han(right).filter((ch) => !FUNCTION_CHARS.has(ch) && q.q.includes(ch)))];
   if (leak.length) out.push(`${tag}: the question gives away ${leak.join('')} from its answer`);
   if (right === topWord(p.text)) out.push(`${tag}: the answer ${right} is the passage's most frequent word`);
+  // rule 5: the answer is not the only choice that looks like the passage — a child matching characters picks it unread
+  const sharesText = q.choices.map((c) => han(c).some((ch) => !FUNCTION_CHARS.has(ch) && p.text.includes(ch)));
+  if (sharesText[q.answer] && sharesText.filter(Boolean).length === 1) out.push(`${tag}: only the answer shares characters with the passage`);
+  // rule 6: the answer is not the only choice that fits the question's grammar (counted with a measure word, 很…, 在…, …了, …的)
+  const wrong = q.choices.filter((_, i) => i !== q.answer);
+  for (const [name, has] of SHAPES) {
+    const r = has(right);
+    const w = wrong.map(has);
+    if ((r && !w.some(Boolean)) || (!r && w.every(Boolean))) out.push(`${tag}: the answer alone is ${r ? '' : 'not '}${name}`);
+  }
+  const measures = q.choices.map(measureOf);
+  const others = wrong.map(measureOf);
+  if (measures.every(Boolean) && others[0] === others[1] && measures[q.answer] !== others[0]) out.push(`${tag}: the answer alone is counted with ${measures[q.answer]}`);
   return out;
 }
+
+const COUNTED_RE = /^[一二两三四五六七八九十几]+([个只本头条匹把张辆件次棵片朵杯位块双])/u;
+const measureOf = (c: string): string | null => COUNTED_RE.exec(c)?.[1] ?? null;
+/** The grammatical shapes a choice can have (rule 6): an answer alone in one, or alone outside one, fits the question unread. */
+const SHAPES: readonly [string, (c: string) => boolean][] = [
+  ['counted (一本…)', (c) => measureOf(c) !== null],
+  ['很…', (c) => c.startsWith('很')],
+  ['在…', (c) => c.startsWith('在')],
+  ['…了', (c) => c.endsWith('了')],
+  ['…的', (c) => c.endsWith('的')],
+];
 
 /** The meaning questions (spec 2026-10-15 §6): two different ones per passage, answered by different sentences, each passing
  *  questionProblems. */

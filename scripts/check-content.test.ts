@@ -63,6 +63,18 @@ describe('meaning questions (spec 2026-10-15 §6)', () => {
     expect(topWord(dad.text)).toBe('爸爸');
     expect(questionProblems(dad, { q: '谁在看书？', choices: ['爸爸', '妈妈', '我'], answer: 0, sentence: 1 })).toContain('x2 "谁在看书？": the answer 爸爸 is the passage\'s most frequent word');
   });
+  it('rule 5: the answer is not the only choice sharing characters with the passage (a child matching characters picks it)', () => {
+    expect(flags({ q: '我家有什么人？', choices: ['姐姐和弟弟', '奶奶和爷爷', '哥哥和妹妹'], answer: 2, sentence: 0 })).toContain('x1 "我家有什么人？": only the answer shares characters with the passage');
+    expect(flags({ q: '我家有什么人？', choices: ['哥哥和弟弟', '姐姐和妹妹', '哥哥和妹妹'], answer: 2, sentence: 0 })).toEqual([]);
+    expect(flags(ok)).toEqual([]); // all three from the passage
+  });
+  it("rule 6: the answer is not the only choice that fits the question's grammar", () => {
+    expect(flags({ ...ok, choices: ['一个妈妈', '爸爸', '哥哥'], answer: 0 })).toContain('x1 "谁是老师？": the answer alone is counted (一本…)');
+    expect(flags({ q: '妈妈怎么样？', choices: ['好了', '很好', '在家'], answer: 0, sentence: 1 })).toContain('x1 "妈妈怎么样？": the answer alone is …了');
+    expect(flags({ q: '妈妈怎么样？', choices: ['好', '很好', '很高'], answer: 0, sentence: 1 })).toContain('x1 "妈妈怎么样？": the answer alone is not 很…');
+    expect(flags({ q: '我家有什么？', choices: ['五个人', '五本书', '五只鸟'], answer: 0, sentence: 0 })).not.toEqual(expect.arrayContaining([expect.stringContaining('counted')]));
+    expect(flags({ q: '我家有什么？', choices: ['五个人', '五只猫', '五只鸟'], answer: 0, sentence: 0 })).toContain('x1 "我家有什么？": the answer alone is counted with 个');
+  });
   it('two different questions per passage, about different sentences, and none for a passage that is not there', () => {
     expect(checkPassageQuestions([p], { x1: [ok] })).toContain('x1: 1 meaning questions, expected 2');
     expect(checkPassageQuestions([p], { x1: [ok, ok] })).toContain('x1: the same question twice');
