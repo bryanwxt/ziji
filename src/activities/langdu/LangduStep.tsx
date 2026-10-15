@@ -195,7 +195,7 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
             actionLabel="开始朗读"
             disabled={!model.heardAll}
             onAction={() => setPart('read')}
-            aside={onSwap && <button type="button" class="btn btn--secondary langdu__next" onClick={swap}><Label zh="下一篇" /></button>}
+            aside={onSwap && <button type="button" class="btn langdu__next" onClick={swap}><Label zh="下一篇" /></button>}
           />
         }
       >

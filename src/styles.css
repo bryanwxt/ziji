@@ -1308,7 +1308,7 @@ button.langdu__sentence { cursor: pointer; }
 /* the parent's Library (spec 2026-10-15 §9): its own scroll, so a long list never pushes the page */
 .library__scroll { flex: none; max-height: 60dvh; overflow: auto; }
 .library__table { font-size: 16px; } /* titles and terms are Chinese: never under 16px */
-.langdu__next { flex: none; min-height: 52px; padding: 6px 18px; font-size: 20px; }
+.langdu__next { flex: none; min-height: 52px; padding: 6px 18px; font-size: 20px; } /* quiet: paper, not a colour, beside 开始朗读 (spec 2026-10-15 §5) */
 .langdu__head .langdu__title { min-width: 0; width: auto; flex: 0 1 auto; font-size: clamp(20px, 3.2dvh, 32px); } /* beside its picture: smaller, so a long title fits a phone */
 .langdu__head .label__cells { flex-wrap: wrap; } /* a long title wraps beside its picture */
 .stage__sheet .sheet .langdu__next { width: auto; flex: none; }
