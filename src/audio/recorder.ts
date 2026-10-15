@@ -1,6 +1,7 @@
 import { average, rmsLevel } from '../langdu/loudness';
 import { MIC_PROMPT_TIMEOUT_MS, MIC_TIMEOUT_MS, micPermission, MicDeniedError, MicStartError, MicTimeoutError, MicUnsupportedError } from './micErrors';
 import { openMeterContext } from './meter';
+import { captureAudio } from './context';
 
 export const MAX_RECORDING_MS = 60_000;
 export { MicDeniedError } from './micErrors';
@@ -107,7 +108,8 @@ export async function startRecording(onAutoStop: () => void, onLevel?: (level: n
   if (typeof MediaRecorder === 'undefined' || !MediaRecorder || !navigator.mediaDevices?.getUserMedia) throw new MicUnsupportedError();
   const own = opts.meterCtx === undefined; // no context given: make one now (still in the tap) and close it on a failure
   const meterCtx = !onLevel ? null : own ? openMeterContext() : opts.meterCtx!;
-  const letGoMeter = () => { if (own) void meterCtx?.close().catch(() => {}); };
+  const letGoMeter = () => { if (own) void meterCtx?.close().catch(() => {}); captureAudio(false); };
+  captureAudio(true); // before asking, still in the tap: a playback session refuses the mic
   let stream: MediaStream;
   try {
     // nothing was speaking: ask at once, inside the tap (iPad Safari); otherwise give the audio a moment first
@@ -138,6 +140,7 @@ export async function startRecording(onAutoStop: () => void, onLevel?: (level: n
     meter?.stop(false);
     if (closeMeter) void meterCtx?.close().catch(() => {}); // a recording that started owns the context
     stream.getTracks().forEach((t) => t.stop());
+    captureAudio(false);
   };
   try {
     recorder.start();
