@@ -4,6 +4,7 @@ import { LangduStep, type LangduResult } from '../activities/langdu/LangduStep';
 import { PASSAGES } from '../content';
 import { afterRead } from '../langdu/history';
 import { pickPassage } from '../langdu/pick';
+import { readerAt } from '../langdu/level';
 import { readingPool, type ReadingPassage } from '../langdu/pool';
 import { tidyPassageTakes } from '../langdu/review';
 import { localDateKey } from '../lib/date';
@@ -29,7 +30,7 @@ export function LangduScreen() {
     void (async () => {
       const [know, kid, parent, settings] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db)]);
       const k = kid ?? DEFAULT_KID;
-      const passage = pickPassage(k.reading, readingPool(parent, PASSAGES, { readable: know.knownChars, classTerm: null }), localDateKey(now()));
+      const passage = pickPassage(k.reading, readingPool(parent, PASSAGES, readerAt(know.knownChars, now(), settings)), localDateKey(now()));
       setState({ passage, oral: settings.oral, kid: k, knownChars: know.knownChars, knownReadings: know.knownReadings, fadePinyin: settings.fadePinyin !== false });
     })();
   }, []);

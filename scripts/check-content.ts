@@ -24,7 +24,8 @@ export function checkContent(chars: BuiltinChar[], passages: Passage[], hasStrok
   for (const ch of new Set(Array.from(listed))) if (HAN.test(ch) && !seen.has(ch)) problems.push(`${ch}: on his school list but not built in`);
   const easy = new Set(chars.filter((c) => c.level <= 2).map((c) => c.char));
   const ids = new Set<string>();
-  for (const p of passages) {
+  // our own passages only: the Global Storybooks chunks are levelled by the import (scripts/storybooks/lib.ts)
+  for (const p of passages.filter((x) => x.source === 'ziji')) {
     if (ids.has(p.id)) problems.push(`duplicate passage ${p.id}`);
     ids.add(p.id);
     const han = Array.from(p.text).filter((ch) => HAN.test(ch));

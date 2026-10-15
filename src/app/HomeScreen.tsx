@@ -14,6 +14,7 @@ import { WeekStrip } from './WeekStrip';
 import { allSessions, getKid, listParentPassages, listRewards, saveKid, updateKid } from '../store/repo';
 import { readToday } from '../langdu/history';
 import { pickPassage } from '../langdu/pick';
+import { readerAt } from '../langdu/level';
 import { readingPool } from '../langdu/pool';
 import { nextSpeaking } from '../kantu/flow';
 import { PASSAGES } from '../content';
@@ -170,7 +171,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
     date: today,
   });
   const world = currentWorld(k);
-  const canRead = settings.langdu && !!pickPassage(k.reading, readingPool(data.parentPassages, PASSAGES, { readable: data.know.knownChars, classTerm: null }), today);
+  const canRead = settings.langdu && !!pickPassage(k.reading, readingPool(data.parentPassages, PASSAGES, readerAt(data.know.knownChars, now(), settings)), today);
   // what the speaking stop is today: what he did, once done; otherwise what comes next (朗读 while 看图说话 is parked, or nothing to read)
   // 看图说话 parked: the stop is 朗读 when there's something to read (or today's lesson read), and left off the path otherwise (the
   // lesson skips it). A 多读一遍 read alone is no lesson read: the step must be done today too.

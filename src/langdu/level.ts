@@ -1,7 +1,9 @@
 // Levelling 朗读's passages (spec 2026-10-15 §3): how much of a passage he can read. Names (transliterated, always shown with
 // pinyin) are left out of every count.
 import { hanChars, MOE_TERMS } from '../content';
-import { LESSONS } from '../content/curriculum';
+import { classLessonAt, LESSONS, listedBy } from '../content/curriculum';
+import type { Settings } from '../types';
+import type { Reader } from './pool';
 
 /** The text without its names: they never count for or against a reader. */
 export const stripNames = (text: string, names: readonly string[] = []): string => names.reduce((t, n) => t.split(n).join(''), text);
@@ -24,3 +26,16 @@ export function passageTerm(text: string, names: readonly string[] = []): string
   const i = CUMULATIVE.findIndex((set) => passageFit(text, set, names) >= TERM_BAR);
   return i < 0 ? null : MOE_TERMS[i]!;
 }
+
+/**
+ * Who is reading (spec 2026-10-15 §3): K is the characters he reads in the app and the 识读字 of every lesson of his book up to
+ * his class's (he meets those at school); his class's term limits the pool to a term ahead at most.
+ */
+export function readerAt(known: ReadonlySet<string>, now: Date, settings: Pick<Settings, 'grade' | 'gradeYear' | 'classLesson'>): Reader {
+  const at = classLessonAt(now, settings);
+  if (at === null) return { readable: known, classTerm: null };
+  return { readable: new Set([...known, ...listedBy(at, 'both').read]), classTerm: LESSONS[at]!.term };
+}
+
+/** In the pool at all: a passage's term at most one past his class's (spec §3); any term when his class is unknown. */
+export const withinReach = (term: string, classTerm: string | null): boolean => classTerm === null || termIndex(term) <= termIndex(classTerm) + 1;

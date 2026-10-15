@@ -2,12 +2,13 @@
 // of it he can read now (fit) and its meaning question. pickPassage (pick.ts) chooses from it.
 import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import type { ParentPassage, Passage, PassageQuestion } from '../types';
-import { passageFit } from './level';
+import { passageFit, withinReach } from './level';
 import type { Candidate } from './pick';
 
-export interface ReadingPassage extends Candidate {
+export interface ReadingPassage extends Candidate, Pick<Passage, 'names' | 'words' | 'image' | 'credit'> {
   title: string;
   text: string;
+  term?: string; // a built-in's (a parent text has none)
   question?: PassageQuestion;
 }
 
@@ -20,6 +21,11 @@ export interface Reader { readable: ReadonlySet<string>; classTerm: string | nul
 export function readingPool(parent: ParentPassage[], builtins: Passage[], reader: Reader, questions: Readonly<Record<string, PassageQuestion>> = PASSAGE_QUESTIONS): ReadingPassage[] {
   return [
     ...[...parent].sort((a, b) => a.createdAt - b.createdAt).map((p): ReadingPassage => ({ id: p.id, title: p.title, text: p.text, source: 'parent', fit: passageFit(p.text, reader.readable), ...(p.question ? { question: p.question } : {}) })),
-    ...builtins.map((p): ReadingPassage => ({ id: p.id, title: p.title, text: p.text, source: 'ziji', fit: passageFit(p.text, reader.readable), ...(questions[p.id] ? { question: questions[p.id] } : {}) })),
+    ...builtins
+      .filter((p) => withinReach(p.term, reader.classTerm))
+      .map((p): ReadingPassage => {
+        const { id, title, text, term, source, names, words, image, story, credit } = p;
+        return { id, title, text, term, source, fit: passageFit(text, reader.readable, names), ...(names ? { names } : {}), ...(words ? { words } : {}), ...(image ? { image } : {}), ...(story ? { story } : {}), ...(credit ? { credit } : {}), ...(questions[id] ? { question: questions[id] } : {}) };
+      }),
   ];
 }

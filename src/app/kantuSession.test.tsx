@@ -17,7 +17,8 @@ vi.mock('../audio/recorder', () => ({
 const speakingOnly = { newwords: false, practice: false, writing: false, speaking: true };
 
 async function setup(kid: Partial<typeof DEFAULT_KID>, withPassage = true) {
-  const app = await makeAppData({ now: () => new Date(2026, 9, 6, 17) });
+  // nothing to read: a day outside the school calendar, where no class lesson adds to what he reads (spec 2026-10-15 §3)
+  const app = await makeAppData({ now: () => (withPassage ? new Date(2026, 9, 6, 17) : new Date(2025, 11, 20, 17)) });
   await updateSettings(app.db, { activities: speakingOnly, story: true, langdu: true }); // 看图说话 and 朗读 are parked by default; these tests switch them on
   if (withPassage) await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
   await saveKid(app.db, { ...DEFAULT_KID, ...kid });
@@ -108,7 +109,7 @@ describe('看图说话 is parked by default', () => {
     expect(screen.queryByText('图上画的是什么？')).toBeNull();
   });
   it('with nothing to read, the speaking step is skipped', async () => {
-    const app = await makeAppData({ now: () => new Date(2026, 9, 6, 17) });
+    const app = await makeAppData({ now: () => new Date(2025, 11, 20, 17) }); // outside the school calendar: only what he knows counts
     await updateSettings(app.db, { activities: speakingOnly, langdu: true });
     await saveKid(app.db, { ...DEFAULT_KID });
     renderWithApp(<SessionScreen free={false} />, app);

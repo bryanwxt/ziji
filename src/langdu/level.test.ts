@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PASSAGES } from '../content';
-import { passageFit, passageTerm, stripNames, termIndex } from './level';
+import { passageFit, passageTerm, readerAt, stripNames, termIndex, withinReach } from './level';
 
 describe('passageFit (spec 2026-10-15 §3)', () => {
   it('the share of character tokens he can read, punctuation ignored', () => {
@@ -28,5 +28,23 @@ describe('passageTerm (spec 2026-10-15 §3: the earliest term with ≥ 90% read)
   });
   it('every own passage carries the term the leveller gives it', () => {
     expect(PASSAGES.filter((p) => p.source === 'ziji').filter((p) => p.term !== passageTerm(p.text, p.names)).map((p) => p.id)).toEqual([]);
+  });
+});
+
+describe("readerAt: what he can read (spec 2026-10-15 §3, K)", () => {
+  const atL12 = { grade: 2, gradeYear: 2026, classLesson: { term: '二下', lesson: 12, setAt: new Date(2026, 9, 15).getTime() } };
+  it("the characters he reads, and his book's 识读字 up to his class's lesson", () => {
+    const r = readerAt(new Set(['鬱']), new Date(2026, 9, 15, 17), atL12);
+    expect(r.classTerm).toBe('二下');
+    expect(['鬱', '我', '纸', '康'].map((c) => r.readable.has(c))).toEqual([true, true, true, true]); // 纸 二下 L11, 康 L12
+    expect(r.readable.has('澡')).toBe(false); // 二下 L13: not yet
+  });
+  it('outside the school calendar: only what he knows, and no term limit', () => {
+    const r = readerAt(new Set(['我']), new Date(2025, 11, 20), {});
+    expect([...r.readable]).toEqual(['我']);
+    expect(r.classTerm).toBeNull();
+  });
+  it('the pool reaches one term past his class at most', () => {
+    expect([withinReach('三上', '二下'), withinReach('三下', '二下'), withinReach('三下', null)]).toEqual([true, false, true]);
   });
 });

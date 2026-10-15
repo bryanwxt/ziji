@@ -18,4 +18,13 @@ describe('readingPool (spec 2026-10-15 §4)', () => {
     );
     expect(pool.map((p) => p.question)).toEqual([q, undefined, { ...q, sentence: 0 }]);
   });
+  it('a built-in brings what the step shows (names, 生词, picture, story, credit); its names leave its fit', () => {
+    const credit = { title: '好', text: 'A', illustration: 'B', translation: 'C', licence: 'CC BY 3.0' as const, adapted: false, source: 'https://x' };
+    const [p] = readingPool([], [{ id: 'gsb:0001-1', title: '好', text: '卡莱爱我。', term: '一下', source: 'gsb', names: ['卡莱'], image: 'passages/gsb-0001-1.webp', story: { id: '0001', part: 1, parts: 1 }, credit }], reader('爱我'));
+    expect(p).toEqual({ id: 'gsb:0001-1', title: '好', text: '卡莱爱我。', term: '一下', source: 'gsb', fit: 1, names: ['卡莱'], image: 'passages/gsb-0001-1.webp', story: { id: '0001', part: 1, parts: 1 }, credit });
+  });
+  it('no built-in more than a term past his class (spec §3)', () => {
+    const b = (id: string, term: string) => ({ id, title: id, text: '我。', term, source: 'ziji' as const });
+    expect(readingPool([], [b('p01', '二下'), b('p02', '三上'), b('p03', '三下')], { readable: new Set(['我']), classTerm: '二下' }).map((p) => p.id)).toEqual(['p01', 'p02']);
+  });
 });

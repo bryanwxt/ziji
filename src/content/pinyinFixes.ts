@@ -17,5 +17,11 @@ customPinyin({
   切肉: 'qiē ròu', 切菜: 'qiē cài', 切开: 'qiē kāi', 切了: 'qiē le', 切成: 'qiē chéng', 切黄瓜: 'qiē huáng guā',
   好好: 'hǎo hǎo', 做错了事: 'zuò cuò le shì', 看家具: 'kàn jiā jù', 一言一行: 'yì yán yì xíng', 夹住: 'jiā zhù',
   // the readings his lessons use (READING_FIXES): 炸鸡 zhá (not 种花: 这种花 is zhǒng — the 组词 carry zhòng themselves)
+  // 朗读's passages (spec 2026-10-15 §2.2, reviewed when they joined the snapshot): 得 after a verb is de, 地 after an adverb de,
+  // 长 + 得/高/出/在 (growing) zhǎng, 干 (doing) gàn, 以为 wéi, 我得 (must) děi, and 头发 before 放 is not 发放
+  写得: 'xiě de', 跑得: 'pǎo de', 长得: 'zhǎng de', 长高: 'zhǎng gāo', 长出: 'zhǎng chū', 长在: 'zhǎng zài', 我得出差: 'wǒ děi chū chāi',
+  干嘛: 'gàn má', 干农活: 'gàn nóng huó', 以为: 'yǐ wéi', 头发放: 'tóu fa fàng',
+  高高兴兴地: 'gāo gāo xìng xìng de', 大大地: 'dà dà de', 高兴地: 'gāo xìng de', 很快地: 'hěn kuài de', 仔细地: 'zǐ xì de',
+  远远地: 'yuǎn yuǎn de', 紧紧地: 'jǐn jǐn de', 尽情地: 'jìn qíng de', 伤心地: 'shāng xīn de', 快乐地: 'kuài lè de',
   炸鸡: 'zhá jī', 油炸: 'yóu zhá', 种植: 'zhòng zhí', 种花的: 'zhòng huā de', 勒紧: 'lēi jǐn', // 种花的: 写一写's piece (never 种花 alone)
 });

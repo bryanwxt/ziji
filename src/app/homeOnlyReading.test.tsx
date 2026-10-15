@@ -8,7 +8,7 @@ vi.mock('../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn(), prime
 
 describe('Home with only 朗读 switched on and nothing he can read yet (plan 10 minor)', () => {
   it('never shows a lone chest: Truffle says there is nothing to practise, and the path is hidden', async () => {
-    const app = await makeAppData();
+    const app = await makeAppData({ now: () => new Date(2025, 11, 20, 9) }); // outside the school calendar: only what he knows counts
     app.settings = { ...DEFAULT_SETTINGS, placementDone: true, activities: { newwords: false, practice: false, writing: false, speaking: true } };
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');

@@ -25,6 +25,7 @@ import { SentenceCard } from '../activities/say/SentenceCard';
 import { recordSayTake, recordSentenceTake } from '../session/say';
 import { afterRead, afterWarmup, readHow, warmupDue } from '../langdu/history';
 import { pickPassage } from '../langdu/pick';
+import { readerAt } from '../langdu/level';
 import { readingPool, type ReadingPassage } from '../langdu/pool';
 import { newestByPassage, tidyPassageTakes } from '../langdu/review';
 import { earnsBonus } from '../langdu/stars';
@@ -146,7 +147,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           // lesson planned before 朗读 was parked passes its stop by
           // one date key for the whole step, the lesson's own: begun before midnight and finished after, it is still that day's
           const day = rec.date;
-          const passage = settings.langdu ? pickPassage(k.reading, readingPool(parentPassages, PASSAGES, { readable: know.knownChars, classTerm: null }), day) : null;
+          const passage = settings.langdu ? pickPassage(k.reading, readingPool(parentPassages, PASSAGES, readerAt(know.knownChars, today, settings)), day) : null;
           const kind = nextSpeaking(k.speakingLast, !!passage, settings.story);
           if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage, oral: settings.oral, warmup: warmupDue(k.reading, day), day };
           return kind === 'story' ? { kind: 'story' as const, scene: sceneFor(k.story) } : null;

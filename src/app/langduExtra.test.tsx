@@ -31,6 +31,8 @@ const kid = { ...DEFAULT_KID, reading: { history: { 'pp:1': { reads: 1, lastRead
 
 /** 朗读 is parked by default (parent, 2026-10-05); these tests switch it on. */
 const LANGDU = { ...DEFAULT_SETTINGS, placementDone: true, langdu: true };
+/** A day outside the school calendar: no class lesson adds to what he reads, so only what he knows counts (spec 2026-10-15 §3). */
+const NOTHING_READABLE = () => new Date(2025, 11, 20, 18);
 
 describe('朗读 extra rounds', () => {
   it("Home's 多读一遍 button opens an extra round; it saves the read and counts it for the gap, leaving rest, turn and stars alone", async () => {
@@ -94,7 +96,7 @@ describe('朗读 extra rounds', () => {
   });
 
   it('no 多读一遍 button when there is nothing to read', async () => {
-    const app = await makeAppData({ settings: LANGDU });
+    const app = await makeAppData({ settings: LANGDU, now: NOTHING_READABLE });
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
     expect(screen.queryByRole('button', { name: '多读一遍' })).toBeNull();
@@ -127,7 +129,7 @@ describe('看图说话 parked (the default)', () => {
     expect(names()).toContain('朗读');
     expect(names()).not.toContain('看图说话');
     a.unmount();
-    renderWithApp(<HomeScreen />, await makeAppData({ settings: LANGDU }));
+    renderWithApp(<HomeScreen />, await makeAppData({ settings: LANGDU, now: NOTHING_READABLE }));
     await screen.findByText('今天的练习');
     expect(names()).not.toContain('朗读');
     expect(names()).not.toContain('看图说话');
@@ -138,8 +140,8 @@ describe('看图说话 parked: the path matches what the lesson does', () => {
   const names = () => [...document.querySelectorAll('.path__name')].map((n) => n.querySelector('.sr-only')?.textContent ?? n.textContent);
   const plan = { steps: ['flashcards' as const, 'speaking' as const], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 };
   it('a started lesson with nothing to read shows no speaking stop (the lesson skips it)', async () => {
-    const app = await makeAppData({ settings: LANGDU, now: () => new Date(2026, 9, 6, 18) });
-    await saveSession(app.db, { ...createSessionRecord(plan, '2026-10-06', 0) });
+    const app = await makeAppData({ settings: LANGDU, now: NOTHING_READABLE });
+    await saveSession(app.db, { ...createSessionRecord(plan, '2025-12-20', 0) });
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
     expect(names()).not.toContain('朗读');
@@ -153,10 +155,18 @@ describe('看图说话 parked: the path matches what the lesson does', () => {
     expect(names()).not.toContain('看图说话');
   });
   it('a 多读一遍 today leaves no 朗读 stop the lesson would skip (nothing else to read)', async () => {
-    const app = await makeAppData({ settings: LANGDU, kid: { ...DEFAULT_KID, speakingLast: 'story', reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 1, lastRead: '2026-10-06', rest: 3, q: 0 } } } }, now: () => new Date(2026, 9, 6, 18) });
+    const app = await makeAppData({ settings: LANGDU, kid: { ...DEFAULT_KID, speakingLast: 'story', reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 1, lastRead: '2025-12-20', rest: 3, q: 0 } } } }, now: NOTHING_READABLE });
     await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
+    expect(names()).not.toContain('朗读');
+  });
+  it('with everything readable read in the last 3 days there is no 多读一遍 and no 朗读 stop', async () => {
+    const app = await makeAppData({ settings: LANGDU, now: NOTHING_READABLE, kid: { ...kid, reading: { ...kid.reading, history: { 'pp:1': { reads: 1, lastRead: '2025-12-18', rest: 3, q: 1 } } } } });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(screen.queryByRole('button', { name: '多读一遍' })).toBeNull();
     expect(names()).not.toContain('朗读');
   });
   it('a 朗读 he read today stays on the path, named 朗读', async () => {
