@@ -150,9 +150,9 @@ export function SettingsPanel() {
         </div>
       </div>
       <div class="field">
-        <label for="st-zodiac">Zodiac (生肖) — the first treasure chest gives Truffle this onesie</label>
+        <label for="st-zodiac">Zodiac (生肖)</label>
         <select id="st-zodiac" value={s.zodiac ?? ''} onChange={(e) => void save({ zodiac: (e.currentTarget.value || null) as ZodiacId | null })}>
-          <option value="">Not set (dragon 龙)</option>
+          <option value="">Not set</option>
           {ONESIES.map((o) => (
             <option key={o.id} value={o.id}>{o.id[0]!.toUpperCase() + o.id.slice(1)} {o.zh}</option>
           ))}

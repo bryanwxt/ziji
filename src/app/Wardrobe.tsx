@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { BUILTIN } from '../content';
 import { ACCESSORY_DEFS } from '../fun/accessories';
 import { accessoryThumb } from '../ui/truffle/accessories';
-import { CHINESE, costumeById, GREEK, ONESIES, OUTFITS } from '../fun/costumes';
+import { ANIMALS, CHINESE, costumeById, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, type Costume } from '../fun/costumes';
 import { POWERS, powerFamilies, powerProgress, type PowerProgress } from '../fun/powers';
 import { saveKid } from '../store/repo';
 import { DEFAULT_KID, type KidState } from '../types';
@@ -25,6 +25,9 @@ const ROOM_TABS: [RoomTab, string][] = [['outfits', '服装'], ['powers', '能�
 const SLOT_TITLE = { face: '脸上', neck: '脖子上', held: '手里', back: '背上' } as const;
 
 /** Truffle's room: what he wears and which power he shows. */
+/** His shelves (rewards spec §5.2): the chest's four, then 希腊 and 以前的衣服, which only show what he owns of them. */
+const SHELVES: [string, Costume[]][] = [['生肖', ONESIES], ['动物', ANIMALS], ['职业', JOBS], ['中国', CHINESE], ['希腊', GREEK], ['以前的衣服', OLD_OUTFITS]];
+
 export function Wardrobe() {
   const { db, refresh, kid, now } = useApp();
   const [k, setK] = useState<KidState>({ ...DEFAULT_KID, ...kid });
@@ -77,7 +80,11 @@ export function Wardrobe() {
         </div>
         {tab === 'outfits' ? (
           <div class="outfits scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
-            {([['生肖', ONESIES], ['衣服', OUTFITS], ['希腊', GREEK], ['中国', CHINESE]] as const).map(([title, list]) => (
+            {SHELVES.map(([title, all]) => {
+              // out of the chest: only what he owns, and no shelf at all if he owns none (spec §5.2)
+              const list = all.some(inChest) ? all : all.filter((x) => k.ownedCostumes.includes(x.id));
+              if (!list.length) return null;
+              return (
               <section key={title}>
                 <h2><Label zh={title} /></h2>
                 <div class="outfit-grid">
@@ -104,7 +111,8 @@ export function Wardrobe() {
                   })}
                 </div>
               </section>
-            ))}
+              );
+            })}
             <section class="outfits__none">
               <button type="button" class={`outfit ${k.wearing === null ? 'is-on' : ''}`} aria-label="不戴" aria-pressed={k.wearing === null} onClick={() => void save({ ...k, wearing: null })}>
                 <InkIcon name="none" size={36} />

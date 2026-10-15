@@ -143,7 +143,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const open = async () => {
     // Dated by the session's own day (a session can finish after midnight); one prize per day however fast the taps.
     if (!canOpenChest(kidRef.current, rec.date)) return;
-    const { kid: next, result } = openChest(kidRef.current, rec.date, settings.zodiac);
+    const { kid: next, result } = openChest(kidRef.current, rec.date);
     await save(next).catch(() => {}); // never strand the child on this screen, even if saving fails
     setChest(result);
     chestRef.current?.classList.remove('chest-hint');

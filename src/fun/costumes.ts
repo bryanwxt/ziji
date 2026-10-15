@@ -6,14 +6,19 @@ import { ACCESSORIES, CHEST_BONUS_STARS } from './pet';
 import type { ZodiacId } from '../types';
 
 export type { ZodiacId };
-export type OutfitId = 'astronaut' | 'chef' | 'wizard' | 'explorer' | 'pirate' | 'hero' | 'pixel' | 'raincoat' | 'robot' | 'rook' | 'football' | 'basketball' | 'gi';
-export type MythId =
+/** The new onesies (rewards spec 2026-10-15 §5.2): river creatures and his favourites. */
+export type AnimalId = 'otter' | 'hornbill' | 'panda' | 'frog' | 'duck' | 'dragonfly' | 'babydino' | 'pterosaur' | 'koi' | 'crab' | 'parrot' | 'magpie' | 'penguin' | 'shark' | 'unicorn' | 'owl' | 'tigercub' | 'bunny';
+/** Jobs, drawn full-body. `football` keeps its id (owned ones stay owned) and is now 足球员. */
+export type JobId = 'astronaut' | 'chef' | 'firefighter' | 'doctor' | 'pilot' | 'police' | 'football' | 'wizard' | 'pirate' | 'hawker';
+export type ChineseId = 'wukong' | 'nezha' | 'change' | 'houyi' | 'caishen' | 'luckycat' | 'liondance';
+/** Out of the chest (spec §5.2): kept, in their old art, for whoever owns them. */
+export type GreekId =
   | 'zeus' | 'hera' | 'poseidon' | 'demeter' | 'athena' | 'apollo' | 'artemis' | 'ares' | 'aphrodite' | 'hephaestus' | 'hermes' | 'dionysus' | 'hades' | 'hestia'
-  | 'heracles' | 'odysseus' | 'perseus' | 'achilles' | 'theseus' | 'jason' | 'medusa' | 'minotaur' | 'cerberus'
-  | 'wukong' | 'nezha' | 'change' | 'houyi' | 'caishen' | 'luckycat' | 'liondance';
-export type CostumeId = ZodiacId | OutfitId | MythId;
-/** Where a costume sits in his wardrobe: 生肖, 衣服, 希腊 (Greek myths), 中国 (Chinese myths and customs). */
-export type CostumeSet = 'zodiac' | 'outfit' | 'greek' | 'chinese';
+  | 'heracles' | 'odysseus' | 'perseus' | 'achilles' | 'theseus' | 'jason' | 'medusa' | 'minotaur' | 'cerberus';
+export type OldOutfitId = 'explorer' | 'hero' | 'pixel' | 'raincoat' | 'robot' | 'rook' | 'basketball' | 'gi';
+export type CostumeId = ZodiacId | AnimalId | JobId | ChineseId | GreekId | OldOutfitId;
+/** His wardrobe's shelves: 生肖, 动物 (the new onesies), 职业, 中国, and the two out of the chest, 希腊 and 以前的衣服. */
+export type CostumeSet = 'zodiac' | 'animal' | 'job' | 'chinese' | 'greek' | 'old';
 
 export interface Costume {
   id: CostumeId;
@@ -21,13 +26,15 @@ export interface Costume {
   set: CostumeSet;
   zh: string;
   py: string;
-  color: string;
+  color: string; // its one dominant colour (rewards spec §5.1)
 }
 
-const o = (id: ZodiacId, zh: string, py: string, color: string): Costume => ({ id, kind: 'onesie', set: 'zodiac', zh, py, color });
-const f = (id: OutfitId, zh: string, py: string, color: string): Costume => ({ id, kind: 'outfit', set: 'outfit', zh, py, color });
-const g = (id: MythId, zh: string, py: string, color: string, kind: Costume['kind'] = 'outfit'): Costume => ({ id, kind, set: 'greek', zh, py, color });
-const c = (id: MythId, zh: string, py: string, color: string, kind: Costume['kind'] = 'outfit'): Costume => ({ id, kind, set: 'chinese', zh, py, color });
+const shelf = (set: CostumeSet, kind: Costume['kind']) => (id: CostumeId, zh: string, py: string, color: string, k: Costume['kind'] = kind): Costume => ({ id, kind: k, set, zh, py, color });
+const o = shelf('zodiac', 'onesie');
+const j = shelf('job', 'outfit');
+const c = shelf('chinese', 'outfit');
+const g = shelf('greek', 'outfit');
+const old = shelf('old', 'outfit');
 
 /** The 12 生肖, in zodiac order. */
 export const ONESIES: Costume[] = [
@@ -38,18 +45,23 @@ export const ONESIES: Costume[] = [
   o('rooster', '鸡', 'jī', '#e0533c'), o('dog', '狗', 'gǒu', '#e8c27a'), o('pig', '猪', 'zhū', '#ffb3c7'),
 ];
 
-export const OUTFITS: Costume[] = [
-  f('astronaut', '宇航员', 'yǔ háng yuán', '#f2f4f8'), f('chef', '厨师', 'chú shī', '#fffdf7'),
-  f('wizard', '魔法师', 'mó fǎ shī', '#7b5cd6'), f('explorer', '探险家', 'tàn xiǎn jiā', '#c9a86a'),
-  f('pirate', '海盗', 'hǎi dào', '#2f4a7a'), f('hero', '超人', 'chāo rén', '#ff4a3d'),
-  f('pixel', '像素', 'xiàng sù', '#5ccf7a'), f('raincoat', '雨衣', 'yǔ yī', '#ffd23f'),
-  // the parent's additions (2026-10-06)
-  f('robot', '机器人', 'jī qì rén', '#c9d1dc'), f('rook', '城堡', 'chéng bǎo', '#efe4cc'),
-  f('football', '足球服', 'zú qiú fú', '#d8262e'), f('basketball', '篮球服', 'lán qiú fú', '#2f6fd6'),
-  f('gi', '柔术服', 'róu shù fú', '#fbfaf6'),
+/** The 18 new onesies, added with their art (Tasks 8–9). */
+export const ANIMALS: Costume[] = [];
+
+/** Jobs (spec §5.2). The rest are added with their full-body art (Task 10). */
+export const JOBS: Costume[] = [
+  j('astronaut', '宇航员', 'yǔ háng yuán', '#f2f4f8'), j('chef', '厨师', 'chú shī', '#fffdf7'), j('wizard', '魔法师', 'mó fǎ shī', '#7b5cd6'),
+  j('pirate', '海盗', 'hǎi dào', '#2f4a7a'), j('football', '足球员', 'zú qiú yuán', '#d8262e'),
 ];
 
-/** Every Greek god, the heroes and the creatures (parent, 2026-10-06: he is really into them). */
+/** Chinese myths, and the fortune cat and the lion dance. */
+export const CHINESE: Costume[] = [
+  c('wukong', '孙悟空', 'sūn wù kōng', '#f2a03d'), c('nezha', '哪吒', 'né zhā', '#e0533c'), c('change', '嫦娥', 'cháng é', '#f6e7f0'),
+  c('houyi', '后羿', 'hòu yì', '#8a5a3c'), c('caishen', '财神', 'cái shén', '#c8102e'), c('luckycat', '招财猫', 'zhāo cái māo', '#c8102e'),
+  c('liondance', '舞狮', 'wǔ shī', '#e0362c', 'onesie'),
+];
+
+/** Every Greek god, the heroes and the creatures (parent, 2026-10-06), out of the chest since 2026-10-15. */
 export const GREEK: Costume[] = [
   g('zeus', '宙斯', 'zhòu sī', '#fbfaf6'), g('hera', '赫拉', 'hè lā', '#5b6fd6'), g('poseidon', '波塞冬', 'bō sài dōng', '#2fa3a0'),
   g('demeter', '得墨忒耳', 'dé mò tè ěr', '#8fb84a'), g('athena', '雅典娜', 'yǎ diǎn nà', '#e9eef6'), g('apollo', '阿波罗', 'ā bō luó', '#ffd54a'),
@@ -59,18 +71,24 @@ export const GREEK: Costume[] = [
   g('heracles', '赫拉克勒斯', 'hè lā kè lè sī', '#d9a441'), g('odysseus', '奥德修斯', 'ào dé xiū sī', '#3f6fb5'), g('perseus', '珀耳修斯', 'pò ěr xiū sī', '#6d8fb3'),
   g('achilles', '阿喀琉斯', 'ā kā liú sī', '#e0b13a'), g('theseus', '忒修斯', 'tè xiū sī', '#9c4f2c'), g('jason', '伊阿宋', 'yī ā sòng', '#2f4a7a'),
   g('medusa', '美杜莎', 'měi dù shā', '#6fae5a'), g('minotaur', '米诺陶洛斯', 'mǐ nuò táo luò sī', '#7a4a2a', 'onesie'),
- g('cerberus', '刻耳柏洛斯', 'kè ěr bó luò sī', '#4a4550', 'onesie'),
-];
-/** Chinese myths, and the fortune cat and the lion dance. */
-export const CHINESE: Costume[] = [
-  c('wukong', '孙悟空', 'sūn wù kōng', '#f2a03d'), c('nezha', '哪吒', 'né zhā', '#e0533c'), c('change', '嫦娥', 'cháng é', '#f6e7f0'),
-  c('houyi', '后羿', 'hòu yì', '#8a5a3c'), c('caishen', '财神', 'cái shén', '#c8102e'), c('luckycat', '招财猫', 'zhāo cái māo', '#c8102e'),
-  c('liondance', '舞狮', 'wǔ shī', '#e0362c', 'onesie'),
+  g('cerberus', '刻耳柏洛斯', 'kè ěr bó luò sī', '#4a4550', 'onesie'),
 ];
 
-export const COSTUMES: Costume[] = [...ONESIES, ...OUTFITS, ...GREEK, ...CHINESE];
+/** The old outfits not among the jobs (spec §5.2): out of the chest, kept for owners. */
+export const OLD_OUTFITS: Costume[] = [
+  old('explorer', '探险家', 'tàn xiǎn jiā', '#c9a86a'), old('hero', '超人', 'chāo rén', '#ff4a3d'), old('pixel', '像素', 'xiàng sù', '#5ccf7a'),
+  old('raincoat', '雨衣', 'yǔ yī', '#ffd23f'), old('robot', '机器人', 'jī qì rén', '#c9d1dc'), old('rook', '城堡', 'chéng bǎo', '#efe4cc'),
+  old('basketball', '篮球服', 'lán qiú fú', '#2f6fd6'), old('gi', '柔术服', 'róu shù fú', '#fbfaf6'),
+];
 
-export const costumeById = (id: string | null | undefined): Costume | undefined => COSTUMES.find((c) => c.id === id);
+export const COSTUMES: Costume[] = [...ONESIES, ...ANIMALS, ...JOBS, ...CHINESE, ...GREEK, ...OLD_OUTFITS];
+
+export const costumeById = (id: string | null | undefined): Costume | undefined => COSTUMES.find((x) => x.id === id);
+
+const CHEST_SETS: ReadonlySet<CostumeSet> = new Set(['zodiac', 'animal', 'job', 'chinese']);
+/** In the chest (spec §5.2): the zodiac and new onesies, the jobs, the Chinese myths. */
+export const inChest = (x: Costume): boolean => CHEST_SETS.has(x.set);
+export const CHEST_COSTUMES: Costume[] = COSTUMES.filter(inChest);
 
 /** Accessories are add-ons (face, neck, paw, back), so they show with any costume; unknown values show nothing. */
 export function visibleAccessory(kid: KidState): string | null {
@@ -79,25 +97,40 @@ export function visibleAccessory(kid: KidState): string | null {
 
 export type ChestResult = { kind: 'costume'; id: CostumeId } | { kind: 'accessory'; item: string } | { kind: 'stars'; amount: number };
 
-/** Call only after today's daily (not free-play) session is complete. */
+/** The chest's groups, in the order a round gives them (spec §5.3): a onesie, then a job or myth ("story"), then an accessory. */
+export type PrizeGroup = 'onesie' | 'story' | 'accessory';
+const ROUND: PrizeGroup[] = ['onesie', 'story', 'accessory'];
+export const prizeGroup = (x: Costume): Exclude<PrizeGroup, 'accessory'> => (x.set === 'zodiac' || x.set === 'animal' ? 'onesie' : 'story');
+
+/** New clothes still in the chest (the chest goal, spec §4). */
+export const costumesLeft = (kid: KidState): number => CHEST_COSTUMES.filter((x) => !kid.ownedCostumes.includes(x.id)).length;
+
+/** Call only after today's daily (not free-play) session is complete. Task 4 replaces this with the meter's owed chests. */
 export function canOpenChest(kid: KidState, today: string): boolean {
   return kid.lastChestDate !== today;
 }
 
-/** First chest ever: the child's own zodiac onesie. Then a seeded pick from everything not yet owned, then stars. */
-export function openChest(kid: KidState, today: string, zodiac: ZodiacId | null): { kid: KidState; result: ChestResult } {
-  if (!kid.ownedCostumes.some((id) => costumeById(id))) {
-    const id = costumeById(zodiac)?.set === 'zodiac' ? zodiac! : 'dragon';
-    return { kid: { ...kid, ownedCostumes: [id], lastChestDate: today }, result: { kind: 'costume', id } };
+type Prize = Exclude<ChestResult, { kind: 'stars' }>;
+
+/**
+ * One chest (spec §5.3): the group furthest behind in its round comes next (ties in round order), and a seeded pick within it
+ * from what he doesn't own; everything owned gives 3 bonus stars. Opening takes one owed chest and marks the day.
+ */
+export function openChest(kid: KidState, today: string): { kid: KidState; result: ChestResult } {
+  const opened = { lastChestDate: today, meter: { ...kid.meter, owed: Math.max(0, kid.meter.owed - 1) } };
+  const owned = (grp: PrizeGroup) =>
+    grp === 'accessory' ? ACCESSORIES.filter((a) => kid.ownedAccessories.includes(a)).length : CHEST_COSTUMES.filter((x) => prizeGroup(x) === grp && kid.ownedCostumes.includes(x.id)).length;
+  const left = (grp: PrizeGroup): Prize[] =>
+    grp === 'accessory'
+      ? ACCESSORIES.filter((a) => !kid.ownedAccessories.includes(a)).map((item) => ({ kind: 'accessory' as const, item }))
+      : CHEST_COSTUMES.filter((x) => prizeGroup(x) === grp && !kid.ownedCostumes.includes(x.id)).map((x) => ({ kind: 'costume' as const, id: x.id }));
+  const open = ROUND.filter((grp) => left(grp).length > 0);
+  if (!open.length) {
+    return { kid: { ...kid, ...opened, bonusStars: kid.bonusStars + CHEST_BONUS_STARS }, result: { kind: 'stars', amount: CHEST_BONUS_STARS } };
   }
-  const pool = [
-    ...COSTUMES.filter((c) => !kid.ownedCostumes.includes(c.id)).map((c) => ({ kind: 'costume' as const, id: c.id })),
-    ...ACCESSORIES.filter((a) => !kid.ownedAccessories.includes(a)).map((item) => ({ kind: 'accessory' as const, item })),
-  ];
-  if (!pool.length) {
-    return { kid: { ...kid, bonusStars: kid.bonusStars + CHEST_BONUS_STARS, lastChestDate: today }, result: { kind: 'stars', amount: CHEST_BONUS_STARS } };
-  }
-  const pick = pool[Math.floor(mulberry32(seedFromString(today))() * pool.length)]!;
-  if (pick.kind === 'costume') return { kid: { ...kid, ownedCostumes: [...kid.ownedCostumes, pick.id], lastChestDate: today }, result: pick };
-  return { kid: { ...kid, ownedAccessories: [...kid.ownedAccessories, pick.item], lastChestDate: today }, result: pick };
+  const group = open.reduce((best, grp) => (owned(grp) < owned(best) ? grp : best));
+  const pool = left(group);
+  const pick = pool[Math.floor(mulberry32(seedFromString(`${today}#${kid.ownedCostumes.length + kid.ownedAccessories.length}`))() * pool.length)]!;
+  if (pick.kind === 'costume') return { kid: { ...kid, ...opened, ownedCostumes: [...kid.ownedCostumes, pick.id] }, result: pick };
+  return { kid: { ...kid, ...opened, ownedAccessories: [...kid.ownedAccessories, pick.item] }, result: pick };
 }

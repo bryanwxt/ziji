@@ -35,6 +35,6 @@ describe('buildFitProfile', () => {
     const { openChest } = await import('../src/fun/costumes');
     const p = readBackup(await buildFitProfile({ now: NOW, ownsAll: true }));
     const kid = p.file.kid as Parameters<typeof openChest>[0];
-    expect(openChest(kid, '2026-10-06', null).result.kind).toBe('stars');
+    expect(openChest(kid, '2026-10-06').result.kind).toBe('stars');
   });
 });

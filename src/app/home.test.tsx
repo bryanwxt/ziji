@@ -142,13 +142,24 @@ describe('HomeScreen', () => {
 });
 
 describe('Wardrobe', () => {
-  it('has four shelves: 生肖, 衣服, 希腊 and 中国 (parent, 2026-10-06: the myth costumes)', async () => {
-    const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['zeus', 'wukong'] } });
+  it('chest shelves first; 希腊 and 以前的衣服 show only what he owns of them (rewards spec §5.2)', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['zeus', 'wukong', 'robot'] } });
     renderWithApp(<Wardrobe />, app);
     const shelves = [...(await screen.findAllByRole('heading', { level: 2 }))].map((h) => h.querySelector('.sr-only')?.textContent ?? h.textContent);
-    expect(shelves.slice(0, 4)).toEqual(['生肖', '衣服', '希腊', '中国']); // then the accessories' shelves
+    expect(shelves[0]).toBe('生肖');
+    expect(shelves).toContain('职业');
+    expect(shelves.indexOf('希腊')).toBe(shelves.indexOf('中国') + 1);
+    expect(shelves.indexOf('以前的衣服')).toBe(shelves.indexOf('希腊') + 1);
     expect(screen.getByRole('button', { name: '宙斯' })).toHaveProperty('disabled', false);
+    expect(screen.getByRole('button', { name: '机器人' })).toHaveProperty('disabled', false);
+    expect(screen.queryByRole('button', { name: '赫拉' })).toBeNull(); // out of the chest and not his: not on the shelf
     expect(screen.getByRole('button', { name: '孙悟空' })).toHaveProperty('disabled', false);
+  });
+  it('no 希腊 or 以前的衣服 shelf for a child who owns none of them', async () => {
+    renderWithApp(<Wardrobe />, await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['tiger'] } }));
+    const shelves = [...(await screen.findAllByRole('heading', { level: 2 }))].map((h) => h.querySelector('.sr-only')?.textContent ?? h.textContent);
+    expect(shelves).not.toContain('希腊');
+    expect(shelves).not.toContain('以前的衣服');
   });
   it('an owned costume shows a small Truffle wearing it; a locked one shows the lock', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['tiger'] } });

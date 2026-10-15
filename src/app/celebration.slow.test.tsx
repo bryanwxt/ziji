@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { createSessionRecord } from '../session/runner';
 import { BUILTIN, builtinWords } from '../content';
+import { CHEST_COSTUMES, costumeById } from '../fun/costumes';
 import { powerFamilies } from '../fun/powers';
 import { getKid, putCards, putWords, saveKid, updateSettings } from '../store/repo';
 import { makeCard } from '../test/fixtures';
@@ -33,12 +34,12 @@ describe('Celebration chest', () => {
     const chest = await screen.findByRole('button', { name: '按住打开宝箱' });
     for (let i = 0; i < 3; i++) fireEvent(chest, new Event('pointerdown', { bubbles: true }));
     await hold();
-    await screen.findByText('松露有新衣服了！'); // first chest: the zodiac onesie (龙 by default)
-    expect(screen.getByText('龙')).toBeTruthy();
-    expect(document.querySelector('.prize svg.truffle')?.getAttribute('data-outfit')).toBe('dragon');
+    await screen.findByText('松露有新衣服了！'); // a round's first prize is a onesie (rewards spec §5.3)
+    const id = document.querySelector('.prize svg.truffle')?.getAttribute('data-outfit');
+    expect(CHEST_COSTUMES.find((c) => c.id === id)?.kind).toBe('onesie');
     await waitFor(async () => expect((await getKid(app.db))?.lastChestDate).toBe('2026-10-02'));
     const kid = await getKid(app.db);
-    expect(kid?.ownedCostumes).toEqual(['dragon']);
+    expect(kid?.ownedCostumes).toEqual([id]);
     expect(kid?.ownedAccessories).toHaveLength(0);
     expect(kid?.bonusStars).toBe(0);
   });
@@ -52,7 +53,8 @@ describe('Celebration chest', () => {
     await hold();
     await screen.findByText('松露有新衣服了！');
     expect(above()).toEqual(closed);
-    expect(document.querySelector('.prize .prize__label')!.textContent).toContain('龙'); // its name at his feet
+    const id = document.querySelector('.prize svg.truffle')!.getAttribute('data-outfit')!;
+    expect(document.querySelector('.prize .prize__label')!.textContent).toContain(costumeById(id)!.zh); // its name at his feet
   });
 
   it("dates the chest by the session's own day when it finishes after midnight", async () => {
