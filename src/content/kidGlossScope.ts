@@ -6,6 +6,7 @@ import { ladderWords } from './ladder';
 import { wordTerm } from './understand';
 import { dictionaryMeaning, dictionaryGloss } from './glossary';
 import { wordsAround } from './family';
+import { sameReading } from './wordGate';
 
 export interface ScopeWord { text: string; reading: string; kind: 'char' | 'word' | 'shown' | 'family'; term: string | null; dictionary?: string }
 
@@ -30,5 +31,27 @@ export function kidGlossScope(): ScopeWord[] {
     seen.add(f.text);
     out.push({ text: f.text, reading: f.pinyin, kind: 'family', term: schoolTerm(c.text)!, dictionary: dictionaryGloss(f.text) });
   }
+  return out;
+}
+
+/**
+ * What is wrong with a bound character's pair (empty when nothing is): it must contain the character, have a kid gloss of its
+ * own written for a reading that gives the character its card's reading there (轻声 counts: 狐狸 hú li for 狸 lí), and the
+ * character's gloss must be the pair's (the card and every English question read one gloss). `rows`: text → [reading, gloss].
+ */
+export function boundProblems(ch: string, pair: string, rows: ReadonlyMap<string, readonly [string, string]>): string[] {
+  const out: string[] = [];
+  const at = Array.from(pair).indexOf(ch);
+  if (Array.from(ch).length !== 1) out.push('only a single character can be bound');
+  if (at < 0) out.push(`${pair} doesn't contain ${ch}`);
+  const own = rows.get(ch);
+  const row = rows.get(pair);
+  if (!own) out.push(`${ch} has no kid gloss`);
+  if (!row) out.push(`${pair} has no kid gloss (add it to words.tsv)`);
+  if (!own || !row || at < 0) return out;
+  const syl = row[0].split(/\s+/);
+  if (syl.length !== Array.from(pair).length) out.push(`${pair} is read "${row[0]}": not one syllable a character`);
+  else if (!sameReading(ch, syl[at]!, own[0])) out.push(`${ch} is ${syl[at]} in ${pair}, its card reads ${own[0]}`);
+  if (own[1] !== row[1]) out.push(`${ch}'s gloss "${own[1]}" isn't ${pair}'s "${row[1]}"`);
   return out;
 }

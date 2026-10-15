@@ -1,13 +1,15 @@
 # Kid glosses for his school characters (欢乐伙伴 一上–三下): char, the reading his lessons use, then at most four everyday
 # English words a P2 Singapore child knows, in the sense his lessons and 组词 use. Built into src/content/kidGloss.json by
 # scripts/build-kidgloss.ts. No Chinese, no semicolons, no dictionary jargon.
+# A fourth column marks a bound character (parent 2026-10-15): one he meets only inside a word, so it is taught and asked
+# through that pair (番 → 番茄), and its gloss is the pair's.
 衣	yī	clothes
 鱼	yú	fish
 雨	yǔ	rain
 一	yī	one
 二	èr	two
 五	wǔ	five
-耳	ěr	ear
+耳	ěr	ear	耳朵
 牙	yá	tooth
 口	kǒu	mouth
 人	rén	person
@@ -15,7 +17,7 @@
 土	tǔ	soil
 马	mǎ	horse
 八	bā	eight
-巴	bā	bus
+巴	bā	bus	巴士
 你	nǐ	you
 我	wǒ	I, me
 也	yě	also, too
@@ -63,7 +65,7 @@
 书	shū	book
 出	chū	go out, come out
 自	zì	self, from
-己	jǐ	self (myself)
+己	jǐ	yourself, myself	自己
 它	tā	it
 吃	chī	eat
 山	shān	hill, mountain
@@ -71,13 +73,13 @@
 毛	máo	hair, fur, feather
 草	cǎo	grass
 太	tài	too, very
-阳	yáng	sun
+阳	yáng	sun	太阳
 王	wáng	king
 三	sān	three
 伞	sǎn	umbrella
 包	bāo	bag, bun
 老	lǎo	old
-师	shī	teacher
+师	shī	teacher	老师
 早	zǎo	early, morning
 安	ān	safe, peaceful
 半	bàn	half
@@ -89,7 +91,7 @@
 竹	zhú	bamboo
 田	tián	field
 苗	miáo	young plant
-象	xiàng	elephant
+象	xiàng	elephant	大象
 家	jiā	home, family
 刀	dāo	knife
 网	wǎng	net, internet
@@ -124,7 +126,7 @@
 少	shǎo	few, little
 床	chuáng	bed
 目	mù	eye
-舌	shé	tongue
+舌	shé	tongue	舌头
 手	shǒu	hand
 足	zú	foot
 本	běn	one (for books)
@@ -155,10 +157,10 @@
 条	tiáo	one (for long things)
 九	jiǔ	nine
 粒	lì	grain (of rice)
-今	jīn	today, now
-什	shén	what
+今	jīn	today	今天
+什	shén	what	什么
 么	me	what, how
-华	huá	Chinese
+华	huá	Chinese, Mandarin	华语
 文	wén	language, writing
 点	diǎn	dot, a little
 说	shuō	say, speak
@@ -183,7 +185,7 @@
 有	yǒu	have
 没	méi	not have, no
 云	yún	cloud
-甲	jiǎ	fingernail, shell
+甲	jiǎ	fingernail	指甲
 丁	dīng	family name Ding
 前	qián	front, before
 后	hòu	back, after
@@ -194,7 +196,7 @@
 边	biān	side
 同	tóng	same
 学	xué	learn, study
-朋	péng	friend
+朋	péng	friend	朋友
 友	yǒu	friend
 坐	zuò	sit
 高	gāo	tall, high
@@ -203,7 +205,7 @@
 起	qǐ	get up, rise
 回	huí	go back, return
 周	zhōu	week
-末	mò	end
+末	mò	weekend	周末
 鸡	jī	chicken
 饭	fàn	cooked rice, meal
 鸭	yā	duck
@@ -227,7 +229,7 @@
 香	xiāng	smells nice
 用	yòng	use
 刷	shuā	brush
-巾	jīn	towel, cloth
+巾	jīn	towel	毛巾
 抹	mā	wipe
 洗	xǐ	wash
 要	yào	want, need
@@ -246,7 +248,7 @@
 谢	xiè	thank
 这	zhè	this
 双	shuāng	pair
-袜	wà	socks
+袜	wà	socks	袜子
 那	nà	that
 皮	pí	skin, leather
 鞋	xié	shoes
@@ -280,7 +282,7 @@
 选	xuǎn	choose
 最	zuì	most
 抱	bào	hug
-怎	zěn	how
+怎	zěn	how	怎么
 拿	ná	hold, take
 办	bàn	handle, sort out
 法	fǎ	way (to do it)
@@ -289,7 +291,7 @@
 扫	sǎo	sweep
 户	hù	door, home
 桌	zhuō	table
-椅	yǐ	chair
+椅	yǐ	chair	椅子
 兄	xiōng	older brother
 房	fáng	house, room
 阿	ā	before names
@@ -298,43 +300,43 @@
 写	xiě	write
 啊	a	oh, ah
 完	wán	finish
-业	yè	homework, work
+业	yè	homework	作业
 躲	duǒ	hide
 进	jìn	go in, enter
-净	jìng	clean
+净	jìng	clean	干净
 谁	shuí	who
 打	dǎ	hit
 听	tīng	listen
 声	shēng	sound, voice
-昨	zuó	yesterday
+昨	zuó	yesterday	昨天
 晚	wǎn	evening, night, late
 星	xīng	star
 明	míng	bright, clear
-庆	qìng	celebrate
+庆	qìng	celebrate	庆祝
 祝	zhù	wish
 节	jié	festival
 爱	ài	love
 给	gěi	give
 国	guó	country
-乐	lè	happy
+乐	lè	happy	快乐
 课	kè	lesson
 台	tái	stage
 讲	jiǎng	speak, tell
-故	gù	story
+故	gù	story	故事
 每	měi	every, each
 童	tóng	child
-因	yīn	because
+因	yīn	because	因为
 为	wèi	for, because
 兔	tù	rabbit
-尾	wěi	tail
+尾	wěi	tail	尾巴
 短	duǎn	short
 眼	yǎn	eye
 睛	jīng	eye
-爪	zhuǎ	claw
+爪	zhuǎ	claw	爪子
 尖	jiān	pointed, sharp
 物	wù	thing
-虎	hǔ	tiger
-狮	shī	lion
+虎	hǔ	tiger	老虎
+狮	shī	lion	狮子
 园	yuán	garden, park
 期	qī	term, week
 带	dài	bring, take
@@ -344,11 +346,11 @@
 认	rèn	know, recognise
 话	huà	words, talk
 再	zài	again
-孩	hái	child
+孩	hái	child	孩子
 组	zǔ	group
 屋	wū	house
 公	gōng	public
-校	xiào	school
+校	xiào	school	学校
 场	chǎng	place, ground
 商	shāng	shop, business
 店	diàn	shop
@@ -358,13 +360,13 @@
 球	qiú	ball
 步	bù	step
 图	tú	picture, map
-习	xí	practise
-伙	huǒ	partner, friend
-伴	bàn	partner, buddy
+习	xí	practise	练习
+伙	huǒ	partner, buddy	伙伴
+伴	bàn	partner, buddy	伙伴
 游	yóu	swim
 拍	pāi	clap, pat
-兴	xìng	happy, keen
-戏	xì	show, game
+兴	xìng	happy	高兴
+戏	xì	game	游戏
 外	wài	outside
 美	měi	beautiful
 丑	chǒu	ugly
@@ -375,17 +377,17 @@
 过	guò	go past
 现	xiàn	now, appear
 些	xiē	some
-适	shì	fits well
+适	shì	just right, fits	合适
 试	shì	try, test
 年	nián	year
 读	dú	read
-级	jí	grade, level
+级	jí	grade, year (school)	年级
 班	bān	class
 折	zhé	fold
 帮	bāng	help
 专	zhuān	special
-助	zhù	help
-吉	jí	lucky
+助	zhù	help	帮助
+吉	jí	lucky	吉利
 利	lì	lucky, sharp
 岁	suì	years old
 平	píng	flat, peaceful
@@ -399,29 +401,29 @@
 演	yǎn	act, perform
 舞	wǔ	dance
 龙	lóng	dragon
-婆	pó	grandma, old woman
+婆	pó	grandma (mum's mum)	外婆
 拜	bài	bow, visit
 着	zhe	still going on
 您	nín	you (polite)
 接	jiē	catch, pick up
-卷	juàn	test paper
+卷	juàn	test paper	试卷
 真	zhēn	real, really
 碗	wǎn	bowl
 盘	pán	plate
 叉	chā	fork
-筷	kuài	chopsticks
+筷	kuài	chopsticks	筷子
 杯	bēi	cup
 壶	hú	pot, kettle
 客	kè	guest
 送	sòng	send, give
 主	zhǔ	owner, main
 递	dì	pass, hand over
-汽	qì	steam
+汽	qì	car	汽车
 忙	máng	busy
-骨	gǔ	bone
+骨	gǔ	bone	骨头
 伸	shēn	stretch
 尝	cháng	taste
-原	yuán	at first
+原	yuán	at first, turns out	原来
 各	gè	each
 定	dìng	decide, sure
 第	dì	order (first, second)
@@ -436,14 +438,14 @@
 角	jiǎo	corner, horn
 然	rán	so, like this
 拉	lā	pull
-森	sēn	forest
+森	sēn	forest	森林
 从	cóng	from
 众	zhòng	crowd, many people
-颜	yán	colour, face
+颜	yán	colour	颜色
 共	gòng	together, in all
 页	yè	page
 空	kōng	sky, empty
-彩	cǎi	colourful
+彩	cǎi	colourful	彩色
 蓝	lán	blue
 绿	lǜ	green
 黄	huáng	yellow
@@ -453,8 +455,8 @@
 哪	nǎ	which
 顶	dǐng	top
 楼	lóu	building, floor
-术	shù	skill, art
-旁	páng	beside
+术	shù	art	美术
+旁	páng	beside, next to	旁边
 向	xiàng	towards
 就	jiù	then, right away
 往	wǎng	towards
@@ -467,12 +469,12 @@
 坡	pō	slope
 久	jiǔ	long time
 答	dá	answer
-已	yǐ	already
+已	yǐ	already	已经
 经	jīng	already, pass through
 骑	qí	ride
 脚	jiǎo	foot
 踏	tà	step on
-应	yīng	should
+应	yīng	should	应该
 该	gāi	should
 行	xíng	OK, go, walk
 桥	qiáo	bridge
@@ -481,13 +483,13 @@
 才	cái	just, only then
 灯	dēng	light, lamp
 亮	liàng	bright
-邻	lín	neighbour
+邻	lín	neighbour	邻居
 居	jū	live, home
-互	hù	each other
+互	hù	each other	互相
 相	xiāng	each other
 光	guāng	light
 照	zhào	shine, photo
-丽	lì	beautiful
+丽	lì	beautiful	美丽
 极	jí	very much, super
 茶	chá	tea
 糖	táng	sugar, sweets
@@ -496,13 +498,13 @@
 炸	zhá	fry (in oil)
 冰	bīng	ice
 温	wēn	warm
-咖	kā	coffee
-啡	fēi	coffee
+咖	kā	coffee	咖啡
+啡	fēi	coffee	咖啡
 队	duì	team, line
 找	zhǎo	look for, find
 座	zuò	seat
 位	wèi	place, seat
-特	tè	special
+特	tè	special, especially	特别
 别	bié	don't, other
 餐	cān	meal
 闻	wén	smell, news
@@ -510,14 +512,14 @@
 食	shí	food
 分	fēn	share, divide
 懂	dǒng	understand
-医	yī	doctor, medicine
+医	yī	doctor	医生
 病	bìng	sick, illness
-护	hù	protect
+护	hù	protect	保护
 顾	gù	look after
-贩	fàn	hawker, sell
+贩	fàn	hawker	小贩
 教	jiāo	teach
 种	zhòng	plant
-姨	yí	auntie
+姨	yí	auntie	阿姨
 员	yuán	member, worker
 消	xiāo	put out, disappear
 防	fáng	guard against, protect
@@ -547,17 +549,17 @@
 摸	mō	touch
 淋	lín	get wet (in rain)
 呢	ne	what about?
-蚂	mǎ	ant
-蚁	yǐ	ant
+蚂	mǎ	ant	蚂蚁
+蚁	yǐ	ant	蚂蚁
 爬	pá	climb, crawl
-蜜	mì	honey
-蜂	fēng	bee
+蜜	mì	honey	蜂蜜
+蜂	fēng	bee	蜜蜂
 丛	cóng	bush, clump
 池	chí	pond, pool
 枝	zhī	branch
 跳	tiào	jump
 清	qīng	clear, clean
-蛙	wā	frog
+蛙	wā	frog	青蛙
 害	hài	harm, hurt
 情	qíng	feeling
 让	ràng	let, give way
@@ -586,55 +588,55 @@
 更	gèng	even more
 鹰	yīng	eagle
 追	zhuī	chase
-永	yǒng	forever
+永	yǒng	forever	永远
 轻	qīng	light (not heavy)
 命	mìng	life
 百	bǎi	hundred
-健	jiàn	healthy
-康	kāng	healthy
-幸	xìng	lucky
+健	jiàn	healthy	健康
+康	kāng	healthy	健康
+幸	xìng	lucky	幸运
 愿	yuàn	wish, willing
 吹	chuī	blow
-糕	gāo	cake
+糕	gāo	cake	蛋糕
 首	shǒu	one (for songs)
 张	zhāng	one (for flat things)
 卡	kǎ	card
 影	yǐng	shadow, film
 票	piào	ticket
-礼	lǐ	gift, manners
+礼	lǐ	present, gift	礼物
 厅	tīng	hall, living room
-奇	qí	strange
+奇	qí	strange	奇怪
 怪	guài	strange, monster
 活	huó	alive, live
 宝	bǎo	treasure, baby
-澡	zǎo	bath
+澡	zǎo	bathe, shower	洗澡
 睡	shuì	sleep
-觉	jiào	sleep, nap
+觉	jiào	sleep	睡觉
 羽	yǔ	feather
 乖	guāi	well-behaved, good
-总	zǒng	always
-聪	cōng	clever
+总	zǒng	always	总是
+聪	cōng	clever	聪明
 金	jīn	gold
-漂	piào	pretty
+漂	piào	pretty	漂亮
 吐	tǔ	spit, blow out
-宠	chǒng	pet, spoil
+宠	chǒng	pet	宠物
 岛	dǎo	island
-欺	qī	bully
-负	fù	bully
+欺	qī	bully	欺负
+负	fù	bully	欺负
 丢	diū	lose, throw away
 梦	mèng	dream
 围	wéi	around, surround
-迎	yíng	welcome
-识	shí	know
+迎	yíng	welcome	欢迎
+识	shí	know, recognise	认识
 醒	xǐng	wake up
 难	nán	hard, difficult
-易	yì	easy
+易	yì	easy	容易
 粗	cū	thick, careless
 细	xì	thin, careful
 抢	qiǎng	grab, snatch
 推	tuī	push
-讨	tǎo	dislike
-厌	yàn	dislike, fed up
+讨	tǎo	dislike, annoying	讨厌
+厌	yàn	dislike, annoying	讨厌
 争	zhēng	fight over, compete
 吵	chǎo	noisy, quarrel
 弄	nòng	make, play with
@@ -642,24 +644,24 @@
 撞	zhuàng	bump into, crash
 倒	dǎo	fall over
 伤	shāng	hurt, injury
-容	róng	easy, hold
+容	róng	easy	容易
 能	néng	can, able
 晶	jīng	crystal, sparkly
 道	dào	road, way
-虹	hóng	rainbow
-茄	qié	brinjal, tomato
+虹	hóng	rainbow	彩虹
+茄	qié	brinjal	茄子
 紫	zǐ	purple
-番	fān	tomato
+番	fān	tomato	番茄
 芽	yá	sprout, bud
 扁	biǎn	flat
-玉	yù	corn, jade
+玉	yù	corn	玉米
 比	bǐ	compare
 伯	bó	uncle
-萝	luó	radish
-卜	bo	radish
+萝	luó	radish	萝卜
+卜	bo	radish	萝卜
 煮	zhǔ	cook, boil
-鼠	shǔ	mouse, rat
-或	huò	or, maybe
+鼠	shǔ	mouse, rat	老鼠
+或	huò	or	或者
 者	zhě	person who
 猪	zhū	pig
 拔	bá	pull out
@@ -669,38 +671,38 @@
 根	gēn	root
 实	shí	real
 持	chí	hold, keep
-静	jìng	quiet, calm
+静	jìng	quiet	安静
 绘	huì	draw
-趣	qù	fun, interest
+趣	qù	interesting, fun	有趣
 借	jiè	borrow
 次	cì	a time, a turn
-英	yīng	English, hero
+英	yīng	English	英文
 遍	biàn	all over
 架	jià	shelf, frame
 箱	xiāng	box
 盒	hé	box
-案	àn	answer
-附	fù	nearby
+案	àn	answer	答案
+附	fù	nearby	附近
 近	jìn	near
 满	mǎn	full
-始	shǐ	begin, start
+始	shǐ	begin, start	开始
 样	yàng	look, kind
 候	hòu	wait, time
-知	zhī	know
+知	zhī	know	知道
 指	zhǐ	finger, point
 逛	guàng	stroll, look around
 夜	yè	night
 市	shì	market, city
 烤	kǎo	bake, grill
-肠	cháng	sausage
-翅	chì	wing
+肠	cháng	sausage	香肠
+翅	chì	wing	翅膀
 射	shè	shoot
 碰	pèng	bump, touch
-饮	yǐn	drink
+饮	yǐn	drink	饮料
 料	liào	stuff, material
 踢	tī	kick
-筝	zhēng	kite
-但	dàn	but
+筝	zhēng	kite	风筝
+但	dàn	but	但是
 闹	nào	noisy
 摊	tān	stall
 阵	zhèn	a burst, a while
@@ -710,13 +712,13 @@
 圈	quān	circle, ring
 馆	guǎn	shop, hall
 院	yuàn	yard, building
-植	zhí	plant
+植	zhí	plant	植物
 海	hǎi	sea
 岸	àn	shore, bank
-参	cān	join, take part
+参	cān	take part, join	参加
 观	guān	look, watch
 野	yě	wild
-泳	yǒng	swim
+泳	yǒng	swim	游泳
 沙	shā	sand
 捡	jiǎn	pick up
 壳	ké	shell
@@ -729,10 +731,10 @@
 城	chéng	city
 浇	jiāo	water (plants)
 桶	tǒng	bucket
-厕	cè	toilet
+厕	cè	toilet	厕所
 所	suǒ	place
-告	gào	tell
-诉	sù	tell
+告	gào	tell	告诉
+诉	sù	tell	告诉
 珍	zhēn	precious, treasure
 惜	xī	treasure, care for
 滴	dī	drop, drip
@@ -753,20 +755,20 @@
 科	kē	subject, science
 将	jiāng	will, future
 当	dāng	act as, when
-司	sī	driver
-希	xī	hope
+司	sī	driver	司机
+希	xī	hope	希望
 望	wàng	hope, look
 军	jūn	army, soldier
 卫	wèi	guard, protect
 练	liàn	practise
-努	nǔ	try hard
+努	nǔ	work hard	努力
 篇	piān	one (for stories)
 复	fù	repeat, again
 交	jiāo	hand in, give
 举	jǔ	lift, raise
 翻	fān	turn over, flip
 陈	chén	family name Chen
-胡	hú	beard
+胡	hú	beard	胡子
 李	lǐ	plum, family name Li
 吴	wú	family name Wu
 言	yán	words, say
@@ -795,11 +797,11 @@
 钟	zhōng	clock, bell
 背	bèi	back (body)
 粉	fěn	powder, pink
-状	zhuàng	shape
+状	zhuàng	shape	形状
 准	zhǔn	ready, exact
 改	gǎi	change, correct
 迟	chí	late
-惯	guàn	used to, habit
+惯	guàn	habit	习惯
 内	nèi	inside
 入	rù	enter, go in
 由	yóu	from, because of
@@ -809,7 +811,7 @@
 宽	kuān	wide
 化	huà	change, melt
 越	yuè	cross, more and more
-幼	yòu	young
+幼	yòu	kindergarten	幼儿园
 死	sǐ	die, dead
 摆	bǎi	set out, swing
 腿	tuǐ	leg
@@ -817,69 +819,69 @@
 喊	hǎn	shout
 披	pī	put on (a cape)
 露	lù	dew, show
-肚	dù	tummy, belly
+肚	dù	tummy	肚子
 脑	nǎo	brain
 展	zhǎn	spread out, show
-旅	lǚ	travel
-艺	yì	art, skill
-傍	bàng	evening
+旅	lǚ	travel, trip	旅行
+艺	yì	art	艺术
+傍	bàng	evening	傍晚
 报	bào	newspaper, report
 杂	zá	mixed, messy
-志	zhì	magazine
+志	zhì	magazine	杂志
 号	hào	number, date
 刚	gāng	just, just now
 付	fù	pay
 钱	qián	money
-束	shù	bunch, end
+束	shù	end, finish	结束
 鲜	xiān	fresh
 提	tí	carry, lift
-备	bèi	get ready
+备	bèi	get ready	准备
 软	ruǎn	soft
 硬	yìng	hard
 松	sōng	loose, pine
 紧	jǐn	tight
 失	shī	lose
 错	cuò	wrong, mistake
-误	wù	mistake
+误	wù	mistake	错误
 扔	rēng	throw
-谅	liàng	forgive
+谅	liàng	forgive	原谅
 系	xì	connect
-突	tū	suddenly
+突	tū	suddenly	突然
 及	jí	reach, in time
 理	lǐ	reason, tidy up
-赛	sài	match, race
+赛	sài	competition, match	比赛
 跌	diē	fall
 受	shòu	receive, get
 刻	kè	moment, carve
 碎	suì	broken (in pieces)
 赔	péi	pay back
 留	liú	stay, keep
-便	biàn	handy, easy
+便	biàn	easy, handy	方便
 盆	pén	basin, pot
-歉	qiàn	sorry
+歉	qiàn	sorry	抱歉
 堂	táng	hall
 溜	liū	slip away, slide
 踩	cǎi	step on
-镜	jìng	mirror, glasses
-休	xiū	rest
-息	xī	rest, breath
-视	shì	look, TV
+镜	jìng	mirror	镜子
+休	xiū	rest	休息
+息	xī	rest	休息
+视	shì	TV	电视
 脱	tuō	take off
 搬	bān	move (things)
 板	bǎn	board
 灵	líng	clever, quick
-需	xū	need
-贺	hè	congratulate
+需	xū	need	需要
+贺	hè	congratulate	祝贺
 部	bù	part, section
 涂	tú	colour in, paint on
 洞	dòng	hole
 吊	diào	hang
 笼	lóng	cage, lantern
 挂	guà	hang
-裙	qún	skirt
-裤	kù	pants, shorts
+裙	qún	skirt	裙子
+裤	kù	pants	裤子
 求	qiú	ask for, beg
-较	jiào	compare, rather
+较	jiào	compare, quite	比较
 晒	shài	dry in the sun
 歪	wāi	crooked
 乱	luàn	messy
@@ -888,9 +890,9 @@
 塞	sāi	stuff in, plug
 熊	xióng	bear
 坑	kēng	pit, hole
-鼻	bí	nose
+鼻	bí	nose	鼻子
 救	jiù	save, rescue
-猴	hóu	monkey
+猴	hóu	monkey	猴子
 竿	gān	pole
 篮	lán	basket
 喷	pēn	spray
@@ -902,71 +904,71 @@
 量	liáng	measure
 夸	kuā	praise
 神	shén	god, magic
-垃	lā	rubbish
-圾	jī	rubbish
-蚊	wén	mosquito
-鸦	yā	crow
+垃	lā	rubbish	垃圾
+圾	jī	rubbish	垃圾
+蚊	wén	mosquito	蚊子
+鸦	yā	crow	乌鸦
 随	suí	follow
 痰	tán	phlegm, spit
 环	huán	ring, around
-境	jìng	place, surroundings
-厨	chú	kitchen
+境	jìng	surroundings	环境
+厨	chú	kitchen	厨房
 脏	zāng	dirty
 橱	chú	cupboard
-仔	zǐ	careful
+仔	zǐ	careful	仔细
 招	zhāo	wave, call over
-决	jué	decide
+决	jué	decide	决定
 惊	jīng	shock, scared
 缩	suō	shrink, pull back
 袋	dài	bag, pocket
 代	dài	replace, instead
 替	tì	instead of, replace
-塑	sù	plastic
-刹	chà	moment
+塑	sù	plastic	塑料
+刹	chà	an instant	一刹那
 使	shǐ	use, make
 废	fèi	waste, useless
 瓶	píng	bottle
 并	bìng	and, also
-洋	yáng	ocean, sea
+洋	yáng	ocean	海洋
 品	pǐn	goods, item
-责	zé	duty, blame
+责	zé	duty	责任
 任	rèn	job, duty
-如	rú	if, like
+如	rú	if	如果
 尽	jìn	do your best
 份	fèn	a portion, share
 设	shè	set up
 计	jì	plan, count
 旗	qí	flag
 颗	kē	one (small round thing)
-世	shì	world
-界	jiè	world, border
+世	shì	world	世界
+界	jiè	world	世界
 族	zú	family, tribe
 印	yìn	print, mark
 度	dù	degree, level
 夹	jiā	clip, squeeze
 其	qí	other, that
 竖	shù	upright, stand up
-拇	mǔ	thumb
+拇	mǔ	thumb	拇指
 谜	mí	riddle
 团	tuán	group, ball
 奋	fèn	try hard
 养	yǎng	raise, keep (pets)
 虾	xiā	prawn, shrimp
 湖	hú	lake
-狐	hú	fox
-狸	lí	fox
+狐	hú	fox	狐狸
+狸	lí	fox	狐狸
 狼	láng	wolf
-猩	xīng	orangutan, ape
-沿	yán	along
-滩	tān	beach, shore
+猩	xīng	orangutan	猩猩
+沿	yán	along	沿着
+滩	tān	beach	海滩
 封	fēng	one (for letters)
-必	bì	must
-须	xū	must
-论	lùn	discuss, opinion
+必	bì	must	必须
+须	xū	must	必须
+论	lùn	discuss	讨论
 领	lǐng	lead, collar
 务	wù	job, chores
-虽	suī	although
-仍	réng	still
+虽	suī	although	虽然
+仍	réng	still	仍然
 假	jiǎ	fake, false
 强	qiáng	strong
 弱	ruò	weak
@@ -978,7 +980,7 @@
 滑	huá	slippery, slide
 灰	huī	grey, ash
 散	sàn	scatter, stroll
-耍	shuǎ	play
+耍	shuǎ	play	玩耍
 笨	bèn	silly, clumsy
 滚	gǔn	roll
 咬	yǎo	bite
@@ -993,9 +995,9 @@
 敢	gǎn	dare, brave
 钻	zuān	squeeze into
 怀	huái	arms, hug
-朱	zhū	bright red
-简	jiǎn	simple, easy
-漫	màn	comics
+朱	zhū	bright red	朱红
+简	jiǎn	simple	简单
+漫	màn	comics	漫画
 忍	rěn	put up with
 哈	hā	ha ha
 哎	āi	hey, oh
@@ -1004,7 +1006,7 @@
 终	zhōng	end, at last
 蛇	shé	snake
 途	tú	way, journey
-勤	qín	hardworking
+勤	qín	hardworking	勤奋
 俩	liǎ	two (people)
 轮	lún	wheel
 钓	diào	fish (with a rod)
@@ -1017,9 +1019,9 @@
 于	yú	at, in
 农	nóng	farm, farming
 夫	fū	man, husband
-劳	láo	work
+劳	láo	work, labour	劳动
 渔	yú	fishing, fisherman
-仙	xiān	fairy
+仙	xiān	fairy	仙女
 捞	lāo	scoop up
 精	jīng	energetic, excellent
 铁	tiě	iron (metal)
@@ -1030,5 +1032,5 @@
 千	qiān	thousand
 减	jiǎn	take away, minus
 算	suàn	count, work out
-检	jiǎn	check
+检	jiǎn	check	检查
 查	chá	check, look up

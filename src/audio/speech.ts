@@ -1,4 +1,5 @@
 import SAY_AS from './sayAs.json';
+import { boundPair, kidGlossReading } from '../content/kidGloss';
 import { audioContext } from './context';
 import { clipPlan, clipUrl } from './clips';
 import { createClipPlayer, type ClipPlayer } from './clipPlayer';
@@ -94,7 +95,8 @@ export function spokenAs(text: string, reading?: string): string {
  * to the voices) is said as its card's first 组词 instead (爪子), when it is wanted at its card's reading; so is each lone piece
  * of a line built from pieces, unless another piece already says it (写一写's "爪，爪子的，爪" stays). `avoid`: words it must not
  * be said as, because they are the answer on screen (连一连's 切 joins 菜: it is said as 切开, not 切菜), and `endings`: nor as
- * one ending in a tile it could join (茄子 when 子 is on the board); with none left, the character is said alone.
+ * one ending in a tile it could join (茄子 when 子 is on the board); with none left, the character is said alone. A bound
+ * character (kidGloss.ts boundPair: 番 → 番茄) is said as its pair the same way, first.
  */
 export function loneSpoken(text: string, reading?: string, avoid: readonly string[] = [], endings: readonly string[] = []): string {
   const { poly, words } = SAY_AS as { poly: Record<string, string>; words?: Record<string, string[]> };
@@ -108,8 +110,11 @@ export function loneSpoken(text: string, reading?: string, avoid: readonly strin
     }).join('，');
   }
   const t = text.trim();
-  if (reading && reading !== poly[t]) return text;
-  return words?.[t]?.find((w) => !avoid.includes(w) && !endings.some((e) => w.endsWith(e))) ?? text;
+  // a bound character (kidGloss.ts: 番 lives only in 番茄) is said as its pair, the word his card and questions teach it in
+  const pair = boundPair(t);
+  if (reading && reading !== (pair ? kidGlossReading(t) : poly[t])) return text;
+  const said = [...new Set([...(pair ? [pair] : []), ...(words?.[t] ?? [])])];
+  return said.find((w) => !avoid.includes(w) && !endings.some((e) => w.endsWith(e))) ?? text;
 }
 
 let player: ClipPlayer = createClipPlayer({

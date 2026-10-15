@@ -6,6 +6,8 @@ import data from './kidGloss.json';
 
 /** text → [the reading the gloss was written for, the gloss]. */
 const ENTRIES = (data as unknown as { entries: Record<string, [string, string]> }).entries;
+/** bound character → the pair it is taught and asked through (chars.tsv's fourth column). */
+const BOUND = (data as unknown as { bound?: Record<string, string> }).bound ?? {};
 
 /** The kid gloss for a character or 词语, if it has one. */
 export const kidGloss = (text: string): string | undefined => ENTRIES[text]?.[1];
@@ -33,3 +35,15 @@ export function glossProblems(gloss: string): string[] {
   if (gloss !== gloss.trim() || /\s{2}/.test(gloss)) out.push('stray spaces');
   return out;
 }
+
+/**
+ * Bound characters (parent 2026-10-15): a character he meets only inside a word (番 only in 番茄, 司 in 司机, 啡 in 咖啡) is
+ * taught and asked through that pair, at the card's reading. Its 认新字 card leads with the pair, its kid gloss is the pair's
+ * ("tomato"), Truffle says the pair (speech.ts loneSpoken), and an English question shows or says the pair, never the lone
+ * character. 写一写 still asks for the character alone.
+ */
+export const boundPair = (char: string): string | undefined => BOUND[char];
+export const isBound = (char: string): boolean => char in BOUND;
+export const boundChars = (): string[] => Object.keys(BOUND);
+/** What an English-meaning question shows or says for a word: a bound character's pair, else the word itself. */
+export const askedAs = (text: string): string => BOUND[text] ?? text;
