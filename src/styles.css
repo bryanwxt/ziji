@@ -1292,6 +1292,10 @@ button.langdu__sentence { cursor: pointer; }
 .langdu__again { min-height: 52px; }
 .langdu__q { margin: 0; font-family: var(--hanzi); font-size: clamp(26px, 4dvh, 36px); }
 .langdu__choices { grid-template-columns: 1fr; max-width: 480px; }
+@media (max-width: 599px) and (max-height: 699px) { /* a long question and its miss on a small phone (Task 11): Truffle's bubble says 想一想 already */
+  .langdu__step:has(+ .langdu__q) { display: none; }
+  .langdu__q { font-size: 24px; }
+}
 /* the library (spec 2026-10-15): a Global Storybooks picture beside the title on Listen and Read, the 生词 strip, the credit line,
    and 下一篇 in the sheet beside 开始朗读 — the passage keeps the card's room */
 .langdu__head { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; max-width: 100%; }

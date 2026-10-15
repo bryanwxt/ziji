@@ -546,6 +546,7 @@ async function sweep(browser: Browser, size: Size) {
   // yesterday's bank (a full meter) and today's first lesson: two chest phases in one Celebration (rewards ruling 2)
   await run('chest-two', AFTERNOON, { activities: only('newwords'), bank: 2 }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-two'); });
   await run('langdu-extra', AFTERNOON, { doneToday: true, langdu: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
+  await run('langdu-library', AFTERNOON, { activities: only('speaking'), speakingLast: 'story', langdu: true, schoolText: false }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu-library'); }); // a library passage: picture, credit, 下一篇 (spec 2026-10-15)
 }
 
 async function main() {

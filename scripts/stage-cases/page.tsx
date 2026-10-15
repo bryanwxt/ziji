@@ -341,11 +341,9 @@ else if (which === 'listen') {
 }
 else if (which?.startsWith('langdu-gsb-') || which === 'langdu-words-listen') {
   // the library (spec 2026-10-15): the longest Global Storybooks passage with its picture, names, credit line and 下一篇; and
-  // our longest passage with 生词 (until our passages carry 生词, the longest with two of its words glossed) — each with every
-  // syllable showing (nothing known), the part opened directly
-  const longest = (ps: Passage[]) => [...ps].sort((a, b) => b.text.length - a.text.length)[0];
-  const own = longest(PASSAGES.filter((x) => x.source === 'ziji'))!;
-  const p = which === 'langdu-words-listen' ? (longest(PASSAGES.filter((x) => x.words?.length)) ?? { ...own, words: [{ text: '球场', gloss: 'sports field' }, { text: '同学', gloss: 'classmate' }] }) : longest(PASSAGES.filter((x) => x.source === 'gsb'))!;
+  // our longest passage with 生词 — each with every syllable showing (nothing known), the part opened directly
+  const longest = (ps: Passage[]) => [...ps].sort((a, b) => b.text.length - a.text.length)[0]!;
+  const p = which === 'langdu-words-listen' ? longest(PASSAGES.filter((x) => x.words?.length)) : longest(PASSAGES.filter((x) => x.source === 'gsb'));
   const part = which.slice(which.lastIndexOf('-') + 1) as LangduPart;
   // the question: the library's longest (question and choices together), on its own passage, so the longest one is the one checked
   const asked = Object.entries(PASSAGE_QUESTIONS).flatMap(([id, qs]) => qs.map((q) => ({ id, q }))).sort((a, b) => (b.q.q + b.q.choices.join('')).length - (a.q.q + a.q.choices.join('')).length)[0]!;
@@ -357,9 +355,9 @@ else if (which?.startsWith('langdu-gsb-') || which === 'langdu-words-listen') {
   ), app);
 }
 else if (which?.startsWith('langdu-')) {
-  // 朗读's parts (spec 2026-10-12 §3, §8): the longest built-in text (p20) with every syllable showing (nothing known), each part
+  // 朗读's parts (spec 2026-10-12 §3, §8): the longest of our passages with every syllable showing (nothing known), each part
   // opened directly; stage-cases.ts misses the question. In listen, the first sentence lights as its voice starts.
-  const p = PASSAGES.find((x) => x.id === 'p20')!;
+  const p = [...PASSAGES.filter((x) => x.source === 'ziji')].sort((a, b) => b.text.length - a.text.length)[0]!;
   const part = (which === 'langdu-read-blocked' ? 'read' : which.slice('langdu-'.length)) as LangduPart;
   render(screen(
     <PinyinFade known={new Set()} on>

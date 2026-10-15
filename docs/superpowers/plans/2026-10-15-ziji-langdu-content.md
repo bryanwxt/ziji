@@ -20,7 +20,7 @@
 - **Warm-up** runs when the last warm-up was **3 or more days ago** (`lastWarmup`). `isFirstDay` goes.
 - **下一篇:** on **Listen** only, **2 swaps per step**, not once recording has started, **never on a parent's school text**, hidden when no other candidate exists. A swapped-out passage gets `lastSkipped = today`, `skips + 1`; reads and rest untouched. **3 skips** → "often skipped" for the parent.
 - **Questions:** **2** per own passage and per Global Storybooks chunk (p01–p20 gain one each); 谁 / 哪里 / 什么 / 为什么 / 怎么样; **3** choices; asked in turn (`history.q`); **choices shuffled at each showing**. Guess-proofing enforced by the content check: all three choices in the passage or none; choice lengths within **2** characters; the question doesn't contain the answer's characters apart from function characters; the answer is not the passage's most frequent word.
-- **Pictures:** one per Global Storybooks passage (the chunk's first page), WebP at most **640 px** wide (the imagebank's are 546, never enlarged), quality 50, ≤ 60 KB each, ≤ 1.5 MB in all (measured ~0.95 MB), in `public/passages/gsb-<story>-<chunk>.webp`, precached; shown on **Listen and Read**, **hidden on Question**. Own passages: no pictures.
+- **Pictures:** one per Global Storybooks passage (the chunk's first page), WebP at most **640 px** wide (the imagebank's are 546, never enlarged), quality 50, ≤ 60 KB each, ≤ 1.5 MB in all (planned ~0.95 MB for 45; the 15 imported measure ~288 KB), in `public/passages/gsb-<story>-<chunk>.webp`, precached; shown on **Listen and Read**, **hidden on Question**. Own passages: no pictures.
 - **Global Storybooks source:** `github.com/global-asp/sbc-source` folder `zh/` pinned at **`be28dab`** (`be28dab38ac55e8eb2185edb6631b11615d02185`, 2026-06-08); images from `global-asp/gsn-imagebank` pinned at **`0df4097`** (`0df409752c86adc92685816e19e6085c4e4496f1`). No runtime fetch. Chunks of **40–110** characters, page-aligned, a short tail merged into the previous chunk; chunks beyond **三上** dropped; a story dropped when **fewer than half** its chunks survive (and, by Ruling, when its first chunk doesn't, or a chunk holds a blocked word). CC BY-NC stories **included** (D1): 0002, 0003, 0009, 0030, 0067, 0112, 0120, 0129, 0231, 0234, 0271.
 - **Edits are light only** (D2): Singapore usage (一点儿 → 一点), typos, the wrong-script 馬. Names kept, always shown with pinyin, left out of the level count. A changed story shows 「有改动」/"adapted".
 - **Credit line** on Listen, small type: 「故事：Global Storybooks · 文 … · 图 … · 译 … · CC BY 3.0 · 有改动」; tapping opens parent-facing details with links to the licence and the source; never on Read or Question. **Parent › Credits**: one Global Storybooks / African Storybook entry with each included story's title, author, illustrator, translator, licence and "adapted"; "Read-aloud passages were written for this app." becomes **"Passages marked ZiJi were written for this app."**
@@ -99,7 +99,7 @@
 | `src/audio/recorder.ts`, `src/activities/shared/recording.tsx`, `src/langdu/sentences.ts` | `StartOptions.maxMs`; `useRecorder(startBlocked, maxMs)`; `readLimitMs` | 2 |
 | `src/app/SessionScreen.tsx`, `LangduScreen.tsx`, `HomeScreen.tsx` | history, mic fix, K, questions, 下一篇 | 2, 4, 5, 6 |
 | `src/activities/langdu/LangduStep.tsx` (+ tests) | read limit; shuffle; warm-up shell + `PassageParts`; picture, 生词, names, 下一篇, credit | 2, 5, 6, 7 |
-| `src/content/storybooks.json`, `public/passages/*.webp` (generated) | the 45 imported passages and their pictures | 3 |
+| `src/content/storybooks.json`, `public/passages/*.webp` (generated) | the 15 imported passages (12 stories) and their pictures | 3 |
 | `src/ui/pinyinFade.tsx` | `KeepPinyin` | 6 |
 | `src/ui/stage/FeedbackSheet.tsx` | `aside` (下一篇 beside 开始朗读) | 6 |
 | `scripts/storybooks/` (new: `zh/`, `manifest.json`, `SOURCE.md`, `lib.ts` + test, `fetch.ts`) | vendored stories; parse, edit, chunk, level, credit | 3 |
@@ -3163,11 +3163,11 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 `vite.config.ts`, `workbox.globPatterns`: `['**/*.{js,css,html,png,svg,ico,webmanifest,woff2}', 'worlds/*.webp', 'passages/*.webp'], // One River's paintings and thumbnails (spec 2026-10-13 §4) and the library's pictures (spec 2026-10-15 §7): offline`.
 
 Run: `npx vite build && grep -o 'passages/gsb-[0-9]*-[0-9]*\.webp' dist/sw.js | sort -u | wc -l`
-Expected: `45` (every picture precached).
+Expected: `15` (every picture precached; the plan first said 45 — the import keeps 15 passages from 12 stories).
 
 - [ ] **Step 2: Stage cases for the library**
 
-`scripts/stage-cases/page.tsx`: import the type `Passage` with `Recording`; the existing `langdu-` cases take the longest of our passages (after Tasks 8–10 it is no longer p20), and new cases come before them:
+(Already done in Tasks 5–7's verification, `adfc0ab`: the four library cases and the picture copy; Task 11 only moves the `langdu-` cases and the missed question to the longest of our passages.) `scripts/stage-cases/page.tsx`: import the type `Passage` with `Recording`; the existing `langdu-` cases take the longest of our passages (after Tasks 8–10 it is no longer p20), and new cases come before them:
 
 ```tsx
 else if (which?.startsWith('langdu-gsb-') || which === 'langdu-words-listen') {
