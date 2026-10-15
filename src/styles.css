@@ -342,6 +342,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* the chest shows once the boat reaches it; hidden (not removed) so nothing below it moves */
 .chest-slot.is-waiting { visibility: hidden; }
 @media (max-height: 760px) { .celebrate .river { width: min(70vw, 300px); } }
+/* almost there (rewards spec §4): up to three lines, each with its ink icon */
+.goals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: clamp(8px, 1.6dvh, 14px); width: min(92vw, 560px); }
+.goal-line { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--surface); border: var(--panel-border); border-radius: 16px; box-shadow: 3px 3px 0 var(--ink); text-align: left; font-size: clamp(20px, 3dvh, 26px); font-weight: 800; color: var(--ink); }
+.goal-line svg { flex: none; }
 
 /* Home */
 .home__who { display: flex; align-items: flex-end; gap: 10px; font-size: 22px; background: var(--paper); border-radius: 14px; padding: 2px 10px 4px; }

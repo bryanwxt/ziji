@@ -10,7 +10,8 @@ import { producedLine } from '../stats/produce';
 import { allSessions, getKid, getSettings, saveKid, updateKid } from '../store/repo';
 import { CHESTS_PER_DAY, lessonOf, METER_FULL, meterLine } from '../fun/meter';
 import { RiverTrack } from '../ui/RiverTrack';
-import { settleMeter } from './celebrationData';
+import { almostThere, type Goal } from '../fun/goals';
+import { loadGoalFacts, settleMeter } from './celebrationData';
 import { localDateKey } from '../lib/date';
 import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
@@ -31,7 +32,7 @@ import { currentWorld } from '../fun/worlds';
 import { burstStyle } from '../ui/worlds/burst';
 import { reducedMotion } from '../ui/motion';
 
-type Phase = 'stars' | 'river' | 'chest' | 'power' | 'badges';
+type Phase = 'stars' | 'river' | 'chest' | 'goals' | 'power' | 'badges';
 // his moments here (spec 2026-10-04 §4.4): an overjoyed hop at the stars, then proud; a pounce as the chest's prize appears
 const DONE: Reaction = { kind: 'done', key: 1 };
 const POUNCE: Reaction = { kind: 'pounce', key: 1 };
@@ -46,6 +47,7 @@ interface River { from: number; left: number; capped: boolean }
 interface Sequence {
   order: Phase[]; // a phase may come twice: two chests in one lesson
   river: River;
+  goals: Goal[];
   power: { id: PowerId; tier: number } | null; // the highest newly reached tier (shown)
   newTiers: { id: PowerId; tier: number }[];
   badges: string[];
@@ -53,7 +55,7 @@ interface Sequence {
 }
 
 export function Celebration({ rec }: { rec: SessionRecord }) {
-  const { db, go, refresh } = useApp();
+  const { db, go, refresh, now } = useApp();
   const kidRef = useRef<KidState>(DEFAULT_KID);
   const counterRef = useRef<HTMLSpanElement>(null);
   const chestRef = useRef<HTMLDivElement>(null);
@@ -79,7 +81,6 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const [arrived, setArrived] = useState(still); // the boat has reached the chest: it shows and can be opened
   // mastery stars (spec 2026-10-11 §5); a lesson finished before them shows the stars its steps earned
   const stars = rec.free ? 0 : rec.stars ?? starsOf(rec.completedSteps);
-  const line = rec.free ? null : producedLine(rec.produced, rec.closest);
 
   useEffect(() => {
     celebrate();
@@ -97,6 +98,11 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
         if (m.owed > 0) for (let i = 0; i < m.owed; i++) order.push('chest');
         else order.push('river');
       }
+      // up to three things he is close to, after the stars and the chest (rewards spec §4); never on free play
+      const goals: Goal[] = lessonOf(rec)
+        ? await loadGoalFacts(db, know, !!fill?.counted, now()).then((f) => almostThere(kidNow, know, f, now())).catch(() => [])
+        : [];
+      if (goals.length) order.push('goals');
       const badges = newBadges(stickerFamilies(BUILTIN), know.knownChars, kidNow.badgesSeen);
       const fresh = newTiers(powerProgress(powerFamilies(BUILTIN), know.knownChars), kidNow.powerTiersSeen);
       const power = [...fresh].sort((a, b) => b.tier - a.tier)[0] ?? null;
@@ -104,7 +110,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
       if (badges.length) order.push('badges');
       kidRef.current = kidNow;
       setKid(kidNow);
-      setSeq({ order, river, power, newTiers: fresh, badges, starsBefore: totalStars(sessions, kidNow.bonusStars) - stars });
+      setSeq({ order, river, goals, power, newTiers: fresh, badges, starsBefore: totalStars(sessions, kidNow.bonusStars) - stars });
     })();
   }, []);
 
@@ -135,6 +141,8 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   }, [phase, chest]);
 
   if (!seq || !kid) return <div class="screen loading"><InkIcon name="star" size={88} label="加载中" /></div>;
+  // the 还差一天 line is promoted to a goal when one shows (rewards ruling 7)
+  const line = rec.free ? null : producedLine(rec.produced, seq.goals.some((g) => g.kind === 'write') ? [] : rec.closest);
 
   const save = async (next: KidState) => {
     kidRef.current = next;
@@ -237,6 +245,19 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
             <h1><Label zh={seq.river.capped ? '今天的宝箱都开了！' : seq.river.left > 0 ? '小船走到一半了！' : '小船出发了！'} /></h1>
             <RiverTrack from={seq.river.from} to={seq.river.left} />
             {boatLine && <p class="celebrate__line"><Label zh={boatLine} /></p>}
+          </>
+        )}
+        {phase === 'goals' && (
+          <>
+            <h1><Label zh="快到了！" /></h1>
+            <ul class="goals">
+              {seq.goals.map((g) => (
+                <li key={g.zh} class={`goal-line goal-line--${g.kind}`}>
+                  <InkIcon name={g.icon} size={40} />
+                  <Label zh={g.zh} />
+                </li>
+              ))}
+            </ul>
           </>
         )}
         {phase === 'chest' && (

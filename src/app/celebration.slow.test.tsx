@@ -167,7 +167,7 @@ describe('Celebration chest save failure', () => {
     app.db.close();
     fireEvent(chest, new Event('pointerdown', { bubbles: true }));
     await hold();
-    expect(await screen.findByText('回家')).toBeTruthy();
+    expect(await screen.findByText(/回家|继续/)).toBeTruthy();
   });
 });
 
