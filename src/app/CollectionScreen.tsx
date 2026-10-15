@@ -55,7 +55,7 @@ export function CollectionScreen() {
   const show = (c: CharCard, from: HTMLElement) => {
     opener.current = from;
     setShown(c);
-    speak(c.char);
+    speak(c.char, { reading: c.pinyin });
   };
   const backs = visible.filter((c) => !c.caught).length;
   const nudge = (el: HTMLElement) => {
@@ -132,7 +132,7 @@ export function CollectionScreen() {
             <h2><Label zh="我的字" /></h2>
             <div class="zika-grid">
               {myWords.map((w) => (
-                <button key={w.id} type="button" class="zika" aria-label={w.text} onClick={() => speak(w.text)}>
+                <button key={w.id} type="button" class="zika" aria-label={w.text} onClick={() => speak(w.text, { reading: w.pinyin })}>
                   {/* each syllable over its own character, as on the lesson cards (parent 2026-10-15) */}
                   {Array.from(w.text).length > 1 ? <span class="zika__char zika__word hanzi" style={{ fontSize: w.text.length > 2 ? '28px' : '44px' }}><Label zh={w.text} py={w.pinyin} /></span> : (
                     <>
@@ -164,13 +164,13 @@ export function CollectionScreen() {
             <span class="zika__head">
               <span class="zika__py">{shown.pinyin}</span>
               <span class="zika__char hanzi">{shown.char}</span>
-              <SpeakButton text={shown.char} />
+              <SpeakButton text={shown.char} reading={shown.pinyin} />
             </span>
             {/* its English, and its 组词's, as on the lesson cards (parent, 2026-10-05) */}
             {shownWord && cardMeaning(shownWord) && <span class="zika__en" lang="en">{cardMeaning(shownWord)}</span>}
             {shown.example && (
               <span class="zika__example">
-                <span class="word-row__line zika__example-line"><span class="hanzi"><Label zh={shown.example} py={shownWord?.examples?.find((e) => e.text === shown.example)?.pinyin} /></span><SpeakButton text={shown.example} small /></span>
+                <span class="word-row__line zika__example-line"><span class="hanzi"><Label zh={shown.example} py={shownWord?.examples?.find((e) => e.text === shown.example)?.pinyin} /></span><SpeakButton text={shown.example} reading={shownWord?.examples?.find((e) => e.text === shown.example)?.pinyin} small /></span>
                 {glossFor(shown.example) && <span class="zika__en" lang="en">{glossFor(shown.example)}</span>}
               </span>
             )}

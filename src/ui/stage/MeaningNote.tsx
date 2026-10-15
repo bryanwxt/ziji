@@ -28,7 +28,7 @@ export function MeaningNote({ right, picked = null, rightMeaning, rightPinyin, a
         <p class="sheet__en-line sheet__en-right">
           {answerLabel && <span class="sheet__en-label">{answerLabel}</span>}
           <span class="sheet__en-zh"><Label zh={right} py={rightPinyin} /></span>
-          {answerLabel && <SpeakButton text={right} small />}
+          {answerLabel && <SpeakButton text={right} reading={rightPinyin} small />}
           {mine && <span lang="en">{mine}</span>}
         </p>
       )}
