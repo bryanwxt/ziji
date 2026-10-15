@@ -47,10 +47,11 @@ const astronaut = (): CostumeLayer => ({
     cel('M134 218 L186 218 C190 218 192 220 192 224 L192 246 C192 250 190 252 186 252 L134 252 C130 252 128 250 128 246 L128 224 C128 220 130 218 134 218 Z', SUIT_GREY, 136, 222, 0.92) +
     `<circle cx="142" cy="230" r="4.4" fill="#ff5532" ${s2}/><circle cx="156" cy="230" r="4.4" fill="#ffc94a" ${s2}/><circle cx="170" cy="230" r="4.4" fill="#7fdc7a" ${s2}/>` +
     `<path d="M138 243 L182 243" stroke="#8a93a6" stroke-width="3" stroke-linecap="round"/><circle cx="182" cy="230" r="3" fill="#3f6fd6"/>` +
-    // the mission patches: blue on his left shoulder, orange on his right; the suit's seams and knee pads
+    // the mission patches: blue on his left shoulder, orange on his right
     `<circle cx="108" cy="222" r="10" fill="#3f6fd6" ${s2}/><path d="${star(108, 222, 6)}" fill="#fffdf7"/>` +
     `<path d="M204 214 L222 214 L222 230 L204 230 Z" fill="#ff8a3d" ${s2}/><path d="M207 222 L219 222" stroke="#fffdf7" stroke-width="2.4"/>` +
-    pair((f) => `<ellipse cx="${f(110)}" cy="266" rx="22" ry="11" fill="${SUIT_GREY}" ${S}/><path d="M${f(96)} 266 L${f(124)} 266" stroke="${celShade(SUIT_GREY)}" stroke-width="2"/>`),
+    // the moon boots on his own feet: each under its gloved paw, a thick sole showing round it (never beside it: four feet)
+    pair((f) => `<ellipse cx="${f(138)}" cy="271" rx="21" ry="11" fill="${SUIT_GREY}" ${S}/><path d="M${f(120)} 276 C${f(130)} 281 ${f(146)} 281 ${f(156)} 276" fill="none" stroke="${celShade(SUIT_GREY)}" stroke-width="2.4"/>`),
   head:
     // the helmet: its ring (shadow, lit, line), the side pods, a blue stripe over the top, then the clear visor
     `<path d="${HELM} ${VISOR_HOLE}" fill="${celShade(SUIT)}"/>` +
@@ -242,15 +243,15 @@ const police = (): CostumeLayer => ({
     // the shirt's collar, its buttons, the gold chest badge, the shoulder straps
     pair((f) => `<path d="M${f(118)} 192 L${f(150)} 204 L${f(142)} 218 Z" fill="#3a5294" ${s2}/>`) +
     [214, 232].map((y) => `<circle cx="160" cy="${y}" r="3.2" fill="${GOLD}" ${s2}/>`).join('') +
-    cel('M118 216 L134 212 L150 216 L148 232 C146 240 140 244 134 246 C128 244 122 240 120 232 Z', GOLD, 124, 218, 0.86) +
-    `<path d="${star(134, 228, 6)}" fill="#c8962a"/>` +
+    cel('M118 208 L134 204 L150 208 L148 222 C146 229 140 233 134 235 C128 233 122 229 120 222 Z', GOLD, 124, 210, 0.86) +
+    `<path d="${star(134, 219, 6)}" fill="#c8962a"/>` +
     pair((f) => `<path d="M${f(100)} 200 L${f(124)} 194" stroke="${celShade(POLICE)}" stroke-width="5" stroke-linecap="round"/>`) +
     // the whistle on its white cord, from his shoulder
     `<path d="M196 196 C200 210 200 222 196 232" fill="none" stroke="#fffdf7" stroke-width="2.6"/>` +
     `<path d="M190 232 L206 232 L208 240 L190 240 Z" fill="#c9ccd6" ${s2}/>` +
-    // the black belt and its buckle
-    `<path d="M98 248 C130 258 190 258 222 248 L224 258 C190 268 130 268 96 258 Z" fill="#26232b" ${S}/>` +
-    `<path d="M152 252 L168 252 L168 264 L152 264 Z" fill="${GOLD}" ${s2}/>`,
+    // the black belt and its buckle, at his waist: low down by his paws its ends read as two more shoes
+    `<path d="M93 238 C128 248 192 248 227 238 L227 249 C192 259 128 259 93 249 Z" fill="#26232b" ${S}/>` +
+    `<path d="M152 243 L168 243 L168 255 L152 255 Z" fill="${GOLD}" ${s2}/>`,
   head:
     // the crown, wider than his head as a peaked cap's is, then the checked band right across, the peak, the gold badge
     cel('M48 72 C42 50 92 26 160 26 C228 26 278 50 272 72 C266 82 250 84 238 82 L82 82 C70 84 54 82 48 72 Z', POLICE, 96, 38, 0.92) +
@@ -272,7 +273,7 @@ const police = (): CostumeLayer => ({
 
 // ---------------------------------------------------------------------------------------------------------------------------
 // 7. 足球员 footballer: a green sweatband right across his forehead (his crown and ears show), a yellow jersey with a green
-//    collar and number 7, green shorts, white socks and boots; the football under his left paw. (Yellow, and the ball.)
+//    collar and number 7, green shorts, black boots on his feet; the football under his left paw. (Yellow, and the ball.)
 const JERSEY = '#ffcc2e';
 const PITCH = '#2fae5a';
 const football = (): CostumeLayer => ({
@@ -283,12 +284,13 @@ const football = (): CostumeLayer => ({
       rope(`M${f(78)} 224 L${f(99)} 233`, PITCH, 6)) +
     `<path d="M136 192 L160 212 L184 192" fill="none" stroke="${INK}" stroke-width="9.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M136 192 L160 212 L184 192" fill="none" stroke="${PITCH}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>` +
     num('7', 160, 234, PITCH) + hi('M110 206 C104 214 102 222 102 230', 3, 0.4) +
-    // green shorts, then white socks and black boots with white stripes and studs
-    cel('M96 248 C128 258 192 258 224 248 L232 274 C200 284 172 282 160 276 C148 282 120 284 88 274 Z', PITCH, 108, 254, 0.9) +
-    `<path d="M160 258 L160 276" stroke="${celShade(PITCH)}" stroke-width="2.4"/>` +
-    pair((f) => `<path d="M${f(90)} 270 L${f(124)} 270 L${f(124)} 279 L${f(90)} 279 Z" fill="#fffdf7" ${s2}/><path d="M${f(90)} 274 L${f(124)} 274" stroke="${PITCH}" stroke-width="2.6"/>` +
-      `<path d="M${f(88)} 284 C${f(88)} 278 ${f(96)} 277 ${f(106)} 277 L${f(122)} 278 C${f(130)} 279 ${f(132)} 284 ${f(128)} 287 L${f(92)} 287 C${f(89)} 287 ${f(88)} 286 ${f(88)} 284 Z" fill="#2d2a33" ${s2}/>` +
-      `<path d="M${f(100)} 280 L${f(110)} 280" stroke="#fffdf7" stroke-width="2" stroke-linecap="round"/>`),
+    // green shorts round his middle, down to the suit's own bottom edge (no legs out at the sides: they read as two more feet)
+    cel('M98 246 C128 256 192 256 222 246 C221 251 219 255 216 258 C200 276 120 276 104 258 C101 255 99 251 98 246 Z', PITCH, 110, 252, 0.9) +
+    `<path d="M160 256 L160 272" stroke="${celShade(PITCH)}" stroke-width="2.4"/>` +
+    // black boots with a white stripe and studs, on his own feet: each under its paw, the boot showing round and below it
+    pair((f) => `<path d="M${f(116)} 274 C${f(116)} 266 ${f(126)} 262 ${f(138)} 262 C${f(150)} 262 ${f(160)} 266 ${f(160)} 274 L${f(160)} 281 C${f(160)} 284 ${f(158)} 286 ${f(154)} 286 L${f(122)} 286 C${f(118)} 286 ${f(116)} 284 ${f(116)} 281 Z" fill="#2d2a33" ${s2}/>` +
+      `<path d="M${f(118)} 279 L${f(158)} 279" stroke="#fffdf7" stroke-width="2.4"/>` +
+      [124, 136, 148].map((x) => `<path d="M${f(x)} 286 L${f(x)} 289" stroke="#2d2a33" stroke-width="3" stroke-linecap="round"/>`).join('')),
   head:
     // the sweatband: right across his forehead, the white stripe along it; it never grows over his crown
     `<path d="M54 92 C92 56 228 56 266 92 L266 108 C228 72 92 72 54 108 Z" fill="${PITCH}" ${S}/>` +

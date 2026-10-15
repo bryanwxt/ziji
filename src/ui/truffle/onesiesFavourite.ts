@@ -135,7 +135,8 @@ const penguin = (): CostumeLayer => ({
   back: '',
   body: tint(PENGUIN) + belly('#ffffff') +
     pair((f) => cel(`M${f(112)} 196 C${f(94)} 212 ${f(88)} 236 ${f(96)} 254 C${f(104)} 252 ${f(110)} 238 ${f(116)} 216 Z`, PENGUIN, Math.min(f(112), f(88)) + 8, 210, 0.88)) +
-    pair((f) => `<ellipse cx="${f(128)}" cy="271" rx="16" ry="6.5" fill="#ff9f43" ${S}/>`),
+    // orange feet under his dark paws, showing below them (out at the sides they read as two more feet)
+    pair((f) => `<ellipse cx="${f(138)}" cy="276" rx="18" ry="7" fill="#ff9f43" ${S}/>`),
   head: hood(PENGUIN) +
     `<path d="M48 120 C46 62 100 30 160 30 C220 30 274 62 272 120 C258 98 232 84 200 80 C186 78 172 80 160 82 C148 80 134 78 120 80 C88 84 62 98 48 120 Z" fill="${PG_CAP}" ${S}/>` +
     hi('M84 66 C98 50 118 42 140 38', 5, 0.3) +
