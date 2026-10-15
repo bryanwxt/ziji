@@ -15,7 +15,10 @@ import { clipId, engineText, type ClipJob, type ClipKind } from './inventory-lib
 import SAY_AS from '../../src/audio/sayAs.json';
 import { boundPair, kidGlossReading } from '../../src/content/kidGloss';
 
-/** Lone characters said as a 组词 instead (scripts/gen-say-as.ts `words`): they need no clip of their own at their card's reading. */
+/**
+ * Lone characters no voice says right alone (scripts/gen-say-as.ts `unsure`, and the 组词 `words` the iPad voice says them as
+ * instead): their clip is cut out of that 组词, said by the same voice (爪 zhuǎ from 爪子; alone, every voice says zhǎo).
+ */
 const SAID_AS_WORD: Record<string, string[]> = (SAY_AS as { words?: Record<string, string[]> }).words ?? {};
 import { parseChapter } from '../../src/story/format';
 
@@ -33,12 +36,21 @@ const sentencePinyin = (t: string) => readingOf(t);
 export const CUT_FROM_SENTENCE = new Set(['一起', '鱼']); // 鱼: parent heard it wrong on its own (2026-10-07)
 
 /** A clip's name: its key, its reading, the voice, and exactly what the voice is given and how, so any change makes a new clip. */
-export const clipIdFor = (j: Pick<ClipJob, 'key' | 'expected' | 'engineText' | 'method'>, voice: string): string =>
-  clipId(j.key, j.expected, `${voice}\u0000${j.method ?? 'say'}\u0000${j.engineText}`);
+export const clipIdFor = (j: Pick<ClipJob, 'key' | 'expected' | 'engineText' | 'method' | 'syllables'>, voice: string): string =>
+  clipId(j.key, j.expected, `${voice}\u0000${j.method ?? 'say'}\u0000${j.engineText}${j.syllables ? `\u0000${j.syllables.join('-')}` : ''}`);
+
+/** The 组词 an unsure character is cut from: the first of its `words` whose syllable there is the card's reading. */
+export function cutFrom(ch: string, reading: string): { word: string; at: number } | null {
+  for (const word of SAID_AS_WORD[ch] ?? []) {
+    const at = Array.from(word).indexOf(ch);
+    if (at >= 0 && readingOf(word)?.split(/\s+/)[at] === reading) return { word, at };
+  }
+  return null;
+}
 
 export function buildInventory(voice: string): ClipJob[] {
   const jobs = new Map<string, ClipJob>();
-  const add = (text: string, expected: string, kind: ClipKind, reading?: string, { piece = false } = {}) => {
+  const add = (text: string, expected: string, kind: ClipKind, reading?: string, { piece = false, taught = false } = {}) => {
     const t = text.trim();
     if (!Array.from(t).some(isHan)) return;
     const key = clipKey(t, reading);
@@ -49,7 +61,7 @@ export function buildInventory(voice: string): ClipJob[] {
     // A bare word is said like an unfinished phrase, its tones bent (东西's 东 falling: parent, 2026-10-06); ended with 。 it
     // is said whole. Not a 听写 cue's middle piece (长城的): that is said mid-cue, and with 。 its 的 came out stressed.
     const said = (kind === 'char' || kind === 'word') && !cut && !piece && !/[。！？]$/.test(e.text) ? `${e.text}。` : e.text;
-    const job: ClipJob = { key, id: '', text: t, engineText: said, expected, kind, sure: e.sure, ...(cut ? { method: 'cut' as const } : {}) };
+    const job: ClipJob = { key, id: '', text: t, engineText: said, expected, kind, sure: e.sure, ...(cut ? { method: 'cut' as const } : {}), ...(taught ? { taught } : {}) };
     jobs.set(key, { ...job, id: clipIdFor(job, voice) });
   };
   const sentence = (t: string, kind: ClipKind = 'sentence') => add(t, sentencePinyin(t), kind);
@@ -59,7 +71,13 @@ export function buildInventory(voice: string): ClipJob[] {
   const ours = (t: string) => Array.from(t).every((c) => !isHan(c) || rangeChars.has(c));
 
   for (const w of inRange) {
-    if (!SAID_AS_WORD[w.text]) add(w.text, w.pinyin, 'char', w.pinyin); // 爪 is said as 爪子 (speech.ts loneSpoken): its 组词's clip
+    const from = Array.from(w.text).length === 1 ? cutFrom(w.text, w.pinyin) : null;
+    if (from) {
+      // spot-listened (sure: false): the cut is only as good as the voice's 组词
+      const job: ClipJob = { key: clipKey(w.text, w.pinyin), id: '', text: w.text, engineText: from.word, expected: w.pinyin, kind: 'char', sure: false, method: 'cut', syllables: [from.at, from.at + 1], taught: true };
+      jobs.set(job.key, { ...job, id: clipIdFor(job, voice) });
+    } else add(w.text, w.pinyin, 'char', w.pinyin, { taught: Array.from(w.text).length === 1 });
+    for (const x of SAID_AS_WORD[w.text] ?? []) add(x, readingOf(x), 'word'); // what the iPad voice says it as, when no clip plays
     for (const e of w.examples ?? []) {
       add(e.text, e.pinyin, 'word');
       add(`${e.text}的`, `${e.pinyin} de`, 'word', undefined, { piece: true }); // 听写's "长，长城的，长"

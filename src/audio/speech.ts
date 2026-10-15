@@ -1,7 +1,7 @@
 import SAY_AS from './sayAs.json';
 import { boundPair, kidGlossReading } from '../content/kidGloss';
 import { audioContext } from './context';
-import { clipPlan, clipUrl } from './clips';
+import { clipPlan, clipUrl, type ClipStep } from './clips';
 import { createClipPlayer, type ClipPlayer } from './clipPlayer';
 import { recordingNow, setClipActive, setSpeaking } from './speaking';
 import { noteVoice, voiceQuality } from './voiceTier';
@@ -98,15 +98,17 @@ export function spokenAs(text: string, reading?: string): string {
  * one ending in a tile it could join (茄子 when 子 is on the board); with none left, the character is said alone. A bound
  * character (kidGloss.ts boundPair: 番 → 番茄) is said as its pair the same way, first.
  */
-export function loneSpoken(text: string, reading?: string, avoid: readonly string[] = [], endings: readonly string[] = []): string {
+export function loneSpoken(text: string, reading?: string, avoid: readonly string[] = [], endings: readonly string[] = [], { voice = false } = {}): string {
   const { poly, words } = SAY_AS as { poly: Record<string, string>; words?: Record<string, string[]> };
   if (text.includes('，')) {
     const parts = text.split('，');
-    // a cue whose word already says it (了，为了的，了): its lone pieces stay bare (review 2026-10-15)
+    // a cue whose word already says it (了，为了的，了): its lone pieces stay bare (review 2026-10-15), for their clips. Not on
+    // the iPad voice (`voice`): there bare 爪 is zhǎo beside 爪子's zhuǎ (parent 2026-10-15), so it is said as its word too
     return parts.map((part, i) => {
       const ch = part.trim();
       if (Array.from(ch).length !== 1) return part;
-      return parts.some((p, j) => j !== i && Array.from(p.trim()).length > 1 && p.includes(ch)) ? part : loneSpoken(part, reading, avoid, endings);
+      const keep = !(voice && words?.[ch]) && parts.some((p, j) => j !== i && Array.from(p.trim()).length > 1 && p.includes(ch));
+      return keep ? part : loneSpoken(part, reading, avoid, endings);
     }).join('，');
   }
   const t = text.trim();
@@ -126,7 +128,26 @@ export function setClipPlayer(p: ClipPlayer): void {
   player = p;
 }
 
-type Line = { text: string; reading?: string };
+/** A line as it is said: by clips (`steps`, saying `text`), else by the iPad voice (`voiced`, also when a clip fails). */
+type Line = { text: string; voiced: string; reading?: string };
+type SayOpts = { reading?: string; avoid?: readonly string[]; endings?: readonly string[] };
+
+/**
+ * How a line is said. A lone unsure character (爪, 切) with its own clip at its card's reading (cut out of its 组词 by the
+ * same voice: scripts/audio inventory) plays that clip, so it sounds the same alone as in its word; on the iPad voice it is
+ * still said as its 组词. A bound character (爪 → 爪子) is said as its pair first either way.
+ */
+function said(line: string, { reading, avoid, endings }: SayOpts): Line & { steps: ClipStep[] | null } {
+  const { poly, words } = SAY_AS as { poly: Record<string, string>; words?: Record<string, string[]> };
+  const t = line.trim();
+  const voiced = loneSpoken(line, reading, avoid, endings, { voice: true });
+  if (words?.[t] && !boundPair(t) && (reading ?? poly[t]) === poly[t]) {
+    const own = clipPlan(t, poly[t]);
+    if (own) return { text: t, voiced, reading, steps: own };
+  }
+  const text = loneSpoken(line, reading, avoid, endings);
+  return { text, voiced, reading, steps: clipPlan(text, reading) };
+}
 /** Lines queued behind a clip (or behind the iPad voice while a clip waits): said in order, one at a time. */
 let after: Line[] = [];
 let clipBusy = false;
@@ -138,33 +159,32 @@ const ttsBusy = () => available() && (live.size > 0 || waiting !== null);
  * character is taught with, when the screen knows it. While he is being recorded it says nothing (final review C1): a peek or
  * a line on screen must never end up in his take.
  */
-export function speak(line: string, { queue = false, reading, avoid, endings }: { queue?: boolean; reading?: string; avoid?: readonly string[]; endings?: readonly string[] } = {}): void {
+export function speak(text: string, { queue = false, reading, avoid, endings }: { queue?: boolean } & SayOpts = {}): void {
   if (recordingNow()) return;
-  const text = loneSpoken(line, reading, avoid, endings);
-  if (queue && (clipBusy || after.length > 0 || (ttsBusy() && clipPlan(text, reading)))) {
-    after.push({ text, reading });
+  const { steps, ...line } = said(text, { reading, avoid, endings });
+  if (queue && (clipBusy || after.length > 0 || (ttsBusy() && steps))) {
+    after.push(line);
     return;
   }
-  const steps = clipPlan(text, reading);
   if (!steps) {
     // the iPad voice: a tap still cuts off a clip and what was queued behind it (final review). Not the whole stopSpeaking(),
     // so ttsSpeak still sees the voice busy and waits its moment after the cancel
     if (!queue) { after = []; clipBusy = false; setClipActive(false); player.stop(); }
-    ttsSpeak(text, { queue, reading });
+    ttsSpeak(line.voiced, { queue, reading });
     return;
   }
   if (!queue) stopSpeaking();
-  playClip(steps, { text, reading });
+  playClip(steps, line);
 }
 
-function playClip(steps: NonNullable<ReturnType<typeof clipPlan>>, line: Line): void {
+function playClip(steps: ClipStep[], line: Line): void {
   clipBusy = true;
   setClipActive(true);
   void player.play(steps, () => setSpeaking(true)).then((r) => {
     if (r === 'stopped') return; // whoever stopped it has reset everything
     clipBusy = false;
     setClipActive(false);
-    if (r === 'failed') { ttsSpeak(line.text, { queue: true, reading: line.reading }); return; } // never silent
+    if (r === 'failed') { ttsSpeak(line.voiced, { queue: true, reading: line.reading }); return; } // never silent
     setSpeaking(false);
     drain();
   });
@@ -177,13 +197,13 @@ function drain(): void {
   if (!next) return;
   const steps = clipPlan(next.text, next.reading);
   if (steps) playClip(steps, next);
-  else ttsSpeak(next.text, { queue: true, reading: next.reading });
+  else ttsSpeak(next.voiced, { queue: true, reading: next.reading });
 }
 
 /** Fetch a lesson's clips ahead, so they play at once and offline (the service worker keeps them). */
 export function prefetchWords(words: { text: string; pinyin?: string; examples?: { text: string }[] }[]): void {
   const ids = new Set<string>();
-  const add = (text: string, reading?: string) => { for (const s of clipPlan(loneSpoken(text, reading), reading) ?? []) if ('id' in s) ids.add(s.id); };
+  const add = (text: string, reading?: string) => { for (const s of said(text, { reading }).steps ?? []) if ('id' in s) ids.add(s.id); };
   for (const w of words) {
     add(w.text, w.pinyin);
     for (const e of w.examples ?? []) add(e.text);

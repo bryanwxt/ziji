@@ -8,16 +8,37 @@ const jobs = buildInventory('test:voice@1/1');
 const keys = new Set(jobs.map((j) => j.key));
 
 describe('the clip inventory', () => {
-  it('every in-range character, by its taught reading (or the 组词 it is said as), and its 组词', () => {
+  it('every in-range character, by its taught reading (and the 组词 an unsure one is said as), and its 组词', () => {
     const inRange = builtinWords(0).filter((w) => (w.level ?? 99) <= 3 || schoolTerm(w.text));
     const saidAs = (SAY_AS as { words: Record<string, string[]> }).words;
     for (const w of inRange) {
-      if (saidAs[w.text]) {
-        for (const x of saidAs[w.text]!) expect(keys.has(x), x).toBe(true); // 爪 is said as 爪子: no clip of its own
-        expect(keys.has(clipKey(w.text, w.pinyin)), w.text).toBe(false);
-      } else expect(keys.has(clipKey(w.text, w.pinyin)), w.text).toBe(true);
+      expect(keys.has(clipKey(w.text, w.pinyin)), w.text).toBe(true);
+      if (Array.from(w.text).length === 1) expect(jobs.find((j) => j.key === clipKey(w.text, w.pinyin))?.taught, w.text).toBe(true);
+      for (const x of saidAs[w.text] ?? []) expect(keys.has(x), x).toBe(true); // the iPad voice's fallback: 爪 said as 爪子
       for (const e of w.examples ?? []) expect(keys.has(e.text), e.text).toBe(true);
     }
+  });
+  it('a 连一连 half at another reading is not the taught clip (长|zhǎng)', () => {
+    const half = jobs.find((j) => j.key === '长|zhǎng');
+    expect(half?.kind).toBe('char');
+    expect(half?.taught).toBeFalsy();
+  });
+  it('an unsure character is cut out of its 组词, said by the same voice (爪 zhuǎ from 爪子, not zhǎo alone)', () => {
+    const { unsure, words } = SAY_AS as { unsure: string[]; words: Record<string, string[]> };
+    const zhua = jobs.find((j) => j.key === '爪|zhuǎ')!;
+    expect(zhua).toMatchObject({ text: '爪', kind: 'char', engineText: '爪子', method: 'cut', syllables: [0, 1], expected: 'zhuǎ', taught: true, sure: false });
+    expect(jobs.find((j) => j.key === '茄|qié')).toMatchObject({ engineText: '番茄', syllables: [1, 2] });
+    const inRange = new Set(builtinWords(0).filter((w) => (w.level ?? 99) <= 3 || schoolTerm(w.text)).map((w) => w.text));
+    for (const ch of unsure.filter((c) => inRange.has(c))) {
+      const j = jobs.find((x) => x.taught && x.text === ch)!;
+      expect(j.method, ch).toBe('cut');
+      expect(words[ch], ch).toContain(j.engineText);
+      expect(Array.from(j.engineText)[j.syllables![0]], ch).toBe(ch);
+    }
+  });
+  it('the syllables kept are part of the clip name', () => {
+    const zhua = jobs.find((j) => j.key === '爪|zhuǎ')!;
+    expect(zhua.id).not.toBe(clipIdFor({ ...zhua, syllables: undefined }, 'test:voice@1/1'));
   });
   it('the pieces lines are built from: 听写 cues (长城的) and the fixed lines', () => {
     const w = builtinWords(0).find((x) => (x.examples ?? []).length > 0 && ((x.level ?? 99) <= 3 || schoolTerm(x.text)))!;

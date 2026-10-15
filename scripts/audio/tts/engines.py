@@ -25,6 +25,16 @@ def syllable_bounds(phonemes, durations, unit=KOKORO_UNIT):
     return out
 
 
+def cut_span(bounds, n, keep, size, tail):
+    """Where to cut a word (the carrier's last n syllables), or only its syllables keep = (from, to), out of the carrier: from
+    the first kept syllable's start to `tail` samples past the last's end, or to where the next syllable starts when one
+    follows (爪 in 爪子 stops before 子)."""
+    mine = bounds[-n:]
+    lo, hi = keep if keep is not None else (0, n)
+    end = mine[hi - 1][1] if hi < n else min(size, mine[-1][1] + tail)
+    return mine[lo][0], end
+
+
 class Kokoro:
     """Kokoro-82M. Voices: 'v1.1/zf_001' (the Chinese-tuned v1.1-zh) or 'v1.0/zf_xiaoxiao' (the original model)."""
 
@@ -41,17 +51,19 @@ class Kokoro:
 
     CARRIER = '就是{}。'
 
-    def synth_cut(self, word, speed):
+    def synth_cut(self, word, speed, keep=None):
         """The word said at the end of a sentence (就是一起。) and cut back out: some words alone come out with bent tones
-        (一起's 一 rising, parent 2026-10-06). The cut runs from the word's first syllable to 40 ms past its last."""
+        (一起's 一 rising, parent 2026-10-06). The cut runs from the word's first syllable to 40 ms past its last. `keep`
+        (from, to): only those syllables of the word, for a character no voice says right alone (爪 from 爪子)."""
         r = next(iter(self.pipe(self.CARRIER.format(word), voice=self.voice, speed=speed)))
         a = np.asarray(r.audio, dtype=np.float32).reshape(-1)
         bounds = syllable_bounds(r.phonemes, r.pred_dur.tolist())
         n = sum(c.isdigit() for c in self.pipe.g2p(word)[0])  # its syllables: each ends in a tone digit
         if n == 0 or len(bounds) < n:
             raise ValueError(f'{word}: no syllables in {r.phonemes}')
-        mine = bounds[-n:]  # the carrier's last n syllables are the word
-        start, end = mine[0][0], min(a.size, mine[-1][1] + int(0.04 * 24000))
+        if keep is not None and not 0 <= keep[0] < keep[1] <= n:
+            raise ValueError(f'{word}: no syllables {keep} in {n}')
+        start, end = cut_span(bounds, n, keep, a.size, int(0.04 * 24000))  # the carrier's last n syllables are the word
         clip = a[start:end].copy()
         fade = int(0.01 * 24000)
         clip[:fade] *= np.linspace(0, 1, fade)
