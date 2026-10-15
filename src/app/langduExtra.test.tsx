@@ -95,6 +95,18 @@ describe('朗读 extra rounds', () => {
     expect(await screen.findByText('我爱我的猫。')).toBeTruthy();
   });
 
+  it('下一篇 works in 多读一遍 as in the lesson: the next passage comes in and the skip is saved (spec 2026-10-15 §5)', async () => {
+    const app = await makeAppData({ settings: LANGDU, kid, now: () => new Date(2026, 9, 2, 17) });
+    await saveKid(app.db, kid);
+    renderWithApp(<LangduScreen />, app);
+    const title = () => document.querySelector('.langdu__title')?.textContent;
+    await waitFor(() => expect(title()).toBeTruthy());
+    const first = title();
+    fireEvent.click(btn('下一篇'));
+    await waitFor(() => expect(title()).not.toBe(first));
+    await waitFor(async () => expect(Object.values((await getKid(app.db))!.reading.history).filter((e) => e.lastSkipped === '2026-10-02' && e.skips === 1)).toHaveLength(1));
+  });
+
   it('no 多读一遍 button when there is nothing to read', async () => {
     const app = await makeAppData({ settings: LANGDU, now: NOTHING_READABLE });
     renderWithApp(<HomeScreen />, app);

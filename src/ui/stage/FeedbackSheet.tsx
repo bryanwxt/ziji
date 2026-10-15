@@ -17,6 +17,8 @@ interface Props {
   auto?: boolean;
   /** a way out rather than the next step (placement's 不知道): the quiet button, not the dark one */
   quiet?: boolean;
+  /** a second, quieter choice beside the action while nothing is answered (朗读's 下一篇, spec 2026-10-15 §5) */
+  aside?: ComponentChildren;
 }
 
 /** How long 真厉害 shows after a right answer before the lesson moves on by itself (parent, 2026-10-05: fewer taps). */
@@ -26,7 +28,7 @@ export const AUTO_NEXT_MS = 1400;
  * The lesson's one action spot (spec 2026-10-04 §3): docked under the stage; after an answer it slides up as the feedback sheet.
  * A right answer goes on by itself after a short pause (a tap on the button goes at once); a miss waits for him to read it.
  */
-export function FeedbackSheet({ tone = 'neutral', title, detail, actionLabel, actionIcon, onAction, disabled = false, auto = true, quiet = false }: Props) {
+export function FeedbackSheet({ tone = 'neutral', title, detail, actionLabel, actionIcon, onAction, disabled = false, auto = true, quiet = false, aside }: Props) {
   const gone = useRef(false);
   const latest = useRef(onAction);
   latest.current = onAction;
@@ -47,7 +49,7 @@ export function FeedbackSheet({ tone = 'neutral', title, detail, actionLabel, ac
   return (
     <div class={`sheet sheet--${tone}`} role={tone === 'neutral' ? undefined : 'status'}>
       {tone === 'neutral' ? (
-        <span class="spacer" />
+        aside ?? <span class="spacer" />
       ) : (
         <div class="sheet__msg">
           <span class="sheet__badge" aria-hidden="true">

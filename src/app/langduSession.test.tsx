@@ -4,7 +4,7 @@ import { setSpeaking } from '../audio/speaking';
 import { speak } from '../audio/speech';
 import { addRecording, getKid, listRecordings, saveKid, saveParentPassage, updateSettings } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
-import { DEFAULT_KID, DEFAULT_SETTINGS, type PassageQuestion } from '../types';
+import { DEFAULT_KID, DEFAULT_SETTINGS, EMPTY_READING, type PassageQuestion } from '../types';
 import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { SessionScreen } from './SessionScreen';
 
@@ -152,6 +152,32 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     fireEvent.click(await screen.findByText('停止'));
     fireEvent.click(await screen.findByText('下一步'));
     expect(await screen.findByText(PASSAGE_QUESTIONS.p01![1]!.q)).toBeTruthy();
+  });
+  it('下一篇 swaps in the next passage, saves the skip at once, and hides after two swaps (spec 2026-10-15 §5, D5)', async () => {
+    const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });
+    await updateSettings(app.db, { activities: speakingOnly, langdu: true });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { ...EMPTY_READING, lastWarmup: '2026-10-04' } });
+    renderWithApp(<SessionScreen free={false} />, app);
+    const title = () => document.querySelector('.langdu__title')!.textContent;
+    await waitFor(() => expect(document.querySelector('.langdu__title')).toBeTruthy());
+    const seen = [title()];
+    for (const n of [1, 2]) {
+      fireEvent.click(btn('下一篇'));
+      await waitFor(() => expect(title()).not.toBe(seen[seen.length - 1]));
+      seen.push(title());
+      await waitFor(async () => expect(Object.values((await getKid(app.db))!.reading.history).filter((e) => e.lastSkipped === '2026-10-05')).toHaveLength(n));
+    }
+    expect(new Set(seen).size).toBe(3);
+    expect(document.querySelector('.langdu__next')).toBeNull(); // two swaps a step
+    const skipped = Object.values((await getKid(app.db))!.reading.history);
+    expect(skipped.every((e) => e.reads === 0 && e.skips === 1)).toBe(true); // reads and rest untouched
+  });
+  it('no 下一篇 on his school text (D5)', async () => {
+    const app = await setup();
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { ...EMPTY_READING, lastWarmup: '2026-10-04' } });
+    renderWithApp(<SessionScreen free={false} />, app);
+    await screen.findByText('我爱爸爸，我爱妈妈。');
+    expect(document.querySelector('.langdu__next')).toBeNull();
   });
   it('his answer to the meaning question is kept with his take, for the parent', async () => {
     const app = await setup();

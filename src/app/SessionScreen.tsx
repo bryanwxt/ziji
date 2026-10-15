@@ -23,8 +23,8 @@ import { recordingSupported, type FinishedRecording } from '../audio/recorder';
 import { SayCard, type SayResult, type SaySkip } from '../activities/say/SayCard';
 import { SentenceCard } from '../activities/say/SentenceCard';
 import { recordSayTake, recordSentenceTake } from '../session/say';
-import { afterRead, afterWarmup, readHow, warmupDue } from '../langdu/history';
-import { pickPassage } from '../langdu/pick';
+import { afterRead, afterSkip, afterWarmup, readHow, warmupDue } from '../langdu/history';
+import { pickPassage, swapTarget } from '../langdu/pick';
 import { withQuestion } from '../langdu/questions';
 import { readerAt } from '../langdu/level';
 import { readingPool, type ReadingPassage } from '../langdu/pool';
@@ -54,7 +54,7 @@ import {
 } from '../session/runner';
 import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
-import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
+import { DEFAULT_KID, type KidState, type OralInfo, type ReadingHistory, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
 import { useApp } from './AppContext';
@@ -83,8 +83,9 @@ function levelOf(know: Knowledge): number {
   return l;
 }
 
-/** Today's 朗读: the passage, whether the warm-up runs (warmupDue), and the lesson's date key. */
-interface LangduSpeaking { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; warmup: boolean; day: string }
+/** Today's 朗读: the passage, whether the warm-up runs (warmupDue), the lesson's date key, and for 下一篇 the pool, his reading
+ *  history as the step knows it and the swaps made. */
+interface LangduSpeaking { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; warmup: boolean; day: string; pool: ReadingPassage[]; reading: ReadingHistory; swaps: number }
 
 interface Loaded {
   rec: SessionRecord;
@@ -148,9 +149,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           // lesson planned before 朗读 was parked passes its stop by
           // one date key for the whole step, the lesson's own: begun before midnight and finished after, it is still that day's
           const day = rec.date;
-          const passage = settings.langdu ? pickPassage(k.reading, readingPool(parentPassages, PASSAGES, readerAt(know.knownChars, today, settings)), day) : null;
+          const pool = settings.langdu ? readingPool(parentPassages, PASSAGES, readerAt(know.knownChars, today, settings)) : [];
+          const passage = pickPassage(k.reading, pool, day);
           const kind = nextSpeaking(k.speakingLast, !!passage, settings.story);
-          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage: withQuestion(passage, k.reading), oral: settings.oral, warmup: warmupDue(k.reading, day), day };
+          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage: withQuestion(passage, k.reading), oral: settings.oral, warmup: warmupDue(k.reading, day), day, pool, reading: k.reading, swaps: 0 };
           return kind === 'story' ? { kind: 'story' as const, scene: sceneFor(k.story) } : null;
         })(),
       });
@@ -444,6 +446,17 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
    * Save the warm-up and the kept read (with his answer), count the read in his history — recorded or not (spec 2026-10-15 §1
    * cause 4) — tidy old passage takes, and give a bonus star for beating the last lesson read. Whatever fails on the way, the lesson goes on to its end (final review I4): no bonus at worst.
    */
+  /** 下一篇 (spec 2026-10-15 §5): the passage is skipped today (saved at once) and the next in the order comes in. */
+  const onLangduSwap = () => {
+    const s = state?.speaking;
+    if (s?.kind !== 'langdu') return;
+    const next = swapTarget(s.reading, s.pool, s.passage, s.day, s.swaps);
+    if (!next) return;
+    const reading = afterSkip(s.reading, s.passage.id, s.day);
+    setState({ ...state!, speaking: { ...s, passage: withQuestion(next, reading), reading, swaps: s.swaps + 1 } });
+    void updateKid(db, (k) => ({ ...k, reading: afterSkip(k.reading, s.passage.id, s.day) })).catch(logError);
+  };
+
   const onLangduDone = (r: LangduResult) =>
     once(async () => {
       const reading = state.speaking as LangduSpeaking;
@@ -577,7 +590,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <ComponentsStep key="components" items={state.round} kid={kid} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
-        <LangduStep passage={state.speaking.passage} oral={state.speaking.oral} kid={kid} withWarmup={state.speaking.warmup} micBlocked={micRefused} onDone={(r) => void onLangduDone(r)} />
+        <LangduStep passage={state.speaking.passage} oral={state.speaking.oral} kid={kid} withWarmup={state.speaking.warmup} micBlocked={micRefused} onSwap={swapTarget(state.speaking.reading, state.speaking.pool, state.speaking.passage, state.speaking.day, state.speaking.swaps) ? onLangduSwap : undefined} onDone={(r) => void onLangduDone(r)} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'story' && (
         <StoryStep scene={state.speaking.scene} told={kid.story.told} kid={kid} onDone={(r) => void onStoryDone(r)} />

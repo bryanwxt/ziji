@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_READING, type ReadingHistory } from '../types';
 import { afterRead, afterSkip, RETIRED_REST } from './history';
-import { pickOrder, pickPassage, type Candidate } from './pick';
+import { pickOrder, pickPassage, swapTarget, type Candidate } from './pick';
 
 const H0: ReadingHistory = EMPTY_READING;
 const c = (id: string, fit: number, over: Partial<Candidate> = {}): Candidate => ({ id, source: id.startsWith('pp:') ? 'parent' : id.startsWith('gsb:') ? 'gsb' : 'ziji', fit, ...over });
@@ -69,5 +69,18 @@ describe('pickPassage (spec 2026-10-15 §4)', () => {
   });
   it('history for a passage no longer in the pool (a deleted school text) is ignored', () => {
     expect(pickPassage(afterRead(H0, 'pp:gone', '2026-10-01', 'well'), [c('p01', 0.93)], T)?.id).toBe('p01');
+  });
+});
+
+describe('下一篇 (spec 2026-10-15 §5, D5)', () => {
+  const pool = [c('p01', 0.93), c('p02', 0.94), c('p03', 0.95)];
+  it('the next in the order, with the swapped one skipped', () => {
+    expect(swapTarget(H0, pool, pool[0]!, T, 0)?.id).toBe('p02');
+    expect(swapTarget(afterSkip(H0, 'p01', T), pool, pool[1]!, T, 1)?.id).toBe('p03');
+  });
+  it('two swaps a step, never a school text, and none when nothing else is there', () => {
+    expect(swapTarget(H0, pool, pool[0]!, T, 2)).toBeNull();
+    expect(swapTarget(H0, [c('pp:a', 0.5), ...pool], c('pp:a', 0.5), T, 0)).toBeNull();
+    expect(swapTarget(H0, [c('p01', 0.93)], c('p01', 0.93), T, 0)).toBeNull();
   });
 });

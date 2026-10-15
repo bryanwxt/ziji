@@ -2,15 +2,15 @@ import { X } from 'lucide-preact';
 import { useEffect, useState } from 'preact/hooks';
 import { LangduStep, type LangduResult } from '../activities/langdu/LangduStep';
 import { PASSAGES } from '../content';
-import { afterRead } from '../langdu/history';
-import { pickPassage } from '../langdu/pick';
+import { afterRead, afterSkip } from '../langdu/history';
+import { pickPassage, swapTarget } from '../langdu/pick';
 import { readerAt } from '../langdu/level';
 import { readingPool, type ReadingPassage } from '../langdu/pool';
 import { tidyPassageTakes } from '../langdu/review';
 import { localDateKey } from '../lib/date';
 import { newId } from '../lib/id';
 import { keepRecording, getKid, getSettings, listParentPassages, updateKid } from '../store/repo';
-import { DEFAULT_KID, type KidState, type OralInfo } from '../types';
+import { DEFAULT_KID, type KidState, type OralInfo, type ReadingHistory } from '../types';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { PinyinFade, type KnownReadings } from '../ui/pinyinFade';
 import { currentWorld, timeOfDay } from '../fun/worlds';
@@ -19,7 +19,7 @@ import { useApp } from './AppContext';
 import { logError } from './errorLog';
 import { loadKnowledge } from './knowledge';
 
-interface Loaded { passage: ReadingPassage | null; oral: OralInfo; kid: KidState; knownChars: Set<string>; knownReadings: KnownReadings; fadePinyin: boolean }
+interface Loaded { passage: ReadingPassage | null; pool: ReadingPassage[]; reading: ReadingHistory; swaps: number; day: string; oral: OralInfo; kid: KidState; knownChars: Set<string>; knownReadings: KnownReadings; fadePinyin: boolean }
 
 /** 多读一遍 from Home (spec 2026-10-15 §5): a passage by the same order as the lesson's, never one read today — listen, read, compare — no warm-up, no question, no stars; it counts as a read for the gap ('extra'). */
 export function LangduScreen() {
@@ -30,8 +30,10 @@ export function LangduScreen() {
     void (async () => {
       const [know, kid, parent, settings] = await Promise.all([loadKnowledge(db), getKid(db), listParentPassages(db), getSettings(db)]);
       const k = kid ?? DEFAULT_KID;
-      const passage = pickPassage(k.reading, readingPool(parent, PASSAGES, readerAt(know.knownChars, now(), settings)), localDateKey(now()));
-      setState({ passage, oral: settings.oral, kid: k, knownChars: know.knownChars, knownReadings: know.knownReadings, fadePinyin: settings.fadePinyin !== false });
+      const day = localDateKey(now());
+      const pool = readingPool(parent, PASSAGES, readerAt(know.knownChars, now(), settings));
+      const passage = pickPassage(k.reading, pool, day);
+      setState({ passage, pool, reading: k.reading, swaps: 0, day, oral: settings.oral, kid: k, knownChars: know.knownChars, knownReadings: know.knownReadings, fadePinyin: settings.fadePinyin !== false });
     })();
   }, []);
 
@@ -41,6 +43,14 @@ export function LangduScreen() {
 
   if (!state?.passage) return <div class="screen loading"><InkIcon name="paw" size={88} label="加载中" /></div>;
   const passage = state.passage;
+  // 下一篇, as in the lesson (spec 2026-10-15 §5)
+  const next = swapTarget(state.reading, state.pool, passage, state.day, state.swaps);
+  const swap = () => {
+    if (!next) return;
+    const reading = afterSkip(state.reading, passage.id, state.day);
+    setState({ ...state, passage: next, reading, swaps: state.swaps + 1 });
+    void updateKid(db, (k) => ({ ...k, reading: afterSkip(k.reading, passage.id, state.day) })).catch(logError);
+  };
 
   const done = async (r: LangduResult) => {
     if (r.read) {
@@ -68,7 +78,7 @@ export function LangduScreen() {
             <X size={34} strokeWidth={3} />
           </button>
         </header>
-        <LangduStep passage={passage} oral={state.oral} kid={state.kid} withWarmup={false} extra onDone={(r) => void done(r)} />
+        <LangduStep passage={passage} oral={state.oral} kid={state.kid} withWarmup={false} extra onSwap={next ? swap : undefined} onDone={(r) => void done(r)} />
       </div>
     </PinyinFade>
   );

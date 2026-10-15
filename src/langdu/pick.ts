@@ -2,7 +2,7 @@
 // story he has started, else the new passage nearest 0.93 of his reading, ZiJi and Global Storybooks taking turns; then any due
 // revisit; anything he can read outside the 3-day gap; retired ones last. 下一篇 takes the next in the same order.
 import type { ReadingHistory } from '../types';
-import { entryOf, inGap, isRetired, overdue } from './history';
+import { afterSkip, entryOf, inGap, isRetired, overdue } from './history';
 
 export const BAND_LOW = 0.9;
 export const BAND_HIGH = 0.97;
@@ -48,3 +48,13 @@ export function pickOrder<T extends Candidate>(r: ReadingHistory, pool: readonly
 }
 
 export const pickPassage = <T extends Candidate>(r: ReadingHistory, pool: readonly T[], today: string): T | null => pickOrder(r, pool, today)[0] ?? null;
+
+/** 下一篇 swaps at most this many times a step (D5). */
+export const MAX_SWAPS = 2;
+
+/** 下一篇's next passage: the order again with this one skipped today; null when no swap is allowed (2 a step, never his school
+ *  text) or nothing else is there (spec 2026-10-15 §5). */
+export function swapTarget<T extends Candidate>(r: ReadingHistory, pool: readonly T[], current: Candidate, today: string, swaps: number): T | null {
+  if (swaps >= MAX_SWAPS || current.source === 'parent') return null;
+  return pickPassage(afterSkip(r, current.id, today), pool, today);
+}
