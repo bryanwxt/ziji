@@ -17,7 +17,7 @@ const placed = (readingIds: string[], over: Partial<PlacementOutcome> = {}): Pla
 
 describe('placementIds (spec 2026-10-14)', () => {
   const terms = [[makeWord('一', { id: 'b:1' }), makeWord('人', { id: 'b:2' })], [makeWord('三', { id: 'b:3' }), makeWord('门', { id: 'b:4' })], [makeWord('天', { id: 'b:5' })]];
-  const a = (term: number, wordId: string, correct: boolean, style: 'read' | 'hear' = 'read'): WalkAnswer => ({ term, style, wordId, correct });
+  const a = (term: number, wordId: string, correct: boolean, style: 'read' | 'listen' = 'read'): WalkAnswer => ({ term, style, wordId, correct });
   it('every character of the passed terms, plus characters read right in a higher term', () => {
     const ids = placementIds(terms, [a(0, 'b:1', true), a(1, 'b:3', false), a(2, 'b:5', true)], 0);
     expect(ids.readingIds.sort()).toEqual(['b:1', 'b:2', 'b:5']);
@@ -30,10 +30,11 @@ describe('placementIds (spec 2026-10-14)', () => {
   it('a character he just missed reading in a passed term is not placed', () => {
     expect(placementIds(terms, [a(0, 'b:1', false)], 0).readingIds).toEqual(['b:2']);
   });
-  it('words heard right are heard guesses, not reading', () => {
-    const ids = placementIds(terms, [a(1, 'w:三门', true, 'hear'), a(2, 'b:5', true, 'hear'), a(0, 'b:1', false, 'hear')], null);
-    expect(ids.heardIds.sort()).toEqual(['b:5', 'w:三门']);
-    expect(ids.readingIds).toEqual([]);
+  it('听一听 (hear it, find it among look-alikes) tests reading too: right ones are placed, missed ones are not (v2.1)', () => {
+    const ids = placementIds(terms, [a(2, 'b:5', true, 'listen'), a(0, 'b:1', false, 'listen')], 0);
+    expect(ids.readingIds.sort()).toEqual(['b:2', 'b:5']);
+    expect(ids.missed).toEqual(['b:1']);
+    expect('heardIds' in ids).toBe(false); // no hear guesses: v2.1 asks no meaning
   });
 });
 

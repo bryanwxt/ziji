@@ -60,7 +60,7 @@ describe('bound characters (parent 2026-10-15)', () => {
       const w = card.get(ch)!;
       const pair = boundPair(ch)!;
       expect(loneSpoken(ch, w.pinyin), ch).toBe(pair);
-      expect(loneSpoken(ch), ch).toBe(pair); // placement's 听一听 and the speak buttons say it with no reading
+      expect(loneSpoken(ch), ch).toBe(pair); // the speak buttons say it with no reading
       // 连一连 / 找一家人: the pair is on the board, so it is said alone (or as another word of it)
       expect(loneSpoken(ch, w.pinyin, [pair]), ch).not.toBe(pair);
     }
@@ -71,10 +71,13 @@ describe('bound characters (parent 2026-10-15)', () => {
     expect(loneSpoken('番，番茄的，番', 'fān')).toBe('番，番茄的，番');
   });
 
-  it("placement's 听一听 asks a bound character's pair meaning", () => {
-    const fan = card.get('番')!;
-    const q = buildQuestion('hear', fan, content, mulberry32(3));
-    expect(q?.answer).toBe('tomato');
-    expect(loneSpoken(q!.text)).toBe('番茄'); // what PlacementScreen says
+  it("placement's 听一听 says a bound character as its pair and never offers the pair's other character (v2.1)", () => {
+    for (const ch of bound) {
+      const w = card.get(ch)!;
+      const q = buildQuestion('listen', w, content, mulberry32(3));
+      if (q?.style !== 'listen') continue; // no three look-alikes: it is asked as 读一读
+      expect(loneSpoken(q.text, q.reading), ch).toBe(boundPair(ch)); // what PlacementScreen says
+      for (const o of q.options) if (o !== ch) expect(boundPair(ch)!.includes(o), `${ch} ${o}`).toBe(false);
+    }
   });
 });

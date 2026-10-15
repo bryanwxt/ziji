@@ -9,6 +9,13 @@ type Counts = Pick<PlacementResult, 'readsUpTo' | 'tested' | 'assumed'>;
 export const placementLineZh = (r: Counts): string =>
   r.readsUpTo ? `读到 ${r.readsUpTo} · 已测 ${r.tested} 个字，推定 ${r.assumed} 个` : `还没开始 · 已测 ${r.tested} 个字`;
 
+/**
+ * The result screen's line in phrases that never break inside (spec v2.1: 「个」 was left alone on a phone's last line):
+ * 「读到 三下 ·」「已测 14 个字，」「推定 1017 个」.
+ */
+export const placementPhrasesZh = (r: Counts): string[] =>
+  r.readsUpTo ? [`读到 ${r.readsUpTo} ·`, `已测 ${r.tested} 个字，`, `推定 ${r.assumed} 个`] : ['还没开始 ·', `已测 ${r.tested} 个字`];
+
 /** Skills: "Reads up to 一下 — 12 tested, 360 assumed." */
 export const placementLine = (r: Counts): string =>
   r.readsUpTo ? `Reads up to ${r.readsUpTo} — ${r.tested} tested, ${r.assumed} assumed.` : `Reads none of the terms yet — ${r.tested} tested.`;

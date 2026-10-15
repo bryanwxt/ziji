@@ -12,24 +12,23 @@ import { ladderWords } from '../content/ladder';
 import { canAskRung } from '../ladder/rungs';
 
 /**
- * What a placement check found (spec 2026-10-14): the characters he reads, the words he heard right, the characters asked and
- * missed, and the term he reads up to (null: none).
+ * What a placement check found (spec 2026-10-14): the characters he reads, the characters asked and missed, and the term he
+ * reads up to (null: none). heardIds: words heard right, as hear guesses (the v2 听一听 asked meanings; v2.1 asks none).
  */
 export interface PlacementOutcome { readingIds: string[]; heardIds?: string[]; askedIds: string[]; missed: string[]; readsUpTo: string | null }
 
 /**
- * Every character of the terms up to `upTo`, and every character read right in a higher term — less any he just missed
- * reading; the words heard right; the characters asked; and the ones missed.
+ * Every character of the terms up to `upTo`, and every character answered right in a higher term — less any he just missed;
+ * the characters asked; and the ones missed. 读一读 and 听一听 (hear it, find it among look-alikes) both test reading the
+ * character (spec v2.1), so both count.
  */
-export function placementIds(terms: Word[][], answers: WalkAnswer[], upTo: number | null): Omit<PlacementOutcome, 'readsUpTo'> & { heardIds: string[] } {
-  const reads = answers.filter((a) => a.style === 'read');
-  const missedReading = new Set(reads.filter((a) => !a.correct).map((a) => a.wordId));
+export function placementIds(terms: Word[][], answers: WalkAnswer[], upTo: number | null): Omit<PlacementOutcome, 'readsUpTo'> {
+  const missedReading = new Set(answers.filter((a) => !a.correct).map((a) => a.wordId));
   const passed = upTo === null ? [] : terms.slice(0, upTo + 1).flat().map((w) => w.id);
-  const readingIds = [...new Set([...passed, ...reads.filter((a) => a.correct).map((a) => a.wordId)])].filter((id) => !missedReading.has(id));
-  const heardIds = [...new Set(answers.filter((a) => a.style === 'hear' && a.correct).map((a) => a.wordId))];
+  const readingIds = [...new Set([...passed, ...answers.filter((a) => a.correct).map((a) => a.wordId)])].filter((id) => !missedReading.has(id));
   const askedIds = [...new Set(answers.map((a) => a.charId ?? a.wordId))];
-  const missed = [...new Set(answers.filter((a) => !a.correct).map((a) => a.wordId))];
-  return { readingIds, heardIds, askedIds, missed };
+  const missed = [...missedReading];
+  return { readingIds, askedIds, missed };
 }
 
 /**

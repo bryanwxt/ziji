@@ -3,14 +3,14 @@ import { classLessonAt, gradeTerms, LESSONS, schoolYear } from '../content/curri
 import type { Settings } from '../types';
 
 /**
- * The placement check (spec 2026-10-14): a short walk over his school terms in 欢乐伙伴 order, 3 quick questions a term
- * (one more on a 2 of 3), up on a pass and down on a miss, ending at the first turn, off either end, or after 15 questions.
+ * The placement check (spec 2026-10-14, v2.1): a short walk over his school terms in 欢乐伙伴 order, 4 questions a term (a
+ * fifth on a 3 of 4), up on a pass and down on a miss, ending at the first turn, off either end, or after 20 questions.
  */
 export const TERMS: readonly string[] = MOE_TERMS;
-export const PER_TERM = 3;
-export const MAX_QUESTIONS = 15;
+export const PER_TERM = 4;
+export const MAX_QUESTIONS = 20;
 
-export type Style = 'read' | 'hear'; // 读一读: the character → its pinyin; 听一听: hear a word → pick its meaning
+export type Style = 'read' | 'listen'; // 读一读: the character → its pinyin; 听一听: hear the character → pick it from look-alikes
 
 /** wordId: what was asked (a 词语 to hear, or a character); charId: the term character it used; dontKnow: he tapped 不知道 (a miss). */
 export interface WalkAnswer { term: number; style: Style; wordId: string; charId?: string; correct: boolean; dontKnow?: boolean }
@@ -42,16 +42,19 @@ export const startWalk = (term: number, termCount: number): WalkState => ({
   term: Math.max(0, Math.min(term, termCount - 1)), visit: [], answers: [], passed: [], direction: 0, done: termCount === 0,
 });
 
-/** One answer. 3 right: up; 0–1: down; 2: one more (3 of 4 up, 2 of 4 down). Ends at a turn, off either end, or after 15. */
+/**
+ * One answer. 4 of 4 right: up; 2 or fewer: down; 3 of 4: one more, which decides (4 of 5 up, 3 of 5 down). A random guesser
+ * (1 in 4) passes a term under 2% of the time. Ends at a turn, off either end, or after 20.
+ */
 export function walkStep(s: WalkState, a: Omit<WalkAnswer, 'term'>, termCount: number): WalkState {
   if (s.done) return s;
   const answer: WalkAnswer = { ...a, correct: a.correct && !a.dontKnow, term: s.term };
   const visit = [...s.visit, answer];
   const answers = [...s.answers, answer];
   const right = visit.filter((x) => x.correct).length;
-  const decided = visit.length > PER_TERM || (visit.length === PER_TERM && right !== 2);
+  const decided = visit.length > PER_TERM || (visit.length === PER_TERM && right !== PER_TERM - 1);
   if (!decided) return { ...s, visit, answers, done: answers.length >= MAX_QUESTIONS };
-  const move: -1 | 1 = right >= PER_TERM ? 1 : -1;
+  const move: -1 | 1 = right >= PER_TERM ? 1 : -1; // 4 of 4, or 4 of 5
   const passed = move === 1 ? [...s.passed, s.term] : s.passed;
   const turned = s.direction !== 0 && move !== s.direction;
   const term = s.term + move;
@@ -61,3 +64,12 @@ export function walkStep(s: WalkState, a: Omit<WalkAnswer, 'term'>, termCount: n
 
 /** The result: the highest term he passed, or null for none. */
 export const readsUpTo = (s: Pick<WalkState, 'passed'>): number | null => (s.passed.length ? Math.max(...s.passed) : null);
+
+/**
+ * A result the parent confirms before it is applied (spec v2.1): more than one term above his class term, or more than one term
+ * above his earlier result (`earlier`: a term index, -1 for none; undefined when there is no earlier check to compare with).
+ */
+export function bigJump(result: number | null, classTerm: number | null, earlier?: number): boolean {
+  if (result === null) return false;
+  return (classTerm !== null && result > classTerm + 1) || (earlier !== undefined && result > earlier + 1);
+}

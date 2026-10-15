@@ -1103,6 +1103,37 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 
 /* the placement check (spec §19 part 6) */
 .placement__levels { font-size: 20px; color: var(--ink-soft); margin: 0; }
+/* its result (spec 2026-10-14 v2.1): the words scroll if they must, 开始！ always sits on screen below them; each line wraps
+   only between whole phrases (a phone had left 「个」 alone on a line) */
+.screen.placement-result { align-items: center; justify-content: center; }
+.placement-result__body {
+  flex: 0 1 auto; min-height: 0; width: 100%; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: clamp(8px, 2dvh, 18px); text-align: center;
+}
+.placement-result__title { margin: 0; font-size: clamp(26px, 4.2dvh, 36px); }
+.placement-result__title, .placement__levels { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; column-gap: 0.25em; max-width: 100%; }
+.placement__phrase { display: inline-block; white-space: nowrap; }
+.placement__phrase .label__cells { flex-wrap: nowrap; }
+.placement-result__daily { margin: 0; font-size: 20px; }
+.placement-result__go { flex: none; }
+/* a result well above his class waits for the parent (spec v2.1): a plain grown-up sheet, the PIN pad when he taps Use */
+.placement-confirm__body {
+  margin: auto; width: min(100%, 520px); max-height: 100%; overflow-y: auto;
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px; text-align: center;
+  background: var(--surface); border: var(--panel-border); border-radius: 22px; box-shadow: var(--panel-shadow); padding: 18px 18px 22px;
+}
+.placement-confirm__body h2 { margin: 0; font-size: 24px; }
+.placement-confirm__body p { margin: 0; }
+.placement-confirm__kid { font-size: 22px; }
+.placement-confirm__msg { font-size: 19px; line-height: 1.4; font-weight: 700; }
+.placement-confirm__note { font-size: 15px; color: var(--ink-soft); }
+.placement-confirm__pin { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+@media (max-height: 700px) {
+  .placement-confirm__body { gap: 8px; padding: 12px 14px 16px; }
+  .placement-confirm__msg { font-size: 17px; }
+  .placement-confirm__pin .pinpad button { height: 50px; }
+  .placement-confirm__pin .pinpad { gap: 8px; }
+}
 
 /* parent Skills panel (spec §19 part 7) */
 .skills__table input { width: 5em; }
@@ -1135,7 +1166,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .placement__choices { width: min(100%, 560px); flex: none; grid-auto-rows: clamp(var(--tap-main), 10dvh, 104px); }
 .placement__choices .choice { min-height: 0; height: 100%; }
 .placement__choices--pinyin .choice { font-size: clamp(26px, 4dvh, 36px); }
-.placement__choices--meaning .choice { font-size: 20px; line-height: 1.2; padding: 8px 10px; white-space: normal; } /* 听一听: English meanings wrap inside the 2×2 grid (spec 2026-10-06 §3.5) */
+.placement__choices--hanzi .choice { font-size: var(--tile-hanzi); } /* 听一听: four look-alike characters (spec 2026-10-14 v2.1) */
 
 /* six stops on one row: on a tablet, names and the 开始 bubble never break onto a second line */
 @media (min-width: 600px) {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../content';
 import { makeCard } from '../test/fixtures';
 import type { ReviewLog } from '../types';
-import { legacyPlacementLine, placementLine, placementLineZh, recheckLine, recheckProgress } from './summary';
+import { legacyPlacementLine, placementLine, placementLineZh, placementPhrasesZh, recheckLine, recheckProgress } from './summary';
 
 const at = new Date(2026, 9, 5, 9).getTime();
 const result = { at, readsUpTo: '一下', tested: 12, assumed: 360, missed: [] };
@@ -11,6 +11,11 @@ describe('placement copy for the parent (spec 2026-10-14)', () => {
   it('the result screen: 读到 一下 · 已测 12 个字，推定 360 个', () => {
     expect(placementLineZh(result)).toBe('读到 一下 · 已测 12 个字，推定 360 个');
     expect(placementLineZh({ ...result, readsUpTo: null, assumed: 0, tested: 6 })).toBe('还没开始 · 已测 6 个字');
+  });
+  it('the same line in phrases the screen never breaks inside (v2.1: no 「个」 alone on a line)', () => {
+    expect(placementPhrasesZh(result)).toEqual(['读到 一下 ·', '已测 12 个字，', '推定 360 个']);
+    expect(placementPhrasesZh(result).join(' ').replace('， ', '，')).toBe(placementLineZh(result));
+    expect(placementPhrasesZh({ ...result, readsUpTo: null, tested: 6 }).join(' ')).toBe('还没开始 · 已测 6 个字');
   });
   it('Skills, in English: Reads up to 一下 — 12 tested, 360 assumed.', () => {
     expect(placementLine(result)).toBe('Reads up to 一下 — 12 tested, 360 assumed.');

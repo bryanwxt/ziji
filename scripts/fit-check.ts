@@ -32,7 +32,7 @@ const VIEWPORT = process.env.FIT_VIEWPORT ? new RegExp(process.env.FIT_VIEWPORT)
 
 /* ---------- in-page probes (plain JS: they run inside WebKit) ---------- */
 const MAIN = '.choice, .sheet .btn, .path__node, .mic-btn, .tabbar__item, .fishtile, .bubble-opt';
-const SCROLLERS = '.scroll-panel, .filters, .kantu__words, .passage, .langdu__passage';
+const SCROLLERS = '.scroll-panel, .filters, .kantu__words, .passage, .langdu__passage, .placement-result__body, .placement-confirm__body';
 
 function probe(args: { main: string; scrollers: string }): string[] {
   const out: string[] = [];
@@ -367,13 +367,12 @@ async function sweep(browser: Browser, size: Size) {
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));
   await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));
   await run('placement', AFTERNOON, { placementDone: false }, async (p) => {
-    // 读一读 and 听一听 (spec 2026-10-14): answer and look again, up to eleven times (the walk ends by 15) — a guess between
-    // the 不知道 taps; every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
+    // 读一读 and 听一听 (spec 2026-10-14 v2.1): answer and look again until the walk ends (by 20) — a guess between the 不知道
+    // taps; every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)
     const boxes: string[] = [];
-    for (let i = 0; i < 11; i++) {
-      // the walk can end early (by 15, often by 6–9 here): the result comes up once the placement is saved
-      await p.waitForSelector('.placement[data-ready="true"], .placement__levels', { timeout: 60_000 });
-      if (await p.$('.placement__levels')) break;
+    for (let i = 0; i < 20; i++) {
+      await p.waitForSelector('.placement[data-ready="true"], .placement__levels, .placement-confirm', { timeout: 60_000 });
+      if (await p.$('.placement__levels, .placement-confirm')) break;
       await check(p, size, 'placement', i);
       boxes.push(await p.evaluate(() => ['.placement__prompt', '.placement__choices', '.placement .btn--big']
         .map((sel) => { const r = document.querySelector(sel)!.getBoundingClientRect(); return [r.top, r.height, r.width].map(Math.round).join(','); }).join(' | ')));
@@ -383,15 +382,34 @@ async function sweep(browser: Browser, size: Size) {
     }
     const moved = boxes.findIndex((b) => b !== boxes[0]);
     if (moved > 0) results.push({ size: size.name, flow: 'placement', step: moved, sig: 'steady', problems: [`question size changed between questions: ${boxes[0]} → ${boxes[moved]}`] });
-    // on to the result screen, over the same painted backdrop: a screenshot only (its 开始！ is off screen on the smallest phones, noted 2026-10-14)
-    for (let i = 0; i < 30 && !(await p.$('.placement__levels')); i++) {
+    for (let i = 0; i < 30 && !(await p.$('.placement__levels, .placement-confirm')); i++) {
       if (await p.$('.placement .btn--big')) await p.click('.placement .btn--big', { timeout: 2000 }).catch(() => {});
       await p.waitForTimeout(150);
     }
-    if (await p.$('.placement__levels')) await snap(p, size, 'placement-result', '.placement__levels');
+    if (await p.$('.placement-confirm')) await p.click('.placement-confirm__keep');
+    await p.waitForSelector('.placement__levels', { timeout: 30_000 });
+    await check(p, size, 'placement', 90); // the result: 开始！ on screen at every size (spec v2.1)
+  });
+  // a strong reader's result (spec v2.1): every answer right climbs off the top to 三下, well above his class (二下), so the
+  // parent's check comes first — its sheet, its PIN pad — then the result with the biggest numbers, 开始！ on screen
+  const FIT_PIN = '2580'; // a test PIN for this local sweep only
+  await run('placement-result', AFTERNOON, { placementDone: false, pinCode: FIT_PIN }, async (p) => {
+    for (let i = 0; i < 25; i++) {
+      await p.waitForSelector('.placement[data-ready="true"], .placement-confirm', { timeout: 60_000 });
+      if (await p.$('.placement-confirm')) break;
+      await p.click('.placement [data-answer="true"]').catch(() => {});
+      await p.waitForTimeout(150);
+    }
+    await p.waitForSelector('.placement-confirm', { timeout: 30_000 });
+    await check(p, size, 'placement-result', 0);
+    await p.click('.placement-confirm__use');
+    await p.waitForSelector('.placement-confirm .pinpad');
+    await check(p, size, 'placement-result', 1);
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.waitForSelector('.placement__levels', { timeout: 60_000 });
+    await check(p, size, 'placement-result', 2);
   });
   // the placement check re-run from Settings (sweep): its 回家 ✕ against the card and Truffle's bubble
-  const FIT_PIN = '2580'; // a test PIN for this local sweep only
   await run('placement-rerun', AFTERNOON, { pinCode: FIT_PIN }, async (p) => {
     await tabTo(p, '家长');
     for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
