@@ -52,26 +52,33 @@ describe('importStory', () => {
   const entry = { level: 1 as const, names: [] };
   it('one passage a chunk with its picture, its part and the credit; a single part keeps the plain title', () => {
     const s = importStory('9001_好.md', md('好', [EASY]), entry);
-    expect(s.passages).toEqual([{ id: 'gsb:9001-1', title: '好', text: EASY, term: '一上', source: 'gsb', image: 'passages/gsb-9001-1.webp', story: { id: '9001', part: 1, parts: 1 }, credit: { title: '好', text: 'A. Writer', illustration: 'B. Painter', translation: 'C. Translator', licence: 'CC BY 3.0', adapted: false, source: 'https://github.com/global-asp/sbc-source/blob/be28dab/zh/9001_%E5%A5%BD.md' } }]);
+    expect(s.passages).toEqual([{ id: 'gsb:9001-1', title: '好', text: EASY, term: '一上', source: 'gsb', image: 'passages/gsb-9001-1.webp', story: { id: '9001', part: 1, parts: 1 }, credit: { title: '好', text: 'A. Writer', illustration: 'B. Painter', translation: 'C. Translator', licence: 'CC BY 3.0', adapted: false, source: 'https://github.com/global-asp/sbc-source/blob/be28dab38ac55e8eb2185edb6631b11615d02185/zh/9001_%E5%A5%BD.md' } }]);
     expect(s.images).toEqual([{ out: 'passages/gsb-9001-1.webp', page: '9001/02.jpg' }]);
   });
-  it('keeps half or more of the chunks when the opening survives; parts are numbered over the kept ones, ids keep the chunk', () => {
-    const s = importStory('9002_好.md', md('好', [EASY, HARD, EASY]), entry);
-    expect(s.passages.map((p) => [p.id, p.title, p.story])).toEqual([['gsb:9002-1', '好（1）', { id: '9002', part: 1, parts: 2 }], ['gsb:9002-3', '好（2）', { id: '9002', part: 2, parts: 2 }]]);
+  it('a whole story: every chunk a part, in order, titled （1）（2）…', () => {
+    const s = importStory('9002_好.md', md('好', [EASY, EASY]), entry);
+    expect(s.passages.map((p) => [p.id, p.title, p.story])).toEqual([['gsb:9002-1', '好（1）', { id: '9002', part: 1, parts: 2 }], ['gsb:9002-2', '好（2）', { id: '9002', part: 2, parts: 2 }]]);
   });
-  it('drops a story when fewer than half its chunks survive, or its opening does not', () => {
-    expect(importStory('9003_好.md', md('好', [EASY, HARD, HARD]), entry).passages).toEqual([]);
+  it('a story is kept only whole: one chunk he cannot read, at the start, in the middle or at the end, drops it all', () => {
+    expect(importStory('9002_好.md', md('好', [EASY, HARD, EASY]), entry).passages).toEqual([]);
+    expect(importStory('9003_好.md', md('好', [EASY, EASY, HARD]), entry).passages).toEqual([]);
     expect(importStory('9004_好.md', md('好', [HARD, EASY, EASY]), entry).passages).toEqual([]);
   });
   it('a chunk with a word from the blocklist is dropped like a chunk beyond 三上 (D2 allows no rewording)', () => {
     expect(blockedIn('孩子们说：“我们不是傻瓜。”')).toEqual(['傻瓜']);
     expect(blockedIn('兔子朝着河马大喊：“该死的河马！”')).toEqual(['该死']); // a curse: 0111's opening (excluded on theme)
+    expect(blockedIn('他们住在一个富人的土地上。')).toEqual(['富人']); // a particle on the word: 0315
+    expect(blockedIn('我们祝老师生日快乐。')).toEqual(['师生']); // the raw text too: a crossing drops a chunk, which errs safe
     const blocked = '我们不是傻瓜。'.repeat(10);
-    expect(importStory('9006_好.md', md('好', [EASY, blocked, EASY]), entry).passages.map((p) => p.id)).toEqual(['gsb:9006-1', 'gsb:9006-3']);
+    expect(importStory('9006_好.md', md('好', [EASY, blocked, EASY]), entry).passages).toEqual([]);
   });
   it("the manifest gives a CC BY story's licence version (the Markdown says only CC-BY); it may not turn BY-NC into BY", () => {
     expect(importStory('9007_好.md', md('好', [EASY]), { ...entry, licence: 'CC BY 4.0' }).passages[0]!.credit!.licence).toBe('CC BY 4.0');
     expect(() => importStory('9008_好.md', md('好', [EASY], 'CC-BY-NC'), { ...entry, licence: 'CC BY 4.0' })).toThrow(/licence/);
+  });
+  it("a name in the story's title is on every passage, since the title shows with each", () => {
+    const s = importStory('9009_卡莱.md', md('卡莱', [EASY, EASY]), { level: 1, names: ['卡莱'] });
+    expect(s.passages.map((p) => p.names)).toEqual([['卡莱'], ['卡莱']]);
   });
   it('names are left out of the level and kept on the passage that has them; an edited story is adapted', () => {
     const s = importStory('9005_好.md', md('好', [EASY + '卡莱'.repeat(10) + '斑馬。']), { level: 1, names: ['卡莱', '旺加里'], edits: [{ from: '斑馬', to: '斑马', why: 'a traditional character' }] });
@@ -91,11 +98,9 @@ describe('the vendored stories (scripts/storybooks/zh at be28dab)', () => {
   it('storybooks.json is exactly what the import makes of them (deterministic, nothing hand-edited)', () => {
     expect(importAll(manifest, files.map((file) => ({ file, md: readFileSync(`scripts/storybooks/zh/${file}`, 'utf8') }))).flatMap((s) => s.passages)).toEqual(passages);
   });
-  it('about 40 passages, all read by 三上, each credited and licensed, each with its picture within budget', () => {
-    expect(passages.length).toBeGreaterThanOrEqual(35);
-    expect(passages.length).toBeLessThanOrEqual(50);
+  it('all read by 三上, each credited and licensed, each with its picture within budget', () => {
     expect(passages.filter((p) => termIndex(p.term) < 0 || termIndex(p.term) > termIndex('三上'))).toEqual([]);
-    expect(passages.filter((p) => !p.credit || !['CC BY 3.0', 'CC BY 4.0', 'CC BY-NC 3.0'].includes(p.credit.licence) || !p.credit.text || !p.credit.translation)).toEqual([]);
+    expect(passages.filter((p) => !p.credit || !['CC BY 3.0', 'CC BY 4.0', 'CC BY-NC 3.0'].includes(p.credit.licence) || !p.credit.text || !p.credit.illustration || !p.credit.translation)).toEqual([]);
     const sizes = passages.map((p) => statSync(`public/${p.image}`).size);
     expect(Math.max(...sizes)).toBeLessThanOrEqual(60_000);
     expect(sizes.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(1_500_000);
@@ -107,10 +112,17 @@ describe('the vendored stories (scripts/storybooks/zh at be28dab)', () => {
   it("the CC BY 4.0 stories are the nine Global ASP's master index gives 4.0 (global-asp/global-asp MASTER.md at 54c9b23; the site agrees)", () => {
     expect(Object.entries(manifest).filter(([, e]) => e.licence === 'CC BY 4.0').map(([id]) => id)).toEqual(['0027', '0089', '0110', '0201', '0243', '0262', '0296', '0315', '0324']);
   });
-  it('the stories excluded on theme stay out: 0072 (revenge, blood), 0111 (该死, revenge), 0342 (punishment)', () => {
-    expect(Object.entries(manifest).filter(([, e]) => e.include === false).map(([id]) => id)).toEqual(['0072', '0111', '0342']);
-    expect(passages.filter((p) => ['0072', '0111', '0342'].includes(p.story!.id))).toEqual([]);
-    expect(passages).toHaveLength(38); // 0111 out on theme; 0315 out: 富人 (blocked) is in every part once 富人的 counts
+  it('the stories excluded stay out, each with its reason: on theme 0004 0052 0066 0072 0111 0342; needing the pictures 0003 0112', () => {
+    const out = ['0003', '0004', '0052', '0066', '0072', '0111', '0112', '0342'];
+    expect(Object.entries(manifest).filter(([, e]) => e.include === false).map(([id]) => id)).toEqual(out);
+    expect(Object.entries(manifest).filter(([, e]) => e.include === false && !e.why).map(([id]) => id)).toEqual([]);
+    expect(passages.filter((p) => out.includes(p.story!.id))).toEqual([]);
+  });
+  it('every story is whole: parts 1…n, none missing (fix round 2026-10-15: no holes, no dropped ending)', () => {
+    const parts = new Map<string, number[]>();
+    for (const p of passages) parts.set(p.story!.id, [...(parts.get(p.story!.id) ?? []), p.story!.part]);
+    expect([...parts].filter(([id, ps]) => ps.join() !== ps.map((_, i) => i + 1).join() || passages.find((p) => p.story!.id === id)!.story!.parts !== ps.length)).toEqual([]);
+    expect(passages).toHaveLength(15);
   });
   it('every edited story is marked adapted, and only those', () => {
     const edited = new Set(Object.entries(manifest).filter(([, e]) => e.edits?.length).map(([id]) => id));

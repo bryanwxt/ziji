@@ -30,6 +30,16 @@ describe('no blocked word is reachable (content audit 2026-10-15)', () => {
     const bad = shownSentenceRows().flatMap(({ s, surface }) => blockedWordsIn(s).map((t) => `${t} in ${s} (${surface})`));
     expect(bad).toEqual([]);
   });
+  it('in the raw text too: a blocked word the tiles cut across is a crossing reviewed below, or it fails', () => {
+    // reviewed 2026-10-15: each blocked word here is two words' edges, not the word
+    const CROSSINGS = ['身体会', '老师生日', '西瓜分'];
+    const multi = [...BLOCKED].filter((w) => Array.from(w).length > 1);
+    const bad = shownSentenceRows().flatMap(({ s, surface }) => {
+      const rest = CROSSINGS.reduce((t, c) => t.split(c).join('|'), s);
+      return multi.filter((w) => rest.includes(w)).map((w) => `${w} in ${s} (${surface})`);
+    });
+    expect(bad).toEqual([]);
+  });
 });
 
 describe('one reading per school character (content audit 2026-10-15)', () => {

@@ -49,11 +49,13 @@ export function tiles(sentence: string): string[] {
 
 /** The blocked words a sentence shows, tile by tile: each tile as written, and without the punctuation and particles it carries
  *  (该死的 → 该死). What the content gate and the Global Storybooks import check. */
+/** What a tile may carry after its word: punctuation and particles (the own-passage word gate's list, spec 2026-10-15). */
+const TRAILING = new Set([...PUNCT, ...'了吗吧呢的得着过啊呀']);
+
 export function blockedWordsIn(sentence: string): string[] {
   return tiles(sentence).flatMap((t) => {
-    const bare = t.replace(/[，。！？、；：“”‘’]+$/u, '');
-    let word = bare;
-    while (word.length > 1 && (PARTICLES.has(word.slice(-1)) || PUNCT.has(word.slice(-1))) && !BLOCKED.has(word)) word = word.slice(0, -1);
+    let word = t.replace(/[，。！？、；：“”‘’]+$/u, '');
+    while (word.length > 1 && TRAILING.has(word.slice(-1)) && !BLOCKED.has(word)) word = word.slice(0, -1);
     return BLOCKED.has(word) ? [word] : [];
   });
 }

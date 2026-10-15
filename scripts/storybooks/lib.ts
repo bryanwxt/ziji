@@ -1,6 +1,7 @@
 // Global Storybooks Chinese → 朗读 passages (spec 2026-10-15 §2.1): parse a story's Markdown, apply the manifest's light edits,
 // cut its pages into passages of 40–110 characters, level each, and keep the stories he can read by 三上.
 import { hanChars } from '../../src/content';
+import { BLOCKED } from '../../src/content/blocked';
 import { blockedWordsIn } from '../../src/content/zuju';
 import { passageTerm, termIndex } from '../../src/langdu/level';
 import { splitSentences } from '../../src/langdu/sentences';
@@ -50,10 +51,14 @@ export function applyEdits(pages: string[], edits: readonly Edit[] = []): string
   return out;
 }
 
-/** Words of the blocklist in a text, word by word as the content gate reads it (src/content/contentGate.test.ts). D2 allows no
- *  rewording, so a chunk with one is dropped like a chunk beyond 三上. */
+const BLOCKED_MULTI = [...BLOCKED].filter((w) => Array.from(w).length > 1);
+
+/** Words of the blocklist in a text: word by word as the content gate reads it (src/content/contentGate.test.ts), then any
+ *  multi-character blocked word anywhere in the raw text — a word that crosses a tile boundary (老师生日 holds 师生) drops a chunk
+ *  too, which errs safe. D2 allows no rewording, so a chunk with one is dropped like a chunk beyond 三上. */
 export function blockedIn(text: string): string[] {
-  return splitSentences(text).flatMap(blockedWordsIn);
+  const words = splitSentences(text).flatMap(blockedWordsIn);
+  return [...words, ...BLOCKED_MULTI.filter((w) => text.includes(w) && !words.includes(w))];
 }
 
 export interface Chunk { firstPage: number; text: string }
@@ -84,7 +89,7 @@ export function chunkPages(pages: string[]): Chunk[] {
 export const passageImage = (story: string, chunk: number): string => `passages/gsb-${story}-${chunk}.webp`;
 /** The imagebank picture of a page: 01 is the cover, so page n is n + 1. */
 export const pageImage = (story: string, page: number): string => `${story}/${String(page + 1).padStart(2, '0')}.jpg`;
-export const sourceUrl = (file: string): string => `https://github.com/global-asp/sbc-source/blob/${SBC_COMMIT.slice(0, 7)}/zh/${encodeURIComponent(file)}`;
+export const sourceUrl = (file: string): string => `https://github.com/global-asp/sbc-source/blob/${SBC_COMMIT}/zh/${encodeURIComponent(file)}`;
 
 export interface ImportedStory { id: string; title: string; chunks: number; passages: Passage[]; images: { out: string; page: string }[] }
 
@@ -96,13 +101,13 @@ export function importStory(file: string, md: string, entry: StoryEntry): Import
   const edits = entry.edits ?? [];
   const chunks = chunkPages(applyEdits(story.pages, edits)).map((c, i) => ({ ...c, chunk: i + 1, term: passageTerm(c.text, entry.names) }));
   const kept = chunks.filter((c) => c.term !== null && termIndex(c.term) <= termIndex(LAST_TERM) && !blockedIn(c.text).length);
-  // fewer than half survive, or not its opening: a story missing its middle, or its start, is no story
-  const whole = kept.length * 2 >= chunks.length && kept[0]?.chunk === 1;
+  // a story is kept only whole: no missing opening, no hole, no dropped ending (fix round, 2026-10-15)
+  const whole = kept.length === chunks.length;
   const licence = entry.licence ?? story.licence;
   if (licence.includes('NC') !== story.licence.includes('NC')) throw new Error(`${file}: manifest licence ${licence} but the story says ${story.licence}`);
   const credit: PassageCredit = { title: story.title, text: story.text, illustration: story.illustration, translation: story.translation, licence, adapted: edits.length > 0, source: sourceUrl(file) };
   const passages: Passage[] = (whole ? kept : []).map((c, i, all) => {
-    const names = entry.names.filter((n) => c.text.includes(n));
+    const names = entry.names.filter((n) => (story.title + c.text).includes(n)); // the title shows with every part
     return {
       id: `gsb:${id}-${c.chunk}`,
       title: all.length > 1 ? `${story.title}（${i + 1}）` : story.title,

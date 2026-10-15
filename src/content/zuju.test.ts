@@ -11,6 +11,8 @@ describe('组句 (spec 2026-10-05 §3.2 rung 4, §6)', () => {
   });
   it('finds the blocked words of a sentence tile by tile, with the punctuation and particles a tile carries left off', () => {
     expect(blockedWordsIn('该死的河马！')).toEqual(['该死']);
+    expect(blockedWordsIn('他们住在富人的家里。')).toEqual(['富人']);
+    expect(blockedWordsIn('你这个傻瓜呀！')).toEqual(['傻瓜']);
     expect(blockedWordsIn('你是傻瓜吗？我们不是傻瓜。')).toEqual(['傻瓜', '傻瓜']);
     expect(blockedWordsIn('我爱河马。')).toEqual([]);
   });
