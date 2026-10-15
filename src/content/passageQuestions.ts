@@ -207,4 +207,84 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '我把绿豆放在什么上？', choices: ['纸巾', '杯子', '叶子'], answer: 0, sentence: 1 },
     { q: '过了三天，绿豆长出了什么？', choices: ['小芽', '绿叶', '红花'], answer: 0, sentence: 2 },
   ],
+  p35: [
+    { q: '我的风筝是什么？', choices: ['一只大老鹰', '一只大公鸡', '一只大白兔'], answer: 0, sentence: 1 },
+    { q: '大家说我的风筝怎么样？', choices: ['很好看', '很好玩', '很有趣'], answer: 0, sentence: 4 },
+  ],
+  p36: [
+    { q: '小文搭什么？', choices: ['船头', '船尾', '大海'], answer: 0, sentence: 2 },
+    { q: '谁说这条船可以开到大海去？', choices: ['妈妈', '小文', '我'], answer: 0, sentence: 5 },
+  ],
+  p37: [
+    { q: '生日卡上画了什么？', choices: ['花', '蛋糕', '菜'], answer: 0, sentence: 1 },
+    { q: '谁买来一个大蛋糕？', choices: ['爸爸', '妈妈', '奶奶'], answer: 0, sentence: 2 },
+  ],
+  p38: [
+    { q: '洗完澡，豆豆在哪里睡着了？', choices: ['沙发上', '床下', '水里'], answer: 0, sentence: 3 },
+    { q: '豆豆醒了以后，做了什么？', choices: ['抢走袜子', '跳进水里', '跑到床上'], answer: 0, sentence: 4 },
+  ],
+  p39: [
+    { q: '纸飞机破了，谁哭了？', choices: ['弟弟', '我', '妈妈'], answer: 0, sentence: 3 },
+    { q: '谁说“吵来吵去，有什么用呢”？', choices: ['妈妈', '弟弟', '我'], answer: 0, sentence: 4 },
+  ],
+  p40: [
+    { q: '小芽长高了，开出了什么？', choices: ['黄色的花', '红色的花', '白色的花'], answer: 0, sentence: 3 },
+    { q: '奶奶用番茄做了什么？', choices: ['一大碗汤', '一大盘菜', '一大碗面'], answer: 0, sentence: 5 },
+  ],
+  p41: [
+    { q: '妹妹选了讲什么的书？', choices: ['大海', '小狗', '星星'], answer: 0, sentence: 3 },
+    { q: '妹妹还想做什么？', choices: ['再看一遍', '再选一本', '快点回家'], answer: 0, sentence: 4 },
+  ],
+  p42: [
+    { q: '爸爸买了什么？', choices: ['烤鸡翅', '香肠', '饮料'], answer: 0, sentence: 4 },
+    { q: '谁最喜欢香肠？', choices: ['我', '爸爸', '妈妈'], answer: 0, sentence: 5 },
+  ],
+  p43: [
+    { q: '谁带我们去海里游泳？', choices: ['爸爸', '哥哥', '妈妈'], answer: 0, sentence: 4 },
+    { q: '我把最好看的贝壳送给了谁？', choices: ['妈妈', '哥哥', '爸爸'], answer: 0, sentence: 5 },
+  ],
+  p44: [
+    { q: '谁把水关上了？', choices: ['爸爸', '妈妈', '我'], answer: 0, sentence: 1 },
+    { q: '从那天起，我洗脸时怎么做？', choices: ['把水关小', '把水关上', '拿去浇花'], answer: 0, sentence: 3 },
+  ],
+  p45: [
+    { q: '种萝卜的爷爷先叫谁来帮忙？', choices: ['老奶奶', '小猪', '小老鼠'], answer: 0, sentence: 1 },
+    { q: '最后，谁跑来帮忙？', choices: ['小老鼠', '小猪', '小猫'], answer: 0, sentence: 4 },
+  ],
+  p46: [
+    { q: '那只动物的耳朵怎么样？', choices: ['很大', '很小', '很长'], answer: 0, sentence: 2 },
+    { q: '谁说想要一只会说话的动物？', choices: ['妹妹', '妈妈', '我'], answer: 0, sentence: 4 },
+  ],
+  p47: [
+    { q: '什么亮晶晶的？', choices: ['小水滴', '小星星', '彩虹'], answer: 0, sentence: 3 },
+    { q: '谁说彩虹像一座桥？', choices: ['妈妈', '妹妹', '我'], answer: 0, sentence: 4 },
+  ],
+  p48: [
+    { q: '在岛上，我们借了什么？', choices: ['脚踏车', '小船', '巴士'], answer: 0, sentence: 2 },
+    { q: '我梦见自己变成了什么？', choices: ['小鸟', '野猪', '大树'], answer: 0, sentence: 4 },
+  ],
+  p49: [
+    { q: '老鹰住在哪里？', choices: ['大山上', '树上', '山下'], answer: 0, sentence: 0 },
+    { q: '一个星期后，小鸟飞过了什么？', choices: ['高楼', '大树', '大山'], answer: 0, sentence: 5 },
+  ],
+  p50: [
+    { q: '我们先去了哪里？', choices: ['花园', '河边', '大树'], answer: 0, sentence: 2 },
+    { q: '我们在哪里吃午饭？', choices: ['河边', '花园', '大树'], answer: 0, sentence: 5 },
+  ],
+  p51: [
+    { q: '谁的衣服上有金色的花？', choices: ['拉吉', '阿里', '我'], answer: 0, sentence: 2 },
+    { q: '谁说“我们都是好朋友”？', choices: ['老师', '阿里', '拉吉'], answer: 0, sentence: 4 },
+  ],
+  p52: [
+    { q: '谁折的船最漂亮？', choices: ['妹妹', '小华', '爷爷'], answer: 0, sentence: 3 },
+    { q: '谁坐在窗前，一点也不开心？', choices: ['小华', '妹妹', '爷爷'], answer: 0, sentence: 1 },
+  ],
+  p53: [
+    { q: '妹妹说的动物是什么？', choices: ['小白兔', '大象', '小狗'], answer: 0, sentence: 2 },
+    { q: '我说的动物是什么？', choices: ['大象', '小狗', '小猫'], answer: 0, sentence: 5 },
+  ],
+  p54: [
+    { q: '第二次，我学会了什么？', choices: ['用脚踢水', '用手推水', '走进水里'], answer: 0, sentence: 3 },
+    { q: '谁说“别怕，我在你身边”？', choices: ['爸爸', '妈妈', '我'], answer: 0, sentence: 2 },
+  ],
 };

@@ -25,5 +25,9 @@ customPinyin({
   远远地: 'yuǎn yuǎn de', 紧紧地: 'jǐn jǐn de', 尽情地: 'jìn qíng de', 伤心地: 'shāng xīn de', 快乐地: 'kuài lè de',
   // our 二上 passages (Task 8): 婆婆家 jiā (it read pó pó jia), 子 neutral in 鞋子 and 池子, 高兴得 de, 一个一个 yí gè yí gè
   婆婆家: 'pó po jiā', 鞋子: 'xié zi', 池子: 'chí zi', 高兴得: 'gāo xìng de', 一个一个: 'yí gè yí gè',
+  // our 二下 passages (Task 9): 得 after a verb is de, 地 after 一块一块 de, 一 before a fourth or first tone in 一X一X, 衣服 fu,
+  // 长着 (growing) zhǎng, 漂亮 piào liang (it read piāo liàng after 一条)
+  一块一块地: 'yí kuài yí kuài de', 一滴一滴: 'yì dī yì dī', 一条一条: 'yì tiáo yì tiáo', 弄得: 'nòng de', 飞得: 'fēi de',
+  排得: 'pái de', 学得: 'xué de', 妹妹选: 'mèi mei xuǎn', 中国衣服: 'zhōng guó yī fu', 漂亮: 'piào liang', 长着: 'zhǎng zhe',
   炸鸡: 'zhá jī', 油炸: 'yóu zhá', 种植: 'zhòng zhí', 种花的: 'zhòng huā de', 勒紧: 'lēi jǐn', // 种花的: 写一写's piece (never 种花 alone)
 });
