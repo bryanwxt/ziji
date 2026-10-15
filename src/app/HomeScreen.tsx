@@ -226,7 +226,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       <main class="home__main">
         <div class="home__cards">
           {/* the reward card (rewards spec §3): the river meter toward the chest, and the parent's goal beside it when there is one */}
-          <div class={`goal reward-card${progress?.reached ? ' goal--reached' : ''}`}>
+          <div class={`goal reward-card${goal && progress ? '' : ' reward-card--alone'}${progress?.reached ? ' goal--reached' : ''}`}>
             <span class="reward-card__meter"><RiverTrack mini from={shown.halves} to={shown.halves} /></span>
             {goal && progress && (
               <>

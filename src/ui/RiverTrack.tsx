@@ -14,6 +14,8 @@ const CHEST_MARK =
   `<rect x="-14" y="-18" width="28" height="18" rx="4" fill="#c77b30" stroke="${LINE}" stroke-width="2"/>` +
   `<path d="M-14 -18 V-24 Q-14 -32 0 -32 Q14 -32 14 -24 V-18 Z" fill="#d98a3d" stroke="${LINE}" stroke-width="2" stroke-linejoin="round"/>` +
   `<rect x="-3" y="-32" width="6" height="32" fill="#f6c343"/>`;
+/** The boat's size on the track: a little larger on Home's small one, so it still reads as a boat at 116 px. */
+const BOAT_SIZE = { full: 0.5, mini: 0.62 };
 const SAID = ['小船在起点', '小船走到一半了', '小船到宝箱了'];
 
 /** The river meter (rewards spec §3): a short river, the One River paper boat on it, the chest at its end. The boat sails from
@@ -41,7 +43,7 @@ export function RiverTrack({ from, to, mini = false, onArrive }: { from: number;
       <path d={`M${START} 52 L${END} 52`} stroke="#ffffff" stroke-width="2.4" stroke-dasharray="2 8" stroke-linecap="round" />
       <g transform={`translate(${END + 26} 50)`} dangerouslySetInnerHTML={{ __html: CHEST_MARK }} />
       <g class="river__boat" style={{ transform: `translateX(${x(at)}px)`, transition: still ? 'none' : `transform ${SAIL_MS}ms ease-in-out` }}>
-        <g transform={`translate(${START} 50) scale(0.42)`} dangerouslySetInnerHTML={{ __html: RIPPLE + BOAT }} />
+        <g transform={`translate(${START} 50) scale(${mini ? BOAT_SIZE.mini : BOAT_SIZE.full})`} dangerouslySetInnerHTML={{ __html: RIPPLE + BOAT }} />
       </g>
     </svg>
   );
