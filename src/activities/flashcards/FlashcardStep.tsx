@@ -21,7 +21,7 @@ import { SpeakButton } from '../../ui/SpeakButton';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { LookAlikeWhy, PinyinWhy, RadicalHint } from '../../ui/stage/WhyLine';
 import { firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
-import { cardMeaning, glossFor } from '../../content/glossary';
+import { cardMeaning, glossFor, questionMeaning } from '../../content/glossary';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
 import type { Idiom } from '../../content/chengyu';
@@ -85,7 +85,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       const options = meaningChoices(word, pool, rng);
       if (options) {
         const hear = ask === 'hear' && voice; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
-        const real = firstSense(cardMeaning(word)!);
+        const real = firstSense(questionMeaning(word)!);
         return { listen: hear, cue: null, answer: noneOfThese === 'answer' ? NONE_OF_THESE : real, options: pickOptions(options, real), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead', none: noneOfThese === 'answer', showsNone: !!noneOfThese, real };
       }
     }

@@ -8,13 +8,15 @@ import { HEAR_CHECKS_PER_DAY, migrateToLadder } from './migrate';
 import type { CardRecord } from '../types';
 
 const now = new Date('2026-10-06T09:00:00');
+/** School characters with a kid gloss: a listening check asks a real English meaning (kidGloss.json), never a made-up one. */
+const CHARS = Array.from('衣鱼雨二五耳牙口人木土马八巴你我也他弟爸她妈父母女儿力河禾立米合');
 // cards as an install from before the ladder has them: earned, never marked passed
 const earned = (wordId: string, kind: CardRecord['kind']): CardRecord => ({ id: `${wordId}:${kind}`, wordId, kind, fsrs: seededKnownCard(now, 20) });
 const learning = (wordId: string, kind: CardRecord['kind']): CardRecord => ({ id: `${wordId}:${kind}`, wordId, kind, fsrs: { ...createEmptyCard(now), reps: 1, state: 1 } });
 
 async function setup(n = 20) {
   const db = await freshDb();
-  const words = Array.from({ length: n }, (_, i) => makeWord(`字${i}`, { rank: i, meaning: `meaning ${i}` }));
+  const words = Array.from({ length: n }, (_, i) => makeWord(CHARS[i]!, { id: `b:字${i}`, rank: i }));
   await putWords(db, words);
   await putCards(db, [...words.map((w) => earned(w.id, 'recognise')), earned('b:字0', 'meaning'), learning('b:字1', 'write')]);
   return db;

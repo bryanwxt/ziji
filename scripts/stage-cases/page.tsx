@@ -48,7 +48,7 @@ import { builtinWords, PASSAGES } from '../../src/content';
 import { LangduStep, type LangduPart } from '../../src/activities/langdu/LangduStep';
 import { PASSAGE_QUESTIONS } from '../../src/content/passageQuestions';
 import { ladderWords } from '../../src/content/ladder';
-import { cardMeaning } from '../../src/content/glossary';
+import { questionMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
 import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
@@ -280,7 +280,7 @@ else if (which === 'hear' || which === 'hear-long' || which === 'hear-read') {
   // with the longest English, hear-read the same as a read-for-meaning question
   const lw = ladderWords();
   const pool = [...builtinWords(0), ...lw];
-  const longest = [...lw].sort((a, b) => (cardMeaning(b)?.length ?? 0) - (cardMeaning(a)?.length ?? 0));
+  const longest = lw.filter((x) => questionMeaning(x)).sort((a, b) => questionMeaning(b)!.length - questionMeaning(a)!.length); // the longest English a question asks (kid glosses)
   const w = which === 'hear' ? builtinWords(0).find((x) => x.text === '门')! : longest[0]!;
   const near = which === 'hear' ? pool : [w, ...longest.slice(1, 4)];
   render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'hear-read' ? 'meaningRead' : 'hear'} word={w} pool={near} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
@@ -396,7 +396,7 @@ else if (which === 'none-word' || which === 'none-meaning') {
     const w = words.find((x) => wordCue(x) && x.text === '河') ?? words.find((x) => wordCue(x))!;
     render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false, mode: 'meaning' }} ask="word" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} noneOfThese="answer" onDone={() => {}} />), app);
   } else {
-    const longest = [...lw].sort((a, b) => (cardMeaning(b)?.length ?? 0) - (cardMeaning(a)?.length ?? 0));
+    const longest = lw.filter((x) => questionMeaning(x)).sort((a, b) => questionMeaning(b)!.length - questionMeaning(a)!.length); // the longest English a question asks (kid glosses)
     render(screen(<FlashcardStep item={{ wordId: longest[0]!.id, isNew: false, retry: false }} ask="meaningRead" word={longest[0]!} pool={longest.slice(0, 4)} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} noneOfThese="answer" onDone={() => {}} />), app);
   }
 }

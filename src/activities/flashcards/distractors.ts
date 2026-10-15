@@ -1,7 +1,7 @@
 import { pinyin } from 'pinyin-pro';
 import { wordComponents } from '../../content';
 import { trapReadings } from './pinyinTraps';
-import { cardMeaning } from '../../content/glossary';
+import { questionMeaning } from '../../content/glossary';
 import { shuffle, type Rng } from '../../lib/random';
 import type { Word } from '../../types';
 
@@ -115,34 +115,67 @@ export function pickPinyinDistractors(target: Word, pool: Word[], rng: Rng, n = 
   return out;
 }
 
-/** A meaning's first sense: what a P2 child reads on a choice (never the whole dictionary entry). */
+/** A meaning's first sense: what a P2 child reads on a choice (never the whole dictionary entry; a kid gloss is one sense). */
 export const firstSense = (m: string): string => m.split(';')[0]!.trim();
-/** A sense compared loosely: no brackets, no leading to/a/an/the, no punctuation ("to teach (at a school)" = "teach"). */
-const sense = (m: string) => firstSense(m).split(',')[0]!.replace(/\([^)]*\)/g, ' ').toLowerCase().replace(/^\s*(to|a|an|the)\s+/, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+/** A meaning's senses compared loosely: no brackets, then each comma part with no leading to/a/an/the and no punctuation
+ *  ("to teach (at a school)" = "teach"; "like, happy" = "like" and "happy"). */
+const senses = (m: string): string[] => firstSense(m).replace(/\([^)]*\)/g, ' ').toLowerCase().split(',')
+  .map((p) => p.replace(/^\s*(to|a|an|the)\s+/, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
 /** Words too common to tell two meanings apart ("one", "something"). */
 const GLUE = new Set(['and', 'the', 'for', 'with', 'one', 'ones', 'someone', 'something', 'sth', 'sb', 'used', 'kind', 'sort']);
-const keyWords = (s: string) => s.split(' ').filter((t) => t.length >= 3 && !GLUE.has(t));
-/** Two meanings that would both be right, or look half-right side by side: the same sense, one inside the other
- *  ("guide" / "tour guide"), or a shared key word ("small box" / "meal in a box"; parent, 2026-10-12: confusing). */
-const alike = (a: string, b: string) => a === b || ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `)
+/** Words a child takes for the same meaning (妈 "mum" beside 母 "mother", 看 "look" beside 见 "see"): two choices with one each
+ *  would both look right, so they count as one key word. */
+const SAME = [
+  'mum mother mummy mama', 'dad father daddy', 'grandma granny', 'grandpa grandad', 'child children kid kids', 'big large huge giant',
+  'small little tiny', 'happy glad joyful joy happiness pleased', 'sad unhappy heartbroken', 'look see watch view peek seen',
+  'say speak talk tell chat words speech', 'hear listen', 'road street way path route', 'friend buddy partner pal',
+  'country nation', 'shop store', 'cold cool chilly', 'hot warm', 'fast quick quickly hurry rush', 'slow slowly',
+  'begin start', 'end finish finished over', 'right correct', 'wrong mistake', 'afraid scared scary scare fear frighten',
+  'angry cross', 'clever smart intelligent', 'pretty beautiful lovely nice looking good', 'quiet calm silent',
+  'noisy loud', 'shout yell call', 'hug embrace', 'house home', 'picture drawing photo painting', 'seat chair',
+  'answer reply', 'ask question', 'remember recall', 'think feel', 'like love fond', 'want wish hope', 'many lots much',
+  'all every each whole', 'very really extremely super', 'toilet bathroom washroom', 'rubbish trash', 'stone rock',
+  'hill mountain', 'sea ocean', 'river stream', 'forest woods jungle', 'cup glass', 'clothes clothing dress',
+  'pants trousers shorts', 'present gift', 'sweets candy', 'meal food', 'cook boil', 'cry weep', 'laugh smile',
+  'leave away depart', 'return back', 'sleep nap asleep', 'bug insect', 'cat kitten', 'dog puppy doggy', 'help rescue',
+  'protect guard defend', 'fight quarrel argue squabble', 'break smash broken', 'fall drop', 'hurt pain injury painful harm',
+  'sick ill illness', 'clean tidy neat', 'strange weird odd', 'fun interesting', 'easy simple handy', 'hard difficult',
+  'near nearby close', 'inside', 'outside', 'top above', 'below under down', 'middle centre', 'side beside',
+  'together', 'piece slice bit lump', 'teacher coach',
+].map((g) => g.split(' '));
+const CANON = new Map(SAME.flatMap((g) => g.map((w) => [w, g[0]!] as const)));
+const keyWords = (s: string) => s.split(' ').filter((t) => t.length >= 3 && !GLUE.has(t)).map((t) => CANON.get(t) ?? t);
+const alikeSense = (a: string, b: string) => a === b || ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `)
   || keyWords(a).some((t) => keyWords(b).includes(t));
+/** Two meanings that would both be right, or look half-right side by side: any of their senses the same, one inside the other
+ *  ("guide" / "tour guide"), or sharing a key word ("small box" / "meal in a box"; parent, 2026-10-12: confusing). Kid glosses
+ *  list a second sense after a comma (喜 "like, happy"), so every sense counts, not only the first (欢 "happy, joyful"). */
+export const alike = (a: string, b: string): boolean => {
+  const sa = senses(a);
+  const sb = senses(b);
+  return sa.some((x) => sb.some((y) => alikeSense(x, y)));
+};
 
-/** Hear / read-for-meaning (spec 2026-10-06 §3.2): its English meaning and three others (or `others`) whose first sense differs, near its place in his order. */
+/**
+ * Hear / read-for-meaning (spec 2026-10-06 §3.2): its English meaning and three others (or `others`) unlike it and each other,
+ * near its place in his order. Only words that take an English question are asked or offered (questionMeaning: kid glosses,
+ * never a grammar word); none for a word that takes none.
+ */
 export function meaningChoices(word: Word, pool: Word[], rng: Rng, others = FEW_WRONG): string[] | null {
-  const full = cardMeaning(word);
+  const full = questionMeaning(word);
   if (!full) return null;
   const answer = firstSense(full);
-  const seen = new Set([sense(answer)]);
+  const seen = [answer];
   const near = pool
-    .filter((w) => w.id !== word.id && !w.paused)
+    .filter((w) => w.id !== word.id && w.text !== word.text && !w.paused && !!questionMeaning(w))
     .sort((a, b) => Math.abs((a.rank ?? 1e9) - (word.rank ?? 0)) - Math.abs((b.rank ?? 1e9) - (word.rank ?? 0)))
     .slice(0, 60);
   const wrong: string[] = [];
   for (const w of shuffle(near, rng)) {
-    const m = cardMeaning(w);
-    if (!m || [...seen].some((x) => alike(x, sense(m)))) continue;
-    seen.add(sense(m));
-    wrong.push(firstSense(m));
+    const m = firstSense(questionMeaning(w)!);
+    if (seen.some((x) => alike(x, m))) continue;
+    seen.push(m);
+    wrong.push(m);
     if (wrong.length === others) break;
   }
   return wrong.length === others ? shuffle([answer, ...wrong], rng) : null;
