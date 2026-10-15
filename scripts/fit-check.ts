@@ -123,7 +123,7 @@ function probe(args: { main: string; scrollers: string }): string[] {
 
 function signature(): string {
   const s = document.querySelector('.screen');
-  const marks = ['.home', '.usage-opts', '.intro', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.choices--six', '.say', '.say__after', '.say-sentence', '.say-sentence__model', '.pairs--eight', '.choice--none', '.arrival', '.zika-big', '.rotate-hint'];
+  const marks = ['.home', '.usage-opts', '.intro', '.pond', '.bubbles', '.langdu', '.kantu', '.kantu__ask', '.kantu__model', '.celebrate', '.chest', '.room', '.zika-grid', '.setup', '.pinpad', '.choices', '.choices--six', '.say', '.say__after', '.say-sentence', '.say-sentence__model', '.pairs--eight', '.choice--none', '.arrival', '.zika-big', '.rotate-hint', '.river', '.goals'];
   const on = marks.filter((m) => s?.matches(m) || s?.querySelector(m) || document.querySelector(`${m}:not(.rotate-hint)`));
   const tone = document.querySelector('.sheet')?.className ?? '';
   const words = (s?.querySelector('.kantu__q, .langdu__step, .pet__bubble, h1, h2')?.textContent ?? '').slice(0, 14);
@@ -317,7 +317,8 @@ async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnl
     if (!(await page.evaluate(advance))) return;
   }
   // the cap reached with the lesson still up: the rest of the flow was never looked at (final review M5)
-  if (await page.$('.lessonbar')) results.push({ size: size.name, flow, step: WALK_CAP, sig: '', problems: [`walker ran out of taps: the lesson bar still shows after ${WALK_CAP} taps (stuck on: ${await page.evaluate(signature)})`] });
+  // the Celebration too: a 继续 that never moves on (a fixed Date once blocked it) passed silently, its later phases never checked
+  if (await page.$('.lessonbar, .celebrate')) results.push({ size: size.name, flow, step: WALK_CAP, sig: '', problems: [`walker ran out of taps: the lesson or its Celebration still shows after ${WALK_CAP} taps (stuck on: ${await page.evaluate(signature)})`] });
 }
 
 async function sweep(browser: Browser, size: Size) {
@@ -531,7 +532,19 @@ async function sweep(browser: Browser, size: Size) {
   await run('writing-sentence', AFTERNOON, { activities: only('writing'), writeSentence: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'writing-sentence'); });
   await run('langdu', AFTERNOON, { activities: only('speaking'), speakingLast: 'story', langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'langdu'); });
   await run('lesson', AFTERNOON, { langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, 朗读 too, then the chest
-  await run('chest-stars', AFTERNOON, { ownsAll: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-stars'); }); // the chest's stars prize
+  // the chest's stars prize; new words only, as the walker can't trace a character and stopped at 写一写, short of the chest
+  await run('chest-stars', AFTERNOON, { ownsAll: true, activities: only('newwords') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-stars'); });
+  // the river meter after an extra lesson (rewards spec §3): half way, the day's second chest, and the cap — at every size
+  const extra = (halves: number, chestsToday: number) => ({ doneToday: true, activities: only('newwords'), meter: { halves, chestsToday } });
+  const extraLesson = async (p: Page) => {
+    await p.click('.done-card button:has-text("再学一课")');
+    await p.waitForSelector('.lessonbar, .celebrate', { timeout: 15_000 });
+  };
+  await run('extra-half', AFTERNOON, extra(0, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-half'); }); // 再学一课就能开宝箱！
+  await run('extra-chest', AFTERNOON, extra(1, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-chest'); }); // the second chest, then 明天再开宝箱！
+  await run('extra-capped', AFTERNOON, extra(0, 2), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-capped'); }); // 明天再开宝箱！
+  // yesterday's bank (a full meter) and today's first lesson: two chest phases in one Celebration (rewards ruling 2)
+  await run('chest-two', AFTERNOON, { activities: only('newwords'), bank: 2 }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-two'); });
   await run('langdu-extra', AFTERNOON, { doneToday: true, langdu: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
 }
 

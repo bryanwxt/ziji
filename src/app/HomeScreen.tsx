@@ -34,6 +34,8 @@ import { TodayPath } from './TodayPath';
 import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
 import { InkIcon } from '../ui/icons/InkIcon';
+import { meterShown, normalizeMeter } from '../fun/meter';
+import { RiverTrack } from '../ui/RiverTrack';
 
 interface HomeData {
   know: Knowledge;
@@ -155,7 +157,9 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const today = localDateKey(now());
   const todaySession = data.sessions.find((s) => s.date === today && !s.free);
   const doneToday = !!todaySession?.completed;
-  const chestOpened = k.lastChestDate === today;
+  // the path's chest is done only when nothing is owed: a second chest he left unopened is still there to claim (rewards spec §3)
+  const chestOpened = k.lastChestDate === today && normalizeMeter(k.meter).owed === 0;
+  const shown = meterShown(k, today); // the small boat on the reward card: a new day's meter has the bank in it
   const hasCards = data.know.cards.some((c) => c.kind === 'recognise');
   const days = streak(data.sessions, today);
   const wotd = wordOfTheDay({
@@ -222,23 +226,27 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       </header>
       <main class="home__main">
         <div class="home__cards">
-          {goal && progress && (
-            <div class={`goal ${progress.reached ? 'goal--reached' : ''}`}>
-              {/* what he sees is Chinese with an ink icon; the parent's English note and older emoji stay in the parent area (spec 2026-10-04 §3) */}
-              <span class="goal__icon"><InkIcon name={goal.icon ?? 'gift'} size={34} /></span>
-              <div class="goal__body">
-                <strong><Label zh={goal.zh ?? '我的奖励'} /></strong>
-                {progress.reached ? (
-                  <span><Label zh="你做到了！找爸爸妈妈拿奖励吧！" /></span>
-                ) : (
-                  <>
-                    <div class="progress"><div class="progress__fill" style={{ width: `${Math.round(progress.fraction * 100)}%` }} /></div>
-                    <small class="goal__count">{progress.value} / {goal.target} {goal.metric === 'stars' ? <InkIcon name="star" size={16} /> : '字'}</small>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+          {/* the reward card (rewards spec §3): the river meter toward the chest, and the parent's goal beside it when there is one */}
+          <div class={`goal reward-card${goal && progress ? '' : ' reward-card--alone'}${progress?.reached ? ' goal--reached' : ''}`}>
+            <span class="reward-card__meter"><RiverTrack key={shown.halves} mini from={shown.halves} to={shown.halves} /></span>
+            {goal && progress && (
+              <>
+                {/* what he sees is Chinese with an ink icon; the parent's English note and older emoji stay in the parent area (spec 2026-10-04 §3) */}
+                <span class="goal__icon"><InkIcon name={goal.icon ?? 'gift'} size={34} /></span>
+                <div class="goal__body">
+                  <strong><Label zh={goal.zh ?? '我的奖励'} /></strong>
+                  {progress.reached ? (
+                    <span><Label zh="你做到了！找爸爸妈妈拿奖励吧！" /></span>
+                  ) : (
+                    <>
+                      <div class="progress"><div class="progress__fill" style={{ width: `${Math.round(progress.fraction * 100)}%` }} /></div>
+                      <small class="goal__count">{progress.value} / {goal.target} {goal.metric === 'stars' ? <InkIcon name="star" size={16} /> : '字'}</small>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
           {doneToday && chestOpened && (
             <div class="card done-card">
               <p class="done-today"><Label zh="今天完成了！" /> <InkIcon name="party" size={30} /></p>

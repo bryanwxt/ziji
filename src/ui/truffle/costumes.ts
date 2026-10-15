@@ -3,6 +3,7 @@ import { BODY, belly, eyes, hood, INK, MUZZLE, num, pair, ropeTail, S, s2, shade
 import { MYTH_HOOD, MYTH_OUTFIT } from './mythCostumes';
 import { EYE_L, EYE_R, EYE_Y, FUR } from './rig';
 import { LWI } from '../cel';
+import { V3 } from './v3';
 
 // Costume art in Truffle's viewBox (30 20 260 270). Ink outlines match the mascot (3.2px, round joins).
 // Redrawn 2026-10-06 (parent: some, like the zodiac ones, were hard to identify): each zodiac hood wears the animal's own
@@ -107,31 +108,6 @@ interface Outfit { back?: string; body: string; head: string; hidesEars?: boolea
 
 /** Outfits: behind him, over his body, on his head. */
 const OUTFIT: Record<string, (c: Costume) => Outfit> = {
-  astronaut: (c) => ({
-    body: tint(c.color) + `<rect x="136" y="214" width="48" height="30" rx="6" fill="#bfe0ff" ${s2}/><circle cx="148" cy="229" r="4" fill="#ff5532"/><circle cx="162" cy="229" r="4" fill="#ffc94a"/><circle cx="176" cy="229" r="4" fill="#7fdc7a"/>`,
-    head: `<path d="M246 66 L266 42" ${S}/><circle cx="267" cy="40" r="6" fill="#ff5532" ${s2}/>` +
-      `<ellipse cx="160" cy="122" rx="118" ry="100" fill="#bfe0ff" fill-opacity=".22" ${S}/><path d="M82 70 C98 50 122 40 146 38" fill="none" stroke="#fffdf7" stroke-width="7" stroke-linecap="round" opacity=".9"/>`,
-  }),
-  chef: (c) => ({
-    body: `<path d="M124 196 L196 196 L206 268 C180 276 140 276 114 268 Z" fill="${c.color}" ${S}/><path d="M124 210 C110 206 100 214 98 224 M196 210 C210 206 220 214 222 224" fill="none" ${s2}/>` +
-      `<rect x="146" y="230" width="28" height="18" rx="4" fill="none" ${s2}/>` +
-      `<path d="M214 262 L234 206" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M214 262 L234 206" stroke="#c98f55" stroke-width="4.5" stroke-linecap="round"/><ellipse cx="237" cy="198" rx="9" ry="13" fill="#c98f55" ${S}/>`,
-    // a tall, puffed toque on a pleated band
-    head: `<path d="M114 62 C96 60 92 34 114 32 C114 20 136 18 146 26 C152 16 170 16 176 26 C186 18 206 22 206 34 C226 34 226 60 206 62 Z" fill="${c.color}" ${S}/>` +
-      `<path d="M134 34 C134 44 138 52 142 58 M160 30 L160 58 M186 34 C186 44 182 52 178 58" stroke="#d9d4cc" stroke-width="2.4" fill="none" stroke-linecap="round"/>` +
-      `<path d="M112 58 L208 58 L208 76 C176 70 144 70 112 76 Z" fill="${c.color}" ${S}/><path d="M124 60 v13 M140 60 v11 M156 60 v10 M172 60 v10 M188 60 v11 M200 60 v12" stroke="#d9d4cc" stroke-width="2"/>` +
-      `<path d="M104 36 C108 28 116 24 124 24" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>`,
-  }),
-  wizard: (c) => ({
-    body: tint(c.color) + `<path d="M160 214 l5 10 11 2 -8 8 2 11 -10 -5 -10 5 2 -11 -8 -8 11 -2 Z" fill="#ffc94a" ${s2}/>` +
-      `<path d="M100 262 L76 214" stroke="${INK}" stroke-width="7" stroke-linecap="round"/><path d="M74 210 l3 7 8 1 -6 5 2 8 -7 -4 -7 4 2 -8 -6 -5 8 -1 Z" fill="#ffc94a" ${s2}/>`,
-    // a tall pointed hat whose tip flops over, a gold band, stars
-    head: `<ellipse cx="160" cy="68" rx="80" ry="13" fill="${shade(c.color, 0.15)}" ${S}/>` +
-      `<path d="M106 66 C118 52 130 34 148 26 C166 18 196 22 230 40 C214 40 196 42 186 48 C196 54 208 60 214 66 Z" fill="${c.color}" ${S}/>` +
-      `<path d="M110 60 C140 52 180 52 210 60 L214 66 C180 58 140 58 106 66 Z" fill="#ffc94a" ${s2}/>` +
-      `<path d="M150 46 l2 5 5 1 -4 3 1 5 -4 -3 -4 3 1 -5 -4 -3 5 -1 Z M182 34 l1.6 4 4 .8 -3 2.4 .8 4 -3.4 -2.4 -3.4 2.4 .8 -4 -3 -2.4 4 -.8 Z" fill="#ffc94a"/>` +
-      `<circle cx="230" cy="41" r="5" fill="#ffc94a" ${s2}/><path d="M124 50 C132 40 140 34 148 31" stroke="#fff" stroke-opacity=".45" stroke-width="4" fill="none" stroke-linecap="round"/>`,
-  }),
   explorer: (c) => ({
     body: `<path d="M110 190 C96 210 94 240 104 258 L136 262 L140 198 Z M210 190 C224 210 226 240 216 258 L184 262 L180 198 Z" fill="${c.color}" ${S}/>` +
       `<path d="M116 194 L204 250" stroke="#7a5a2c" stroke-width="6" stroke-linecap="round"/><rect x="196" y="236" width="24" height="20" rx="4" fill="#b08a4e" ${s2}/>` +
@@ -141,14 +117,6 @@ const OUTFIT: Record<string, (c: Costume) => Outfit> = {
       `<path d="M108 64 C106 30 214 30 212 64 C180 58 140 58 108 64 Z" fill="${c.color}" ${S}/>` +
       `<path d="M108 58 C140 52 180 52 212 58 L212 66 C180 60 140 60 108 66 Z" fill="#7a5a2c"/><circle cx="160" cy="36" r="4" fill="${shade(c.color, 0.3)}"/>` +
       `<path d="M120 50 C124 40 134 34 146 32" stroke="#fff" stroke-opacity=".5" stroke-width="4" fill="none" stroke-linecap="round"/>`,
-  }),
-  pirate: (c) => ({
-    body: tint('#fffdf7') + [212, 232, 252].map((y) => `<rect x="${y === 252 ? 118 : 108}" y="${y}" width="${y === 252 ? 84 : 104}" height="8" rx="4" fill="${c.color}"/>`).join(''),
-    // an eye-patch over his right eye, and a three-cornered hat with a gold edge and a skull
-    head: `<path d="M84 86 L190 108 M216 128 L252 140" stroke="${INK}" stroke-width="3.6" stroke-linecap="round"/><ellipse cx="${EYE_R}" cy="${EYE_Y}" rx="17" ry="15" fill="${INK}"/>` +
-      `<path d="M66 76 C78 42 118 50 160 30 C202 50 242 42 254 76 C226 64 196 72 160 66 C124 72 94 64 66 76 Z" fill="#26232b" ${S}/>` +
-      `<path d="M70 72 C96 62 124 68 160 62 C196 68 224 62 250 72" stroke="#e0b13a" stroke-width="3.5" fill="none" stroke-linecap="round"/>` +
-      `<circle cx="160" cy="48" r="9" fill="#fffdf7" ${s2}/><path d="M155 46 h3 M162 46 h3 M156 52 q4 3 8 0" fill="none" ${s2}/><path d="M150 60 L170 56 M150 56 L170 60" stroke="#fffdf7" stroke-width="3" stroke-linecap="round"/>`,
   }),
   hero: () => ({
     back: `<path d="M112 192 C78 222 66 262 80 288 L240 288 C254 262 242 222 208 192 Z" fill="#d8262e" ${S}/>`,
@@ -191,14 +159,6 @@ const OUTFIT: Record<string, (c: Costume) => Outfit> = {
     head: `<path d="M100 74 L100 30 L122 30 L122 44 L134 44 L134 30 L154 30 L154 44 L166 44 L166 30 L186 30 L186 44 L198 44 L198 30 L220 30 L220 74 C186 68 134 68 100 74 Z" fill="${c.color}" ${S}/>` +
       `<path d="M100 56 h120 M120 56 v14 M160 56 v12 M200 56 v14 M140 44 v12 M180 44 v12" stroke="#c4b48f" stroke-width="2.4"/><path d="M104 36 v16" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".7"/>`,
   }),
-  football: (c) => ({
-    // red with white sleeves; number 7
-    body: tint(c.color) + pair((f) => `<path d="M${f(114)} 188 C${f(100)} 192 ${f(88)} 204 ${f(84)} 220 L${f(104)} 228 C${f(106)} 214 ${f(112)} 204 ${f(122)} 198 Z" fill="#fffdf7" ${S}/>`) +
-      `<path d="M144 190 L160 204 L176 190" fill="none" stroke="#fffdf7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>` +
-      num('7', 160, 232, '#fffdf7') + `<rect x="114" y="252" width="92" height="14" rx="6" fill="#fffdf7" ${S}/>` +
-      `<circle cx="90" cy="262" r="14" fill="#fffdf7" ${S}/><path d="M90 256 l5 4 -2 6 h-6 l-2 -6 Z" fill="${INK}"/>`,
-    head: '',
-  }),
   basketball: (c) => ({
     // a vest (his grey shoulders show), number 7, a ball at his side
     body: tint(c.color) + pair((f) => `<ellipse cx="${f(104)}" cy="208" rx="13" ry="20" fill="${FUR}" ${S}/>`) +
@@ -217,10 +177,14 @@ const OUTFIT: Record<string, (c: Costume) => Outfit> = {
   }),
 };
 
+/** A costume's layers: behind him, over his body, on his head, his tail's replacement, and art inside each paw (rewards spec §5.1). */
+export interface CostumeLayer { back: string; body: string; head: string; tail?: string; pawL?: string; pawR?: string; hidesEars: boolean }
+
 /** The layers for a costume id, or null for unknown ids (ignored, never worn). `tail` replaces his own tail (it swishes with it). */
-export function costumeLayer(id: string | null | undefined): { back: string; body: string; head: string; tail?: string; hidesEars: boolean } | null {
+export function costumeLayer(id: string | null | undefined): CostumeLayer | null {
   const c = costumeById(id);
   if (!c) return null;
+  const v3 = V3[c.id]; if (v3) return v3();
   if (c.kind === 'onesie') {
     const a: Animal & { back?: string } = (ANIMAL[c.id] ?? MYTH_HOOD[c.id])!(c);
     return {

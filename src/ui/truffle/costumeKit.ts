@@ -181,3 +181,41 @@ export const fringe = (color: string, kind: 'fluff' | 'spike' = 'fluff', from = 
 /** A horse's muzzle on a hood: a long pale oval with nostril slits (dots would read as a pig's snout). */
 export const MUZZLE = (fill: string) =>
   `<ellipse cx="160" cy="70" rx="21" ry="13" fill="${fill}" ${S}/><path d="M151 66 q3 4 1 8 M169 66 q-3 4 -1 8" stroke="${DARK}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+
+// ---- v3 (rewards spec 2026-10-15 §5.1): the helpers the approved samples (docs/worlds/costumes/samples-v3.ts.txt) drew with ----
+
+/** His paws' outlines (parts.ts G.pawL / G.pawR): for gloves, and for a paw closing over a held thing. */
+export const PAW_L_D = 'M122 262 C120 276 154 278 154 266 C154 258 124 254 122 262Z';
+export const PAW_R_D = 'M198 262 C200 276 166 278 166 266 C166 258 196 254 198 262Z';
+export const CREAM_PAW = '#fbf5ea';
+const TOES_L = 'M132 264 L132 270 M142 264 L142 270';
+const TOES_R = 'M178 264 L178 270 M188 264 L188 270';
+const glove = (d: string, fill: string, toes: string) =>
+  `<path d="${d}" fill="${fill}" ${s2}/><path d="${toes}" fill="none" stroke="${celShade(fill)}" stroke-width="1.6" stroke-linecap="round"/>`;
+export const gloveL = (fill: string) => glove(PAW_L_D, fill, TOES_L);
+export const gloveR = (fill: string) => glove(PAW_R_D, fill, TOES_R);
+/** His own cream paw drawn again over a held thing, so the paw closes round it. */
+export const pawOverL = `<path d="${PAW_L_D}" fill="${CREAM_PAW}" ${s2}/><path d="${TOES_L}" fill="none" ${s2}/>`;
+export const pawOverR = `<path d="${PAW_R_D}" fill="${CREAM_PAW}" ${s2}/><path d="${TOES_R}" fill="none" ${s2}/>`;
+
+/**
+ * A cel piece: its one hard shadow (the piece in its shadow tone), the lit fill on top shrunk toward (ax, ay) — a point near the
+ * piece's upper left, so what is left is a rim on the side away from the light — then the line. Explicit paths only, never a
+ * clip-path; exact for any piece that is star-shaped about (ax, ay).
+ */
+export const cel = (d: string, fill: string, ax: number, ay: number, k = 0.9, sh = celShade(fill)) =>
+  `<path d="${d}" fill="${sh}"/><path d="${d}" fill="${fill}" transform="translate(${ax} ${ay}) scale(${k}) translate(${-ax} ${-ay})"/><path d="${d}" fill="none" ${S}/>`;
+/** A soft white highlight stroke on the lit side. */
+export const hi = (d: string, w = 4, o = 0.5) => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity="${o}" stroke-width="${w}" stroke-linecap="round"/>`;
+/** A thick stroked band with an ink edge (a ribbon, a hose, a sash). */
+export const rope = (d: string, color: string, w: number) => ropeTail(d, color, w);
+/**
+ * A held pole (a staff, a spatula, a spyglass): a straight rod through the paw at (cx, cy), turned `deg`, running `back` behind
+ * and `ahead` in front, with an ink edge, optional end caps of 20 and a highlight. Put it in pawL/pawR so it rides the paw.
+ */
+export const heldPole = (cx: number, cy: number, deg: number, back: number, ahead: number, color: string, w = 8, cap?: string) =>
+  `<g transform="translate(${cx} ${cy}) rotate(${deg})">` +
+  `<path d="M${-back} 0 L${ahead} 0" stroke="${INK}" stroke-width="${w + 2 * LW}" stroke-linecap="round"/>` +
+  `<path d="M${-back} 0 L${ahead} 0" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>` +
+  (cap ? `<path d="M${-back} 0 L${-back + 20} 0 M${ahead - 20} 0 L${ahead} 0" stroke="${cap}" stroke-width="${w}" stroke-linecap="round"/>` : '') +
+  `<path d="M${-back + 6} ${-w * 0.3} L${ahead - 6} ${-w * 0.3}" stroke="#fff" stroke-opacity=".35" stroke-width="${Math.max(1.5, w * 0.2)}" stroke-linecap="round"/></g>`;

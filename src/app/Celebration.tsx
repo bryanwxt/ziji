@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../audio/sfx';
 import { BUILTIN } from '../content';
 import { radicalMeaning } from '../content/radicals';
-import { canOpenChest, costumeById, openChest, visibleAccessory, type ChestResult } from '../fun/costumes';
+import { costumeById, openChest, visibleAccessory, type ChestResult } from '../fun/costumes';
 import { newTiers, powerDef, powerFamilies, powerProgress, type PowerId } from '../fun/powers';
 import { newBadges, stickerFamilies } from '../fun/stickers';
 import { totalStars, starsOf } from '../stats/stats';
 import { producedLine } from '../stats/produce';
-import { allSessions, getKid, getSettings, saveKid } from '../store/repo';
+import { allSessions, getKid, getSettings, saveKid, updateKid } from '../store/repo';
+import { CHESTS_PER_DAY, lessonOf, METER_FULL, meterLine } from '../fun/meter';
+import { RiverTrack } from '../ui/RiverTrack';
+import { almostThere, type Goal } from '../fun/goals';
+import { loadGoalFacts, settleMeter } from './celebrationData';
 import { localDateKey } from '../lib/date';
 import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
@@ -28,7 +32,7 @@ import { currentWorld } from '../fun/worlds';
 import { burstStyle } from '../ui/worlds/burst';
 import { reducedMotion } from '../ui/motion';
 
-type Phase = 'stars' | 'chest' | 'power' | 'badges';
+type Phase = 'stars' | 'river' | 'chest' | 'goals' | 'power' | 'badges';
 // his moments here (spec 2026-10-04 §4.4): an overjoyed hop at the stars, then proud; a pounce as the chest's prize appears
 const DONE: Reaction = { kind: 'done', key: 1 };
 const POUNCE: Reaction = { kind: 'pounce', key: 1 };
@@ -36,9 +40,18 @@ const POUNCE: Reaction = { kind: 'pounce', key: 1 };
 const WATCH_EVERY_MS = 2400;
 /** His pounce as the chest opens: a key the wiggles never use, so the rig always plays it (final review I1). */
 const WATCH_POUNCE: Reaction = { kind: 'pounce', key: -1 };
+/** The goals wait this long for their read at most; past it the Celebration goes on without them (a stuck read never hangs it). */
+const GOALS_WAIT_MS = 1500;
+/** A second tap on 继续 this soon after a phase change is the same double tap: it never skips the phase just shown. */
+const TAP_GAP_MS = 300;
+
+/** The boat in this Celebration (rewards spec §3): where it sails from, where the meter ends, and whether today's 2 chests are earned. */
+interface River { from: number; left: number; capped: boolean }
 
 interface Sequence {
-  order: Phase[];
+  order: Phase[]; // a phase may come twice: two chests in one lesson
+  river: River;
+  goals: Goal[];
   power: { id: PowerId; tier: number } | null; // the highest newly reached tier (shown)
   newTiers: { id: PowerId; tier: number }[];
   badges: string[];
@@ -46,14 +59,15 @@ interface Sequence {
 }
 
 export function Celebration({ rec }: { rec: SessionRecord }) {
-  const { db, go, refresh, settings } = useApp();
+  const { db, go, refresh, now } = useApp();
   const kidRef = useRef<KidState>(DEFAULT_KID);
   const counterRef = useRef<HTMLSpanElement>(null);
   const chestRef = useRef<HTMLDivElement>(null);
   const starRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const [kid, setKid] = useState<KidState | null>(null);
   const [seq, setSeq] = useState<Sequence | null>(null);
-  const [phase, setPhase] = useState<Phase>('stars');
+  const [at, setAt] = useState(0); // the phase on screen: its place in seq.order
+  const phase: Phase = seq?.order[at] ?? 'stars';
   const [chest, setChest] = useState<ChestResult | null>(null);
   const [landed, setLanded] = useState(0);
   const [powered, setPowered] = useState(false);
@@ -68,25 +82,49 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   };
   const [wiggle, setWiggle] = useState(1); // the key of his next excited wiggle at the chest
   const still = reducedMotion();
+  const [arrived, setArrived] = useState(still); // the boat has reached the chest: it shows and can be opened
   // mastery stars (spec 2026-10-11 §5); a lesson finished before them shows the stars its steps earned
   const stars = rec.free ? 0 : rec.stars ?? starsOf(rec.completedSteps);
-  const line = rec.free ? null : producedLine(rec.produced, rec.closest);
+  const movedAt = useRef(-Infinity); // when the phase last changed (performance.now: a clock change or a fixed Date never blocks 继续): a double tap moves one phase
 
   useEffect(() => {
     celebrate();
     void (async () => {
-      const [k, know, sessions] = await Promise.all([getKid(db), loadKnowledge(db), allSessions(db)]);
-      const kidNow = k ?? DEFAULT_KID;
-      const badges = newBadges(stickerFamilies(BUILTIN), know.knownChars, kidNow.badgesSeen);
+      const [know, sessions] = await Promise.all([loadKnowledge(db), allSessions(db)]);
+      // the goals' facts are read alongside the meter (never on free play); whether the lesson moved the meter is filled in after
+      const facts = lessonOf(rec) ? loadGoalFacts(db, know, false, now()) : null;
+      facts?.catch(() => {});
+      // the lesson counts on the river meter once (rewards spec §3); if that fails he still gets his celebration
+      const { kid: kidNow, fill } = await settleMeter(db, rec, localDateKey(now())).catch(async () => ({ kid: (await getKid(db).catch(() => null)) ?? DEFAULT_KID, fill: null }));
+      const m = kidNow.meter;
+      const river: River = fill
+        ? { from: fill.from, left: fill.left, capped: fill.capped }
+        : { from: m.halves, left: m.halves, capped: m.day === rec.date && m.chestsToday >= CHESTS_PER_DAY };
       const order: Phase[] = ['stars'];
-      if (!rec.free && rec.completedSteps.length > 0 && canOpenChest(kidNow, rec.date)) order.push('chest');
+      // every chest earned and not yet opened (one an earlier lesson left too), else how far the boat got
+      if (lessonOf(rec)) {
+        if (m.owed > 0) for (let i = 0; i < m.owed; i++) order.push('chest');
+        else order.push('river');
+      }
+      // up to three things he is close to, after the stars and the chest (rewards spec §4); never on free play. They show after
+      // the chests, so they count from him as the chests leave him (the pick is seeded by the day: it is what open() will give)
+      let afterChests = kidNow;
+      for (let i = 0; i < m.owed; i++) afterChests = openChest(afterChests, rec.date).kid;
+      const goals: Goal[] = facts
+        ? await Promise.race([
+            facts.then((f) => almostThere(afterChests, know, { ...f, counted: !!fill?.counted }, now())).catch(() => []),
+            new Promise<Goal[]>((r) => setTimeout(() => r([]), GOALS_WAIT_MS)),
+          ])
+        : [];
+      if (goals.length) order.push('goals');
+      const badges = newBadges(stickerFamilies(BUILTIN), know.knownChars, kidNow.badgesSeen);
       const fresh = newTiers(powerProgress(powerFamilies(BUILTIN), know.knownChars), kidNow.powerTiersSeen);
       const power = [...fresh].sort((a, b) => b.tier - a.tier)[0] ?? null;
       if (power) order.push('power');
       if (badges.length) order.push('badges');
       kidRef.current = kidNow;
       setKid(kidNow);
-      setSeq({ order, power, newTiers: fresh, badges, starsBefore: totalStars(sessions, kidNow.bonusStars) - stars });
+      setSeq({ order, river, goals, power, newTiers: fresh, badges, starsBefore: totalStars(sessions, kidNow.bonusStars) - stars });
     })();
   }, []);
 
@@ -116,15 +154,29 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     return () => clearInterval(t);
   }, [phase, chest]);
 
-  if (!seq || !kid) return <div class="screen loading"><InkIcon name="star" size={88} label="加载中" /></div>;
+  // once the boat reaches the chest, the hold button takes focus (keyboard and switch users land on it)
+  useEffect(() => {
+    if (phase === 'chest' && arrived && !chest) chestRef.current?.querySelector<HTMLButtonElement>('button.hold')?.focus();
+  }, [arrived, at, seq]);
 
-  const save = async (next: KidState) => {
-    kidRef.current = next;
-    setKid(next);
-    await saveKid(db, next);
+  if (!seq || !kid) return <div class="screen loading"><InkIcon name="star" size={88} label="加载中" /></div>;
+  // the 还差一天 line is promoted to a goal when one shows (rewards ruling 7)
+  const line = rec.free ? null : producedLine(rec.produced, seq.goals.some((g) => g.kind === 'write') ? [] : rec.closest);
+
+  // merges only what this screen changes (badges seen, powers seen): a chest opened in another tab is never written back over
+  const save = async (patch: Partial<KidState>) => {
+    const local = { ...kidRef.current, ...patch };
+    kidRef.current = local;
+    setKid(local);
+    const saved = await updateKid(db, (cur) => ({ ...cur, ...patch }));
+    if (saved) { kidRef.current = saved; setKid(saved); }
+    else await saveKid(db, local); // no kid stored yet: this one is him
   };
   const advance = async () => {
-    const nextPhase = seq.order[seq.order.indexOf(phase) + 1];
+    if (performance.now() - movedAt.current < TAP_GAP_MS) return;
+    movedAt.current = performance.now();
+    const next = at + 1;
+    const nextPhase = seq.order[next];
     if (!nextPhase) {
       await refresh();
       // the chapter's payoff after the lesson, when one is owed (spec 2026-10-07 3c §5)
@@ -136,16 +188,32 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     if (nextPhase === 'badges') {
       playSfx('levelUp');
       celebrate();
-      await save({ ...kidRef.current, badgesSeen: [...kidRef.current.badgesSeen, ...seq.badges] });
+      await save({ badgesSeen: [...kidRef.current.badgesSeen, ...seq.badges] });
     }
-    setPhase(nextPhase);
+    setChest(null); // a second chest starts closed
+    setArrived(still);
+    setAt(next);
   };
   const open = async () => {
-    // Dated by the session's own day (a session can finish after midnight); one prize per day however fast the taps.
-    if (!canOpenChest(kidRef.current, rec.date)) return;
-    const { kid: next, result } = openChest(kidRef.current, rec.date, settings.zodiac);
-    await save(next).catch(() => {}); // never strand the child on this screen, even if saving fails
-    setChest(result);
+    if (chest) return;
+    // dated by the session's own day (a session can finish after midnight); one owed chest per opening, in one transaction.
+    // What is shown is worked out first, so a failed save never strands him on this screen.
+    let opened = openChest(kidRef.current, rec.date);
+    let next: KidState = opened.kid; // what he is shown becomes his, unless the chest turns out to be opened already (another tab)
+    try {
+      const saved = await updateKid(db, (k) => {
+        if (k.meter.owed <= 0) return null;
+        opened = openChest(k, rec.date);
+        return opened.kid;
+      });
+      // nothing owed when it was saved: the prize is shown, but a later save() carries what is stored, not it
+      next = saved ?? (await getKid(db)) ?? kidRef.current;
+    } catch {
+      // shown anyway; a failed save keeps it in memory, as before
+    }
+    kidRef.current = next;
+    setKid(next);
+    setChest(opened.result);
     chestRef.current?.classList.remove('chest-hint');
     playSfx('chest');
     const r = chestRef.current?.getBoundingClientRect();
@@ -156,13 +224,18 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     const seen = { ...kidRef.current.powerTiersSeen };
     for (const t of seq.newTiers) seen[t.id] = Math.max(seen[t.id] ?? 0, t.tier);
     // Never strand the child on this screen: carry on even if saving fails.
-    await save({ ...kidRef.current, powerTiersSeen: seen, activePower: seq.power!.id }).catch(() => {});
+    await save({ powerTiersSeen: seen, activePower: seq.power!.id }).catch(() => {});
     setPowered(true);
     playSfx('levelUp');
     celebrate();
   };
 
-  const isLast = seq.order.indexOf(phase) === seq.order.length - 1;
+  const isLast = at === seq.order.length - 1;
+  const chestNo = seq.order.slice(0, at).filter((p) => p === 'chest').length;
+  const lastChest = seq.order.lastIndexOf('chest') === at;
+  const boatLine = meterLine(seq.river); // 再学一课就能开宝箱！ or 明天再开宝箱！
+  const afterOpen = chest && lastChest ? boatLine : null; // under an opened last chest: where the meter now is
+  const opened = chest ? (lastChest ? seq.river.left : 0) : null; // where the boat waits once the chest is open
   const def = seq.power ? powerDef(seq.power.id)! : null;
   const radical = def?.radicals[0];
   const meaning = radical ? radicalMeaning(radical) : undefined;
@@ -194,9 +267,36 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
             )}
           </>
         )}
+        {phase === 'river' && (
+          <>
+            <h1><Label zh={seq.river.capped ? '今天的宝箱都开了！' : seq.river.left > 0 ? '小船走到一半了！' : '小船出发了！'} /></h1>
+            <RiverTrack from={seq.river.from} to={seq.river.left} />
+            {boatLine && <p class="celebrate__line"><Label zh={boatLine} /></p>}
+          </>
+        )}
+        {phase === 'goals' && (
+          <>
+            <h1><Label zh="快到了！" /></h1>
+            <ul class="goals">
+              {seq.goals.map((g) => (
+                <li key={g.zh} class={`goal-line goal-line--${g.kind}`}>
+                  <InkIcon name={g.icon} size={40} />
+                  <Label zh={g.zh} />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
         {phase === 'chest' && (
           <>
             <h1><Label zh={chest ? (chest.kind === 'costume' ? '松露有新衣服了！' : chest.kind === 'accessory' ? '松露有新东西了！' : `多了 ${chest.amount} 颗星！`) : '宝箱！'} /></h1>
+            {/* the boat sails to the chest (rewards spec §3); once it is open the boat waits where the meter now is */}
+            <RiverTrack
+              key={chest ? `${at}-open` : at}
+              from={opened ?? (chestNo === 0 ? seq.river.from : 0)}
+              to={opened ?? METER_FULL}
+              onArrive={() => setArrived(true)}
+            />
             {/* one slot above the chest, the same size closed and open (review 2026-10-15: the chest dropped ~40 px as the prize
                 came in above it): the watching Truffle, or the dressed-up Truffle that replaces him; a stars prize rises out of
                 the chest instead; a costume's name sits at his feet */}
@@ -213,20 +313,20 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
             )}
             {/* the hold button centred under the chest, and 继续 in its place once it opens: what is below the chest keeps its
                 height, so the chest doesn't drop (chest layout fix) */}
-            <div ref={chestRef} class="chest-slot">
+            <div ref={chestRef} class={`chest-slot${arrived ? '' : ' is-waiting'}`}>
               <div class="chest-art" onClick={chest ? undefined : hint}>
                 <Chest open={!!chest} />
                 {chest?.kind === 'stars' && <span class="prize prize__stars"><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /><InkIcon name="star" size={72} /></span>}
               </div>
               <div class="chest-slot__under">
-                {!chest ? <HoldButton label="按住打开宝箱" onComplete={() => void open()} onTooShort={hint} /> : (
+                {!chest ? <HoldButton key={at} label="按住打开宝箱" disabled={!arrived} onComplete={() => void open()} onTooShort={hint} /> : (
                   <button type="button" class="btn btn--primary btn--big" onClick={() => void advance()}>
                     <Label zh={isLast ? '回家' : '继续'} />
                   </button>
                 )}
               </div>
             </div>
-            <p class={chest ? 'is-kept' : undefined} aria-hidden={chest ? 'true' : undefined}><Label zh="按住，打开宝箱！" /></p>
+            <p class={chest && !afterOpen ? 'is-kept' : undefined} aria-hidden={chest && !afterOpen ? 'true' : undefined}><Label zh={afterOpen ?? '按住，打开宝箱！'} /></p>
           </>
         )}
         {phase === 'power' && def && seq.power && (

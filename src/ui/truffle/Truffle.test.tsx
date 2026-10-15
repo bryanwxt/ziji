@@ -171,8 +171,8 @@ describe('Truffle costumes', () => {
       const { container, unmount } = render(<Truffle outfit={c.id} />);
       expect(container.querySelector('svg.truffle')?.getAttribute('data-outfit')).toBe(c.id);
       expect(container.querySelector('.truffle__outfit-body')?.innerHTML.length).toBeGreaterThan(10);
-      // a jersey, a gi, the Golden Fleece and the fortune cat's collar are all body: nothing on his head
-      if (!['football', 'gi', 'jason', 'luckycat'].includes(c.id)) expect(container.querySelector('.truffle__outfit-head')?.innerHTML.length, c.id).toBeGreaterThan(10);
+      // a jersey, a gi and the Golden Fleece are all body: nothing on his head
+      if (!['football', 'gi', 'jason'].includes(c.id)) expect(container.querySelector('.truffle__outfit-head')?.innerHTML.length, c.id).toBeGreaterThan(10);
       unmount();
     }
   });
@@ -188,8 +188,8 @@ describe('Truffle onesie hood', () => {
     const hooded = render(<Truffle outfit="tiger" />);
     expect(hooded.container.querySelector('.truffle__head')!.innerHTML).not.toContain('M74 92');
     hooded.unmount();
-    const chef = render(<Truffle outfit="chef" />);
-    expect(chef.container.querySelector('.truffle__head')!.innerHTML).toContain('M74 92');
+    const banded = render(<Truffle outfit="football" />); // a sweatband: his ears show above it
+    expect(banded.container.querySelector('.truffle__head')!.innerHTML).toContain('M74 92');
   });
 });
 

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'preact/hooks';
 import { BUILTIN } from '../content';
 import { ACCESSORY_DEFS } from '../fun/accessories';
 import { accessoryThumb } from '../ui/truffle/accessories';
-import { CHINESE, costumeById, GREEK, ONESIES, OUTFITS } from '../fun/costumes';
+import { ANIMALS, CHINESE, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, type Costume } from '../fun/costumes';
 import { POWERS, powerFamilies, powerProgress, type PowerProgress } from '../fun/powers';
-import { saveKid } from '../store/repo';
+import { saveKid, updateKid } from '../store/repo';
 import { DEFAULT_KID, type KidState } from '../types';
 import { Label } from '../ui/Label';
 import { Pet } from '../ui/Pet';
@@ -24,6 +24,9 @@ const ROOM_TABS: [RoomTab, string][] = [['outfits', '服装'], ['powers', '能�
 
 const SLOT_TITLE = { face: '脸上', neck: '脖子上', held: '手里', back: '背上' } as const;
 
+/** His shelves (rewards spec §5.2): the chest's four, then 希腊 and 以前的衣服, which only show what he owns of them. */
+const SHELVES: [string, Costume[]][] = [['生肖', ONESIES], ['动物', ANIMALS], ['职业', JOBS], ['中国', CHINESE], ['希腊', GREEK], ['以前的衣服', OLD_OUTFITS]];
+
 /** Truffle's room: what he wears and which power he shows. */
 export function Wardrobe() {
   const { db, refresh, kid, now } = useApp();
@@ -39,9 +42,13 @@ export function Wardrobe() {
     });
   }, []);
 
-  const save = async (next: KidState) => {
-    setK(next);
-    await saveKid(db, next);
+  // only what was tapped is merged into the stored kid: a chest opened in another tab is never written back over
+  const save = async (patch: Partial<KidState>) => {
+    const local = { ...k, ...patch };
+    setK(local);
+    const saved = await updateKid(db, (cur) => ({ ...cur, ...patch }));
+    if (saved) setK(saved);
+    else await saveKid(db, local); // no kid stored yet (a first run): this one is him
     await refresh();
   };
 
@@ -77,7 +84,11 @@ export function Wardrobe() {
         </div>
         {tab === 'outfits' ? (
           <div class="outfits scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
-            {([['生肖', ONESIES], ['衣服', OUTFITS], ['希腊', GREEK], ['中国', CHINESE]] as const).map(([title, list]) => (
+            {SHELVES.map(([title, all]) => {
+              // out of the chest: only what he owns, and no shelf at all if he owns none (spec §5.2)
+              const list = all.some(inChest) ? all : all.filter((x) => k.ownedCostumes.includes(x.id));
+              if (!list.length) return null;
+              return (
               <section key={title}>
                 <h2><Label zh={title} /></h2>
                 <div class="outfit-grid">
@@ -91,7 +102,7 @@ export function Wardrobe() {
                         aria-label={c.zh}
                         aria-pressed={k.outfit === c.id}
                         disabled={!owned}
-                        onClick={() => void save({ ...k, outfit: k.outfit === c.id ? null : c.id })}
+                        onClick={() => void save({ outfit: k.outfit === c.id ? null : c.id })}
                       >
                         {owned ? (
                           <span class="outfit__preview" aria-hidden="true"><Truffle mood="content" outfit={c.id} accessory={null} size={64} /></span>
@@ -104,9 +115,10 @@ export function Wardrobe() {
                   })}
                 </div>
               </section>
-            ))}
+              );
+            })}
             <section class="outfits__none">
-              <button type="button" class={`outfit ${k.wearing === null ? 'is-on' : ''}`} aria-label="不戴" aria-pressed={k.wearing === null} onClick={() => void save({ ...k, wearing: null })}>
+              <button type="button" class={`outfit ${k.wearing === null ? 'is-on' : ''}`} aria-label="不戴" aria-pressed={k.wearing === null} onClick={() => void save({ wearing: null })}>
                 <InkIcon name="none" size={36} />
                 <span class="outfit__name"><Label zh="不戴" /></span>
               </button>
@@ -120,7 +132,7 @@ export function Wardrobe() {
                     const owned = k.ownedAccessories.includes(d.id);
                     const thumb = accessoryThumb(d.id)!;
                     return (
-                      <button key={d.id} type="button" class={`outfit ${k.wearing === d.id ? 'is-on' : ''}`} aria-label={d.zh} aria-pressed={k.wearing === d.id} disabled={!owned} onClick={() => void save({ ...k, wearing: k.wearing === d.id ? null : d.id })}>
+                      <button key={d.id} type="button" class={`outfit ${k.wearing === d.id ? 'is-on' : ''}`} aria-label={d.zh} aria-pressed={k.wearing === d.id} disabled={!owned} onClick={() => void save({ wearing: k.wearing === d.id ? null : d.id })}>
                         {owned ? (
                           <svg class="acc-thumb" viewBox={thumb.viewBox} width="64" height="48" aria-hidden="true" dangerouslySetInnerHTML={{ __html: thumb.markup }} />
                         ) : (
@@ -154,7 +166,7 @@ export function Wardrobe() {
                   class={`place ${reached ? '' : 'is-locked'}`}
                   aria-pressed={currentWorld(k) === w.id}
                   disabled={!reached}
-                  onClick={() => void save({ ...k, world: w.id })}
+                  onClick={() => void save({ world: w.id })}
                 >
                   <img class="place__thumb" src={paintingHref(w.id, true)} alt="" aria-hidden="true" />
                   <Label zh={w.zh} />
@@ -179,7 +191,7 @@ export function Wardrobe() {
                   aria-label={`${p.name} ${tier > 0 ? `${tier}级` : '还没解锁'} ${pr?.known ?? 0}/${pr?.size ?? 0}${ready ? ' 完成练习就解锁' : ''}`}
                   aria-pressed={k.activePower === p.id}
                   disabled={tier === 0}
-                  onClick={() => void save({ ...k, activePower: p.id })}
+                  onClick={() => void save({ activePower: p.id })}
                 >
                   {/* one line for the family, the hint on its own line under it (parent, 2026-10-05: a wrapping row overlapped the next) */}
                   <span class="power-row__top">

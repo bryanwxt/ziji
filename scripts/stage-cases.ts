@@ -1,19 +1,14 @@
 // Runs the stage cases (stage-cases/page.tsx) in WebKit at a phone and an iPad size; exits 1 on any problem.
-import { build } from 'esbuild';
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { webkit } from 'playwright-core';
-import { chaptersShim } from './stage-cases/shim';
-import { storyWalk } from './story-walk';
+import { bundleStagePage } from './stage-cases/bundle';
 import { textChecks } from './text-checks';
 import { WORLDS } from '../src/fun/worlds';
+import { CHEST_COSTUMES } from '../src/fun/costumes';
+import { SHEET_CELL_HEIGHT, SHEET_COLUMNS, SHEET_PROBE } from './stage-cases/faceProbe';
 
-const dir = join(tmpdir(), `ziji-stage-cases-${process.pid}`);
-mkdirSync(dir, { recursive: true });
-await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, plugins: [chaptersShim], jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.woff': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"./"' }, logLevel: 'error' });
-cpSync('public/worlds', join(dir, 'worlds'), { recursive: true }); // the paintings, next to the page (spec 2026-10-13 §5)
-writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
+const dir = await bundleStagePage();
 
 /** Anything in the lesson card cut off by the card's own box (the same probe as the clue case), and the phone typography checks
  *  (text-checks.ts: pinyin over its character, no line led by 。, no speak button on text, no clipped tag). */
@@ -322,6 +317,19 @@ for (const size of SIZES) {
   })));
   await page.close();
 }
+// every chest costume on the v3 contact sheet (rewards spec §7): idle, the 64 px tile and cheering; no held prop over his face
+{
+  const ids = CHEST_COSTUMES.map((c) => c.id);
+  const page = await browser.newPage({ viewport: { width: SHEET_COLUMNS * 240 + 20, height: Math.ceil(ids.length / SHEET_COLUMNS) * SHEET_CELL_HEIGHT + 40 } });
+  await page.goto(`file://${dir}/index.html?case=costume-sheet&ids=${ids.join(',')}`);
+  // every cell drawn before the probe: an empty sheet would pass it
+  await page.waitForFunction(`document.querySelectorAll('[data-costume]').length === ${ids.length}`, undefined, { timeout: 60_000 }).catch(() => problems.push('costume-sheet: the sheet never drew'));
+  await page.waitForTimeout(500);
+  mkdirSync('fit-shots/stage-cases', { recursive: true });
+  await page.screenshot({ path: 'fit-shots/stage-cases/costume-sheet.png', fullPage: true });
+  problems.push(...(await page.evaluate<string[]>(SHEET_PROBE)));
+  await page.close();
+}
 // the worlds' creatures and every world at three sizes for the parent to look over, and every prop moment timed (spec 2026-10-13 §6, §10; 2026-10-04 §6)
 {
   const page = await browser.newPage({ viewport: { width: 1320, height: 1300 } });
@@ -494,6 +502,19 @@ for (const size of SIZES) {
   const rest = await page.evaluate(() => document.querySelector('[data-part="rig"]')!.getAttribute('transform') ?? '');
   if (!/^translate\(0\.00 0\.00\) translate\(160 276\) scale\(1\.0000 1\.0000\)/.test(rest)) problems.push(`alive: not back at rest after a reaction (${rest})`);
   if (process.env.DEBUG_CASES) console.log('alive p95 idle', idle, 'reacting', reacting, 'work idle', idleWork, 'reacting', reactWork, 'rest', rest);
+  // the same 8 ms budget in a costume whose prop rides his paw (rewards spec §7)
+  await page.goto(`file://${dir}/index.html?case=alive&outfit=firefighter`);
+  await page.waitForTimeout(500);
+  if (!(await page.$('svg.truffle[data-alive="true"][data-outfit="firefighter"]'))) problems.push('alive (firefighter): no live Truffle in the costume rendered');
+  await work();
+  await p95();
+  const dressedIdle = await work();
+  if (dressedIdle > 8) problems.push(`alive (firefighter): too much work per frame while idle: p95 ${dressedIdle.toFixed(1)}ms (budget 8)`);
+  await page.evaluate(() => (window as unknown as { react: (k: string) => void }).react('right'));
+  await p95();
+  const dressedReact = await work();
+  if (dressedReact > 8) problems.push(`alive (firefighter): too much work per frame while reacting: p95 ${dressedReact.toFixed(1)}ms (budget 8)`);
+  if (process.env.DEBUG_CASES) console.log('alive (firefighter) work idle', dressedIdle, 'reacting', dressedReact);
   await page.goto(`file://${dir}/index.html?case=alive-calm`);
   await page.waitForTimeout(300);
   const ears = new Set<string>();

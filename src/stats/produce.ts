@@ -21,27 +21,33 @@ export const lessonStars = (p: { write: number; say: number }): number => Math.m
 /** How many words "closest" names. */
 export const CLOSEST_MAX = 3;
 
-/**
- * The words one more day from "can produce" (spec §5: 「还差一天：森、林」): a write card with one passing day, or a Say rung
- * with one confirmed day, the most recent first, at most 3.
- */
-export function closestToProduce(cards: CardRecord[], logs: ReviewLog[], wordOf: (id: string) => Word | undefined): string[] {
+/** A word one more day from "can produce" (spec 2026-10-11 §5): which skill, and when its day was. */
+export interface OneDayAway { text: string; kind: 'write' | 'say'; at: number }
+
+/** Words with a write card at one passing day or a Say rung at one confirmed day, the most recent first, each word once. */
+export function oneDayAway(cards: CardRecord[], logs: ReviewLog[], wordOf: (id: string) => Word | undefined): OneDayAway[] {
   const fastWrite = fastLimit(logs, 'write');
-  const near: { at: number; text: string }[] = [];
+  const near: OneDayAway[] = [];
   for (const c of cards) {
     if (c.passed || (c.kind !== 'write' && c.kind !== 'say')) continue;
     const text = wordOf(c.wordId)?.text;
     if (!text) continue;
     if (c.kind === 'write') {
       const days = passDays(logs, c.id, fastWrite);
-      if (days.length === 1) near.push({ at: days[0]!, text });
+      if (days.length === 1) near.push({ text, kind: 'write', at: days[0]! });
     } else {
       const days = sayDays(logs, c.id);
       const at = logs.filter((l) => l.cardId === c.id && l.correct).reduce((m, l) => Math.max(m, l.at), 0);
-      if (days.length === 1) near.push({ at, text });
+      if (days.length === 1) near.push({ text, kind: 'say', at });
     }
   }
-  return [...new Set(near.sort((a, b) => b.at - a.at).map((x) => x.text))].slice(0, CLOSEST_MAX);
+  const seen = new Set<string>();
+  return near.sort((a, b) => b.at - a.at).filter((x) => (seen.has(x.text) ? false : (seen.add(x.text), true)));
+}
+
+/** The words one more day from "can produce" (spec §5: 「还差一天：森、林」), at most 3. */
+export function closestToProduce(cards: CardRecord[], logs: ReviewLog[], wordOf: (id: string) => Word | undefined): string[] {
+  return oneDayAway(cards, logs, wordOf).map((x) => x.text).slice(0, CLOSEST_MAX);
 }
 
 /** The line under the stars (spec §5): what he can now do, or what is one day away; null when neither. */

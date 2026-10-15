@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { createSessionRecord } from '../session/runner';
 import { BUILTIN, builtinWords } from '../content';
+import { CHEST_COSTUMES, costumeById } from '../fun/costumes';
 import { powerFamilies } from '../fun/powers';
 import { getKid, putCards, putWords, saveKid, updateSettings } from '../store/repo';
 import { makeCard } from '../test/fixtures';
@@ -17,6 +18,14 @@ const plan = (steps: StepKind[]): SessionPlan => ({ steps, reviewWordIds: [], ne
 const finished = (date: string, steps: StepKind[]) => ({ ...createSessionRecord(plan(steps), date, 0), completed: true, completedSteps: steps });
 
 const hold = () => new Promise((r) => setTimeout(r, 1300));
+/** Taps 继续 until `text` shows: the river (and, from Task 5, the goals) come before the powers and badges. */
+async function continueTo(text: string) {
+  for (let i = 0; i < 6 && !screen.queryByText(text); i++) {
+    fireEvent.click(screen.getByText('继续'));
+    await new Promise((r) => setTimeout(r, 320)); // past the double-tap guard
+  }
+  return screen.findByText(text);
+}
 
 async function setup(date: string, steps: StepKind[]) {
   const app = await makeAppData();
@@ -33,12 +42,12 @@ describe('Celebration chest', () => {
     const chest = await screen.findByRole('button', { name: '按住打开宝箱' });
     for (let i = 0; i < 3; i++) fireEvent(chest, new Event('pointerdown', { bubbles: true }));
     await hold();
-    await screen.findByText('松露有新衣服了！'); // first chest: the zodiac onesie (龙 by default)
-    expect(screen.getByText('龙')).toBeTruthy();
-    expect(document.querySelector('.prize svg.truffle')?.getAttribute('data-outfit')).toBe('dragon');
+    await screen.findByText('松露有新衣服了！'); // a round's first prize is a onesie (rewards spec §5.3)
+    const id = document.querySelector('.prize svg.truffle')?.getAttribute('data-outfit');
+    expect(CHEST_COSTUMES.find((c) => c.id === id)?.kind).toBe('onesie');
     await waitFor(async () => expect((await getKid(app.db))?.lastChestDate).toBe('2026-10-02'));
     const kid = await getKid(app.db);
-    expect(kid?.ownedCostumes).toEqual(['dragon']);
+    expect(kid?.ownedCostumes).toEqual([id]);
     expect(kid?.ownedAccessories).toHaveLength(0);
     expect(kid?.bonusStars).toBe(0);
   });
@@ -46,13 +55,14 @@ describe('Celebration chest', () => {
     await setup('2026-10-02', ['flashcards']);
     fireEvent.click(screen.getByText('继续'));
     const chest = await screen.findByRole('button', { name: '按住打开宝箱' });
-    const above = () => { const out: string[] = []; for (let e = document.querySelector('.chest-slot')!.previousElementSibling; e; e = e.previousElementSibling) out.unshift(e.tagName + '.' + e.className.split(' ')[0]); return out; };
+    const above = () => { const out: string[] = []; for (let e = document.querySelector('.chest-slot')!.previousElementSibling; e; e = e.previousElementSibling) out.unshift(`${e.tagName}.${(e.getAttribute('class') ?? '').split(' ')[0]}`); return out; };
     const closed = above();
     fireEvent(chest, new Event('pointerdown', { bubbles: true }));
     await hold();
     await screen.findByText('松露有新衣服了！');
     expect(above()).toEqual(closed);
-    expect(document.querySelector('.prize .prize__label')!.textContent).toContain('龙'); // its name at his feet
+    const id = document.querySelector('.prize svg.truffle')!.getAttribute('data-outfit')!;
+    expect(document.querySelector('.prize .prize__label')!.textContent).toContain(costumeById(id)!.zh); // its name at his feet
   });
 
   it("dates the chest by the session's own day when it finishes after midnight", async () => {
@@ -103,8 +113,7 @@ describe('Celebration power-up', () => {
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
-    fireEvent.click(screen.getByText('继续'));
-    expect(await screen.findByText('新能力！')).toBeTruthy();
+    await continueTo('新能力！');
     expect(screen.getByText('按住，变身！')).toBeTruthy();
     expect(document.querySelector('svg.truffle')?.getAttribute('data-tier')).toBe('0');
     fireEvent(screen.getByRole('button', { name: '按住，变身！' }), new Event('pointerdown', { bubbles: true }));
@@ -125,8 +134,7 @@ describe('Celebration power-up, several powers at once', () => {
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
-    fireEvent.click(screen.getByText('继续'));
-    await screen.findByText('新能力！');
+    await continueTo('新能力！');
     expect(document.querySelector('.power-intro')?.textContent).toContain('火');
     expect(screen.queryByText('继续')).toBeNull();
     fireEvent(screen.getByRole('button', { name: '按住，变身！' }), new Event('pointerdown', { bubbles: true }));
@@ -143,8 +151,7 @@ describe('Celebration power-up, several powers at once', () => {
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
-    fireEvent.click(screen.getByText('继续'));
-    await screen.findByText('新能力！');
+    await continueTo('新能力！');
     app.db.close();
     fireEvent(screen.getByRole('button', { name: '按住，变身！' }), new Event('pointerdown', { bubbles: true }));
     await hold();
@@ -160,7 +167,7 @@ describe('Celebration chest save failure', () => {
     app.db.close();
     fireEvent(chest, new Event('pointerdown', { bubbles: true }));
     await hold();
-    expect(await screen.findByText('回家')).toBeTruthy();
+    expect(await screen.findByText(/回家|继续/)).toBeTruthy();
   });
 });
 
@@ -173,8 +180,7 @@ describe('Celebration power-up in costume', () => {
     await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02', ownedCostumes: ['tiger'], outfit: 'tiger', ownedAccessories: ['scarf'], wearing: 'scarf' });
     renderWithApp(<Celebration rec={finished('2026-10-02', ['flashcards'])} />, app);
     await screen.findByText('太棒了！');
-    fireEvent.click(screen.getByText('继续'));
-    await screen.findByText('新能力！');
+    await continueTo('新能力！');
     expect(document.querySelector('.celebrate svg.truffle')?.getAttribute('data-outfit')).toBe('tiger');
     expect(document.querySelector('.celebrate .truffle__accessory')).toBeTruthy();
   });
@@ -220,7 +226,7 @@ describe('the story after the celebration (spec 3c §5)', () => {
       const home = b.textContent === '回家';
       fireEvent.click(b);
       if (home) return;
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 320)); // past the double-tap guard
     }
   };
   it('an owed payoff plays after the celebration, then home', async () => {

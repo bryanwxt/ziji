@@ -1,5 +1,5 @@
-// The myth costumes (parent, 2026-10-06: he is really into the Greek myths): every Greek god, the heroes and the creatures,
-// and Chinese myth figures, the fortune cat and the lion dance. Each carries the thing a child knows the figure by. Drawn from
+// The Greek myth costumes (parent, 2026-10-06: he is really into the Greek myths): every Greek god, the heroes and the
+// creatures, out of the chest since 2026-10-15 and kept for owners (the Chinese ones are redrawn in myths.ts). Each carries the thing a child knows the figure by. Drawn from
 // the old stories and pictures, never a film's or a game's version of them.
 import type { Costume } from '../../fun/costumes';
 import { band, crown, eyes, fringe, helmet, hood, INK, MUZZLE, pair, robe, ropeTail, S, s2, shade, staff, tint, toga, wings, wreath } from './costumeKit';
@@ -189,54 +189,6 @@ export const MYTH_OUTFIT: Record<string, (c: Costume) => MythOutfit> = {
     head: MEDUSA_HAIR(c.color),
     hidesEars: true,
   }),
-  // ---- Chinese ----
-  wukong: () => ({
-    // the golden headband, a tiger-skin skirt, the 金箍棒
-    body: tint('#f2a03d') + `<path d="M104 236 L216 236 L222 262 C190 274 130 274 98 262 Z" fill="#ffb84a" ${S}/>` +
-      [112, 140, 168, 196].map((x) => `<path d="M${x} 240 L${x + 8} 256 L${x + 14} 240 Z" fill="#3a2a20"/>`).join('') +
-      `<path d="M58 270 L262 170" stroke="${INK}" stroke-width="11" stroke-linecap="round"/><path d="M58 270 L262 170" stroke="#c8102e" stroke-width="7" stroke-linecap="round"/><path d="M58 270 L74 262 M262 170 L246 178" stroke="${GOLD}" stroke-width="7" stroke-linecap="round"/>`,
-    head: band(GOLD, 78, 12) + pair((f) => `<path d="M${f(80)} 104 C${f(64)} 104 ${f(60)} 88 ${f(72)} 86 C${f(80)} 86 ${f(80)} 96 ${f(74)} 96" fill="none" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M${f(80)} 104 C${f(64)} 104 ${f(60)} 88 ${f(72)} 86 C${f(80)} 86 ${f(80)} 96 ${f(74)} 96" fill="none" stroke="${GOLD}" stroke-width="4.5" stroke-linecap="round"/>`),
-  }),
-  nezha: (c) => ({
-    // twin hair buns tied with red, the red sash (混天绫) flowing out behind him, the gold ring, fire wheels at his feet
-    back: pair((f) => ropeTail(`M${f(112)} 200 C${f(84)} 196 ${f(66)} 212 ${f(70)} 232 C${f(74)} 252 ${f(58)} 266 ${f(44)} 258`, c.color, 11) +
-      `<path d="M${f(48)} 256 L${f(34)} 248 L${f(40)} 262 L${f(34)} 272 Z" fill="${c.color}" ${s2}/>`),
-    body: tint('#fbe9d6') + `<path d="M110 200 C140 214 180 214 210 200" fill="none" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M110 200 C140 214 180 214 210 200" fill="none" stroke="${c.color}" stroke-width="11" stroke-linecap="round"/>` +
-      `<circle cx="160" cy="232" r="16" fill="none" stroke="${INK}" stroke-width="9"/><circle cx="160" cy="232" r="16" fill="none" stroke="${GOLD}" stroke-width="5"/><path d="M150 222 a14 14 0 0 1 10 -4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>` +
-      pair((f) => `<circle cx="${f(96)}" cy="266" r="12" fill="${GOLD}" ${S}/><circle cx="${f(96)}" cy="266" r="4" fill="${INK}"/><path d="M${f(84)} 262 C${f(76)} 252 ${f(82)} 246 ${f(86)} 252 C${f(84)} 244 ${f(92)} 240 ${f(94)} 250" fill="#ff6a3d" ${s2}/>`),
-    head: pair((f) => `<circle cx="${f(124)}" cy="42" r="14" fill="#2a2630" ${S}/><path d="M${f(116)} 34 C${f(120)} 30 ${f(126)} 30 ${f(130)} 32" stroke="#fff" stroke-opacity=".45" stroke-width="3" fill="none" stroke-linecap="round"/>` +
-      `<path d="M${f(110)} 52 C${f(118)} 58 ${f(130)} 58 ${f(138)} 52" stroke="${c.color}" stroke-width="5.5" fill="none" stroke-linecap="round"/><path d="M${f(136)} 54 l${f(144) - f(136)} 7 l${f(138) - f(144)} 3 Z" fill="${c.color}" ${s2}/>`) +
-      `<circle cx="160" cy="92" r="4" fill="#d8262e"/>`,
-  }),
-  change: (c) => ({
-    // the full moon behind her, ribbons, and the little jade rabbit
-    back: `<circle cx="240" cy="66" r="40" fill="#fff3c4" ${S}/><path d="M218 50 a8 8 0 1 0 8 10" stroke="#f0dc9a" stroke-width="3" fill="none"/>` +
-      pair((f) => ropeTail(`M${f(108)} 198 C${f(76)} 208 ${f(84)} 236 ${f(64)} 252 C${f(52)} 262 ${f(56)} 274 ${f(68)} 280`, '#ff9fbf', 8)),
-    body: robe(c.color, '#ff9fbf') + `<ellipse cx="160" cy="244" rx="14" ry="11" fill="#fffdf7" ${S}/><ellipse cx="153" cy="230" rx="4" ry="10" fill="#fffdf7" ${s2}/><ellipse cx="166" cy="230" rx="4" ry="10" fill="#fffdf7" ${s2}/><circle cx="156" cy="242" r="1.6" fill="${INK}"/><circle cx="164" cy="242" r="1.6" fill="${INK}"/>`,
-    // two upright loops of hair (双环髻) over a small bun, a hairpin with a flower and pearls
-    head: pair((f) => { const a = f(0) === 0 ? -22 : 22; return `<ellipse cx="${f(134)}" cy="42" rx="10" ry="16" transform="rotate(${a} ${f(134)} 42)" fill="none" stroke="${INK}" stroke-width="12"/><ellipse cx="${f(134)}" cy="42" rx="10" ry="16" transform="rotate(${a} ${f(134)} 42)" fill="none" stroke="#3a3440" stroke-width="7"/>`; }) + `<ellipse cx="160" cy="56" rx="22" ry="12" fill="#3a3440" ${S}/><path d="M146 44 C152 40 160 39 166 40" stroke="#fff" stroke-opacity=".4" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M176 46 L212 60" stroke="${GOLD}" stroke-width="4" stroke-linecap="round"/><circle cx="178" cy="46" r="7" fill="#ff9fbf" ${s2}/><circle cx="178" cy="46" r="2.6" fill="${GOLD}"/><path d="M210 60 L212 74 M206 60 L204 72" stroke="${GOLD}" stroke-width="1.6"/><circle cx="212" cy="76" r="3" fill="#fffdf7" ${s2}/><circle cx="204" cy="74" r="3" fill="#fffdf7" ${s2}/>`,
-  }),
-  houyi: (c) => ({
-    // a headband, a big bow and arrow, a sun on his chest (he shot down nine suns)
-    back: `<path d="M74 280 C30 230 30 150 74 104" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round"/><path d="M74 280 C30 230 30 150 74 104" fill="none" stroke="#8a5a3c" stroke-width="6" stroke-linecap="round"/><path d="M74 104 L74 280" stroke="${INK}" stroke-width="1.8"/>`,
-    body: tint(c.color) + `<circle cx="160" cy="226" r="14" fill="#ff5532" ${S}/>` + [...Array(8)].map((_, i) => {
-      const a = (i * Math.PI) / 4;
-      return `<path d="M${(160 + 18 * Math.cos(a)).toFixed(1)} ${(226 + 18 * Math.sin(a)).toFixed(1)} L${(160 + 24 * Math.cos(a)).toFixed(1)} ${(226 + 24 * Math.sin(a)).toFixed(1)}" stroke="#ff9f43" stroke-width="3.5" stroke-linecap="round"/>`;
-    }).join('') + `<path d="M76 190 L120 190" stroke="${INK}" stroke-width="3"/><path d="M118 184 L128 190 L118 196 Z" fill="${INK}"/>`,
-    head: band('#d8262e', 78, 11) + `<path d="M238 98 C256 102 266 116 262 132 M240 104 C252 112 254 126 246 138" stroke="${INK}" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M238 98 C256 102 266 116 262 132 M240 104 C252 112 254 126 246 138" stroke="#d8262e" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
-  }),
-  caishen: (c) => ({
-    // a red robe, a tall gold hat, a gold ingot (元宝)
-    body: robe(c.color, GOLD) + `<path d="M138 236 C142 250 178 250 182 236 L176 230 C170 236 150 236 144 230 Z" fill="${GOLD}" ${S}/><ellipse cx="160" cy="230" rx="11" ry="8" fill="${GOLD}" ${S}/>`,
-    head: pair((f) => `<path d="M${f(118)} 52 C${f(98)} 46 ${f(82)} 44 ${f(70)} 48 C${f(68)} 56 ${f(72)} 62 ${f(80)} 62 C${f(92)} 60 ${f(106)} 60 ${f(118)} 64 Z" fill="${GOLD}" ${S}/>`) + `<path d="M114 72 L116 40 C116 30 204 30 204 40 L206 72 Z" fill="${GOLD}" ${S}/><path d="M108 66 C140 60 180 60 212 66 L212 78 C180 72 140 72 108 78 Z" fill="${c.color}" ${S}/><circle cx="160" cy="52" r="7" fill="#3f6fd6" ${s2}/><circle cx="160" cy="27" r="6" fill="${c.color}" ${s2}/><path d="M126 44 C130 36 140 33 150 33" stroke="#fff" stroke-opacity=".55" stroke-width="3.5" fill="none" stroke-linecap="round"/>`,
-  }),
-  luckycat: (c) => ({
-    // the fortune cat: a red collar with a gold bell, a big gold coin
-    body: `<path d="M114 194 C140 206 180 206 206 194" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="M114 194 C140 206 180 206 206 194" fill="none" stroke="${c.color}" stroke-width="9" stroke-linecap="round"/>` +
-      `<circle cx="160" cy="210" r="9" fill="${GOLD}" ${S}/><path d="M152 210 h16" stroke="${INK}" stroke-width="2"/>` +
-      `<ellipse cx="160" cy="246" rx="24" ry="16" fill="${GOLD}" ${S}/><text x="160" y="247" font-family="WenKai, serif" font-size="15" text-anchor="middle" dominant-baseline="middle" fill="${INK}">招财</text>`,
-    head: '',
-  }),
 };
 
 export const MYTH_HOOD: Record<string, (c: Costume) => MythHood> = {
@@ -257,15 +209,5 @@ export const MYTH_HOOD: Record<string, (c: Costume) => MythHood> = {
       pair((f) => `<path d="M${f(84)} 204 L${f(78)} 180 L${f(96)} 194 Z M${f(112)} 194 L${f(118)} 178 L${f(104)} 190 Z" fill="${c.color}" ${S}/><circle cx="${f(98)}" cy="208" r="19" fill="${c.color}" ${S}/>` +
         `<ellipse cx="${f(98)}" cy="216" rx="11" ry="8" fill="#9c96a3" ${s2}/><circle cx="${f(91)}" cy="203" r="3" fill="#fff"/><circle cx="${f(105)}" cy="203" r="3" fill="#fff"/><circle cx="${f(91)}" cy="203" r="1.5" fill="${INK}"/><circle cx="${f(105)}" cy="203" r="1.5" fill="${INK}"/><path d="M${f(94)} 212 Q${f(98)} 209 ${f(102)} 212 Q${f(98)} 218 ${f(94)} 212 Z" fill="${INK}"/><path d="M${f(96)} 222 q2 5 4 0" fill="#ff8fab" ${s2}/>`),
     tail: ropeTail('M210 248 C232 244 246 228 250 206', c.color, 10),
-  }),
-  liondance: (c) => ({
-    // the lion-dance head: a horn, a mirror on its brow, big bright eyes, a white fluffy fringe round the face; a fringed body
-    front: fringe('#fffdf7', 'fluff', 0.36, 1.14, 19) + `<path d="M152 38 L160 23 L168 38 Z" fill="${GOLD}" ${S}/><circle cx="160" cy="45" r="6" fill="#c9eaff" ${S}/>` +
-      pair((f) => `<circle cx="${f(124)}" cy="56" r="11" fill="#fffdf7" ${S}/><circle cx="${f(126)}" cy="58" r="5.5" fill="${INK}"/><path d="M${f(110)} 43 Q${f(124)} 35 ${f(138)} 43" fill="none" stroke="${GOLD}" stroke-width="4" stroke-linecap="round"/>`),
-    body: `<path d="M102 252 C130 262 190 262 218 252" fill="none" stroke="${GOLD}" stroke-width="8" stroke-linecap="round"/>` +
-      [110, 124, 138, 152, 166, 180, 194, 208].map((x) => `<path d="M${x} 256 L${x + 3} 268" stroke="${GOLD}" stroke-width="3" stroke-linecap="round"/>`).join('') +
-      pair((f) => `<circle cx="${f(110)}" cy="214" r="8" fill="#fffdf7" ${s2}/>`),
-    belly: `<ellipse cx="160" cy="232" rx="30" ry="22" fill="${GOLD}" opacity=".9"/>`,
-    tail: [...Array(4)].map((_, i) => `<circle cx="${214 + i * 12}" cy="${244 - i * 10}" r="10" fill="#fffdf7" ${s2}/>`).join(''),
   }),
 };

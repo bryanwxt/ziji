@@ -9,6 +9,7 @@ import { DEFAULT_KID, DEFAULT_SETTINGS, type SessionPlan } from '../types';
 import { HomeScreen, RIVER_NEWS } from './HomeScreen';
 import { CollectionScreen } from './CollectionScreen';
 import { powerFamilies } from '../fun/powers';
+import { EMPTY_METER } from '../fun/meter';
 import { Wardrobe } from './Wardrobe';
 import { WORLD_LINES } from '../fun/worlds';
 
@@ -139,16 +140,36 @@ describe('HomeScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: '继续：宝箱' }));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false });
   });
+
+  it("a second chest still owed after today's first was opened: the path chest stays open to claim it (rewards fix round)", async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02', meter: { ...EMPTY_METER, owed: 1, chestsToday: 2, day: '2026-10-02', lesson: 5 } } });
+    await saveSession(app.db, done('2026-10-02', ['flashcards']));
+    renderWithApp(<HomeScreen />, app);
+    fireEvent.click(await screen.findByRole('button', { name: '继续：宝箱' }));
+    expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false });
+    expect(document.querySelector('.screen.home')!.classList.contains('home--done')).toBe(false);
+  });
 });
 
 describe('Wardrobe', () => {
-  it('has four shelves: 生肖, 衣服, 希腊 and 中国 (parent, 2026-10-06: the myth costumes)', async () => {
-    const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['zeus', 'wukong'] } });
+  it('chest shelves first; 希腊 and 以前的衣服 show only what he owns of them (rewards spec §5.2)', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['zeus', 'wukong', 'robot'] } });
     renderWithApp(<Wardrobe />, app);
     const shelves = [...(await screen.findAllByRole('heading', { level: 2 }))].map((h) => h.querySelector('.sr-only')?.textContent ?? h.textContent);
-    expect(shelves.slice(0, 4)).toEqual(['生肖', '衣服', '希腊', '中国']); // then the accessories' shelves
+    expect(shelves[0]).toBe('生肖');
+    expect(shelves).toContain('职业');
+    expect(shelves.indexOf('希腊')).toBe(shelves.indexOf('中国') + 1);
+    expect(shelves.indexOf('以前的衣服')).toBe(shelves.indexOf('希腊') + 1);
     expect(screen.getByRole('button', { name: '宙斯' })).toHaveProperty('disabled', false);
+    expect(screen.getByRole('button', { name: '机器人' })).toHaveProperty('disabled', false);
+    expect(screen.queryByRole('button', { name: '赫拉' })).toBeNull(); // out of the chest and not his: not on the shelf
     expect(screen.getByRole('button', { name: '孙悟空' })).toHaveProperty('disabled', false);
+  });
+  it('no 希腊 or 以前的衣服 shelf for a child who owns none of them', async () => {
+    renderWithApp(<Wardrobe />, await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['tiger'] } }));
+    const shelves = [...(await screen.findAllByRole('heading', { level: 2 }))].map((h) => h.querySelector('.sr-only')?.textContent ?? h.textContent);
+    expect(shelves).not.toContain('希腊');
+    expect(shelves).not.toContain('以前的衣服');
   });
   it('an owned costume shows a small Truffle wearing it; a locked one shows the lock', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['tiger'] } });
@@ -684,5 +705,29 @@ describe('字卡 filters (parent, 2026-10-05: changing the filter seemed to do n
     panel.scrollTop = 900;
     fireEvent.click(screen.getByText('全部'));
     expect(panel.scrollTop).toBe(0);
+  });
+});
+
+describe('Home: the river meter on the reward card (rewards spec §3)', () => {
+  it('shows the boat where the meter is, with no parent goal too', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, meter: { ...EMPTY_METER, halves: 1, chestsToday: 1, day: '2026-10-02', lesson: 1 } } });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(document.querySelector('.reward-card svg.river--mini')?.getAttribute('data-halves')).toBe('1');
+    expect(document.querySelector('.reward-card .goal__body')).toBeNull(); // no parent goal: the card is the meter alone
+  });
+  it("a new day's boat has yesterday's banked halves in it", async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, meter: { ...EMPTY_METER, chestsToday: 2, day: '2026-10-01', lesson: 1 }, bank: 1 } });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(document.querySelector('.reward-card svg.river--mini')?.getAttribute('data-halves')).toBe('1');
+  });
+  it("the parent's goal sits beside the meter", async () => {
+    const app = await makeAppData();
+    await saveReward(app.db, { id: 'g', title: 'Ice cream', emoji: '🍦', metric: 'stars', target: 10, createdAt: 0, claimedAt: null });
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(document.querySelector('.reward-card svg.river--mini')).toBeTruthy();
+    expect(document.querySelector('.reward-card .goal__body')?.textContent).toContain('我的奖励');
   });
 });

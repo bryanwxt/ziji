@@ -170,10 +170,15 @@ export function Truffle({ paws = undefined, mood = 'sulk', accessory = null, siz
             {layer?.head && <g class="truffle__power-head" dangerouslySetInnerHTML={{ __html: layer.head }} />}
           </g>
         </g>
-        {/* his front paws, in front of his head (spec 2026-10-04 §4.6): at rest at his feet; they wave, knead and cover his eyes */}
-        <g class="truffle__paw" data-part="paw-l" transform={paws ? `translate(${paws.lx} ${paws.ly}) rotate(${paws.lr} 138 266)` : undefined} {...part('body')} dangerouslySetInnerHTML={{ __html: PAW_L }} />
+        {/* his front paws, in front of his head (spec 2026-10-04 §4.6): at rest at his feet; they wave, knead and cover his eyes.
+            A costume's paw art (a glove, a held prop: rewards spec §5.1) is drawn inside each paw's group, so it moves with the paw */}
+        <g class="truffle__paw" data-part="paw-l" transform={paws ? `translate(${paws.lx} ${paws.ly}) rotate(${paws.lr} 138 266)` : undefined} {...part('body')}>
+          <g dangerouslySetInnerHTML={{ __html: PAW_L }} />
+          {wear?.pawL && <g class="truffle__outfit-paw" dangerouslySetInnerHTML={{ __html: wear.pawL }} />}
+        </g>
         <g class="truffle__paw" data-part="paw-r" transform={paws ? `translate(${paws.rx} ${paws.ry}) rotate(${paws.rr} 182 266)` : undefined} {...part('body')}>
           <g dangerouslySetInnerHTML={{ __html: PAW_R }} />
+          {wear?.pawR && <g class="truffle__outfit-paw" dangerouslySetInnerHTML={{ __html: wear.pawR }} />}
           {/* a held item (brush, lantern, kite, balloon, wand) is in this paw: it moves with it, so a raised paw never leaves another behind */}
           {acc?.over && <g class="truffle__accessory truffle__accessory--over" dangerouslySetInnerHTML={{ __html: acc.over }} />}
         </g>

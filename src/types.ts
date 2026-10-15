@@ -2,6 +2,7 @@ import type { IconName } from './ui/icons/icons';
 import type { Course } from './content';
 import type { WriteItem } from './session/writing';
 import { DEFAULT_FINDS, type Finds } from './fun/finds';
+import { EMPTY_METER, type Meter } from './fun/meter';
 import type { Card as FsrsCard, Grade, State } from 'ts-fsrs';
 import type { Recall } from './session/recall';
 import type { PracticeItem } from './session/round';
@@ -296,7 +297,7 @@ export interface Settings {
   targetWrite: number;
   lastBackupAt: number | null;
   placementDone: boolean;
-  zodiac: ZodiacId | null; // the child's 生肖, the first chest's gift
+  zodiac: ZodiacId | null; // the child's 生肖 (Settings); not used since the river chest (rewards spec 2026-10-15) — kept for a later use
   oral: OralInfo;
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
   placementMarked?: boolean; // an older placement's unrechecked cards marked placed and re-spread (src/placement/migrate.ts)
@@ -364,6 +365,8 @@ export interface KidState {
   finds: Finds; // tap fun in the journey worlds
   greetedOn?: string; // the day Truffle last greeted him on Home with how he feels about it (spec 2026-10-04 §4.6)
   starredUpTo?: number; // passes up to this time have earned their stars (spec 2026-10-11 §5); absent: none yet
+  meter: Meter; // the river meter toward the chest (rewards spec 2026-10-15 §3)
+  bank?: number; // halves earned past the day's 2 chests, waiting for tomorrow (at most one full meter)
 }
 
 export const DEFAULT_KID: KidState = {
@@ -386,6 +389,7 @@ export const DEFAULT_KID: KidState = {
   speakingLast: null,
   story: { next: 0, told: 0 },
   finds: DEFAULT_FINDS,
+  meter: EMPTY_METER,
 };
 
 export interface RewardGoal {

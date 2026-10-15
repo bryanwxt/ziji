@@ -22,7 +22,8 @@ import { FeedbackSheet } from '../../src/ui/stage/FeedbackSheet';
 import { Stage } from '../../src/ui/stage/Stage';
 import { Pet } from '../../src/ui/Pet';
 import { Truffle } from '../../src/ui/truffle/Truffle';
-import { COSTUMES } from '../../src/fun/costumes';
+import { COSTUMES, costumeById } from '../../src/fun/costumes';
+import { SHEET_CELL_HEIGHT, SHEET_COLUMNS } from './faceProbe';
 import { Label } from '../../src/ui/Label';
 import { PairGame } from '../../src/activities/practice/PairGame';
 import { BuildSentence } from '../../src/activities/practice/BuildSentence';
@@ -51,7 +52,7 @@ import { ladderWords } from '../../src/content/ladder';
 import { questionMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
 import { PRESETS, type Expression } from '../../src/ui/truffle/rig';
-import { PAW_TRACKS, type Reaction } from '../../src/ui/truffle/timelines';
+import { PAW_TRACKS, type PawPose, type Reaction } from '../../src/ui/truffle/timelines';
 import { ListenRows } from '../../src/parent/ListenPanel';
 import type { Recording } from '../../src/types';
 import { PinyinFade } from '../../src/ui/pinyinFade';
@@ -92,9 +93,10 @@ if (which?.startsWith('alive') || which === 'moments') {
 /** One live Truffle on a lesson stage; the check calls window.react('right') to make him react (spec 2026-10-04 §4, §6). */
 function Alive({ calm }: { calm: boolean }) {
   const [react, setReact] = useState<Reaction | null>(null);
+  const outfit = new URLSearchParams(location.search).get('outfit'); // a costume with paw props (rewards spec §7: still within 8 ms)
   (window as unknown as { react: (kind: Reaction['kind']) => void }).react = (kind) => setReact((r) => ({ kind, key: (r?.key ?? 0) + 1 }));
   return screen(
-    <Stage activity="flash" truffle={<Pet kid={DEFAULT_KID} size={180} alive calm={calm} react={react} />} sheet={<FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />}>
+    <Stage activity="flash" truffle={<Pet kid={{ ...DEFAULT_KID, outfit }} size={180} alive calm={calm} react={react} />} sheet={<FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />}>
       <div style="width:200px;height:200px" />
     </Stage>,
   );
@@ -155,6 +157,38 @@ else if (which === 'costumes') {
     </div>,
     app,
   );
+}
+else if (which === 'costume-sheet') {
+  // the v3 contact sheet (rewards spec §5.1; compare with docs/worlds/costumes/standard-v3.png): idle at 220 px, the 64 px
+  // Wardrobe tile, and cheering at 220 px with his right paw up (the props ride the paw)
+  const ids = (new URLSearchParams(location.search).get('ids') ?? '').split(',').filter(Boolean);
+  const raised = PAW_TRACKS.raise(400)!;
+  render(
+    <div style={`display:grid;grid-template-columns:repeat(${SHEET_COLUMNS}, 232px);gap:8px;padding:8px;background:#fbf6ea;font:600 13px sans-serif;text-align:center`}>
+      {ids.map((id) => (
+        <div key={id} data-costume={id} style={`height:${SHEET_CELL_HEIGHT - 8}px`}>
+          <figure data-row="idle" style="margin:0"><Truffle expression="neutral" outfit={id} size={220} label={null} /></figure>
+          <figure data-row="tile" style="margin:0"><Truffle mood="content" outfit={id} size={64} label={null} /></figure>
+          <figure data-row="cheer" style="margin:0"><Truffle expression="joy" paws={raised} outfit={id} size={220} label={null} /></figure>
+          <div>{costumeById(id)?.zh ?? id}</div>
+        </div>
+      ))}
+    </div>,
+    app,
+  );
+  // the probe's other paw poses (every PAW_TRACKS move, frame by frame: costume-sheet.ts), one 220 px figure per costume, drawn
+  // over the sheet after its screenshot: elementFromPoint only sees what is on screen
+  (window as unknown as { __sheetPose: (paws: PawPose, row: string) => void }).__sheetPose = (paws, row) =>
+    render(
+      <div style={`display:grid;grid-template-columns:repeat(${SHEET_COLUMNS}, 232px);gap:8px;padding:8px;background:#fbf6ea`}>
+        {ids.map((id) => (
+          <div key={id} data-costume={id}>
+            <figure data-row={row} style="margin:0"><Truffle expression="joy" paws={paws} outfit={id} size={220} label={null} /></figure>
+          </div>
+        ))}
+      </div>,
+      app,
+    );
 }
 else if (which?.startsWith('story-') && which !== 'story-page') {
   // the 3c reader on its own (spec 2026-10-07 3c §4): setup page, Granny's lines, 听一听, the rescued words
