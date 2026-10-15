@@ -44,11 +44,15 @@ const LANGDU = { ...DEFAULT_SETTINGS, placementDone: true, langdu: true };
 /** A day outside the school calendar: no class lesson adds to what he reads, so only what he knows counts (spec 2026-10-15 §3). */
 const NOTHING_READABLE = () => new Date(2025, 11, 20, 18);
 
+/** A lesson plan with the speaking step (朗读): today's session says whether it is done. */
+const SPEAKING_PLAN = { steps: ['flashcards' as const, 'speaking' as const], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 };
+
 describe('朗读 extra rounds', () => {
   it("Home's 多读一遍 button opens an extra round; it saves the read and counts it for the gap, leaving rest, turn and stars alone", async () => {
     const app = await makeAppData({ settings: LANGDU, kid, now: () => new Date(2026, 9, 2, 17) });
     await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
     await saveKid(app.db, kid);
+    await saveSession(app.db, { ...createSessionRecord(SPEAKING_PLAN, '2026-10-02', 0), completed: true, completedSteps: ['flashcards', 'speaking'] }); // today's 朗读 done
     const home = renderWithApp(<HomeScreen />, app);
     fireEvent.click(await screen.findByRole('button', { name: '多读一遍' }));
     expect(app.go).toHaveBeenCalledWith({ name: 'langdu' });
@@ -116,6 +120,19 @@ describe('朗读 extra rounds', () => {
     fireEvent.click(btn('下一篇'));
     await waitFor(() => expect(title()).not.toBe(first));
     await waitFor(async () => expect(Object.values((await getKid(app.db))!.reading.history).filter((e) => e.lastSkipped === '2026-10-02' && e.skips === 1)).toHaveLength(1));
+  });
+
+  it("no 多读一遍 before today's 朗读: an extra round must not use up the lesson's passage (final review)", async () => {
+    const app = await makeAppData({ settings: LANGDU, kid, now: () => new Date(2026, 9, 2, 17) });
+    await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1 });
+    await saveKid(app.db, kid);
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天的练习');
+    expect(screen.queryByRole('button', { name: '多读一遍' })).toBeNull();
+    await saveSession(app.db, { ...createSessionRecord(SPEAKING_PLAN, '2026-10-02', 0), completedSteps: ['flashcards'] }); // begun, 朗读 not yet
+    renderWithApp(<HomeScreen />, app);
+    await screen.findAllByText('今天的练习');
+    expect(screen.queryByRole('button', { name: '多读一遍' })).toBeNull();
   });
 
   it('no 多读一遍 button when there is nothing to read', async () => {

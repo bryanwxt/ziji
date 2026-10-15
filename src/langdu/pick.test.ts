@@ -45,6 +45,21 @@ describe('pickPassage (spec 2026-10-15 §4)', () => {
     };
     expect(ids(pickOrder(r, [c('p01', 0.95), c('p02', 0.95), c('p03', 0.95), c('p04', 0.95)], T))).toEqual(['p02', 'p01', 'p04', 'p03']);
   });
+  it('an unread easy passage comes before one resting from an early read (final review: 47 unread ones were never offered)', () => {
+    const r: ReadingHistory = { ...H0, lastKind: 'revisit', history: { p01: { reads: 2, lastRead: '2026-10-10', rest: 7, q: 2 } } }; // in band, not due
+    expect(ids(pickOrder(r, [c('p01', 0.93), c('p02', 0.99)], T))).toEqual(['p02', 'p01']);
+    expect(ids(pickOrder({ ...r, lastKind: 'new' }, [c('p01', 0.93), c('p02', 0.99)], T))).toEqual(['p02', 'p01']); // not due: no revisit's turn
+  });
+  it('with nothing new in band, unread easy passages and due revisits still take turns', () => {
+    const r: ReadingHistory = { ...H0, history: { p01: { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1 } } }; // due
+    const pool = [c('p01', 0.95), c('p02', 0.99)];
+    expect(pickPassage({ ...r, lastKind: 'new' }, pool, T)?.id).toBe('p01');
+    expect(pickPassage({ ...r, lastKind: 'revisit' }, pool, T)?.id).toBe('p02');
+  });
+  it('resting passages come back nearest their due day first', () => {
+    const r: ReadingHistory = { ...H0, history: { p01: { reads: 2, lastRead: '2026-10-12', rest: 7, q: 2 }, p02: { reads: 2, lastRead: '2026-10-09', rest: 7, q: 2 } } };
+    expect(ids(pickOrder(r, [c('p01', 0.93), c('p02', 0.97)], T))).toEqual(['p02', 'p01']); // p02 is due in 1 day, p01 in 4
+  });
   it('a skipped passage keeps out of the way for 3 days', () => {
     const r = afterSkip(H0, 'p02', T);
     expect(pickPassage(r, [c('p02', 0.93), c('p03', 0.96)], T)?.id).toBe('p03');

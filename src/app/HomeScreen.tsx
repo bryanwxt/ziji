@@ -180,6 +180,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
     : canRead || (!!todaySession?.completedSteps.includes('speaking') && readToday(k.reading, today)) ? 'langdu' : null;
   const steps = (todaySession?.plan.steps ?? stepsOn(settings)).filter((s) => s !== 'speaking' || speakingKind !== null);
   const nodes = pathNodes(steps, todaySession?.completedSteps ?? [], chestOpened, doneToday);
+  // 多读一遍 only once today's 朗读 is done (or the lesson has no speaking step): an extra round first would use up the lesson's passage
+  const extraRound = canRead && (!steps.includes('speaking') || !!todaySession?.completedSteps.includes('speaking'));
   const wotdWord = wotd ? data.know.wordsById.get(`b:${wotd}`) : undefined;
   const wotdExample = wotdWord ? pickExample(wotdWord)?.example ?? null : null;
   const play = (free: boolean) => {
@@ -276,7 +278,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
               )}
             </div>
           )}
-          {canRead && (
+          {extraRound && (
             <button type="button" class="btn btn--secondary langdu-btn" aria-label="多读一遍" onClick={() => go({ name: 'langdu' })}>
               <InkIcon name="mic" size={28} /> <Label zh="多读一遍" />
             </button>

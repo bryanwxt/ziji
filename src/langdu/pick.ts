@@ -1,6 +1,6 @@
 // Which passage 朗读 reads (spec 2026-10-15 §4): an unread school text first; then new and revisit in turn — the next part of a
-// story he has started, else the new passage nearest 0.93 of his reading, ZiJi and Global Storybooks taking turns; then any due
-// revisit; anything he can read outside the 3-day gap; retired ones last. 下一篇 takes the next in the same order.
+// story he has started, else the new passage nearest 0.93 of his reading, ZiJi and Global Storybooks taking turns, else an unread
+// easy one; then any due revisit; then a resting one nearest its due day; retired ones last. 下一篇 takes the next in the same order.
 import type { ReadingHistory } from '../types';
 import { afterSkip, entryOf, inGap, isRetired, overdue } from './history';
 
@@ -39,8 +39,14 @@ export function pickOrder<T extends Candidate>(r: ReadingHistory, pool: readonly
   const band = unread
     .filter((c) => c.source !== 'parent' && inBand(c.fit))
     .sort((a, b) => Number(b.source === turn) - Number(a.source === turn) || near(a) - near(b) || a.id.localeCompare(b.id));
-  const fresh = [...started, ...band];
-  const rest = open.filter((c) => !isRetired(e(c)) && readable(c)).sort((a, b) => near(a) - near(b) || a.id.localeCompare(b.id));
+  // nothing new in band: an unread easy passage is still new — it takes the new turn before anything read comes back early
+  // (final review: ordering by fit alone recycled a dozen early-read passages while 47 unread ones waited)
+  const easy = unread.filter((c) => c.source !== 'parent' && c.fit > BAND_HIGH).sort((a, b) => near(a) - near(b) || a.id.localeCompare(b.id));
+  const fresh = [...started, ...band, ...easy];
+  // then what he has read and is resting, nearest its due day first
+  const rest = open
+    .filter((c) => !isRetired(e(c)) && readable(c))
+    .sort((a, b) => (overdue(e(b), today) ?? 0) - (overdue(e(a), today) ?? 0) || near(a) - near(b) || a.id.localeCompare(b.id));
   const retired = open
     .filter((c) => isRetired(e(c)) && readable(c))
     .sort((a, b) => (e(a).lastRead ?? '').localeCompare(e(b).lastRead ?? '') || a.id.localeCompare(b.id));

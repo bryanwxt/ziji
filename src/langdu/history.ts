@@ -54,14 +54,16 @@ export function nextRest(rest: number, well: boolean): number {
   return REST_LADDER.find((s) => s > rest) ?? RETIRED_REST;
 }
 
-/** A read: the first rests 3 days; then a good read climbs the ladder and a miss goes back to 3. 多读一遍 ('extra') counts for
+/** A read: the first rests 3 days; then a good read climbs the ladder (a read before its rest is over keeps it) and a miss goes back to 3. 多读一遍 ('extra') counts for
  *  the gap and the reads only. A lesson read moves the question turn on and says whether it was new or a revisit. */
 export function afterRead(r: ReadingHistory, id: string, today: string, how: ReadHow): ReadingHistory {
   const e = entryOf(r, id);
   // a second lesson read of it today (two tabs): one more read, no second climb, turn or kind
   if (how !== 'extra' && e.reads > 0 && e.lastRead === today) return { ...r, history: { ...r.history, [id]: { ...e, reads: e.reads + 1 } } };
   const first = e.reads === 0;
-  const rest = first ? REST_LADDER[0] : how === 'extra' ? e.rest : nextRest(e.rest, how === 'well');
+  // an early read (offered before its rest was over, when nothing else was there) keeps its rest: the ladder climbs on spaced reads
+  const early = !!e.lastRead && daysBetween(e.lastRead, today) < e.rest;
+  const rest = first ? REST_LADDER[0] : how === 'extra' || (how === 'well' && early) ? e.rest : nextRest(e.rest, how === 'well');
   const entry: PassageHistory = { ...e, reads: e.reads + 1, lastRead: today, rest, q: how === 'extra' ? e.q : e.q + 1 };
   return { ...r, history: { ...r.history, [id]: entry }, lastKind: how === 'extra' ? r.lastKind : first ? 'new' : 'revisit' };
 }

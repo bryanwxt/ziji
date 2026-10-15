@@ -29,6 +29,13 @@ describe('rest after a read (spec 2026-10-15 §4, D6)', () => {
     expect(rests).toEqual([3, 7, 18, 45, RETIRED_REST]);
     expect(isRetired(entryOf(r, 'p01'))).toBe(true);
   });
+  it('an early read (before its rest is over: nothing else was there) keeps the rest — it does not climb (final review)', () => {
+    let r = afterRead(H0, 'p01', '2026-10-01', 'well'); // rest 3
+    r = afterRead(r, 'p01', '2026-10-04', 'well'); // due: climbs to 7
+    r = afterRead(r, 'p01', '2026-10-08', 'well'); // 4 days into 7: early
+    expect(entryOf(r, 'p01')).toMatchObject({ reads: 3, lastRead: '2026-10-08', rest: 7, q: 3 });
+    expect(entryOf(afterRead(r, 'p01', '2026-10-12', 'not-well'), 'p01').rest).toBe(3); // a miss still goes back to 3
+  });
   it('a missed question puts the rest back to 3', () => {
     const r = afterRead(reads(H0, 'p01', ['2026-10-01', '2026-10-04', '2026-10-11']), 'p01', '2026-10-29', 'not-well');
     expect(entryOf(r, 'p01')).toMatchObject({ reads: 4, rest: 3, lastRead: '2026-10-29' });
