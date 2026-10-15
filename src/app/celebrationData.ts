@@ -13,13 +13,15 @@ import { getKid, logsSince, saveKid, updateKid } from '../store/repo';
 import { DEFAULT_KID, type KidState, type SessionRecord } from '../types';
 
 /** Counts a finished lesson on the meter, once (a celebration shown again counts nothing); free play counts nothing (fill null). */
-export async function settleMeter(db: AppDb, rec: SessionRecord): Promise<{ kid: KidState; fill: MeterFill | null }> {
+/** `today` is the device's local day: a meter dated after it (a clock that ran ahead) would refuse every lesson, so its day is
+ *  set aside first and the lesson counts as on a new meter day. */
+export async function settleMeter(db: AppDb, rec: SessionRecord, today: string): Promise<{ kid: KidState; fill: MeterFill | null }> {
   const lesson = lessonOf(rec);
   const stored = await getKid(db);
   if (!lesson) return { kid: stored ?? DEFAULT_KID, fill: null };
   let fill: MeterFill | null = null;
   const saved = await updateKid(db, (k) => {
-    const r = fillMeter(k, lesson);
+    const r = fillMeter(k.meter.day > today ? { ...k, meter: { ...k.meter, day: '' } } : k, lesson);
     fill = r.fill;
     return r.fill.counted ? r.kid : null;
   });

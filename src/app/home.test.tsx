@@ -140,6 +140,15 @@ describe('HomeScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: '继续：宝箱' }));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false });
   });
+
+  it("a second chest still owed after today's first was opened: the path chest stays open to claim it (rewards fix round)", async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02', meter: { ...EMPTY_METER, owed: 1, chestsToday: 2, day: '2026-10-02', lesson: 5 } } });
+    await saveSession(app.db, done('2026-10-02', ['flashcards']));
+    renderWithApp(<HomeScreen />, app);
+    fireEvent.click(await screen.findByRole('button', { name: '继续：宝箱' }));
+    expect(app.go).toHaveBeenCalledWith({ name: 'session', free: false });
+    expect(document.querySelector('.screen.home')!.classList.contains('home--done')).toBe(false);
+  });
 });
 
 describe('Wardrobe', () => {

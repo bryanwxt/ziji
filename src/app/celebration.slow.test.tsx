@@ -22,7 +22,7 @@ const hold = () => new Promise((r) => setTimeout(r, 1300));
 async function continueTo(text: string) {
   for (let i = 0; i < 6 && !screen.queryByText(text); i++) {
     fireEvent.click(screen.getByText('继续'));
-    await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 320)); // past the double-tap guard
   }
   return screen.findByText(text);
 }
@@ -226,7 +226,7 @@ describe('the story after the celebration (spec 3c §5)', () => {
       const home = b.textContent === '回家';
       fireEvent.click(b);
       if (home) return;
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 320)); // past the double-tap guard
     }
   };
   it('an owed payoff plays after the celebration, then home', async () => {

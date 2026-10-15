@@ -34,7 +34,7 @@ import { TodayPath } from './TodayPath';
 import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
 import { InkIcon } from '../ui/icons/InkIcon';
-import { meterShown } from '../fun/meter';
+import { meterShown, normalizeMeter } from '../fun/meter';
 import { RiverTrack } from '../ui/RiverTrack';
 
 interface HomeData {
@@ -157,7 +157,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const today = localDateKey(now());
   const todaySession = data.sessions.find((s) => s.date === today && !s.free);
   const doneToday = !!todaySession?.completed;
-  const chestOpened = k.lastChestDate === today;
+  // the path's chest is done only when nothing is owed: a second chest he left unopened is still there to claim (rewards spec §3)
+  const chestOpened = k.lastChestDate === today && normalizeMeter(k.meter).owed === 0;
   const shown = meterShown(k, today); // the small boat on the reward card: a new day's meter has the bank in it
   const hasCards = data.know.cards.some((c) => c.kind === 'recognise');
   const days = streak(data.sessions, today);
@@ -227,7 +228,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         <div class="home__cards">
           {/* the reward card (rewards spec §3): the river meter toward the chest, and the parent's goal beside it when there is one */}
           <div class={`goal reward-card${goal && progress ? '' : ' reward-card--alone'}${progress?.reached ? ' goal--reached' : ''}`}>
-            <span class="reward-card__meter"><RiverTrack mini from={shown.halves} to={shown.halves} /></span>
+            <span class="reward-card__meter"><RiverTrack key={shown.halves} mini from={shown.halves} to={shown.halves} /></span>
             {goal && progress && (
               <>
                 {/* what he sees is Chinese with an ink icon; the parent's English note and older emoji stay in the parent area (spec 2026-10-04 §3) */}

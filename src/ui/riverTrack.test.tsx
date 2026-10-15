@@ -28,4 +28,12 @@ describe('the river track (rewards spec §3)', () => {
     expect(container.innerHTML).not.toMatch(/clip-path|Gradient|filter/);
     expect(container.querySelector('svg.river')!.getAttribute('aria-label')).toBe('小船走到一半了');
   });
+  it('sails again when the meter it shows changes (Home after a lesson)', async () => {
+    motion.reduced = false;
+    const { rerender } = render(<RiverTrack mini from={0} to={0} />);
+    expect(boatX()).toBe('translateX(0px)');
+    rerender(<RiverTrack mini from={1} to={1} />);
+    await waitFor(() => expect(boatX()).toBe('translateX(122px)'));
+    expect(document.querySelector('svg.river')!.getAttribute('data-halves')).toBe('1');
+  });
 });

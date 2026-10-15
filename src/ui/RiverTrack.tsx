@@ -35,7 +35,7 @@ export function RiverTrack({ from, to, mini = false, onArrive }: { from: number;
       cancelAnimationFrame(raf);
       clearTimeout(t);
     };
-  }, []);
+  }, [from, to]); // a new meter sails again (Home after a lesson)
   const x = (h: number) => ((END - START) * Math.min(Math.max(h, 0), METER_FULL)) / METER_FULL;
   return (
     <svg class={`river${mini ? ' river--mini' : ''}`} viewBox="0 0 320 64" data-halves={to} role="img" aria-label={SAID[Math.min(Math.max(to, 0), METER_FULL)]}>

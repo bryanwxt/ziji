@@ -2,7 +2,10 @@ import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { EMPTY_METER } from '../fun/meter';
 import { createSessionRecord } from '../session/runner';
-import { getKid, saveKid } from '../store/repo';
+import { BUILTIN, builtinWords } from '../content';
+import { powerFamilies } from '../fun/powers';
+import { getKid, putCards, putWords, saveKid } from '../store/repo';
+import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, type KidState, type SessionPlan, type SessionRecord } from '../types';
 import { Celebration } from './Celebration';
@@ -98,5 +101,46 @@ describe('the river meter on the Celebration (rewards spec §3)', () => {
     expect(river()).toBeNull();
     expect((await getKid(app.db))?.meter.lesson ?? null).toBeNull(); // nothing counted
     expect(screen.queryByRole('button', { name: '按住打开宝箱' })).toBeNull();
+  });
+
+  it('the hold button takes focus once the boat reaches the chest (a11y, rewards fix round)', async () => {
+    await show({}, lesson(10));
+    next();
+    const btn = await screen.findByRole('button', { name: '按住打开宝箱' });
+    await waitFor(() => expect(document.activeElement).toBe(btn));
+  });
+  it('a double tap on 继续 moves one phase, never two (rewards fix round)', async () => {
+    await show({ lastChestDate: DAY, meter: { ...EMPTY_METER, chestsToday: 1, day: DAY, lesson: 10 } }, lesson(20, true));
+    next();
+    fireEvent.click(screen.getByText('继续')); // the second tap of a double tap lands on the next phase's 继续
+    await new Promise((r) => setTimeout(r, 50));
+    expect(river()?.getAttribute('data-halves')).toBe('1'); // still on the river
+  });
+  it('a chest already opened elsewhere: the prize shows, but the power-up saved after it never carries it (rewards fix round)', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, builtinWords(0));
+    await putCards(app.db, powerFamilies(BUILTIN).water.slice(0, 3).map((c) => makeCard(`b:${c}`, 'recognise', new Date(2026, 9, 1), true)));
+    await saveKid(app.db, DEFAULT_KID);
+    renderWithApp(<Celebration rec={lesson(10)} />, app);
+    await screen.findByText('太棒了！');
+    next();
+    const btn = (await screen.findByRole('button', { name: '按住打开宝箱' })) as HTMLButtonElement;
+    await waitFor(() => expect(btn.disabled).toBe(false));
+    const k = (await getKid(app.db))!;
+    await saveKid(app.db, { ...k, meter: { ...k.meter, owed: 0 } }); // opened in another tab meanwhile
+    fireEvent(btn, new Event('pointerdown', { bubbles: true }));
+    await hold();
+    await waitFor(() => expect(document.querySelector('.chest.is-open')).toBeTruthy());
+    for (let i = 0; i < 6 && !screen.queryByText('新能力！'); i++) {
+      await new Promise((r) => setTimeout(r, 350));
+      fireEvent.click(screen.getByText('继续'));
+    }
+    fireEvent(await screen.findByRole('button', { name: '按住，变身！' }), new Event('pointerdown', { bubbles: true }));
+    await hold();
+    await waitFor(async () => expect((await getKid(app.db))!.powerTiersSeen.water).toBe(1));
+    const after = (await getKid(app.db))!;
+    expect(after.ownedCostumes).toEqual(DEFAULT_KID.ownedCostumes);
+    expect(after.ownedAccessories).toEqual(DEFAULT_KID.ownedAccessories);
+    expect(after.meter.owed).toBe(0);
   });
 });

@@ -12,13 +12,19 @@ import { Celebration } from './Celebration';
 vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
 vi.mock('../ui/confetti', () => ({ celebrate: vi.fn() }));
 vi.mock('../ui/motion', () => ({ burst: vi.fn(), flyAlong: vi.fn(async () => {}), reducedMotion: () => true }));
+// a goal read that never finishes (a stuck IndexedDB read): toggled per test
+const stuck = { on: false };
+vi.mock('./celebrationData', async (orig) => {
+  const real = await orig<typeof import('./celebrationData')>();
+  return { ...real, loadGoalFacts: (...a: Parameters<typeof real.loadGoalFacts>) => (stuck.on ? new Promise<never>(() => {}) : real.loadGoalFacts(...a)) };
+});
 
 const plan: SessionPlan = { steps: ['newwords'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 };
 const finished = (free = false) => ({ ...createSessionRecord(plan, '2026-10-02', 10, free), completed: true, completedSteps: ['newwords' as const] });
 async function continueTo(text: string) {
   for (let i = 0; i < 6 && !screen.queryByText(text); i++) {
     fireEvent.click(screen.getByText('继续'));
-    await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 320)); // past the double-tap guard
   }
   return screen.findByText(text);
 }
@@ -57,5 +63,19 @@ describe('almost there on the Celebration (rewards spec §4)', () => {
     await screen.findByText('练习得很好！');
     expect(screen.queryByText('快到了！')).toBeNull();
     expect(screen.getByText('回家')).toBeTruthy();
+  });
+  it('a goal read that never finishes never holds back the stars: no goals, and on he goes (rewards fix round)', async () => {
+    stuck.on = true;
+    try {
+      const app = await makeAppData();
+      await saveKid(app.db, { ...DEFAULT_KID, lastChestDate: '2026-10-02' });
+      renderWithApp(<Celebration rec={finished()} />, app);
+      await screen.findByText('太棒了！', {}, { timeout: 3000 });
+      fireEvent.click(screen.getByText('继续'));
+      await new Promise((r) => setTimeout(r, 350));
+      expect(screen.queryByText('快到了！')).toBeNull();
+    } finally {
+      stuck.on = false;
+    }
   });
 });
