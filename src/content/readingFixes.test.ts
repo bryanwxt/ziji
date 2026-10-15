@@ -137,7 +137,7 @@ describe('content sweep (parent, 2026-10-05)', () => {
     expect(cardMeaning(byText.get('后')!)).toMatch(/after|back/);
     expect(cardMeaning(byText.get('店')!)).toMatch(/shop/);
     expect(cardMeaning(byText.get('台')!)).toMatch(/stage/);
-    for (const [t, en] of [['鸭子', 'duck'], ['叶子', 'leaf'], ['轮子', 'wheel'], ['黄色', 'yellow'], ['烟花', 'fireworks'], ['玻璃', 'glass'], ['故事', 'story'], ['告诉', 'to tell'], ['东西', 'thing; stuff']]) expect(glossFor(t), t).toBe(en);
+    for (const [t, en] of [['鸭子', 'duck'], ['叶子', 'leaf'], ['轮子', 'wheel'], ['黄色', 'yellow'], ['烟花', 'fireworks'], ['玻璃', 'glass'], ['故事', 'story'], ['告诉', 'tell'], ['东西', 'thing, things']]) expect(glossFor(t), t).toBe(en); // a school 词语's kid gloss (kidGloss.json)
   });
   it('a P2 reading on the cards a child meets: 教 jiāo, 兴 xìng, 漂 piào, 切 qiē; 儿化 written nǎ r', async () => {
     const { builtinWords } = await import('.');

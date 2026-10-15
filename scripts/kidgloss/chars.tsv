@@ -1,0 +1,1034 @@
+# Kid glosses for his school characters (欢乐伙伴 一上–三下): char, the reading his lessons use, then at most four everyday
+# English words a P2 Singapore child knows, in the sense his lessons and 组词 use. Built into src/content/kidGloss.json by
+# scripts/build-kidgloss.ts. No Chinese, no semicolons, no dictionary jargon.
+衣	yī	clothes
+鱼	yú	fish
+雨	yǔ	rain
+一	yī	one
+二	èr	two
+五	wǔ	five
+耳	ěr	ear
+牙	yá	tooth
+口	kǒu	mouth
+人	rén	person
+木	mù	wood
+土	tǔ	soil
+马	mǎ	horse
+八	bā	eight
+巴	bā	bus
+你	nǐ	you
+我	wǒ	I, me
+也	yě	also, too
+他	tā	he, him
+弟	dì	younger brother
+不	bù	not, no
+爸	bà	dad
+她	tā	she, her
+妈	mā	mum
+的	de	's (my, your)
+父	fù	father
+母	mǔ	mother
+女	nǚ	girl, woman
+儿	ér	child
+力	lì	strength
+河	hé	river
+禾	hé	rice plant
+立	lì	stand
+米	mǐ	rice
+合	hé	close, join
+气	qì	air
+和	hé	and
+哥	gē	older brother
+几	jǐ	how many
+七	qī	seven
+了	le	shows it's done
+个	gè	one (for most things)
+句	jù	sentence
+可	kě	can, may
+以	yǐ	with, by
+吗	ma	asks a question
+去	qù	go
+日	rì	sun, day
+石	shí	stone
+子	zǐ	child, son
+字	zì	word, character
+车	chē	car
+四	sì	four
+十	shí	ten
+士	shì	soldier
+只	zhī	one (for animals)
+把	bǎ	hold, handle
+尺	chǐ	ruler
+是	shì	is, am, are
+书	shū	book
+出	chū	go out, come out
+自	zì	self, from
+己	jǐ	self (myself)
+它	tā	it
+吃	chī	eat
+山	shān	hill, mountain
+羊	yáng	sheep, goat
+毛	máo	hair, fur, feather
+草	cǎo	grass
+太	tài	too, very
+阳	yáng	sun
+王	wáng	king
+三	sān	three
+伞	sǎn	umbrella
+包	bāo	bag, bun
+老	lǎo	old
+师	shī	teacher
+早	zǎo	early, morning
+安	ān	safe, peaceful
+半	bàn	half
+午	wǔ	noon
+奶	nǎi	milk, grandma
+玩	wán	play
+具	jù	tool
+鸟	niǎo	bird
+竹	zhú	bamboo
+田	tián	field
+苗	miáo	young plant
+象	xiàng	elephant
+家	jiā	home, family
+刀	dāo	knife
+网	wǎng	net, internet
+在	zài	at, in
+里	lǐ	inside
+上	shàng	up, on
+下	xià	down, below
+大	dà	big
+小	xiǎo	small
+来	lái	come
+哭	kū	cry
+笑	xiào	laugh, smile
+男	nán	boy, man
+爷	yé	grandpa
+姐	jiě	older sister
+果	guǒ	fruit
+开	kāi	open
+瓜	guā	melon
+火	huǒ	fire
+花	huā	flower
+叶	yè	leaf
+面	miàn	face, side, noodles
+关	guān	close, shut
+朵	duǒ	one (for flowers)
+两	liǎng	two
+片	piàn	piece, slice
+画	huà	draw, picture
+笔	bǐ	pen, pencil
+长	cháng	long
+广	guǎng	wide
+多	duō	many, a lot
+少	shǎo	few, little
+床	chuáng	bed
+目	mù	eye
+舌	shé	tongue
+手	shǒu	hand
+足	zú	foot
+本	běn	one (for books)
+工	gōng	work
+厂	chǎng	factory
+走	zǒu	walk
+跑	pǎo	run
+飞	fēi	fly
+妹	mèi	younger sister
+门	mén	door
+看	kàn	look, watch
+见	jiàn	see, meet
+问	wèn	ask
+又	yòu	again
+头	tóu	head
+们	men	more than one
+身	shēn	body
+体	tǐ	body
+牛	niú	cow
+井	jǐng	water well
+虫	chóng	bug, worm
+弓	gōng	bow (for arrows)
+贝	bèi	shell
+心	xīn	heart
+豆	dòu	bean
+六	liù	six
+支	zhī	one (for pens)
+条	tiáo	one (for long things)
+九	jiǔ	nine
+粒	lì	grain (of rice)
+今	jīn	today, now
+什	shén	what
+么	me	what, how
+华	huá	Chinese
+文	wén	language, writing
+点	diǎn	dot, a little
+说	shuō	say, speak
+语	yǔ	language, words
+月	yuè	moon, month
+天	tiān	day, sky
+地	dì	ground, land
+风	fēng	wind
+雷	léi	thunder
+电	diàn	electricity, lightning
+水	shuǐ	water
+寸	cùn	inch
+方	fāng	square, direction
+正	zhèng	straight, right way up
+反	fǎn	opposite, back to front
+白	bái	white
+好	hǎo	good
+坏	huài	bad
+对	duì	right, correct
+古	gǔ	very old
+旧	jiù	old (not new)
+有	yǒu	have
+没	méi	not have, no
+云	yún	cloud
+甲	jiǎ	fingernail, shell
+丁	dīng	family name Ding
+前	qián	front, before
+后	hòu	back, after
+左	zuǒ	left
+右	yòu	right (side)
+中	zhōng	middle
+间	jiān	between
+边	biān	side
+同	tóng	same
+学	xué	learn, study
+朋	péng	friend
+友	yǒu	friend
+坐	zuò	sit
+高	gāo	tall, high
+发	fā	send out
+直	zhí	straight
+起	qǐ	get up, rise
+回	huí	go back, return
+周	zhōu	week
+末	mò	end
+鸡	jī	chicken
+饭	fàn	cooked rice, meal
+鸭	yā	duck
+元	yuán	dollar
+饿	è	hungry
+饱	bǎo	full (after eating)
+饼	bǐng	biscuit, cake
+干	gān	dry
+狗	gǒu	dog
+喜	xǐ	like, happy
+欢	huān	happy, joyful
+肉	ròu	meat
+猫	māo	cat
+采	cǎi	pick
+歌	gē	song
+唱	chàng	sing
+青	qīng	green
+菜	cài	vegetable, dish
+汤	tāng	soup
+蛋	dàn	egg
+香	xiāng	smells nice
+用	yòng	use
+刷	shuā	brush
+巾	jīn	towel, cloth
+抹	mā	wipe
+洗	xǐ	wash
+要	yào	want, need
+脸	liǎn	face
+放	fàng	put, let go
+冲	chōng	rinse, shower
+凉	liáng	cool
+东	dōng	east
+西	xī	west
+到	dào	arrive, reach
+先	xiān	first
+请	qǐng	please, invite
+很	hěn	very
+泡	pào	bubble
+变	biàn	change
+谢	xiè	thank
+这	zhè	this
+双	shuāng	pair
+袜	wà	socks
+那	nà	that
+皮	pí	skin, leather
+鞋	xié	shoes
+件	jiàn	one (for clothes)
+服	fú	clothes
+被	bèi	blanket, quilt
+还	hái	still, also
+色	sè	colour
+红	hóng	red
+都	dōu	all
+动	dòng	move
+作	zuò	do, make
+快	kuài	fast, quick
+收	shōu	collect, receive
+拾	shí	pick up
+穿	chuān	wear, put on
+事	shì	thing, event
+做	zuò	do, make
+甜	tián	sweet
+苦	kǔ	bitter
+臭	chòu	smelly
+生	shēng	grow, be born
+重	zhòng	heavy
+喝	hē	drink
+甘	gān	sweet
+汁	zhī	juice
+买	mǎi	buy
+斤	jīn	half a kilo
+串	chuàn	bunch, skewer
+弯	wān	bend, curved
+选	xuǎn	choose
+最	zuì	most
+抱	bào	hug
+怎	zěn	how
+拿	ná	hold, take
+办	bàn	handle, sort out
+法	fǎ	way (to do it)
+圆	yuán	round, circle
+切	qiē	cut
+扫	sǎo	sweep
+户	hù	door, home
+桌	zhuō	table
+椅	yǐ	chair
+兄	xiōng	older brother
+房	fáng	house, room
+阿	ā	before names
+叔	shū	uncle
+会	huì	can, know how
+写	xiě	write
+啊	a	oh, ah
+完	wán	finish
+业	yè	homework, work
+躲	duǒ	hide
+进	jìn	go in, enter
+净	jìng	clean
+谁	shuí	who
+打	dǎ	hit
+听	tīng	listen
+声	shēng	sound, voice
+昨	zuó	yesterday
+晚	wǎn	evening, night, late
+星	xīng	star
+明	míng	bright, clear
+庆	qìng	celebrate
+祝	zhù	wish
+节	jié	festival
+爱	ài	love
+给	gěi	give
+国	guó	country
+乐	lè	happy
+课	kè	lesson
+台	tái	stage
+讲	jiǎng	speak, tell
+故	gù	story
+每	měi	every, each
+童	tóng	child
+因	yīn	because
+为	wèi	for, because
+兔	tù	rabbit
+尾	wěi	tail
+短	duǎn	short
+眼	yǎn	eye
+睛	jīng	eye
+爪	zhuǎ	claw
+尖	jiān	pointed, sharp
+物	wù	thing
+虎	hǔ	tiger
+狮	shī	lion
+园	yuán	garden, park
+期	qī	term, week
+带	dài	bring, take
+黑	hēi	black, dark
+站	zhàn	stand, station
+叫	jiào	call, shout
+认	rèn	know, recognise
+话	huà	words, talk
+再	zài	again
+孩	hái	child
+组	zǔ	group
+屋	wū	house
+公	gōng	public
+校	xiào	school
+场	chǎng	place, ground
+商	shāng	shop, business
+店	diàn	shop
+梯	tī	ladder, stairs
+扶	fú	help up, hold
+常	cháng	often
+球	qiú	ball
+步	bù	step
+图	tú	picture, map
+习	xí	practise
+伙	huǒ	partner, friend
+伴	bàn	partner, buddy
+游	yóu	swim
+拍	pāi	clap, pat
+兴	xìng	happy, keen
+戏	xì	show, game
+外	wài	outside
+美	měi	beautiful
+丑	chǒu	ugly
+新	xīn	new
+卖	mài	sell
+加	jiā	add
+亲	qīn	dear, family
+过	guò	pass, cross
+现	xiàn	now, appear
+些	xiē	some
+适	shì	fits well
+试	shì	try, test
+年	nián	year
+读	dú	read
+级	jí	grade, level
+班	bān	class
+折	zhé	fold
+帮	bāng	help
+专	zhuān	special
+助	zhù	help
+吉	jí	lucky
+利	lì	lucky, sharp
+岁	suì	years old
+平	píng	flat, peaceful
+余	yú	extra, left over
+全	quán	all, whole
+除	chú	remove
+贴	tiē	stick on
+福	fú	blessing, luck
+时	shí	time
+表	biǎo	watch
+演	yǎn	act, perform
+舞	wǔ	dance
+龙	lóng	dragon
+婆	pó	grandma, old woman
+拜	bài	bow, visit
+着	zhe	still going on
+您	nín	you (polite)
+接	jiē	catch, pick up
+卷	juàn	test paper
+真	zhēn	real, really
+碗	wǎn	bowl
+盘	pán	plate
+叉	chā	fork
+筷	kuài	chopsticks
+杯	bēi	cup
+壶	hú	pot, kettle
+客	kè	guest
+送	sòng	send, give
+主	zhǔ	owner, main
+递	dì	pass, hand over
+汽	qì	steam
+忙	máng	busy
+骨	gǔ	bone
+伸	shēn	stretch
+尝	cháng	taste
+原	yuán	at first
+各	gè	each
+定	dìng	decide, sure
+第	dì	order (first, second)
+捉	zhuō	catch
+非	fēi	not, very
+棵	kē	one (for trees)
+树	shù	tree
+剪	jiǎn	cut with scissors
+排	pái	line up, row
+林	lín	woods
+形	xíng	shape
+角	jiǎo	corner, horn
+然	rán	so, like this
+拉	lā	pull
+森	sēn	forest
+从	cóng	from
+众	zhòng	crowd, many people
+颜	yán	colour, face
+共	gòng	together, in all
+页	yè	page
+空	kōng	sky, empty
+彩	cǎi	colourful
+蓝	lán	blue
+绿	lǜ	green
+黄	huáng	yellow
+想	xiǎng	think, want, miss
+音	yīn	sound
+室	shì	room
+哪	nǎ	which
+顶	dǐng	top
+楼	lóu	building, floor
+术	shù	skill, art
+旁	páng	beside
+向	xiàng	towards
+就	jiù	then, right away
+往	wǎng	towards
+转	zhuǎn	turn
+操	cāo	exercise
+运	yùn	move, carry
+路	lù	road
+远	yuǎn	far
+迷	mí	get lost, a fan
+坡	pō	slope
+久	jiǔ	long time
+答	dá	answer
+已	yǐ	already
+经	jīng	already, pass through
+骑	qí	ride
+脚	jiǎo	foot
+踏	tà	step on
+应	yīng	should
+该	gāi	should
+行	xíng	OK, go, walk
+桥	qiáo	bridge
+等	děng	wait
+停	tíng	stop
+才	cái	just, only then
+灯	dēng	light, lamp
+亮	liàng	bright
+邻	lín	neighbour
+居	jū	live, home
+互	hù	each other
+相	xiāng	each other
+光	guāng	light
+照	zhào	shine, photo
+丽	lì	beautiful
+极	jí	very much, super
+茶	chá	tea
+糖	táng	sugar, sweets
+炒	chǎo	stir-fry
+油	yóu	oil
+炸	zhá	fry (in oil)
+冰	bīng	ice
+温	wēn	warm
+咖	kā	coffee
+啡	fēi	coffee
+队	duì	team, line
+找	zhǎo	look for, find
+座	zuò	seat
+位	wèi	place, seat
+特	tè	special
+别	bié	don't, other
+餐	cān	meal
+闻	wén	smell, news
+味	wèi	taste, smell
+食	shí	food
+分	fēn	share, divide
+懂	dǒng	understand
+医	yī	doctor, medicine
+病	bìng	sick, illness
+护	hù	protect
+顾	gù	look after
+贩	fàn	hawker, sell
+教	jiāo	teach
+种	zhòng	plant
+姨	yí	auntie
+员	yuán	member, worker
+消	xiāo	put out, disappear
+防	fáng	guard against, protect
+灾	zāi	disaster
+灭	miè	put out (fire)
+保	bǎo	protect, keep
+抓	zhuā	grab, catch
+怕	pà	afraid, scared
+建	jiàn	build
+住	zhù	live, stay
+阴	yīn	cloudy
+晴	qíng	sunny
+湿	shī	wet
+冷	lěng	cold
+热	rè	hot
+暗	àn	dark
+乌	wū	black, crow
+闪	shǎn	flash
+刮	guā	blow, scrape
+记	jì	remember, write down
+得	dé	get
+窗	chuāng	window
+忘	wàng	forget
+急	jí	in a hurry, worried
+铃	líng	bell
+响	xiǎng	loud, ring
+摸	mō	touch
+淋	lín	get wet (in rain)
+呢	ne	what about?
+蚂	mǎ	ant
+蚁	yǐ	ant
+爬	pá	climb, crawl
+蜜	mì	honey
+蜂	fēng	bee
+丛	cóng	bush, clump
+池	chí	pond, pool
+枝	zhī	branch
+跳	tiào	jump
+清	qīng	clear, clean
+蛙	wā	frog
+害	hài	harm, hurt
+情	qíng	feeling
+让	ràng	let, give way
+像	xiàng	look like
+窝	wō	nest
+结	jié	tie, knot
+掉	diào	fall, drop
+泥	ní	mud
+成	chéng	become, finish
+纸	zhǐ	paper
+机	jī	machine
+块	kuài	piece, dollar
+跟	gēn	follow, with
+棋	qí	chess
+搭	dā	build, put up
+积	jī	pile up
+布	bù	cloth
+娃	wá	baby, doll
+吧	ba	let's, OK?
+器	qì	tool
+许	xǔ	allow, many
+绳	shéng	rope
+捏	niē	pinch
+拼	pīn	put together
+船	chuán	boat
+更	gèng	even more
+鹰	yīng	eagle
+追	zhuī	chase
+永	yǒng	forever
+轻	qīng	light (not heavy)
+命	mìng	life
+百	bǎi	hundred
+健	jiàn	healthy
+康	kāng	healthy
+幸	xìng	lucky
+愿	yuàn	wish, willing
+吹	chuī	blow
+糕	gāo	cake
+首	shǒu	one (for songs)
+张	zhāng	one (for flat things)
+卡	kǎ	card
+影	yǐng	shadow, film
+票	piào	ticket
+礼	lǐ	gift, manners
+厅	tīng	hall, living room
+奇	qí	strange
+怪	guài	strange, monster
+活	huó	alive, live
+宝	bǎo	treasure, baby
+澡	zǎo	bath
+睡	shuì	sleep
+觉	jiào	sleep, nap
+羽	yǔ	feather
+乖	guāi	well-behaved, good
+总	zǒng	always
+聪	cōng	clever
+金	jīn	gold
+漂	piào	pretty
+吐	tǔ	spit, blow out
+宠	chǒng	pet, spoil
+岛	dǎo	island
+欺	qī	bully
+负	fù	bully
+丢	diū	lose, throw away
+梦	mèng	dream
+围	wéi	around, surround
+迎	yíng	welcome
+识	shí	know
+醒	xǐng	wake up
+难	nán	hard, difficult
+易	yì	easy
+粗	cū	thick, careless
+细	xì	thin, careful
+抢	qiǎng	grab, snatch
+推	tuī	push
+讨	tǎo	dislike
+厌	yàn	dislike, fed up
+争	zhēng	fight over, compete
+吵	chǎo	noisy, quarrel
+弄	nòng	make, play with
+破	pò	broken
+撞	zhuàng	bump into, crash
+倒	dǎo	fall over
+伤	shāng	hurt, injury
+容	róng	easy, hold
+能	néng	can, able
+晶	jīng	crystal, sparkly
+道	dào	road, way
+虹	hóng	rainbow
+茄	qié	brinjal, tomato
+紫	zǐ	purple
+番	fān	tomato
+芽	yá	sprout, bud
+扁	biǎn	flat
+玉	yù	corn, jade
+比	bǐ	compare
+伯	bó	uncle
+萝	luó	radish
+卜	bo	radish
+煮	zhǔ	cook, boil
+鼠	shǔ	mouse, rat
+或	huò	or, maybe
+者	zhě	person who
+猪	zhū	pig
+拔	bá	pull out
+摘	zhāi	pick
+挖	wā	dig
+考	kǎo	test, exam
+根	gēn	root
+实	shí	real
+持	chí	hold, keep
+静	jìng	quiet, calm
+绘	huì	draw
+趣	qù	fun, interest
+借	jiè	borrow
+次	cì	a time, a turn
+英	yīng	English, hero
+遍	biàn	all over
+架	jià	shelf, frame
+箱	xiāng	box
+盒	hé	box
+案	àn	answer
+附	fù	nearby
+近	jìn	near
+满	mǎn	full
+始	shǐ	begin, start
+样	yàng	look, kind
+候	hòu	wait, time
+知	zhī	know
+指	zhǐ	finger, point
+逛	guàng	stroll, look around
+夜	yè	night
+市	shì	market, city
+烤	kǎo	bake, grill
+肠	cháng	sausage
+翅	chì	wing
+射	shè	shoot
+碰	pèng	bump, touch
+饮	yǐn	drink
+料	liào	stuff, material
+踢	tī	kick
+筝	zhēng	kite
+但	dàn	but
+闹	nào	noisy
+摊	tān	stall
+阵	zhèn	a burst, a while
+引	yǐn	lead, pull
+群	qún	group, crowd
+套	tào	cover, set
+圈	quān	circle, ring
+馆	guǎn	shop, hall
+院	yuàn	yard, building
+植	zhí	plant
+海	hǎi	sea
+岸	àn	shore, bank
+参	cān	join, take part
+观	guān	look, watch
+野	yě	wild
+泳	yǒng	swim
+沙	shā	sand
+捡	jiǎn	pick up
+壳	ké	shell
+区	qū	area
+处	chù	place
+街	jiē	street, road
+整	zhěng	whole, tidy
+齐	qí	neat, all together
+离	lí	leave, away from
+城	chéng	city
+浇	jiāo	water (plants)
+桶	tǒng	bucket
+厕	cè	toilet
+所	suǒ	place
+告	gào	tell
+诉	sù	tell
+珍	zhēn	precious, treasure
+惜	xī	treasure, care for
+滴	dī	drop, drip
+约	yuē	agree to meet
+浪	làng	wave
+费	fèi	cost, waste
+流	liú	flow
+连	lián	join, link
+线	xiàn	line, thread
+断	duàn	break, snap
+猜	cāi	guess
+摇	yáo	shake
+渴	kě	thirsty
+低	dī	low
+斗	dòu	fight
+赶	gǎn	hurry
+功	gōng	success, skill
+科	kē	subject, science
+将	jiāng	will, future
+当	dāng	act as, when
+司	sī	driver
+希	xī	hope
+望	wàng	hope, look
+军	jūn	army, soldier
+卫	wèi	guard, protect
+练	liàn	practise
+努	nǔ	try hard
+篇	piān	one (for stories)
+复	fù	repeat, again
+交	jiāo	hand in, give
+举	jǔ	lift, raise
+翻	fān	turn over, flip
+陈	chén	family name Chen
+胡	hú	beard
+李	lǐ	plum, family name Li
+吴	wú	family name Wu
+言	yán	words, say
+姓	xìng	family name
+名	míng	name
+胖	pàng	fat, chubby
+瘦	shòu	thin
+矮	ǎi	short (not tall)
+意	yì	meaning, idea
+思	sī	think
+姑	gū	auntie
+谈	tán	talk, chat
+题	tí	question, topic
+退	tuì	move back, return
+信	xìn	letter, believe
+陪	péi	go with, stay with
+装	zhuāng	put in, pack
+辆	liàng	one (for cars)
+单	dān	single, list
+超	chāo	super, go past
+按	àn	press
+盖	gài	lid, cover
+吸	xī	suck, breathe in
+管	guǎn	tube, in charge
+弹	tán	play (piano)
+钟	zhōng	clock, bell
+背	bèi	back (body)
+粉	fěn	powder, pink
+状	zhuàng	shape
+准	zhǔn	ready, exact
+改	gǎi	change, correct
+迟	chí	late
+惯	guàn	used to, habit
+内	nèi	inside
+入	rù	enter, go in
+由	yóu	from, because of
+浅	qiǎn	shallow, light (colour)
+深	shēn	deep
+窄	zhǎi	narrow
+宽	kuān	wide
+化	huà	change, melt
+越	yuè	cross, more and more
+幼	yòu	young
+死	sǐ	die, dead
+摆	bǎi	set out, swing
+腿	tuǐ	leg
+嘴	zuǐ	mouth
+喊	hǎn	shout
+披	pī	put on (a cape)
+露	lù	dew, show
+肚	dù	tummy, belly
+脑	nǎo	brain
+展	zhǎn	spread out, show
+旅	lǚ	travel
+艺	yì	art, skill
+傍	bàng	evening
+报	bào	newspaper, report
+杂	zá	mixed, messy
+志	zhì	magazine
+号	hào	number, date
+刚	gāng	just, just now
+付	fù	pay
+钱	qián	money
+束	shù	bunch, end
+鲜	xiān	fresh
+提	tí	carry, lift
+备	bèi	get ready
+软	ruǎn	soft
+硬	yìng	hard
+松	sōng	loose, pine
+紧	jǐn	tight
+失	shī	lose
+错	cuò	wrong, mistake
+误	wù	mistake
+扔	rēng	throw
+谅	liàng	forgive
+系	xì	connect
+突	tū	suddenly
+及	jí	reach, in time
+理	lǐ	reason, tidy up
+赛	sài	match, race
+跌	diē	fall
+受	shòu	receive, get
+刻	kè	moment, carve
+碎	suì	broken (in pieces)
+赔	péi	pay back
+留	liú	stay, keep
+便	biàn	handy, easy
+盆	pén	basin, pot
+歉	qiàn	sorry
+堂	táng	hall
+溜	liū	slip away, slide
+踩	cǎi	step on
+镜	jìng	mirror, glasses
+休	xiū	rest
+息	xī	rest, breath
+视	shì	look, TV
+脱	tuō	take off
+搬	bān	move (things)
+板	bǎn	board
+灵	líng	clever, quick
+需	xū	need
+贺	hè	congratulate
+部	bù	part, section
+涂	tú	colour in, paint on
+洞	dòng	hole
+吊	diào	hang
+笼	lóng	cage, lantern
+挂	guà	hang
+裙	qún	skirt
+裤	kù	pants, shorts
+求	qiú	ask for, beg
+较	jiào	compare, rather
+晒	shài	dry in the sun
+歪	wāi	crooked
+乱	luàn	messy
+累	lèi	tired
+汗	hàn	sweat
+塞	sāi	stuff in, plug
+熊	xióng	bear
+坑	kēng	pit, hole
+鼻	bí	nose
+救	jiù	save, rescue
+猴	hóu	monkey
+竿	gān	pole
+篮	lán	basket
+喷	pēn	spray
+升	shēng	rise, go up
+称	chēng	call, weigh
+官	guān	official, officer
+墙	qiáng	wall
+沉	chén	sink, heavy
+量	liáng	measure
+夸	kuā	praise
+神	shén	god, magic
+垃	lā	rubbish
+圾	jī	rubbish
+蚊	wén	mosquito
+鸦	yā	crow
+随	suí	follow
+痰	tán	phlegm, spit
+环	huán	ring, around
+境	jìng	place, surroundings
+厨	chú	kitchen
+脏	zāng	dirty
+橱	chú	cupboard
+仔	zǐ	careful
+招	zhāo	wave, call over
+决	jué	decide
+惊	jīng	shock, scared
+缩	suō	shrink, pull back
+袋	dài	bag, pocket
+代	dài	replace, instead
+替	tì	instead of, replace
+塑	sù	plastic
+刹	chà	moment
+使	shǐ	use, make
+废	fèi	waste, useless
+瓶	píng	bottle
+并	bìng	and, also
+洋	yáng	ocean, sea
+品	pǐn	goods, item
+责	zé	duty, blame
+任	rèn	job, duty
+如	rú	if, like
+尽	jìn	do your best
+份	fèn	a portion, share
+设	shè	set up
+计	jì	plan, count
+旗	qí	flag
+颗	kē	one (small round thing)
+世	shì	world
+界	jiè	world, border
+族	zú	family, tribe
+印	yìn	print, mark
+度	dù	degree, level
+夹	jiā	clip, squeeze
+其	qí	other, that
+竖	shù	upright, stand up
+拇	mǔ	thumb
+谜	mí	riddle
+团	tuán	group, ball
+奋	fèn	try hard
+养	yǎng	raise, keep (pets)
+虾	xiā	prawn, shrimp
+湖	hú	lake
+狐	hú	fox
+狸	lí	fox
+狼	láng	wolf
+猩	xīng	orangutan, ape
+沿	yán	along
+滩	tān	beach, shore
+封	fēng	one (for letters)
+必	bì	must
+须	xū	must
+论	lùn	discuss, opinion
+领	lǐng	lead, collar
+务	wù	job, chores
+虽	suī	although
+仍	réng	still
+假	jiǎ	fake, false
+强	qiáng	strong
+弱	ruò	weak
+吞	tūn	swallow
+慢	màn	slow
+懒	lǎn	lazy
+咸	xián	salty
+淡	dàn	light, not salty
+滑	huá	slippery, slide
+灰	huī	grey, ash
+散	sàn	scatter, stroll
+耍	shuǎ	play
+笨	bèn	silly, clumsy
+滚	gǔn	roll
+咬	yǎo	bite
+够	gòu	enough
+躺	tǎng	lie down
+偷	tōu	steal
+吓	xià	scare, scared
+逃	táo	run away, escape
+痛	tòng	pain, hurt
+冒	mào	catch a cold
+抖	dǒu	shake, shiver
+敢	gǎn	dare, brave
+钻	zuān	squeeze into
+怀	huái	arms, hug
+朱	zhū	bright red
+简	jiǎn	simple, easy
+漫	màn	comics
+忍	rěn	put up with
+哈	hā	ha ha
+哎	āi	hey, oh
+呀	ya	oh, ah
+无	wú	no, without
+终	zhōng	end, at last
+蛇	shé	snake
+途	tú	way, journey
+勤	qín	hardworking
+俩	liǎ	two (people)
+轮	lún	wheel
+钓	diào	fish (with a rod)
+数	shù	number
+却	què	but, yet
+念	niàn	read aloud, miss
+传	chuán	pass on, spread
+感	gǎn	feel
+抬	tái	lift (up)
+于	yú	at, in
+农	nóng	farm, farming
+夫	fū	man, husband
+劳	láo	work
+渔	yú	fishing, fisherman
+仙	xiān	fairy
+捞	lāo	scoop up
+精	jīng	energetic, excellent
+铁	tiě	iron (metal)
+银	yín	silver
+牌	pái	sign, medal, card
+签	qiān	sign (your name)
+万	wàn	ten thousand
+千	qiān	thousand
+减	jiǎn	take away, minus
+算	suàn	count, work out
+检	jiǎn	check
+查	chá	check, look up
