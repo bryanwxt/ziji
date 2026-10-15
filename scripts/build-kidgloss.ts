@@ -43,7 +43,9 @@ const csvAt = process.argv.indexOf('--csv');
 if (csvAt > 0) {
   const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
   const group = (t: string) => Object.entries(NO_ENGLISH_GROUPS).find(([, ws]) => ws.includes(t))?.[0] ?? '';
-  const lines = ['term,char,reading,old meaning,kid gloss,no English question'];
+  // glosses kept as written that follow a 组词 more than the character (parent to look over): a note above the table
+  const CHECK = '巴 bus, 番 tomato, 负 bully, 欺 bully, 司 driver, 志 magazine, 案 answer, 刹 moment';
+  const lines = [q(`check these: ${CHECK} (each follows the 组词 his lessons use)`), '', 'term,char,reading,old meaning,kid gloss,no English question'];
   for (const w of scope.filter((x) => x.kind === 'char')) lines.push([w.term!, w.text, w.reading, w.dictionary ?? '', rows.get(w.text)?.[1] ?? '', group(w.text)].map(q).join(','));
   writeFileSync(process.argv[csvAt + 1]!, '﻿' + lines.join('\n') + '\n');
 }
