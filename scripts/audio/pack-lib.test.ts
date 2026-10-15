@@ -50,4 +50,14 @@ describe('packIndex, a character said without its reading (final review I3)', ()
     const { index } = packIndex('v', jobs, new Set(['c1', 'w1']), []);
     expect(index.clips['教']).toBe('c1');
   });
+  it("is the card's reading, never a 连一连 half's (长 alone played zhǎng, 大 dài: the halves' char jobs came later)", () => {
+    const jobs = [{ ...job('长|cháng', 'c1', 'char'), taught: true }, job('长|zhǎng', 'h1', 'char')];
+    const { index } = packIndex('v', jobs, new Set(['c1', 'h1']), []);
+    expect(index.clips['长']).toBe('c1');
+    expect(index.clips['长|zhǎng']).toBe('h1');
+  });
+  it('falls back to any lone-character clip when the taught one is not made yet', () => {
+    const jobs = [{ ...job('长|cháng', 'c1', 'char'), taught: true }, job('长|zhǎng', 'h1', 'char')];
+    expect(packIndex('v', jobs, new Set(['h1']), []).index.clips['长']).toBe('h1');
+  });
 });

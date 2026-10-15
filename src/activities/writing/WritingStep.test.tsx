@@ -91,7 +91,7 @@ describe('WritingStep cue: more than the pinyin (parent, 2026-10-04)', () => {
     vi.mocked(speak).mockClear();
     render(<WritingStep word={hen} kid={DEFAULT_KID} isNew={false} pass="recall" onDone={vi.fn()} />);
     expect(document.querySelector('.write__sentence')?.textContent).toBe('这个书包＿大。');
-    expect(speak).toHaveBeenLastCalledWith('很，这个书包很大。');
+    expect(speak).toHaveBeenLastCalledWith('很，这个书包很大。', { reading: 'hěn' });
     expect(document.querySelector('[lang="en"]')).toBeNull();
     expect(screen.queryByText('very')).toBeNull();
   });
@@ -113,9 +113,9 @@ describe('WritingStep cue: more than the pinyin (parent, 2026-10-04)', () => {
     expect(document.querySelector('.write__sentence')).toBeNull();
     expect(document.querySelector('.write__blank .label')?.getAttribute('data-py')).toBe('zi');
     expect(screen.getByText('空格子')).toBeTruthy(); // the screen-reader copy says the gap
-    expect(speak).toHaveBeenLastCalledWith('儿，儿子的，儿');
+    expect(speak).toHaveBeenLastCalledWith('儿，儿子的，儿', { reading: 'ér' }); // its lone pieces at the card's reading
     fireEvent.click(screen.getByLabelText('听'));
-    expect(speak).toHaveBeenLastCalledWith('儿，儿子的，儿');
+    expect(speak).toHaveBeenLastCalledWith('儿，儿子的，儿', { reading: 'ér' }); // its lone pieces at the card's reading
   });
   it('a word with no cue shows neither line', () => {
     render(<WritingStep word={makeWord('大人', { pinyin: 'dà rén', source: 'parent' })} kid={DEFAULT_KID} isNew={false} pass="recall" onDone={vi.fn()} />);

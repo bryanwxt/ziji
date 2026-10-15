@@ -37,13 +37,16 @@ def tidy(audio, rate):
 
 
 def render(engine, job, speed):
-    """(audio, rate) for one job: said as given, or (method 'cut') said at the end of a sentence and cut back out. An
+    """(audio, rate) for one job: said as given, or (method 'cut') said at the end of a sentence and cut back out (only its
+    `syllables`, when it has them: 爪 out of 爪子). An
     engine that can't cut says the job's sayText instead, when it has one (the audition's)."""
     if job.get('method') == 'cut':
         if not hasattr(engine, 'synth_cut') and job.get('sayText'):
             return engine.synth(job['sayText'], speed)
         if not hasattr(engine, 'synth_cut'):
             raise ValueError(f"{job['engineText']}: this engine can't cut a word from a sentence")
+        if job.get('syllables'):
+            return engine.synth_cut(job['engineText'], speed, tuple(job['syllables']))
         return engine.synth_cut(job['engineText'], speed)
     return engine.synth(job['engineText'], speed)
 

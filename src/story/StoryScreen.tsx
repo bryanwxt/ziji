@@ -328,6 +328,7 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
   const canNext = ready ?? beat.kind === 'page';
   const forward = () => { if (!canNext || exiting) return; if (last) void finish(); else goTo(at + 1); };
   const word = (id: string) => know?.wordsById.get(id)?.text ?? know?.ladderById.get(id)?.text ?? id.slice(2);
+  const reading = (id: string) => know?.wordsById.get(id)?.pinyin ?? know?.ladderById.get(id)?.pinyin;
   const fly = !reducedMotion();
   // the scene stays put across pages; Granny's and 听一听's beats stand in the last scene he saw (听一听: the payoff's first)
   const scene = beat.kind === 'page' ? beat.scene
@@ -367,7 +368,7 @@ export function StoryScreen({ part, chapter, then }: { part: 'setup' | 'payoff';
             {rescued.length > 0 && (
               <div class="story__rescued">
                 {rescued.map((id, k) => (
-                  <button key={id} type="button" tabIndex={still ? -1 : undefined} class={`story__chip${anim ? ' story__chip--fly' : ''}`} style={anim ? { animationDelay: `${300 + k * 90}ms` } : undefined} lang="zh" onClick={() => speak(word(id))}>{word(id)}</button>
+                  <button key={id} type="button" tabIndex={still ? -1 : undefined} class={`story__chip${anim ? ' story__chip--fly' : ''}`} style={anim ? { animationDelay: `${300 + k * 90}ms` } : undefined} lang="zh" onClick={() => speak(word(id), { reading: reading(id) })}>{word(id)}</button>
                 ))}
               </div>
             )}

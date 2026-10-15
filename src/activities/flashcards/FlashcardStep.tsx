@@ -279,7 +279,7 @@ function WordRow({ zh, py, en, mark, class: cls, textClass }: { zh: string; py?:
     <div class={`word-row ${cls}${long ? ' word-row--long' : ''}`} lang="zh">
       <div class="word-row__line">
         <span class={`hanzi word-row__zh${textClass ? ` ${textClass}` : ''}`}><Label zh={zh} py={py} mark={mark} fade /></span>
-        <SpeakButton text={zh} small />
+        <SpeakButton text={zh} reading={py} small />
       </div>
       {en && <p class="word-row__en" lang="en">{en}</p>}
     </div>
@@ -384,7 +384,7 @@ function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; t
                   <div class="hanzi hanzi--xl">{word.text}</div>
                 </>
               )}
-              <SpeakButton text={word.text} />
+              <SpeakButton text={word.text} reading={word.pinyin} />
             </div>
           )}
         </div>

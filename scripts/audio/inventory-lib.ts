@@ -6,6 +6,10 @@ export type ClipKind = 'char' | 'word' | 'sentence' | 'fragment';
 export interface ClipJob {
   key: string; id: string; text: string; engineText: string; expected: string; kind: ClipKind; sure: boolean;
   method?: 'cut'; // said at the end of a sentence and cut back out (scripts/audio/inventory.ts CUT_FROM_SENTENCE)
+  /** With 'cut': only these syllables of engineText are kept, [from, to) (爪 cut out of 爪子, said zhuǎ by the same voice). */
+  syllables?: [number, number];
+  /** A character at its card's reading: the clip a lone character said without its reading plays (pack-lib packIndex). */
+  taught?: boolean;
 }
 
 /** FNV-1a 64-bit of the UTF-8 bytes, as 16 hex digits. */

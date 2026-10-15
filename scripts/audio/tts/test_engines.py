@@ -1,6 +1,6 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(__file__))
-from engines import syllable_bounds
+from engines import cut_span, syllable_bounds
 from synth import render
 
 
@@ -12,8 +12,8 @@ class Fake:
         self.calls.append(('say', text))
         return [0.0], 24000
 
-    def synth_cut(self, word, speed):
-        self.calls.append(('cut', word))
+    def synth_cut(self, word, speed, keep=None):
+        self.calls.append(('cut', word) if keep is None else ('cut', word, keep))
         return [0.0], 24000
 
 
@@ -29,6 +29,20 @@ class EnginesTest(unittest.TestCase):
         render(e, {'engineText': '东西。', 'kind': 'word'}, 1.0)
         render(e, {'engineText': '一起', 'kind': 'word', 'method': 'cut'}, 1.0)
         self.assertEqual(e.calls, [('say', '东西。'), ('cut', '一起')])
+
+    def test_render_cuts_one_syllable_out_of_a_word(self):
+        # 爪 alone is zhǎo to every voice: it is cut out of 爪子, where the same voice says zhuǎ
+        e = Fake()
+        render(e, {'engineText': '爪子', 'kind': 'char', 'method': 'cut', 'syllables': [0, 1]}, 1.0)
+        self.assertEqual(e.calls, [('cut', '爪子', (0, 1))])
+
+    def test_cut_span_keeps_only_the_wanted_syllables(self):
+        # the word's syllables are the carrier's last n; a syllable followed by another ends where the next starts (no 40 ms tail)
+        bounds = [(0, 10), (10, 20), (20, 30), (30, 40)]  # 就 是 爪 子
+        self.assertEqual(cut_span(bounds, 2, None, 100, 5), (20, 45))
+        self.assertEqual(cut_span(bounds, 2, (0, 1), 100, 5), (20, 30))
+        self.assertEqual(cut_span(bounds, 2, (1, 2), 100, 5), (30, 45))
+        self.assertEqual(cut_span(bounds, 2, (1, 2), 42, 5), (30, 42))
 
     def test_render_cut_needs_an_engine_that_can(self):
         class SayOnly:

@@ -117,10 +117,10 @@ describe('a lone character no voice can be steered on is said as its first 组�
     speak('爪', { reading: 'zhuǎ' });
     expect(calls[0]!.steps).toEqual([{ id: 'z' }]);
   });
-  it('in a dictation cue each lone piece is the word, and prefetch fetches the word', () => {
+  it('in a dictation cue on the iPad voice each lone piece is the word too (parent 2026-10-15: bare 爪 is zhǎo, 爪子 zhuǎ), and prefetch fetches the word', () => {
     speak('爪，爪子的，爪', { reading: 'zhuǎ' });
     speak('了', { reading: 'le', queue: true });
-    expect(spoken).toEqual(['爪，爪子的，爪', '为了']); // a cue whose word already says it leaves the lone pieces bare (review 2026-10-15)
+    expect(spoken).toEqual(['爪子，爪子的，爪子', '为了']);
     setClipIndex({ v: 1, voice: 't', clips: { 爪子: 'z' } });
     prefetchWords([{ text: '爪', pinyin: 'zhuǎ' }]);
     expect(player.prefetch).toHaveBeenCalledWith(['z']);
@@ -136,3 +136,50 @@ describe('a lone character no voice can be steered on is said as its first 组�
   });
 });
 
+describe('a lone character cut out of its 组词 (爪 from 爪子): its clip plays, the same zhuǎ alone as together', () => {
+  const cut = { '爪|zhuǎ': 'c', 爪: 'c', '切|qiē': 'q', 切: 'q', 爪子的: 'zd', 爪子: 'z', 切菜: 'qc' };
+  it('an unsure character said alone plays its own clip, not its 组词', () => {
+    setClipIndex({ v: 1, voice: 't', clips: cut });
+    speak('切', { reading: 'qiē' });
+    expect(calls[0]!.steps).toEqual([{ id: 'q' }]);
+  });
+  it('with no reading given it is the card reading', () => {
+    setClipIndex({ v: 1, voice: 't', clips: cut });
+    speak('切');
+    expect(calls[0]!.steps).toEqual([{ id: 'q' }]);
+  });
+  it('the 写一写 cue plays the cut clip for its lone pieces', () => {
+    setClipIndex({ v: 1, voice: 't', clips: cut });
+    speak('爪，爪子的，爪', { reading: 'zhuǎ' });
+    expect(calls[0]!.steps).toEqual([{ id: 'c' }, { pause: 0.3 }, { id: 'zd' }, { pause: 0.3 }, { id: 'c' }]);
+    expect(spoken).toEqual([]);
+  });
+  it('a board whose answer is its 组词 plays the cut clip, never the answer', () => {
+    setClipIndex({ v: 1, voice: 't', clips: cut });
+    speak('爪', { reading: 'zhuǎ', avoid: ['爪子'] });
+    expect(calls[0]!.steps).toEqual([{ id: 'c' }]);
+  });
+  it('a bound character is still said as its pair, the word its card teaches (爪 → 爪子)', () => {
+    setClipIndex({ v: 1, voice: 't', clips: cut });
+    speak('爪', { reading: 'zhuǎ' });
+    expect(calls[0]!.steps).toEqual([{ id: 'z' }]);
+  });
+  it('a clip that fails: the iPad voice says the 组词, never the bare character', async () => {
+    setClipIndex({ v: 1, voice: 't', clips: cut });
+    speak('切', { reading: 'qiē' });
+    calls[0]!.resolve('failed');
+    await tick();
+    expect(spoken).toEqual(['切菜']);
+  });
+  it('another reading of it is not the cut clip', () => {
+    setClipIndex({ v: 1, voice: 't', clips: cut });
+    speak('切', { reading: 'qiè' });
+    expect(calls).toEqual([]);
+    expect(spoken).toEqual(['怯']); // its twin at that reading (spokenAs)
+  });
+  it('prefetch fetches the cut clip', () => {
+    setClipIndex({ v: 1, voice: 't', clips: cut });
+    prefetchWords([{ text: '切', pinyin: 'qiē' }]);
+    expect(player.prefetch).toHaveBeenCalledWith(['q']);
+  });
+});
