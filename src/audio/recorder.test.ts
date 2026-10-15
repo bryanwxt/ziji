@@ -198,3 +198,43 @@ describe('opening the microphone (mic fix 2026-10-14)', () => {
     expect(await startRecording(() => {}).catch((e: unknown) => e)).toMatchObject({ name: 'NotSupportedError', stage: 'MediaRecorder' });
   });
 });
+
+describe('the audio session while recording (parent 2026-10-15: InvalidStateError, the mic never asked)', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+  const recorderClass = class {
+    static isTypeSupported = () => true;
+    mimeType = 'audio/mp4'; state = 'recording';
+    ondataavailable: ((e: { data: Blob }) => void) | null = null;
+    onstop: (() => void) | null = null;
+    start() {}
+    stop() { this.state = 'inactive'; this.onstop?.(); }
+  };
+  it('asks for the mic in play-and-record, then hands the session back to playback', async () => {
+    const { audioContext, resetAudioContextForTests } = await import('./context');
+    resetAudioContextForTests();
+    const session = { type: 'auto' };
+    const seen: string[] = [];
+    vi.stubGlobal('AudioContext', class { state = 'running'; resume = vi.fn(async () => {}); });
+    vi.stubGlobal('navigator', { audioSession: session, mediaDevices: { getUserMedia: vi.fn(async () => { seen.push(session.type); return { getTracks: () => [{ stop() {} }] }; }) } });
+    vi.stubGlobal('MediaRecorder', recorderClass);
+    audioContext(); // Truffle has spoken: playback
+    expect(session.type).toBe('playback');
+    const rec = await startRecording(() => {});
+    expect(seen).toEqual(['play-and-record']);
+    await rec.stop();
+    expect(session.type).toBe('playback');
+    resetAudioContextForTests();
+  });
+  it('a refused or failed start hands the session back too', async () => {
+    const { audioContext, resetAudioContextForTests } = await import('./context');
+    resetAudioContextForTests();
+    const session = { type: 'auto' };
+    vi.stubGlobal('AudioContext', class { state = 'running'; resume = vi.fn(async () => {}); });
+    vi.stubGlobal('navigator', { audioSession: session, mediaDevices: { getUserMedia: vi.fn(async () => { throw Object.assign(new Error('x'), { name: 'InvalidStateError' }); }) } });
+    vi.stubGlobal('MediaRecorder', recorderClass);
+    audioContext();
+    await expect(startRecording(() => {})).rejects.toBeInstanceOf(MicStartError);
+    expect(session.type).toBe('playback');
+    resetAudioContextForTests();
+  });
+});
