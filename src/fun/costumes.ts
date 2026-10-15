@@ -36,6 +36,7 @@ const j = shelf('job', 'outfit');
 const c = shelf('chinese', 'outfit');
 const g = shelf('greek', 'outfit');
 const old = shelf('old', 'outfit');
+const an = shelf('animal', 'onesie');
 
 /** The 12 生肖, in zodiac order. */
 export const ONESIES: Costume[] = [
@@ -47,7 +48,12 @@ export const ONESIES: Costume[] = [
 ];
 
 /** The 18 new onesies, added with their art (Tasks 8–9). */
-export const ANIMALS: Costume[] = [];
+export const ANIMALS: Costume[] = [
+  // the river creatures (Task 8)
+  an('otter', '水獭', 'shuǐ tǎ', '#93643f'), an('panda', '熊猫', 'xióng māo', '#fbfaf6'), an('hornbill', '犀鸟', 'xī niǎo', '#3d3845'),
+  an('frog', '青蛙', 'qīng wā', '#7cc84a'), an('duck', '鸭子', 'yā zi', '#ffd84a'), an('dragonfly', '蜻蜓', 'qīng tíng', '#3fb6c8'),
+  an('koi', '锦鲤', 'jǐn lǐ', '#fffaf2'), an('crab', '螃蟹', 'páng xiè', '#d8382e'), an('parrot', '鹦鹉', 'yīng wǔ', '#2f8fd6'),
+];
 
 /** Jobs (spec §5.2). The rest are added with their full-body art (Task 10). */
 export const JOBS: Costume[] = [

@@ -77,3 +77,13 @@ describe('v3 costumes (rewards spec §5.1)', () => {
     }
   });
 });
+
+describe('the river onesies (rewards spec §5.2)', () => {
+  it('are drawn and on the 动物 shelf', () => {
+    for (const id of ['otter', 'panda', 'hornbill', 'frog', 'duck', 'dragonfly', 'koi', 'crab', 'parrot']) {
+      expect(V3[id], id).toBeTypeOf('function');
+      expect(costumeById(id), id).toMatchObject({ set: 'animal', kind: 'onesie' });
+      expect(V3[id]!().hidesEars, id).toBe(true);
+    }
+  });
+});
