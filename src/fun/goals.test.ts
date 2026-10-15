@@ -35,6 +35,10 @@ describe('almost there (rewards spec §4)', () => {
     const kid = { ...DEFAULT_KID, meter: { halves: 1, chestsToday: 1, day: '2026-10-15', owed: 0, lesson: 1 } };
     expect(almostThere(kid, know(''), facts({ counted: true }), NOW)).toEqual([{ kind: 'chest', zh: `宝箱里还有 ${CHEST_COSTUMES.length} 件新衣服`, icon: 'gift', effort: 1 }]);
   });
+  it("the chest on a new day: the boat sits where Home shows it, with the bank in it (fix round 1)", () => {
+    const kid = { ...DEFAULT_KID, meter: { halves: 0, chestsToday: 2, day: '2026-10-14', owed: 0, lesson: 1 }, bank: 1 };
+    expect(almostThere(kid, know(''), facts({ counted: true }), NOW)[0]).toMatchObject({ kind: 'chest', effort: 1 });
+  });
   it('a badge: the family nearest to complete', () => {
     expect(almostThere(allOwned, know('林森'), facts({ families: [wood] }), NOW)).toEqual([{ kind: 'badge', zh: '再认识 2 个『木』字，得到新徽章', icon: 'medal', effort: 2 }]);
     expect(almostThere(allOwned, know('林森树村'), facts({ families: [wood] }), NOW)).toEqual([]); // complete: the Celebration's 新徽章 phase shows it instead

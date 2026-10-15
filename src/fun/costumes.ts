@@ -1,6 +1,7 @@
 import { mulberry32, seedFromString } from '../lib/random';
 import type { KidState } from '../types';
 import { accessoryById } from './accessories';
+import { normalizeMeter } from './meter';
 import { ACCESSORIES, CHEST_BONUS_STARS } from './pet';
 
 import type { ZodiacId } from '../types';
@@ -117,7 +118,8 @@ type Prize = Exclude<ChestResult, { kind: 'stars' }>;
  * from what he doesn't own; everything owned gives 3 bonus stars. Opening takes one owed chest and marks the day.
  */
 export function openChest(kid: KidState, today: string): { kid: KidState; result: ChestResult } {
-  const opened = { lastChestDate: today, meter: { ...kid.meter, owed: Math.max(0, kid.meter.owed - 1) } };
+  const meter = normalizeMeter(kid.meter); // an old or hand-edited save: owed is always a safe count
+  const opened = { lastChestDate: today, meter: { ...meter, owed: Math.max(0, meter.owed - 1) } };
   const owned = (grp: PrizeGroup) =>
     grp === 'accessory' ? ACCESSORIES.filter((a) => kid.ownedAccessories.includes(a)).length : CHEST_COSTUMES.filter((x) => prizeGroup(x) === grp && kid.ownedCostumes.includes(x.id)).length;
   const left = (grp: PrizeGroup): Prize[] =>

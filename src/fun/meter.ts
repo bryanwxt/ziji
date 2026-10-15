@@ -37,17 +37,20 @@ export function lessonOf(rec: Pick<SessionRecord, 'free' | 'extra' | 'completedS
 export function fillMeter(kid: KidState, lesson: Lesson): { kid: KidState; fill: MeterFill } {
   const m = kid.meter;
   const sameDay = m.day === lesson.day;
-  if (m.lesson === lesson.key) {
+  // startedAt keys only increase: a lesson at or before the last one counted, or from an earlier day, was counted already (or
+  // never can be): a Celebration shown again (a reload, the path chest, the daily after an extra) counts nothing (review focus 1)
+  if ((m.lesson !== null && lesson.key <= m.lesson) || lesson.day < m.day) {
     return { kid, fill: { counted: false, from: m.halves, chests: 0, left: m.halves, capped: sameDay && m.chestsToday >= CHESTS_PER_DAY, banked: 0 } };
   }
   // a new day: its chests start again, and what was banked joins the meter (spec §3: the first lesson adds its 2 on top)
   let halves = sameDay ? m.halves : m.halves + (kid.bank ?? 0);
   let bank = sameDay ? kid.bank ?? 0 : 0;
   let chestsToday = sameDay ? m.chestsToday : 0;
-  // today's first chest was opened before the meter existed (lastChestDate: today's first-chest marker)
-  const openedBefore = !sameDay && lesson.kind === 'first' && kid.lastChestDate === lesson.day;
+  // today's first chest was opened before the meter existed (lastChestDate: today's first-chest marker), whichever lesson
+  // comes first on the meter's new day; the daily lesson itself then adds nothing (review focus 2)
+  const openedBefore = !sameDay && kid.lastChestDate === lesson.day;
   if (openedBefore) chestsToday = 1;
-  const add = openedBefore ? 0 : lesson.kind === 'first' ? FIRST_HALVES : EXTRA_HALVES;
+  const add = openedBefore && lesson.kind === 'first' ? 0 : lesson.kind === 'first' ? FIRST_HALVES : EXTRA_HALVES;
   const from = Math.min(halves, METER_FULL);
   let chests = 0;
   let banked = 0;
@@ -60,6 +63,12 @@ export function fillMeter(kid: KidState, lesson: Lesson): { kid: KidState; fill:
       halves -= METER_FULL;
       chests++;
       chestsToday++;
+    }
+    // capped with halves left over: they wait in the bank, so the boat shows the capped day and tomorrow carries one meter at most
+    if (chestsToday >= CHESTS_PER_DAY && halves > 0) {
+      banked = Math.min(BANK_MAX, bank + halves) - bank;
+      bank += banked;
+      halves = 0;
     }
   }
   const meter: Meter = { halves, chestsToday, day: lesson.day, owed: m.owed + chests, lesson: lesson.key };

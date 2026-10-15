@@ -70,6 +70,11 @@ describe('the chest (rewards spec §5.3)', () => {
     expect(openChest(kid, '2026-10-15').kid.meter.owed).toBe(0);
     expect(openChest({ ...DEFAULT_KID }, '2026-10-15').kid.meter.owed).toBe(0); // never below 0
   });
+  it('a kid with no meter or a damaged one (an old backup) still opens: owed stays a safe count (fix round 1)', () => {
+    expect(openChest({ ...DEFAULT_KID, meter: undefined as never }, '2026-10-15').kid.meter.owed).toBe(0);
+    expect(openChest({ ...DEFAULT_KID, meter: { owed: 'x' } as never }, '2026-10-15').kid.meter).toEqual({ ...EMPTY_METER, owed: 0 });
+    expect(openChest({ ...DEFAULT_KID, meter: { ...EMPTY_METER, owed: 9 } }, '2026-10-15').kid.meter.owed).toBe(3);
+  });
   it('the same day and the same owned things always give the same prize', () => {
     expect(openChest(DEFAULT_KID, '2026-10-05').result).toEqual(openChest(DEFAULT_KID, '2026-10-05').result);
   });

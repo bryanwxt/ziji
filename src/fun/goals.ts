@@ -5,7 +5,7 @@ import type { Knowledge } from '../stats/stats';
 import type { KidState } from '../types';
 import type { IconName } from '../ui/icons/icons';
 import { costumesLeft } from './costumes';
-import { CHESTS_PER_DAY, METER_FULL } from './meter';
+import { METER_FULL, meterShown } from './meter';
 import { POWERS, tierFor, type PowerId } from './powers';
 import type { StickerFamily } from './stickers';
 import { WORLDS } from './worlds';
@@ -54,8 +54,8 @@ export function almostThere(kid: KidState, know: Pick<Knowledge, 'knownChars'>, 
 
   const left = costumesLeft(kid);
   if (left > 0) {
-    const capped = kid.meter.day === today && kid.meter.chestsToday >= CHESTS_PER_DAY;
-    out.push({ kind: 'chest', zh: `宝箱里还有 ${left} 件新衣服`, icon: 'gift', effort: capped ? METER_FULL : METER_FULL - kid.meter.halves, moved: facts.counted });
+    const shown = meterShown(kid, today); // as Home's small boat shows it: a new day's meter has the bank in it
+    out.push({ kind: 'chest', zh: `宝箱里还有 ${left} 件新衣服`, icon: 'gift', effort: shown.capped ? METER_FULL : METER_FULL - shown.halves, moved: facts.counted });
   }
 
   const badge = facts.families

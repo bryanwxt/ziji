@@ -79,6 +79,60 @@ describe('the river meter (rewards spec §3)', () => {
   });
 });
 
+describe('the meter after review (fix round 1)', () => {
+  it('daily, then an extra, then the daily celebrated again: the daily counts once (review focus 1)', () => {
+    const a = run([first('2026-10-15', 1), extra('2026-10-15', 2)]);
+    const again = fillMeter(a.kid, first('2026-10-15', 1));
+    expect(again.kid).toBe(a.kid);
+    expect(again.fill).toMatchObject({ counted: false, chests: 0 });
+    expect(again.kid.meter).toMatchObject({ owed: 1, chestsToday: 1, halves: 1 });
+  });
+  it("an older day's record never resets the day or the bank", () => {
+    const kid = { ...DEFAULT_KID, meter: { halves: 0, chestsToday: 2, day: '2026-10-16', owed: 0, lesson: 5 }, bank: 1 };
+    const old = fillMeter(kid, first('2026-10-15', 99));
+    expect(old.kid).toBe(kid);
+    expect(old.fill).toMatchObject({ counted: false, chests: 0 });
+  });
+  it("lastChestDate today and only extra lessons (an install updated mid-day): two more chests never come, only one (review focus 2)", () => {
+    let k: KidState = { ...DEFAULT_KID, lastChestDate: '2026-10-15' };
+    let chests = 0;
+    for (let i = 1; i <= 4; i++) {
+      const r = fillMeter(k, extra('2026-10-15', i));
+      chests += r.fill.chests;
+      k = r.kid;
+    }
+    expect(chests).toBe(1);
+    expect(k.meter.chestsToday).toBe(2);
+    expect(k.bank).toBe(2);
+  });
+  it('at the cap, leftover halves go into the bank: never more than one meter carried into tomorrow', () => {
+    const damaged = { ...DEFAULT_KID, meter: { halves: 1, chestsToday: 2, day: '2026-10-15', owed: 0, lesson: 3 }, bank: 2 };
+    const a = run([first('2026-10-16', 4)], damaged); // 1 + 2 + 2 = 5 halves: 2 chests, 1 left over
+    expect(a.fill).toMatchObject({ chests: 2, left: 0, capped: true, banked: 1 });
+    expect(a.kid.meter.halves).toBe(0);
+    expect(a.kid.bank).toBe(1);
+    expect(meterShown(a.kid, '2026-10-16')).toEqual({ halves: 0, capped: true });
+  });
+  it('any run of lessons: halves + bank stay within one meter, and no day gives more than 2 chests', () => {
+    let seed = 7;
+    const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+    for (let trial = 0; trial < 200; trial++) {
+      let k: KidState = { ...DEFAULT_KID, lastChestDate: rand() < 0.3 ? '2026-10-01' : null };
+      let d = 1;
+      const perDay = new Map<string, number>();
+      for (let key = 1; key <= 12; key++) {
+        if (rand() < 0.3) d++;
+        const dayKey = `2026-10-${String(d).padStart(2, '0')}`;
+        const r = fillMeter(k, { kind: rand() < 0.4 ? 'first' : 'extra', day: dayKey, key });
+        k = r.kid;
+        perDay.set(dayKey, (perDay.get(dayKey) ?? 0) + r.fill.chests);
+        expect(k.meter.halves + (k.bank ?? 0)).toBeLessThanOrEqual(2);
+        expect(perDay.get(dayKey)!).toBeLessThanOrEqual(2);
+      }
+    }
+  });
+});
+
 describe('meter data from older or damaged saves (review focus 4)', () => {
   it('starts empty; anything out of range or of the wrong type falls back', () => {
     expect(normalizeMeter(undefined)).toEqual(EMPTY_METER);
