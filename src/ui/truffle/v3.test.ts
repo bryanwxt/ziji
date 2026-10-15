@@ -130,3 +130,15 @@ describe('the jobs, full-body (rewards spec §5.2)', () => {
     expect(V3.wizard!().body).not.toContain('M100 262 L76 214');
   });
 });
+
+describe('the Chinese myths, redrawn (rewards spec §5.2)', () => {
+  it('all seven are drawn; the fortune cat and the lion dance are hoods', () => {
+    for (const id of ['wukong', 'nezha', 'change', 'houyi', 'caishen', 'luckycat', 'liondance']) expect(V3[id], id).toBeTypeOf('function');
+    expect(costumeById('luckycat')?.kind).toBe('onesie');
+    expect(costumeById('liondance')?.kind).toBe('onesie');
+  });
+  it('every chest costume but the kept zodiac is v3', async () => {
+    const { CHEST_COSTUMES } = await import('../../fun/costumes');
+    for (const c of CHEST_COSTUMES) if (c.set !== 'zodiac') expect(V3[c.id], c.id).toBeTypeOf('function');
+  });
+});

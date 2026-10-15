@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { addDays, localDateKey } from '../lib/date';
 import { DEFAULT_KID, type KidState } from '../types';
 import { costumeLayer } from '../ui/truffle/costumes';
-import { CHEST_COSTUMES, CHINESE, costumeById, COSTUMES, costumesLeft, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, openChest, prizeGroup, visibleAccessory, type ChestResult } from './costumes';
-import { EMPTY_METER } from './meter';
+import { ANIMALS, CHEST_COSTUMES, CHINESE, costumeById, COSTUMES, costumesLeft, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, openChest, prizeGroup, visibleAccessory, type ChestResult } from './costumes';
+import { EMPTY_METER, fillMeter } from './meter';
 import { ACCESSORIES } from './pet';
 
 const day = (d: number) => localDateKey(addDays(new Date(2026, 10, 1), d));
@@ -117,6 +117,7 @@ describe('telling the onesies apart (parent, 2026-10-06; rewards spec §5.1: one
   const PAIRS: [string, string][] = [['ox', 'horse'], ['ox', 'monkey'], ['ox', 'dog'], ['horse', 'monkey'], ['horse', 'dog'], ['monkey', 'dog'], ['dragon', 'snake'], ['rabbit', 'goat'], ['koi', 'crab'],
     ['tigercub', 'tiger'], ['babydino', 'dragon'], ['pterosaur', 'dragon'], ['pterosaur', 'babydino'], ['magpie', 'hornbill'], ['penguin', 'hornbill'], ['parrot', 'magpie'], ['shark', 'rat'], ['owl', 'otter'], ['unicorn', 'rabbit'],
     ['football', 'firefighter'], ['police', 'pirate'], ['police', 'hawker'],
+    ['caishen', 'liondance'], ['nezha', 'liondance'],
   ];
   it('the lookalikes never share a colour', () => {
     for (const [a, b] of PAIRS) {
@@ -124,5 +125,31 @@ describe('telling the onesies apart (parent, 2026-10-06; rewards spec §5.1: one
       const cb = costumeById(b);
       if (ca && cb) expect(far(ca.color, cb.color), `${a} vs ${b}`).toBe(true);
     }
+  });
+});
+
+describe('the chest holds 63 prizes, and they last (rewards spec §5.2–5.3)', () => {
+  it('47 costumes and 16 accessories', () => {
+    expect(CHEST_COSTUMES).toHaveLength(47);
+    expect(ONESIES.length + ANIMALS.length).toBe(30);
+    expect(JOBS).toHaveLength(10);
+    expect(CHINESE).toHaveLength(7);
+    expect(CHEST_COSTUMES.length + ACCESSORIES.length).toBe(63);
+  });
+  it('at ≤2 chests a day, however many lessons, they last at least 32 days', () => {
+    let kid: KidState = { ...DEFAULT_KID };
+    let prizes = 0;
+    let days = 0;
+    while (prizes < 63) {
+      const d = day(days);
+      for (const [i, kind] of (['first', 'extra', 'extra', 'extra', 'extra'] as const).entries()) kid = fillMeter(kid, { kind, day: d, key: days * 10 + i }).kid;
+      while (kid.meter.owed > 0) {
+        const o = openChest(kid, d);
+        kid = o.kid;
+        if (o.result.kind !== 'stars') prizes++;
+      }
+      days++;
+    }
+    expect(days).toBeGreaterThanOrEqual(32);
   });
 });

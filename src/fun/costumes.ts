@@ -67,10 +67,10 @@ export const JOBS: Costume[] = [
   j('hawker', '小贩', 'xiǎo fàn', '#2f74c9'),
 ];
 
-/** Chinese myths, and the fortune cat and the lion dance. */
+/** Chinese myths, and the fortune cat and the lion dance (redrawn to v3, spec §5.2). */
 export const CHINESE: Costume[] = [
-  c('wukong', '孙悟空', 'sūn wù kōng', '#f2a03d'), c('nezha', '哪吒', 'né zhā', '#e0533c'), c('change', '嫦娥', 'cháng é', '#f6e7f0'),
-  c('houyi', '后羿', 'hòu yì', '#8a5a3c'), c('caishen', '财神', 'cái shén', '#c8102e'), c('luckycat', '招财猫', 'zhāo cái māo', '#c8102e'),
+  c('wukong', '孙悟空', 'sūn wù kōng', '#f5b82e'), c('nezha', '哪吒', 'né zhā', '#ef6f8a'), c('change', '嫦娥', 'cháng é', '#f8cfe0'),
+  c('houyi', '后羿', 'hòu yì', '#3d7a5a'), c('caishen', '财神', 'cái shén', '#9e1b32'), c('luckycat', '招财猫', 'zhāo cái māo', '#fff7ec', 'onesie'),
   c('liondance', '舞狮', 'wǔ shī', '#e0362c', 'onesie'),
 ];
 
