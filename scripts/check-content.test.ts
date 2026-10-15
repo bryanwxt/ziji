@@ -20,7 +20,7 @@ describe('built-in content', () => {
     expect(checkContent(BUILTIN.filter((c) => c.char !== '蚂'), [], hasStrokeFile, LISTED)).toContain('蚂: on his school list but not built in');
   });
   it('flags a passage that uses a character outside levels 1–2', () => {
-    const problems = checkContent(BUILTIN, [{ id: 'x', title: 't', text: '我'.repeat(29) + '惜' }], hasStrokeFile);
+    const problems = checkContent(BUILTIN, [{ id: 'x', title: 't', text: '我'.repeat(29) + '惜', term: '一上', source: 'ziji' }], hasStrokeFile);
     expect(problems).toContain('x: uses 惜 outside levels 1–2'); // 惜 is HSK 5
   });
 });

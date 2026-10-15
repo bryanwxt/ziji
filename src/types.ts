@@ -238,10 +238,32 @@ export interface PicturePrompt {
   mime: string;
 }
 
+/** Where a Global Storybooks passage comes from (spec 2026-10-15 §2.1): the story's credits, its licence, whether we changed it. */
+export interface PassageCredit {
+  title: string; // the story's title
+  text: string; // its author(s)
+  illustration: string;
+  translation: string;
+  licence: 'CC BY 3.0' | 'CC BY 4.0' | 'CC BY-NC 3.0'; // the version from Global ASP's master index (the Markdown has none)
+  adapted: boolean; // the manifest edited it (「有改动」)
+  source: string; // the story's Markdown at the pinned commit
+}
+
+/** A 生词 shown under the title on Listen (spec 2026-10-15 §2.2): the word and its kid gloss. */
+export interface PassageWord { text: string; gloss: string }
+
+/** A built-in 朗读 passage: ours (`p01`…) or a Global Storybooks chunk (`gsb:<story>-<chunk>`). */
 export interface Passage {
   id: string;
   title: string;
   text: string;
+  term: string; // the MOE term it levels at (passageTerm)
+  source: 'ziji' | 'gsb';
+  names?: string[]; // transliterated names: left out of levelling, always shown with pinyin
+  words?: PassageWord[];
+  image?: string; // under public/, e.g. 'passages/gsb-0001-1.webp'
+  story?: { id: string; part: number; parts: number };
+  credit?: PassageCredit;
 }
 
 /** A 朗读 meaning question (spec 2026-10-12 §3): 谁 / 哪里 / 什么 / 为什么, three choices, the right one marked. `sentence`: the
