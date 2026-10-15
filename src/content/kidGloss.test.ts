@@ -94,7 +94,13 @@ describe('grammar words leave English questions (parent 2026-10-15)', () => {
   const grammar = [...NO_ENGLISH].map((t) => byText.get(t)).filter((w): w is Word => !!w);
 
   it("the parent's list is on it, and its school words are in his content", () => {
-    for (const t of '了吗呢吧的地得着过啊呀个们把被所而之') expect(noEnglishQuestion(t), t).toBe(true);
+    for (const t of '了吗呢吧的得着啊呀个们把被所而之') expect(noEnglishQuestion(t), t).toBe(true);
+    // 地 "ground" and 过 "go past" take English questions: a meaning he can picture (parent 2026-10-15)
+    for (const [t, en] of [['地', 'ground, land'], ['过', 'go past']]) {
+      expect(noEnglishQuestion(t), t).toBe(false);
+      expect(questionMeaning(byText.get(t)!), t).toBe(en);
+      expect(canAskRung(byText.get(t)!, 'hear'), t).toBe(true);
+    }
     expect(grammar.length).toBeGreaterThan(30);
   });
 

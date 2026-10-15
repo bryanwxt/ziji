@@ -7,8 +7,9 @@
 const GROUPS: Record<string, string> = {
   /** End-of-sentence sounds and interjections: a feeling, not a meaning. */
   particles: '了吗呢吧啊呀哈哎',
+  // 地 dì "ground" and 过 guò "go past" have a meaning he can picture: they take English questions (parent 2026-10-15)
   /** Aspect markers and structural words: grammar a child uses before he can name it. */
-  structural: '的地得着过们么把被所而之以于及其并然者第才将当就',
+  structural: '的得着们么把被所而之以于及其并然者第才将当就',
   /** Measure words with nothing concrete to picture (只 "one (for animals)" is fine; 个 is for anything). */
   measure: '个',
   /** Only a name or a prefix in his lessons (陈 / 吴 / 李 are family names in 三上's names lesson; 阿 is 阿姨's). */
