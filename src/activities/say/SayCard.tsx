@@ -7,6 +7,8 @@ import { Stage } from '../../ui/stage/Stage';
 import { Label } from '../../ui/Label';
 import { Pet } from '../../ui/Pet';
 import { SpeakButton } from '../../ui/SpeakButton';
+import { BoundWord } from '../../ui/BoundWord';
+import { boundPair } from '../../content/kidGloss';
 import { MicButton, useRecorder } from '../shared/recording';
 
 export interface SayResult { take: FinishedRecording; elapsedMs: number }
@@ -20,6 +22,7 @@ export type SaySkip = null | 'skip';
  */
 export function SayCard({ word, kid, onDone }: { word: Word; kid: KidState; onDone: (r: SayResult | SaySkip) => void }) {
   const rec = useRecorder();
+  const pair = boundPair(word.text); // a bound character is read in its pair (番茄), as the model says it (parent 2026-10-15)
   const [again, setAgain] = useState(false); // his one re-record is used
   const shownAt = useRef(performance.now());
   const finished = useRef(false);
@@ -55,7 +58,7 @@ export function SayCard({ word, kid, onDone }: { word: Word; kid: KidState; onDo
       sheet={<FeedbackSheet actionLabel="继续" disabled={!said && !blocked && !stuck} onAction={next} />}
     >
       <div class="say">
-        <div class="hanzi hanzi--q" data-q lang="zh">{word.text}</div>
+        <div class="hanzi hanzi--q" data-q lang="zh">{pair ? <BoundWord pair={pair} ch={word.text} /> : word.text}</div>
         <MicButton rec={rec} withLevel={false} />{/* blocked: the note, and 继续 goes on (mic fix 2026-10-14) */}
         {said && (
           <div class="say__after">

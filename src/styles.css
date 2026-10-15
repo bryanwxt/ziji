@@ -1628,3 +1628,15 @@ button.langdu__sentence { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .home .world-anim { animation: none; } }
 /* among English meanings, 都不对 takes the English options' size so it doesn't shout over them */
 .stage .choices--english .choice.choice--none { font-size: clamp(20px, 2.8vh, 26px); }
+
+/* A bound character (parent 2026-10-15): its 认新字 card and English questions lead with its pair (番茄), the character he
+   learns picked out in it; the character alone sits small beside the speak button, so he knows it by itself too. */
+.bound__ch { color: var(--orange-ink); text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 0.06em; text-underline-offset: 0.12em; }
+.intro__bound { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 2px; }
+.intro__alone { display: inline-flex; align-items: baseline; gap: 6px; padding: 0 12px; border-radius: 12px; border: 2px solid var(--gold-edge); background: var(--gold-soft); color: var(--ink); }
+.intro__alone .hanzi { font-family: var(--hanzi); font-size: 40px; line-height: 1.25; }
+.intro__alone .pinyin { font-size: 16px; font-weight: 700; color: var(--ink-soft); }
+@media (max-width: 599px) { .intro__alone .hanzi { font-size: 32px; } .intro__bound { gap: 10px; } }
+/* the 成语 card's character shrinks on a short screen (above); its pair does too, the pair's own sizing being more specific */
+@media (max-height: 820px) { .intro .intro__card--idiom .hanzi--xl.hanzi--pair { font-size: min(var(--hanzi-xl), 96px, calc(68vw / var(--len)), calc(420px / var(--len))); } }
+@media (max-height: 700px) { .intro .intro__card--idiom .hanzi--xl.hanzi--pair { font-size: min(var(--hanzi-xl), 56px, calc(68vw / var(--len))); } }

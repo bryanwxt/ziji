@@ -26,7 +26,7 @@ describe('a lesson on the ladder (spec 2026-10-06 §3.2)', () => {
     const app = await setup(true);
     renderWithApp(<SessionScreen free={false} />, app);
     await screen.findByText('我记住了！');
-    const shown = words.find((w) => w.text === document.querySelector('.intro .hanzi--xl')?.textContent)!;
+    const shown = words.find((w) => w.text === document.querySelector('.intro__card')?.getAttribute('data-word'))!;
     fireEvent.click(screen.getByText('我记住了！'));
     expect(await screen.findByText('听一听，是什么意思？')).toBeTruthy();
     fireEvent.click(screen.getByText(firstSense(cardMeaning(shown)!))); // right: a miss shows the card again first
