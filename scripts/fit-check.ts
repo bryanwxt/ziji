@@ -543,6 +543,8 @@ async function sweep(browser: Browser, size: Size) {
   await run('extra-half', AFTERNOON, extra(0, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-half'); }); // 再学一课就能开宝箱！
   await run('extra-chest', AFTERNOON, extra(1, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-chest'); }); // the second chest, then 明天再开宝箱！
   await run('extra-capped', AFTERNOON, extra(0, 2), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-capped'); }); // 明天再开宝箱！
+  // yesterday's bank (a full meter) and today's first lesson: two chest phases in one Celebration (rewards ruling 2)
+  await run('chest-two', AFTERNOON, { activities: only('newwords'), bank: 2 }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-two'); });
   await run('langdu-extra', AFTERNOON, { doneToday: true, langdu: true }, async (p) => { await p.click('.langdu-btn'); await walkLesson(p, size, 'langdu-extra'); });
 }
 
