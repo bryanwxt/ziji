@@ -10,16 +10,18 @@ export type { ZodiacId };
 /** The new onesies (rewards spec 2026-10-15 §5.2): river creatures and his favourites. */
 export type AnimalId = 'otter' | 'hornbill' | 'panda' | 'frog' | 'duck' | 'dragonfly' | 'babydino' | 'pterosaur' | 'koi' | 'crab' | 'parrot' | 'magpie' | 'penguin' | 'shark' | 'unicorn' | 'owl' | 'tigercub';
 /** Jobs, drawn full-body. `football` keeps its id (owned ones stay owned) and is now 足球员. */
-export type JobId = 'astronaut' | 'chef' | 'firefighter' | 'doctor' | 'pilot' | 'police' | 'football' | 'wizard' | 'pirate' | 'hawker';
+export type JobId = 'astronaut' | 'chef' | 'firefighter' | 'doctor' | 'pilot' | 'police' | 'football' | 'wizard' | 'pirate' | 'hawker' | 'soldier';
+/** His robots (his ask, 2026-10-15): Truffle's own mecha and car-robot, not any show's. */
+export type RobotId = 'mecha' | 'carbot';
 export type ChineseId = 'wukong' | 'nezha' | 'change' | 'houyi' | 'caishen' | 'luckycat' | 'liondance';
 /** Out of the chest (spec §5.2): kept, in their old art, for whoever owns them. */
 export type GreekId =
   | 'zeus' | 'hera' | 'poseidon' | 'demeter' | 'athena' | 'apollo' | 'artemis' | 'ares' | 'aphrodite' | 'hephaestus' | 'hermes' | 'dionysus' | 'hades' | 'hestia'
   | 'heracles' | 'odysseus' | 'perseus' | 'achilles' | 'theseus' | 'jason' | 'medusa' | 'minotaur' | 'cerberus';
 export type OldOutfitId = 'explorer' | 'hero' | 'pixel' | 'raincoat' | 'robot' | 'rook' | 'basketball' | 'gi';
-export type CostumeId = ZodiacId | AnimalId | JobId | ChineseId | GreekId | OldOutfitId;
-/** His wardrobe's shelves: 生肖, 动物 (the new onesies), 职业, 中国, and the two out of the chest, 希腊 and 以前的衣服. */
-export type CostumeSet = 'zodiac' | 'animal' | 'job' | 'chinese' | 'greek' | 'old';
+export type CostumeId = ZodiacId | AnimalId | JobId | RobotId | ChineseId | GreekId | OldOutfitId;
+/** His wardrobe's shelves: 生肖, 动物 (the new onesies), 职业, 机器人, 中国, and the two out of the chest, 希腊 and 以前的衣服. */
+export type CostumeSet = 'zodiac' | 'animal' | 'job' | 'robot' | 'chinese' | 'greek' | 'old';
 
 export interface Costume {
   id: CostumeId;
@@ -33,6 +35,7 @@ export interface Costume {
 const shelf = (set: CostumeSet, kind: Costume['kind']) => (id: CostumeId, zh: string, py: string, color: string, k: Costume['kind'] = kind): Costume => ({ id, kind: k, set, zh, py, color });
 const o = shelf('zodiac', 'onesie');
 const j = shelf('job', 'outfit');
+const rb = shelf('robot', 'outfit');
 const c = shelf('chinese', 'outfit');
 const g = shelf('greek', 'outfit');
 const old = shelf('old', 'outfit');
@@ -65,6 +68,13 @@ export const JOBS: Costume[] = [
   j('doctor', '医生', 'yī shēng', '#49b8a8'), j('pilot', '飞行员', 'fēi xíng yuán', '#9a6338'), j('police', '警察', 'jǐng chá', '#2a3f7a'),
   j('football', '足球员', 'zú qiú yuán', '#ffcc2e'), j('wizard', '魔法师', 'mó fǎ shī', '#7b5cd6'), j('pirate', '海盗', 'hǎi dào', '#2d2a33'),
   j('hawker', '小贩', 'xiǎo fàn', '#2f74c9'),
+  // his ask (2026-10-15): a Singapore-army soldier in pixel camo, a flag in his paw (no weapons)
+  j('soldier', '军人', 'jūn rén', '#82803a'),
+];
+
+/** His robots (his ask, 2026-10-15): an orange armoured mecha and a red car-robot, Truffle's own designs. */
+export const ROBOTS: Costume[] = [
+  rb('mecha', '机甲', 'jī jiǎ', '#ee6a12'), rb('carbot', '变形机器人', 'biàn xíng jī qì rén', '#e0283a'),
 ];
 
 /** Chinese myths, and the fortune cat and the lion dance (redrawn to v3, spec §5.2). */
@@ -94,12 +104,12 @@ export const OLD_OUTFITS: Costume[] = [
   old('basketball', '篮球服', 'lán qiú fú', '#2f6fd6'), old('gi', '柔术服', 'róu shù fú', '#fbfaf6'),
 ];
 
-export const COSTUMES: Costume[] = [...ONESIES, ...ANIMALS, ...JOBS, ...CHINESE, ...GREEK, ...OLD_OUTFITS];
+export const COSTUMES: Costume[] = [...ONESIES, ...ANIMALS, ...JOBS, ...ROBOTS, ...CHINESE, ...GREEK, ...OLD_OUTFITS];
 
 export const costumeById = (id: string | null | undefined): Costume | undefined => COSTUMES.find((x) => x.id === id);
 
-const CHEST_SETS: ReadonlySet<CostumeSet> = new Set(['zodiac', 'animal', 'job', 'chinese']);
-/** In the chest (spec §5.2): the zodiac and new onesies, the jobs, the Chinese myths. */
+const CHEST_SETS: ReadonlySet<CostumeSet> = new Set(['zodiac', 'animal', 'job', 'robot', 'chinese']);
+/** In the chest (spec §5.2): the zodiac and new onesies, the jobs, the robots, the Chinese myths. */
 export const inChest = (x: Costume): boolean => CHEST_SETS.has(x.set);
 export const CHEST_COSTUMES: Costume[] = COSTUMES.filter(inChest);
 
@@ -110,7 +120,7 @@ export function visibleAccessory(kid: KidState): string | null {
 
 export type ChestResult = { kind: 'costume'; id: CostumeId } | { kind: 'accessory'; item: string } | { kind: 'stars'; amount: number };
 
-/** The chest's groups, in the order a round gives them (spec §5.3): a onesie, then a job or myth ("story"), then an accessory. */
+/** The chest's groups, in the order a round gives them (spec §5.3): a onesie, then a job, robot or myth ("story"), then an accessory. */
 export type PrizeGroup = 'onesie' | 'story' | 'accessory';
 const ROUND: PrizeGroup[] = ['onesie', 'story', 'accessory'];
 export const prizeGroup = (x: Costume): Exclude<PrizeGroup, 'accessory'> => (x.set === 'zodiac' || x.set === 'animal' ? 'onesie' : 'story');

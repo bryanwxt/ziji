@@ -219,3 +219,51 @@ export const heldPole = (cx: number, cy: number, deg: number, back: number, ahea
   `<path d="M${-back} 0 L${ahead} 0" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>` +
   (cap ? `<path d="M${-back} 0 L${-back + 20} 0 M${ahead - 20} 0 L${ahead} 0" stroke="${cap}" stroke-width="${w}" stroke-linecap="round"/>` : '') +
   `<path d="M${-back + 6} ${-w * 0.3} L${ahead - 6} ${-w * 0.3}" stroke="#fff" stroke-opacity=".35" stroke-width="${Math.max(1.5, w * 0.2)}" stroke-linecap="round"/></g>`;
+
+const r1 = (n: number) => Math.round(n * 10) / 10;
+/** An ellipse as an explicit cubic path (so it can be a `cel` piece, or a hole cut the other way round). */
+export const oval = (cx: number, cy: number, rx: number, ry: number, ccw = false) => {
+  const [kx, ky] = [rx * 0.5523, ry * 0.5523];
+  const p = (x: number, y: number) => `${r1(x)} ${r1(y)}`;
+  return ccw
+    ? `M${p(cx - rx, cy)} C${p(cx - rx, cy + ky)} ${p(cx - kx, cy + ry)} ${p(cx, cy + ry)} C${p(cx + kx, cy + ry)} ${p(cx + rx, cy + ky)} ${p(cx + rx, cy)} ` +
+      `C${p(cx + rx, cy - ky)} ${p(cx + kx, cy - ry)} ${p(cx, cy - ry)} C${p(cx - kx, cy - ry)} ${p(cx - rx, cy - ky)} ${p(cx - rx, cy)} Z`
+    : `M${p(cx - rx, cy)} C${p(cx - rx, cy - ky)} ${p(cx - kx, cy - ry)} ${p(cx, cy - ry)} C${p(cx + kx, cy - ry)} ${p(cx + rx, cy - ky)} ${p(cx + rx, cy)} ` +
+      `C${p(cx + rx, cy + ky)} ${p(cx + kx, cy + ry)} ${p(cx, cy + ry)} C${p(cx - kx, cy + ry)} ${p(cx - rx, cy + ky)} ${p(cx - rx, cy)} Z`;
+};
+/** A five-pointed star as an explicit path. */
+export const star = (cx: number, cy: number, r: number, inner = 0.45) =>
+  'M' + [...Array(10)].map((_, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 ? r * inner : r;
+    return `${r1(cx + rr * Math.cos(a))} ${r1(cy + rr * Math.sin(a))}`;
+  }).join(' L') + ' Z';
+
+/** An absolute M/L/C/Z path's points shrunk toward (ax, ay) by k, as numbers (one subpath of a ring can then be lit alone). */
+export const shrinkD = (d: string, ax: number, ay: number, k: number) => {
+  let i = 0;
+  return d.replace(/-?\d*\.?\d+/g, (n) => {
+    const a = i++ % 2 ? ay : ax;
+    return String(r1(a + k * (Number(n) - a)));
+  });
+};
+/**
+ * A cel ring (a helmet round his face): the piece with a hole, its shadow, the outer edge lit toward (ax, ay) with the hole kept
+ * where it is (so no shadow rim falls inside the hole), then the line. Even-odd, explicit paths, no clip-path.
+ */
+export const celRing = (outer: string, hole: string, fill: string, ax: number, ay: number, k = 0.94, sh = celShade(fill)) =>
+  `<path d="${outer} ${hole}" fill="${sh}" fill-rule="evenodd"/><path d="${shrinkD(outer, ax, ay, k)} ${hole}" fill="${fill}" fill-rule="evenodd"/>` +
+  `<path d="${outer} ${hole}" fill="none" ${S}/>`;
+/**
+ * A flag on a short pole held in his paw at (cx, cy), the pole turned `deg` and `len` long. In the group's frame the hoist runs
+ * along the pole's top `hoist` units and the flag flies `fly` units to the +y side (to his right when the pole leans right).
+ * `cloth` draws the flag's face in that frame, given its box (x0 at the hoist's foot, x1 at the pole's tip, y 0…fly).
+ */
+export const poleFlag = (cx: number, cy: number, deg: number, len: number, hoist: number, fly: number, pole: string, cloth: (x0: number, x1: number) => string) => {
+  const [x0, x1] = [len - hoist, len - 2];
+  const edge = `M${x1} 0 L${x1} ${fly} L${x0} ${fly} L${x0} 0 Z`;
+  return heldPole(cx, cy, deg, 8, len, pole, 6) +
+    `<g transform="translate(${cx} ${cy}) rotate(${deg})">` +
+    `<path d="${edge}" fill="${celShade('#fffdf7')}"/>` + cloth(x0, x1) + `<path d="${edge}" fill="none" ${s2}/>` +
+    `<circle cx="${len + 2}" cy="0" r="4.4" fill="#f2c230" ${s2}/></g>`;
+};

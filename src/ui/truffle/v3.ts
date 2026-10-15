@@ -4,6 +4,7 @@ import { JOB_COSTUMES } from './jobs';
 import { MYTH_COSTUMES } from './myths';
 import { FAVOURITE_ONESIES } from './onesiesFavourite';
 import { RIVER_ONESIES } from './onesiesRiver';
+import { ROBOT_COSTUMES } from './robots';
 import type { CostumeLayer } from './costumes';
 
-export const V3: Record<string, () => CostumeLayer> = { ...RIVER_ONESIES, ...FAVOURITE_ONESIES, ...JOB_COSTUMES, ...MYTH_COSTUMES };
+export const V3: Record<string, () => CostumeLayer> = { ...RIVER_ONESIES, ...FAVOURITE_ONESIES, ...JOB_COSTUMES, ...ROBOT_COSTUMES, ...MYTH_COSTUMES };

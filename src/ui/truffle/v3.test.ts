@@ -136,6 +136,20 @@ describe('the jobs, full-body (rewards spec §5.2)', () => {
   });
 });
 
+describe('his asks: the robots and the soldier (2026-10-15)', () => {
+  it('机甲 and 变形机器人 are drawn and on the 机器人 shelf; 军人 is drawn and on the 职业 shelf', () => {
+    for (const id of ['mecha', 'carbot']) {
+      expect(V3[id], id).toBeTypeOf('function');
+      expect(costumeById(id), id).toMatchObject({ set: 'robot', kind: 'outfit' });
+    }
+    expect(V3.soldier, 'soldier').toBeTypeOf('function');
+    expect(costumeById('soldier')).toMatchObject({ set: 'job', kind: 'outfit' });
+  });
+  it('each holds its signature thing in a paw slot (it rides his paw)', () => {
+    for (const id of ['mecha', 'carbot', 'soldier']) expect(V3[id]!().pawR, id).toBeTruthy();
+  });
+});
+
 describe('the Chinese myths, redrawn (rewards spec §5.2)', () => {
   it('all seven are drawn; the fortune cat and the lion dance are hoods', () => {
     for (const id of ['wukong', 'nezha', 'change', 'houyi', 'caishen', 'luckycat', 'liondance']) expect(V3[id], id).toBeTypeOf('function');
