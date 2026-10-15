@@ -145,3 +145,41 @@ describe('meter data from older or damaged saves (review focus 4)', () => {
     expect(normalizeBank(undefined)).toBe(0);
   });
 });
+
+describe('the meter after re-review (fix round 2)', () => {
+  it("an extra lesson's chest opened the next morning never eats that day's first chest (the marker is for migration only)", () => {
+    // D: daily, then two extras (second chest owed). D+1: that owed chest is opened first, which marks lastChestDate D+1
+    const d = run([first('2026-10-15', 1), extra('2026-10-15', 2), extra('2026-10-15', 3)]);
+    const opened: KidState = { ...d.kid, lastChestDate: '2026-10-16', meter: { ...d.kid.meter, owed: 0 } };
+    const next = fillMeter(opened, first('2026-10-16', 4));
+    expect(next.fill).toMatchObject({ counted: true, chests: 1 });
+    expect(next.kid.meter.chestsToday).toBe(1);
+  });
+  it('the marker still holds for a meter that has never run (an install updated mid-day)', () => {
+    const a = fillMeter({ ...DEFAULT_KID, lastChestDate: '2026-10-15' }, first('2026-10-15', 1));
+    expect(a.fill).toMatchObject({ counted: true, chests: 0 });
+    expect(a.kid.meter.chestsToday).toBe(1);
+  });
+  it('a bad or future day, or a bad lesson key, never locks the meter', () => {
+    expect(normalizeMeter({ day: 'zzz' }).day).toBe('');
+    expect(normalizeMeter({ day: '2026-10-15T00' }).day).toBe('');
+    expect(normalizeMeter({ lesson: -5 }).lesson).toBeNull();
+    expect(normalizeMeter({ lesson: 1.5 }).lesson).toBeNull();
+    expect(normalizeMeter({ lesson: 0 }).lesson).toBeNull();
+    const zzz = { ...DEFAULT_KID, meter: normalizeMeter({ day: 'zzz', lesson: 5 }) };
+    expect(fillMeter(zzz, first('2026-10-15', 6)).fill.counted).toBe(true);
+    // a key from the future (a clock that ran ahead) never stops a later day's lesson
+    const ahead = { ...DEFAULT_KID, meter: { ...EMPTY_METER, day: '2026-10-15', chestsToday: 1, lesson: 9_999_999_999_999 } };
+    expect(fillMeter(ahead, first('2026-10-16', 10)).fill).toMatchObject({ counted: true, chests: 1 });
+    // on the same day the key still decides: a lesson shown again counts once
+    expect(fillMeter(ahead, extra('2026-10-15', 10)).fill.counted).toBe(false);
+  });
+  it('a loaded meter at the cap with a half in it: the half and the new one go to the bank, never more than one meter', () => {
+    const kid = { ...DEFAULT_KID, meter: { ...EMPTY_METER, halves: 1, chestsToday: 2, day: '2026-10-15', lesson: 3 }, bank: 1 };
+    const r = fillMeter(kid, extra('2026-10-15', 4));
+    expect(r.fill).toMatchObject({ counted: true, chests: 0, left: 0, capped: true });
+    expect(r.kid.meter.halves).toBe(0);
+    expect(r.kid.bank).toBe(2);
+    expect(r.kid.meter.halves + (r.kid.bank ?? 0)).toBeLessThanOrEqual(2);
+  });
+});
