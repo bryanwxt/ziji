@@ -23,7 +23,7 @@ export function Credits() {
           <ul class="credits__stories">
             {STORIES.map((c) => (
               <li key={c.source}>
-                {c.title} — text {c.text}, illustration {c.illustration}, translation {c.translation} — <a href={LICENCE_URL[c.licence]} target="_blank" rel="noopener noreferrer">{c.licence}</a>
+                <a href={c.source} target="_blank" rel="noopener noreferrer">{c.title}</a> — text {c.text}, illustration {c.illustration}, translation {c.translation} — <a href={LICENCE_URL[c.licence]} target="_blank" rel="noopener noreferrer">{c.licence}</a>
                 {c.adapted ? ', adapted' : ''}
               </li>
             ))}

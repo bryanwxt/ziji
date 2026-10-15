@@ -306,9 +306,20 @@ describe('the Listen screen of a library passage (spec 2026-10-15 §2, §5, §7)
   it('a double tap on 下一篇 swaps once', () => {
     const onSwap = vi.fn();
     render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onSwap={onSwap} onDone={vi.fn()} />);
+    modelReads(2);
     fireEvent.click(button('下一篇'));
     fireEvent.click(button('下一篇'));
     expect(onSwap).toHaveBeenCalledOnce();
+  });
+  it('下一篇 waits, quiet, until he has heard the passage: never the only live button while the model reads', () => {
+    const onSwap = vi.fn();
+    render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onSwap={onSwap} onDone={vi.fn()} />);
+    expect(button('下一篇').disabled).toBe(true);
+    fireEvent.click(button('下一篇'));
+    expect(onSwap).not.toHaveBeenCalled();
+    modelReads(2);
+    expect(button('下一篇').disabled).toBe(false);
+    expect(button('开始朗读').disabled).toBe(false);
   });
   it('下一篇 is on Listen only: never once he is reading', async () => {
     render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onSwap={vi.fn()} onDone={vi.fn()} />);
@@ -361,7 +372,7 @@ describe('the Listen screen of a library passage (spec 2026-10-15 §2, §5, §7)
   it('the credit line under the passage on Listen only; tapping it shows the licence and the source (spec 2026-10-15 §2.1)', async () => {
     const credit = { title: '和植物聊天的卡莱', text: 'Ursula Nafula', illustration: 'Jesse Breytenbach', translation: 'Vicky Liu', licence: 'CC BY 4.0' as const, adapted: true, source: 'https://github.com/global-asp/sbc-source/blob/be28dab38ac55e8eb2185edb6631b11615d02185/zh/0089.md' };
     render(<LangduStep passage={{ ...gsb, credit }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
-    expect(document.querySelector('.langdu__credit summary')!.textContent).toBe('故事：Global Storybooks · 文 Ursula Nafula · 图 Jesse Breytenbach · 译 Vicky Liu · CC BY 4.0 · 有改动');
+    expect(document.querySelector('.langdu__credit summary')!.textContent).toBe('故事：Global Storybooks · CC BY 4.0 · 有改动 · 文 Ursula Nafula · 图 Jesse Breytenbach · 译 Vicky Liu');
     expect(document.querySelector('.langdu__credit a')).toBeNull(); // the details are laid out only once opened
     const details = document.querySelector<HTMLDetailsElement>('.langdu__credit')!;
     details.open = true;

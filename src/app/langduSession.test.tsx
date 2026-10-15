@@ -35,6 +35,16 @@ async function setup(now: () => Date = () => new Date(2026, 9, 5, 17)) {
 }
 
 const btn = (t: string) => screen.getByText(t).closest('button') as HTMLButtonElement;
+/** The model reads today's passage through, however many sentences it has: 开始朗读 and 下一篇 come alive. */
+async function heardAll() {
+  await waitFor(() => expect(document.querySelector('.langdu__listen')).toBeTruthy());
+  for (let i = 0; i < 40 && document.querySelector('.langdu__listen[data-heard="false"]'); i++) {
+    await act(() => new Promise((r) => setTimeout(r, 5))); // the step's effects have run: the model's next sentence has begun
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+  }
+  await waitFor(() => expect(document.querySelector('.langdu__listen[data-heard="true"]')).toBeTruthy());
+}
 
 async function warmUp() {
   await screen.findByText('老师好！');
@@ -162,12 +172,14 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     await waitFor(() => expect(document.querySelector('.langdu__title')).toBeTruthy());
     const seen = [title()];
     for (const n of [1, 2]) {
+      await heardAll();
       fireEvent.click(btn('下一篇'));
       await waitFor(() => expect(title()).not.toBe(seen[seen.length - 1]));
       seen.push(title());
       await waitFor(async () => expect(Object.values((await getKid(app.db))!.reading.history).filter((e) => e.lastSkipped === '2026-10-05')).toHaveLength(n));
     }
     expect(new Set(seen).size).toBe(3);
+    await heardAll();
     expect(document.querySelector('.langdu__next')).toBeNull(); // two swaps a step
     const skipped = Object.values((await getKid(app.db))!.reading.history);
     expect(skipped.every((e) => e.reads === 0 && e.skips === 1)).toBe(true); // reads and rest untouched

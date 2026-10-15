@@ -43,12 +43,15 @@ export function LangduScreen() {
 
   if (!state?.passage) return <div class="screen loading"><InkIcon name="paw" size={88} label="加载中" /></div>;
   const passage = state.passage;
-  // 下一篇, as in the lesson (spec 2026-10-15 §5)
+  // 下一篇, as in the lesson (spec 2026-10-15 §5); swaps are counted in memory, the skips saved: a reload starts with two again
   const next = swapTarget(state.reading, state.pool, passage, state.day, state.swaps);
   const swap = () => {
     if (!next) return;
-    const reading = afterSkip(state.reading, passage.id, state.day);
-    setState({ ...state, passage: next, reading, swaps: state.swaps + 1 });
+    setState((prev) => {
+      if (!prev?.passage || prev.passage.id !== passage.id) return prev; // already swapped
+      const target = swapTarget(prev.reading, prev.pool, prev.passage, prev.day, prev.swaps);
+      return target ? { ...prev, passage: target, reading: afterSkip(prev.reading, prev.passage.id, prev.day), swaps: prev.swaps + 1 } : prev;
+    });
     void updateKid(db, (k) => ({ ...k, reading: afterSkip(k.reading, passage.id, state.day) })).catch(logError);
   };
 

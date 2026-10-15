@@ -20,6 +20,7 @@ describe('Credits', () => {
     expect(stories.length).toBe(new Set(PASSAGES.filter((p) => p.source === 'gsb').map((p) => p.story!.id)).size);
     expect(stories).toContain('一个很高的人 — text Cornelius Gulere, illustration Catherine Groenewald, translation dohliam — CC BY 3.0');
     expect(stories.find((s) => s!.startsWith('数数动物'))).toMatch(/adapted$/);
-    expect(items.find((li) => li.textContent!.startsWith('和植物聊天的卡莱'))!.querySelector('a')!.getAttribute('href')).toBe('https://creativecommons.org/licenses/by/4.0/');
+    const kalai = items.find((li) => li.textContent!.startsWith('和植物聊天的卡莱'))!;
+    expect([...kalai.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual([PASSAGES.find((p) => p.story?.id === '0089')!.credit!.source, 'https://creativecommons.org/licenses/by/4.0/']); // the title links its source
   });
 });

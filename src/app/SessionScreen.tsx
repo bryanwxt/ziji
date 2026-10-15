@@ -446,14 +446,21 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
    * Save the warm-up and the kept read (with his answer), count the read in his history — recorded or not (spec 2026-10-15 §1
    * cause 4) — tidy old passage takes, and give a bonus star for beating the last lesson read. Whatever fails on the way, the lesson goes on to its end (final review I4): no bonus at worst.
    */
-  /** 下一篇 (spec 2026-10-15 §5): the passage is skipped today (saved at once) and the next in the order comes in. */
+  /**
+   * 下一篇 (spec 2026-10-15 §5): the passage is skipped today (saved at once) and the next in the order comes in. The swaps made
+   * are counted in memory only: a reload re-picks with the saved skips and starts the step with two swaps again.
+   */
   const onLangduSwap = () => {
     const s = state?.speaking;
-    if (s?.kind !== 'langdu') return;
-    const next = swapTarget(s.reading, s.pool, s.passage, s.day, s.swaps);
-    if (!next) return;
-    const reading = afterSkip(s.reading, s.passage.id, s.day);
-    setState({ ...state!, speaking: { ...s, passage: withQuestion(next, reading), reading, swaps: s.swaps + 1 } });
+    if (s?.kind !== 'langdu' || !swapTarget(s.reading, s.pool, s.passage, s.day, s.swaps)) return;
+    setState((prev) => {
+      const cur = prev?.speaking;
+      if (!prev || cur?.kind !== 'langdu' || cur.passage.id !== s.passage.id) return prev; // already swapped
+      const next = swapTarget(cur.reading, cur.pool, cur.passage, cur.day, cur.swaps);
+      if (!next) return prev;
+      const reading = afterSkip(cur.reading, cur.passage.id, cur.day);
+      return { ...prev, speaking: { ...cur, passage: withQuestion(next, reading), reading, swaps: cur.swaps + 1 } };
+    });
     void updateKid(db, (k) => ({ ...k, reading: afterSkip(k.reading, s.passage.id, s.day) })).catch(logError);
   };
 

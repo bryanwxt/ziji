@@ -147,7 +147,7 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
   };
   const swapped = useRef(false);
   const swap = () => {
-    if (swapped.current || !onSwap) return; // a double tap on 下一篇 swaps once
+    if (swapped.current || !onSwap || !model.heardAll) return; // a double tap on 下一篇 swaps once
     swapped.current = true;
     model.stop();
     onSwap();
@@ -195,7 +195,8 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
             actionLabel="开始朗读"
             disabled={!model.heardAll}
             onAction={() => setPart('read')}
-            aside={onSwap && <button type="button" class="btn langdu__next" onClick={swap}><Label zh="下一篇" /></button>}
+            // 下一篇 waits for the read-through like 开始朗读: never the only live button while the model reads (review, 2026-10-15)
+            aside={onSwap && <button type="button" class="btn langdu__next" disabled={!model.heardAll} onClick={swap}><Label zh="下一篇" /></button>}
           />
         }
       >

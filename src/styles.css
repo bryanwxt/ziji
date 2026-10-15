@@ -1297,6 +1297,7 @@ button.langdu__sentence { cursor: pointer; }
 .langdu__head { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; max-width: 100%; }
 .langdu__pic { flex: none; height: clamp(64px, 14dvh, 160px); width: auto; aspect-ratio: 1; object-fit: cover; border-radius: 14px; border: var(--panel-border); }
 .langdu:not(.langdu__listen) .langdu__pic { height: clamp(56px, 11dvh, 140px); } /* on Read the passage comes first */
+@media (max-height: 699px) { .langdu:not(.langdu__listen) .langdu__pic { display: none; } } /* a short phone keeps Read for the text he reads aloud */
 .langdu__words { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; font-size: 18px; }
 .langdu__words li { display: inline-flex; align-items: flex-end; gap: 6px; }
 .langdu__gloss { color: var(--ink-soft); font-size: 15px; }

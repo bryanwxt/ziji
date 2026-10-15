@@ -26,6 +26,16 @@ beforeEach(() => vi.mocked(speak).mockClear());
 afterEach(() => act(() => setSpeaking(false)));
 
 const btn = (t: string) => screen.getByText(t).closest('button') as HTMLButtonElement;
+/** The model reads today's passage through, however many sentences it has: 开始朗读 and 下一篇 come alive. */
+async function heardAll() {
+  await waitFor(() => expect(document.querySelector('.langdu__listen')).toBeTruthy());
+  for (let i = 0; i < 40 && document.querySelector('.langdu__listen[data-heard="false"]'); i++) {
+    await act(() => new Promise((r) => setTimeout(r, 5))); // the step's effects have run: the model's next sentence has begun
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+  }
+  await waitFor(() => expect(document.querySelector('.langdu__listen[data-heard="true"]')).toBeTruthy());
+}
 
 const kid = { ...DEFAULT_KID, reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-09-25', rest: 3, q: 1 } }, lastKind: 'new' as const, lastWarmup: '2026-09-25', warmups: 3 } };
 
@@ -102,6 +112,7 @@ describe('朗读 extra rounds', () => {
     const title = () => document.querySelector('.langdu__title')?.textContent;
     await waitFor(() => expect(title()).toBeTruthy());
     const first = title();
+    await heardAll();
     fireEvent.click(btn('下一篇'));
     await waitFor(() => expect(title()).not.toBe(first));
     await waitFor(async () => expect(Object.values((await getKid(app.db))!.reading.history).filter((e) => e.lastSkipped === '2026-10-02' && e.skips === 1)).toHaveLength(1));

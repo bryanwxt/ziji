@@ -347,9 +347,12 @@ else if (which?.startsWith('langdu-gsb-') || which === 'langdu-words-listen') {
   const own = longest(PASSAGES.filter((x) => x.source === 'ziji'))!;
   const p = which === 'langdu-words-listen' ? (longest(PASSAGES.filter((x) => x.words?.length)) ?? { ...own, words: [{ text: '球场', gloss: 'sports field' }, { text: '同学', gloss: 'classmate' }] }) : longest(PASSAGES.filter((x) => x.source === 'gsb'))!;
   const part = which.slice(which.lastIndexOf('-') + 1) as LangduPart;
+  // the question: the library's longest (question and choices together), on its own passage, so the longest one is the one checked
+  const asked = Object.entries(PASSAGE_QUESTIONS).flatMap(([id, qs]) => qs.map((q) => ({ id, q }))).sort((a, b) => (b.q.q + b.q.choices.join('')).length - (a.q.q + a.q.choices.join('')).length)[0]!;
+  const shown = part === 'meaning' ? PASSAGES.find((x) => x.id === asked.id)! : p;
   render(screen(
     <PinyinFade known={new Set()} on>
-      <LangduStep passage={{ ...p, question: PASSAGE_QUESTIONS[p.id]?.[0] }} rng={() => 0.999} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup={false} startAt={part} onSwap={() => {}} onDone={() => {}} />
+      <LangduStep passage={{ ...shown, question: part === 'meaning' ? asked.q : PASSAGE_QUESTIONS[p.id]?.[0] }} rng={() => 0.999} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup={false} startAt={part} onSwap={() => {}} onDone={() => {}} />
     </PinyinFade>,
   ), app);
 }

@@ -8,7 +8,8 @@ export const LICENCE_URL: Readonly<Record<PassageCredit['licence'], string>> = {
   'CC BY-NC 3.0': 'https://creativecommons.org/licenses/by-nc/3.0/',
 };
 
-/** 「故事：Global Storybooks · 文 … · 图 … · 译 … · CC BY 3.0 · 有改动」 */
+/** 「故事：Global Storybooks · CC BY 3.0 · 有改动 · 文 … · 图 … · 译 …」: the licence and 有改动 first, so the one line's ellipsis
+ *  never cuts them (the people are in the details and the parent's Credits). */
 export function creditLine(c: PassageCredit): string {
-  return ['故事：Global Storybooks', `文 ${c.text}`, `图 ${c.illustration}`, `译 ${c.translation}`, c.licence, ...(c.adapted ? ['有改动'] : [])].join(' · ');
+  return ['故事：Global Storybooks', c.licence, ...(c.adapted ? ['有改动'] : []), `文 ${c.text}`, `图 ${c.illustration}`, `译 ${c.translation}`].join(' · ');
 }

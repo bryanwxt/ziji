@@ -263,7 +263,10 @@ for (const size of SIZES) {
       return { loaded: img.complete && img.naturalWidth > 0, height: Math.round(r.height), onScreen: r.top >= 0 && r.bottom <= innerHeight };
     });
     if (c === 'langdu-gsb-meaning' && pic) problems.push(`${size.name} ${c}: the picture shows on the question`);
-    if ((c === 'langdu-gsb-listen' || c === 'langdu-gsb-read') && (!pic || !pic.loaded || !pic.onScreen || pic.height < 48)) problems.push(`${size.name} ${c}: picture ${JSON.stringify(pic)}`);
+    const picShown = await page.evaluate(() => { const img = document.querySelector('img.langdu__pic'); return !!img && getComputedStyle(img).display !== 'none'; });
+    const readPic = c === 'langdu-gsb-read' && size.height >= 700; // a short phone hides it on Read: the text comes first
+    if ((c === 'langdu-gsb-listen' || readPic) && (!pic || !pic.loaded || !pic.onScreen || pic.height < 48)) problems.push(`${size.name} ${c}: picture ${JSON.stringify(pic)}`);
+    if (c === 'langdu-gsb-read' && !readPic && picShown) problems.push(`${size.name} ${c}: the picture shows on Read on a short screen`);
     if (c === 'langdu-gsb-listen' || c === 'langdu-words-listen') {
       const next = await page.$('.langdu__next');
       const box = await next?.boundingBox();

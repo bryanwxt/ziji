@@ -84,7 +84,7 @@ export const PASSAGE_QUESTIONS: Readonly<Record<string, readonly PassageQuestion
     { q: '电视里的小马在做什么？', choices: ['唱歌', '做作业', '看电视'], answer: 0, sentence: 3 },
   ],
   p20: [
-    { q: '学校里有一个大的什么？', choices: ['看花的地方', '打球的地方', '看书的地方'], answer: 1, sentence: 1 },
+    { q: '学校里有什么？', choices: ['看花的地方', '打球的地方', '看书的地方'], answer: 1, sentence: 1 },
     { q: '我很喜欢谁？', choices: ['同学和老师', '同学和妈妈', '爸爸和老师'], answer: 0, sentence: 3 },
   ],
 
