@@ -28,7 +28,7 @@ customPinyin({
   // our 二下 passages (Task 9): 得 after a verb is de, 地 after 一块一块 de, 一 before a fourth or first tone in 一X一X, 衣服 fu,
   // 长着 (growing) zhǎng, 漂亮 piào liang (it read piāo liàng after 一条)
   一块一块地: 'yí kuài yí kuài de', 一滴一滴: 'yì dī yì dī', 一条一条: 'yì tiáo yì tiáo', 弄得: 'nòng de', 飞得: 'fēi de',
-  排得: 'pái de', 学得: 'xué de', 妹妹选: 'mèi mei xuǎn', 中国衣服: 'zhōng guó yī fu', 漂亮: 'piào liang', 长着: 'zhǎng zhe',
+  排得: 'pái de', 学得: 'xué de', 妹妹选: 'mèi mei xuǎn', 漂亮: 'piào liang', 长着: 'zhǎng zhe',
   // Task 9's review: the neutral tone in 眼睛, 时候 and 星星 (they read yǎn jīng, shí hòu, xīng xīng)
   眼睛: 'yǎn jing', 时候: 'shí hou', 星星: 'xīng xing',
   // our 三上 passages (Task 10): 得 after a verb de, 地 after 好好 de, 种 (planting) zhòng, 长 (growing) zhǎng, 倒 (pouring) dào,
@@ -37,5 +37,15 @@ customPinyin({
   越长越高: 'yuè zhǎng yuè gāo', 倒上水: 'dào shàng shuǐ', 一件一件: 'yí jiàn yí jiàn', 一本一本: 'yì běn yì běn',
   裤子: 'kù zi', 裙子: 'qún zi', 箱子: 'xiāng zi', 爸爸的: 'bà ba de', 妈妈打开: 'mā ma dǎ kāi', 东西: 'dōng xi', 有意思: 'yǒu yì si',
   只留下: 'zhǐ liú xià',
+  // Task 11: the neutral tone 现代汉语词典 marks as required (and Singapore's textbooks print), for word cards and passages alike;
+  // left toned where the dictionary marks it optional or usage varies: 这里 那里 哪里 心里 知道 照顾 关系 打扫
+  朋友: 'péng you', 衣服: 'yī fu', 早上: 'zǎo shang', 晚上: 'wǎn shang', 护士: 'hù shi', 告诉: 'gào su', 明白: 'míng bai',
+  地方: 'dì fang', 先生: 'xiān sheng', 客气: 'kè qi', 舒服: 'shū fu', 意思: 'yì si', 事情: 'shì qing', 学生: 'xué sheng',
+  谢谢: 'xiè xie', 名字: 'míng zi', 月亮: 'yuè liang', 窗户: 'chuāng hu', 麻烦: 'má fan', 热闹: 'rè nao', 干净: 'gān jing',
+  商量: 'shāng liang', 消息: 'xiāo xi', 打算: 'dǎ suan', 收拾: 'shōu shi', 招呼: 'zhāo hu', 葡萄: 'pú tao', 玻璃: 'bō li',
+  当地方言: 'dāng dì fāng yán', // 地方 inside 当地 + 方言 keeps its tone
+  // 子 as a noun suffix is zi (pinyin-pro read zǐ); 棋子 stays qí zǐ
+  包子: 'bāo zi', 饺子: 'jiǎo zi', 橙子: 'chéng zi', 虫子: 'chóng zi', 果子: 'guǒ zi', 豆子: 'dòu zi', 刀子: 'dāo zi',
+  法子: 'fǎ zi', 剪子: 'jiǎn zi', 窗子: 'chuāng zi', 步子: 'bù zi', 一下子: 'yí xià zi',
   炸鸡: 'zhá jī', 油炸: 'yóu zhá', 种植: 'zhòng zhí', 种花的: 'zhòng huā de', 勒紧: 'lēi jǐn', // 种花的: 写一写's piece (never 种花 alone)
 });
