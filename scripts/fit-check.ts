@@ -404,24 +404,66 @@ async function sweep(browser: Browser, size: Size) {
       await p.waitForTimeout(150);
     }
   });
-  // the parent's class lesson and Progress against the lists (spec 2026-10-11 §8), in WebKit
+  // the parent area's five tabs (parent, 2026-10-15), each shot; its class lesson and Progress against the lists (spec 2026-10-11 §8), in WebKit
   await run('parent', AFTERNOON, { pinCode: FIT_PIN, reviewHistory: true }, async (p) => {
     await tabTo(p, '家长');
     for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
-    await p.click('.tab:has-text("Settings")');
-    await p.waitForSelector('#st-class-now');
-    await snap(p, size, 'parent-settings', '#st-class-now');
-    await p.click('.tab:has-text("Progress")');
+    let step = 0;
+    // the parent area may scroll down, never sideways: the five tabs fit in one row, no label cut (the old thirteen scrolled sideways on a phone)
+    const fits = async () => results.push({ size: size.name, flow: 'parent-tabs', step: step++, sig: await p.evaluate(() => document.querySelector('.tab.is-active')?.textContent ?? ''), problems: await p.evaluate(() => {
+      const out: string[] = [];
+      const de = document.documentElement;
+      if (de.scrollWidth > innerWidth + 1) out.push(`page scrolls sideways ${de.scrollWidth - innerWidth}px`);
+      const nav = document.querySelector('.parent__tabs');
+      if (!nav) return ['no parent tabs'];
+      if (nav.scrollWidth > nav.clientWidth + 1) out.push(`tabs scroll sideways ${nav.scrollWidth - nav.clientWidth}px`);
+      const tops = new Set<number>();
+      for (const el of nav.querySelectorAll('.tab, .tab__zh, .tab__en')) {
+        if (el.scrollWidth > el.clientWidth + 1) out.push(`cut: ${el.textContent}`);
+        if (el.classList.contains('tab')) tops.add(Math.round(el.getBoundingClientRect().top));
+      }
+      if (tops.size > 1) out.push('tabs wrap to two rows');
+      const r = nav.getBoundingClientRect();
+      if (r.left < -1 || r.right > innerWidth + 1) out.push('tabs off screen');
+      for (const el of document.querySelectorAll('.segmented__opt')) if (el.scrollWidth > el.clientWidth + 1) out.push(`cut: ${el.textContent}`);
+      return out;
+    }) });
+    const tab = (label: string) => p.click(`.parent__tabs .tab:has-text("${label}")`);
+    await p.waitForSelector('.tiles');
+    await fits();
+    await snap(p, size, 'parent-today', '.parent__tabs');
+    await snap(p, size, 'parent-today-listen', '#parent-listen');
+    await p.click('button:has-text("All recordings")');
+    await snap(p, size, 'parent-today-recordings', '#parent-recordings');
+    await tab('Progress');
     await p.waitForSelector('.progress__bars');
+    await fits();
+    await snap(p, size, 'parent-progress-top', '.parent__tabs');
     await snap(p, size, 'parent-progress', '.progress__bars');
     // retention and the fit (SRS tuning spec §5, §6.2): the real optimizer loads from the build, in WebKit
-    await p.click('.tab:has-text("Skills")');
     await p.waitForSelector('.skills__retention');
-    await snap(p, size, 'parent-skills-placement', '.skills > h2'); // the placement result and its rechecks (spec 2026-10-14)
+    await snap(p, size, 'parent-skills-placement', '.skills__placement'); // the placement result and its rechecks (spec 2026-10-14)
     await snap(p, size, 'parent-skills', '.skills__retention');
     await p.click('button:has-text("Fit to his memory")');
     await p.waitForSelector('.skills__compare', { timeout: 20_000 });
     await snap(p, size, 'parent-fit', 'button:has-text("Use these")');
+    await tab('Content');
+    await p.waitForSelector('.segmented');
+    for (const [i, part] of ['Words', 'From a worksheet', 'Reading texts', 'Pictures'].entries()) {
+      await p.click(`.segmented__opt:has-text("${part}")`);
+      await p.waitForTimeout(200);
+      await fits();
+      await snap(p, size, `parent-content-${i}`, '.parent__tabs');
+    }
+    await tab('Rewards');
+    await fits();
+    await snap(p, size, 'parent-rewards', '.parent__tabs');
+    await tab('Settings');
+    await p.waitForSelector('#st-class-now');
+    await fits();
+    await snap(p, size, 'parent-settings-top', '.parent__tabs');
+    await snap(p, size, 'parent-settings', '#st-class-now');
+    await snap(p, size, 'parent-backup', '#parent-backup');
   });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });

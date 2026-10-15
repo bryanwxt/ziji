@@ -148,12 +148,13 @@ describe('BackupPanel restore', () => {
 });
 
 describe('ParentArea tabs', () => {
-  it('shows icon tabs as a segmented control', async () => {
+  it('shows five icon tabs as a segmented control, each 中文 and English', async () => {
     const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, pinHash: await hashPin('1111') } });
     renderWithApp(<ParentArea />, app);
     for (const d of '1111') fireEvent.click(screen.getByRole('button', { name: d }));
-    await screen.findByText('Overview');
-    expect(document.querySelectorAll('.tabs .tab svg').length).toBe(13); // + From a worksheet, Skills, Listen & confirm
+    await screen.findByRole('tablist', { name: 'Parent area' });
+    expect(document.querySelectorAll('.tabs .tab svg').length).toBe(5);
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['今天 Today', '进度 Progress', '内容 Content', '奖励 Rewards', '设置 Settings']);
   });
 });
 

@@ -44,7 +44,7 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
   const trend = weeklyTrend(know.cards, 'recognise', now);
   return (
     <section class="panel progress-panel">
-      <h2>Progress</h2>
+      <h3>MOE progress</h3>
       <p class="muted">A step counts only after he gets it right on two different days.</p>
       <dl class="progress__counts">
         <dt>Characters recognised</dt><dd>{target ? `${read} of ${target.read.size} by the end of ${endTerm}` : know.known}</dd>

@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { ladderWords } from '../content/ladder';
@@ -22,8 +23,9 @@ const DAYS = 14;
 
 interface Data { logs: ReviewLog[]; allLogs: ReviewLog[]; answers: AnswerLog[]; words: Word[]; cards: CardRecord[]; reads: Recording[]; settings: Settings }
 
-/** The parent's view of each skill (spec §19 part 7): 14-day accuracy, the class baseline they typed in, the last placement, and the words to practise more. */
-export function SkillsPanel() {
+/** The parent's view of each skill (spec §19 part 7): 14-day accuracy, the class baseline they typed in, the last placement, and the words to practise more.
+ *  The Progress tab's three sections (parent, 2026-10-15): School (`school`, his book's lists, then the placement), Skills, and Memory (the fit). */
+export function SkillsPanel({ school }: { school?: ComponentChildren } = {}) {
   const { db, now, refresh } = useApp();
   const [d, setD] = useState<Data | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -81,67 +83,84 @@ export function SkillsPanel() {
   const loud = d.reads.filter((r) => typeof r.level === 'number');
 
   return (
-    <section class="panel skills">
-      <h2>Skills</h2>
-      <p>
-        {p
-          ? `Placement (${new Date(p.at).toLocaleDateString()}): ${isLegacyPlacement(p) ? legacyPlacementLine(p, d.words) : placementLine(p)}`
-          : 'Placement: not done yet'}
-      </p>
-      {p && <p>{recheckLine(recheckProgress(d.cards, d.allLogs, p.at))}</p>}
-      {d.settings.pace && <p>New words: {Math.min(d.settings.pace.perDay, d.settings.newPerDay)} a day — {d.settings.pace.reason} (most {d.settings.newPerDay})</p>}
-      {p && p.missed.length > 0 && <p class="hanzi">Missed in placement: {p.missed.slice(0, 12).map((id) => byId.get(id)?.text ?? '').join(' ')}</p>}
-      <table class="skills__table">
-        <thead>
-          <tr><th>Skill</th><th>Last {DAYS} days</th><th>Class baseline (% right)</th><th>Difference</th></tr>
-        </thead>
-        <tbody>
-          {SKILLS.map((s) => {
-            const now = pct(s);
-            const base = d.settings.baselines?.[s];
-            return (
-              <tr key={s}>
-                <td>{LABEL[s]}</td>
-                <td>{now === null ? '—' : `${now}% (${acc[s].total})`}</td>
-                <td>
-                  <input type="number" min={0} max={100} aria-label={`Class baseline for ${LABEL[s]} (% right)`} defaultValue={base === undefined ? '' : String(base)}
-                    onInput={(e) => typed(s, e.currentTarget.value)} onChange={(e) => void setBaseline(s, e.currentTarget.value)} /> {/* saved when he's done typing, not per keystroke */}
-                </td>
-                <td>{now === null || base === undefined ? '—' : `${now - base >= 0 ? '+' : ''}${now - base}`}</td>
-              </tr>
-            );
-          })}
-          <tr>
-            <td>Reading aloud (朗读)</td>
-            <td>{d.reads.length ? `${d.reads.length} reads` : '—'}</td>
-            <td colSpan={2}>{loud.length ? `average loudness ${Math.round((loud.reduce((n, r) => n + r.level!, 0) / loud.length) * 1000) / 10}` : ''}</td>
-          </tr>
-        </tbody>
-      </table>
-      <RetentionCheck logs={d.allLogs} now={now()} />
-      <FitToMemory logs={d.allLogs} cards={d.cards} settings={d.settings} onChange={load} />
-      <h3>Missed most (last {DAYS} days)</h3>
-      {SKILLS.map((s) => {
-        const missed = topMissed(d.logs, d.answers, s);
-        if (!missed.length) return null;
-        return (
-          <div key={s} class="skills__missed">
-            <h4>{LABEL[s]}</h4>
-            <ul>
-              {missed.map((m) => {
-                const text = byId.get(m.wordId)?.text ?? m.wordId;
+    <>
+      <section class="parent__section" id="parent-school" aria-labelledby="parent-school-title">
+        <h2 class="parent__section-title" id="parent-school-title">School</h2>
+        {school}
+        <section class="panel skills__placement">
+          <h3>Placement</h3>
+          <p>
+            {p
+              ? `Placement (${new Date(p.at).toLocaleDateString()}): ${isLegacyPlacement(p) ? legacyPlacementLine(p, d.words) : placementLine(p)}`
+              : 'Placement: not done yet'}
+          </p>
+          {p && <p>{recheckLine(recheckProgress(d.cards, d.allLogs, p.at))}</p>}
+          {d.settings.pace && <p>New words: {Math.min(d.settings.pace.perDay, d.settings.newPerDay)} a day — {d.settings.pace.reason} (most {d.settings.newPerDay})</p>}
+          {p && p.missed.length > 0 && <p class="hanzi">Missed in placement: {p.missed.slice(0, 12).map((id) => byId.get(id)?.text ?? '').join(' ')}</p>}
+        </section>
+      </section>
+      <section class="parent__section" id="parent-skills" aria-labelledby="parent-skills-title">
+        <h2 class="parent__section-title" id="parent-skills-title">Skills</h2>
+        <section class="panel skills">
+          <h3>Accuracy</h3>
+          <table class="skills__table">
+            <thead>
+              <tr><th>Skill</th><th>Last {DAYS} days</th><th>Class baseline (% right)</th><th>Difference</th></tr>
+            </thead>
+            <tbody>
+              {SKILLS.map((s) => {
+                const now = pct(s);
+                const base = d.settings.baselines?.[s];
                 return (
-                  <li key={m.wordId}>
-                    <span class="hanzi">{text}</span> × {m.misses}{' '}
-                    <button type="button" class="small-btn" aria-label={`Practise ${text} more (${LABEL[s]})`} onClick={() => void practise(s, m.wordId)}>Practise more</button>
-                  </li>
+                  <tr key={s}>
+                    <td>{LABEL[s]}</td>
+                    <td>{now === null ? '—' : `${now}% (${acc[s].total})`}</td>
+                    <td>
+                      <input type="number" min={0} max={100} aria-label={`Class baseline for ${LABEL[s]} (% right)`} defaultValue={base === undefined ? '' : String(base)}
+                        onInput={(e) => typed(s, e.currentTarget.value)} onChange={(e) => void setBaseline(s, e.currentTarget.value)} /> {/* saved when he's done typing, not per keystroke */}
+                    </td>
+                    <td>{now === null || base === undefined ? '—' : `${now - base >= 0 ? '+' : ''}${now - base}`}</td>
+                  </tr>
                 );
               })}
-            </ul>
-          </div>
-        );
-      })}
-      {message && <p role="status">{message}</p>}
-    </section>
+              <tr>
+                <td>Reading aloud (朗读)</td>
+                <td>{d.reads.length ? `${d.reads.length} reads` : '—'}</td>
+                <td colSpan={2}>{loud.length ? `average loudness ${Math.round((loud.reduce((n, r) => n + r.level!, 0) / loud.length) * 1000) / 10}` : ''}</td>
+              </tr>
+            </tbody>
+          </table>
+          <RetentionCheck logs={d.allLogs} now={now()} />
+          <h3>Missed most (last {DAYS} days)</h3>
+          {SKILLS.map((s) => {
+            const missed = topMissed(d.logs, d.answers, s);
+            if (!missed.length) return null;
+            return (
+              <div key={s} class="skills__missed">
+                <h4>{LABEL[s]}</h4>
+                <ul>
+                  {missed.map((m) => {
+                    const text = byId.get(m.wordId)?.text ?? m.wordId;
+                    return (
+                      <li key={m.wordId}>
+                        <span class="hanzi">{text}</span> × {m.misses}{' '}
+                        <button type="button" class="small-btn" aria-label={`Practise ${text} more (${LABEL[s]})`} onClick={() => void practise(s, m.wordId)}>Practise more</button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+          {message && <p role="status">{message}</p>}
+        </section>
+      </section>
+      <section class="parent__section" id="parent-memory" aria-labelledby="parent-memory-title">
+        <h2 class="parent__section-title" id="parent-memory-title">Memory</h2>
+        <section class="panel skills__memory">
+          <FitToMemory logs={d.allLogs} cards={d.cards} settings={d.settings} onChange={load} />
+        </section>
+      </section>
+    </>
   );
 }

@@ -77,14 +77,16 @@ describe('Listen & confirm (spec 2026-10-11 §6)', () => {
     await waitFor(() => expect(document.querySelectorAll('.listen__row')).toHaveLength(1));
     expect(document.querySelector('.listen__row audio')!.getAttribute('src')).toBe(before);
   });
-  it('the tab shows a badge with the number waiting, and it goes down as he is heard', async () => {
+  it('Today shows a badge with the number waiting, and it goes down as he is heard', async () => {
     const app = await withTakes();
     renderWithApp(<ParentArea />, app);
     for (const d of '1111') fireEvent.click(screen.getByRole('button', { name: d }));
-    expect(await screen.findByLabelText('2 waiting')).toBeTruthy();
-    fireEvent.click(screen.getByText('Listen & confirm', { selector: '.tab' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Said right: 森' }));
+    const today = await screen.findByRole('tab', { name: /Today/ });
+    await waitFor(() => expect(today.querySelector('.tab__badge')?.getAttribute('aria-label')).toBe('2 waiting'));
+    expect(document.querySelectorAll('.tab__badge')).toHaveLength(1); // on Today only
+    fireEvent.click(await screen.findByRole('button', { name: 'Said right: 森' })); // the queue is on Today, under the overview
     expect(await screen.findByLabelText('1 waiting')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('Takes to review').closest('.tile')!.querySelector('.tile__value')!.textContent).toBe('1')); // the tile above keeps up
   });
   it('Overview has a takes-to-review tile that opens the queue', async () => {
     const app = await withTakes();
