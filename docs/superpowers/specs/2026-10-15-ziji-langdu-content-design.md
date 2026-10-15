@@ -301,3 +301,5 @@ Each has a recommendation. Under the autonomy rule (2026-10-07), the recommendat
 | D5 | 「下一篇」 limits | **2 swaps a step, only before recording, never on his school texts.** |
 | D6 | Rest schedule | **No repeat within 3 days.** Rest grows 3 → 7 → 18 → 45 days when read well, back to 3 on a miss or ≥2 parent marks, and retired after that. |
 | D7 | A second lesson, or 多读一遍, on the same day | **A different passage.** Repeated reading comes from spaced revisits, not same-day repeats. |
+
+**Decided (parent, 2026-10-15):** all seven recommendations approved as written: D1 include the CC BY-NC stories, D2 light edits only, D3 one picture per Global Storybooks passage, D4 40 new passages of our own (二上 12, 二下 16, 三上 12), D5 2 swaps a step before recording and never on his school texts, D6 the rest schedule (no repeat within 3 days; 3 → 7 → 18 → 45, then retired), D7 a different passage on the same day.
