@@ -1,12 +1,8 @@
 // Runs the stage cases (stage-cases/page.tsx) in WebKit at a phone and an iPad size; exits 1 on any problem.
-import { build } from 'esbuild';
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { webkit } from 'playwright-core';
-import { chaptersShim } from './stage-cases/shim';
 import { bundleStagePage } from './stage-cases/bundle';
-import { storyWalk } from './story-walk';
 import { textChecks } from './text-checks';
 import { WORLDS } from '../src/fun/worlds';
 import { CHEST_COSTUMES } from '../src/fun/costumes';

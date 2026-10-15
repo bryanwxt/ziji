@@ -163,10 +163,14 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   // the 还差一天 line is promoted to a goal when one shows (rewards ruling 7)
   const line = rec.free ? null : producedLine(rec.produced, seq.goals.some((g) => g.kind === 'write') ? [] : rec.closest);
 
-  const save = async (next: KidState) => {
-    kidRef.current = next;
-    setKid(next);
-    await saveKid(db, next);
+  // merges only what this screen changes (badges seen, powers seen): a chest opened in another tab is never written back over
+  const save = async (patch: Partial<KidState>) => {
+    const local = { ...kidRef.current, ...patch };
+    kidRef.current = local;
+    setKid(local);
+    const saved = await updateKid(db, (cur) => ({ ...cur, ...patch }));
+    if (saved) { kidRef.current = saved; setKid(saved); }
+    else await saveKid(db, local); // no kid stored yet: this one is him
   };
   const advance = async () => {
     if (performance.now() - movedAt.current < TAP_GAP_MS) return;
@@ -184,7 +188,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     if (nextPhase === 'badges') {
       playSfx('levelUp');
       celebrate();
-      await save({ ...kidRef.current, badgesSeen: [...kidRef.current.badgesSeen, ...seq.badges] });
+      await save({ badgesSeen: [...kidRef.current.badgesSeen, ...seq.badges] });
     }
     setChest(null); // a second chest starts closed
     setArrived(still);
@@ -220,7 +224,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
     const seen = { ...kidRef.current.powerTiersSeen };
     for (const t of seq.newTiers) seen[t.id] = Math.max(seen[t.id] ?? 0, t.tier);
     // Never strand the child on this screen: carry on even if saving fails.
-    await save({ ...kidRef.current, powerTiersSeen: seen, activePower: seq.power!.id }).catch(() => {});
+    await save({ powerTiersSeen: seen, activePower: seq.power!.id }).catch(() => {});
     setPowered(true);
     playSfx('levelUp');
     celebrate();

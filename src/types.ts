@@ -297,7 +297,7 @@ export interface Settings {
   targetWrite: number;
   lastBackupAt: number | null;
   placementDone: boolean;
-  zodiac: ZodiacId | null; // the child's 生肖, the first chest's gift
+  zodiac: ZodiacId | null; // the child's 生肖 (Settings); not used since the river chest (rewards spec 2026-10-15) — kept for a later use
   oral: OralInfo;
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
   placementMarked?: boolean; // an older placement's unrechecked cards marked placed and re-spread (src/placement/migrate.ts)
