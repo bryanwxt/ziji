@@ -252,3 +252,37 @@ describe('the eye line follows the visible white (row D, spec 2026-10-13 §7)', 
     expect(upperLid(118, 0, 0).fill).toBe('M118 118Z');
   });
 });
+
+describe('feet and mitts (parent 2026-10-16): a raised paw shows its mitt, a resting one its foot', () => {
+  it('paints the raised state on each paw and swaps its foot and mitt layers', () => {
+    const attrs: Record<string, string> = {};
+    const els = (part: string) => ({ setAttribute: (a: string, v: string) => { attrs[`${part} ${a}`] = v; } }) as unknown as Element;
+    paint(els, PRESETS.neutral, { ...REST_POSE, raisedR: true }, {});
+    expect(attrs['paw-r data-raised']).toBe('1');
+    expect(attrs['foot-r display']).toBe('none');
+    expect(attrs['mitt-r display']).toBe('inline');
+    expect(attrs['foot-r-over display']).toBe('none');
+    expect(attrs['mitt-r-over display']).toBe('inline');
+    expect(attrs['foot-l display']).toBe('inline');
+    expect(attrs['mitt-l display']).toBe('none');
+    paint(els, PRESETS.neutral, REST_POSE, {});
+    expect(attrs['foot-r display']).toBe('inline');
+    expect(attrs['mitt-r display']).toBe('none');
+  });
+  it('looks the layers up only when a paw goes up or down, never on a still frame (the 8 ms budget)', () => {
+    const asked: string[] = [];
+    const cache = new Map<string, Element>();
+    const els = (part: string) => {
+      asked.push(part);
+      if (!cache.has(part)) cache.set(part, { setAttribute: () => {} } as unknown as Element);
+      return cache.get(part)!;
+    };
+    const memo = new WeakMap<Element, Record<string, string>>();
+    paint(els, PRESETS.neutral, REST_POSE, {}, memo);
+    asked.length = 0;
+    paint(els, PRESETS.neutral, REST_POSE, {}, memo);
+    expect(asked.filter((p) => /^(foot|mitt)-/.test(p))).toEqual([]);
+    paint(els, PRESETS.neutral, { ...REST_POSE, raisedL: true }, {}, memo);
+    expect(asked.filter((p) => /^(foot|mitt)-l/.test(p)).length).toBeGreaterThan(0);
+  });
+});

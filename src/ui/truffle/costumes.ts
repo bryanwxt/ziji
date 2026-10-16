@@ -171,7 +171,16 @@ const OUTFIT: Record<string, (c: Costume) => Outfit> = {
 };
 
 /** A costume's layers: behind him, over his body, on his head, his tail's replacement, and art inside each paw (rewards spec §5.1). */
-export interface CostumeLayer { back: string; body: string; head: string; tail?: string; pawL?: string; pawR?: string; hidesEars: boolean }
+/**
+ * `feetL`/`feetR` are drawn in place of his own front paws, inside each paw's group (so they move with it): footwear and an
+ * animal's feet replace his paws, never sit under them as a second pair (parent 2026-10-16). Keep each in the paw's place.
+ * While a paw is raised it shows `mittL`/`mittR` instead (a glove or mitt in the costume's colour, never a boot held up).
+ * `overL`/`overR`: the foot (or mitt) is drawn again over the paw's held prop, so the paw closes round its handle.
+ */
+export interface CostumeLayer {
+  back: string; body: string; head: string; tail?: string; pawL?: string; pawR?: string;
+  feetL?: string; feetR?: string; mittL?: string; mittR?: string; overL?: boolean; overR?: boolean; hidesEars: boolean;
+}
 
 /** The layers for a costume id, or null for unknown ids (ignored, never worn). `tail` replaces his own tail (it swishes with it). */
 export function costumeLayer(id: string | null | undefined): CostumeLayer | null {

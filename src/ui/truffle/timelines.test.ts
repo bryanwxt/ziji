@@ -1,6 +1,6 @@
 // src/ui/truffle/timelines.test.ts
 import { describe, expect, it } from 'vitest';
-import { PAW_REST, PAW_TRACKS, REACTIONS, REST, TRACKS } from './timelines';
+import { PAW_REST, PAW_TRACKS, pawRaised, REACTIONS, REST, TRACKS } from './timelines';
 
 describe('body moves (spec §4.1, §4.4)', () => {
   it('a hop crouches first, rises with a stretch, lands with a squash and ends at rest', () => {
@@ -87,5 +87,23 @@ describe('a new word (sweep: spec §4.4 "he leans toward the card")', () => {
     expect(TRACKS.lean(500)!.lean).toBeGreaterThan(3);
     expect(TRACKS.lean(0)).toEqual(REST);
     expect(TRACKS.lean(5000)).toBeNull();
+  });
+});
+
+describe('a raised paw (parent 2026-10-16: a raised paw wears a mitt, not a boot)', () => {
+  const peak = (name: keyof typeof PAW_TRACKS, side: 'l' | 'r') => {
+    let up = false;
+    for (let t = 0; t < 2000; t += 20) {
+      const p = PAW_TRACKS[name](t);
+      if (!p) break;
+      if (side === 'l' ? pawRaised(p.lx, p.ly) : pawRaised(p.rx, p.ry)) up = true;
+    }
+    return up;
+  };
+  it('kneading keeps his feet on the ground; waving, raising, clapping, hiding and swatting lift them', () => {
+    expect(pawRaised(0, 0)).toBe(false);
+    expect(peak('knead', 'l') || peak('knead', 'r')).toBe(false);
+    for (const n of ['wave', 'raise', 'swat'] as const) expect(peak(n, 'r'), n).toBe(true);
+    for (const n of ['clap', 'cover'] as const) expect(peak(n, 'l') && peak(n, 'r'), n).toBe(true);
   });
 });

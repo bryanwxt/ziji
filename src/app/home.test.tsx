@@ -158,6 +158,7 @@ describe('Wardrobe', () => {
     const shelves = [...(await screen.findAllByRole('heading', { level: 2 }))].map((h) => h.querySelector('.sr-only')?.textContent ?? h.textContent);
     expect(shelves[0]).toBe('生肖');
     expect(shelves).toContain('职业');
+    expect(shelves.indexOf('机器人')).toBe(shelves.indexOf('职业') + 1); // his robots, after the jobs (his ask, 2026-10-15)
     expect(shelves.indexOf('希腊')).toBe(shelves.indexOf('中国') + 1);
     expect(shelves.indexOf('以前的衣服')).toBe(shelves.indexOf('希腊') + 1);
     expect(screen.getByRole('button', { name: '宙斯' })).toHaveProperty('disabled', false);

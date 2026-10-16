@@ -1,6 +1,6 @@
 // His favourite onesies (rewards spec 2026-10-15 §5.2), to the v3 standard (docs/worlds/costumes/standard-v3.png): each a hood
 // with the animal's own face, its body and tail, in light cel. penguin is the plan's worked example.
-import { belly, cel, celShade, DARK, eyes, gloveL, gloveR, hi, hood, pair, pawOverR, rope, ropeTail, S, s2, tint } from './costumeKit';
+import { belly, cel, celShade, DARK, eyes, feet, mitts, gloveL, gloveR, hi, hood, pair, pawOverR, rope, ropeTail, S, s2, tint } from './costumeKit';
 import type { CostumeLayer } from './costumes';
 
 /** A circle as an explicit cubic path (so a round piece can be a `cel` piece, its shadow a rim on the lower right). */
@@ -128,15 +128,13 @@ const magpie = (): CostumeLayer => ({
 
 // ---------------------------------------------------------------------------------------------------------------------------
 // 4. 企鹅 penguin (the worked example): a fluffy grey chick's hood under a dark cap that sweeps to both cheeks, a tuft,
-//    white-ringed eyes and a small beak; a white belly, flippers, orange feet; dark gloves.
+//    white-ringed eyes and a small beak; a white belly, flippers, orange feet.
 const PENGUIN = '#c7ccd6';
 const PG_CAP = '#3d3845';
 const penguin = (): CostumeLayer => ({
   back: '',
   body: tint(PENGUIN) + belly('#ffffff') +
-    pair((f) => cel(`M${f(112)} 196 C${f(94)} 212 ${f(88)} 236 ${f(96)} 254 C${f(104)} 252 ${f(110)} 238 ${f(116)} 216 Z`, PENGUIN, Math.min(f(112), f(88)) + 8, 210, 0.88)) +
-    // orange feet under his dark paws, showing below them (out at the sides they read as two more feet)
-    pair((f) => `<ellipse cx="${f(138)}" cy="276" rx="18" ry="7" fill="#ff9f43" ${S}/>`),
+    pair((f) => cel(`M${f(112)} 196 C${f(94)} 212 ${f(88)} 236 ${f(96)} 254 C${f(104)} 252 ${f(110)} 238 ${f(116)} 216 Z`, PENGUIN, Math.min(f(112), f(88)) + 8, 210, 0.88)),
   head: hood(PENGUIN) +
     `<path d="M48 120 C46 62 100 30 160 30 C220 30 274 62 272 120 C258 98 232 84 200 80 C186 78 172 80 160 82 C148 80 134 78 120 80 C88 84 62 98 48 120 Z" fill="${PG_CAP}" ${S}/>` +
     hi('M84 66 C98 50 118 42 140 38', 5, 0.3) +
@@ -144,8 +142,9 @@ const penguin = (): CostumeLayer => ({
     pair((f) => `<circle cx="${f(132)}" cy="58" r="7.5" fill="#fffdf7"/><circle cx="${f(133)}" cy="59" r="4.2" fill="${DARK}"/><circle cx="${f(134.5)}" cy="57" r="1.5" fill="#fff"/>`) +
     `<path d="M151 66 L169 66 L160 77 Z" fill="#ffb03d" ${s2}/>`,
   tail: `<path d="M208 256 L230 262 L212 270 Z" fill="${PG_CAP}" ${S}/>`,
-  pawL: gloveL(PG_CAP),
-  pawR: gloveR(PG_CAP),
+  // orange feet in his paws' place: flat, three toes
+  ...feet((f) => cel(`M${f(118)} 278 C${f(118)} 266 ${f(128)} 259 ${f(138)} 259 C${f(148)} 259 ${f(158)} 266 ${f(158)} 278 L${f(156)} 285 L${f(148)} 281 L${f(138)} 287 L${f(128)} 281 L${f(120)} 285 Z`, '#ff9f43', Math.min(f(118), f(158)) + 8, 263, 0.9)),
+  ...mitts(PG_CAP),
   hidesEars: true,
 });
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { BUILTIN } from '../content';
 import { ACCESSORY_DEFS } from '../fun/accessories';
 import { accessoryThumb } from '../ui/truffle/accessories';
-import { ANIMALS, CHINESE, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, type Costume } from '../fun/costumes';
+import { ANIMALS, CHINESE, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, ROBOTS, type Costume } from '../fun/costumes';
 import { POWERS, powerFamilies, powerProgress, type PowerProgress } from '../fun/powers';
 import { saveKid, updateKid } from '../store/repo';
 import { DEFAULT_KID, type KidState } from '../types';
@@ -24,8 +24,8 @@ const ROOM_TABS: [RoomTab, string][] = [['outfits', '服装'], ['powers', '能�
 
 const SLOT_TITLE = { face: '脸上', neck: '脖子上', held: '手里', back: '背上' } as const;
 
-/** His shelves (rewards spec §5.2): the chest's four, then 希腊 and 以前的衣服, which only show what he owns of them. */
-const SHELVES: [string, Costume[]][] = [['生肖', ONESIES], ['动物', ANIMALS], ['职业', JOBS], ['中国', CHINESE], ['希腊', GREEK], ['以前的衣服', OLD_OUTFITS]];
+/** His shelves (rewards spec §5.2): the chest's five, then 希腊 and 以前的衣服, which only show what he owns of them. */
+const SHELVES: [string, Costume[]][] = [['生肖', ONESIES], ['动物', ANIMALS], ['职业', JOBS], ['机器人', ROBOTS], ['中国', CHINESE], ['希腊', GREEK], ['以前的衣服', OLD_OUTFITS]];
 
 /** Truffle's room: what he wears and which power he shows. */
 export function Wardrobe() {

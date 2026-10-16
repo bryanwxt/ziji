@@ -79,6 +79,7 @@ Every prize must reach v3 (`docs/worlds/costumes/standard-v3.png`):
 - Headgear reaches both edges of the head, and the crown stays visible.
 - His face stays readable.
 - Held props move with his paw. The rig gets `pawL`/`pawR` costume slots (`docs/worlds/costumes/rig-slot.diff`).
+- Footwear and an animal's own feet replace his paws, never sit under them (parent 2026-10-16): they go in the `feetL`/`feetR` slots, drawn in his paws' place, so each foot is one foot. While a paw is raised (a wave, clap, cover or swat; not kneading) it wears `mittL`/`mittR` instead, a glove or mitt in the costume's colour; the rig flips the two layers only when the paw goes up or down.
 
 ### 5.2 The set
 
@@ -86,11 +87,12 @@ Every prize must reach v3 (`docs/worlds/costumes/standard-v3.png`):
 |---|---|
 | Zodiac onesies (keep) | 鼠 牛 虎 兔 龙 蛇 马 羊 猴 鸡 狗 猪 |
 | New onesies (17; 小白兔 became the zodiac 兔's look, parent 2026-10-15) | 水獭 otter, 犀鸟 hornbill, 熊猫 panda, 青蛙 frog, 鸭子 duck, 蜻蜓 dragonfly, 小恐龙 baby dino, 翼龙 pterosaur, 锦鲤 koi, 螃蟹 crab, 鹦鹉 parrot, 喜鹊 magpie, 企鹅 penguin, 鲨鱼 shark, 独角兽 unicorn, 猫头鹰 owl, 小老虎 tiger cub, 小白兔 bunny |
-| Jobs (10, redrawn as full-body) | 宇航员 astronaut, 厨师 chef, 消防员 firefighter, 医生 doctor, 飞行员 pilot, 警察 police officer, 足球员 footballer, 魔法师 wizard, 海盗 pirate, 小贩 hawker |
+| Jobs (11, redrawn as full-body; 军人 his ask, 2026-10-15) | 宇航员 astronaut, 厨师 chef, 消防员 firefighter, 医生 doctor, 飞行员 pilot, 警察 police officer, 足球员 footballer, 魔法师 wizard, 海盗 pirate, 小贩 hawker, 军人 soldier (Singapore-army camo, a flag, no weapons) |
+| Robots (2, his ask, 2026-10-15; shelf 机器人, story group) | 机甲 mecha (orange), 变形机器人 car-robot (red): Truffle's own designs, no show's names, emblems or signature shapes |
 | Chinese myths (7, redrawn) | 孙悟空, 哪吒, 嫦娥, 后羿, 财神, 招财猫, 舞狮 |
 | Accessories (16) | Kept as they are |
 
-- **Total in the chest:** 47 costumes plus 16 accessories, so 63 prizes.
+- **Total in the chest:** 49 costumes plus 16 accessories, so 65 prizes (46 + 16 = 62 after the one-rabbit merge, then his three asks).
 - **Starting point for drawing:** the 6 samples in `docs/worlds/costumes/samples-v3.ts.txt` (otter, panda, firefighter, hawker, 孙悟空, 嫦娥).
 - **Helpers to reuse:**
   - `cel(d, fill, ax, ay)` for a shadow-on-the-far-side piece;
@@ -104,9 +106,9 @@ Every prize must reach v3 (`docs/worlds/costumes/standard-v3.png`):
 ### 5.3 Chest order
 
 - **Old first chest** (no longer used): the very first chest gave his zodiac onesie from Settings.
-- **The pick:** a seeded pick from unowned prizes, weighted to rotate groups. Within each group's round he gets one onesie, then a job or myth, then an accessory, before any repeats of a group.
+- **The pick:** a seeded pick from unowned prizes, weighted to rotate groups. Within each group's round he gets one onesie, then a job, robot or myth, then an accessory, before any repeats of a group.
 - **When everything is owned:** the chest gives 3 bonus stars, as now.
-- **Pace:** at ≤2 chests a day, 63 prizes last at least 32 days, typically about 6 weeks.
+- **Pace:** at ≤2 chests a day, 65 prizes last at least 32 days, typically about 6 weeks.
 
 ## 6. Existing data
 
@@ -130,7 +132,7 @@ Every prize must reach v3 (`docs/worlds/costumes/standard-v3.png`):
   - with goals shown.
 - **WebKit:**
   - the Celebration meter and goals at iPad and phone sizes;
-  - a costume sheet of all 47 at 220 px, 64 px and cheer;
+  - a costume sheet of all 49 at 220 px, 64 px and cheer;
   - Truffle with every costume in idle and cheer, with no prop crossing his face (stage case);
   - the per-frame check still within 8 ms.
 - **Fit sweep:** clean.

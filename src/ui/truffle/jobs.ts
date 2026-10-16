@@ -3,32 +3,15 @@
 //
 // Held props sit out to his right (or low on his left) so they clear his face in every paw move: the wave turns his right paw
 // up and 20° toward his face, so anything held in it must stay right of x ≈ 230 once turned (the WebKit face probe checks it).
-import { cel, celShade, CREAM_PAW, gloveL, gloveR, heldPole, hi, INK, num, pair, PAW_L_D, PAW_R_D, pawOverL, pawOverR, rope, S, s2, tint } from './costumeKit';
+import { boot, cel, celShade, CREAM_PAW, feet, mitts, gloveL, gloveR, heldPole, hi, INK, num, oval, pair, PAW_L_D, PAW_R_D, pawOverL, pawOverR, poleFlag, rope, S, s2, star, tint } from './costumeKit';
 import type { CostumeLayer } from './costumes';
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
-/** An ellipse as an explicit cubic path (so it can be a `cel` piece, or a hole cut the other way round). */
-const oval = (cx: number, cy: number, rx: number, ry: number, ccw = false) => {
-  const [kx, ky] = [rx * 0.5523, ry * 0.5523];
-  const p = (x: number, y: number) => `${r1(x)} ${r1(y)}`;
-  return ccw
-    ? `M${p(cx - rx, cy)} C${p(cx - rx, cy + ky)} ${p(cx - kx, cy + ry)} ${p(cx, cy + ry)} C${p(cx + kx, cy + ry)} ${p(cx + rx, cy + ky)} ${p(cx + rx, cy)} ` +
-      `C${p(cx + rx, cy - ky)} ${p(cx + kx, cy - ry)} ${p(cx, cy - ry)} C${p(cx - kx, cy - ry)} ${p(cx - rx, cy - ky)} ${p(cx - rx, cy)} Z`
-    : `M${p(cx - rx, cy)} C${p(cx - rx, cy - ky)} ${p(cx - kx, cy - ry)} ${p(cx, cy - ry)} C${p(cx + kx, cy - ry)} ${p(cx + rx, cy - ky)} ${p(cx + rx, cy)} ` +
-      `C${p(cx + rx, cy + ky)} ${p(cx + kx, cy + ry)} ${p(cx, cy + ry)} C${p(cx - kx, cy + ry)} ${p(cx - rx, cy + ky)} ${p(cx - rx, cy)} Z`;
-};
-/** A five-pointed star as an explicit path. */
-const star = (cx: number, cy: number, r: number, inner = 0.45) =>
-  'M' + [...Array(10)].map((_, i) => {
-    const a = -Math.PI / 2 + (i * Math.PI) / 5;
-    const rr = i % 2 ? r * inner : r;
-    return `${r1(cx + rr * Math.cos(a))} ${r1(cy + rr * Math.sin(a))}`;
-  }).join(' L') + ' Z';
 const GOLD = '#f2c230';
 
 // ---------------------------------------------------------------------------------------------------------------------------
 // 1. 宇航员 astronaut: a white space helmet round his whole head with a clear visor over his face, a radio antenna and side
-//    pods; a white space suit with mission patches and a chest control box; the life-support pack behind; grey gloves and boots.
+//    pods; a white space suit with mission patches and a chest control box; the life-support pack behind; grey moon boots.
 //    (Told apart by the helmet ring.)
 const SUIT = '#f2f4f8';
 const SUIT_GREY = '#d9dde6';
@@ -49,9 +32,7 @@ const astronaut = (): CostumeLayer => ({
     `<path d="M138 243 L182 243" stroke="#8a93a6" stroke-width="3" stroke-linecap="round"/><circle cx="182" cy="230" r="3" fill="#3f6fd6"/>` +
     // the mission patches: blue on his left shoulder, orange on his right
     `<circle cx="108" cy="222" r="10" fill="#3f6fd6" ${s2}/><path d="${star(108, 222, 6)}" fill="#fffdf7"/>` +
-    `<path d="M204 214 L222 214 L222 230 L204 230 Z" fill="#ff8a3d" ${s2}/><path d="M207 222 L219 222" stroke="#fffdf7" stroke-width="2.4"/>` +
-    // the moon boots on his own feet: each under its gloved paw, a thick sole showing round it (never beside it: four feet)
-    pair((f) => `<ellipse cx="${f(138)}" cy="271" rx="21" ry="11" fill="${SUIT_GREY}" ${S}/><path d="M${f(120)} 276 C${f(130)} 281 ${f(146)} 281 ${f(156)} 276" fill="none" stroke="${celShade(SUIT_GREY)}" stroke-width="2.4"/>`),
+    `<path d="M204 214 L222 214 L222 230 L204 230 Z" fill="#ff8a3d" ${s2}/><path d="M207 222 L219 222" stroke="#fffdf7" stroke-width="2.4"/>`,
   head:
     // the helmet: its ring (shadow, lit, line), the side pods, a blue stripe over the top, then the clear visor
     `<path d="${HELM} ${VISOR_HOLE}" fill="${celShade(SUIT)}"/>` +
@@ -64,8 +45,10 @@ const astronaut = (): CostumeLayer => ({
     `<path d="${oval(160, 124, 100, 70)}" fill="#bfe0ff" fill-opacity=".2" ${S}/>` +
     hi('M80 96 C88 78 104 66 124 60', 6, 0.7) + hi('M136 57 L146 56', 5, 0.6) +
     hi('M70 52 C82 40 98 33 116 30', 5, 0.6),
-  pawL: gloveL(SUIT_GREY),
-  pawR: gloveR(SUIT_GREY),
+  // the moon boots in his paws' place: grey, a thick sole and a blue band
+  ...feet((f) => boot(f, SUIT_GREY) + `<path d="M${f(117)} 279 L${f(159)} 279" stroke="${celShade(SUIT_GREY)}" stroke-width="2.6"/>` +
+    `<path d="M${f(119)} 266 C${f(130)} 262 ${f(146)} 262 ${f(157)} 266" fill="none" stroke="#3f6fd6" stroke-width="3.4" stroke-linecap="round"/>`),
+  ...mitts(SUIT_GREY),
   hidesEars: true,
 });
 
@@ -276,6 +259,9 @@ const police = (): CostumeLayer => ({
 //    collar and number 7, green shorts, black boots on his feet; the football under his left paw. (Yellow, and the ball.)
 const JERSEY = '#ffcc2e';
 const PITCH = '#2fae5a';
+/** His football boots, in his paws' place: black, a white stripe, studs. */
+const FOOTBALL_BOOTS = feet((f) => boot(f, '#2d2a33', '#18161c') + `<path d="M${f(118)} 279 L${f(158)} 279" stroke="#fffdf7" stroke-width="2.4"/>` +
+  [124, 136, 148].map((x) => `<path d="M${f(x)} 286 L${f(x)} 289" stroke="#2d2a33" stroke-width="3" stroke-linecap="round"/>`).join(''));
 const football = (): CostumeLayer => ({
   back: '',
   body: tint(JERSEY) +
@@ -286,11 +272,7 @@ const football = (): CostumeLayer => ({
     num('7', 160, 234, PITCH) + hi('M110 206 C104 214 102 222 102 230', 3, 0.4) +
     // green shorts round his middle, down to the suit's own bottom edge (no legs out at the sides: they read as two more feet)
     cel('M98 246 C128 256 192 256 222 246 C221 251 219 255 216 258 C200 276 120 276 104 258 C101 255 99 251 98 246 Z', PITCH, 110, 252, 0.9) +
-    `<path d="M160 256 L160 272" stroke="${celShade(PITCH)}" stroke-width="2.4"/>` +
-    // black boots with a white stripe and studs, on his own feet: each under its paw, the boot showing round and below it
-    pair((f) => `<path d="M${f(116)} 274 C${f(116)} 266 ${f(126)} 262 ${f(138)} 262 C${f(150)} 262 ${f(160)} 266 ${f(160)} 274 L${f(160)} 281 C${f(160)} 284 ${f(158)} 286 ${f(154)} 286 L${f(122)} 286 C${f(118)} 286 ${f(116)} 284 ${f(116)} 281 Z" fill="#2d2a33" ${s2}/>` +
-      `<path d="M${f(118)} 279 L${f(158)} 279" stroke="#fffdf7" stroke-width="2.4"/>` +
-      [124, 136, 148].map((x) => `<path d="M${f(x)} 286 L${f(x)} 289" stroke="#2d2a33" stroke-width="3" stroke-linecap="round"/>`).join('')),
+    `<path d="M160 256 L160 272" stroke="${celShade(PITCH)}" stroke-width="2.4"/>`,
   head:
     // the sweatband: right across his forehead, the white stripe along it; it never grows over his crown
     `<path d="M54 92 C92 56 228 56 266 92 L266 108 C228 72 92 72 54 108 Z" fill="${PITCH}" ${S}/>` +
@@ -301,9 +283,11 @@ const football = (): CostumeLayer => ({
     cel(oval(112, 254, 19, 19), '#fffdf7', 104, 244, 0.9, '#d9d4cc') +
     `<path d="M112 247 L119 252 L116 260 L108 260 L105 252 Z" fill="#2d2a33"/>` +
     `<path d="M95 248 L100 250 L100 257 L95 260 M129 248 L124 250 L124 257 L129 260 M106 237 L112 240 L118 237" fill="#2d2a33" ${s2}/>` +
-    `<path d="M112 247 L112 240 M119 252 L124 250 M116 260 L119 267 M108 260 L105 267 M105 252 L100 250" stroke="${INK}" stroke-width="1.6"/></g>` +
-    pawOverL,
+    `<path d="M112 247 L112 240 M119 252 L124 250 M116 260 L119 267 M108 260 L105 267 M105 252 L100 250" stroke="${INK}" stroke-width="1.6"/></g>`,
   pawR: '',
+  ...FOOTBALL_BOOTS,
+  ...mitts(JERSEY),
+  overL: true,
   hidesEars: false,
 });
 
@@ -427,4 +411,74 @@ const hawker = (): CostumeLayer => ({
   hidesEars: false,
 });
 
-export const JOB_COSTUMES: Record<string, () => CostumeLayer> = { astronaut, chef, firefighter, doctor, pilot, police, football, wizard, pirate, hawker };
+// ---------------------------------------------------------------------------------------------------------------------------
+// 11. 军人 soldier (his ask, 2026-10-15), Singapore-army flavoured: a helmet in pixel camo right across his head with its chin
+//     straps, a pixel-camo uniform with chest pockets, the webbing belt and a water bottle on his hip, a small Singapore flag
+//     patch on his arm, black boots on his own feet; a Singapore flag in his right paw. No weapons: this is a 7-year-old's app.
+//     (The camo helmet and the flag.)
+const ARMY = '#82803a';
+const CAMO = ['#4f5e2a', '#8a6a3e', '#b3bd7c'];
+const WEBBING = '#4a5526';
+/** Pixel camo: 8-unit squares, seeded, kept to the cells whose four corners pass `inside`. */
+const camo = (seed: number, x0: number, x1: number, y0: number, y1: number, inside: (x: number, y: number) => boolean) => {
+  let h = seed;
+  const rnd = () => ((h = (h * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  let out = '';
+  for (let y = y0; y < y1; y += 8) for (let x = x0; x < x1; x += 8) {
+    const r = rnd();
+    const k = rnd();
+    if (r > 0.5 || ![[x, y], [x + 8, y], [x, y + 8], [x + 8, y + 8]].every(([a, b]) => inside(a!, b!))) continue;
+    out += `<path d="M${x} ${y} L${x + 8} ${y} L${x + 8} ${y + 8} L${x} ${y + 8} Z" fill="${CAMO[Math.floor(k * 3)]}"/>`;
+  }
+  return out;
+};
+const inEllipse = (cx: number, cy: number, rx: number, ry: number) => (x: number, y: number) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+const SOLDIER_HELM = 'M52 112 C46 62 98 26 160 26 C222 26 274 62 268 112 C262 106 252 100 240 96 C200 86 120 86 80 96 C68 100 58 106 52 112 Z';
+/** His black army boots, in his paws' place: laces, a sole. */
+const ARMY_BOOTS = feet((f) => boot(f, '#2d2a33', '#18161c') + `<path d="M${f(118)} 281 L${f(158)} 281" stroke="#4a4552" stroke-width="2.4"/>` +
+  `<path d="M${f(130)} 263 L${f(146)} 263 M${f(129)} 268 L${f(147)} 268 M${f(129)} 273 L${f(147)} 273" stroke="#8a8399" stroke-width="1.8" stroke-linecap="round"/>`);
+const soldier = (): CostumeLayer => ({
+  back: '',
+  body: tint(ARMY) +
+    camo(7, 88, 232, 188, 276, (x, y) => y > 196 && inEllipse(160, 234, 64, 40)(x, y)) +
+    // the collar folded open, the two chest pockets with their flaps and buttons
+    pair((f) => `<path d="M${f(118)} 190 L${f(152)} 204 L${f(140)} 218 Z" fill="${ARMY}" ${s2}/>`) +
+    pair((f) => `<path d="M${f(118)} 212 L${f(144)} 212 L${f(144)} 234 L${f(118)} 234 Z" fill="none" stroke="${celShade(ARMY)}" stroke-width="2.4" stroke-linejoin="round"/>` +
+      `<path d="M${f(116)} 210 L${f(146)} 210 L${f(146)} 218 L${f(131)} 221 L${f(116)} 218 Z" fill="${ARMY}" ${s2}/><circle cx="${f(131)}" cy="216" r="2.2" fill="${WEBBING}"/>`) +
+    // the Singapore flag patch on his left arm: red over white, the crescent
+    `<path d="M196 208 L218 206 L219 214 L197 216 Z" fill="#e0283a"/><path d="M197 216 L219 214 L220 222 L198 224 Z" fill="#fffdf7"/><path d="M196 208 L218 206 L220 222 L198 224 Z" fill="none" ${s2}/>` +
+    `<circle cx="202" cy="211.5" r="2.6" fill="#fffdf7"/><circle cx="203.4" cy="211.3" r="2.3" fill="#e0283a"/>` +
+    // the webbing belt and its buckle, at his waist
+    `<path d="M93 238 C128 248 192 248 227 238 L227 249 C192 259 128 259 93 249 Z" fill="${WEBBING}" ${S}/>` +
+    `<path d="M151 242 L169 242 L169 255 L151 255 Z" fill="#c9ccd6" ${s2}/><path d="M156 246 L164 246 L164 251 L156 251 Z" fill="${WEBBING}"/>` +
+    // the water bottle on his right hip: its olive cover, the black cap, the strap over the belt
+    `<path d="M104 246 L104 238" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>` +
+    cel('M88 254 C86 244 92 238 100 238 L110 238 C118 238 122 244 120 254 L118 270 C117 276 113 278 108 278 L100 278 C95 278 91 276 90 270 Z', '#5f6e30', 94, 244, 0.88) +
+    `<path d="M96 232 L112 232 L112 240 L96 240 Z" fill="#2d2a33" ${s2}/><path d="M92 256 L116 256" stroke="${WEBBING}" stroke-width="3"/>`,
+  head:
+    // the helmet right across his head in pixel camo, its rim, then the chin straps down his cheeks
+    cel(SOLDIER_HELM, ARMY, 100, 44, 0.94) +
+    camo(3, 64, 256, 30, 92, (x, y) => inEllipse(160, 100, 98, 68)(x, y) && y < 90 - 0.002 * (x - 160) ** 2) +
+    `<path d="${SOLDIER_HELM}" fill="none" ${S}/>` +
+    `<path d="M56 106 C66 100 74 98 82 96 C120 87 200 87 238 96 C246 98 254 100 264 106" fill="none" stroke="${celShade(ARMY)}" stroke-width="5" stroke-linecap="round"/>` +
+    hi('M70 70 C84 50 106 38 132 33', 6, 0.4) +
+    pair((f) => rope(`M${f(60)} 110 C${f(62)} 136 ${f(68)} 156 ${f(80)} 172`, WEBBING, 4)),
+  // a Singapore flag on a short pole, flying out to his right: red over white, the crescent and five stars
+  pawR: poleFlag(186, 262, -40, 84, 26, 36, '#c9ccd6', (x0, x1) => {
+    const mid = (x0 + x1) / 2;
+    const cx = x1 - (x1 - x0) / 4;
+    return `<path d="M${x1} 0 L${x1} 36 L${mid} 36 L${mid} 0 Z" fill="#e0283a"/><path d="M${mid} 0 L${mid} 36 L${x0} 36 L${x0} 0 Z" fill="#fffdf7"/>` +
+      `<circle cx="${cx}" cy="8.5" r="4.6" fill="#fffdf7"/><circle cx="${cx}" cy="10.5" r="4.1" fill="#e0283a"/>` +
+      [0, 1, 2, 3, 4].map((i) => {
+        const a = (i * 2 * Math.PI) / 5;
+        return `<circle cx="${(cx + 2.9 * Math.cos(a)).toFixed(1)}" cy="${(15 + 2.9 * Math.sin(a)).toFixed(1)}" r="1" fill="#fffdf7"/>`;
+      }).join('');
+  }),
+  pawL: '',
+  ...ARMY_BOOTS,
+  ...mitts(ARMY),
+  overR: true,
+  hidesEars: true,
+});
+
+export const JOB_COSTUMES: Record<string, () => CostumeLayer> = { astronaut, chef, firefighter, doctor, pilot, police, football, wizard, pirate, hawker, soldier };

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { addDays, localDateKey } from '../lib/date';
 import { DEFAULT_KID, type KidState } from '../types';
 import { costumeLayer } from '../ui/truffle/costumes';
-import { ANIMALS, CHEST_COSTUMES, CHINESE, costumeById, COSTUMES, costumesLeft, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, openChest, prizeGroup, visibleAccessory, type ChestResult } from './costumes';
+import { ANIMALS, CHEST_COSTUMES, CHINESE, costumeById, COSTUMES, costumesLeft, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, openChest, prizeGroup, ROBOTS, visibleAccessory, type ChestResult } from './costumes';
 import { EMPTY_METER, fillMeter } from './meter';
 import { ACCESSORIES } from './pet';
 
@@ -20,6 +20,13 @@ describe('the costume catalogue (rewards spec §5.2)', () => {
     expect(CHEST_COSTUMES.some((c) => c.set === 'greek' || c.set === 'old')).toBe(false);
     expect(new Set(COSTUMES.map((c) => c.id)).size).toBe(COSTUMES.length);
     expect(costumeById('nope')).toBeUndefined();
+  });
+  it('the robots (机甲, 变形机器人) are a chest shelf of their own and count as story prizes; 军人 is a job (his ask, 2026-10-15)', () => {
+    expect(ROBOTS.map((c) => [c.id, c.zh])).toEqual([['mecha', '机甲'], ['carbot', '变形机器人']]);
+    expect(ROBOTS.every((c) => c.set === 'robot' && c.kind === 'outfit' && inChest(c))).toBe(true);
+    expect(ROBOTS.map(prizeGroup)).toEqual(['story', 'story']);
+    expect(costumeById('soldier')).toMatchObject({ zh: '军人', set: 'job', kind: 'outfit' });
+    expect(costumeById('robot')).toMatchObject({ set: 'old' }); // the retired 机器人 stays out of the chest
   });
   it('names carry one pinyin syllable per character', async () => {
     const { ACCESSORY_DEFS } = await import('./accessories');
@@ -118,6 +125,7 @@ describe('telling the onesies apart (parent, 2026-10-06; rewards spec §5.1: one
     ['tigercub', 'tiger'], ['babydino', 'dragon'], ['pterosaur', 'dragon'], ['pterosaur', 'babydino'], ['magpie', 'hornbill'], ['penguin', 'hornbill'], ['parrot', 'magpie'], ['shark', 'rat'], ['owl', 'otter'], ['unicorn', 'rabbit'],
     ['football', 'firefighter'], ['police', 'pirate'], ['police', 'hawker'],
     ['caishen', 'liondance'], ['nezha', 'liondance'],
+    ['mecha', 'carbot'], ['mecha', 'tiger'], ['soldier', 'houyi'], ['soldier', 'frog'],
   ];
   it('the lookalikes never share a colour', () => {
     for (const [a, b] of PAIRS) {
@@ -128,19 +136,20 @@ describe('telling the onesies apart (parent, 2026-10-06; rewards spec §5.1: one
   });
 });
 
-describe('the chest holds 62 prizes, and they last (rewards spec §5.2–5.3)', () => {
-  it('46 costumes and 16 accessories', () => {
-    expect(CHEST_COSTUMES).toHaveLength(46);
+describe('the chest holds 65 prizes, and they last (rewards spec §5.2–5.3)', () => {
+  it('49 costumes and 16 accessories', () => {
+    expect(CHEST_COSTUMES).toHaveLength(49);
     expect(ONESIES.length + ANIMALS.length).toBe(29);
-    expect(JOBS).toHaveLength(10);
+    expect(JOBS).toHaveLength(11);
+    expect(ROBOTS).toHaveLength(2);
     expect(CHINESE).toHaveLength(7);
-    expect(CHEST_COSTUMES.length + ACCESSORIES.length).toBe(62);
+    expect(CHEST_COSTUMES.length + ACCESSORIES.length).toBe(65);
   });
-  it('at ≤2 chests a day, however many lessons, they last at least 31 days (62 prizes)', () => {
+  it('at ≤2 chests a day, however many lessons, they last at least 32 days (65 prizes)', () => {
     let kid: KidState = { ...DEFAULT_KID };
     let prizes = 0;
     let days = 0;
-    while (prizes < 62) {
+    while (prizes < 65) {
       const d = day(days);
       for (const [i, kind] of (['first', 'extra', 'extra', 'extra', 'extra'] as const).entries()) kid = fillMeter(kid, { kind, day: d, key: days * 10 + i }).kid;
       while (kid.meter.owed > 0) {
@@ -150,6 +159,6 @@ describe('the chest holds 62 prizes, and they last (rewards spec §5.2–5.3)', 
       }
       days++;
     }
-    expect(days).toBeGreaterThanOrEqual(31);
+    expect(days).toBeGreaterThanOrEqual(32);
   });
 });
