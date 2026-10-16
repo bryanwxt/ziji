@@ -24,6 +24,26 @@ describe('the look-alike line (spec 2026-10-12 §3)', () => {
   });
 });
 
+describe('the look-alike line as sums (parent 2026-10-16: "扫 彐 扬 昜" read as a stray row)', () => {
+  it('不一样, then 扫 = 扌 + 彐 · 扬 = 扌 + 昜: the shared part plain, each one\'s own part marked', () => {
+    const { container } = render(<LookAlikeWhy right="扫" picked="扬" />);
+    expect(container.querySelector('.why__label .label')!.getAttribute('data-zh')).toBe('不一样');
+    const sums = [...container.querySelectorAll('.why__char')].map((c) => [...c.querySelectorAll('.why__zh, .why__shared, .why__own')].map((e) => `${e.classList.contains('why__own') ? '*' : ''}${e.textContent}`).join(' '));
+    expect(sums).toEqual(['扫 扌 *彐', '扬 扌 *昜']);
+    expect(container.querySelectorAll('.why__op')).toHaveLength(4); // = + for each
+  });
+  it('parts that overlap make no sum (商: 口 inside its 冏): its own parts, as before', () => {
+    const { container } = render(<LookAlikeWhy right="衣" picked="商" />);
+    expect(container.querySelector('.why__sum')).toBeNull();
+  });
+  it('a character inside the other has no sum of its own (生 · 星 = 日 + 生)', () => {
+    const { container } = render(<LookAlikeWhy right="生" picked="星" />);
+    const [mine, other] = [...container.querySelectorAll('.why__char')];
+    expect(mine!.querySelector('.why__sum')).toBeNull();
+    expect(other!.querySelector('.why__own')!.textContent).toBe('日');
+  });
+});
+
 describe('the pinyin line (spec 2026-10-12 §3)', () => {
   it('tone: 声调不同 with the right syllable and the picked one', () => {
     const { container } = render(<PinyinWhy word={w('请')} picked="qìng" />);

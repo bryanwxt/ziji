@@ -118,3 +118,51 @@ describe('练一练 miss sheet: what he picked, with its English', () => {
     expect(document.querySelector('.pair-summary')!.textContent).toContain(CHOICE_GLOSS['学生']);
   });
 });
+
+describe('练一练 miss sheet: one two-row layout for every question type (parent 2026-10-16)', () => {
+  /** ✓ 正确答案 and ✗ 你选的 rows, the same cells in the same order, the speak button only on the right row; the why-line inside */
+  const twoRows = () => {
+    const note = document.querySelector('.sheet--oops .sheet__en--named')!;
+    expect(note).toBeTruthy();
+    const right = note.querySelector('.sheet__en-right')!;
+    const mine = note.querySelector('.sheet__en-picked')!;
+    expect(right.querySelector('.sheet__en-label .label')!.getAttribute('data-zh')).toBe('正确答案');
+    expect(mine.querySelector('.sheet__en-label .label')!.getAttribute('data-zh')).toBe('你选的');
+    for (const row of [right, mine]) expect([...row.children].slice(0, 3).map((c) => c.className)).toEqual(['sheet__en-label', 'sheet__en-zh', 'sheet__en-gloss']);
+    expect(mine.querySelector('.speak')).toBeNull();
+    expect(document.querySelector('.sheet .why')?.parentElement ?? note).toBe(note);
+    return { right, mine };
+  };
+  it('意思 (English choices): 鱼 fish, then the word his English means', () => {
+    render(<FlashcardStep {...base} item={review} ask="meaningRead" />);
+    const real = firstSense(questionMeaning(he)!);
+    fireEvent.click(choices().find((b) => b.textContent !== real)!);
+    const { right } = twoRows();
+    expect(right.lastElementChild!.classList.contains('speak')).toBe(true); // after the English, not between
+  });
+  it('读音 (pinyin choices): the pick named as its character', () => {
+    render(<FlashcardStep {...base} item={review} ask="read" />);
+    fireEvent.click(choices().find((b) => b.textContent !== he.pinyin && pinyinPickNote(he, b.textContent!, pool))!);
+    twoRows();
+  });
+  it('选一选 (a word), 钓鱼 (with its why-line inside), 成语 gap, 搭配 (no second speak button)', () => {
+    const fit = { kind: 'fit' as const, wordId: null, word: '没关系', before: '', after: '！', options: ['没关系', '对不起', '不客气', '星期天'] };
+    let r = render(<UseQuestion item={fit} kid={DEFAULT_KID} onAnswer={vi.fn()} onNext={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '对不起' }));
+    twoRows();
+    r.unmount();
+    r = render(<ComponentsStep items={[{ wordId: 'b:波', word: '波浪', index: 0, answer: '波', options: ['波', '玻', '坡', '破'] }]} kid={DEFAULT_KID} onAnswer={vi.fn()} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '玻' }));
+    twoRows();
+    r.unmount();
+    const gap = idiomGap(builtinIdiom('五颜六色')!, '颜', mulberry32(1))!;
+    r = render(<IdiomQuestion gap={gap} kid={DEFAULT_KID} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: gap.options.find((o) => o !== '颜')! }));
+    expect(twoRows().right.querySelector('.sheet__en-zh .label')!.getAttribute('data-zh')).toBe('五颜六色'); // said once, in its row
+    expect(document.querySelectorAll('.sheet .speak')).toHaveLength(1);
+    r.unmount();
+    render(<MatchQuestion question={{ verb: '吃', noun: '面条', options: ['面条', '气球', '日记', '网球'] }} kid={DEFAULT_KID} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '气球' }));
+    expect(twoRows().right.querySelector('.speak')).toBeNull(); // the pair line above has it
+  });
+});

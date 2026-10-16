@@ -77,15 +77,17 @@ export function ComponentsStep({ items, kid, onAnswer, onDone, onProgress }: Pro
               {correct ? (
                 <span class="zibian__why"><Radical ch={item.answer} /></span>
               ) : (
-                // the part that tells them apart (spec 2026-10-12 §3); nothing to tell: the radical rows as before
-                <LookAlikeWhy right={item.answer} picked={picked!} fallback={
-                  <span class="zibian__why">
-                    <Radical ch={item.answer} />
-                    {getCharInfo(picked!)?.radical !== getCharInfo(item.answer)?.radical && <Radical ch={picked!} />}
-                  </span>
+                // what he caught beside the right one, then the part that tells them apart (spec 2026-10-12 §3); nothing to
+                // tell: the radical rows as before
+                <MeaningNote right={item.answer} picked={picked} why={
+                  <LookAlikeWhy right={item.answer} picked={picked!} fallback={
+                    <span class="zibian__why">
+                      <Radical ch={item.answer} />
+                      {getCharInfo(picked!)?.radical !== getCharInfo(item.answer)?.radical && <Radical ch={picked!} />}
+                    </span>
+                  } />
                 } />
               )}
-              {!correct && <MeaningNote right={item.answer} picked={picked} />}
             </>
           }
           actionLabel="继续"

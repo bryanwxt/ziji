@@ -16,7 +16,7 @@ import type { Word } from '../types';
 import { familyDistractors } from './family';
 import { NONE_OF_THESE } from './noneOfThese';
 import { nearWords, NEAR_MAX_HSK, zuciBoard } from './pairs';
-import { choiceGloss, cuePickNote, meaningPickNote, NONE_PICKED_EN, pickedNote, pinyinPickNote } from './missNote';
+import { choiceGloss, shortGloss, cuePickNote, meaningPickNote, NONE_PICKED_EN, pickedNote, pinyinPickNote } from './missNote';
 
 const school = builtinWords(0).filter((w) => schoolTerm(w.text));
 const words: Word[] = [...school, ...ladderWords()];
@@ -107,5 +107,23 @@ describe('the hand-written glosses for choices (CHOICE_GLOSS)', () => {
   it('are kid glosses: four words at most, no jargon, no Chinese, one sense', () => {
     const bad = Object.entries(CHOICE_GLOSS).flatMap(([t, g]) => glossProblems(g).map((p) => `${t} "${g}": ${p}`));
     expect(bad).toEqual([]);
+  });
+});
+
+describe('the sheet\'s English is short (parent 2026-10-16: 扬 showed "to raise; to hoist")', () => {
+  it('the dictionary cut to its first sense and first comma part, with no leading "to"', () => {
+    expect(shortGloss('to raise; to hoist')).toBe('raise');
+    expect(shortGloss('experience; to go through')).toBe('experience');
+    expect(shortGloss('to teach (at a school, college), to train')).toBe('teach (at a school, college)');
+    expect(shortGloss('to')).toBe('to');
+  });
+  it('a kid gloss or one written for a decoy wins over the dictionary; the dictionary only cut short', () => {
+    expect(choiceGloss('扬')).toBe('raise');
+    expect(choiceGloss('鱼')).toBe(kidGloss('鱼'));
+    expect(choiceGloss('对不起')).toBe(kidGloss('对不起') ?? CHOICE_GLOSS['对不起']);
+    for (const w of school.slice(0, 400)) {
+      const g = choiceGloss(w.text);
+      if (g && !kidGloss(w.text) && !CHOICE_GLOSS[w.text]) expect(g, w.text).not.toMatch(/;/);
+    }
   });
 });

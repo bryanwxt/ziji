@@ -50,7 +50,7 @@ export function MatchQuestion({ question, kid, onDone, none }: Props) {
             <>
               <span class="hanzi">{pair}</span>
               <SpeakButton text={pair} />
-              <MeaningNote right={question.noun} picked={correct ? null : choice} /> {/* 都不对 picked wrongly is said plainly (missNote.ts) */}
+              <MeaningNote right={question.noun} picked={correct ? null : choice} speak={false} /> {/* 都不对 picked wrongly is said plainly (missNote.ts) */}
             </>
           )}
           actionLabel="继续"

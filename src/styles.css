@@ -216,14 +216,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .part--radical { color: var(--blue); }
 /* English on the 认字 card (parent, 2026-10-04): small, quiet, one line each */
 .intro__en { margin: 0; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.25; color: var(--ink-soft); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sheet__en { margin: 2px 0 0; display: flex; flex-direction: column; gap: 2px; flex-basis: 100%; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.3; color: var(--ink-soft); }
-.sheet__en-line { margin: 0; display: flex; align-items: flex-end; gap: 8px; }
-.sheet__en-zh { font-family: var(--hanzi); font-size: 22px; flex: none; }
+/* the miss sheet's comparison (parent 2026-10-16): name | Chinese | English (| speak) in columns shared by both rows (subgrid),
+   the English wrapping inside its own column; the picked row quieter, its character still plain to read */
+.sheet__en { margin: 2px 0 0; display: grid; grid-template-columns: auto minmax(0, max-content); justify-content: start; align-items: end; column-gap: 12px; row-gap: 6px; flex-basis: 100%; font-family: var(--font, system-ui); font-size: 16px; line-height: 1.3; color: var(--ink-soft); }
+.sheet__en--named { grid-template-columns: auto auto minmax(0, max-content) auto minmax(0, 1fr); justify-content: stretch; } /* the last, flexible column takes what spans to the end (a long pick's English, the why row) without widening the others */
+.sheet__en-picked .sheet__en-gloss { grid-column: 3 / -1; } /* no speak button on this row: its English may use that room */
+.sheet__en-line { margin: 0; grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: end; }
+.sheet__en-zh { font-family: var(--hanzi); font-size: 22px; font-weight: 400; }
 .sheet__en-zh .label__py { font-size: 12px; }
+.sheet__en-gloss { overflow-wrap: anywhere; -webkit-hyphens: auto; hyphens: auto; padding-bottom: 0.15em; } /* a word too long for a phone's column breaks with a hyphen */
 .sheet__en-right { font-weight: 700; color: var(--ink); }
-.sheet__en-line { flex-wrap: wrap; row-gap: 0; }
-.sheet__en-label { font-family: var(--font); font-size: 16px; font-weight: 800; color: inherit; align-self: center; }
-.sheet__en-line .speak--sm { align-self: center; }
+.sheet__en-label { display: inline-flex; align-items: flex-end; gap: 4px; font-family: var(--font); font-size: 16px; font-weight: 800; white-space: nowrap; }
+.sheet__en-label .label__py { font-size: 10px; font-weight: 700; }
+.sheet__en-mark { flex: none; margin-bottom: 0.2em; }
+.sheet__en-right .sheet__en-label { color: var(--green-ink); }
+.sheet__en-picked { font-weight: 600; color: var(--ink-soft); }
+.sheet__en-picked .sheet__en-label { color: var(--orange-ink); opacity: 0.85; }
+.sheet__en-line .speak--sm { align-self: center; justify-self: start; }
 .sheet__detail { flex-wrap: wrap; }
 /* the characters sit on the card's centre line; the speak button hangs just to their right (parent, 2026-10-05: rows looked off-centre) */
 .intro__head { position: relative; display: flex; justify-content: center; max-width: 100%; }
@@ -958,10 +967,17 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
      answer, and a slimmer 继续 leaves the English one line each (parent, 2026-10-05: the sheet was cut off on an iPhone) */
   .stage__sheet .sheet--oops .sheet__title:has(+ .sheet__detail) { display: none; }
   .stage__sheet .sheet--oops:has(.sheet__detail) .btn { min-width: 0; padding: 10px 12px; }
-  .sheet__en { font-size: 15px; line-height: 1.2; gap: 0; }
+  .sheet__en { font-size: 15px; line-height: 1.2; column-gap: 6px; row-gap: 4px; }
+  .sheet__en-label .label__py, .why__label .label__py { padding: 0 0.05em; letter-spacing: -0.02em; }
+  .sheet__en .speak--sm { width: 44px; height: 44px; }
+  .sheet__en--long .sheet__en-line .sheet__en-gloss { grid-column: 2 / -1; grid-row: 2; padding-bottom: 0; }
+  .sheet__en--long .sheet__en-line .speak--sm { grid-column: 3 / span 2; grid-row: 1; }
   .sheet__en-zh { font-size: 18px; }
   .sheet__en-zh .label__py { font-size: 10px; min-height: 1em; }
-  .sheet__en-line { gap: 6px; }
+  /* the comparison takes the sheet's whole width; 继续 goes under it, full width (a narrow English column read as a muddle) */
+  .stage__sheet .sheet:has(.sheet__en--named) { flex-direction: column; align-items: stretch; gap: 8px; }
+  .stage__sheet .sheet:has(.sheet__en--named) .btn { width: 100%; }
+  .stage:has(.sheet .sheet__en--named):has(.sheet .clue) .stage__truffle { display: none; } /* with 选一选's clue too, the card needs Truffle's row */
 }
 @media (max-width: 599px) and (max-height: 720px) { /* the smallest phones: the answer and its English, not the long hint, so the card keeps its tiles */
   .stage__sheet .sheet__detail .clue { display: none; }
@@ -1683,6 +1699,25 @@ button.langdu__sentence { cursor: pointer; }
 .why mark { background: var(--gold-soft); color: inherit; border-radius: 4px; padding: 0 2px; }
 @media (max-width: 599px) { .sheet__detail .why .hanzi, .why__syl { font-size: 16px; } } /* phones: under the compact answer (18px); after the base rules so it wins */
 @media (max-width: 599px) { .why__dot { display: none; } } /* the two characters wrap onto two lines here; a dot left at a line's end means nothing */
+/* the why-line's parts as a sum (parent 2026-10-16): 扫 = 扌 + 彐, the part only it has coloured (green his answer's, orange
+   his pick's), the shared part plain; on the miss sheet it is the comparison's third row, its name (💡 不一样) under the others */
+.why__body { display: contents; }
+.why__clause { display: inline-flex; align-items: flex-end; gap: 6px; white-space: nowrap; }
+.family-sum .why__label { display: none; } /* 找一家人's summary lays out its own rows: each why sits under its word, unnamed */
+.why__label { display: inline-flex; align-items: flex-end; gap: 4px; font-size: 16px; font-weight: 800; color: var(--ink-soft); white-space: nowrap; }
+.why__label .label__py { font-size: 10px; font-weight: 700; }
+.why__mark { flex: none; margin-bottom: 0.2em; color: var(--gold-edge); }
+.why__sum { display: inline-flex; align-items: center; gap: 5px; }
+.why__op { font-size: 15px; font-weight: 700; color: var(--muted); }
+.sheet__detail .why .why__shared { color: var(--ink-soft); }
+.why__own { font-weight: 400; color: var(--green-ink); background: var(--green-soft); box-shadow: inset 0 0 0 2px var(--green); border-radius: 6px; padding: 0 3px; }
+.why__char:not(.why__char--right) .why__own { color: var(--orange-ink); background: #fff7ed; box-shadow: inset 0 0 0 2px var(--orange); }
+.why__char:not(.why__char--right) .why__zh { color: var(--ink-soft); }
+.why__char:not(.why__char--right) .why__part { color: var(--orange-ink); }
+.sheet__en > :not(.sheet__en-line) { grid-column: 1 / -1; }
+.sheet__en--named > .why { display: grid; grid-template-columns: subgrid; align-items: end; margin-top: 2px; }
+.sheet__en--named > .why > .why__body { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; }
+.sheet__en--named > .why .why__char { flex-wrap: wrap; white-space: normal; min-width: 0; } /* a long one wraps inside the sheet rather than run past it */
 
 /* Pinyin fading (spec 2026-10-12 §4): a faded syllable keeps its slot; a tap shows it for 3 s */
 .label__cell--hidden { cursor: pointer; }
@@ -1694,7 +1729,7 @@ button.langdu__sentence { cursor: pointer; }
 /* a short phone: when the sheet explains why (look-alike, sound-part) or lists the two family words it needs the room Truffle's bubble
    took, so he sits this one out; the sheet's own lines are what he reads (WebKit, iPhone SE 375x667) */
 @media (max-width: 599px) and (max-height: 700px) {
-  .stage:has(.sheet .why, .sheet .family-sum__row.is-missed) .stage__truffle { display: none; }
+  .stage:has(.sheet .why, .sheet .family-sum__row.is-missed, .sheet .sheet__en--named) .stage__truffle { display: none; } /* the two-row comparison too (parent 2026-10-16) */
   .stage__sheet .sheet__detail:has(.family-sum) { max-height: 38dvh; }
   .family-sum { min-width: 0; max-width: 100%; }
   .family-sum__row { flex-wrap: nowrap; }
