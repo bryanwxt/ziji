@@ -1,7 +1,6 @@
 // Runs the stage cases (stage-cases/page.tsx) in WebKit at a phone and an iPad size; exits 1 on any problem.
 import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { webkit } from 'playwright-core';
 import { bundleStagePage } from './stage-cases/bundle';
 import { textChecks } from './text-checks';
 import { serveStrokeData } from './stroke-route';
@@ -10,6 +9,7 @@ import { PASSAGES } from '../src/content';
 import { WORLDS } from '../src/fun/worlds';
 import { CHEST_COSTUMES } from '../src/fun/costumes';
 import { SHEET_CELL_HEIGHT, SHEET_COLUMNS, SHEET_PROBE } from './stage-cases/faceProbe';
+import { launchWebKit } from './launch-webkit';
 
 /** The case page's 朗读 passage: the longest of ours (page.tsx picks it the same way). */
 const LONGEST_OWN = [...PASSAGES.filter((p) => p.source === 'ziji')].sort((a, b) => b.text.length - a.text.length)[0]!;
@@ -55,7 +55,7 @@ const sheetScrolls = (page: import('playwright-core').Page, name: string) => pag
 
 const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'iphone-15', width: 390, height: 844 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
 const problems: string[] = [];
-const launched = await webkit.launch();
+const launched = await launchWebKit();
 // every page answers stroke-data fetches from node_modules, not the CDN (scripts/stroke-route.ts)
 const browser = {
   newPage: async (opts?: Parameters<typeof launched.newPage>[0]) => { const p = await launched.newPage(opts); await serveStrokeData(p); return p; },
