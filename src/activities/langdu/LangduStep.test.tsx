@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/preact
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setSpeaking } from '../../audio/speaking';
 import { DEFAULT_KID } from '../../types';
+import { PinyinFade } from '../../ui/pinyinFade';
 import { LangduStep } from './LangduStep';
 
 vi.mock('../../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
@@ -261,6 +262,15 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     expect(screen.queryByText('大声一点！')).toBeNull();
   });
 
+  it('shows the choices shuffled each time; the right one stays right (spec 2026-10-15 §6)', async () => {
+    render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup={false} rng={() => 0} onDone={vi.fn()} />);
+    await toCompare();
+    fireEvent.click(button('下一步'));
+    const shown = [...document.querySelectorAll('.langdu__choices .choice')].map((b) => [...b.querySelectorAll('.label__ch')].map((c) => c.textContent).join(''));
+    expect(shown).toEqual(['妈妈', '小马', '老师']); // stored 老师 妈妈 小马
+    fireEvent.click(button('妈妈'));
+    expect(await screen.findByText('对了！')).toBeTruthy();
+  });
   it('missing self-introduction details: just 老师好！', () => {
     render(<LangduStep passage={passage} oral={{ ...oral, school: '' }} kid={DEFAULT_KID} withWarmup onDone={vi.fn()} />);
     expect(screen.getByText('老师好！')).toBeTruthy();
@@ -288,5 +298,103 @@ describe('朗读 on the stage (spec 2026-10-04 §3)', () => {
     onStage(); // compare
     fireEvent.click(button('下一步'));
     onStage(); // meaning
+  });
+});
+
+describe('the Listen screen of a library passage (spec 2026-10-15 §2, §5, §7)', () => {
+  const gsb = { id: 'gsb:0089-1', title: '卡莱', text: '卡莱七岁。卡莱爱我。', names: ['卡莱'], image: 'passages/gsb-0089-1.webp', question };
+  it('a double tap on 下一篇 swaps once', () => {
+    const onSwap = vi.fn();
+    render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onSwap={onSwap} onDone={vi.fn()} />);
+    modelReads(2);
+    fireEvent.click(button('下一篇'));
+    fireEvent.click(button('下一篇'));
+    expect(onSwap).toHaveBeenCalledOnce();
+  });
+  it('下一篇 waits, quiet, until he has heard the passage: never the only live button while the model reads', () => {
+    const onSwap = vi.fn();
+    render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onSwap={onSwap} onDone={vi.fn()} />);
+    expect(button('下一篇').disabled).toBe(true);
+    fireEvent.click(button('下一篇'));
+    expect(onSwap).not.toHaveBeenCalled();
+    modelReads(2);
+    expect(button('下一篇').disabled).toBe(false);
+    expect(button('开始朗读').disabled).toBe(false);
+  });
+  it('下一篇 is on Listen only: never once he is reading', async () => {
+    render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onSwap={vi.fn()} onDone={vi.fn()} />);
+    expect(document.querySelector('.langdu__next')).toBeTruthy();
+    modelReads(2);
+    fireEvent.click(button('开始朗读'));
+    await waitFor(() => expect(document.querySelector('.mic-btn')).toBeTruthy()); // on Read
+    expect(document.querySelector('.langdu__next')).toBeNull();
+  });
+  it('no 下一篇 when the screen gives none (a school text, two swaps made, nothing else to read)', () => {
+    render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.langdu__next')).toBeNull();
+  });
+  it('the picture shows on Listen and Read, never on the question', async () => {
+    render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
+    expect(document.querySelector('img.langdu__pic')!.getAttribute('src')).toBe('/passages/gsb-0089-1.webp');
+    expect(document.querySelector('.langdu__head img.langdu__pic')).toBeTruthy(); // beside the title, not in the passage
+    modelReads(2);
+    fireEvent.click(button('开始朗读'));
+    expect(document.querySelector('img.langdu__pic')).toBeTruthy();
+    await record();
+    await screen.findByRole('button', { name: '听我的' });
+    fireEvent.click(button('下一步'));
+    await screen.findByText('想一想');
+    expect(document.querySelector('img.langdu__pic')).toBeNull();
+  });
+  it('a picture that fails to load hides itself', () => {
+    render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
+    fireEvent.error(document.querySelector('img.langdu__pic')!);
+    expect(document.querySelector('img.langdu__pic')).toBeNull();
+    expect(document.querySelectorAll('.langdu__sentence')).toHaveLength(2);
+  });
+  it('生词 under the title: each word with its pinyin and kid gloss', () => {
+    render(<LangduStep passage={{ ...passage, words: [{ text: '风筝', gloss: 'kite' }] }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
+    const strip = screen.getByRole('list', { name: '生词' });
+    expect(strip.textContent).toContain('kite');
+    expect([...strip.querySelectorAll('.label__ch')].map((c) => c.textContent).join('')).toBe('风筝');
+    expect(strip.querySelectorAll('.label__py').length).toBeGreaterThan(0);
+  });
+  it('names keep their pinyin while the characters he reads lose theirs', () => {
+    render(
+      <PinyinFade known={new Set(['卡', '七', '岁'])} on>
+        <LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />
+      </PinyinFade>,
+    );
+    const cell = (ch: string) => [...document.querySelectorAll('.langdu__sentence .label__cell--zh')].find((c) => c.querySelector('.label__ch')!.textContent === ch)!;
+    expect(cell('卡').classList.contains('label__cell--hidden')).toBe(false); // a name
+    expect(cell('七').classList.contains('label__cell--hidden')).toBe(true);
+  });
+  it('the credit line under the passage on Listen only; tapping it shows the licence and the source (spec 2026-10-15 §2.1)', async () => {
+    const credit = { title: '和植物聊天的卡莱', text: 'Ursula Nafula', illustration: 'Jesse Breytenbach', translation: 'Vicky Liu', licence: 'CC BY 4.0' as const, adapted: true, source: 'https://github.com/global-asp/sbc-source/blob/be28dab38ac55e8eb2185edb6631b11615d02185/zh/0089.md' };
+    render(<LangduStep passage={{ ...gsb, credit }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.langdu__credit summary')!.textContent).toBe('故事：Global Storybooks · CC BY 4.0 · 有改动 · 文 Ursula Nafula · 图 Jesse Breytenbach · 译 Vicky Liu');
+    expect(document.querySelector('.langdu__credit a')).toBeNull(); // the details are laid out only once opened
+    const details = document.querySelector<HTMLDetailsElement>('.langdu__credit')!;
+    details.open = true;
+    fireEvent(details, new Event('toggle'));
+    await waitFor(() => expect([...document.querySelectorAll('.langdu__credit a')].map((a) => a.getAttribute('href'))).toEqual(['https://creativecommons.org/licenses/by/4.0/', credit.source]));
+    modelReads(2);
+    fireEvent.click(button('开始朗读'));
+    await waitFor(() => expect(document.querySelector('.mic-btn')).toBeTruthy());
+    expect(document.querySelector('.langdu__credit')).toBeNull();
+  });
+  it("the warm-up's take survives a swap: the next passage starts at Listen and the take is reported at the end", async () => {
+    const onDone = vi.fn();
+    const view = render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup onSwap={vi.fn()} onDone={onDone} />);
+    await record();
+    await waitFor(() => expect(button('继续').disabled).toBe(false));
+    fireEvent.click(button('继续'));
+    view.rerender(<LangduStep passage={{ ...passage, id: 'p02', text: '我爱老师。', question: undefined }} oral={oral} kid={DEFAULT_KID} withWarmup onDone={onDone} />);
+    expect(screen.getByText('听一听，看一看')).toBeTruthy();
+    modelReads(1);
+    fireEvent.click(button('开始朗读'));
+    await record();
+    fireEvent.click(await screen.findByText('完成'));
+    expect(onDone.mock.calls[0]![0].intro).not.toBeNull();
   });
 });

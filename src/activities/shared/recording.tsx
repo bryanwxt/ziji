@@ -20,8 +20,8 @@ const HEARD = 0.002; // above a working microphone's noise floor; a suspended me
 
 /** One recording at a time, with an optional live level. Only a refused mic, or none to record with, becomes 'blocked'; any other failure is
  *  tried again once, then the button says 再试一次 (`failed`) so his next tap asks again (mic fix 2026-10-14). */
-/** startBlocked: the microphone was already refused on an earlier screen, so don't ask again. */
-export function useRecorder(startBlocked = false) {
+/** startBlocked: the microphone was already refused on an earlier screen, so don't ask again. maxMs: its auto-stop (the recorder's minute when absent). */
+export function useRecorder(startBlocked = false, maxMs?: number) {
   const [state, setState] = useState<MicState>(recordingSupported() && !startBlocked ? 'ready' : 'blocked');
   const [result, setResult] = useState<FinishedRecording | null>(null);
   const [level, setLevel] = useState(0);
@@ -66,7 +66,7 @@ export function useRecorder(startBlocked = false) {
             if (l > HEARD) setHeard(true);
           }
         : undefined,
-      { meterCtx, wasSpeaking },
+      { meterCtx, wasSpeaking, ...(maxMs ? { maxMs } : {}) },
     );
   const start = async (withLevel: boolean) => {
     if (starting.current || active.current) return;

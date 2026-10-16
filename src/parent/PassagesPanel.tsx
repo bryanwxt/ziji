@@ -5,10 +5,11 @@ import { hanChars } from '../content';
 import { splitSentences } from '../langdu/sentences';
 import { deleteParentPassage, listParentPassages, saveParentPassage } from '../store/repo';
 import type { ParentPassage, PassageQuestion } from '../types';
+import { LibraryList } from './LibraryList';
 
 const NO_CHOICES: [string, string, string] = ['', '', ''];
 
-/** School texts for 朗读: they come before the built-in passages, 3 days each; each may carry one meaning question (spec 2026-10-12 §3). */
+/** School texts for 朗读: each comes before the built-in passages until he has read it, then returns on the rest schedule; each may carry one meaning question (spec 2026-10-12 §3). Below them, the built-in Library (spec 2026-10-15 §9). */
 export function PassagesPanel() {
   const { db } = useApp();
   const [list, setList] = useState<ParentPassage[]>([]);
@@ -64,7 +65,7 @@ export function PassagesPanel() {
   return (
     <section class="panel">
       <h2>Reading texts (朗读)</h2>
-      <p>Texts here come first in the daily 朗读 step, in the order added; each is read for 3 days. When none are left, the app uses its built-in passages.</p>
+      <p>Texts here come first in the daily 朗读 step, in the order added. Once read, each comes back after a rest (3 days, longer each time he reads it well), like the built-in passages.</p>
       {list.length > 0 && (
         <table class="table">
           <tbody>
@@ -113,6 +114,7 @@ export function PassagesPanel() {
         <button type="button" class="small-btn" disabled={!canSave} onClick={() => void save()}>Save text</button>
         {editing && <button type="button" class="small-btn" onClick={reset}>Cancel</button>}
       </div>
+      <LibraryList />
     </section>
   );
 }

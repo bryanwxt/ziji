@@ -3,6 +3,7 @@
 import type { Rng } from '../lib/random';
 import type { Word } from '../types';
 import { HSK_WORDS } from '.';
+import { BLOCKED } from './blocked';
 import { bankFor, fillGap, SENTENCE_BANK } from './sentenceBank';
 import { chengyuOf, isIdiomWord } from './chengyu';
 
@@ -21,7 +22,8 @@ const isTime = (t: string) => TIME_WORDS.has(t) || CLOCK.test(t);
 const SUBJECTS = new Set(['我', '你', '他', '她', '它', '我们', '你们', '他们', '她们', '大家', '爸爸', '妈妈', '哥哥', '姐姐', '弟弟', '妹妹', '爷爷', '奶奶', '老师', '朋友', '同学']);
 
 let dict: Set<string> | null = null;
-const known = () => (dict ??= new Set([...HSK_WORDS.keys(), ...SENTENCE_BANK.map((b) => b.word), ...TIME_WORDS, '不知道', '一下', '有点', '早点', '小猫', '小狗', '小鸟', '面条', '过去']));
+// the blocked words too (three are in no dictionary: 该死 吃醋 颗粒), so a blocked word is always one tile the content gate sees
+const known = () => (dict ??= new Set([...HSK_WORDS.keys(), ...BLOCKED, ...SENTENCE_BANK.map((b) => b.word), ...TIME_WORDS, '不知道', '一下', '有点', '早点', '小猫', '小狗', '小鸟', '面条', '过去']));
 
 /**
  * Word tiles, the longest dictionary word first. Punctuation and a lone 了/吗/吧/的… stay with the word before it, a number
@@ -43,6 +45,19 @@ export function tiles(sentence: string): string[] {
     i += len;
   }
   return out;
+}
+
+/** The blocked words a sentence shows, tile by tile: each tile as written, and without the punctuation and particles it carries
+ *  (该死的 → 该死). What the content gate and the Global Storybooks import check. */
+/** What a tile may carry after its word: punctuation and particles (the own-passage word gate's list, spec 2026-10-15). */
+const TRAILING = new Set([...PUNCT, ...'了吗吧呢的得着过啊呀']);
+
+export function blockedWordsIn(sentence: string): string[] {
+  return tiles(sentence).flatMap((t) => {
+    let word = t.replace(/[，。！？、；：“”‘’]+$/u, '');
+    while (word.length > 1 && TRAILING.has(word.slice(-1)) && !BLOCKED.has(word)) word = word.slice(0, -1);
+    return BLOCKED.has(word) ? [word] : [];
+  });
 }
 
 /**

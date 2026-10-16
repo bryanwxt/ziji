@@ -46,3 +46,7 @@ export function answeringSentence(q: Pick<PassageQuestion, 'choices' | 'answer' 
   const right = q.choices[q.answer];
   return right ? sentences.findIndex((s) => s.includes(right)) : -1;
 }
+
+/** 朗读's read stops by itself after this (spec 2026-10-15 §8): the recorder's minute, or 0.8 s a character for a long passage
+ *  (88 s for 110). Here, not in recorder.ts, which the step's tests replace. */
+export const readLimitMs = (text: string): number => Math.max(60_000, Math.round(Array.from(text).filter((c) => HAN.test(c)).length * 800));

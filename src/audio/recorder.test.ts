@@ -49,6 +49,18 @@ describe('recording levels', () => {
     expect(close).toHaveBeenCalled();
     expect(track.stop).toHaveBeenCalled();
   });
+  it("stops by itself at the caller's limit (朗读's long passages, spec 2026-10-15 §8)", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [{ stop: vi.fn() }] })) } });
+    vi.stubGlobal('MediaRecorder', class { static isTypeSupported = () => true; mimeType = 'audio/mp4'; state = 'recording'; ondataavailable = null; onstop = null; start() {} stop() {} });
+    const onAutoStop = vi.fn();
+    await startRecording(onAutoStop, undefined, { maxMs: 88_000 });
+    vi.advanceTimersByTime(60_000);
+    expect(onAutoStop).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(28_000);
+    expect(onAutoStop).toHaveBeenCalledOnce();
+  });
+
   it('creates the audio context during the tap, before waiting for the microphone (iPad Safari only starts audio in a gesture)', async () => {
     const order: string[] = [];
     vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn(async () => { order.push('mic'); return { getTracks: () => [] }; }) } });

@@ -17,5 +17,37 @@ customPinyin({
   切肉: 'qiē ròu', 切菜: 'qiē cài', 切开: 'qiē kāi', 切了: 'qiē le', 切成: 'qiē chéng', 切黄瓜: 'qiē huáng guā',
   好好: 'hǎo hǎo', 做错了事: 'zuò cuò le shì', 看家具: 'kàn jiā jù', 一言一行: 'yì yán yì xíng', 夹住: 'jiā zhù',
   // the readings his lessons use (READING_FIXES): 炸鸡 zhá (not 种花: 这种花 is zhǒng — the 组词 carry zhòng themselves)
+  // 朗读's passages (spec 2026-10-15 §2.2, reviewed when they joined the snapshot): 得 after a verb is de, 地 after an adverb de,
+  // 长 + 得/高/出/在 (growing) zhǎng, 干 (doing) gàn, 以为 wéi, 我得 (must) děi, and 头发 before 放 is not 发放
+  写得: 'xiě de', 跑得: 'pǎo de', 长得: 'zhǎng de', 长高: 'zhǎng gāo', 长出: 'zhǎng chū', 长在: 'zhǎng zài', 我得出差: 'wǒ děi chū chāi',
+  干嘛: 'gàn má', 干农活: 'gàn nóng huó', 以为: 'yǐ wéi', 头发放: 'tóu fa fàng',
+  高高兴兴地: 'gāo gāo xìng xìng de', 大大地: 'dà dà de', 高兴地: 'gāo xìng de', 很快地: 'hěn kuài de', 仔细地: 'zǐ xì de',
+  远远地: 'yuǎn yuǎn de', 紧紧地: 'jǐn jǐn de', 尽情地: 'jìn qíng de', 伤心地: 'shāng xīn de', 快乐地: 'kuài lè de',
+  // our 二上 passages (Task 8): 婆婆家 jiā (it read pó pó jia), 子 neutral in 鞋子 and 池子, 高兴得 de, 一个一个 yí gè yí gè
+  婆婆家: 'pó po jiā', 鞋子: 'xié zi', 池子: 'chí zi', 高兴得: 'gāo xìng de', 一个一个: 'yí gè yí gè',
+  // our 二下 passages (Task 9): 得 after a verb is de, 地 after 一块一块 de, 一 before a fourth or first tone in 一X一X, 衣服 fu,
+  // 长着 (growing) zhǎng, 漂亮 piào liang (it read piāo liàng after 一条)
+  一块一块地: 'yí kuài yí kuài de', 一滴一滴: 'yì dī yì dī', 一条一条: 'yì tiáo yì tiáo', 弄得: 'nòng de', 飞得: 'fēi de',
+  排得: 'pái de', 学得: 'xué de', 妹妹选: 'mèi mei xuǎn', 漂亮: 'piào liang', 长着: 'zhǎng zhe',
+  // Task 9's review: the neutral tone in 眼睛, 时候 and 星星 (they read yǎn jīng, shí hòu, xīng xīng)
+  眼睛: 'yǎn jing', 时候: 'shí hou', 星星: 'xīng xing',
+  // our 三上 passages (Task 10): 得 after a verb de, 地 after 好好 de, 种 (planting) zhòng, 长 (growing) zhǎng, 倒 (pouring) dào,
+  // 一 in 一X一X before a fourth or third tone, 子 neutral in 裤子 裙子 箱子, 东西 (things) dōng xi, 意思 si, 只 (only) zhǐ
+  玩得: 'wán de', 急得: 'jí de', 晒得: 'shài de', 好好地: 'hǎo hǎo de', 种了: 'zhòng le', 种好了: 'zhòng hǎo le', 种到: 'zhòng dào',
+  越长越高: 'yuè zhǎng yuè gāo', 倒上水: 'dào shàng shuǐ', 一件一件: 'yí jiàn yí jiàn', 一本一本: 'yì běn yì běn',
+  裤子: 'kù zi', 裙子: 'qún zi', 箱子: 'xiāng zi', 爸爸的: 'bà ba de', 妈妈打开: 'mā ma dǎ kāi', 东西: 'dōng xi', 有意思: 'yǒu yì si',
+  只留下: 'zhǐ liú xià',
+  // Task 10's review: 背 (carrying) bēi, 这种 (this kind) zhǒng, 妈妈 before 走 keeps its neutral tone
+  背上书包: 'bēi shàng shū bāo', 这种: 'zhè zhǒng', 妈妈走: 'mā ma zǒu',
+  // Task 11: the neutral tone 现代汉语词典 marks as required (and Singapore's textbooks print), for word cards and passages alike;
+  // left toned where the dictionary marks it optional or usage varies: 这里 那里 哪里 心里 知道 照顾 关系 打扫
+  朋友: 'péng you', 衣服: 'yī fu', 早上: 'zǎo shang', 晚上: 'wǎn shang', 护士: 'hù shi', 告诉: 'gào su', 明白: 'míng bai',
+  地方: 'dì fang', 先生: 'xiān sheng', 客气: 'kè qi', 舒服: 'shū fu', 意思: 'yì si', 事情: 'shì qing', 学生: 'xué sheng',
+  谢谢: 'xiè xie', 名字: 'míng zi', 月亮: 'yuè liang', 窗户: 'chuāng hu', 麻烦: 'má fan', 热闹: 'rè nao', 干净: 'gān jing',
+  商量: 'shāng liang', 消息: 'xiāo xi', 打算: 'dǎ suan', 收拾: 'shōu shi', 招呼: 'zhāo hu', 葡萄: 'pú tao', 玻璃: 'bō li',
+  当地方言: 'dāng dì fāng yán', // 地方 inside 当地 + 方言 keeps its tone
+  // 子 as a noun suffix is zi (pinyin-pro read zǐ); 棋子 stays qí zǐ
+  包子: 'bāo zi', 饺子: 'jiǎo zi', 橙子: 'chéng zi', 虫子: 'chóng zi', 果子: 'guǒ zi', 豆子: 'dòu zi', 刀子: 'dāo zi',
+  法子: 'fǎ zi', 剪子: 'jiǎn zi', 窗子: 'chuāng zi', 步子: 'bù zi', 一下子: 'yí xià zi',
   炸鸡: 'zhá jī', 油炸: 'yóu zhá', 种植: 'zhòng zhí', 种花的: 'zhòng huā de', 勒紧: 'lēi jǐn', // 种花的: 写一写's piece (never 种花 alone)
 });

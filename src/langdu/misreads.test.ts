@@ -2,37 +2,37 @@ import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../content';
 import { addRecording, getCard, getKid, getWord, listRecordings, putCards, putWords, saveKid } from '../store/repo';
 import { freshDb, makeCard } from '../test/fixtures';
-import { DEFAULT_KID } from '../types';
+import { DEFAULT_KID, EMPTY_READING } from '../types';
 import { applyMisreads } from './misreads';
 import { buildSessionPlan } from '../session/plan';
 import { DEFAULT_SETTINGS } from '../types';
 import { allCards, allWords } from '../store/repo';
 
 describe('applyMisreads', () => {
-  it('turns misread characters into priority words and gives the passage an extra day', async () => {
+  it('turns misread characters into priority words; 2 or more make the passage due 3 days after the review', async () => {
     const db = await freshDb();
     const now = new Date(2026, 9, 5, 17);
     await putWords(db, builtinWords(0));
     await putCards(db, [makeCard('b:大', 'recognise', new Date(2026, 10, 1), true)]);
-    await saveKid(db, { ...DEFAULT_KID, reading: { passageId: 'pp:1', days: 3, extra: 0, lastDay: '2026-10-05', lastRead: {}, warmups: 0 } });
+    await saveKid(db, { ...DEFAULT_KID, reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 2, lastRead: '2026-10-01', rest: 18, q: 2 } } } });
     const rec = { id: 'r1', createdAt: now.getTime(), prompt: { kind: 'passage' as const, passageId: 'pp:1' }, blob: new Blob(), mime: 'audio/mp4', durationSec: 12 };
     await addRecording(db, rec);
     await applyMisreads(db, rec, ['大', '天'], now);
     expect((await getCard(db, 'b:大:recognise'))!.fsrs.due.getTime()).toBe(now.getTime());
     expect((await getWord(db, 'b:天'))!.listedAt).toBe(-now.getTime()); // ahead of every school list
-    expect((await getKid(db))!.reading.extra).toBe(1);
+    expect((await getKid(db))!.reading.history['pp:1']).toEqual({ reads: 2, lastRead: '2026-10-01', rest: 7, q: 2 }); // 4 days since the read + 3
     expect((await listRecordings(db))[0]!.misread).toEqual(['大', '天']);
   });
 
-  it('a passage that has moved on gets no extra day, and no marks changes nothing', async () => {
+  it('one mark leaves the rest alone, and no marks changes nothing', async () => {
     const db = await freshDb();
     const now = new Date(2026, 9, 5, 17);
     await putWords(db, builtinWords(0));
-    await saveKid(db, { ...DEFAULT_KID, reading: { passageId: 'pp:2', days: 1, extra: 0, lastDay: '2026-10-05', lastRead: {}, warmups: 0 } });
+    await saveKid(db, { ...DEFAULT_KID, reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 2, lastRead: '2026-10-01', rest: 18, q: 2 } } } });
     const rec = { id: 'r1', createdAt: now.getTime(), prompt: { kind: 'passage' as const, passageId: 'pp:1' }, blob: new Blob(), mime: 'audio/mp4', durationSec: 12 };
     await addRecording(db, rec);
     await applyMisreads(db, rec, ['大'], now);
-    expect((await getKid(db))!.reading.extra).toBe(0);
+    expect((await getKid(db))!.reading.history['pp:1']!.rest).toBe(18);
     await applyMisreads(db, rec, [], now);
     expect((await listRecordings(db))[0]!.misread).toEqual([]);
   });
@@ -53,7 +53,7 @@ describe('saving misreads again (deferred minors, plan 8)', () => {
   const setup = async () => {
     const db = await freshDb();
     await putWords(db, builtinWords(0));
-    await saveKid(db, { ...DEFAULT_KID, reading: { passageId: 'pp:1', days: 3, extra: 0, lastDay: '2026-10-05', lastRead: {}, warmups: 0 } });
+    await saveKid(db, { ...DEFAULT_KID, reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 2, lastRead: '2026-10-01', rest: 18, q: 2 } } } });
     const rec = { id: 'r1', createdAt: 0, prompt: { kind: 'passage' as const, passageId: 'pp:1' }, blob: new Blob(), mime: 'audio/mp4', durationSec: 12 };
     await addRecording(db, rec);
     return { db, rec };
@@ -63,18 +63,19 @@ describe('saving misreads again (deferred minors, plan 8)', () => {
     const { db, rec } = await setup();
     expect(await applyMisreads(db, rec, ['天', '𠀀'], now)).toEqual({ updated: 1, notInApp: ['𠀀'] });
   });
-  it('a second save of the same recording adds no second extra day', async () => {
+  it('a one-mark save then a two-mark save acts once, on the second', async () => {
     const { db, rec } = await setup();
     await applyMisreads(db, rec, ['天'], now);
-    await applyMisreads(db, { ...rec, misread: ['天'] }, ['天', '地'], now);
-    expect((await getKid(db))!.reading.extra).toBe(1);
+    expect((await getKid(db))!.reading.history['pp:1']!.rest).toBe(18);
+    await applyMisreads(db, (await listRecordings(db))[0]!, ['天', '地'], now);
+    expect((await getKid(db))!.reading.history['pp:1']!.rest).toBe(7);
   });
-  it('sweep: unmarking every character and marking again adds no second extra day', async () => {
+  it('sweep: unmarking every character and marking again on a later day resets the rest no second time', async () => {
     const { db, rec } = await setup();
-    await applyMisreads(db, rec, ['天'], now);
+    await applyMisreads(db, rec, ['天', '地'], now);
     await applyMisreads(db, (await listRecordings(db))[0]!, [], now);
-    await applyMisreads(db, (await listRecordings(db))[0]!, ['天'], now);
-    expect((await getKid(db))!.reading.extra).toBe(1);
+    await applyMisreads(db, (await listRecordings(db))[0]!, ['天', '地'], new Date(2026, 9, 9, 17));
+    expect((await getKid(db))!.reading.history['pp:1']!.rest).toBe(7);
   });
   it('unmarking a character takes away the priority it was given', async () => {
     const { db, rec } = await setup();

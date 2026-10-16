@@ -4,9 +4,14 @@ import { join } from 'node:path';
 import { webkit } from 'playwright-core';
 import { bundleStagePage } from './stage-cases/bundle';
 import { textChecks } from './text-checks';
+import { PASSAGE_QUESTIONS } from '../src/content/passageQuestions';
+import { PASSAGES } from '../src/content';
 import { WORLDS } from '../src/fun/worlds';
 import { CHEST_COSTUMES } from '../src/fun/costumes';
 import { SHEET_CELL_HEIGHT, SHEET_COLUMNS, SHEET_PROBE } from './stage-cases/faceProbe';
+
+/** The case page's 朗读 passage: the longest of ours (page.tsx picks it the same way). */
+const LONGEST_OWN = [...PASSAGES.filter((p) => p.source === 'ziji')].sort((a, b) => b.text.length - a.text.length)[0]!;
 
 const dir = await bundleStagePage();
 
@@ -248,6 +253,35 @@ for (const size of SIZES) {
     if (missed !== 2) problems.push(`${size.name} family two wrong: ${missed} misses explained (want 2)`);
     problems.push(...(await cardClipped(page, `${size.name} family two wrong`)), ...(await sheetFits(page, `${size.name} family two wrong`)), ...(await sheetScrolls(page, `${size.name} family two wrong`)));
   }
+  // the library (spec 2026-10-15): Listen with the picture, names, credit line and 下一篇; Read with the picture; the question
+  // without it; our passage with its 生词 strip. Nothing clipped; the picture loaded and on screen; 下一篇 big enough to tap.
+  for (const c of ['langdu-gsb-listen', 'langdu-gsb-read', 'langdu-gsb-meaning', 'langdu-words-listen']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`, '.langdu__passage')));
+    const pic = await page.evaluate(() => {
+      const img = document.querySelector<HTMLImageElement>('img.langdu__pic');
+      if (!img) return null;
+      const r = img.getBoundingClientRect();
+      return { loaded: img.complete && img.naturalWidth > 0, height: Math.round(r.height), onScreen: r.top >= 0 && r.bottom <= innerHeight };
+    });
+    if (c === 'langdu-gsb-meaning' && pic) problems.push(`${size.name} ${c}: the picture shows on the question`);
+    const picShown = await page.evaluate(() => { const img = document.querySelector('img.langdu__pic'); return !!img && getComputedStyle(img).display !== 'none'; });
+    const readPic = c === 'langdu-gsb-read' && size.height >= 700; // a short phone hides it on Read: the text comes first
+    if ((c === 'langdu-gsb-listen' || readPic) && (!pic || !pic.loaded || !pic.onScreen || pic.height < 48)) problems.push(`${size.name} ${c}: picture ${JSON.stringify(pic)}`);
+    if (c === 'langdu-gsb-read' && !readPic && picShown) problems.push(`${size.name} ${c}: the picture shows on Read on a short screen`);
+    if (c === 'langdu-gsb-listen' || c === 'langdu-words-listen') {
+      const next = await page.$('.langdu__next');
+      const box = await next?.boundingBox();
+      if (!box || Math.min(box.width, box.height) < 43.5) problems.push(`${size.name} ${c}: 下一篇 under 44px (${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'missing'})`);
+      // the passage keeps room to read: at least three lines of it show (spec 2026-10-15 Ruling: in the card, picture + 下一篇 squeezed it to nothing)
+      const room = await page.evaluate(() => { const p = document.querySelector('.langdu__passage'); const line = p?.querySelector('.langdu__sentence .label__cell')?.getBoundingClientRect().height ?? 0; return p && line ? p.getBoundingClientRect().height / line : 0; });
+      if (room < 2.5) problems.push(`${size.name} ${c}: the passage shows ${room.toFixed(1)} lines`);
+    }
+    if (c === 'langdu-gsb-listen' && !(await page.$('.langdu__credit summary'))) problems.push(`${size.name} ${c}: no credit line`);
+    if (c === 'langdu-words-listen' && !(await page.$('.langdu__words li'))) problems.push(`${size.name} ${c}: no 生词 strip`);
+  }
   // 朗读 (spec 2026-10-12 §8): every part with the longest built-in text, the sentence lit while the model reads, a missed question
   for (const c of ['langdu-warmup', 'langdu-listen', 'langdu-read', 'langdu-read-blocked', 'langdu-compare', 'langdu-meaning']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
@@ -261,7 +295,8 @@ for (const size of SIZES) {
   {
     await page.goto(`file://${dir}/index.html?case=langdu-meaning`);
     await page.waitForTimeout(300);
-    await page.click('.langdu__choices .choice >> nth=0'); // p20's right answer is the second choice
+    const asked = PASSAGE_QUESTIONS[LONGEST_OWN.id]![0]!; // shown in stored order (page.tsx's rng)
+    await page.click(`.langdu__choices .choice >> nth=${asked.answer === 0 ? 1 : 0}`); // a wrong choice
     await page.waitForTimeout(1600);
     await page.screenshot({ path: `fit-shots/stage-cases/langdu-meaning-wrong-${size.name}.png` });
     if (!(await page.$('.langdu__choices .choice.is-answer'))) problems.push(`${size.name} langdu-meaning: the miss does not show the right choice`);

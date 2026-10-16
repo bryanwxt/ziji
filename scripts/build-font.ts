@@ -7,7 +7,7 @@ import { collectFontText } from './font-lib';
 
 const FONT_URL = 'https://github.com/lxgw/LxgwWenKai/releases/download/v1.522/LXGWWenKai-Regular.ttf';
 const OFL_URL = 'https://raw.githubusercontent.com/lxgw/LxgwWenKai/main/OFL.txt';
-const CHARLIST_URL = 'https://raw.githubusercontent.com/elkmovie/hsk30/main/charlist.txt';
+const CHARLIST_URL = 'https://raw.githubusercontent.com/elkmovie/hsk30/7f3d4fdcfcb6e826001df062747c943d1fa8160e/charlist.txt'; // pinned (2023-11-08): main could change the subset
 const cacheDir = new URL('./.cache/', import.meta.url);
 const outDir = new URL('../public/fonts/', import.meta.url);
 

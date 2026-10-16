@@ -13,7 +13,13 @@
 - **LXGW WenKai (霞鹜文楷)** — [lxgw/LxgwWenKai](https://github.com/lxgw/LxgwWenKai), SIL Open Font License 1.1. Subset to the app's characters as `public/fonts/wenkai.woff2`; licence text in `public/fonts/LXGWWenKai-OFL.txt`.
 - **Lucide icons** — via `lucide-preact`, ISC License (portions derived from Feather, MIT License).
 - **Nunito** — via `@fontsource/nunito`, SIL Open Font License 1.1.
-- Read-aloud passages were written for this project.
+- Read-aloud passages marked ZiJi were written for this project.
+- **Global Storybooks Chinese** — [global-asp/sbc-source](https://github.com/global-asp/sbc-source) (commit `be28dab`) and its pictures
+  ([global-asp/gsn-imagebank](https://github.com/global-asp/gsn-imagebank), commit `0df4097`), from the African Storybook. Each story keeps its own
+  licence — [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) or
+  [CC BY-NC 3.0](https://creativecommons.org/licenses/by-nc/3.0/) — and its author, illustrator and translator credits, shown under each passage and in
+  the parent area's Credits. Stories changed for Singapore usage are marked "adapted"; the changes are listed in `scripts/storybooks/manifest.json`, the
+  sources in `scripts/storybooks/SOURCE.md`.
 
 Jun Da's *Modern Chinese Character Frequency List* was considered. On 2026-10-02 it stated no terms of use, so it is not used.
 

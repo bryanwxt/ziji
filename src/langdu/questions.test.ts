@@ -1,0 +1,37 @@
+import { describe, expect, it } from 'vitest';
+import { mulberry32 } from '../lib/random';
+import { EMPTY_READING, type PassageQuestion } from '../types';
+import { afterRead } from './history';
+import type { ReadingPassage } from './pool';
+import { questionFor, shuffleQuestion, withQuestion } from './questions';
+
+const q1: PassageQuestion = { q: '谁是老师？', choices: ['爸爸', '妈妈', '哥哥'], answer: 1, sentence: 1 };
+const q2: PassageQuestion = { q: '我家有几个人？', choices: ['三个', '四个', '五个'], answer: 2, sentence: 0 };
+
+describe('questions in turn (spec 2026-10-15 §6)', () => {
+  it('the turn picks one, round and round; none without questions', () => {
+    expect([0, 1, 2, 3].map((t) => questionFor([q1, q2], t))).toEqual([q1, q2, q1, q2]);
+    expect(questionFor(undefined, 0)).toBeUndefined();
+    expect(questionFor([], 3)).toBeUndefined();
+  });
+  it("a revisit asks the other question: the passage's turn moves on with each lesson read", () => {
+    const p: ReadingPassage = { id: 'p01', title: 'x', text: 'y', source: 'ziji', fit: 1, questions: [q1, q2] };
+    expect(withQuestion(p, EMPTY_READING).question).toBe(q1);
+    expect(withQuestion(p, afterRead(EMPTY_READING, 'p01', '2026-10-01', 'well')).question).toBe(q2);
+    expect(withQuestion({ ...p, questions: undefined }, EMPTY_READING).question).toBeUndefined();
+  });
+});
+
+describe('shuffleQuestion', () => {
+  it('keeps the right answer right, and moves it about', () => {
+    const places = new Set<number>();
+    for (let seed = 1; seed <= 30; seed++) {
+      const s = shuffleQuestion(q1, mulberry32(seed));
+      expect(s.choices[s.answer]).toBe('妈妈');
+      expect([...s.choices].sort()).toEqual([...q1.choices].sort());
+      expect(s.sentence).toBe(1);
+      places.add(s.answer);
+    }
+    expect([...places].sort()).toEqual([0, 1, 2]);
+  });
+});

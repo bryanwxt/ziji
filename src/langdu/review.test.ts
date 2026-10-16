@@ -4,8 +4,7 @@ import { getKid, saveKid } from '../store/repo';
 import { waitingTakes } from '../session/say';
 import { addRecording, getRecording, listRecordings, putWords } from '../store/repo';
 import { freshDb, makeWord } from '../test/fixtures';
-import { DEFAULT_KID, type Recording } from '../types';
-import { addExtraDay } from './cycle';
+import { DEFAULT_KID, EMPTY_READING, type Recording } from '../types';
 import { finishPassageReview, passageTakesToDrop, tidyPassageTakes, waitingPassageTakes } from './review';
 
 const day = (d: number, h = 17) => new Date(2026, 9, d, h).getTime();
@@ -47,12 +46,12 @@ describe('passage takes in the queue (spec 2026-10-12 §6)', () => {
     expect(await getRecording(db, 'a')).toMatchObject({ review: 'ok', misread: ['爱'] });
     expect(waitingPassageTakes(await listRecordings(db))).toEqual([]);
   });
-  it('a retry after a failed save grants one extra day and finishes the take', async () => {
+  it('a retry after a failed save resets the rest once and finishes the take', async () => {
     const db = await freshDb();
     await putWords(db, [makeWord('爱')]);
     const r = passage('a', 'p01', day(1));
     await addRecording(db, r);
-    const before = { passageId: 'p01', days: 3, extra: 0, lastDay: '2026-10-01', lastRead: {}, warmups: 0 };
+    const before = { ...EMPTY_READING, history: { p01: { reads: 2, lastRead: '2026-09-25', rest: 18, q: 2 } } };
     await saveKid(db, { ...DEFAULT_KID, reading: before });
     const real = repo.updateRecording;
     let calls = 0;
@@ -60,12 +59,11 @@ describe('passage takes in the queue (spec 2026-10-12 §6)', () => {
       if (++calls === 2) throw new Error('boom'); // applyMisreads' save is call 1; the review save fails
       return real(d, x);
     });
-    await expect(finishPassageReview(db, r, ['爱'], new Date(2026, 9, 2))).rejects.toThrow('boom');
-    await finishPassageReview(db, r, ['爱'], new Date(2026, 9, 2));
+    await expect(finishPassageReview(db, r, ['爱', '我'], new Date(2026, 9, 2))).rejects.toThrow('boom');
+    await finishPassageReview(db, r, ['爱', '我'], new Date(2026, 9, 2));
     spy.mockRestore();
-    expect(await getRecording(db, 'a')).toMatchObject({ review: 'ok', misread: ['爱'] });
-    const after = (await getKid(db))!.reading;
-    expect(JSON.stringify(after)).toBe(JSON.stringify(addExtraDay(before, 'p01')));
+    expect(await getRecording(db, 'a')).toMatchObject({ review: 'ok', misread: ['爱', '我'] });
+    expect((await getKid(db))!.reading.history.p01).toEqual({ reads: 2, lastRead: '2026-09-25', rest: 10, q: 2 }); // due 3 days after the review, once
   });
 });
 

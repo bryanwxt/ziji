@@ -1,6 +1,8 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
-import { getSettings, listParentPassages } from '../store/repo';
+import { PASSAGES } from '../content';
+import { getSettings, listParentPassages, saveKid } from '../store/repo';
+import { DEFAULT_KID, EMPTY_READING } from '../types';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { PassagesPanel } from './PassagesPanel';
 import { SettingsPanel } from './SettingsPanel';
@@ -83,6 +85,21 @@ describe('PassagesPanel', () => {
     fireEvent.click(screen.getByText('Save text'));
     await waitFor(async () => expect((await listParentPassages(app.db)).length).toBe(1));
     expect((await listParentPassages(app.db))[0]!.question).toBeUndefined();
+  });
+});
+
+describe('the Library (spec 2026-10-15 §9)', () => {
+  it('lists every built-in passage, read-only, with source, term, fit, reads, next and often skipped', async () => {
+    const app = await makeAppData({ now: () => new Date(2026, 9, 15, 17) });
+    await saveKid(app.db, { ...DEFAULT_KID, reading: { ...EMPTY_READING, history: { p01: { reads: 2, lastRead: '2026-10-10', rest: 7, q: 2, lastSkipped: '2026-10-12', skips: 3 } } } });
+    renderWithApp(<PassagesPanel />, app);
+    await screen.findByText('Library');
+    const rows = [...document.querySelectorAll('.library__table tbody tr')];
+    expect(rows).toHaveLength(PASSAGES.length);
+    const p01 = rows.find((r) => r.textContent!.startsWith('我的家'))!;
+    expect([...p01.querySelectorAll('td')].map((td) => td.textContent)).toEqual(['我的家 · often skipped', 'ZiJi', '一下', '100%', '2', '2026-10-17']);
+    expect(rows.some((r) => r.textContent!.includes('Global Storybooks'))).toBe(true);
+    expect(document.querySelector('.library__table button')).toBeNull(); // read-only
   });
 });
 

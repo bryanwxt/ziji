@@ -225,7 +225,7 @@ export interface Recording {
   durationSec: number;
   level?: number; // average loudness (RMS 0..1) while reading; older recordings have none
   misread?: string[]; // characters the parent confirmed he misread
-  extraDayGiven?: boolean; // its marks have given the passage its one extra day (never a second, however often re-marked)
+  extraDayGiven?: boolean; // its marks have acted on the passage (≥ 2 marks: due 3 days after the review, spec 2026-10-15 §4), once per take; named for the old extra day
   review?: 'ok' | 'no'; // a Say or 说一句 take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
   meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
   cardBefore?: CardSnapshot; // a Say or 说一句 take: its card as it was when he recorded (SRS tuning spec §4), for the verdict's log
@@ -238,10 +238,32 @@ export interface PicturePrompt {
   mime: string;
 }
 
+/** Where a Global Storybooks passage comes from (spec 2026-10-15 §2.1): the story's credits, its licence, whether we changed it. */
+export interface PassageCredit {
+  title: string; // the story's title
+  text: string; // its author(s)
+  illustration: string;
+  translation: string;
+  licence: 'CC BY 3.0' | 'CC BY 4.0' | 'CC BY-NC 3.0'; // the version from Global ASP's master index (the Markdown has none)
+  adapted: boolean; // the manifest edited it (「有改动」)
+  source: string; // the story's Markdown at the pinned commit
+}
+
+/** A 生词 shown under the title on Listen (spec 2026-10-15 §2.2): the word and its kid gloss. */
+export interface PassageWord { text: string; gloss: string }
+
+/** A built-in 朗读 passage: ours (`p01`…) or a Global Storybooks chunk (`gsb:<story>-<chunk>`). */
 export interface Passage {
   id: string;
   title: string;
   text: string;
+  term: string; // the MOE term it levels at (passageTerm)
+  source: 'ziji' | 'gsb';
+  names?: string[]; // transliterated names: left out of levelling, always shown with pinyin
+  words?: PassageWord[];
+  image?: string; // under public/, e.g. 'passages/gsb-0001-1.webp'
+  story?: { id: string; part: number; parts: number };
+  credit?: PassageCredit;
 }
 
 /** A 朗读 meaning question (spec 2026-10-12 §3): 谁 / 哪里 / 什么 / 为什么, three choices, the right one marked. `sentence`: the
@@ -271,17 +293,26 @@ export interface OralInfo {
   customIntro: string;
 }
 
-/** 朗读 progress: the passage in its 3-day cycle, and warm-ups recorded (for pinyin fading). */
-export interface ReadingState {
-  passageId: string | null;
-  days: number;
-  extra: number;
-  lastDay: string | null;
-  lastRead: Record<string, string>;
+/** One passage's 朗读 history (spec 2026-10-15 §4): due again `rest` days after `lastRead`; `q` the next question's turn. */
+export interface PassageHistory {
+  reads: number;
+  lastRead: string | null;
+  rest: number;
+  lastSkipped?: string; // 下一篇 swapped it out that day: the 3-day gap applies
+  skips?: number; // 下一篇 swaps, for the parent ("often skipped" at 3)
+  q: number;
+}
+
+/** 朗读 progress (spec 2026-10-15 §4): each passage's history, the kind of the last lesson read (new and revisit take turns),
+ *  the day the warm-up last ran, and warm-ups recorded. */
+export interface ReadingHistory {
+  history: Record<string, PassageHistory>;
+  lastKind: 'new' | 'revisit' | null;
+  lastWarmup: string | null;
   warmups: number;
 }
 
-export const DEFAULT_READING: ReadingState = { passageId: null, days: 0, extra: 0, lastDay: null, lastRead: {}, warmups: 0 };
+export const EMPTY_READING: ReadingHistory = { history: {}, lastKind: null, lastWarmup: null, warmups: 0 };
 
 /** The parent's correction of where his class is (spec 2026-10-11 §4): the lesson on the day it was set. */
 export interface ClassLessonSetting { term: string; lesson: number; setAt: number }
@@ -359,7 +390,7 @@ export interface KidState {
   worldsSeen: string[]; // journey worlds reached; never shrinks
   world: string | null; // the child's pick in the room; null = newest reached
   riverNews: boolean; // his old paper worlds were just mapped onto One River: Home says so once (spec 2026-10-13 §8)
-  reading: ReadingState;
+  reading: ReadingHistory;
   speakingLast: 'langdu' | 'story' | null; // which activity the speaking step ran last (they alternate)
   story: { next: number; told: number }; // 看图说话: next scene, stories told (drives starter fading)
   finds: Finds; // tap fun in the journey worlds
@@ -385,7 +416,7 @@ export const DEFAULT_KID: KidState = {
   worldsSeen: [],
   world: null,
   riverNews: false,
-  reading: DEFAULT_READING,
+  reading: EMPTY_READING,
   speakingLast: null,
   story: { next: 0, told: 0 },
   finds: DEFAULT_FINDS,

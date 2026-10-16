@@ -54,6 +54,8 @@ export interface StartOptions {
   meterCtx?: AudioContext | null;
   /** Truffle was speaking when he tapped: wait for the audio to let go before asking for the mic */
   wasSpeaking?: boolean;
+  /** stop by itself after this long (default MAX_RECORDING_MS) */
+  maxMs?: number;
 }
 
 export interface FinishedRecording {
@@ -133,7 +135,7 @@ export async function startRecording(onAutoStop: () => void, onLevel?: (level: n
     if (e.data.size) chunks.push(e.data);
   };
   const started = Date.now();
-  const timer = setTimeout(onAutoStop, MAX_RECORDING_MS);
+  const timer = setTimeout(onAutoStop, opts.maxMs ?? MAX_RECORDING_MS);
   const meter = onLevel && meterCtx ? startLevels(meterCtx, stream, onLevel) : null;
   const release = (closeMeter = true) => {
     clearTimeout(timer);

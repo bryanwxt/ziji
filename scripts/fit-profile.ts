@@ -15,7 +15,7 @@ import { exportBackup } from '../src/store/backup';
 import { openAppDb } from '../src/store/db';
 import { addReviewLog, putCards, putWords, saveKid, saveParentPassage, saveReward, saveSession, seedBuiltinWords, updateSettings } from '../src/store/repo';
 import { makeReviewHistory } from '../src/test/reviewHistory';
-import { DEFAULT_KID, DEFAULT_SETTINGS, type ActivityKind, type SessionPlan } from '../src/types';
+import { DEFAULT_KID, DEFAULT_SETTINGS, EMPTY_READING, type ActivityKind, type SessionPlan } from '../src/types';
 
 export interface FitProfileOptions {
   now: Date;
@@ -33,6 +33,7 @@ export interface FitProfileOptions {
   ownsAll?: boolean; // every costume and accessory owned: the chest gives stars (sweep: that prize was never screenshotted)
   meter?: Partial<Meter>; // the river meter as a test wants it (rewards spec §3); its day is today
   bank?: number;
+  schoolText?: boolean; // false: no parent text, and one of our passages read yesterday, so 朗读 reads a Global Storybooks passage (its turn: a picture, a credit line, 下一篇; spec 2026-10-15)
 }
 
 const LONG_PASSAGE =
@@ -75,7 +76,7 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
     const { logs } = makeReviewHistory({ cards: 330, days: 120, end: new Date(t - 3_600_000), wordIds: words.slice(100, 430).map((w) => w.id) });
     for (const l of logs) await addReviewLog(db, l);
   }
-  await saveParentPassage(db, { id: 'pp:fit', title: '我的家', text: LONG_PASSAGE, createdAt: t - 86_400_000 });
+  if (o.schoolText !== false) await saveParentPassage(db, { id: 'pp:fit', title: '我的家', text: LONG_PASSAGE, createdAt: t - 86_400_000 });
   await saveReward(db, { id: 'goal:fit', title: 'Lego set', emoji: '🧱', metric: 'stars', target: 40, createdAt: t - 86_400_000, claimedAt: null });
   const today = localDateKey(o.now);
   const yesterday = localDateKey(new Date(t - 86_400_000));
@@ -92,6 +93,7 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
       bonusStars: 3,
       ...(o.meter ? { meter: { ...EMPTY_METER, day: today, ...o.meter } } : {}),
       ...(o.bank ? { bank: o.bank } : {}),
+      ...(o.schoolText === false ? { reading: { ...EMPTY_READING, lastWarmup: yesterday, history: { p01: { reads: 1, lastRead: yesterday, rest: 3, q: 1 } } } } : {}),
       ...(o.ownsAll ? { ownedCostumes: COSTUMES.map((c) => c.id), ownedAccessories: [...ACCESSORIES] } : {}),
     });
   }

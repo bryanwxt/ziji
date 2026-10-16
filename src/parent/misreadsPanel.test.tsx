@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addRecording, getCard, getKid, listRecordings, putCards, putWords, saveKid, saveParentPassage } from '../store/repo';
-import { DEFAULT_KID } from '../types';
+import { DEFAULT_KID, EMPTY_READING } from '../types';
 import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { RecordingsPanel } from './RecordingsPanel';
@@ -35,20 +35,20 @@ describe('RecordingsPanel misreads', () => {
     expect(await screen.findByText(/1 character will come up in practice/)).toBeTruthy();
   });
 
-  it('final review: a double tap on Save gives the passage one extra day, not two', async () => {
+  it('final review: a double tap on Save resets the rest once', async () => {
     const now = new Date(2026, 9, 5, 17);
     const app = await makeAppData({ now: () => now });
     await putWords(app.db, [makeWord('大'), makeWord('人')]);
     await saveParentPassage(app.db, { id: 'pp:1', title: '大人', text: '大人，大人。', createdAt: 1 });
     await addRecording(app.db, rec('pp:1'));
-    await saveKid(app.db, { ...DEFAULT_KID, reading: { passageId: 'pp:1', days: 3, extra: 0, lastDay: '2026-10-05', lastRead: {}, warmups: 0 } });
+    await saveKid(app.db, { ...DEFAULT_KID, reading: { ...EMPTY_READING, history: { 'pp:1': { reads: 2, lastRead: '2026-10-01', rest: 18, q: 2 } } } });
     renderWithApp(<RecordingsPanel />, app);
     fireEvent.click(await screen.findByText('Mark misreads'));
-    fireEvent.click(document.querySelector('button.misread-ch')!);
+    for (const b of document.querySelectorAll('button.misread-ch')) if (b.getAttribute('aria-pressed') !== 'true') fireEvent.click(b); // 大 and 人: two marks
     fireEvent.click(screen.getByText('Save misread characters'));
     fireEvent.click(screen.getByText('Save misread characters'));
     await screen.findByText(/will come up in practice/);
-    expect((await getKid(app.db))!.reading.extra).toBe(1);
+    expect((await getKid(app.db))!.reading.history['pp:1']!.rest).toBe(7);
   });
 
   it('a recording of a deleted text still lists, with a fallback title and nothing to mark', async () => {

@@ -1,6 +1,7 @@
 import data from './builtin.json';
 import hsk from './hskwords.json';
 import passages from './passages.json';
+import storybooks from './storybooks.json';
 import type { BuiltinChar, CharInfo, Example, Passage, Word } from '../types';
 import { EXTRA_EXAMPLES } from './extraExamples';
 import { ZUCI_DROPS } from './zuciPicks';
@@ -11,9 +12,10 @@ import { BLOCKED } from './blocked';
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.12`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists;
-// .11: 蚂蚁拇狐狸 and readable 组词; .12: the content audit (the blocklist, the readings his lessons use, 组词 a child knows first)
-export const PASSAGES: Passage[] = passages as Passage[];
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.14`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists;
+// .11: 蚂蚁拇狐狸 and readable 组词; .12: the content audit (the blocklist, the readings his lessons use, 组词 a child knows first); .13: 该死 blocked; .14: the neutral tone on word cards (朋友 早上 名字 …)
+/** 朗读's built-in passages (spec 2026-10-15 §2): ours, then the Global Storybooks chunks (scripts/import-storybooks.ts). */
+export const PASSAGES: Passage[] = [...(passages as Passage[]), ...(storybooks as unknown as { passages: Passage[] }).passages];
 
 const infoByChar = new Map<string, CharInfo>(
   BUILTIN.map((c) => [c.char, { char: c.char, radical: c.radical, components: c.components }]),

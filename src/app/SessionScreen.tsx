@@ -23,7 +23,11 @@ import { recordingSupported, type FinishedRecording } from '../audio/recorder';
 import { SayCard, type SayResult, type SaySkip } from '../activities/say/SayCard';
 import { SentenceCard } from '../activities/say/SentenceCard';
 import { recordSayTake, recordSentenceTake } from '../session/say';
-import { pickPassage, readingPool, finishDay, isFirstDay, type ReadingPassage } from '../langdu/cycle';
+import { afterRead, afterSkip, afterWarmup, readHow, warmupDue } from '../langdu/history';
+import { pickPassage, swapTarget } from '../langdu/pick';
+import { withQuestion } from '../langdu/questions';
+import { readerAt } from '../langdu/level';
+import { readingPool, type ReadingPassage } from '../langdu/pool';
 import { newestByPassage, tidyPassageTakes } from '../langdu/review';
 import { earnsBonus } from '../langdu/stars';
 import { burst } from '../ui/motion';
@@ -48,9 +52,9 @@ import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, sendBack, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
-import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession } from '../store/repo';
+import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
-import { DEFAULT_KID, type KidState, type OralInfo, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
+import { DEFAULT_KID, type KidState, type OralInfo, type ReadingHistory, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
 import { useApp } from './AppContext';
@@ -79,6 +83,10 @@ function levelOf(know: Knowledge): number {
   return l;
 }
 
+/** Today's 朗读: the passage, whether the warm-up runs (warmupDue), the lesson's date key, and for 下一篇 the pool, his reading
+ *  history as the step knows it and the swaps made. */
+interface LangduSpeaking { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; warmup: boolean; day: string; pool: ReadingPassage[]; reading: ReadingHistory; swaps: number }
+
 interface Loaded {
   rec: SessionRecord;
   know: Knowledge;
@@ -88,7 +96,7 @@ interface Loaded {
   fadePinyin: boolean; // settings.fadePinyin as the lesson loaded (spec 2026-10-12 §4): absent = on
   choose: UseItem[] | null; // built when 选一选 starts, so it knows what he missed earlier in the lesson
   wrapup: UseItem[] | null; // built when 用一用 starts, from today's recalls
-  speaking: { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; firstDay: boolean; day: string } | { kind: 'story'; scene: Scene } | null;
+  speaking: LangduSpeaking | { kind: 'story'; scene: Scene } | null;
   confusions: Map<string, string[]>; // look-alikes he picked, per word (钓鱼, spec 2026-10-05 §3.4)
   slow: SlowLines; // his slow line per tap kind, worked out once as the lesson loads (SRS tuning spec §3.2)
 }
@@ -141,9 +149,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           // lesson planned before 朗读 was parked passes its stop by
           // one date key for the whole step, the lesson's own: begun before midnight and finished after, it is still that day's
           const day = rec.date;
-          const passage = settings.langdu ? pickPassage(k.reading, readingPool(parentPassages, PASSAGES, know.knownChars), day) : null;
+          const pool = settings.langdu ? readingPool(parentPassages, PASSAGES, readerAt(know.knownChars, today, settings)) : [];
+          const passage = pickPassage(k.reading, pool, day);
           const kind = nextSpeaking(k.speakingLast, !!passage, settings.story);
-          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage, oral: settings.oral, firstDay: isFirstDay(k.reading, passage.id, day), day };
+          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage: withQuestion(passage, k.reading), oral: settings.oral, warmup: warmupDue(k.reading, day), day, pool, reading: k.reading, swaps: 0 };
           return kind === 'story' ? { kind: 'story' as const, scene: sceneFor(k.story) } : null;
         })(),
       });
@@ -434,12 +443,30 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     })();
 
   /**
-   * Save the warm-up and the kept read (with his answer), count the cycle day, tidy old passage takes, and give a bonus star for
-   * beating the last lesson read. Whatever fails on the way, the lesson goes on to its end (final review I4): no bonus at worst.
+   * Save the warm-up and the kept read (with his answer), count the read in his history — recorded or not (spec 2026-10-15 §1
+   * cause 4) — tidy old passage takes, and give a bonus star for beating the last lesson read. Whatever fails on the way, the lesson goes on to its end (final review I4): no bonus at worst.
    */
+  /**
+   * 下一篇 (spec 2026-10-15 §5): the passage is skipped today (saved at once) and the next in the order comes in. The swaps made
+   * are counted in memory only: a reload re-picks with the saved skips and starts the step with two swaps again.
+   */
+  const onLangduSwap = () => {
+    const s = state?.speaking;
+    if (s?.kind !== 'langdu' || !swapTarget(s.reading, s.pool, s.passage, s.day, s.swaps)) return;
+    setState((prev) => {
+      const cur = prev?.speaking;
+      if (!prev || cur?.kind !== 'langdu' || cur.passage.id !== s.passage.id) return prev; // already swapped
+      const next = swapTarget(cur.reading, cur.pool, cur.passage, cur.day, cur.swaps);
+      if (!next) return prev;
+      const reading = afterSkip(cur.reading, cur.passage.id, cur.day);
+      return { ...prev, speaking: { ...cur, passage: withQuestion(next, reading), reading, swaps: cur.swaps + 1 } };
+    });
+    void updateKid(db, (k) => ({ ...k, reading: afterSkip(k.reading, s.passage.id, s.day) })).catch(logError);
+  };
+
   const onLangduDone = (r: LangduResult) =>
     once(async () => {
-      const reading = state.speaking as { kind: 'langdu'; passage: ReadingPassage; oral: OralInfo; firstDay: boolean; day: string };
+      const reading = state.speaking as LangduSpeaking;
       const at = now();
       if (r.intro) await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'intro' }, ...r.intro });
       let bonus = false;
@@ -459,14 +486,14 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         }
       }
       try {
-        const fresh = (await getKid(db)) ?? kid;
-        await saveKid(db, {
-          ...fresh,
-          // no take (the mic refused or failing): the passage day isn't counted, so he reads it again next time (review M-6)
-          reading: { ...(r.read ? finishDay(fresh.reading, reading.passage.id, reading.day) : fresh.reading), warmups: fresh.reading.warmups + (r.intro ? 1 : 0) },
-          speakingLast: 'langdu',
-          bonusStars: fresh.bonusStars + (bonus ? 1 : 0),
-        });
+        // every read counts, a take or none: an unrecorded 读完了 moves the passage on too (spec 2026-10-15 §1 cause 4); applied to
+        // his state as stored, in one transaction, so a change saved meanwhile (a find, a star) is kept
+        const how = readHow({ extra: false, asked: !!reading.passage.question, meaning: r.meaning });
+        const change = (fresh: KidState): KidState => {
+          const read = afterRead(fresh.reading, reading.passage.id, reading.day, how);
+          return { ...fresh, reading: reading.warmup ? afterWarmup(read, reading.day, !!r.intro) : read, speakingLast: 'langdu', bonusStars: fresh.bonusStars + (bonus ? 1 : 0) };
+        };
+        if (!(await updateKid(db, change))) await saveKid(db, change(kid)); // nothing stored yet: start from the lesson's copy
       } catch (err) {
         logError(err); // his state couldn't be saved: the lesson still ends, with no bonus
         bonus = false;
@@ -570,7 +597,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <ComponentsStep key="components" items={state.round} kid={kid} onAnswer={(item, c) => void onZibianAnswer(item, c)} onDone={() => void finishTimedStep('components')} onProgress={setStepFraction} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'langdu' && (
-        <LangduStep passage={state.speaking.passage} oral={state.speaking.oral} kid={kid} withWarmup={state.speaking.firstDay} micBlocked={micRefused} onDone={(r) => void onLangduDone(r)} />
+        <LangduStep passage={state.speaking.passage} oral={state.speaking.oral} kid={kid} withWarmup={state.speaking.warmup} micBlocked={micRefused} onSwap={swapTarget(state.speaking.reading, state.speaking.pool, state.speaking.passage, state.speaking.day, state.speaking.swaps) ? onLangduSwap : undefined} onDone={(r) => void onLangduDone(r)} />
       )}
       {step === 'speaking' && state.speaking?.kind === 'story' && (
         <StoryStep scene={state.speaking.scene} told={kid.story.told} kid={kid} onDone={(r) => void onStoryDone(r)} />

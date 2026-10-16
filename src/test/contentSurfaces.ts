@@ -1,7 +1,7 @@
 // Every child-facing surface that shows or says a word, with the pinyin the app gives it (the content audit's collector,
 // 2026-10-15, on today's code): what src/content/contentGate.test.ts checks.
 import { pickExample } from '../activities/writing/cue';
-import { BUILTIN, builtinReading, builtinWords, HSK_WORDS } from '../content';
+import { BUILTIN, builtinReading, builtinWords, HSK_WORDS, PASSAGES } from '../content';
 import { CHENGYU, chengyuPinyin } from '../content/chengyu';
 import { taughtAt } from '../content/curriculum';
 import { DAPEI } from '../content/dapei';
@@ -14,6 +14,7 @@ import { collectionCards } from '../fun/collection';
 import { familyDistractors } from '../practice/family';
 import { dapeiQuestion, nearWords, NEAR_MAX_HSK, zuciBoard } from '../practice/pairs';
 import { mulberry32 } from '../lib/random';
+import { splitSentences } from '../langdu/sentences';
 import type { Knowledge } from '../stats/stats';
 import type { Word } from '../types';
 import s1a from '../content/sentences/一上.json';
@@ -89,6 +90,7 @@ export function shownSentenceRows(): { s: string; for: string; surface: string }
   }
   for (const r of [s1a, s1b, s2a, s2b].flat() as { word: string; s: { zh: string }[] }[]) for (const s of r.s) out.push({ s: s.zh, for: r.word, surface: 'understand' });
   for (const c of CHENGYU) for (const s of c.sentences) out.push({ s, for: c.text, surface: '成语 sentence' });
+  for (const p of PASSAGES) for (const s of splitSentences(p.text)) out.push({ s, for: p.id, surface: '朗读 passage' });
   return out;
 }
 export { shownSentences };

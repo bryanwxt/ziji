@@ -1,5 +1,5 @@
 import { createContext, type ComponentChildren } from 'preact';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
 /** How long a tapped syllable shows (spec 2026-10-12 §4). */
 export const PEEK_MS = 3000;
@@ -56,5 +56,12 @@ export function PinyinFade({ known, readings, on, children }: { known: ReadonlyS
       timer.current = setTimeout(() => setPeeked(null), PEEK_MS);
     },
   }), [show, peeked]);
+  return <PinyinFadeContext.Provider value={value}>{children}</PinyinFadeContext.Provider>;
+}
+
+/** Characters whose pinyin always shows inside it (a passage's transliterated names, spec 2026-10-15 §3); the fade decides the rest. */
+export function KeepPinyin({ chars, children }: { chars: ReadonlySet<string>; children: ComponentChildren }) {
+  const outer = useContext(PinyinFadeContext);
+  const value = useMemo(() => (outer && chars.size ? { ...outer, show: (ch: string, syl?: string) => chars.has(ch) || outer.show(ch, syl) } : outer), [outer, chars]);
   return <PinyinFadeContext.Provider value={value}>{children}</PinyinFadeContext.Provider>;
 }
