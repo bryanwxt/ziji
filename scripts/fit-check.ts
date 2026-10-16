@@ -2,12 +2,13 @@
    Run: npm run fit  (builds, serves dist on :4174, walks every flow at every size, writes fit-shots/). Exit 1 on any problem. */
 import { execSync, spawn } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { webkit, type Browser, type Page } from 'playwright-core';
+import type { Browser, Page } from 'playwright-core';
 import { WORLDS } from '../src/fun/worlds';
 import { buildFitProfile, type FitProfileOptions } from './fit-profile';
 import { textChecks } from './text-checks';
 import { serveStrokeData, strokeHits } from './stroke-route';
 import type { ActivityKind } from '../src/types';
+import { launchWebKit } from './launch-webkit';
 
 const PORT = Number(process.env.FIT_PORT ?? 4174); // FIT_PORT: another worktree's sweep may hold 4174
 const BASE = `http://127.0.0.1:${PORT}/`;
@@ -334,7 +335,7 @@ async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnl
 // The sizes share one browser; if it dies, the next flow launches another rather than every later flow failing on a closed one.
 let shared: Promise<Browser> | null = null;
 function browserNow(): Promise<Browser> {
-  if (!shared) shared = webkit.launch();
+  if (!shared) shared = launchWebKit();
   return shared.then((b) => {
     if (b.isConnected()) return b;
     shared = null;
@@ -353,7 +354,7 @@ async function sweep(size: Size) {
       const errors: string[] = [];
       let crashed = false;
       // a retry gets a browser of its own: nothing left over from the crash (or from the other sizes' flows) can take it down too
-      const own = attempt > 1 ? await webkit.launch() : null;
+      const own = attempt > 1 ? await launchWebKit() : null;
       try {
         const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error(`flow took over ${limitMs / 60_000} minutes (stuck?)`)), limitMs));
         page = await Promise.race([open(own ?? (await browserNow()), size, now, profile, errors), limit]);

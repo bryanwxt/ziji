@@ -4,7 +4,8 @@ import { build } from 'esbuild';
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { webkit, type Browser } from 'playwright-core';
+import type { Browser } from 'playwright-core';
+import { launchWebKit } from './launch-webkit';
 
 export const STORY_SIZES = [
   ['iphone-se', 375, 553], // Safari with its bars on the smallest phone
@@ -59,7 +60,7 @@ if (process.argv[1]?.endsWith('story-walk.ts')) {
   await build({ entryPoints: ['scripts/stage-cases/page.tsx'], bundle: true, outdir: dir, plugins: [chaptersShim], jsx: 'automatic', jsxImportSource: 'preact', loader: { '.json': 'json', '.woff2': 'file', '.woff': 'file', '.png': 'file', '.md': 'text' }, external: ['/fonts/*'], define: { 'import.meta.env.BASE_URL': '"./"' }, logLevel: 'error' });
   writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="page.css"><div id="app"></div><script src="page.js"></script>`);
   for (const f of readdirSync('public/story/bg').filter((x) => x.endsWith('.webp'))) copyFileSync(`public/story/bg/${f}`, join(dir, 'story/bg', f));
-  const browser = await webkit.launch();
+  const browser = await launchWebKit();
   const problems = await storyWalk(browser, dir);
   await browser.close();
   for (const p of problems) console.log(`FAIL ${p}`);
