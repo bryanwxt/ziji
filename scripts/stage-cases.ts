@@ -156,6 +156,16 @@ for (const size of SIZES) {
       problems.push(...(await cardClipped(page, `${size.name} ${name}`, '.is-eaten')), ...(await sheetFits(page, `${size.name} ${name}`)), ...(await sheetScrolls(page, `${size.name} ${name}`)));
     }
   }
+  // a miss names what he picked, with its English (parent 2026-10-16): the longest English on both lines, and a pinyin pick
+  for (const [c, pick] of [['miss-long', '字典'], ['miss-read', 'qīng']] as const) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(300);
+    await page.click(`.choice:text-is("${pick}")`);
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    if (!(await page.$('.sheet .sheet__en-picked [lang="en"]'))) problems.push(`${size.name} ${c}: no English beside what he picked`);
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)), ...(await sheetFits(page, `${size.name} ${c}`)), ...(await sheetScrolls(page, `${size.name} ${c}`)));
+  }
   // the Understand question (plan 2b): the choices open after the sentence (5 s here: no voice ends it), then a miss's sheet
   {
     await page.goto(`file://${dir}/index.html?case=understand`);

@@ -17,7 +17,8 @@ interface Props {
   onDone: (r: { correct: boolean; responseMs: number; picked: string }) => void;
 }
 
-/** Complete the 成语 (spec 2026-10-05 §3.2 rung 5): which character goes in the gap? After a miss the sheet gives its English. */
+/** Complete the 成语 (spec 2026-10-05 §3.2 rung 5): which character goes in the gap? After a miss the sheet gives its English,
+ *  and the character he put in with its own (parent 2026-10-16). */
 export function IdiomQuestion({ gap, kid, onDone }: Props) {
   const text = gap.idiom.text;
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ text.codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [gap]);
@@ -45,7 +46,7 @@ export function IdiomQuestion({ gap, kid, onDone }: Props) {
             <>
               <span class="hanzi">{text}</span>
               <SpeakButton text={text} />
-              <MeaningNote right={text} rightMeaning={gap.idiom.meaning} />
+              <MeaningNote right={text} rightMeaning={gap.idiom.meaning} picked={choice} />
             </>
           )}
           actionLabel="继续"
