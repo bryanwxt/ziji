@@ -1700,7 +1700,7 @@ button.langdu__sentence { cursor: pointer; }
 @media (max-width: 599px) { .sheet__detail .why .hanzi, .why__syl { font-size: 16px; } } /* phones: under the compact answer (18px); after the base rules so it wins */
 @media (max-width: 599px) { .why__dot { display: none; } } /* the two characters wrap onto two lines here; a dot left at a line's end means nothing */
 /* the why-line's parts as a sum (parent 2026-10-16): 扫 = 扌 + 彐, the part only it has coloured (green his answer's, orange
-   his pick's), the shared part plain; on the miss sheet it is the comparison's third row, its name (💡 不一样) under the others */
+   his pick's), the shared part plain; on the miss sheet it is the comparison's third row, its name (a bulb and 不一样) under the others */
 .why__body { display: contents; }
 .why__clause { display: inline-flex; align-items: flex-end; gap: 6px; white-space: nowrap; }
 .family-sum .why__label { display: none; } /* 找一家人's summary lays out its own rows: each why sits under its word, unnamed */
