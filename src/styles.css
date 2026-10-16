@@ -413,6 +413,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .setup__school { font-size: 16px; letter-spacing: 0; }
 }
 @media (max-width: 599px) and (max-height: 700px) { .setup__flavor { display: none; } } /* an SE: Truffle's bubble says it already */
+/* his first words never run off a phone's edge (fit sweep, iPhone SE on Linux fonts): they may wrap, and stay inside the screen */
+.setup__pet .pet { width: 100%; }
+.setup__pet .pet__bubble { white-space: normal; max-width: min(calc(100vw - 32px), 360px); text-align: center; }
 @media (orientation: portrait) { .setup { grid-template-columns: 1fr; } }
 .brand { margin: 0; font-family: var(--hanzi); font-weight: 400; font-size: 64px; line-height: 1; color: var(--green-edge); letter-spacing: 0.08em; }
 

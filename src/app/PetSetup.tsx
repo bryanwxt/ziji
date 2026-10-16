@@ -67,7 +67,7 @@ export function PetSetup() {
           <div class="setup__form">
             <h2><Label zh="这是松露！" /></h2>
             <p class="setup__school"><Label zh={schoolLine(grade!, now())} /></p>
-            <p class="setup__flavor"><Label zh="他有点儿凶，可是你答对了，他就会开心！" /></p>
+            <p class="setup__flavor"><Label zh="他有点凶，你答对了，他就开心！" /></p>
             <div class="setup__go">
               <button type="button" class="btn setup__change" onClick={() => setPicking(true)}><Label zh="改" /></button>
               <button type="button" class="btn btn--primary btn--big" onClick={() => void done()}>
