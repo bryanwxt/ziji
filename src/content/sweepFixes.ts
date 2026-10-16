@@ -7,7 +7,8 @@ export const SWEEP_MEANINGS: Record<string, string> = {
   // HSK 5–9 (second sweep)
   "丑": "ugly",
   "旦": "dawn; day",
-  "甲": "first; shell; nail",
+  "甲": "first (like A); shell; nail",
+  "丁": "fourth (like D); small cube",
   "央": "center",
   "仔": "young animal; young man",
   "朵": "measure word for flowers",
