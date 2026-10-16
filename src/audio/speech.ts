@@ -98,7 +98,7 @@ export function spokenAs(text: string, reading?: string): string {
  * one ending in a tile it could join (茄子 when 子 is on the board); with none left, the character is said alone. A bound
  * character (kidGloss.ts boundPair: 番 → 番茄) is said as its pair the same way, first.
  */
-export function loneSpoken(text: string, reading?: string, avoid: readonly string[] = [], endings: readonly string[] = [], { voice = false } = {}): string {
+export function loneSpoken(text: string, reading?: string, avoid: readonly string[] = [], endings: readonly string[] = [], { voice = false, alone = false } = {}): string {
   const { poly, words } = SAY_AS as { poly: Record<string, string>; words?: Record<string, string[]> };
   if (text.includes('，')) {
     const parts = text.split('，');
@@ -108,12 +108,13 @@ export function loneSpoken(text: string, reading?: string, avoid: readonly strin
       const ch = part.trim();
       if (Array.from(ch).length !== 1) return part;
       const keep = !(voice && words?.[ch]) && parts.some((p, j) => j !== i && Array.from(p.trim()).length > 1 && p.includes(ch));
-      return keep ? part : loneSpoken(part, reading, avoid, endings);
+      return keep ? part : loneSpoken(part, reading, avoid, endings, { alone });
     }).join('，');
   }
   const t = text.trim();
   // a bound character (kidGloss.ts: 番 lives only in 番茄) is said as its pair, the word his card and questions teach it in
-  const pair = boundPair(t);
+  // `alone`: a board tile is that character, never its pair (parent 2026-10-16: 连一连's 阳 was said 太阳)
+  const pair = alone ? undefined : boundPair(t);
   if (reading && reading !== (pair ? kidGlossReading(t) : poly[t])) return text;
   const said = [...new Set([...(pair ? [pair] : []), ...(words?.[t] ?? [])])];
   return said.find((w) => !avoid.includes(w) && !endings.some((e) => w.endsWith(e))) ?? text;
@@ -130,22 +131,22 @@ export function setClipPlayer(p: ClipPlayer): void {
 
 /** A line as it is said: by clips (`steps`, saying `text`), else by the iPad voice (`voiced`, also when a clip fails). */
 type Line = { text: string; voiced: string; reading?: string };
-type SayOpts = { reading?: string; avoid?: readonly string[]; endings?: readonly string[] };
+type SayOpts = { reading?: string; avoid?: readonly string[]; endings?: readonly string[]; alone?: boolean };
 
 /**
  * How a line is said. A lone unsure character (爪, 切) with its own clip at its card's reading (cut out of its 组词 by the
  * same voice: scripts/audio inventory) plays that clip, so it sounds the same alone as in its word; on the iPad voice it is
  * still said as its 组词. A bound character (爪 → 爪子) is said as its pair first either way.
  */
-function said(line: string, { reading, avoid, endings }: SayOpts): Line & { steps: ClipStep[] | null } {
+function said(line: string, { reading, avoid, endings, alone }: SayOpts): Line & { steps: ClipStep[] | null } {
   const { poly, words } = SAY_AS as { poly: Record<string, string>; words?: Record<string, string[]> };
   const t = line.trim();
-  const voiced = loneSpoken(line, reading, avoid, endings, { voice: true });
-  if (words?.[t] && !boundPair(t) && (reading ?? poly[t]) === poly[t]) {
+  const voiced = loneSpoken(line, reading, avoid, endings, { voice: true, alone });
+  if (words?.[t] && (alone || !boundPair(t)) && (reading ?? poly[t]) === poly[t]) {
     const own = clipPlan(t, poly[t]);
     if (own) return { text: t, voiced, reading, steps: own };
   }
-  const text = loneSpoken(line, reading, avoid, endings);
+  const text = loneSpoken(line, reading, avoid, endings, { alone });
   return { text, voiced, reading, steps: clipPlan(text, reading) };
 }
 /** Lines queued behind a clip (or behind the iPad voice while a clip waits): said in order, one at a time. */
@@ -159,9 +160,9 @@ const ttsBusy = () => available() && (live.size > 0 || waiting !== null);
  * character is taught with, when the screen knows it. While he is being recorded it says nothing (final review C1): a peek or
  * a line on screen must never end up in his take.
  */
-export function speak(text: string, { queue = false, reading, avoid, endings }: { queue?: boolean } & SayOpts = {}): void {
+export function speak(text: string, { queue = false, reading, avoid, endings, alone }: { queue?: boolean } & SayOpts = {}): void {
   if (recordingNow()) return;
-  const { steps, ...line } = said(text, { reading, avoid, endings });
+  const { steps, ...line } = said(text, { reading, avoid, endings, alone });
   if (queue && (clipBusy || after.length > 0 || (ttsBusy() && steps))) {
     after.push(line);
     return;
