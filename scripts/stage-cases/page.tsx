@@ -138,6 +138,15 @@ else if (which === 'pair' || which === 'match' || which === 'build' || which ===
     : <ComponentsStep items={[fishItem(w('根'), ['跟'], new Set(), rng)!]} kid={DEFAULT_KID} onAnswer={() => {}} onDone={() => {}} />;
   render(screen(body), app);
 }
+else if (which === 'miss-long' || which === 'miss-read') {
+  // the miss sheet naming what he picked, with its English (parent 2026-10-16): long dictionary English on both lines (字典
+  // picked for 经验), and a pinyin choice named as the part read so (qīng picked for 静 → 青)
+  const words = builtinWords(0);
+  const jing = words.find((x) => x.text === '静')!;
+  render(screen(which === 'miss-long'
+    ? <UseQuestion item={{ kind: 'fit', wordId: null, word: '经验', before: '他教书很有', after: '。', options: ['经验', '字典', '充电', '注视'] }} kid={DEFAULT_KID} onAnswer={() => {}} onNext={() => {}} />
+    : <FlashcardStep item={{ wordId: jing.id, isNew: false, retry: false }} ask="read" word={jing} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
+}
 else if (which === 'understand') {
   // the Understand question (plan 2b), with the longest English among the written sentences: the tightest card
   const items = SENTENCE_TERMS.flatMap((t) => inScopeWords(t)).map((w) => understandItem(w, mulberry32(1))).filter((x): x is UnderstandItem => !!x);

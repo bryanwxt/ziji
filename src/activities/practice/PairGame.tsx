@@ -5,7 +5,7 @@ import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32 } from '../../lib/random';
 import type { PairBoard } from '../../practice/pairs';
 import type { KidState } from '../../types';
-import { glossFor } from '../../content/glossary';
+import { choiceGloss } from '../../practice/missNote';
 import { halfReading, readingOf } from '../../content/wordGate';
 import { Label } from '../../ui/Label';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
@@ -115,7 +115,7 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
                 return (
                   <p key={i} class={`pair-summary__row${wrong ? ' is-missed' : ''}`}>
                     <span class="hanzi"><Label zh={word} py={readingOf(word)} fade /></span>
-                    {glossFor(word) && <span lang="en">{glossFor(word)}</span>}
+                    {choiceGloss(word) && <span lang="en">{choiceGloss(word)}</span>} {/* a board's other 词语 may have only a kid gloss written for it (choiceGloss.ts) */}
                   </p>
                 );
               })}

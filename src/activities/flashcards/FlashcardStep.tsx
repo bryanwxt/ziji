@@ -28,6 +28,7 @@ import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from
 import { InkIcon } from '../../ui/icons/InkIcon';
 import type { Idiom } from '../../content/chengyu';
 import { NONE_OF_THESE, noneChoices, noneDecoyChoices } from '../../practice/noneOfThese';
+import { cuePickNote, meaningPickNote, pickedNote, pinyinPickNote, type PickedNote } from '../../practice/missNote';
 
 export interface FlashResult {
   correct: boolean;
@@ -63,6 +64,18 @@ interface Props {
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
+
+/** What he picked, for the miss sheet (parent 2026-10-16: English beside every wrong pick): 都不对 said plainly; an English
+ *  choice as the word it means; a 组词 or sentence gap as the character he put in (never the made-up word); a character; a
+ *  pinyin choice as the character or word read so (nothing for a slip of his own word's sound). */
+function missedPick(choice: string | null, quiz: { cue: MeaningCue | null; mode: 'hear' | 'meaningRead' | null; listen: boolean }, word: Word, pool: Word[]): PickedNote | null {
+  if (choice === null) return null;
+  if (choice === NONE_OF_THESE) return pickedNote(choice);
+  if (quiz.mode) return meaningPickNote(choice, word, pool);
+  if (quiz.cue) return cuePickNote(quiz.cue, choice, pool);
+  if (quiz.listen) return pickedNote(choice, pool);
+  return pinyinPickNote(word, choice, pool);
+}
 
 export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null, noneOfThese }: Props) {
   // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
@@ -184,7 +197,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           // a 都不对 question shows the real answer, right or wrong (production practice spec §5)
           detail={result.correct && !quiz.none ? undefined : (
             <>
-              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? kidGlossReading(pair) : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={quiz.mode || choice === NONE_OF_THESE ? null : quiz.cue ? quiz.cue.before + (choice ?? '') + quiz.cue.after : quiz.listen ? choice : null} />
+              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? kidGlossReading(pair) : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={result.correct ? null : missedPick(choice, quiz, word, pool)} />
               {/* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
                   find the character → the look-alike part; its reading → the kind of pinyin slip */}
               {result.correct ? null
