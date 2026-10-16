@@ -14,4 +14,9 @@ describe('the school year in Settings follows the calendar', () => {
     fireEvent.change(select, { target: { value: '4' } });
     await waitFor(async () => expect(await getSettings(app.db)).toMatchObject({ grade: 4, gradeYear: 2027 }));
   });
+  it('says the school year was picked at setup and can be changed here', async () => {
+    renderWithApp(<SettingsPanel />, await makeAppData());
+    const select = await screen.findByLabelText('School year');
+    expect(select.closest('.field')!.textContent).toContain('He picked his school year when he first met Truffle; change it here.');
+  });
 });

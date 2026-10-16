@@ -415,6 +415,39 @@ for (const size of SIZES) {
     }, t);
     if (shown !== 1) problems.push(`granny talking at ${t} ms: ${shown} mouths showing (want exactly 1)`);
   }
+  // first run (2026-10-16): his school year asked up front, then where school is — the longest line, and the no-list line
+  await page.addInitScript({ content: 'window.__name = (f) => f;' }); // tsx (esbuild keepNames) wraps in-page helpers in __name()
+  for (const c of ['setup-long', 'setup-none']) {
+    for (const [name, width, height] of [['iphone-se', 375, 667], ['iphone-15', 390, 844], ['ipad-landscape', 1024, 768]] as const) {
+      await page.setViewportSize({ width, height });
+      await page.goto(`file://${dir}/index.html?case=${c}`);
+      await page.waitForSelector('.setup__grade', { timeout: 10_000 });
+      const grade = Number(await page.getAttribute('#app', 'data-grade'));
+      await page.click(`.setup__grade >> nth=${grade - 1}`);
+      await page.waitForSelector('.setup__school');
+      await page.waitForTimeout(600);
+      await page.screenshot({ path: `fit-shots/stage-cases/${c}-${name}.png` });
+      problems.push(...(await page.evaluate(textChecks)).map((x) => `${c} ${name}: ${x}`));
+      problems.push(...(await page.evaluate((n) => {
+        const out: string[] = [];
+        const line = document.querySelector('.setup__school .label')!;
+        if (n.startsWith('setup-none') !== (line.getAttribute('data-zh') === '我们从一上开始')) out.push(`${n}: the school line is ${line.getAttribute('data-zh')}`);
+        const cells = [...line.querySelectorAll('.label__cell')].map((x) => x.getBoundingClientRect().top);
+        if (cells.length && Math.max(...cells) - Math.min(...cells) > 4) out.push(`${n}: the school line wraps`);
+        const form = document.querySelector('.setup__form')!.getBoundingClientRect();
+        for (const el of document.querySelectorAll('.setup__form *')) {
+          const r = el.getBoundingClientRect();
+          if (r.width && r.height && (r.left < form.left - 2 || r.right > form.right + 2 || r.bottom > form.bottom + 2)) { out.push(`${n}: cut off in the card: ${(el.textContent ?? '').trim().slice(0, 12)}`); break; }
+        }
+        for (const el of document.querySelectorAll('button')) {
+          const r = el.getBoundingClientRect();
+          if (r.bottom > innerHeight + 1 || r.right > innerWidth + 1) out.push(`${n}: off screen: ${el.textContent}`);
+          if (Math.min(r.width, r.height) < 43.5) out.push(`${n}: under 44px: ${el.textContent}`);
+        }
+        return out;
+      }, `${c} ${name}`)));
+    }
+  }
   // the 3c reader: setup page, Granny's lines, 听一听 and the rescued words, at three sizes (spec 2026-10-07 3c §7)
   mkdirSync(join(dir, 'story/bg'), { recursive: true });
   for (const f of readdirSync('public/story/bg').filter((x) => x.endsWith('.webp'))) copyFileSync(`public/story/bg/${f}`, join(dir, 'story/bg', f));

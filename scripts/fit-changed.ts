@@ -12,7 +12,7 @@ const TABLE: [string, string | null][] = [
   ['src/app/TodayPath', '^home'],
   ['src/app/WeekStrip', '^home'],
   ['src/app/SetupPin', '^setup-pin$|^pin-gate$'],
-  ['src/app/PetSetup', '^pet-setup$'],
+  ['src/app/PetSetup', '^pet-setup$|^placement$'],
   ['src/app/PlacementScreen', '^placement'],
   ['src/placement/', '^placement'],
   ['src/parent/', '^parent$|^pin-gate$|^placement-rerun$'],

@@ -6,6 +6,7 @@ import { setSpeaking } from '../../src/audio/speaking';
 import { openAppDb } from '../../src/store/db';
 import { addReviewLog } from '../../src/store/repo';
 import { StoryScreen } from '../../src/story/StoryScreen';
+import { PetSetup, schoolLine } from '../../src/app/PetSetup';
 import { DEFAULT_SETTINGS, type Grade } from '../../src/types';
 import ch03 from '../../src/content/story/season-1/ch03.md';
 import { parseChapter, slotsIn, type Line } from '../../src/story/format';
@@ -198,6 +199,22 @@ else if (which === 'costume-sheet') {
       </div>,
       app,
     );
+}
+else if (which === 'setup-long' || which === 'setup-none') {
+  // first run's second beat (2026-10-16): the longest 「学校现在学到：…」 line any P1–P3 day of 2026 gives, or the no-list line (P5);
+  // the grade to tap is the page's data-grade
+  void (async () => {
+    let best = { grade: 5, day: new Date(2026, 9, 6), len: 0 };
+    if (which === 'setup-long') for (let g = 1; g <= 3; g++) for (let d = 0; d < 366; d += 3) {
+      const day = new Date(2026, 0, 1 + d);
+      const len = schoolLine(g, day).length;
+      if (len > best.len) best = { grade: g, day, len };
+    }
+    const db = await openAppDb(`stage-${Date.now()}`);
+    const ctx: AppData = { db, settings: { ...DEFAULT_SETTINGS }, kid: null, voice: false, now: () => best.day, go: () => {}, refresh: async () => {} };
+    app.dataset.grade = String(best.grade);
+    render(<AppContext.Provider value={ctx}><PetSetup /></AppContext.Provider>, app);
+  })();
 }
 else if (which?.startsWith('story-') && which !== 'story-page') {
   // the 3c reader on its own (spec 2026-10-07 3c §4): setup page, Granny's lines, 听一听, the rescued words

@@ -88,7 +88,7 @@ export function SettingsPanel() {
         <select id="st-grade" value={String(schoolYear(s, now()))} onChange={(e) => void save({ grade: Number(e.currentTarget.value), gradeYear: now().getFullYear(), classLesson: null })}>
           {[1, 2, 3, 4, 5, 6].map((g) => <option key={g} value={String(g)}>P{g}</option>)}
         </select>
-        <p class="hint">Progress compares him with the MOE lists to the end of his school year (lists go up to P3).</p>
+        <p class="hint">He picked his school year when he first met Truffle; change it here. It moves up each January. Progress compares him with the MOE lists to the end of his school year (lists go up to P3).</p>
       </div>
       <ClassLessonField settings={s} now={now()} onSave={save} />
       <div class="field">

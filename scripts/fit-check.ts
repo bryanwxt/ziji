@@ -32,7 +32,7 @@ const ONLY = process.env.FIT_ONLY ? new RegExp(process.env.FIT_ONLY) : null; // 
 const VIEWPORT = process.env.FIT_VIEWPORT ? new RegExp(process.env.FIT_VIEWPORT) : null; // size names, e.g. FIT_VIEWPORT='^ipad-' (CI shards the sweep by size; iphone-sideways is the rotate check)
 
 /* ---------- in-page probes (plain JS: they run inside WebKit) ---------- */
-const MAIN = '.choice, .sheet .btn, .path__node, .mic-btn, .tabbar__item, .fishtile, .bubble-opt';
+const MAIN = '.choice, .setup__grade, .sheet .btn, .path__node, .mic-btn, .tabbar__item, .fishtile, .bubble-opt';
 const SCROLLERS = '.scroll-panel, .filters, .kantu__words, .passage, .langdu__passage, .placement-result__body, .placement-confirm__body';
 
 function probe(args: { main: string; scrollers: string }): string[] {
@@ -368,7 +368,12 @@ async function sweep(browser: Browser, size: Size) {
   }
   // First run
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));
-  await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, (p) => check(p, size, 'pet-setup', 0));
+  await run('pet-setup', AFTERNOON, { kid: false, placementDone: false }, async (p) => {
+    await check(p, size, 'pet-setup', 0); // asleep: 你读几年级？ and six grade buttons
+    await p.click('.setup__grade >> nth=0');
+    await p.waitForSelector('.setup__school');
+    await check(p, size, 'pet-setup', 1); // awake: where school is, 改 and 好！
+  });
   await run('placement', AFTERNOON, { placementDone: false }, async (p) => {
     // 读一读 and 听一听 (spec 2026-10-14 v2.1): answer and look again until the walk ends (by 20) — a guess between the 不知道
     // taps; every question keeps the same box and grid: the screen must not jump between styles (the parent noticed)

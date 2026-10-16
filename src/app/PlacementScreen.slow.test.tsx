@@ -114,6 +114,14 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     await waitFor(() => expect(document.querySelector('[data-question="0"]')).toBeTruthy(), LONG);
     expect(schoolTerm(screen.getByTestId('placement-char').textContent!)).toBe('二上');
   });
+  it('a P1 child (the grade picked at setup) is asked 一上 characters first', async () => {
+    const app = await setup();
+    app.settings = { ...app.settings, grade: 1, gradeYear: 2026, classLesson: null };
+    app.now = () => new Date(2026, 9, 14, 16);
+    renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={SEED} />, app);
+    await waitFor(() => expect(document.querySelector('[data-question="0"]')).toBeTruthy(), LONG);
+    expect(schoolTerm(screen.getByTestId('placement-char').textContent!)).toBe('一上');
+  });
   it('always ends within 20 questions, whatever he answers', async () => {
     for (const seed of [1, 2, 3]) {
       const app = await setup();
