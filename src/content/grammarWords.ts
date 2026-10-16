@@ -12,8 +12,9 @@ const GROUPS: Record<string, string> = {
   structural: '的得着们么把被所而之以于及其并然者第才将当就',
   /** Measure words with nothing concrete to picture (只 "one (for animals)" is fine; 个 is for anything). */
   measure: '个',
-  /** Only a name or a prefix in his lessons (陈 / 吴 / 李 are family names in 三上's names lesson; 阿 is 阿姨's). */
-  names: '陈吴李丁阿',
+  /** Only a name or a prefix in his lessons (陈 / 吴 / 李 are family names in 三上's names lesson; 阿 is 阿姨's). 丁 is not:
+   *  一下 L11 uses it as a label, the 4th like D (parent 2026-10-16), so it takes English questions. */
+  names: '陈吴李阿',
 };
 
 /** Multi-character words of the same kinds (a 词语 can be grammar too). */

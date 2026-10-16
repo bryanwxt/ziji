@@ -9,7 +9,7 @@ import type { Word } from '../types';
 import { cardMeaning, dictionaryMeaning, glossFor, questionMeaning } from './glossary';
 import { NO_ENGLISH, noEnglishQuestion } from './grammarWords';
 import { builtinWords } from './index';
-import { glossProblems, kidGloss, kidGlossReading } from './kidGloss';
+import { glossProblems, isBound, kidGloss, kidGlossReading } from './kidGloss';
 import { kidGlossScope } from './kidGlossScope';
 import { ladderWords } from './ladder';
 import { freshDb, makeCard } from '../test/fixtures';
@@ -150,5 +150,35 @@ describe('grammar words leave English questions (parent 2026-10-15)', () => {
     await openMissingRungs(db, new Date('2026-10-15T09:00:00'));
     const kinds = (await allCards(db)).filter((c) => c.wordId === ma.id).map((c) => c.kind);
     expect(kinds.some((k) => k === 'understand' || k === 'recognise')).toBe(true);
+  });
+});
+
+describe('the sense his lesson teaches (parent 2026-10-16: 丁 showed "family name Ding", 甲 "fingernail")', () => {
+  // 一下 L11 reads 甲丁前后左右中间边同学朋友坐高发直起回周末: classmates in seats labelled 甲…丁, the first and the fourth
+  it('甲 and 丁 are the 1st and 4th labels (like A and D), taught alone, with 组词 in that sense', () => {
+    expect(kidGloss('甲')).toBe('the 1st (like A)');
+    expect(kidGloss('丁')).toBe('the 4th (like D)');
+    expect(isBound('甲')).toBe(false);
+    expect(isBound('丁')).toBe(false);
+    for (const ch of '甲丁') {
+      const w = byText.get(ch)!;
+      expect(cardMeaning(w)).toBe(kidGloss(ch));
+      const shown = (w.examples ?? []).map((e) => e.text);
+      expect(shown[0], ch).toBe('甲乙丙丁');
+      expect(shown, ch).not.toContain('指甲'); // fingernail is another sense, met later (二下)
+      expect(glossFor('甲乙丙丁')).toBe('A, B, C, D');
+    }
+    // a label, not a name: 丁 takes English questions now
+    expect(noEnglishQuestion('丁')).toBe(false);
+    expect(questionMeaning(byText.get('丁')!)).toBe('the 4th (like D)');
+  });
+
+  it('李 is a family name in 三上 L2 (陈李吴姓名), not "plum" first', () => {
+    expect(kidGloss('李')).toBe('family name Li');
+  });
+
+  it('no school character reads "family name" unless his lessons teach it as a name', () => {
+    const named = scope.filter((w) => w.text.length === 1 && /family name/i.test(kidGloss(w.text) ?? '')).map((w) => w.text).sort();
+    expect(named).toEqual(['吴', '姓', '李', '陈'].sort());
   });
 });

@@ -262,6 +262,8 @@ export const ZUCI_FIRST: Record<string, ExtraExample[]> = {
   捞: [['捞鱼', 'lāo yú', 'to scoop up fish']], 六: [['六个', 'liù gè', 'six (of them)'], ['六月', 'liù yuè', 'June']],
   角: [['牛角', 'niú jiǎo', 'ox horn']], 窄: [['很窄', 'hěn zhǎi', 'very narrow']], 晃: [['摇晃', 'yáo huàng', 'to shake; to sway']],
   佛: [['大佛', 'dà fó', 'a big Buddha statue']],
+  // 一下 L11 (甲丁前后左右中间边同学朋友坐…) uses 甲…丁 as labels, 1st to 4th (parent 2026-10-16: 甲 showed "fingernail", 丁 "family name Ding")
+  甲: [['甲乙丙丁', 'jiǎ yǐ bǐng dīng', 'A, B, C, D'], ['甲乙', 'jiǎ yǐ', 'A and B (first and second)']], 丁: [['甲乙丙丁', 'jiǎ yǐ bǐng dīng', 'A, B, C, D']],
 };
 
 /** char → 组词 its card no longer shows (each is still a word elsewhere: a family row, the ladder). */
@@ -288,6 +290,7 @@ export const ZUCI_DROPS: Record<string, string> = {
   单: '单位', 该: '活该', 河: '运河 河流', 拉: '拉动',
   卖: '买卖 出卖', 实: '实习', 使: '大使馆 大使 使得', 往: '交往 前往',
   英: '精英', 草: '起草', 封: '封建 封面', 闻: '传闻',
+  甲: '指甲', // fingernail: another sense, met in 二下; his 一下 甲 is the 1st label (parent 2026-10-16)
   响: '影响', 信: '短信 信号', 选: '当选 选修', 部: '部门',
   倒: '打倒 倒车 倒卖', 海: '海关', 借: '借口 借条', 离: '离婚 分离',
   嘴: '吵嘴', 厂: '厂长 厂商', 父: '父女', 木: '麻木',

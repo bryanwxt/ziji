@@ -1,5 +1,7 @@
 // Bound characters on the 认新字 card and in English questions (parent 2026-10-15): 番 is taught and asked through 番茄.
 import { cleanup, fireEvent, render } from '@testing-library/preact';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../audio/speech', () => ({ speak: vi.fn(), stopSpeaking: vi.fn() }));
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
@@ -27,7 +29,7 @@ const step = (word: Word, extra: Record<string, unknown>) =>
 afterEach(() => { cleanup(); vi.mocked(speak).mockClear(); });
 
 describe('a bound character\'s 认新字 card (番 / 番茄)', () => {
-  it('leads with the pair, 番 picked out in it, its pinyin over it, the pair\'s English, and 番 alone beside the speak button', () => {
+  it('leads with the pair, 番 picked out in it, its pinyin over it, and the pair\'s English', () => {
     render(<FlashcardStep {...base} word={fan} item={{ wordId: fan.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
     const head = document.querySelector('.intro__head')!;
     const pair = head.querySelector('.hanzi--pair .label')!;
@@ -35,7 +37,6 @@ describe('a bound character\'s 认新字 card (番 / 番茄)', () => {
     expect([...head.querySelectorAll('.hanzi--pair .label__cell--mark .label__ch')].map((e) => e.textContent)).toEqual(['番']);
     // each syllable over its own character (parent 2026-10-15), not one centred string
     expect([...pair.querySelectorAll('.label__cell')].map((c) => [c.querySelector('.label__py')!.textContent, c.querySelector('.label__ch')!.textContent])).toEqual([['fān', '番'], ['qié', '茄']]);
-    expect(head.querySelector('.intro__alone .hanzi')!.textContent).toBe('番');
     expect(document.querySelector('.intro__en')!.textContent).toBe('tomato');
     // the speak button says the pair; the card says it once, never again in its 词语 rows
     fireEvent.click(head.querySelector('.speak')!);
@@ -43,6 +44,23 @@ describe('a bound character\'s 认新字 card (番 / 番茄)', () => {
     expect(introSpoken(fan, null)).not.toContain('番茄');
     const rows = [...document.querySelectorAll('.intro__group .label')].map((e) => e.getAttribute('data-zh'));
     expect(rows).toEqual([]); // its only other 组词 is 一番, another sense: no 组词 row at all
+  });
+
+  it('marks 番 once (parent 2026-10-16: colour, underline and a 「番 fān」 chip was excessive): orange in the pair, no chip', () => {
+    render(<FlashcardStep {...base} word={fan} item={{ wordId: fan.id, isNew: true, retry: false }} voice={false} onDone={vi.fn()} />);
+    const head = document.querySelector('.intro__head')!;
+    expect(head.querySelector('.intro__alone')).toBeNull();
+    // the character appears once in the head: in its pair, over its own pinyin
+    expect([...head.querySelectorAll('.label__ch, .hanzi')].filter((e) => e.children.length === 0 && e.textContent === '番')).toHaveLength(1);
+    expect([...head.querySelectorAll('.pinyin')].map((e) => e.textContent)).not.toContain('fān');
+    // one mark in the stylesheet: the colour, never an underline too
+    const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
+    const rules = [...css.matchAll(/([^{}]*(?:\.bound__ch|\.intro__word \.label__cell--mark)[^{}]*)\{([^}]*)\}/g)];
+    expect(rules.length).toBeGreaterThan(0);
+    for (const [, sel, body] of rules) {
+      expect(body, sel).toMatch(/color:\s*var\(--orange-ink\)/);
+      expect(body, sel).not.toMatch(/underline|text-decoration-color/);
+    }
   });
 
   it('番 shows no 组词 in another sense: 一番 "a round of" never sits under "tomato"', () => {

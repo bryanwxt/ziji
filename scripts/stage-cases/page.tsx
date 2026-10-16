@@ -449,6 +449,12 @@ else if (which === 'intro-bound' || which === 'intro-bound-full' || which === 'i
   const known = new Set(words.slice(0, 1200).map((x) => x.text));
   render(screen(<PinyinFade known={known} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} idiom={introIdiom(w, idiomsFor(w, 3, words))} onDone={() => {}} /></PinyinFade>), app);
 }
+else if (which === 'intro-jia' || which === 'intro-ding') {
+  // 一下 L11's labels (parent 2026-10-16: 甲 showed "fingernail", 丁 "family name Ding"): the 1st and the 4th, with 甲乙丙丁
+  const words = builtinWords(0);
+  const w = words.find((x) => x.text === (which === 'intro-jia' ? '甲' : '丁'))!;
+  render(screen(<PinyinFade known={new Set()} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} lessonTag="课本 一下·11" onDone={() => {}} /></PinyinFade>), app);
+}
 else if (which === 'hear-bound' || which === 'hear-bound-read' || which === 'hear-bound-long') {
   // an English question on a bound character (parent 2026-10-15): it asks about 番茄 (or 幼儿园), heard or read
   const pool = [...builtinWords(0), ...ladderWords()];

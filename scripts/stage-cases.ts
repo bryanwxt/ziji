@@ -239,12 +239,15 @@ for (const size of SIZES) {
     for (const sel of ['.intro__tag', '.intro__word .label__cell--zh', ...(c === 'intro-raincoat' ? [] : ['.intro .usage .speak'])]) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
   }
-  // a bound character's 认新字 card (parent 2026-10-15): the pair, the character alone and the speak button all on the card
-  for (const c of ['intro-bound', 'intro-bound-full', 'intro-bound-long']) {
+  // a bound character's 认新字 card (parent 2026-10-15): the pair, its character marked once, and the speak button on the card;
+  // no chip of the character alone (parent 2026-10-16). 甲 and 丁 are 一下 L11's labels, taught alone
+  for (const c of ['intro-bound', 'intro-bound-full', 'intro-bound-long', 'intro-jia', 'intro-ding']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(2400); // its pinyin comes 2 s after the character
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
-    for (const sel of ['.hanzi--pair', '.hanzi--pair .label__cell--mark', '.intro__alone', '.intro__bound .speak']) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
+    const bound = c.startsWith('intro-bound');
+    for (const sel of [...(bound ? ['.hanzi--pair', '.hanzi--pair .label__cell--mark'] : ['.intro__group .word-row']), '.intro__char .speak']) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
+    if (await page.$('.intro__alone')) problems.push(`${size.name} ${c}: the character alone is marked a third time`);
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
   }
   {

@@ -376,15 +376,13 @@ function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; t
         {tag && <p class="intro__tag" lang="zh">{tag}</p>}
         <div class="intro__head">
           {pair ? (
-            // a bound character (parent 2026-10-15): its pair leads, the character marked in it, and the character alone beside
-            // the speak button, so he knows it by itself too
+            // a bound character (parent 2026-10-15): its pair leads, the character he learns in orange, its pinyin over it. One
+            // mark only (parent 2026-10-16: colour, underline and a 「甲 jiǎ」 chip beside it was excessive); the orange and the
+            // 新字 step say which character is new
             <div class="intro__char intro__char--bound">
               {/* each syllable over its own character (parent 2026-10-15: one centred string drifted off wide characters) */}
               <div class="hanzi hanzi--xl hanzi--long hanzi--pair intro__word" style={`--len:${Array.from(pair).length}`}><Label zh={pair} py={kidGlossReading(pair)} mark={[Array.from(pair).indexOf(word.text), 1]} /></div>
-              <div class="intro__bound">
-                <span class="intro__alone" lang="zh" aria-label={`${word.text} ${word.pinyin}`}><span class="hanzi">{word.text}</span><small class="pinyin pinyin--later">{word.pinyin}</small></span>
-                <SpeakButton text={pair} />
-              </div>
+              <SpeakButton text={pair} />
             </div>
           ) : (
             <div class="intro__char">
