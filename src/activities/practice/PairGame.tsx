@@ -64,7 +64,7 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
     const pair = board.pairs.find(([a]) => a === board.left[l]);
     // a character said as a word (爪 → 爪子) is never said as a word on the board, or one ending in a right-hand tile: that
     // would say an answer
-    speak(board.left[l]!, { reading: pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!), avoid: board.pairs.map(([a, b]) => a + b), endings: board.right });
+    speak(board.left[l]!, { reading: pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!), avoid: board.pairs.map(([a, b]) => a + b), endings: board.right, alone: true });
     if (isTarget(l) && !target.current.pickedAt) target.current.pickedAt = performance.now();
   };
   const tapRight = (r: number) => {
