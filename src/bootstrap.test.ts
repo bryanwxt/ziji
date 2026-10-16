@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { default_w } from 'ts-fsrs';
-import { bootstrap } from './bootstrap';
+import { bootstrap, firstRoute } from './bootstrap';
+import { DEFAULT_KID, DEFAULT_SETTINGS } from './types';
 import { builtinWords, CONTENT_VERSION } from './content';
 import { schedulerParams, setSchedulerParams } from './srs/scheduler';
 import { allCards, getSettings, getWord, putCards, putWords, seedBuiltinWords, updateSettings } from './store/repo';
@@ -70,5 +71,18 @@ describe('launch (deferred minor, plan 11)', () => {
     (await bootstrap(name)).db.close();
     expect([...schedulerParams()]).toEqual([...default_w]);
     setSchedulerParams(null);
+  });
+});
+
+describe('firstRoute', () => {
+  it('a new install: PIN, then meeting Truffle (where he picks his school year), then placement, then home', () => {
+    const s = { ...DEFAULT_SETTINGS };
+    expect(firstRoute({ settings: s, kid: null })).toEqual({ name: 'setupPin' });
+    expect(firstRoute({ settings: { ...s, pinHash: 'h' }, kid: null })).toEqual({ name: 'petSetup' });
+    expect(firstRoute({ settings: { ...s, pinHash: 'h', grade: 1, gradeYear: 2026 }, kid: { ...DEFAULT_KID } })).toEqual({ name: 'placement' });
+    expect(firstRoute({ settings: { ...s, pinHash: 'h', placementDone: true }, kid: { ...DEFAULT_KID } })).toEqual({ name: 'home' });
+  });
+  it('an existing install never sees the setup again, with or without a school year set', () => {
+    expect(firstRoute({ settings: { ...DEFAULT_SETTINGS, pinHash: 'h', placementDone: true, grade: undefined }, kid: { ...DEFAULT_KID } })).toEqual({ name: 'home' });
   });
 });

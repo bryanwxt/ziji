@@ -398,6 +398,24 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .setup__pet { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .setup__form { padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius-lg); box-shadow: 0 var(--edge) 0 var(--line); }
 .setup__form p { margin: 0; }
+.setup__form h2 { margin: 0; }
+/* his school year, asked first (2026-10-16): six big buttons, three to a row, that fit an SE with no scrolling */
+.setup__grades { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
+.setup__grade { min-height: var(--tap-main); min-width: 0; padding: 6px 4px; font-size: 22px; }
+.setup__grade .label__cells, .setup__school .label__cells { flex-wrap: nowrap; } /* 一年级 and 学校现在学到：二下 第十七课 each on one line */
+.setup__school { font-size: 18px; font-weight: 700; }
+.setup__go { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.setup__change { min-width: 64px; padding: 12px 16px; }
+@media (max-width: 599px) {
+  .setup__form { padding: 16px 12px; gap: 10px; }
+  .setup__grades { gap: 10px; }
+  .setup__grade { font-size: 20px; }
+  .setup__school { font-size: 16px; letter-spacing: 0; }
+}
+@media (max-width: 599px) and (max-height: 700px) { .setup__flavor { display: none; } } /* an SE: Truffle's bubble says it already */
+/* his first words never run off a phone's edge (fit sweep, iPhone SE on Linux fonts): they may wrap, and stay inside the screen */
+.setup__pet .pet { width: 100%; }
+.setup__pet .pet__bubble { white-space: normal; max-width: min(calc(100vw - 32px), 360px); text-align: center; }
 @media (orientation: portrait) { .setup { grid-template-columns: 1fr; } }
 .brand { margin: 0; font-family: var(--hanzi); font-weight: 400; font-size: 64px; line-height: 1; color: var(--green-edge); letter-spacing: 0.08em; }
 

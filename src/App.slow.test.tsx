@@ -20,7 +20,8 @@ describe('App', () => {
     type('1234');
     await screen.findByText('Enter the same PIN again');
     type('1234');
-    fireEvent.click(await screen.findByRole('button', { name: '叫醒松露' }));
+    const grades = await screen.findByRole('group', { name: '你读几年级？' }); // he picks his school year; that wakes Truffle
+    fireEvent.click(grades.querySelectorAll('button')[1]!); // 二年级
     fireEvent.click(await screen.findByText('好！'));
     // the adaptive check walks down band by band before it gives up (spec §19 part 6)
     for (let i = 0; i < 60 && !screen.queryByText('开始！'); i++) {
