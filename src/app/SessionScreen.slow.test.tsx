@@ -25,9 +25,16 @@ async function tapAndWait(...els: HTMLElement[]) {
   await waitFor(() => expect(document.body.innerHTML).not.toBe(before), { timeout: 15_000 });
 }
 const OPEN = '.choice:not([disabled]), .fishtile:not([disabled])';
+/** The button labelled `zh`, found by its own label, not by text: a sheet can show the word 继续 too (a 组词 board's summary
+ *  lists 继续 when the board holds it; CI 2026-10-15). Two such buttons on one screen fail the walk. */
+function buttonLabelled(zh: string): HTMLButtonElement | null {
+  const found = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((b) => [...b.children].some((c) => c.classList.contains('label') && c.getAttribute('data-zh') === zh));
+  if (found.length > 1) throw new Error(`${found.length} buttons labelled ${zh} on one screen`);
+  return found[0] ?? null;
+}
 /** 继续 when it can be tapped (a pairing board or 组句 needs several taps first). */
 const nextButton = () => {
-  const b = (screen.queryByText('继续') ?? screen.queryByText('好了！'))?.closest('button'); // 好了！ checks a finished 组句
+  const b = buttonLabelled('继续') ?? buttonLabelled('好了！'); // 好了！ checks a finished 组句
   return b && !b.disabled ? b : null;
 };
 /** Answers whatever is on screen until the celebration: 我记住了！, else the first open choice (and 继续 once it opens). `seen` gets each screen's stage. */
@@ -71,7 +78,7 @@ async function learnCurrentWord() {
   fireEvent.click(await screen.findByText('我记住了！'));
   const shown = document.querySelector('[data-q]')!.textContent!;
   fireEvent.click(screen.getByText(firstSense(cardMeaning(byText.get(shown)!)!))); // a new word is read for meaning with no voice (spec 2026-10-06 §3.2)
-  fireEvent.click(screen.getByText('继续'));
+  fireEvent.click(buttonLabelled('继续')!);
 }
 
 describe('SessionScreen', { timeout: 60_000 }, () => {
@@ -241,7 +248,7 @@ describe('the lesson at its edges (review focus)', { timeout: 60_000 }, () => {
     renderWithApp(<SessionScreen free={false} />, app);
     await waitFor(() => expect(document.querySelector('.choice:not([disabled])')).toBeTruthy());
     fireEvent.click(document.querySelector<HTMLButtonElement>('.choice:not([disabled])')!);
-    const next = screen.getByText('继续');
+    const next = buttonLabelled('继续')!;
     fireEvent.click(next);
     fireEvent.click(next);
     await waitFor(async () => expect((await getSession(app.db, '2026-10-02'))!.practiceIndex).toBe(1));
@@ -279,7 +286,7 @@ describe('钓鱼 for what he confused, in 练一练 (spec 2026-10-05 §3.4)', { 
       if (fish) {
         fished = true;
         await tapAndWait(screen.getByRole('button', { name: '根' }));
-        await tapAndWait(screen.getByText('继续'));
+        await tapAndWait(buttonLabelled('继续')!);
         continue;
       }
       const next = nextButton();
