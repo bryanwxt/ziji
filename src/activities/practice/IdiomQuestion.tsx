@@ -9,7 +9,6 @@ import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Pet } from '../../ui/Pet';
-import { SpeakButton } from '../../ui/SpeakButton';
 
 interface Props {
   gap: IdiomGap;
@@ -43,11 +42,7 @@ export function IdiomQuestion({ gap, kid, onDone }: Props) {
           tone={correct ? 'good' : 'oops'}
           title={correct ? lines.cheer : lines.comfort}
           detail={correct ? undefined : (
-            <>
-              <span class="hanzi">{text}</span>
-              <SpeakButton text={text} />
-              <MeaningNote right={text} rightMeaning={gap.idiom.meaning} picked={choice} />
-            </>
+            <MeaningNote lead right={text} rightMeaning={gap.idiom.meaning} picked={choice} /> // the 成语 leads its own row, with its speak button
           )}
           actionLabel="继续"
           onAction={() => onDone({ correct, responseMs: Math.round(performance.now() - shownAt.current), picked: choice })}

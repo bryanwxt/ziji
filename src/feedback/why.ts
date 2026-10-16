@@ -37,6 +37,16 @@ export function differingParts(a: string, b: string): { right: string[]; picked:
   return { right: pa.filter((p) => !inside.has(p)), picked: pb.filter((p) => !inside.has(p)) };
 }
 
+/**
+ * A character as the sum of its parts beside a look-alike (扫 · 扬 → 扫 = 扌 + 彐, 彐 its own): the parts both share and the
+ * parts only it has, in its own order. Empty when it has none to show beyond itself (生 inside 星).
+ */
+export function partsSum(ch: string, other: string): { part: string; own: boolean }[] {
+  const own = new Set(differingParts(ch, other).right);
+  const inOther = new Set([other, ...partsOf(other)]);
+  return partsOf(ch).filter((p) => own.has(p) || inOther.has(p)).map((p) => ({ part: p, own: own.has(p) }));
+}
+
 export type PinyinSlip =
   | { kind: 'tone'; right: string; picked: string }
   | { kind: 'soundPart'; part: string; partReading: string; char: string; right: string }

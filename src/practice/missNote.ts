@@ -8,7 +8,7 @@
 // (choiceGloss); 找一家人 gives each wrong word its English already (family.ts takes only words that have some).
 import { chengyuOf } from '../content/chengyu';
 import { CHOICE_GLOSS } from '../content/choiceGloss';
-import { glossFor, questionMeaning } from '../content/glossary';
+import { dictionaryGloss, questionMeaning } from '../content/glossary';
 import { askedAs, boundPair, kidGloss, kidGlossReading } from '../content/kidGloss';
 import { wordComponents } from '../content';
 import { firstSense } from '../activities/flashcards/distractors';
@@ -26,11 +26,28 @@ export const NONE_PICKED_EN = 'the answer was there';
 
 const isHanChar = (t: string) => /^\p{Script=Han}$/u.test(t);
 
-/** English for any Chinese choice: a 成语's, a parent word's own (from the pool), the kid gloss or dictionary's, else one
- *  written for a decoy (CHOICE_GLOSS). */
+/** The dictionary's English cut to what a kid gloss would say (parent 2026-10-16: 扬 showed "to raise; to hoist"): its first
+ *  sense, the first of its comma parts (not inside brackets), no leading "to" — "raise". */
+export function shortGloss(gloss: string): string {
+  const first = gloss.split(';')[0]!.trim();
+  let depth = 0;
+  let cut = first.length;
+  for (let i = 0; i < first.length; i++) {
+    const c = first[i]!;
+    if (c === '(') depth++;
+    else if (c === ')') depth = Math.max(0, depth - 1);
+    else if ((c === ',' || c === '，') && depth === 0) { cut = i; break; }
+  }
+  const out = first.slice(0, cut).trim().replace(/^to\s+(?=\S)/i, '');
+  return out || first;
+}
+
+/** English for any Chinese choice: a 成语's, a parent word's own (from the pool), the kid gloss, one written for a decoy
+ *  (CHOICE_GLOSS), and only then the dictionary's, cut short (shortGloss). */
 export function choiceGloss(text: string, pool: readonly Word[] = []): string | undefined {
   const parent = pool.find((w) => w.text === text && w.source === 'parent' && w.meaning);
-  return chengyuOf(text)?.meaning ?? parent?.meaning ?? glossFor(text) ?? CHOICE_GLOSS[text];
+  const dict = dictionaryGloss(text);
+  return chengyuOf(text)?.meaning ?? parent?.meaning ?? kidGloss(text) ?? CHOICE_GLOSS[text] ?? (dict ? shortGloss(dict) : undefined);
 }
 
 /** A Chinese choice he picked: 都不对 said plainly; a bound character as its pair (番 → 番茄 tomato, 番 marked); a word or

@@ -162,14 +162,32 @@ for (const size of SIZES) {
       problems.push(...(await cardClipped(page, `${size.name} ${name}`, '.is-eaten')), ...(await sheetFits(page, `${size.name} ${name}`)), ...(await sheetScrolls(page, `${size.name} ${name}`)));
     }
   }
-  // a miss names what he picked, with its English (parent 2026-10-16): the longest English on both lines, and a pinyin pick
-  for (const [c, pick] of [['miss-long', '字典'], ['miss-read', 'qīng']] as const) {
+  // a miss names what he picked, with its English (parent 2026-10-16): the longest English on both lines, a pinyin pick, and the
+  // parent's two iPhone sheets: 鱼 read for its English (stand picked), 扫 heard (扬 picked, the look-alike parts the third row)
+  for (const [c, pick] of [['miss-long', '字典'], ['miss-read', 'qīng'], ['miss-meaning', 'stand'], ['miss-look', '扬']] as const) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(300);
     await page.click(`.choice:text-is("${pick}")`);
     await page.waitForTimeout(1600);
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
-    if (!(await page.$('.sheet .sheet__en-picked [lang="en"]'))) problems.push(`${size.name} ${c}: no English beside what he picked`);
+    if (!(await page.$('.sheet .sheet__en-picked [lang="en"]:not(:empty)'))) problems.push(`${size.name} ${c}: no English beside what he picked`);
+    // the comparison's columns: each row's Chinese starts at the same x, and so does each row's English (unless it sits under a
+    // long word on a phone); the speak button after the right answer's English, never between its Chinese and English
+    problems.push(...(await page.evaluate((n) => {
+      const out: string[] = [];
+      const x = (q: string) => [...document.querySelectorAll(q)].map((e) => Math.round(e.getBoundingClientRect().left));
+      const same = (xs: number[]) => xs.every((v) => Math.abs(v - xs[0]!) <= 1);
+      if (!same(x('.sheet__en-line > .sheet__en-zh'))) out.push(`${n}: the Chinese columns don't line up`);
+      if (!same(x('.sheet__en-line > .sheet__en-label'))) out.push(`${n}: the names don't line up`);
+      if (!same(x('.sheet__en-line > .sheet__en-gloss'))) out.push(`${n}: the English columns don't line up`);
+      const sp = document.querySelector('.sheet__en-right .speak')?.getBoundingClientRect();
+      const zh = document.querySelector('.sheet__en-right .sheet__en-zh')?.getBoundingClientRect();
+      if (!sp || !zh || sp.left < zh.right) out.push(`${n}: the speak button is not after the right answer`);
+      if (document.querySelector('.sheet .why') && document.querySelector('.sheet .why')!.parentElement !== document.querySelector('.sheet__en')) out.push(`${n}: the why-line is outside the comparison`);
+      const b = document.querySelector('.sheet .btn')!.getBoundingClientRect();
+      if (Math.min(b.width, b.height) < 51.5) out.push(`${n}: 继续 under 52px (${Math.round(b.width)}×${Math.round(b.height)})`);
+      return out;
+    }, `${size.name} ${c}`)));
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)), ...(await sheetFits(page, `${size.name} ${c}`)), ...(await sheetScrolls(page, `${size.name} ${c}`)));
   }
   // the Understand question (plan 2b): the choices open after the sentence (5 s here: no voice ends it), then a miss's sheet

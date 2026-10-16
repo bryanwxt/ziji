@@ -72,9 +72,9 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
               <>
                 {!correct && item.kind !== 'fit' && <span class="hanzi">{fullSentence(item)}</span>} {/* a 选一选 card already shows its sentence filled in */}
                 {item.pair && <span class="pair hanzi">{`${item.word} + ${item.pair}`}</span>}
-                {!correct && <MeaningNote right={item.word} picked={item.kind === 'fit' ? choice : null} rightMeaning={item.kind === 'fit' ? item.meaning : undefined} />}
-                {/* single characters: the part that tells them apart (spec 2026-10-12 §3) */}
-                {!correct && item.kind === 'fit' && choice && Array.from(item.word).length === 1 && Array.from(choice).length === 1 && <LookAlikeWhy right={item.word} picked={choice} />}
+                {/* single characters: the part that tells them apart (spec 2026-10-12 §3), the note's third row */}
+                {!correct && <MeaningNote right={item.word} picked={item.kind === 'fit' ? choice : null} rightMeaning={item.kind === 'fit' ? item.meaning : undefined}
+                  why={item.kind === 'fit' && choice && Array.from(item.word).length === 1 && Array.from(choice).length === 1 ? <LookAlikeWhy right={item.word} picked={choice} /> : null} />}
                 {!correct && item.kind === 'fit' && item.clue && <span class="clue hanzi">{item.clue}</span>}
                 {!correct && item.kind === 'fit' && item.clue && CLUE_EN[item.word] && <span class="clue__en" lang="en">{CLUE_EN[item.word]}</span>}
               </>

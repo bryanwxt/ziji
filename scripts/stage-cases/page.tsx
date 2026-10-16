@@ -139,12 +139,20 @@ else if (which === 'pair' || which === 'match' || which === 'build' || which ===
     : <ComponentsStep items={[fishItem(w('根'), ['跟'], new Set(), rng)!]} kid={DEFAULT_KID} onAnswer={() => {}} onDone={() => {}} />;
   render(screen(body), app);
 }
-else if (which === 'miss-long' || which === 'miss-read') {
+else if (which === 'miss-long' || which === 'miss-read' || which === 'miss-meaning' || which === 'miss-look') {
   // the miss sheet naming what he picked, with its English (parent 2026-10-16): long dictionary English on both lines (字典
   // picked for 经验), and a pinyin choice named as the part read so (qīng picked for 静 → 青)
   const words = builtinWords(0);
   const jing = words.find((x) => x.text === '静')!;
-  render(screen(which === 'miss-long'
+  // and the parent's two iPhone sheets (2026-10-16): 鱼 read for its English (stand picked), and 扫 found in 扫除 (扬 picked,
+  // with the look-alike parts as the third row)
+  const yu = words.find((x) => x.text === '鱼')!;
+  const sao = words.find((x) => x.text === '扫')!;
+  render(screen(which === 'miss-meaning'
+    ? <FlashcardStep item={{ wordId: yu.id, isNew: false, retry: false }} ask="meaningRead" word={yu} pool={words.filter((x) => "鱼儿去立".includes(x.text))} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />
+    : which === 'miss-look'
+    ? <FlashcardStep item={{ wordId: sao.id, isNew: false, retry: false }} ask="listen" word={sao} pool={words.filter((x) => '扫挂折援扬扭'.includes(x.text))} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />
+    : which === 'miss-long'
     ? <UseQuestion item={{ kind: 'fit', wordId: null, word: '经验', before: '他教书很有', after: '。', options: ['经验', '字典', '充电', '注视'] }} kid={DEFAULT_KID} onAnswer={() => {}} onNext={() => {}} />
     : <FlashcardStep item={{ wordId: jing.id, isNew: false, retry: false }} ask="read" word={jing} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
 }

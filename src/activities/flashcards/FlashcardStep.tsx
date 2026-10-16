@@ -197,14 +197,15 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           // a 都不对 question shows the real answer, right or wrong (production practice spec §5)
           detail={result.correct && !quiz.none ? undefined : (
             <>
-              <MeaningNote answerLabel="正确答案：" right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? kidGlossReading(pair) : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={result.correct ? null : missedPick(choice, quiz, word, pool)} />
-              {/* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
-                  find the character → the look-alike part; its reading → the kind of pinyin slip */}
-              {result.correct ? null
-                : quiz.mode ? <RadicalHint text={word.text} />
-                : quiz.cue ? <LookAlikeWhy right={word.text} picked={choice === NONE_OF_THESE ? '' : (choice ?? '')} fallback={<RadicalHint text={word.text} />} />
-                : quiz.listen ? <LookAlikeWhy right={word.text} picked={choice ?? ''} />
-                : <PinyinWhy word={word} picked={choice ?? ''} />}
+              <MeaningNote lead right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? kidGlossReading(pair) : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={result.correct ? null : missedPick(choice, quiz, word, pool)} why={
+                /* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
+                  find the character → the look-alike part; its reading → the kind of pinyin slip */
+                result.correct ? null
+                  : quiz.mode ? <RadicalHint text={word.text} />
+                  : quiz.cue ? <LookAlikeWhy right={word.text} picked={choice === NONE_OF_THESE ? '' : (choice ?? '')} fallback={<RadicalHint text={word.text} />} />
+                  : quiz.listen ? <LookAlikeWhy right={word.text} picked={choice ?? ''} />
+                  : <PinyinWhy word={word} picked={choice ?? ''} />
+              } />
             </>
           )}
           actionLabel="继续"
