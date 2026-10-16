@@ -1,12 +1,12 @@
 /* Fit sweep (spec §18): every child screen and lesson step must fit one screen in WebKit, the engine of the iPad and iPhone.
    Run: npm run fit  (builds, serves dist on :4174, walks every flow at every size, writes fit-shots/). Exit 1 on any problem. */
-import { spawn } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { webkit, type Browser, type Page } from 'playwright-core';
 import { WORLDS } from '../src/fun/worlds';
 import { buildFitProfile, type FitProfileOptions } from './fit-profile';
 import { textChecks } from './text-checks';
-import { serveStrokeData } from './stroke-route';
+import { serveStrokeData, strokeHits } from './stroke-route';
 import type { ActivityKind } from '../src/types';
 
 const PORT = Number(process.env.FIT_PORT ?? 4174); // FIT_PORT: another worktree's sweep may hold 4174
@@ -203,6 +203,7 @@ async function open(browser: Browser, size: { name: string; width: number; heigh
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 300)));
   page.on('crash', () => errors.push('the page crashed (WebKit killed its web process)'));
+  if (process.env.FIT_DIAG) page.on('requestfailed', (r) => { if (r.url().includes('jsdelivr')) errors.push(`DIAG requestfailed ${r.url().slice(-20)} ${r.failure()?.errorText}`); });
   await seed(page, await buildFitProfile({ now, ...profile }));
   return page;
 }
@@ -367,6 +368,7 @@ async function sweep(size: Size) {
       await page?.context().close().catch(() => {});
       await own?.close().catch(() => {});
       if (!crashed) return;
+      if (process.env.FIT_DIAG) console.log(`DIAG strokes served ${strokeHits.served} missing ${strokeHits.missing}; ${execSync('ps -eo rss,comm --sort=-rss | head -6').toString().replace(/\n/g, ' | ')}`);
       if (attempt < (process.env.CI ? 2 : 1)) { console.log(`retrying ${size.name} ${flow} after a crash:\n       - ${results[results.length - 1]!.problems.join('\n       - ')}`); results.splice(mark); }
     }
   };
@@ -586,6 +588,7 @@ async function main() {
     const sizes = SIZES.filter((s) => !VIEWPORT || VIEWPORT.test(s.name));
     await Promise.all(sizes.map((size) => sweep(size))); // sizes in parallel, each in its own contexts
     stageInvariants();
+    if (process.env.FIT_DIAG) console.log(`DIAG end: strokes served ${strokeHits.served} missing ${strokeHits.missing}`);
     // A phone turned sideways: the overlay covers the screen
     const side = { name: 'iphone-sideways', width: 667, height: 375 };
     if (!VIEWPORT || VIEWPORT.test(side.name)) {

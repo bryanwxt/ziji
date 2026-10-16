@@ -10,13 +10,18 @@ const DATA_DIR = dirname(createRequire(import.meta.url).resolve('hanzi-writer-da
 export const STROKE_CDN = 'https://cdn.jsdelivr.net/npm/hanzi-writer-data@*/**';
 const CORS = { 'access-control-allow-origin': '*' };
 
+export const strokeHits = { served: 0, missing: 0 };
+
 async function fulfil(route: Route): Promise<void> {
   const file = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() ?? '');
   // only "<one character>.json": anything else (a path, a dot-dot) is not a stroke file
   if (!/^[^/\\]+\.json$/.test(file) || file.startsWith('.')) return route.fulfill({ status: 404, headers: CORS, body: '' });
   try {
-    return await route.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body: await readFile(join(DATA_DIR, file)) });
+    const body = await readFile(join(DATA_DIR, file));
+    strokeHits.served++;
+    return await route.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body });
   } catch {
+    strokeHits.missing++;
     return route.fulfill({ status: 404, headers: CORS, body: '' }); // the CDN's answer for a character it has no strokes for
   }
 }
