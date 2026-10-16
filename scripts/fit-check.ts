@@ -367,7 +367,7 @@ async function sweep(size: Size) {
       await page?.context().close().catch(() => {});
       await own?.close().catch(() => {});
       if (!crashed) return;
-      if (attempt < (process.env.CI ? 2 : 1)) { results.splice(mark); console.log(`retrying ${size.name} ${flow} after a crash`); }
+      if (attempt < (process.env.CI ? 2 : 1)) { console.log(`retrying ${size.name} ${flow} after a crash:\n       - ${results[results.length - 1]!.problems.join('\n       - ')}`); results.splice(mark); }
     }
   };
   const tabTo = (p: Page, label: string) => p.click(`.tabbar__item:has-text("${label}")`);

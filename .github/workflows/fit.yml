@@ -77,6 +77,7 @@ jobs:
         env:
           FIT_VIEWPORT: ${{ matrix.viewport }}
           FIT_ONLY: ${{ inputs.only }}
+          DEBUG: pw:browser
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
