@@ -1,11 +1,12 @@
 /* Fit sweep (spec §18): every child screen and lesson step must fit one screen in WebKit, the engine of the iPad and iPhone.
    Run: npm run fit  (builds, serves dist on :4174, walks every flow at every size, writes fit-shots/). Exit 1 on any problem. */
-import { spawn } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { webkit, type Browser, type Page } from 'playwright-core';
 import { WORLDS } from '../src/fun/worlds';
 import { buildFitProfile, type FitProfileOptions } from './fit-profile';
 import { textChecks } from './text-checks';
+import { serveStrokeData, strokeHits } from './stroke-route';
 import type { ActivityKind } from '../src/types';
 
 const PORT = Number(process.env.FIT_PORT ?? 4174); // FIT_PORT: another worktree's sweep may hold 4174
@@ -175,6 +176,7 @@ async function seed(page: Page, json: string) {
 async function open(browser: Browser, size: { name: string; width: number; height: number }, now: Date, profile: Omit<FitProfileOptions, 'now'>, errors: string[] = []): Promise<Page> {
   const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, hasTouch: true, serviceWorkers: 'block' });
   await ctx.clock.setFixedTime(now);
+  await serveStrokeData(ctx);
   await ctx.addInitScript({ content: 'window.__name = (f) => f;' }); // tsx (esbuild keepNames) wraps functions in __name(); in-page code needs it to exist
   await ctx.addInitScript(() => {
     // A pretend microphone, so the recorded states (听松露说, 重录) are walked too.
@@ -189,11 +191,19 @@ async function open(browser: Browser, size: { name: string; width: number; heigh
       removeEventListener() {}
     }
     (window as unknown as { MediaRecorder: unknown }).MediaRecorder = FakeRecorder;
-    const stream = () => { const ac = new AudioContext(); const o = ac.createOscillator(); const d = ac.createMediaStreamDestination(); o.connect(d); o.start(); return d.stream; };
+    // one oscillator for the page, a fresh track per recording: an AudioContext per getUserMedia, never closed, piled up in
+    // the recording flows (langdu, practice, say), the ones whose page WebKit on Linux killed now and then
+    let tone: MediaStream | null = null;
+    const stream = () => {
+      if (!tone) { const ac = new AudioContext(); const o = ac.createOscillator(); const d = ac.createMediaStreamDestination(); o.connect(d); o.start(); tone = d.stream; }
+      return new MediaStream(tone.getAudioTracks().map((t) => t.clone()));
+    };
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => stream() } });
   });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 300)));
+  page.on('crash', () => errors.push('the page crashed (WebKit killed its web process)'));
+  if (process.env.FIT_DIAG) page.on('requestfailed', (r) => { if (r.url().includes('jsdelivr')) errors.push(`DIAG requestfailed ${r.url().slice(-20)} ${r.failure()?.errorText}`); });
   await seed(page, await buildFitProfile({ now, ...profile }));
   return page;
 }
@@ -321,7 +331,18 @@ async function walkLesson(page: Page, size: Size, flow: string, opts: { firstOnl
   if (await page.$('.lessonbar, .celebrate')) results.push({ size: size.name, flow, step: WALK_CAP, sig: '', problems: [`walker ran out of taps: the lesson or its Celebration still shows after ${WALK_CAP} taps (stuck on: ${await page.evaluate(signature)})`] });
 }
 
-async function sweep(browser: Browser, size: Size) {
+// The sizes share one browser; if it dies, the next flow launches another rather than every later flow failing on a closed one.
+let shared: Promise<Browser> | null = null;
+function browserNow(): Promise<Browser> {
+  if (!shared) shared = webkit.launch();
+  return shared.then((b) => {
+    if (b.isConnected()) return b;
+    shared = null;
+    return browserNow();
+  });
+}
+
+async function sweep(size: Size) {
   const run = async (flow: string, now: Date, profile: Omit<FitProfileOptions, 'now'>, then: (p: Page) => Promise<void>) => {
     if (ONLY && !ONLY.test(flow)) return;
     // a 2-core CI runner is several times slower than the Mac: more time per flow, and one retry of a crashed flow (what we do by hand locally)
@@ -331,9 +352,11 @@ async function sweep(browser: Browser, size: Size) {
       let page: Page | null = null;
       const errors: string[] = [];
       let crashed = false;
+      // a retry gets a browser of its own: nothing left over from the crash (or from the other sizes' flows) can take it down too
+      const own = attempt > 1 ? await webkit.launch() : null;
       try {
         const limit = new Promise<never>((_, no) => setTimeout(() => no(new Error(`flow took over ${limitMs / 60_000} minutes (stuck?)`)), limitMs));
-        page = await Promise.race([open(browser, size, now, profile, errors), limit]);
+        page = await Promise.race([open(own ?? (await browserNow()), size, now, profile, errors), limit]);
         if (process.env.CI) page.setDefaultTimeout(60_000);
         const p = page;
         await Promise.race([then(p), limit]); // one stuck screen can't stall the whole sweep
@@ -343,8 +366,10 @@ async function sweep(browser: Browser, size: Size) {
         results.push({ size: size.name, flow, step: -1, sig: '', problems: [`flow crashed${attempt > 1 ? ' (after a retry)' : ''}: ${String(e).slice(0, 900)}`, ...errors.map((m) => `page error: ${m}`)] });
       }
       await page?.context().close().catch(() => {});
+      await own?.close().catch(() => {});
       if (!crashed) return;
-      if (attempt < (process.env.CI ? 2 : 1)) { results.splice(mark); console.log(`retrying ${size.name} ${flow} after a crash`); }
+      if (process.env.FIT_DIAG) console.log(`DIAG strokes served ${strokeHits.served} missing ${strokeHits.missing}; ${execSync('ps -eo rss,comm --sort=-rss | head -6').toString().replace(/\n/g, ' | ')}`);
+      if (attempt < (process.env.CI ? 2 : 1)) { console.log(`retrying ${size.name} ${flow} after a crash:\n       - ${results[results.length - 1]!.problems.join('\n       - ')}`); results.splice(mark); }
     }
   };
   const tabTo = (p: Page, label: string) => p.click(`.tabbar__item:has-text("${label}")`);
@@ -559,21 +584,21 @@ async function main() {
   const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort', '--host', '127.0.0.1'], { stdio: 'ignore' });
   try {
     for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE)).ok) break; } catch { /* starting */ } await new Promise((r) => setTimeout(r, 250)); }
-    let browser: Browser;
-    try { browser = await webkit.launch(); } catch (e) { console.error(`WebKit is missing: run  npx playwright-core install webkit  (ask first: it downloads ~100 MB)\n${e}`); process.exitCode = 2; return; }
+    try { await browserNow(); } catch (e) { console.error(`WebKit is missing: run  npx playwright-core install webkit  (ask first: it downloads ~100 MB)\n${e}`); process.exitCode = 2; return; }
     const sizes = SIZES.filter((s) => !VIEWPORT || VIEWPORT.test(s.name));
-    await Promise.all(sizes.map((size) => sweep(browser, size))); // sizes in parallel, each in its own contexts
+    await Promise.all(sizes.map((size) => sweep(size))); // sizes in parallel, each in its own contexts
     stageInvariants();
+    if (process.env.FIT_DIAG) console.log(`DIAG end: strokes served ${strokeHits.served} missing ${strokeHits.missing}`);
     // A phone turned sideways: the overlay covers the screen
     const side = { name: 'iphone-sideways', width: 667, height: 375 };
     if (!VIEWPORT || VIEWPORT.test(side.name)) {
-      const page = await open(browser, side, AFTERNOON, {});
+      const page = await open(await browserNow(), side, AFTERNOON, {});
       const covered = await page.evaluate(() => { const h = document.querySelector('.rotate-hint'); if (!h) return false; const r = h.getBoundingClientRect(); return getComputedStyle(h).display !== 'none' && r.width >= innerWidth && r.height >= innerHeight; });
       mkdirSync(`${OUT}/${side.name}`, { recursive: true });
       await page.screenshot({ path: `${OUT}/${side.name}/home-00.png` });
       results.push({ size: side.name, flow: 'rotate', step: 0, sig: '', problems: covered ? [] : ['the turn-it-upright overlay does not cover the screen'] });
     }
-    await browser.close();
+    await (await browserNow()).close();
   } finally {
     server.kill();
   }

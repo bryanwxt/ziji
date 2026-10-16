@@ -77,6 +77,12 @@ jobs:
         env:
           FIT_VIEWPORT: ${{ matrix.viewport }}
           FIT_ONLY: ${{ inputs.only }}
+          DEBUG: pw:browser
+          FIT_DIAG: '1'
+      - if: always()
+        run: sudo dmesg | grep -iE 'oom|killed process|out of memory|segfault|WebProcess|WPE' | tail -40 || true
+      - if: always()
+        run: free -m
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

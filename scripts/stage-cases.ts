@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { webkit } from 'playwright-core';
 import { bundleStagePage } from './stage-cases/bundle';
 import { textChecks } from './text-checks';
+import { serveStrokeData } from './stroke-route';
 import { PASSAGE_QUESTIONS } from '../src/content/passageQuestions';
 import { PASSAGES } from '../src/content';
 import { WORLDS } from '../src/fun/worlds';
@@ -54,7 +55,12 @@ const sheetScrolls = (page: import('playwright-core').Page, name: string) => pag
 
 const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'iphone-15', width: 390, height: 844 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
 const problems: string[] = [];
-const browser = await webkit.launch();
+const launched = await webkit.launch();
+// every page answers stroke-data fetches from node_modules, not the CDN (scripts/stroke-route.ts)
+const browser = {
+  newPage: async (opts?: Parameters<typeof launched.newPage>[0]) => { const p = await launched.newPage(opts); await serveStrokeData(p); return p; },
+  close: () => launched.close(),
+};
 for (const size of SIZES) {
   const page = await browser.newPage({ viewport: { width: size.width, height: size.height } });
   await page.addInitScript({ content: 'window.__name = (f) => f;' }); // tsx (esbuild keepNames) wraps in-page helpers in __name()
