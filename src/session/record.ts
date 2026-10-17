@@ -11,6 +11,7 @@ import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecor
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
+import { applyQuickChecks, pinDue } from '../weeklist/schedule';
 
 export { LISTEN_MS, USE_READING_MS };
 
@@ -33,7 +34,8 @@ async function reviewCard(db: AppDb, wordId: string, kind: CardKind, rating: Gra
   const id = `${wordId}:${kind}`;
   const existing = await getCard(db, id);
   const was = existing?.fsrs ?? newCard(now);
-  const card: CardRecord = { ...(existing ?? {}), id, wordId, kind, fsrs: review(was, rating, now) }; // keeps its pass
+  // keeps its pass; a list word's card waits no later than its list's ready-by day (weekly list spec §6.2)
+  const card: CardRecord = pinDue({ ...(existing ?? {}), id, wordId, kind, fsrs: review(was, rating, now) }, await allWeekLists(db), now);
   await putCards(db, [card]);
   return { card, before: snapshot(was, now) };
 }
@@ -243,6 +245,7 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
 
 async function planNow(db: AppDb, now: Date, extra = false) {
   await openMissingRungs(db, now);
+  await applyQuickChecks(db, now); // a list's known words come up as due reviews before its ready-by (weekly list spec §6.1)
   const [cards, words, settings, practised, lists, sessions] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db), allWeekLists(db), allSessions(db)]);
   const all = [...words, ...ladderWordsBesides(words)];
   // an extra lesson never asks the pace: it takes no new words (learning rules 2026-10-17)

@@ -103,7 +103,11 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   // first rechecks of placed characters (spec 2026-10-14): 10 a lesson, in the school order their due times keep
   const placementCheck = (c: CardRecord) => c.placed === true;
   const dueAll = dueOf(recognise);
-  const checks = new Set(dueAll.filter(placementCheck).slice(0, PLACEMENT_CHECKS_PER_LESSON));
+  // a list word's recheck is its quick check (weekly list spec §5.2): it doesn't count toward the 10
+  const checks = new Set([
+    ...dueAll.filter((c) => placementCheck(c) && !owner.has(c.wordId)).slice(0, PLACEMENT_CHECKS_PER_LESSON),
+    ...dueAll.filter((c) => placementCheck(c) && owner.has(c.wordId)),
+  ]);
   const dueRecognise = dueAll.filter((c) => !placementCheck(c) || checks.has(c));
   // a real backlog pauses new words; first rechecks of placement guesses (never practised, or marked placed) don't
   const backlog = dueAll.filter((c) => !placementCheck(c) && practised.has(c.wordId)).length;
