@@ -84,22 +84,34 @@ describe('reserved items after the check (spec §2.1, §8.2)', () => {
   });
 });
 
-describe('withList (spec §7.6)', () => {
+describe('withList (spec §7.6; fix round 2026-10-17)', () => {
   const item = (wordId: string, due = false): PracticeItem => ({ wordId, rung: 1, ask: 'read', grades: due ? 'recognise' : null, retry: false, ...(due ? { due: true } : {}) });
   const reserved = (id: string): PracticeItem => ({ ...item(id), list: { listId: 'wl:p', form: 'read', reserved: true } });
   const boost = (id: string): PracticeItem => ({ ...item(id), list: { listId: 'wl:p', form: 'read' } });
-  it('reserved items always come; boost only as far as the box holds; never ahead of the first due items', () => {
-    const round = [item('x1', true), item('x2', true), item('x3'), item('x4'), item('x5'), item('x6')];
-    const out = withList(round, [reserved('b:干净'), boost('b:整齐')], 6);
-    expect(out.map((x) => x.wordId)).toContain('b:干净');
-    expect(out.map((x) => x.wordId)).not.toContain('b:整齐');
-    expect(out.findIndex((x) => x.wordId === 'b:干净')).toBeGreaterThan(1);
+  const listAt = (out: PracticeItem[], f: (x: PracticeItem) => boolean) => out.map((x, i) => (f(x) ? i : -1)).filter((i) => i >= 0);
+  it('due items fill the box (30 due, box 37): 8 reserved items still spread over its first 60%, inside the due block', () => {
+    const round = Array.from({ length: 30 }, (_, k) => item(`x${k}`, true));
+    const out = withList(round, ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛'].map((t) => reserved(`p:${t}`)), 37);
+    const at = listAt(out, (x) => !!x.list?.reserved);
+    expect(at).toHaveLength(8);
+    expect(Math.min(...at)).toBeGreaterThanOrEqual(3);
+    expect(Math.max(...at)).toBeLessThan(Math.floor(0.6 * 37) + 8);
+    for (let k = 1; k < at.length; k++) expect(at[k]! - at[k - 1]!).toBeGreaterThan(1); // spread, not bunched
+    expect(listAt(out, (x) => !!x.list && !x.list.reserved)).toEqual([]);
   });
-  it('boost: at most 6 and a third of the round, spread out, inside the box, never beside the same word', () => {
+  it('boost room: min(6, max(⌊round/3⌋, ⌊box/6⌋), box − due − reserved)', () => {
+    const round = [item('x1', true), item('x2', true), item('x3'), item('x4'), item('x5'), item('x6')];
+    const out = withList(round, [reserved('b:干净'), boost('b:整齐'), boost('b:安静'), boost('b:热闹')], 6);
+    expect(listAt(out, (x) => !!x.list && !x.list.reserved)).toHaveLength(2); // max(2, 1), under 6 − 2 − 1
+    expect(out.findIndex((x) => x.wordId === 'b:整齐')).toBeGreaterThan(1); // after the first due items
+    // nothing due and no round: a sixth of the box still has room
+    expect(withList([], ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((t) => boost(`b:${t}`)), 36)).toHaveLength(6);
+  });
+  it('boost: spread out, after the first due items, never beside the same word', () => {
     const round = Array.from({ length: 30 }, (_, k) => item(k % 2 ? 'b:整齐' : `x${k}`, k < 4));
     const boosts = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((t) => boost(`b:${t}`));
     const out = withList(round, [...boosts, boost('b:整齐')], 60);
-    const at = out.map((x, i) => (x.list ? i : -1)).filter((i) => i >= 0);
+    const at = listAt(out, (x) => !!x.list);
     expect(at).toHaveLength(MAX_BOOST);
     expect(Math.min(...at)).toBeGreaterThanOrEqual(4);
     for (const i of at) expect([out[i - 1]?.wordId, out[i + 1]?.wordId]).not.toContain(out[i]!.wordId);
@@ -112,5 +124,23 @@ describe('withList (spec §7.6)', () => {
   it('no list items: the round unchanged', () => {
     const round = [item('x1', true), item('x2')];
     expect(withList(round, [], 40)).toEqual(round);
+  });
+});
+
+describe('都不对 on list items (fix round 2026-10-17)', async () => {
+  const { withListNone } = await import('./practice');
+  const { mulberry32 } = await import('../lib/random');
+  const fitItem = (id: string): PracticeItem => ({ wordId: id, rung: 2, ask: 'fit', grades: null, retry: false, list: { listId: 'wl:p', form: 'fit', fit: base.fits[0] } });
+  const matchItem = (id: string): PracticeItem => ({ wordId: id, rung: 2, ask: 'match', grades: null, retry: false, list: { listId: 'wl:p', form: 'dapei', pair: base.pairs[0] } });
+  const boardItem = (id: string): PracticeItem => ({ wordId: id, rung: 2, ask: 'match', grades: null, retry: false, list: { listId: 'wl:p', form: 'dapei', pairs: base.pairs } });
+  it('list 选词填空 and single 搭配 items take it at the usual share; boards, read items and today\'s words never', () => {
+    const xs = Array.from({ length: 200 }, (_, k) => [fitItem(`p:f${k}`), matchItem(`p:m${k}`), boardItem(`p:b${k}`)]).flat();
+    const out = withListNone([...xs, fitItem('p:new')], new Set(['p:new']), mulberry32(5));
+    const share = (f: (x: PracticeItem) => boolean) => out.filter(f).filter((x) => x.none).length / out.filter(f).length;
+    expect(share((x) => x.ask === 'fit')).toBeGreaterThan(0.25);
+    expect(share((x) => x.ask === 'fit')).toBeLessThan(0.55);
+    expect(share((x) => x.ask === 'match' && !x.list?.pairs)).toBeGreaterThan(0.25);
+    expect(out.filter((x) => x.list?.pairs).some((x) => x.none)).toBe(false);
+    expect(out.at(-1)!.none).toBeUndefined();
   });
 });

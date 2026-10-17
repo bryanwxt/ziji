@@ -89,3 +89,24 @@ describe('the re-teaching card (spec §2.1)', () => {
     expect(document.querySelector('.pet__bubble .label')!.getAttribute('data-zh')).toBe('再认一次！');
   });
 });
+
+describe('a list verb\'s questions (fix round 2026-10-17)', () => {
+  const lead: ListCard = { lead: '炒青菜', leadReading: 'chǎo qīng cài', leadGloss: 'stir-fry → leafy greens', mark: [0, 1] };
+  const ask = (a: 'read' | 'meaningRead', word = chao, list: ListCard | undefined = lead) =>
+    render(<FlashcardStep {...base} word={word} item={{ wordId: word.id, isNew: false, retry: false }} onDone={vi.fn()} list={list} ask={a} />);
+  it('its English question shows the pair, the verb picked out, as a bound character\'s does', () => {
+    ask('meaningRead');
+    const q = document.querySelector('[data-q]')!;
+    expect(q.textContent).toBe('炒青菜');
+    expect(q.querySelector('.bound__ch')!.textContent).toBe('炒');
+  });
+  it('its read question keeps the bare character, and asks 这个字怎么读？', () => {
+    ask('read');
+    expect(document.querySelector('[data-q]')!.textContent).toBe('炒');
+    expect(document.querySelector('.pet__bubble .label')!.getAttribute('data-zh')).toBe('这个字怎么读？');
+  });
+  it('a word of more than one character asks 这个词怎么读？', () => {
+    ask('read', makeWord('低下头', { id: 'p:低下头', source: 'parent', pinyin: 'dī xià tóu' }), undefined);
+    expect(document.querySelector('.pet__bubble .label')!.getAttribute('data-zh')).toBe('这个词怎么读？');
+  });
+});

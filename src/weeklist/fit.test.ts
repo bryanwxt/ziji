@@ -6,11 +6,11 @@ import { parentSentenceProblems, proposeFit } from './fit';
 
 const w = (t: string) => makeWord(t, { id: `p:${t}`, source: 'parent', pinyin: 'x x' });
 describe('proposeFit (spec §7.3)', () => {
-  const mates = ['整齐', '热闹', '安静', '冰冷', '书包', '跑'].map(w);
-  it('decoys only from the list, same length, never the answer', () => {
+  const mates = ['整齐', '热闹', '安静', '紧张', '冰冷', '书包', '跑'].map(w);
+  it('decoys only from the list, same length, never the answer (nor a near-synonym: 整齐)', () => {
     const f = proposeFit(w('干净'), mates, [], { text: '教室打扫得很＿。', source: 'parent' })!;
     expect(f.wrong).toHaveLength(3);
-    for (const d of f.wrong) { expect(mates.map((m) => m.text)).toContain(d); expect([...d]).toHaveLength(2); }
+    for (const d of f.wrong) { expect(mates.map((m) => m.text)).toContain(d); expect([...d]).toHaveLength(2); expect(d).not.toBe('整齐'); }
   });
   it('confusables (shared character) come first', () => {
     const f = proposeFit(w('告诉'), ['帮助', '跑步', '告别'].concat('认识').map(w), [], { text: '妈妈＿我要早睡。', source: 'parent' })!;
@@ -32,10 +32,10 @@ describe('parentSentenceProblems', () => {
 // Follow-up (coordinator, 2026-10-17): decoys the grammar can't give away, spread over the rows, and a tint where one may fit.
 import { mightFit, proposeFits } from './fit';
 describe('decoys the grammar cannot give away', () => {
-  const list = ['整齐', '蝴蝶', '跑步', '热闹', '干净', '安静', '公园', '草地', '帮助', '告诉'].map(w);
-  it('an adjective blank gets adjective decoys, never a noun or a verb', () => {
+  const list = ['整齐', '蝴蝶', '跑步', '热闹', '干净', '安静', '高兴', '公园', '草地', '帮助', '告诉'].map(w);
+  it('an adjective blank gets adjective decoys, never a noun or a verb, nor its near-synonym 干净 (fix round)', () => {
     const f = proposeFit(w('整齐'), list, [], { text: '我的书桌很＿。', source: 'school' })!;
-    expect(f.wrong.sort()).toEqual(['安静', '干净', '热闹'].sort());
+    expect(f.wrong.sort()).toEqual(['安静', '热闹', '高兴'].sort());
   });
   it('a verb blank gets verbs', () => {
     const f = proposeFit(w('告诉'), [...list, w('喜欢'), w('认识')], [], { text: '妈妈＿我要早睡。', source: 'school' })!;

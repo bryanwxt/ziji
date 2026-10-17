@@ -42,7 +42,7 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
-import { beginNewWord, bringForward, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { beginNewWord, bringForward, recordMeaningOnce, ratedToday, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import type { SlowLines } from '../srs/slow';
 import { meaningCredit } from '../session/writeCredit';
 import { settleLessonStars } from '../session/stars';
@@ -299,7 +299,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       // a weekly list word (weekly list spec §8.3, §2.1): every 认新字 answer counts toward its readiness; a re-teaching card is
       // asked but grades no card (it is a retry)
       const onList = !!item.reteach || !!rec.plan.listNewIds?.includes(item.wordId);
-      if (onList && !rec.free && r.asked === 'read') await noteListAnswer(db, item.wordId, 'read', r.correct, now());
+      // right after its card: an echo, never counted as learned (fix round 2026-10-17); a re-teaching card's right answer is noted
+      if (onList && !rec.free && r.asked === 'read') await noteListAnswer(db, item.wordId, 'read', r.correct, now(), undefined, { echo: true, reteach: !!item.reteach });
       if (!item.retry && !rec.free && !gone(item.wordId)) {
         const outcome = { correct: r.correct, responseMs: r.responseMs, slow: state.slow };
         // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing. A list
@@ -334,10 +335,14 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       if (!rec.free && !item.retry && !gone(item.wordId)) {
         // a sentence takes reading time first: that doesn't make a right answer slow (as in 选一选)
         const outcome = { correct: r.correct, responseMs: r.asked === 'use' || r.inContext ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs, slow: state.slow };
+        // a weekly list's read or meaning item grades his reading card when it is that card's first answer of the day (weekly list
+        // spec §6.4, §8.2; a miss rates Again)
+        const readCard = know.cardsById.get(`${item.wordId}:recognise`);
+        const grades = item.grades ?? (item.list && (item.list.form === 'read' || item.list.form === 'meaning') && readCard && !ratedToday(readCard, now()) ? 'recognise' : null);
         if (item.grades === 'understand' && r.asked === 'understand') know.cardsById.set(`${item.wordId}:understand`, await recordUnderstand(db, item.wordId, { correct: r.correct, responseMs: r.responseMs, slow: state.slow }, now()));
         else if (item.grades === 'hear' && r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
-        else if (item.grades === 'recognise') sent = await gradeReading(item.wordId, outcome);
-        else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
+        else if (grades === 'recognise') sent = await gradeReading(item.wordId, outcome);
+        else if (item.grades === 'meaning' && r.asked === 'meaning') { const c = await recordMeaningOnce(db, item.wordId, outcome, now()); if (c) know.cardsById.set(c.id, c); }
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs, state.slow));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
         if (item.ask !== 'fish' && item.ask !== 'understand' && !item.list) await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b); a weekly list's extra item isn't a ladder rung
@@ -365,20 +370,22 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
    */
   const noteListPractice = async (item: PracticeItem, r: PracticeResult) => {
     const tomorrow = startOfLocalDay(addDays(now(), 1));
+    // the day it was met or re-taught, an answer is an echo of its card (fix round 2026-10-17)
+    const echo = new Set([...(rec.plan.reteachIds ?? []), ...rec.plan.newWordIds]);
     const rateUse = async (wordId: string, correct: boolean) => {
       if (!rec.extra && know.cardsById.has(`${wordId}:meaning`)) know.cardsById.set(`${wordId}:meaning`, await recordUse(db, wordId, correct, now(), r.responseMs, state.slow));
       if (!correct) await bringForward(db, wordId, 'meaning', tomorrow);
     };
     if (item.list && r.listPairs?.length) {
       for (const p of r.listPairs) {
-        const left = await noteListPairAnswer(db, item.list.listId, p, p.correct, now());
+        const left = await noteListPairAnswer(db, item.list.listId, p, p.correct, now(), { echo });
         if (left) await rateUse(left, p.correct);
       }
       return;
     }
     const form = item.list?.form ?? formOf(item.ask);
     if (!form) return;
-    await noteListAnswer(db, item.wordId, form, r.correct, now());
+    await noteListAnswer(db, item.wordId, form, r.correct, now(), undefined, { echo });
     if (!item.list) return;
     if (form === 'fit') await rateUse(item.wordId, r.correct);
     else if (!r.correct) await bringForward(db, item.wordId, form === 'read' ? 'recognise' : 'meaning', tomorrow);

@@ -39,3 +39,22 @@ describe('listBoard (spec §7.5)', () => {
     expect(listBoard(pairs.slice(0, 2), mulberry32(1))).toBeNull();
   });
 });
+
+describe('the planned board is the board asked (fix round 2026-10-17)', async () => {
+  const { listPracticeItems } = await import('../weeklist/plan');
+  const { makeWord } = await import('../test/fixtures');
+  it('a group of four pairs plans a board of three; rebuilt from its pairs with any seed, it holds the same three', () => {
+    const four = [
+      P('踢', '毽子', ['青菜', '风筝', '书包']), P('炒', '青菜', ['毽子', '风筝', '书包']), P('放', '风筝', ['毽子', '青菜', '书包']), P('拍', '皮球', ['毽子', '青菜', '风筝']),
+    ];
+    const items = four.map((p) => ({ wordId: `b:${p.left}`, text: p.left, from: 'both' as const, addedStatus: 'new' as const, last: { read: { at: 1, correct: true }, meaning: { at: 1, correct: true } } }));
+    const list = { id: 'wl:b', name: 'B', createdAt: 0, readyBy: '2026-11-11', homeworkDue: '2026-11-13', items, pairs: four, fits: [] };
+    const ws = new Map(items.map((i) => [i.wordId, makeWord(i.text)]));
+    const xs = listPracticeItems([list], ws, new Date(2026, 10, 9, 9), new Set(items.map((i) => i.wordId)));
+    const board = xs.find((x) => x.list?.pairs)!;
+    expect(board.list!.pairs).toHaveLength(3);
+    const planned = board.list!.pairs!.map((p) => `${p.left}${p.right}`).sort();
+    for (let seed = 1; seed <= 200; seed++) expect(listBoard(board.list!.pairs!, mulberry32(seed))!.pairs.map(([l, r]) => l + r).sort()).toEqual(planned);
+    expect(xs.filter((x) => !x.list?.pairs).map((x) => x.wordId)).toHaveLength(1); // the fourth is asked on its own
+  });
+});

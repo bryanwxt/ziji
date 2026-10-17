@@ -14,7 +14,7 @@ import { allCards, allWeekLists, allWords, deleteWeekList, updateWeekList } from
 import type { CardRecord, ItemStatus, WeekFit, WeekList, WeekPair, Word } from '../types';
 import { proposeWrong } from '../weeklist/dapei';
 import { clampReadyBy, daysBetween, defaultDates, pastDue, weekdayZh } from '../weeklist/dates';
-import { mightFit, parentSentenceProblems, proposeFit, proposeFits, sentenceFor } from '../weeklist/fit';
+import { fitDoubts, parentSentenceProblems, proposeFit, proposeFits, sentenceFor } from '../weeklist/fit';
 import { itemStatus, matchText } from '../weeklist/match';
 import { parseWeekList, weekIsWord, type DraftItem, type DraftPair, type WeekDraft } from '../weeklist/parse';
 import { activeLists, CLOSE_AFTER_DAYS, HEADROOM } from '../weeklist/plan';
@@ -222,7 +222,8 @@ export function WeekPanel() {
   const toCheck = livePairs.filter((p) => !p.ok).length + liveFits.filter(([, f]) => !f!.ok).length;
   const allFine = () => {
     setPairs((ps) => ps.map((p) => (p.removed ? p : { ...p, ok: true })));
-    setFits((fs) => Object.fromEntries(Object.entries(fs).map(([t, f]) => [t, f.fit && !f.removed ? { ...f, ok: true } : f])));
+    // a row with a look-alike, a near-synonym or a decoy seen in that spot needs its own Fine (fix round 2026-10-17)
+    setFits((fs) => Object.fromEntries(Object.entries(fs).map(([t, f]) => [t, f.fit && !f.removed && !fitDoubts(f.fit, t).length ? { ...f, ok: true } : f])));
   };
   const englishProblems = (t: string) => { const e = english[t]?.trim(); return e ? glossProblems(e) : []; };
   const badEnglish = kept.some((it) => englishProblems(it.text).length > 0);
@@ -377,7 +378,7 @@ export function WeekPanel() {
           )}
 
           <h3>Check the wrong answers</h3>
-          <p class="week__hint">ZiJi made these wrong answers from the list. Tap one that is actually right to swap it. Fine confirms a row; All fine confirms them all. Rows marked “check this one” have a wrong answer that may fit: look at those first.</p>
+          <p class="week__hint">ZiJi made these wrong answers from the list. Tap one that is actually right to swap it. Fine confirms a row; All fine confirms them all. Rows marked “check this one” have a wrong answer that may fit, looks like the answer or means much the same: All fine leaves those for you to look at one by one.</p>
           {pairs.length > 0 && <h4 class="week__sub">搭配 ({livePairs.length})</h4>}
           {groups.map(([g, idx]) => (
             <div key={g} role="group" aria-label={g || '搭配'} class="week__group">
@@ -415,7 +416,7 @@ export function WeekPanel() {
             {kept.filter((it) => fits[it.text]?.fit).map((it) => {
               const f = fits[it.text]!;
               const [before, after] = f.fit!.sentence.split(BLANK);
-              const doubt = f.removed ? [] : mightFit(f.fit!);
+              const doubt = f.removed ? [] : fitDoubts(f.fit!, it.text);
               return (
                 <li key={it.text} data-word={it.text} class={`week__row ${f.removed ? 'is-off' : ''} ${f.ok && !f.removed ? 'is-ok' : ''} ${doubt.length ? 'is-doubt' : ''}`}>
                   <span class="hanzi week__sentence" lang="zh-CN">{before}<span class="week__blank">{it.text}</span>{after}</span>

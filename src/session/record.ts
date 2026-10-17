@@ -185,7 +185,7 @@ export const recordUnderstand = (db: AppDb, wordId: string, outcome: TapOutcome,
 export const recordHear = (db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> =>
   rateTap(db, wordId, 'hear', outcome, outcome.responseMs, now);
 
-const ratedToday = (c: CardRecord | undefined, now: Date) => !!c?.fsrs.last_review && localDateKey(c.fsrs.last_review) === localDateKey(now);
+export const ratedToday = (c: CardRecord | undefined, now: Date) => !!c?.fsrs.last_review && localDateKey(c.fsrs.last_review) === localDateKey(now);
 
 /** Brings a card forward so the next lesson includes it; never pushes it later. */
 export async function bringForward(db: AppDb, wordId: string, kind: CardKind, due: Date): Promise<void> {
@@ -281,4 +281,15 @@ async function planNow(db: AppDb, now: Date, extra = false) {
  */
 export async function startExtraLesson(db: AppDb, now: Date): Promise<SessionRecord> {
   return { ...createSessionRecord(await planNow(db, now, true), localDateKey(now), now.getTime()), extra: true };
+}
+
+/**
+ * A round's meaning question: the day's first rating of the card, as recordMeaning; already rated today (a weekly list's
+ * 选词填空 or 搭配 rated it first, fix round 2026-10-17), a miss only brings it forward, so one lesson never rates it twice.
+ */
+export async function recordMeaningOnce(db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord | undefined> {
+  const existing = await getCard(db, `${wordId}:meaning`);
+  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, outcome, now);
+  if (!outcome.correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
+  return getCard(db, `${wordId}:meaning`);
 }

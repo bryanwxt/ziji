@@ -445,7 +445,7 @@ export interface RewardGoal {
 
 /** The forms a list item is practised and checked in (weekly list spec 2026-10-17 §7). */
 export type WeekForm = 'read' | 'meaning' | 'fit' | 'dapei';
-export interface WeekAnswer { at: number; correct: boolean }
+export interface WeekAnswer { at: number; correct: boolean; echo?: true } // echo: given right after its card (认新字, or the day it was re-taught): never counts as learned
 /** An item's status for its list (spec §5.2), worked out from its cards at each plan. */
 export type ItemStatus = 'new' | 'learning' | 'known' | 'placed';
 
@@ -457,7 +457,8 @@ export interface WeekItem {
   addedStatus: ItemStatus;
   last?: Partial<Record<WeekForm, WeekAnswer>>; // his latest answer in each form since the list arrived (§8.3)
   rightDays?: string[]; // local days with a right answer after the check: solid at 2 (§2.1)
-  missedOn?: string; // the last local day it was missed after the check: a re-teaching card the next day (§2.1)
+  missedOn?: string; // the last local day it was missed after the check: a re-teaching card the next lesson day (§2.1)
+  reteachedOn?: string; // the day its re-teaching card was answered right; cleared by a later miss (fix round 2026-10-17)
 }
 
 /** A 搭配 from the sheet: verb or adjective + object, with three wrong partners the parent confirmed (§7.4). */

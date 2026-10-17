@@ -75,6 +75,31 @@ function confusable(a: string, b: string): boolean {
   return (kidGloss(b) ?? '').split(/[\s,]+/).some((g) => g.length > 2 && ga.includes(g));
 }
 
+/**
+ * Near-synonyms that fit the same blanks (fix round 2026-10-17: 抓/捉, 秋天/春天, 高兴/安静 were proposed as each other's wrong
+ * answers): one is never a decoy for another, and the preview flags one the parent puts in. Extend as lists bring new words.
+ */
+export const NEAR_FAMILIES: readonly (readonly string[])[] = [
+  ['抓', '捉', '拿', '抢', '握', '捡', '拾', '摸', '提', '抱'], // grab, hold
+  ['看', '望', '瞧', '盯', '瞪', '看见', '看到', '观察'], // look
+  ['说', '讲', '告诉', '叫', '喊', '问', '回答'], // say
+  ['走', '跑', '跳', '爬', '飞', '游'], // move
+  ['春天', '夏天', '秋天', '冬天'], // seasons
+  ['早上', '早晨', '上午', '中午', '下午', '晚上', '夜晚', '白天', '今天', '明天', '昨天'], // times
+  ['高兴', '开心', '快乐', '愉快', '兴奋', '激动', '难过', '伤心', '生气', '害怕', '着急', '担心', '紧张', '安静', '平静', '满意'], // feelings and moods
+  ['干净', '整齐', '整洁', '漂亮', '美丽', '好看'], // neat, pretty
+  ['热闹', '吵闹', '安静'], // noise
+  ['大', '小', '高', '矮', '长', '短'], ['快', '慢', '早', '晚'], // sizes, speeds
+  ['下雨', '下雪', '刮风', '打雷', '晴天', '雨天', '阴天'], // weather
+];
+const familyOf = new Map<string, Set<number>>();
+NEAR_FAMILIES.forEach((f, i) => { for (const t of f) familyOf.set(t, new Set([...(familyOf.get(t) ?? []), i])); });
+/** Two words of one near-synonym family. */
+export function sameFamily(a: string, b: string): boolean {
+  const fa = familyOf.get(a);
+  return !!fa && a !== b && [...(familyOf.get(b) ?? [])].some((i) => fa.has(i));
+}
+
 /** How many rows already use each word as a decoy, and the most any word may be (spread, follow-up 2026-10-17). */
 export const DECOY_CAP = 3;
 
@@ -101,11 +126,12 @@ export function proposeFit(
     if (kind && wordKind(d, pairs) !== kind) return false; // the grammar would give the answer away
     if (!sameShape(word.text, d)) return false;
     if (kind === 'verb' && VERB_FAMILY[d] && VERB_FAMILY[d] === VERB_FAMILY[word.text]) return false;
+    if (sameFamily(word.text, d)) return false; // a near-synonym fits the blank too
+    if (Array.from(d).length !== len) return false; // a length that differs gives the answer away (fix round 2026-10-17)
     if (sentencesFor(d).some((s) => s.zh === before + d + after)) return false;
     return true;
   });
-  const sameLen = candidates.filter((d) => Array.from(d).length === len);
-  const pool = sameLen.length >= 3 ? sameLen : candidates;
+  const pool = candidates;
   const order = (d: string) => (confusable(word.text, d) ? 0 : 1) * 100 + (used.get(d) ?? 0);
   const ranked = pool.map((d, i) => [d, order(d), i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([d]) => d);
   if (ranked.length < 3) return null;
@@ -147,12 +173,28 @@ export function parentSentenceProblems(text: string, word: string): string[] {
   return out;
 }
 
+/**
+ * Decoys the parent must look at before confirming (fix round 2026-10-17): ones seen in that spot in the app's sentences
+ * (mightFit), look-alikes of the answer (a shared character, or a shared radical between single characters), and near-synonyms.
+ * A row with any is left out of All fine.
+ */
+export function fitDoubts(fit: WeekFit, answer: string): string[] {
+  const seen = mightFit(fit);
+  const ca = Array.from(answer);
+  const rad = (c: string) => getCharInfo(c)?.radical;
+  const lookAlike = (d: string) => { const cd = Array.from(d); return cd.some((c) => ca.includes(c)) || (ca.length === 1 && cd.length === 1 && !!rad(d) && rad(d) === rad(answer)); };
+  return fit.wrong.filter((d) => seen.includes(d) || lookAlike(d) || sameFamily(answer, d));
+}
+
+/** The blank of a list's 选词填空 is drawn this many boxes wide whatever the answer's length, so its width tells nothing. */
+export const BLANK_WIDTH = 2;
+
 /** A confirmed row as 选一选's question (UseQuestion `fit`). `pool`: his words, for a parent decoy's own English on the miss sheet. */
 export function fitUseItem(fit: WeekFit, word: Word, rng: Rng, pool: readonly Word[] = []): UseItem {
   const at = fit.sentence.indexOf(BLANK);
   const glosses = Object.fromEntries(fit.wrong.flatMap((d) => { const w = pool.find((x) => x.text === d && x.source === 'parent' && x.meaning); return w ? [[d, w.meaning!]] : []; }));
   return {
-    kind: 'fit', wordId: word.id, word: word.text, before: fit.sentence.slice(0, at), after: fit.sentence.slice(at + 1), options: shuffle([word.text, ...fit.wrong], rng),
+    kind: 'fit', wordId: word.id, word: word.text, before: fit.sentence.slice(0, at), after: fit.sentence.slice(at + 1), options: shuffle([word.text, ...fit.wrong], rng), blankWidth: BLANK_WIDTH,
     ...(word.meaning && word.source === 'parent' ? { meaning: word.meaning } : {}), ...(Object.keys(glosses).length ? { glosses } : {}),
   };
 }
@@ -166,7 +208,7 @@ export function fitStillGood(fit: WeekFit, answer: string, onList: ReadonlySet<s
   const at = fit.sentence.indexOf(BLANK);
   if (at < 0 || fit.sentence.indexOf(BLANK, at + 1) >= 0) return false;
   if (new Set(fit.wrong).size !== 3) return false;
-  return fit.wrong.every((d) => onList.has(d) && d !== answer && !d.includes(answer) && !answer.includes(d) && !fit.sentence.includes(d) && sameShape(answer, d) && !BLOCKED.has(d));
+  return fit.wrong.every((d) => onList.has(d) && Array.from(d).length === Array.from(answer).length && d !== answer && !d.includes(answer) && !answer.includes(d) && !fit.sentence.includes(d) && sameShape(answer, d) && !BLOCKED.has(d));
 }
 
 /** A 搭配 still guess-proof when asked (spec §7.4): three different wrong partners, none the right one. */

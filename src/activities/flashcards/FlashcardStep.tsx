@@ -79,7 +79,8 @@ function missedPick(choice: string | null, quiz: { cue: MeaningCue | null; mode:
 
 export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese, list }: Props) {
   // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
-  const pair = boundPair(word.text);
+  const pair = list?.lead ?? boundPair(word.text); // a list verb's English questions show its list pair the same way (fix round 2026-10-17)
+  const pairPy = list?.lead ? list.leadReading : pair ? kidGlossReading(pair) : undefined;
   // none: the right answer is left out and 都不对 is right; real: the right answer itself, shown after (production practice spec §5)
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null; none: boolean; showsNone: boolean; real: string } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
@@ -139,6 +140,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       quizAt.current = performance.now();
       // A class sentence is read around its blank: saying the word would give the answer away (its choices don't share its sound).
       if (quiz.cue) speak(quiz.cue.kind === 'sentence' ? `${quiz.cue.before}，，${quiz.cue.after}` : quiz.cue.full);
+      else if (quiz.listen && quiz.mode) sayWord(); // heard for its meaning: a list verb as its pair
       else if (quiz.listen) speak(word.text, { reading: word.pinyin });
     }
   }, [phase]);
@@ -179,7 +181,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const mood: TruffleMood = phase === 'feedback' ? resting : 'neutral'; // still while he answers (spec 2026-10-11 §5)
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害！', content: '呼噜～' };
   // a list word or pair is a 词, not a 字 (weekly list spec §7.1)
-  const bubble = phase === 'intro' ? (item.reteach ? '再认一次！' : again ? '再看一遍！' : list && (list.lead || Array.from(word.text).length > 1) ? '新词来了！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
+  const bubble = phase === 'intro' ? (item.reteach ? '再认一次！' : again ? '再看一遍！' : list && (list.lead || Array.from(word.text).length > 1) ? '新词来了！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : Array.from(word.text).length > 1 ? '这个词怎么读？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
     if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : quiz.mode === 'hear' ? 'hear' : 'read', picked: choice ?? undefined });
@@ -203,7 +205,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           // a 都不对 question shows the real answer, right or wrong (production practice spec §5)
           detail={result.correct && !quiz.none ? undefined : (
             <>
-              <MeaningNote lead right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? kidGlossReading(pair) : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={result.correct ? null : missedPick(choice, quiz, word, pool)} why={
+              <MeaningNote lead right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? pairPy : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={result.correct ? null : missedPick(choice, quiz, word, pool)} why={
                 /* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
                   find the character → the look-alike part; its reading → the kind of pinyin slip */
                 result.correct ? null
@@ -244,7 +246,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                 </div>
               ) : (
                 <>
-                  {quiz.listen ? <SpeakButton text={quiz.mode && pair ? pair : word.text} reading={quiz.mode && pair ? undefined : word.pinyin} big />
+                  {quiz.listen ? <SpeakButton text={quiz.mode && pair ? pair : word.text} reading={quiz.mode && pair ? (list?.lead ? pairPy : undefined) : word.pinyin} big />
                     // an English question on a bound character asks about its pair, the character picked out in it; never the lone character
                     : quiz.mode && pair ? <div class="hanzi hanzi--q hanzi--pair" data-q style={`--len:${Array.from(pair).length}`}><BoundWord pair={pair} ch={word.text} /></div>
                     : <div class="hanzi hanzi--q" data-q>{word.text}</div>}

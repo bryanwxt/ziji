@@ -178,16 +178,17 @@ export function listCardFor(word: Word, lists: WeekList[], begun: ReadonlySet<st
 }
 
 /**
- * Not-solid items whose card 认新字 shows again (spec §2.1): the day after each miss, never two days running without a new miss.
- * Missed in the check first, then the oldest last answer; at most `cap`.
+ * Not-solid items whose card 认新字 shows again (spec §2.1): the next lesson day after a miss — a skipped day keeps it (fix round
+ * 2026-10-17) — and never again until a miss after it was re-taught. Missed in the check first, then the oldest last answer; at
+ * most `cap`.
  */
 export function reteachIds(lists: WeekList[], now: Date, cap = MAX_RETEACH): string[] {
-  const yesterday = localDateKey(addDays(now, -1));
+  const today = localDateKey(now);
   const inCheck: string[] = [];
   const later: string[] = [];
   for (const l of lists) {
     for (const it of notSolid(l, now)) {
-      if (it.missedOn !== yesterday || inCheck.includes(it.wordId) || later.includes(it.wordId)) continue;
+      if (!it.missedOn || it.missedOn >= today || it.missedOn <= (it.reteachedOn ?? '') || inCheck.includes(it.wordId) || later.includes(it.wordId)) continue;
       (l.check?.results[it.wordId]?.correct === false ? inCheck : later).push(it.wordId);
     }
   }

@@ -235,6 +235,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
     <UseQuestion
       item={use}
       kid={kid}
+      none={item.list ? (noneKind(item.none) ?? undefined) : undefined}
       onAnswer={(correct, ms) => {
         answer.current = { correct, ms };
       }}

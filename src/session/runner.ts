@@ -163,7 +163,14 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   };
   if (next.practiceIndex! >= queue.length) return finishStep(next);
   // what time left for tomorrow: only due revision never reached counts (new words' later rungs, retries and meaning starts don't)
-  if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) return finishStep({ ...next, practiceLeft: queue.slice(next.practiceIndex!).filter((x) => x.due).length });
+  if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) {
+    const rest = queue.slice(next.practiceIndex!);
+    const left = (rec.practiceLeft ?? 0) + rest.filter((x) => x.due).length;
+    // a weekly list's reserved item is never cut (weekly list spec §2.1): the unasked ones come next, and then the step ends
+    const owed = rest.filter((x) => x.list?.reserved && !x.retry);
+    if (owed.length) return { ...next, practiceQueue: [...queue.slice(0, next.practiceIndex!), ...owed], practiceLeft: left };
+    return finishStep({ ...next, practiceLeft: left });
+  }
   return next;
 }
 

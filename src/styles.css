@@ -1917,3 +1917,4 @@ button.langdu__sentence { cursor: pointer; }
    faded, on its first day and every day; its example sentence sits where the 词语 rows would */
 .intro__card--list .intro__word .label__py, .intro__card--list .pinyin--later { animation: none; opacity: 1; }
 .intro__example .word-row__zh .label__cell--mark .label__ch { color: var(--orange-ink); }
+.intro__example .word-row__zh, .intro__example .label__cells { text-wrap: balance; } /* a long example breaks evenly, not one character alone (fix round 2026-10-17) */

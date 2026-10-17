@@ -31,7 +31,7 @@ describe('选词填空 from the list (spec §7.3)', () => {
   const item: PracticeItem = { wordId: 'p:亮晶晶', rung: 2, ask: 'fit', grades: null, retry: false, list: { listId: 'wl:q', form: 'fit', fit } };
   it('the confirmed sentence, its blank, and the four list words as choices', () => {
     ask(pool[0]!, item);
-    expect(document.querySelector('.meaning-cue .label')!.getAttribute('data-zh')).toBe('夜空里的星星＿＿＿。');
+    expect(document.querySelector('.meaning-cue .label')!.getAttribute('data-zh')).toBe('夜空里的星星＿＿。') // a fixed-width blank (fix round);
     expect([...document.querySelectorAll('.choice')].map((b) => b.textContent).sort()).toEqual(['亮晶晶', '毛茸茸', '绿油油', '胖乎乎'].sort());
   });
   it('a miss: ✓ the answer and ✗ his pick, each with its pinyin and English, then counted as a use answer', () => {
@@ -41,6 +41,25 @@ describe('选词填空 from the list (spec §7.3)', () => {
     expect(document.querySelector('.sheet__en-picked .sheet__en-zh .label__py')!.textContent).toBe('pàng');
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false, asked: 'use' }));
+  });
+});
+
+describe('都不对 on a list 选词填空 (fix round 2026-10-17)', () => {
+  const fit = { wordId: 'p:亮晶晶', sentence: '夜空里的星星＿。', source: 'parent' as const, wrong: ['胖乎乎', '毛茸茸', '绿油油'] as [string, string, string] };
+  it('the answer left out: 都不对 is right, and the sheet still shows the real answer', () => {
+    const onDone = ask(pool[0]!, { wordId: 'p:亮晶晶', rung: 2, ask: 'fit', grades: null, retry: false, none: 'answer', list: { listId: 'wl:q', form: 'fit', fit } });
+    expect([...document.querySelectorAll('.choice')].map((b) => b.textContent)).not.toContain('亮晶晶');
+    fireEvent.click(choice('都不对'));
+    expect(document.querySelector('.sheet--good')).toBeTruthy();
+    expect(rows()[0]).toEqual(['亮晶晶', 'sparkly']);
+    fireEvent.click(screen.getByText('继续'));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true }));
+  });
+  it('the decoy variant: 都不对 is among the choices, and wrong', () => {
+    ask(pool[0]!, { wordId: 'p:亮晶晶', rung: 2, ask: 'fit', grades: null, retry: false, none: 'decoy', list: { listId: 'wl:q', form: 'fit', fit } });
+    expect([...document.querySelectorAll('.choice')].map((b) => b.textContent)).toEqual(expect.arrayContaining(['亮晶晶', '都不对']));
+    fireEvent.click(choice('都不对'));
+    expect(document.querySelector('.sheet--oops')).toBeTruthy();
   });
 });
 

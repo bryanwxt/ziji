@@ -23,7 +23,8 @@ export function isReady(item: WeekItem, list: WeekList, word?: Word): boolean {
     const since = Object.values(item.last ?? {}).filter((a) => a && a.at > list.check!.at);
     return check.correct && since.every((a) => a!.correct);
   }
-  return formsFor(item, list, word).every((f) => item.last?.[f]?.correct === true);
+  // an echo (right after its card) shows he can, not that he learned it: a later day's answer counts (fix round 2026-10-17)
+  return formsFor(item, list, word).every((f) => item.last?.[f]?.correct === true && !item.last[f]!.echo);
 }
 
 export function isSolid(item: WeekItem, list: WeekList): boolean {

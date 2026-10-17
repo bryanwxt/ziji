@@ -33,7 +33,7 @@ import { settleJourney } from '../placement/journey';
 import { TabBar } from '../ui/TabBar';
 import { useApp } from './AppContext';
 import { loadKnowledge, type Knowledge } from './knowledge';
-import { TodayPath } from './TodayPath';
+import { newwordsName, TodayPath } from './TodayPath';
 import { backupNudgeDays } from '../parent/backupNudge';
 import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
@@ -304,6 +304,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           {steps.length || todaySession ? (
             <TodayPath
               speakingName={speakingKind === 'story' ? '看图说话' : '朗读'}
+              newwordsName={newwordsName(todaySession)}
               nodes={nodes}
               started={!!todaySession}
               onStart={() => play(false)}

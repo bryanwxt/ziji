@@ -58,10 +58,11 @@ describe('re-teaching cards (spec §2.1)', () => {
     check: { at: 1, day: '2026-11-04', done: true, results: Object.fromEntries(list.items.map((i, k) => [i.wordId, { form: 'read' as const, correct: !missedOn[k] }])) },
     items: list.items.map((i, k) => (missedOn[k] ? { ...i, missedOn: missedOn[k] } : i)),
   });
-  it('the day after a miss only; never two days running without a new miss', () => {
+  it('the next lesson after a miss; never again once re-taught, until a new miss', () => {
     const l = after(['2026-11-04', '', '2026-11-04']);
     expect(reteachIds([l], new Date(2026, 10, 5, 8))).toEqual(['b:炒', 'p:低下头']);
-    expect(reteachIds([l], new Date(2026, 10, 6, 8))).toEqual([]);
+    const taught = { ...l, items: l.items.map((i) => (i.missedOn ? { ...i, reteachedOn: '2026-11-05' } : i)) };
+    expect(reteachIds([taught], new Date(2026, 10, 6, 8))).toEqual([]);
     expect(reteachIds([after(['2026-11-05'])], new Date(2026, 10, 6, 8))).toEqual(['b:炒']); // missed again in Thursday's lesson
   });
   it('nothing before the check, nothing for a solid item, at most 6', () => {
