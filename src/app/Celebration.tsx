@@ -338,7 +338,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
           <>
             <h1><Label zh="新能力！" /></h1>
             <p class="power-intro">
-              <span class="hanzi">{radical}</span> = <Label zh={meaning?.zh ?? def.name} /> {meaning && <InkIcon name={meaning.icon} size={44} />}
+              <span class="hanzi">{radical}</span> <Label zh={def.line} /> {meaning && <InkIcon name={meaning.icon} size={44} />}
             </p>
             <Truffle
               mood={powered ? 'cheer' : 'neutral'}

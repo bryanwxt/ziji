@@ -136,6 +136,8 @@ describe('Celebration power-up, several powers at once', () => {
     await screen.findByText('太棒了！');
     await continueTo('新能力！');
     expect(document.querySelector('.power-intro')?.textContent).toContain('火');
+    expect(document.querySelector('.power-intro .label')?.getAttribute('data-zh')).toBe('火字旁的字'); // says whose characters (review 2026-10-17)
+    expect(document.querySelector('.power-intro')?.textContent).not.toContain('=');
     expect(screen.queryByText('继续')).toBeNull();
     fireEvent(screen.getByRole('button', { name: '按住，变身！' }), new Event('pointerdown', { bubbles: true }));
     await hold();
