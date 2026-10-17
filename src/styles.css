@@ -1994,3 +1994,9 @@ button.langdu__sentence { cursor: pointer; }
 .week-summary__focus { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--gold-soft); }
 .week-summary__focus p { margin: 0; line-height: 1.4; }
 .week-summary__share { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+/* "This week, try this" on top of Today (parent loop spec §5.1): one calm line and its one button */
+.try-this { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 16px; border: 2px solid #ffe6a3; border-radius: var(--radius); background: var(--gold-soft); }
+.try-this p { margin: 0; line-height: 1.4; }
+.try-this__head { flex-basis: 100%; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+.try-this__text { flex: 1 1 18em; min-width: 0; font-size: 17px; font-weight: 700; }

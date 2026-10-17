@@ -18,6 +18,7 @@ import { RecordingsPanel } from './RecordingsPanel';
 import { RewardsPanel } from './RewardsPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { TalkSection } from './TalkSection';
+import { TryThis } from './TryThis';
 import { WeekPanel } from './WeekPanel';
 import { WeekSummaryPanel } from './WeekSummaryPanel';
 import { WordsPanel } from './WordsPanel';
@@ -54,6 +55,8 @@ const PARTS: [ContentPart, string][] = [
   ['passages', 'Reading texts'],
   ['pictures', 'Pictures'],
 ];
+/** How many times (50 ms apart) a shortcut looks for its section before giving up. */
+const SCROLL_TRIES = 20;
 let lastPart: ContentPart = 'week'; // Content opens where the parent left it, for this session
 
 export function ParentArea() {
@@ -64,14 +67,25 @@ export function ParentArea() {
   const [allRecordings, setAllRecordings] = useState(false);
   const [goTo, setGoTo] = useState<ParentPlace | null>(null); // a shortcut's section, scrolled to once its tab shows
   const [waiting, setWaiting] = useState<number | null>(null); // takes to review: the badge on Today
+  const [talked, setTalked] = useState(0); // a talk logged or undone: the top line looks again
   const countWaiting = async () => setWaiting(waitingTakes(await listRecordings(db)).length);
   useEffect(() => {
     void countWaiting();
   }, []);
   useEffect(() => {
     if (!goTo) return;
-    document.getElementById(placeId(goTo))?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-    setGoTo(null);
+    // a section inside a panel still loading (聊一聊 waits for the overview) shows a moment later: look again for up to a second
+    let tries = 0;
+    const look = () => {
+      const el = document.getElementById(placeId(goTo));
+      if (!el && tries++ < SCROLL_TRIES) return;
+      clearInterval(timer);
+      el?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      setGoTo(null);
+    };
+    const timer = setInterval(look, 50);
+    look();
+    return () => clearInterval(timer);
   }, [goTo, tab, part, allRecordings]);
   const navigate = (p: ParentPlace) => {
     setTab(HOME[p]);
@@ -99,7 +113,9 @@ export function ParentArea() {
           {tab === 'today' && (
             <>
               <div id={placeId('dashboard')} class="parent__section">
-                <Dashboard onNavigate={navigate} waiting={waiting ?? undefined} talk={<div id={placeId('talk')}><TalkSection onNavigate={navigate} /></div>} />
+                <TryThis onNavigate={navigate} waiting={waiting} talked={talked} />
+                <Dashboard onNavigate={navigate} waiting={waiting ?? undefined}
+                  talk={<div id={placeId('talk')}><TalkSection onNavigate={navigate} onLogged={() => setTalked((n) => n + 1)} /></div>} />
                 <ExtraLessonButton />
               </div>
               <div id={placeId('listen')} class="parent__section"><ListenPanel onReviewed={() => void countWaiting()} /></div>

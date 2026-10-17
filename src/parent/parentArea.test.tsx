@@ -46,6 +46,7 @@ describe('the parent area in five tabs', () => {
     enter(await open());
     // Today: the overview, Listen & confirm, and all recordings behind a toggle
     expect(await screen.findByText('Day streak')).toBeTruthy();
+    expect(await screen.findByText('This week, try this')).toBeTruthy();
     expect(await heading(/聊一聊 Talk/)).toBeTruthy();
     expect(document.getElementById(placeId('talk'))).toBeTruthy();
     expect(await heading('Listen & confirm')).toBeTruthy();
@@ -148,5 +149,11 @@ describe("the overview's shortcuts land on the right tab and section", () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Week summary' }));
     expect(tab(/Progress/).getAttribute('aria-selected')).toBe('true');
     await lands('summary');
+  });
+  it('the top line opens Today on 聊一聊 when no talk is logged yet', async () => {
+    enter(await open({ lastBackupAt: Date.now() }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Go to 聊一聊' }));
+    expect(tab(/Today/).getAttribute('aria-selected')).toBe('true');
+    await lands('talk');
   });
 });
