@@ -132,7 +132,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       const m = mood as ReturnType<typeof dayMood> | null;
       if (m && m !== 'plain') {
         setPropPlay((p) => ({ react: { kind: m === 'missed' ? 'huff' : 'bouncy', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
-        setSaid(m === 'missed' ? '你去哪儿了？我好想你！' : '又见面了！');
+        setSaid(m === 'missed' ? '你去哪里了？我好想你！' : '又见面了！');
         clearTimeout(saidTimer.current);
         saidTimer.current = setTimeout(() => setSaid(null), 2600);
       }
@@ -270,7 +270,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
                 <button type="button" class="btn btn--secondary" onClick={() => { primeSpeech(); go({ name: 'session', free: false, extra: true }); }}><Label zh="再学一课" /></button>
               )}
               {hasCards && (
-                <button type="button" class="btn btn--secondary" onClick={() => play(true)}><Label zh="再玩一会儿" /></button>
+                <button type="button" class="btn btn--secondary" onClick={() => play(true)}><Label zh="再玩一会" /></button>
               )}
             </div>
           )}

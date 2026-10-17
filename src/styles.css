@@ -1103,9 +1103,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .room > .room__tabs { grid-column: 2; }
   .room > [role="tabpanel"] { grid-column: 2; height: 100%; }
 }
-.home__cards .done-card .btn { flex: none; } .home__cards .done-card .label__cells { flex-wrap: nowrap; } /* 再玩一会儿 on one line */
+.home__cards .done-card .btn { flex: none; } .home__cards .done-card .label__cells { flex-wrap: nowrap; } /* 再玩一会 on one line */
 .home__cards .done-today { min-width: 0; }
-/* two choices after the day's lesson (再学一课, 再玩一会儿): the title on its own line, the buttons side by side and compact */
+/* two choices after the day's lesson (再学一课, 再玩一会): the title on its own line, the buttons side by side and compact */
 .home__cards .done-card { flex-wrap: wrap; justify-content: center; row-gap: 6px; column-gap: 10px; padding: 8px 12px; }
 .home__cards .done-card .done-today { flex-basis: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 20px; }
 .home__cards .done-card .btn { min-height: 46px; padding: 4px 14px; font-size: 18px; }

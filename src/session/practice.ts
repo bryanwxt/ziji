@@ -206,7 +206,7 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
   return withSentence(withSay(withFish(graded, fish), say), sentence);
 }
 
-/** 再玩一会儿: a round of words he has begun, from their own rungs, twice each; practice only. */
+/** 再玩一会: a round of words he has begun, from their own rungs, twice each; practice only. */
 export function planFreePlay(cards: CardRecord[], words: Word[], rungs: ReadonlyMap<string, number>, voice: boolean, rng: Rng, n = FREE_PLAY_WORDS, level = 1): PracticeItem[] {
   const byId = new Map(words.filter((w) => !w.paused).map((w) => [w.id, w]));
   const ids = shuffle([...new Set(cards.filter((c) => c.kind === 'recognise' && byId.has(c.wordId)).map((c) => c.wordId))], rng).slice(0, n);

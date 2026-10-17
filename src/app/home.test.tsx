@@ -91,7 +91,7 @@ describe('HomeScreen', () => {
     expect(document.querySelector('.goal')?.textContent).toContain('我的奖励');
     expect(document.querySelector('.goal .goal__count')?.textContent?.trim()).toBe('1 / 10');
     expect(document.querySelector('.goal .goal__count svg.inkicon')).toBeTruthy();
-    fireEvent.click(screen.getByText('再玩一会儿'));
+    fireEvent.click(screen.getByText('再玩一会'));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: true });
   });
   it('offers another lesson once today is done: one is the baseline, more is his choice (parent, 2026-10-05)', async () => {
@@ -683,14 +683,14 @@ describe("Truffle's memory (spec 2026-10-04 §4.6, phase E)", () => {
     await saveSession(app.db, done('2026-09-28', ['flashcards']));
     const first = renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
-    await waitFor(() => expect(bubble()).toBe('你去哪儿了？我好想你！'));
+    await waitFor(() => expect(bubble()).toBe('你去哪里了？我好想你！'));
     await waitFor(() => expect(react()).toBe('huff'));
     await waitFor(async () => expect((await getKid(app.db))?.greetedOn).toBe('2026-10-02'));
     first.unmount();
     renderWithApp(<HomeScreen />, { ...app, kid: (await getKid(app.db))! });
     await screen.findByText('今天的练习');
     await new Promise((r) => setTimeout(r, 200));
-    expect(bubble()).not.toBe('你去哪儿了？我好想你！');
+    expect(bubble()).not.toBe('你去哪里了？我好想你！');
   });
   it('on a streak day he is extra bouncy', async () => {
     const app = await makeAppData();
