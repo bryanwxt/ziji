@@ -29,7 +29,7 @@ import { withQuestion } from '../langdu/questions';
 import { readerAt } from '../langdu/level';
 import { readingPool, type ReadingPassage } from '../langdu/pool';
 import { newestByPassage, tidyPassageTakes } from '../langdu/review';
-import { earnsBonus } from '../langdu/stars';
+import { bonusOnRead } from '../langdu/stars';
 import { burst } from '../ui/motion';
 import { WritingStep, type WriteResult } from '../activities/writing/WritingStep';
 import { playSfx } from '../audio/sfx';
@@ -470,15 +470,17 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const at = now();
       if (r.intro) await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'intro' }, ...r.intro });
       let bonus = false;
+      let misreadsBefore: number | undefined;
       if (r.read) {
         try {
-          // the passage's last lesson take: a 多读一遍 take is never the baseline (final review I6)
+          // the passage's last lesson take: a 多读一遍 take is never the baseline (final review I6). Accuracy, never speed
+          // (learning rules 2026-10-17): a complete re-read earns it now, or at review when the last take was reviewed
           const prev = newestByPassage(await listRecordings(db)).get(reading.passage.id);
-          bonus = earnsBonus(prev, { level: r.read.level ?? 0, durationSec: r.read.durationSec });
+          ({ now: bonus, misreadsBefore } = bonusOnRead(prev, r.read, reading.passage.text));
         } catch (err) {
           logError(err); // his takes couldn't be read: no bonus this time
         }
-        await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'passage', passageId: reading.passage.id }, ...r.read, ...(r.meaning ? { meaning: r.meaning } : {}) });
+        await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'passage', passageId: reading.passage.id }, ...r.read, ...(r.meaning ? { meaning: r.meaning } : {}), ...(misreadsBefore !== undefined ? { misreadsBefore } : {}) });
         try {
           await tidyPassageTakes(db, at);
         } catch (err) {

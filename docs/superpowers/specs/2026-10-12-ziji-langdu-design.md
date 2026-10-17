@@ -127,3 +127,17 @@ The other lengths keep their proportions: the practice share is 1/3, and the wri
 ## 9. Out of scope
 
 Recorded or neural voice clips. Per-character karaoke timing. Speech-recognition scoring. 看图说话 (`settings.story`). New built-in passages (the 20 stay). A passage generator from known characters.
+
+## 10. Amendment 2026-10-17: the bonus star rewards accuracy, and the question comes first
+
+Parent decision, 2026-10-17, from the learning-rules review. A star for reading quicker or louder teaches rushing (Kuhn & Stahl 2003). §3's `earnsBonus` is replaced by the rules in `src/langdu/stars.ts`.
+
+- **Complete read:** a take is complete when both of these hold:
+  - it lasts at least the passage's Han characters ÷ 4 seconds, since no P2 child reads aloud faster than that;
+  - it ended at least 1 s before the recorder's own limit (`readLimitMs`), so he stopped it himself.
+- **When the bonus star is earned:** only on a re-read of a passage, meaning a later lesson's take of it, and only when that take is complete.
+  - **The parent reviewed the last take:** the new take stores that take's misread count as `misreadsBefore`. The star comes at the parent's Done in Listen & confirm, once, when the new take has fewer misreads, or none both times.
+  - **The last take was never reviewed:** the star comes at once.
+  - **Never** for speed or loudness.
+- **The kept take of a lesson:** the re-read (再读一遍) when it is complete, else the first take. He has just compared his read with the model's.
+- **Purpose cue:** Listen shows the meaning question as 「读的时候想一想：…」 before he reads (Therrien 2004). It is asked after reading, as before. An extra round (多读一遍) has no question, so it shows none.

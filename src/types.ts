@@ -228,6 +228,7 @@ export interface Recording {
   misread?: string[]; // characters the parent confirmed he misread
   extraDayGiven?: boolean; // its marks have acted on the passage (≥ 2 marks: due 3 days after the review, spec 2026-10-15 §4), once per take; named for the old extra day
   review?: 'ok' | 'no'; // a Say or 说一句 take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
+  misreadsBefore?: number; // a passage re-read whose last take the parent had reviewed: that take's misreads; fewer on this one earn the bonus star at review (learning rules 2026-10-17)
   meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
   cardBefore?: CardSnapshot; // a Say or 说一句 take: its card as it was when he recorded (SRS tuning spec §4), for the verdict's log
 }

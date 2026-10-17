@@ -2,9 +2,10 @@
 // listened; Done saves the characters he misread. Takes older than 14 days are tidied, reviewed or not, except each passage's
 // newest lesson take (final review I5, I6). A 多读一遍 take (prompt.extra) is listed in Recordings but never the queue's take.
 import type { AppDb } from '../store/db';
-import { deleteRecording, getRecording, listRecordings, updateRecording } from '../store/repo';
+import { deleteRecording, getRecording, listRecordings, updateKid, updateRecording } from '../store/repo';
 import type { Recording } from '../types';
 import { applyMisreads } from './misreads';
+import { bonusOnReview } from './stars';
 
 /** Passage takes are kept this long; each passage's newest lesson take stays whatever its age. */
 export const PASSAGE_KEEP_DAYS = 14;
@@ -46,13 +47,17 @@ export async function tidyPassageTakes(db: AppDb, now: Date): Promise<void> {
   for (const id of passageTakesToDrop(await listRecordings(db), now)) await deleteRecording(db, id);
 }
 
-/** Done on a passage take: its marks become priority words (as before), and it is listened to. Not graded. */
-export async function finishPassageReview(db: AppDb, rec: Recording, marks: string[], now: Date): Promise<{ updated: number; notInApp: string[] }> {
+/** Done on a passage take: its marks become priority words (as before), and it is listened to. Not graded. A re-read with a
+ *  reviewed take before it earns the bonus star here, once, for fewer misreads than that take (learning rules 2026-10-17). */
+export async function finishPassageReview(db: AppDb, rec: Recording, marks: string[], now: Date): Promise<{ updated: number; notInApp: string[]; bonus: boolean }> {
   // work from the stored take, not the row's copy: a retry after a failed save must not grant the extra day twice
   const stored = await getRecording(db, rec.id);
-  if (!stored || stored.review === 'ok') return { updated: 0, notInApp: [] };
+  if (!stored || stored.review === 'ok') return { updated: 0, notInApp: [], bonus: false };
   const res = await applyMisreads(db, stored, marks, now);
   const saved = await getRecording(db, rec.id);
-  if (saved && !saved.review) await updateRecording(db, { ...saved, review: 'ok' });
-  return res;
+  const first = !!saved && !saved.review;
+  if (first) await updateRecording(db, { ...saved!, review: 'ok' });
+  const bonus = first && bonusOnReview(stored.misreadsBefore, new Set(marks).size);
+  if (bonus) await updateKid(db, (k) => ({ ...k, bonusStars: k.bonusStars + 1 }));
+  return { ...res, bonus };
 }
