@@ -151,7 +151,7 @@ export interface SessionPlan {
   steps: StepKind[];
   reviewWordIds: string[];
   newWordIds: string[];
-  newWordLanes?: Record<string, 'school' | 'catchup'>; // each new word's lane (spec 2026-10-11 §5); listed and non-book words have none; plans saved before it have none
+  newWordLanes?: Record<string, 'school' | 'catchup' | 'list'>; // each new word's lane (spec 2026-10-11 §5; 'list': weekly list spec §5.3); listed and non-book words have none; plans saved before it have none
   flashTimeBoxMs: number;
   writeCandidates: { wordId: string; isNew: boolean }[];
   writeCount: number;
@@ -166,6 +166,11 @@ export interface SessionPlan {
   sentenceIds?: string[]; // words for 说一句 in 练一练, best first (production practice spec §4); plans saved before it have none
   weakIds?: string[]; // an extra lesson with nothing due or near due: his weakest words, practice only (learning rules 2026-10-17)
   writeWordIds?: string[]; // the words 写一写 covers today (production practice spec §3): 练一练 leaves out their 组词 taps; plans saved before it have none
+  listNewIds?: string[]; // today's new words taken for a weekly list (a subset of newWordIds, weekly list spec §5.2)
+  reteachIds?: string[]; // not-solid list items whose card 认新字 shows again first (spec §2.1); no new-word slot
+  listCards?: Record<string, ListCard>; // the list word card for today's list words and re-teaching cards (spec §7.1)
+  listItems?: PracticeItem[]; // list items for 练一练, interleaved by withList (spec §6.4, §2.1)
+  frontLoad?: boolean; // a day with list new words: 练一练 +2 minutes, 写一写 half (spec §5.1)
 }
 
 export interface FlashItem {
@@ -173,6 +178,7 @@ export interface FlashItem {
   isNew: boolean;
   retry: boolean; // re-shown after a wrong answer (or free play): no scheduler review
   mode?: 'read' | 'meaning'; // absent = read
+  reteach?: true; // a not-solid list item's card again (weekly list spec §2.1): shown first, asked, never graded
 }
 
 export interface SessionRecord {
@@ -435,4 +441,80 @@ export interface RewardGoal {
   target: number;
   createdAt: number;
   claimedAt: number | null;
+}
+
+/** The forms a list item is practised and checked in (weekly list spec 2026-10-17 §7). */
+export type WeekForm = 'read' | 'meaning' | 'fit' | 'dapei';
+export interface WeekAnswer { at: number; correct: boolean }
+/** An item's status for its list (spec §5.2), worked out from its cards at each plan. */
+export type ItemStatus = 'new' | 'learning' | 'known' | 'placed';
+
+/** One word on a list: an existing word by id, never a copy (spec §3.4). */
+export interface WeekItem {
+  wordId: string; // 'b:套' | 'w:街道' | 'p:…'
+  text: string; // as on the sheet, for the parent's view if the word is later deleted
+  from: 'grid' | 'pair' | 'both';
+  addedStatus: ItemStatus;
+  last?: Partial<Record<WeekForm, WeekAnswer>>; // his latest answer in each form since the list arrived (§8.3)
+  rightDays?: string[]; // local days with a right answer after the check: solid at 2 (§2.1)
+  missedOn?: string; // the last local day it was missed after the check: a re-teaching card the next day (§2.1)
+}
+
+/** A 搭配 from the sheet: verb or adjective + object, with three wrong partners the parent confirmed (§7.4). */
+export interface WeekPair {
+  left: string;
+  right: string;
+  group?: string; // its theme heading (食物)
+  wrong: [string, string, string];
+  reading?: string; // left+right pinyin, one syllable per character
+  last?: WeekAnswer;
+}
+
+/** A 选词填空 row the parent confirmed (§7.3): the sentence with ＿ once, and three list-mates that don't fit. */
+export interface WeekFit {
+  wordId: string;
+  sentence: string;
+  source: 'class' | 'school' | 'bank' | 'parent';
+  wrong: [string, string, string];
+}
+
+/** The 考考自己 on the ready-by day (§8.1): one answer per item, saved as he goes. */
+export interface WeekCheck {
+  at: number;
+  day: string;
+  results: Record<string, { form: WeekForm; correct: boolean }>; // by wordId, or `${left}|${right}` for a pair asked from a non-item half
+  done: boolean;
+}
+
+/** A list from school or tuition to learn by a day (spec §4). Its words stay ordinary words. */
+export interface WeekList {
+  id: string; // 'wl:<uuid>'
+  name: string;
+  createdAt: number;
+  readyBy: string; // local YYYY-MM-DD
+  homeworkDue: string; // local YYYY-MM-DD
+  items: WeekItem[];
+  pairs: WeekPair[];
+  fits: WeekFit[];
+  check?: WeekCheck;
+  closedAt?: number;
+}
+
+/** What the 认新字 card shows for a list word (spec §7.1–7.2). */
+export interface ListCard {
+  lead?: string; // a verb's pair (煮番茄汤), shown and said in place of the bare character
+  leadReading?: string;
+  leadGloss?: string;
+  example?: Example; // one short sentence using the word
+  mark?: [number, number]; // the new character inside the word or pair, in Han characters
+}
+
+/** A 练一练 item that a list adds (spec §6.4, §2.1). */
+export interface ListAsk {
+  listId: string;
+  form: WeekForm;
+  pair?: WeekPair;
+  pairs?: WeekPair[]; // a 连一连 board of list pairs (§7.5)
+  fit?: WeekFit;
+  reserved?: true; // a not-solid item's guaranteed slot after the check
 }

@@ -4,7 +4,7 @@ import { normalizeFinds } from '../fun/finds';
 import { normalizeBank, normalizeMeter } from '../fun/meter';
 import { migrateAccessory } from '../fun/accessories';
 import { migrateReading } from '../langdu/history';
-import { DEFAULT_KID, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type Word } from '../types';
+import { DEFAULT_KID, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type WeekList, type Word } from '../types';
 import type { AppDb } from './db';
 
 const MAIN = 'main';
@@ -290,3 +290,11 @@ export async function getConfusions(db: AppDb): Promise<Map<string, string[]>> {
   const list = (await db.getAll('ladder')).filter((e) => e.confused?.length).sort((a, b) => (b.confusedAt ?? b.at ?? 0) - (a.confusedAt ?? a.at ?? 0));
   return new Map(list.map((e) => [e.wordId, e.confused!]));
 }
+
+/** Weekly lists (weekly list spec 2026-10-17 §4), active and closed. */
+export const allWeekLists = (db: AppDb) => db.getAll('weekLists');
+export const getWeekList = (db: AppDb, id: string) => db.get('weekLists', id);
+export async function putWeekList(db: AppDb, l: WeekList): Promise<void> {
+  await db.put('weekLists', l);
+}
+export const deleteWeekList = (db: AppDb, id: string) => db.delete('weekLists', id);

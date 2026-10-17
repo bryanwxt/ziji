@@ -3,7 +3,7 @@ import { isLadderId } from '../content/ladder';
 import { lessonLabel, taughtAt } from '../content/curriculum';
 import type { Word } from '../types';
 
-export type Lane = 'school' | 'catchup';
+export type Lane = 'school' | 'catchup' | 'list';
 
 /** A word's lesson in his book: a character's first 识读 lesson; a ladder 词语's latest among its characters; else none. */
 export function bookLesson(w: Pick<Word, 'id' | 'text'>): number | undefined {
@@ -16,6 +16,7 @@ export function bookLesson(w: Pick<Word, 'id' | 'text'>): number | undefined {
 
 /** The 认新字 card's small label (spec §9): 「课本 二下·17」 for his class's lesson, 「补 一上·5」 for catch-up; none without a lane. */
 export function laneTag(lane: Lane | undefined, w: Pick<Word, 'id' | 'text'>): string | null {
+  if (lane === 'list') return '本周';
   const at = lane ? bookLesson(w) : undefined;
   return lane && at !== undefined ? `${lane === 'school' ? '课本' : '补'} ${lessonLabel(at)}` : null;
 }

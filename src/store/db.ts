@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { AnswerLog, CardRecord, KidState, LadderEntry, ParentPassage, PicturePrompt, Recording, ReviewLog, RewardGoal, SessionRecord, Settings, Word } from '../types';
+import type { AnswerLog, CardRecord, KidState, LadderEntry, ParentPassage, PicturePrompt, Recording, ReviewLog, RewardGoal, SessionRecord, Settings, WeekList, Word } from '../types';
 
 export interface HanziDB extends DBSchema {
   words: { key: string; value: Word };
@@ -14,6 +14,7 @@ export interface HanziDB extends DBSchema {
   passages: { key: string; value: ParentPassage };
   answers: { key: number; value: AnswerLog; indexes: { byAt: number } };
   ladder: { key: string; value: LadderEntry };
+  weekLists: { key: string; value: WeekList };
   /** what was here before the last restore (review 2026-10-17): a backup's text, so the restore can be undone; never backed up */
   restorePoints: { key: string; value: RestorePoint };
 }
@@ -28,10 +29,10 @@ export interface RestorePoint {
 export type AppDb = IDBPDatabase<HanziDB>;
 
 export const DB_NAME = 'hanzi-buddy'; // pre-rename name; kept so existing progress survives
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 
 /** Stores holding one record per item (everything except the 'main' singletons). */
-export const LIST_STORES = ['words', 'cards', 'reviewLogs', 'sessions', 'rewards', 'recordings', 'prompts', 'passages', 'answers', 'ladder'] as const;
+export const LIST_STORES = ['words', 'cards', 'reviewLogs', 'sessions', 'rewards', 'recordings', 'prompts', 'passages', 'answers', 'ladder', 'weekLists'] as const;
 export type ListStore = (typeof LIST_STORES)[number];
 
 export interface OpenHandlers {
@@ -75,6 +76,7 @@ export function openAppDb(name: string = DB_NAME, handlers: OpenHandlers = {}): 
         logs.createIndex('byWord', 'wordId');
         db.createObjectStore('restorePoints', { keyPath: 'id' });
       }
+      if (oldVersion < 6) db.createObjectStore('weekLists', { keyPath: 'id' }); // weekly lists (weekly list spec 2026-10-17 §4)
     },
   });
   return open.then((db) => (opened = db));
