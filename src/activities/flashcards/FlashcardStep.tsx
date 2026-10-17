@@ -57,8 +57,6 @@ interface Props {
   reintroOnMiss?: boolean;
   /** 认新字: a 成语 that uses the word, at his level or one up (spec 2026-10-05 §2.1, §4) */
   idiom?: Idiom | null;
-  /** 认新字: the word's lesson in his book, 「课本 二下·17」 or 「补 一上·5」 (spec 2026-10-11 §9); none for a listed word */
-  lessonTag?: string | null;
   /** 练一练: a 组词 gap or English meaning asked without its answer, 「都不对」 right (production practice spec §5) */
   noneOfThese?: 'answer' | 'decoy';
 }
@@ -77,7 +75,7 @@ function missedPick(choice: string | null, quiz: { cue: MeaningCue | null; mode:
   return pinyinPickNote(word, choice, pool);
 }
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, lessonTag = null, noneOfThese }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese }: Props) {
   // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
   const pair = boundPair(word.text);
   // none: the right answer is left out and 都不对 is right; real: the right answer itself, shown after (production practice spec §5)
@@ -219,7 +217,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
         truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} calm={phase === 'quiz'} react={react} /></div>}
         sheet={sheet}
       >
-        {phase === 'intro' ? <Intro word={word} idiom={idiom} tag={lessonTag} /> : (
+        {phase === 'intro' ? <Intro word={word} idiom={idiom} /> : (
           <>
             <div class="flash__prompt">
               {quiz.cue ? (
@@ -366,7 +364,7 @@ export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
   return idioms.find((i) => !shown.some((t) => t.includes(i.text)) && inBoundSense(word.text, i.text)) ?? null;
 }
 
-function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; tag?: string | null }) {
+function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
   // never the one the usage line already shows; all of them feed the meaning questions
   const { line, listed } = cardRows(word, idiom);
   const pair = boundPair(word.text);
@@ -374,7 +372,6 @@ function Intro({ word, idiom, tag = null }: { word: Word; idiom: Idiom | null; t
   return (
     <div class="intro">
       <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`} data-word={word.text}>
-        {tag && <p class="intro__tag" lang="zh">{tag}</p>}
         <div class="intro__head">
           {pair ? (
             // a bound character (parent 2026-10-15): its pair leads, the character he learns in orange, its pinyin over it. One

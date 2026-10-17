@@ -8,8 +8,13 @@ import { strokeAvailability } from '../content/strokes';
 import { localDateKey } from '../lib/date';
 import { isKnown } from '../srs/scheduler';
 import { applyDictationMistakes } from '../session/dictation';
+import { bookLesson } from '../session/lanes';
+import { lessonLabel } from '../content/curriculum';
 import { deleteWord, putWords } from '../store/repo';
 import type { Word } from '../types';
+
+/** The word's lesson in his book (二下·17), shown here rather than on the child's 认新字 card (review 2026-10-17) */
+const lessonOf = (w: Word): string => { const at = bookLesson(w); return at === undefined ? '—' : lessonLabel(at); };
 
 type Filter = 'lists' | `level${1 | 2 | 3 | 4 | 5 | 6 | 7}` | 'paused';
 const MAX_ROWS = 200;
@@ -218,7 +223,7 @@ export function WordsPanel() {
           </div>
         </div>
         <table class="table">
-          <thead><tr><th>Word</th><th>Pinyin</th><th>List</th><th>Status</th><th>Write</th><th>Paused</th><th /></tr></thead>
+          <thead><tr><th>Word</th><th>Pinyin</th><th>List</th><th>Book lesson</th><th>Status</th><th>Write</th><th>Paused</th><th /></tr></thead>
           <tbody>
             {shown.slice(0, MAX_ROWS).map((w) => (
               <tr key={w.id}>
@@ -229,6 +234,7 @@ export function WordsPanel() {
                     : w.pinyin}
                 </td>
                 <td>{w.listName ?? `HSK ${w.level === 7 ? '7–9' : w.level}`}</td>
+                <td>{lessonOf(w)}</td>
                 <td>{status(w)}</td>
                 <td><input type="checkbox" aria-label={`Write ${w.text}`} checked={w.writeable} onChange={(e) => void update(w, { writeable: e.currentTarget.checked })} /></td>
                 <td><input type="checkbox" aria-label={`Pause ${w.text}`} checked={w.paused} onChange={(e) => void update(w, { paused: e.currentTarget.checked })} /></td>

@@ -31,11 +31,14 @@ export const WEEK_REACH = 15;
 const TIE_ORDER: GoalKind[] = ['write', 'chest', 'badge', 'power', 'world'];
 
 /** The next power tier's threshold (tierFor's steps: 3 known, then half, then all). */
-function nextTierAt(size: number, known: number): number {
+export function nextTierAt(size: number, known: number): number {
   const t1 = Math.min(3, size);
   const t2 = Math.max(Math.ceil(size / 2), t1);
   return known < t1 ? t1 : known < t2 ? t2 : size;
 }
+
+/** Characters still to learn for a power's next tier (0 once it has all three): 「再认识 N 个字」 in Truffle's room too. */
+export const powerNeed = (size: number, known: number): number => (tierFor(size, known) < 3 ? nextTierAt(size, known) - known : 0);
 
 export function almostThere(kid: KidState, know: Pick<Knowledge, 'knownChars'>, facts: GoalFacts, now: Date): Goal[] {
   const today = localDateKey(now);
@@ -68,7 +71,7 @@ export function almostThere(kid: KidState, know: Pick<Knowledge, 'knownChars'>, 
   const power = POWERS.map((p) => {
     const chars = facts.powers[p.id] ?? [];
     const known = chars.filter((ch) => know.knownChars.has(ch)).length;
-    return { p, chars, need: tierFor(chars.length, known) < 3 ? nextTierAt(chars.length, known) - known : 0 };
+    return { p, chars, need: powerNeed(chars.length, known) };
   })
     .filter((x) => x.need > 0)
     .sort((a, b) => a.need - b.need)[0];

@@ -111,7 +111,7 @@ export function CollectionScreen() {
                 <span class="zika__py">{c.pinyin}</span>
                 <span class="zika__char hanzi">{c.char}</span>
                 <span class="zika__foot">
-                  <span class="zika__stars">{Array.from({ length: c.stars }, (_, i) => <InkIcon key={i} name="star" size={14} />)}</span>
+                  <span class="zika__stars" aria-hidden="true">{[1, 2, 3].map((i) => <InkIcon key={i} name={i <= c.stars ? 'star' : 'starOutline'} size={20} />)}</span>
                   {c.power && <InkIcon name={powerDef(c.power)!.mark} size={16} />}
                 </span>
               </button>

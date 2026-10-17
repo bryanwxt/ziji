@@ -4,6 +4,7 @@ import { ACCESSORY_DEFS } from '../fun/accessories';
 import { accessoryThumb } from '../ui/truffle/accessories';
 import { ANIMALS, CHINESE, GREEK, inChest, JOBS, OLD_OUTFITS, ONESIES, ROBOTS, type Costume } from '../fun/costumes';
 import { POWERS, powerFamilies, powerProgress, type PowerProgress } from '../fun/powers';
+import { powerNeed } from '../fun/goals';
 import { saveKid, updateKid } from '../store/repo';
 import { DEFAULT_KID, type KidState } from '../types';
 import { Label } from '../ui/Label';
@@ -26,6 +27,11 @@ const SLOT_TITLE = { face: '脸上', neck: '脖子上', held: '手里', back: '�
 
 /** His shelves (rewards spec §5.2): the chest's five, then 希腊 and 以前的衣服, which only show what he owns of them. */
 const SHELVES: [string, Costume[]][] = [['生肖', ONESIES], ['动物', ANIMALS], ['职业', JOBS], ['机器人', ROBOTS], ['中国', CHINESE], ['希腊', GREEK], ['以前的衣服', OLD_OUTFITS]];
+
+/** A locked prize's way in (review 2026-10-17): it comes out of the chest. */
+function ChestTag() {
+  return <span class="outfit__tag"><InkIcon name="gift" size={14} /><Label zh="宝箱" /></span>;
+}
 
 /** Truffle's room: what he wears and which power he shows. */
 export function Wardrobe() {
@@ -104,12 +110,10 @@ export function Wardrobe() {
                         disabled={!owned}
                         onClick={() => void save({ outfit: k.outfit === c.id ? null : c.id })}
                       >
-                        {owned ? (
-                          <span class="outfit__preview" aria-hidden="true"><Truffle mood="content" outfit={c.id} accessory={null} size={64} /></span>
-                        ) : (
-                          <span class="outfit__swatch"><InkIcon name="lock" size={20} /></span>
-                        )}
+                        {/* locked: Truffle in it as a full-contrast silhouette, and where it comes from (review 2026-10-17) */}
+                        <span class={`outfit__preview${owned ? '' : ' is-silhouette'}`} aria-hidden="true"><Truffle mood="content" outfit={c.id} accessory={null} size={64} /></span>
                         <span class="outfit__name"><Label zh={c.zh} py={c.py} /></span>
+                        {!owned && <ChestTag />}
                       </button>
                     );
                   })}
@@ -133,12 +137,11 @@ export function Wardrobe() {
                     const thumb = accessoryThumb(d.id)!;
                     return (
                       <button key={d.id} type="button" class={`outfit ${k.wearing === d.id ? 'is-on' : ''}`} aria-label={d.zh} aria-pressed={k.wearing === d.id} disabled={!owned} onClick={() => void save({ wearing: k.wearing === d.id ? null : d.id })}>
-                        {owned ? (
+                        <span class={owned ? 'acc-thumb__box' : 'acc-thumb__box is-silhouette'}>
                           <svg class="acc-thumb" viewBox={thumb.viewBox} width="64" height="48" aria-hidden="true" dangerouslySetInnerHTML={{ __html: thumb.markup }} />
-                        ) : (
-                          <InkIcon name="lock" size={32} />
-                        )}
+                        </span>
                         <span class="outfit__name"><Label zh={d.zh} py={d.py} /></span>
+                        {!owned && <ChestTag />}
                       </button>
                     );
                   })}
@@ -171,14 +174,17 @@ export function Wardrobe() {
                   <img class="place__thumb" src={paintingHref(w.id, true)} alt="" aria-hidden="true" />
                   <Label zh={w.zh} />
                   {!reached && (
-                    <span class="place__lock"><InkIcon name="lock" size={20} /> <Label zh={`再学 ${Math.max(1, w.at - learned)} 个字`} /></span>
+                    <span class="place__lock"><InkIcon name="lock" size={20} /> <Label zh={`再认识 ${Math.max(1, w.at - learned)} 个字`} /></span>
                   )}
                 </button>
               );
             })}
           </div>
         ) : (
-          <div class="powers scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
+          // the grid inside the scroller, not the scroller itself: WebKit sized a scrolling grid's rows to their min-height, so a
+          // row's hint line printed over its border on iPhone (review 2026-10-17)
+          <div class="powers-panel scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
+            <div class="powers">
             {POWERS.map((p) => {
               const pr = progress?.find((x) => x.id === p.id);
               const tier = k.powerTiersSeen[p.id] ?? 0;
@@ -201,9 +207,11 @@ export function Wardrobe() {
                     <span class="power-row__count">{pr?.known ?? 0}/{pr?.size ?? 0}</span>
                   </span>
                   {ready && <span class="power-row__ready"><InkIcon name="sparkle" size={16} /> <Label zh="完成练习就解锁" /></span>}
+                  {!ready && tier === 0 && pr && <span class="power-row__need"><Label zh={`再认识 ${powerNeed(pr.size, pr.known)} 个字`} /></span>}
                 </button>
               );
             })}
+            </div>
           </div>
         )}
       </div>

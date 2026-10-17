@@ -10,7 +10,6 @@ import { WrapupStep } from '../activities/choose/WrapupStep';
 import { planWrapup, wrapupTargets } from '../session/wrapup';
 import { endOfLocalDay } from '../lib/date';
 import { FlashcardStep, introIdiom, type FlashResult } from '../activities/flashcards/FlashcardStep';
-import { laneTag } from '../session/lanes';
 import { chooseCount, planChoose } from '../practice/choose';
 import { fitItem, usageItem, type UseItem } from '../practice/useItems';
 import { noteRecall } from '../session/recall';
@@ -526,7 +525,6 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           ask={step === 'newwords' ? 'hear' : undefined} // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2)
           reintroOnMiss={step === 'newwords'}
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
-          lessonTag={step === 'newwords' ? laneTag(rec.plan.newWordLanes?.[flashWord.id], flashWord) : null} // spec 2026-10-11 §9
           word={flashWord}
           pool={meaningPool(know)}
           card={know.cardsById.get(`${flashWord.id}:recognise`)}

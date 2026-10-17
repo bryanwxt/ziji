@@ -14,9 +14,9 @@ describe('the look-alike line (spec 2026-10-12 §3)', () => {
     expect([...container.querySelectorAll('.why__zh')].map((e) => e.textContent)).toEqual(['河', '何']);
     expect(container.querySelectorAll('.why__part svg')).toHaveLength(2); // the ink icons
   });
-  it('a part with no meaning is still named, without English (银 艮 · 铁 失)', () => {
+  it('a part he knows with no meaning is still named, without English; one he does not know is left out (银 · 铁 = 钅 + 失)', () => {
     const { container } = render(<LookAlikeWhy right="银" picked="铁" />);
-    expect(why(container)).toBe('银 艮 · 铁 失');
+    expect(why(container)).toBe('银 · 铁 失');
   });
   it('nothing to tell apart: the fallback, or nothing', () => {
     expect(render(<LookAlikeWhy right="未" picked="末" />).container.innerHTML).toBe('');
@@ -25,16 +25,26 @@ describe('the look-alike line (spec 2026-10-12 §3)', () => {
 });
 
 describe('the look-alike line as sums (parent 2026-10-16: "扫 彐 扬 昜" read as a stray row)', () => {
-  it('不一样, then 扫 = 扌 + 彐 · 扬 = 扌 + 昜: the shared part plain, each one\'s own part marked', () => {
-    const { container } = render(<LookAlikeWhy right="扫" picked="扬" />);
+  it('不一样, then 河 = 氵 + 可 · 何 = 亻 + 可: the shared part plain, each one\'s own part marked', () => {
+    const { container } = render(<LookAlikeWhy right="河" picked="何" />);
     expect(container.querySelector('.why__label .label')!.getAttribute('data-zh')).toBe('不一样');
     const sums = [...container.querySelectorAll('.why__char')].map((c) => [...c.querySelectorAll('.why__zh, .why__shared, .why__own')].map((e) => `${e.classList.contains('why__own') ? '*' : ''}${e.textContent}`).join(' '));
-    expect(sums).toEqual(['扫 扌 *彐', '扬 扌 *昜']);
+    expect(sums).toEqual(['河 *氵 可', '何 *亻 可']);
     expect(container.querySelectorAll('.why__op')).toHaveLength(4); // = + for each
   });
-  it('parts that overlap make no sum (商: 口 inside its 冏): its own parts, as before', () => {
-    const { container } = render(<LookAlikeWhy right="衣" picked="商" />);
+  it('no parts he does not know (review 2026-10-17): 扫 · 扬 differ only in 彐 and 昜, so no line', () => {
+    expect(render(<LookAlikeWhy right="扫" picked="扬" />).container.innerHTML).toBe('');
+    expect(render(<LookAlikeWhy right="扫" picked="扬" fallback={<i class="old" />} />).container.querySelector('.old')).toBeTruthy();
+  });
+  it('a sum with a part he does not know shows his own known part alone (根 木 · 跟 足)', () => {
+    const { container } = render(<LookAlikeWhy right="根" picked="跟" />);
     expect(container.querySelector('.why__sum')).toBeNull();
+    expect(why(container)).toBe('根 木 tree · 跟 足 foot');
+  });
+  it('characters that do not really look alike get no comparison (衣 · 商 share only 亠; never 商 → 口 丷 冏)', () => {
+    expect(render(<LookAlikeWhy right="衣" picked="商" />).container.innerHTML).toBe('');
+    expect(render(<LookAlikeWhy right="商" picked="衣" fallback={<i class="old" />} />).container.querySelector('.old')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('冏');
   });
   it('a character inside the other has no sum of its own (生 · 星 = 日 + 生)', () => {
     const { container } = render(<LookAlikeWhy right="生" picked="星" />);

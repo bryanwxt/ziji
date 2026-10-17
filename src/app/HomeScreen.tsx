@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { enterSafeScreen } from '../pwa';
 import { pinyin } from 'pinyin-pro';
 import { primeSpeech, speak } from '../audio/speech';
-import { pathNodes } from '../fun/path';
+import { lessonStops, pathNodes } from '../fun/path';
 import { wordOfTheDay } from '../fun/wordOfDay';
 import { goalProgress, nextGoal } from '../fun/rewards';
 import { localDateKey } from '../lib/date';
@@ -34,6 +34,7 @@ import { TabBar } from '../ui/TabBar';
 import { useApp } from './AppContext';
 import { loadKnowledge, type Knowledge } from './knowledge';
 import { TodayPath } from './TodayPath';
+import { backupNudgeDays } from '../parent/backupNudge';
 import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
 import { InkIcon } from '../ui/icons/InkIcon';
@@ -131,7 +132,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       const m = mood as ReturnType<typeof dayMood> | null;
       if (m && m !== 'plain') {
         setPropPlay((p) => ({ react: { kind: m === 'missed' ? 'huff' : 'bouncy', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
-        setSaid(m === 'missed' ? '你去哪儿了？我好想你！' : '又见面了！');
+        setSaid(m === 'missed' ? '你去哪里了？我好想你！' : '又见面了！');
         clearTimeout(saidTimer.current);
         saidTimer.current = setTimeout(() => setSaid(null), 2600);
       }
@@ -182,10 +183,13 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
     ? todaySession?.completedSteps.includes('speaking') ? k.speakingLast ?? 'story' : nextSpeaking(k.speakingLast, canRead, true)
     : canRead || (!!todaySession?.completedSteps.includes('speaking') && readToday(k.reading, today)) ? 'langdu' : null;
   const steps = (todaySession?.plan.steps ?? stepsOn(settings)).filter((s) => s !== 'speaking' || speakingKind !== null);
-  const nodes = pathNodes(steps, todaySession?.completedSteps ?? [], chestOpened, doneToday);
+  const nodes = lessonStops(pathNodes(steps, todaySession?.completedSteps ?? [], chestOpened, doneToday)); // one set of names (review 2026-10-17)
   // 多读一遍 only once today's 朗读 is done (or the lesson has no speaking step): an extra round first would use up the lesson's passage
   const extraRound = canRead && (!steps.includes('speaking') || !!todaySession?.completedSteps.includes('speaking'));
   const wotdWord = wotd ? data.know.wordsById.get(`b:${wotd}`) : undefined;
+  // the parent's backup reminder (review 2026-10-17): small, English behind 给家长, never in the child's way
+  const firstUse = data.sessions.reduce<number | null>((m, s) => { const t = new Date(`${s.date}T00:00`).getTime(); return m === null || t < m ? t : m; }, null);
+  const backupDays = backupNudgeDays({ lastBackupAt: settings.lastBackupAt, firstUse, now: now().getTime() });
   const wotdExample = wotdWord ? pickExample(wotdWord)?.example ?? null : null;
   const play = (free: boolean) => {
     primeSpeech();
@@ -266,7 +270,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
                 <button type="button" class="btn btn--secondary" onClick={() => { primeSpeech(); go({ name: 'session', free: false, extra: true }); }}><Label zh="再学一课" /></button>
               )}
               {hasCards && (
-                <button type="button" class="btn btn--secondary" onClick={() => play(true)}><Label zh="再玩一会儿" /></button>
+                <button type="button" class="btn btn--secondary" onClick={() => play(true)}><Label zh="再玩一会" /></button>
               )}
             </div>
           )}
@@ -284,6 +288,9 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
                 </button>
               )}
             </div>
+          )}
+          {backupDays !== null && (
+            <p class="parent-nudge"><Label zh="给家长" /> <span lang="en">No backup for {backupDays} days · 家长 → Settings → Backup</span></p>
           )}
           {extraRound && (
             <button type="button" class="btn btn--secondary langdu-btn" aria-label="多读一遍" onClick={() => go({ name: 'langdu' })}>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BUILTIN } from '../content';
 import { newTiers, powerFamilies, powerOf, powerProgress, POWERS, tierFor } from './powers';
+import { radicalMeaning } from '../content/radicals';
 
 describe('powers', () => {
   const fam = powerFamilies(BUILTIN);
@@ -39,5 +40,17 @@ describe('power families with HSK 1–9 content', () => {
     const level = new Map(BUILTIN.map((c) => [c.char, c.level]));
     expect(Object.values(fam).flat().every((ch) => level.get(ch)! <= 2)).toBe(true);
     expect(fam.water.length).toBeGreaterThan(3);
+  });
+});
+
+describe("新能力's line (review 2026-10-17: 「木 = 木」 said nothing)", () => {
+  it('each power says whose characters it is, by the radical\'s name: 木字旁的字, 三点水的字', () => {
+    expect(POWERS.find((p) => p.id === 'wood')!.line).toBe('木字旁的字');
+    expect(POWERS.find((p) => p.id === 'water')!.line).toBe('三点水的字');
+    for (const p of POWERS) {
+      expect(p.line, p.id).toMatch(/^[\p{Script=Han}]+的字$/u); // Chinese only: Label gives it pinyin; no emoji
+      expect(p.line, p.id).not.toBe(`${p.radicals[0]}的字`);
+      expect(radicalMeaning(p.radicals[0]!), p.id).toBeTruthy(); // the icon beside it
+    }
   });
 });

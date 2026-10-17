@@ -189,7 +189,7 @@ export function skipPracticeItem(rec: SessionRecord): SessionRecord {
   return next.practiceIndex! >= (rec.practiceQueue?.length ?? 0) ? finishStep(next) : next;
 }
 
-/** 再玩一会儿 (spec 2026-10-05 §7): one 练一练 round of words he knows; never saved, never graded, no time box. */
+/** 再玩一会 (spec 2026-10-05 §7): one 练一练 round of words he knows; never saved, never graded, no time box. */
 export function createFreePracticeRecord(queue: PracticeItem[], date: string, now: number): SessionRecord {
   const plan: SessionPlan = {
     steps: ['practice'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, practiceTimeBoxMs: Number.POSITIVE_INFINITY,

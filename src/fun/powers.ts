@@ -9,21 +9,22 @@ export interface PowerDef {
   radicals: string[];
   color: string;
   mark: IconName; // drawn with the ink icon set
+  line: string; // 新能力's line for him, by the radical's name (review 2026-10-17: 「木 = 木」 said nothing)
 }
 
 /** Truffle's powers: the five elements 五行 plus the biggest radical families. 冫 (ice) is not water. */
 export const POWERS: PowerDef[] = [
-  { id: 'water', name: '水', radicals: ['氵', '水'], color: '#4aa3ff', mark: 'drop' },
-  { id: 'fire', name: '火', radicals: ['火', '灬'], color: '#ff6a3d', mark: 'flame' },
-  { id: 'wood', name: '木', radicals: ['木'], color: '#46b06a', mark: 'leaf' },
-  { id: 'metal', name: '金', radicals: ['金', '钅'], color: '#b9a46a', mark: 'sparkle' },
-  { id: 'earth', name: '土', radicals: ['土'], color: '#b07a4a', mark: 'rock' },
-  { id: 'roar', name: '口', radicals: ['口'], color: '#ff8fb1', mark: 'shout' },
-  { id: 'friends', name: '亻', radicals: ['亻', '人'], color: '#7b8cff', mark: 'hands' },
-  { id: 'voice', name: '讠', radicals: ['讠', '言'], color: '#2fbfb0', mark: 'speech' },
-  { id: 'dash', name: '辶', radicals: ['辶'], color: '#ffc94a', mark: 'wind' },
-  { id: 'heart', name: '心', radicals: ['心', '忄'], color: '#ff5a7a', mark: 'heart' },
-  { id: 'sun', name: '日', radicals: ['日'], color: '#ffb020', mark: 'sun' },
+  { id: 'water', name: '水', radicals: ['氵', '水'], color: '#4aa3ff', mark: 'drop', line: '三点水的字' },
+  { id: 'fire', name: '火', radicals: ['火', '灬'], color: '#ff6a3d', mark: 'flame', line: '火字旁的字' },
+  { id: 'wood', name: '木', radicals: ['木'], color: '#46b06a', mark: 'leaf', line: '木字旁的字' },
+  { id: 'metal', name: '金', radicals: ['金', '钅'], color: '#b9a46a', mark: 'sparkle', line: '金字旁的字' },
+  { id: 'earth', name: '土', radicals: ['土'], color: '#b07a4a', mark: 'rock', line: '提土旁的字' },
+  { id: 'roar', name: '口', radicals: ['口'], color: '#ff8fb1', mark: 'shout', line: '口字旁的字' },
+  { id: 'friends', name: '亻', radicals: ['亻', '人'], color: '#7b8cff', mark: 'hands', line: '单人旁的字' },
+  { id: 'voice', name: '讠', radicals: ['讠', '言'], color: '#2fbfb0', mark: 'speech', line: '言字旁的字' },
+  { id: 'dash', name: '辶', radicals: ['辶'], color: '#ffc94a', mark: 'wind', line: '走之旁的字' },
+  { id: 'heart', name: '心', radicals: ['心', '忄'], color: '#ff5a7a', mark: 'heart', line: '心字底的字' },
+  { id: 'sun', name: '日', radicals: ['日'], color: '#ffb020', mark: 'sun', line: '日字旁的字' },
 ];
 
 export const powerDef = (id: string | null | undefined): PowerDef | undefined => POWERS.find((p) => p.id === id);

@@ -2,6 +2,7 @@
 // Worked out at runtime from the content's components and radicals; the sheets in src/ui/stage/WhyLine.tsx show them.
 import { getCharInfo, hanChars } from '../content';
 import { radicalMeaning } from '../content/radicals';
+import { taughtAt } from '../content/curriculum';
 import { TRIVIAL } from '../activities/components/zibian';
 import { soundParts, splitSyllable } from '../activities/flashcards/pinyinTraps';
 import { syllableTone } from '../activities/flashcards/tones';
@@ -45,6 +46,32 @@ export function partsSum(ch: string, other: string): { part: string; own: boolea
   const own = new Set(differingParts(ch, other).right);
   const inOther = new Set([other, ...partsOf(other)]);
   return partsOf(ch).filter((p) => own.has(p) || inOther.has(p)).map((p) => ({ part: p, own: own.has(p) }));
+}
+
+/** A part a P1–P3 child knows (review 2026-10-17): a radical with a meaning (氵 water) or a character his book teaches (its
+ *  lists run 一上 to 三下). 丷, 冏, 彐 or 亠 are strokes to him, not parts. */
+export const knownPart = (p: string): boolean => !!radicalMeaning(p) || taughtAt(p) !== undefined;
+
+/** Two characters that really look alike: something tells them apart, and what they share is at least half of each (河 · 何
+ *  share 可, 根 · 跟 share 艮, 生 is inside 星); 衣 · 商 share only 亠, a sliver of 商, so no. */
+export function lookAlike(a: string, b: string): boolean {
+  const d = differingParts(a, b);
+  if (!d.right.length && !d.picked.length) return false;
+  const bulk = (x: string, y: string) => {
+    const mine = partsOf(x);
+    const inY = new Set([y, ...partsOf(y)]);
+    return inY.has(x) || mine.filter((p) => inY.has(p)).length * 2 >= mine.length;
+  };
+  return bulk(a, b) && bulk(b, a);
+}
+
+/** What the why-line shows of one character beside its look-alike: a sum of two parts he knows (河 = 氵 + 可), else the parts
+ *  only it has when he knows them all (根 → 木: its 艮 is no part to him); null when nothing is left (商 → 口 丷 冏). */
+export function partsToShow(ch: string, other: string): { kind: 'sum'; parts: { part: string; own: boolean }[] } | { kind: 'own'; parts: string[] } | null {
+  const sum = partsSum(ch, other);
+  if (sum.length === 2 && sum.every((s) => knownPart(s.part))) return { kind: 'sum', parts: sum };
+  const own = differingParts(ch, other).right;
+  return own.length && own.every(knownPart) ? { kind: 'own', parts: own } : null;
 }
 
 export type PinyinSlip =

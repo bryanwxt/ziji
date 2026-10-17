@@ -22,7 +22,8 @@ export interface Booted {
 }
 
 export async function bootstrap(dbName: string): Promise<Booted> {
-  const db = await openAppDb(dbName);
+  // a newer build opened in another tab: this one's connection has closed so the upgrade can run; reload into the new build
+  const db = await openAppDb(dbName, { onBlocking: () => globalThis.location?.reload() });
   await applySettingsMigration(db); // first: a move (v5: both tracks) can change the course the words are written for
   // the 3,000 built-in words are rewritten only when the content changed (a launch used to rewrite them all)
   const stored = (await db.get('settings', 'main'))?.contentVersion;

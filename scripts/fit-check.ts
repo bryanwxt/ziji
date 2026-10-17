@@ -389,7 +389,7 @@ async function sweep(size: Size) {
   await run('home-evening', EVENING, { world: 'home' }, (p) => check(p, size, 'home-evening', 0)); // the first world's evening
   for (const w of WORLDS) {
     await run(`home-${w.id}`, AFTERNOON, { world: w.id }, (p) => check(p, size, `home-${w.id}`, 0));
-    await run(`home-done-${w.id}`, AFTERNOON, { world: w.id, doneToday: true }, (p) => check(p, size, `home-done-${w.id}`, 0)); // the done card and 再玩一会儿 sit differently
+    await run(`home-done-${w.id}`, AFTERNOON, { world: w.id, doneToday: true }, (p) => check(p, size, `home-done-${w.id}`, 0)); // the done card and 再玩一会 sit differently
   }
   // First run
   await run('setup-pin', AFTERNOON, { pin: false, kid: false, placementDone: false }, (p) => check(p, size, 'setup-pin', 0));

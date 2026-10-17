@@ -91,7 +91,7 @@ describe('HomeScreen', () => {
     expect(document.querySelector('.goal')?.textContent).toContain('我的奖励');
     expect(document.querySelector('.goal .goal__count')?.textContent?.trim()).toBe('1 / 10');
     expect(document.querySelector('.goal .goal__count svg.inkicon')).toBeTruthy();
-    fireEvent.click(screen.getByText('再玩一会儿'));
+    fireEvent.click(screen.getByText('再玩一会'));
     expect(app.go).toHaveBeenCalledWith({ name: 'session', free: true });
   });
   it('offers another lesson once today is done: one is the baseline, more is his choice (parent, 2026-10-05)', async () => {
@@ -110,7 +110,7 @@ describe('HomeScreen', () => {
     await waitFor(() => expect(document.querySelector('.home__pet .pet__bubble')?.textContent).toContain('想再学一课吗？'));
     expect(screen.getByText('再学一课').closest('button')!.className).toContain('btn--secondary');
   });
-  it('right after the day’s lesson: no 再学一课 yet, Truffle says when (learning rules 2026-10-17); 再玩一会儿 stays', async () => {
+  it('right after the day’s lesson: no 再学一课 yet, Truffle says when (learning rules 2026-10-17); 再玩一会 stays', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02', greetedOn: '2026-10-02' } }); // 9:00
     await saveSession(app.db, { ...done('2026-10-02', ['newwords', 'practice']), startedAt: new Date(2026, 9, 2, 8, 30).getTime(), activeMs: 15 * 60_000 });
     await putCards(app.db, [makeCard('b:大', 'recognise', new Date(2026, 9, 5))]);
@@ -119,7 +119,7 @@ describe('HomeScreen', () => {
     expect(screen.queryByText('再学一课')).toBeNull();
     expect(document.querySelector('.done-card')?.textContent).toContain('过一会再来！'); // open at 10:45
     await waitFor(() => expect(document.querySelector('.home__pet .pet__bubble')?.textContent).toContain('过一会再来！'));
-    expect(screen.getByText('再玩一会儿')).toBeTruthy();
+    expect(screen.getByText('再玩一会')).toBeTruthy();
   });
   it('an extra lesson just finished (his stars this morning) closes it again for 2 hours', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02', starredUpTo: new Date(2026, 9, 2, 8, 50).getTime() } });
@@ -190,12 +190,12 @@ describe('Wardrobe', () => {
     expect(shelves).not.toContain('希腊');
     expect(shelves).not.toContain('以前的衣服');
   });
-  it('an owned costume shows a small Truffle wearing it; a locked one shows the lock', async () => {
+  it('an owned costume shows a small Truffle wearing it; a locked one only its silhouette (review 2026-10-17)', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['tiger'] } });
     renderWithApp(<Wardrobe />, app);
     const tiger = await screen.findByRole('button', { name: '虎' });
     expect(tiger.querySelector('svg.truffle')?.getAttribute('data-outfit')).toBe('tiger');
-    expect(screen.getByRole('button', { name: '牛' }).querySelector('svg.truffle')).toBeNull();
+    expect(screen.getByRole('button', { name: '牛' }).querySelector('.is-silhouette svg.truffle')).toBeTruthy();
   });
   it('accessories he has not won yet are locked', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedAccessories: ['scarf'] } });
@@ -683,14 +683,14 @@ describe("Truffle's memory (spec 2026-10-04 §4.6, phase E)", () => {
     await saveSession(app.db, done('2026-09-28', ['flashcards']));
     const first = renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天的练习');
-    await waitFor(() => expect(bubble()).toBe('你去哪儿了？我好想你！'));
+    await waitFor(() => expect(bubble()).toBe('你去哪里了？我好想你！'));
     await waitFor(() => expect(react()).toBe('huff'));
     await waitFor(async () => expect((await getKid(app.db))?.greetedOn).toBe('2026-10-02'));
     first.unmount();
     renderWithApp(<HomeScreen />, { ...app, kid: (await getKid(app.db))! });
     await screen.findByText('今天的练习');
     await new Promise((r) => setTimeout(r, 200));
-    expect(bubble()).not.toBe('你去哪儿了？我好想你！');
+    expect(bubble()).not.toBe('你去哪里了？我好想你！');
   });
   it('on a streak day he is extra bouncy', async () => {
     const app = await makeAppData();

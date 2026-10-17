@@ -209,7 +209,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   padding: 22px 44px; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: rise-in var(--dur-slow) var(--spring) backwards;
 }
 /* 认新字's lesson label (spec 2026-10-11 §9): small and quiet, above the character; 16px, the smallest Chinese the fit check allows */
-.intro__tag { margin: 0 0 -6px; padding: 0.3em 0.3em 0; align-self: flex-start; font-family: var(--hanzi); font-size: 16px; line-height: 1.25; color: var(--ink-soft); }
 /* the padding: the tag sits in the card's top-left corner, and the card scrolls, so it clips: 补's 衤 inks left of and above its box
    (parent 2026-10-15: half the 补 was cut off on his iPhone) */
 .parts { font-size: 28px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-family: var(--hanzi); }
@@ -552,8 +551,11 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .label-tag { display: inline-block; font-family: var(--font); font-weight: 900; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; background: var(--green); color: var(--ink); border: 2px solid var(--ink); border-radius: 5px; padding: 1px 7px; }
 
 /* Answers */
-.choice, .fishtile, .choice.is-right, .fishtile.is-right, .fishtile.is-on { background: var(--green-soft); }
-.choice.is-oops, .fishtile.is-oops, .choice.is-dim { opacity: 0.45; }
+/* an unanswered tile is paper; green is only the right answer, orange only his wrong pick (review 2026-10-17: every tile used to
+   start green, so each looked "correct" before he answered, and the faded ones after a miss looked like the answer) */
+.choice, .fishtile { background: var(--surface); }
+.choice.is-answer, .choice.is-right, .choice.is-eaten, .fishtile.is-right { background: var(--green-soft); border-color: var(--green-ink); color: var(--green-ink); }
+.choice.is-wrong, .choice.is-oops, .fishtile.is-oops { background: var(--orange-soft); border-color: var(--orange-ink); color: var(--orange-ink); opacity: 1; }
 
 /* Bars */
 .sheet, .tabbar { background: var(--paper); border-top: 3px solid var(--ink); }
@@ -636,7 +638,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .zika__word .label__cells { flex-wrap: nowrap; }
 .zika__word .label__py { font-family: var(--font); font-size: min(15px, 0.45em); font-weight: 400; font-style: italic; opacity: 1; color: var(--ink-soft); min-height: 0; padding: 0 0.15em 2px; }
 .zika__foot { display: flex; gap: 6px; font-size: 14px; }
-.zika__stars { color: #d9a400; display: inline-flex; gap: 1px; }
+.zika__stars { color: #d9a400; display: inline-flex; gap: 1px; } /* three slots at 20px, earned ones gold (review 2026-10-17: ~10px and pale) */
 .zika.card--rare { box-shadow: 4px 4px 0 var(--ink), inset 0 0 0 4px #7db8f0; }
 .zika.card--rare::after { content: ''; position: absolute; top: 7px; right: 7px; width: 10px; height: 10px; background: #4a90d9; border: 2px solid var(--ink); transform: rotate(45deg); } /* a little blue diamond */
 .zika.card--gold { background: linear-gradient(135deg, #fff1c9, #ffd56a 55%, #fff1c9); }
@@ -659,16 +661,18 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .room__tabs { display: flex; gap: 10px; }
 .room__tabs .chip { min-height: 52px; min-width: 110px; font-size: 22px; justify-content: center; }
 .room__tabs .chip.is-on { background: var(--green); }
-.powers { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; width: 100%; max-width: 760px; }
+.powers-panel { width: 100%; max-width: 760px; }
+.powers { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; width: 100%; }
 .power-row { min-height: 64px; height: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 4px; padding: 8px 14px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); }
 .power-row.is-on { background: var(--green-soft); }
-.power-row:disabled { opacity: 0.55; box-shadow: 4px 4px 0 var(--line-strong); border-color: var(--line-strong); }
+.power-row:disabled { border-style: dashed; box-shadow: 4px 4px 0 var(--line-strong); } /* locked, but full contrast: what it is and how to get it (review 2026-10-17) */
 .power-row__mark { font-size: 28px; }
 .power-row__name { font-size: 30px; flex: 1; text-align: left; }
 .power-row__pips { display: flex; gap: 4px; }
 .power-row__pips i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); }
 .power-row__count { font-weight: 900; font-size: 16px; min-width: 52px; text-align: right; }
 .power-row__top { display: flex; align-items: center; gap: 10px; }
+.power-row__need { display: flex; align-items: center; gap: 4px; font-size: 16px; color: var(--ink); text-align: left; }
 .power-row__ready { display: flex; align-items: center; gap: 4px; font-size: 16px; color: var(--green-ink); text-align: left; }
 .card--gold .zika__stars { color: var(--ink); }
 
@@ -679,7 +683,16 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .outfit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px; }
 .outfit { min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); }
 .outfit.is-on { background: var(--green-soft); }
-.outfit:disabled { opacity: 0.5; box-shadow: 4px 4px 0 var(--line-strong); border-color: var(--line-strong); }
+.outfit:disabled { border-style: dashed; box-shadow: 4px 4px 0 var(--line-strong); cursor: default; }
+/* a prize not won yet: its shape in solid ink, and where it comes from (review 2026-10-17: pale padlocks said nothing) */
+/* painted ink by attribute, not a CSS filter: WebKit dropped the filter on all but the first row of tiles */
+.is-silhouette [fill]:not([fill="none"]) { fill: var(--ink) !important; }
+.is-silhouette [stroke]:not([stroke="none"]) { stroke: var(--ink) !important; }
+.is-silhouette [data-part="shadow"], .is-silhouette image { visibility: hidden; }
+.outfit__tag { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px 2px; font-size: 16px; line-height: 1.1; background: var(--gold-soft); border: 2px solid var(--ink); border-radius: 999px; color: var(--ink); }
+.outfit__tag .label { font-size: 16px; }
+.outfit__tag, .power-row__need, .place__lock { white-space: nowrap; }
+.outfit__tag .label__cells, .power-row__need .label__cells, .place__lock .label__cells { flex-wrap: nowrap; }
 .outfit__preview { display: block; width: 64px; height: 64px; }
 .outfit__preview .truffle { width: 64px; height: auto; }
 .outfit__swatch { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid var(--ink); display: grid; place-items: center; font-size: 16px; background: var(--line); }
@@ -691,6 +704,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 
 .inkicon { display: inline-block; vertical-align: middle; flex: none; overflow: visible; }
 .acc-thumb { display: block; overflow: visible; }
+.acc-thumb__box { display: block; }
 .outfit__name .label { font-size: 16px; }
 .outfits__none { display: flex; align-items: center; gap: 14px; }
 .outfits__none .outfit { width: 96px; }
@@ -721,8 +735,9 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .place { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 8px 10px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 16px; box-shadow: 4px 4px 0 var(--ink); font-size: 20px; }
 .place[aria-pressed="true"] { background: var(--green-soft); outline: 3px solid var(--ink); outline-offset: 2px; }
 .place__thumb { display: block; width: 100%; aspect-ratio: 9 / 8; object-fit: cover; object-position: center bottom; border: 2.5px solid var(--ink); border-radius: 10px; background: var(--paper); }
-.place.is-locked .place__thumb { filter: grayscale(1); opacity: 0.45; }
-.place__lock { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; color: var(--ink-soft); }
+.place.is-locked .place__thumb { filter: grayscale(1); }
+.place.is-locked { border-style: dashed; }
+.place__lock { display: inline-flex; align-items: center; gap: 4px; font-size: 16px; color: var(--ink); }
 
 /* ===== 朗读 coach (spec §16) ===== */
 .meter { display: flex; align-items: center; gap: 14px; width: min(520px, 100%); }
@@ -930,6 +945,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   :root { --pet-home: clamp(100px, 14dvh, 150px); }
   .home__title { display: none; } /* no room under the cards; the 开始 bubble names the next step */
   .home__path .path { padding-bottom: 18px; } /* six stops reach the road: sit above the world's taps on it (the race car) */
+  .home--done .home__path .path { padding-bottom: 40px; } /* the done card pushes the stops down: four of them hid the frog (sweep 2026-10-17) */
 }
 
 /* Lessons: the whole world behind every step; 继续 and feedback float as a card with ground around it */
@@ -1088,9 +1104,9 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .room > .room__tabs { grid-column: 2; }
   .room > [role="tabpanel"] { grid-column: 2; height: 100%; }
 }
-.home__cards .done-card .btn { flex: none; } .home__cards .done-card .label__cells { flex-wrap: nowrap; } /* 再玩一会儿 on one line */
+.home__cards .done-card .btn { flex: none; } .home__cards .done-card .label__cells { flex-wrap: nowrap; } /* 再玩一会 on one line */
 .home__cards .done-today { min-width: 0; }
-/* two choices after the day's lesson (再学一课, 再玩一会儿): the title on its own line, the buttons side by side and compact */
+/* two choices after the day's lesson (再学一课, 再玩一会): the title on its own line, the buttons side by side and compact */
 .home__cards .done-card { flex-wrap: wrap; justify-content: center; row-gap: 6px; column-gap: 10px; padding: 8px 12px; }
 .home__cards .done-card .done-today { flex-basis: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 20px; }
 .home__cards .done-card .btn { min-height: 46px; padding: 4px 14px; font-size: 18px; }
@@ -1246,10 +1262,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .path__name .label__cells, .path__bubble .label__cells { flex-wrap: nowrap; }
 }
 @media (max-width: 599px) {
-  /* six stops across a phone: icons only (their names are the buttons' labels), and 开始 stays on one line */
-  .home .path__name { display: none; }
+  /* five stops across a phone, each with its name (review 2026-10-17: icons alone said nothing), and 开始 on one line */
+  .home .path__name { white-space: nowrap; font-size: 16px; padding: 0 4px 2px; }
+  .home .path__name .label__cells { flex-wrap: nowrap; }
   .path__bubble { white-space: nowrap; }
   .path__bubble .label__cells { flex-wrap: nowrap; }
+  .home .path__bubble { top: auto; bottom: calc(100% + 12px); } /* above the lifted current stop, never over it (review 2026-10-17: 开始 hid 字) */
 }
 
 /* ===== Stage (spec 2026-10-04 §3) ===== */
@@ -1320,6 +1338,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .stage .langdu__script { background: none; border: none; box-shadow: none; } /* the card is the paper */
 .stage .langdu__title, .stage .langdu__step, .stage .langdu__ok, .stage .langdu__thanks { background: none; padding: 0; }
 /* 朗读 (spec 2026-10-12 §3): the passage a sentence at a time, the one being read lit; compare's two big buttons; the question */
+.langdu__sentences { position: relative; } /* the sentences' offsetTop is inside the box: it scrolls to the lit one */
+.langdu__passage.has-more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); }
 .langdu__sentences { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: flex-start; gap: 2px 4px; text-align: left; }
 .langdu__sentence { font: inherit; color: inherit; background: none; border: 0; box-shadow: none; border-radius: 12px; padding: 2px 6px; margin: 0; transition: background-color 0.2s; }
 button.langdu__sentence { cursor: pointer; }
@@ -1795,3 +1815,8 @@ button.langdu__sentence { cursor: pointer; }
 .intro__word .label__cell--zh { min-width: 0; }
 .intro__word .label__py { --rest: 1; font-family: var(--font); font-size: min(24px, 0.34em); font-weight: 800; color: var(--ink-soft); min-height: 0; line-height: 1.25; padding: 0 0.1em; animation: later-in 300ms ease-out 2s both; }
 .intro__word .label__cell--mark .label__ch { background: none; border-radius: 0; color: var(--orange-ink); } /* a bound pair's character, as BoundWord marks it */
+
+/* the parent's backup reminder on Home (review 2026-10-17): one quiet line across the cards, not a thing for him to tap */
+.parent-nudge { grid-column: 1 / -1; margin: 0; justify-self: start; display: inline-flex; align-items: flex-end; gap: 8px; padding: 2px 10px 3px; font-size: 14px; font-weight: 700; color: var(--ink-soft); background: color-mix(in srgb, var(--paper) 88%, transparent); border: 1.5px dashed var(--line-strong); border-radius: 10px; pointer-events: none; }
+.parent-nudge .label { font-size: 16px; }
+.setup-tip { margin: 6px 0 0; max-width: 520px; font-size: 14px; line-height: 1.3; }

@@ -300,3 +300,34 @@ describe('English choices never clip a long word', () => {
     expect(css).toMatch(/\.choices--english \.choice \{[^}]*overflow-wrap: anywhere/);
   });
 });
+
+describe('choice colours (review 2026-10-17): only an answered tile is coloured', () => {
+  const rulesFor = (sel: RegExp) => [...inkLayer.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter((m) => m[1].split(',').some((s) => sel.test(s.trim())));
+  it('an unanswered choice or fish tile is paper, never the green of the answer', () => {
+    for (const plain of [/^\.choice$/, /^\.fishtile$/]) {
+      const rules = rulesFor(plain);
+      expect(rules.length).toBeGreaterThan(0);
+      for (const r of rules) expect(r[2]).not.toMatch(/green|orange/);
+    }
+    expect(inkLayer).toMatch(/\n\.choice, \.fishtile \{[^}]*background: var\(--surface\)/);
+  });
+  it('green is the right answer, orange his wrong pick, on every choice-like tile', () => {
+    expect(inkLayer).toMatch(/\.choice\.is-answer, \.choice\.is-right, \.choice\.is-eaten, \.fishtile\.is-right \{[^}]*background: var\(--green-soft\)/);
+    expect(inkLayer).toMatch(/\.choice\.is-wrong, \.choice\.is-oops, \.fishtile\.is-oops \{[^}]*background: var\(--orange-soft\)/);
+  });
+  it('his wrong pick is not faded out (it must read as orange, not as a ghost of the answer)', () => {
+    expect(inkLayer).not.toMatch(/\.fishtile\.is-oops[^{]*\{[^}]*opacity: 0\./);
+    expect(inkLayer).not.toMatch(/\.choice\.is-oops[^{]*\{[^}]*opacity: 0\./);
+  });
+});
+
+describe("Truffle's room: locked tiles are full contrast (review 2026-10-17)", () => {
+  it('a locked outfit, power or place is not faded; its prize is an ink silhouette', () => {
+    expect(css).not.toMatch(/\.outfit:disabled \{[^}]*opacity/);
+    expect(css).not.toMatch(/\.power-row:disabled \{[^}]*opacity/);
+    expect(css).not.toMatch(/\.place\.is-locked \.place__thumb \{[^}]*opacity/);
+    expect(css).toMatch(/\.is-silhouette \[fill\]:not\(\[fill="none"\]\) \{[^}]*fill: var\(--ink\)/);
+    expect(css).not.toMatch(/\.is-silhouette[^{]*\{[^}]*filter:/); // WebKit dropped a filter on most tiles
+    expect(css).toMatch(/\.outfit__tag \{[^}]*font-size: 16px/);
+  });
+});

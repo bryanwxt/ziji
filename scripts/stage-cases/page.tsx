@@ -446,8 +446,7 @@ else if (which === 'intro-raincoat' || which === 'intro-usage' || which === 'int
   // and the longest one (本来), whose 。 must not start a line and whose speak button must not sit on the text
   const all = [...builtinWords(0), ...ladderWords()];
   const w = all.find((x) => x.text === (which === 'intro-raincoat' ? '雨衣' : which === 'intro-usage' ? '保持' : '本来'))!;
-  const tag = which === 'intro-raincoat' ? '补 一上·1' : '课本 二下·17';
-  render(screen(<PinyinFade known={new Set('我们要教室干净他住在北京后来到这里')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={all} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} lessonTag={tag} onDone={() => {}} /></PinyinFade>), app);
+  render(screen(<PinyinFade known={new Set('我们要教室干净他住在北京后来到这里')} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={all} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} /></PinyinFade>), app);
 }
 else if (which === 'intro-bound' || which === 'intro-bound-full' || which === 'intro-bound-long') {
   // a bound character's 认新字 card (parent 2026-10-15): 番 led by 番茄; 丽 with a 成语 (the fullest); 幼 led
@@ -461,7 +460,7 @@ else if (which === 'intro-jia' || which === 'intro-ding') {
   // 一下 L11's labels (parent 2026-10-16: 甲 showed "fingernail", 丁 "family name Ding"): the 1st and the 4th, with 甲乙丙丁
   const words = builtinWords(0);
   const w = words.find((x) => x.text === (which === 'intro-jia' ? '甲' : '丁'))!;
-  render(screen(<PinyinFade known={new Set()} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} lessonTag="课本 一下·11" onDone={() => {}} /></PinyinFade>), app);
+  render(screen(<PinyinFade known={new Set()} on><FlashcardStep item={{ wordId: w.id, isNew: true, retry: false }} ask="listen" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} /></PinyinFade>), app);
 }
 else if (which === 'hear-bound' || which === 'hear-bound-read' || which === 'hear-bound-long') {
   // an English question on a bound character (parent 2026-10-15): it asks about 番茄 (or 幼儿园), heard or read
