@@ -1,4 +1,4 @@
-// 写一写 (spec 2026-10-05 §5; spec 2026-10-11 §4): 7 characters at the usual 20 minutes (writeCharTarget), at or below his level, traced only once, never back to back.
+// 写一写 (spec 2026-10-05 §5; spec 2026-10-11 §4): 4 characters at the usual 15 minutes (writeCharTarget), at or below his level, traced only once, never back to back.
 import { hanChars } from '../content';
 import { State } from 'ts-fsrs';
 import { writeAt } from '../content/curriculum';
@@ -7,7 +7,8 @@ import { isKnown } from '../srs/scheduler';
 import type { CardRecord, Word } from '../types';
 
 export const MAX_WRITE_CHARS = 10;
-/** Characters a lesson (production practice spec §3, §6): 4 under 20 minutes, 7 at 20 (the usual), 8 at 25, 9 at 30, 10 from 40. */
+/** Characters a lesson (production practice spec §3, §6): 4 under 20 minutes (15 is the usual: ~4 minutes left after 认新字,
+ *  练一练's 5 and 朗读, at about a minute a character), 7 at 20, 8 at 25, 9 at 30, 10 from 40. */
 export const writeCharTarget = (minutes: number): number => Math.min(MAX_WRITE_CHARS, minutes < 20 ? 4 : minutes < 25 ? 7 : minutes < 30 ? 8 : minutes < 40 ? 9 : 10);
 
 /**

@@ -97,6 +97,15 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     });
   });
 
+  it('the meaning question shows on Listen, before he reads: a purpose cue (Therrien 2004); not on an extra round', () => {
+    const view = render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.langdu__purpose')?.textContent).toContain('我爱谁？');
+    expect(screen.getByText('读的时候想一想：')).toBeTruthy();
+    view.unmount();
+    render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup={false} extra onDone={vi.fn()} />);
+    expect(document.querySelector('.langdu__purpose')).toBeNull();
+  });
+
   it('after day 1: no warm-up, straight to listening', () => {
     render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
     expect(screen.queryByText('老师好！')).toBeNull();
@@ -104,8 +113,8 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     expect(speak).toHaveBeenLastCalledWith('我爱爸爸。');
   });
 
-  it('a worse re-read keeps the first take', async () => {
-    takes = [{ level: 0.1, durationSec: 20 }, { level: 0.05, durationSec: 21 }];
+  it('a re-read cut short keeps the first take (learning rules 2026-10-17: never the quicker one)', async () => {
+    takes = [{ level: 0.1, durationSec: 20 }, { level: 0.3, durationSec: 1 }];
     const onDone = vi.fn();
     render(<LangduStep passage={{ ...passage, question: undefined }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={onDone} />);
     await toCompare();

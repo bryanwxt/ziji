@@ -164,6 +164,7 @@ export interface SessionPlan {
   newWordMeaningIds?: string[]; // today's new words that have a cue: their meaning question comes in the same lesson (spec §20 part 2)
   sayIds?: string[]; // words to say aloud in 练一练, best first (spec 2026-10-11 §4); plans saved before it have none
   sentenceIds?: string[]; // words for 说一句 in 练一练, best first (production practice spec §4); plans saved before it have none
+  weakIds?: string[]; // an extra lesson with nothing due or near due: his weakest words, practice only (learning rules 2026-10-17)
   writeWordIds?: string[]; // the words 写一写 covers today (production practice spec §3): 练一练 leaves out their 组词 taps; plans saved before it have none
 }
 
@@ -227,6 +228,7 @@ export interface Recording {
   misread?: string[]; // characters the parent confirmed he misread
   extraDayGiven?: boolean; // its marks have acted on the passage (≥ 2 marks: due 3 days after the review, spec 2026-10-15 §4), once per take; named for the old extra day
   review?: 'ok' | 'no'; // a Say or 说一句 take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
+  misreadsBefore?: number; // a passage re-read whose last take the parent had reviewed: that take's misreads; fewer on this one earn the bonus star at review (learning rules 2026-10-17)
   meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
   cardBefore?: CardSnapshot; // a Say or 说一句 take: its card as it was when he recorded (SRS tuning spec §4), for the verdict's log
 }
@@ -356,7 +358,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   pinHash: null,
-  sessionMinutes: 20, // one ~20-minute lesson (spec 2026-10-12 production practice §6)
+  sessionMinutes: 15, // one ~15-minute lesson (learning rules 2026-10-17; was 20, production practice spec §6)
   newPerDay: 8, // the ceiling the app paces under (spec 2026-10-05 §2.2)
   activities: { newwords: true, practice: true, writing: true, speaking: true },
   speechRate: 0.8,
@@ -369,7 +371,7 @@ export const DEFAULT_SETTINGS: Settings = {
   oral: { name: '', age: '', school: '', className: '', customIntro: '' },
   story: false,
   langdu: true,
-  lessonVersion: 8,
+  lessonVersion: 9,
 };
 
 export type PetColor = 'green' | 'blue' | 'purple' | 'red' | 'gold';

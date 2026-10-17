@@ -67,6 +67,32 @@ describe('passage takes in the queue (spec 2026-10-12 §6)', () => {
   });
 });
 
+describe('the bonus star at review: fewer misreads than the last reviewed take (learning rules 2026-10-17)', () => {
+  const take = (misreadsBefore?: number): Recording => ({ ...passage('a', 'p01', day(2)), ...(misreadsBefore !== undefined ? { misreadsBefore } : {}) });
+  const review = async (r: Recording, marks: string[]) => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('爱'), makeWord('我')]);
+    await saveKid(db, { ...DEFAULT_KID, bonusStars: 3 });
+    await addRecording(db, r);
+    const res = await finishPassageReview(db, r, marks, new Date(2026, 9, 3));
+    await finishPassageReview(db, r, marks, new Date(2026, 9, 3)); // a second Done gives nothing more
+    return { res, stars: (await getKid(db))!.bonusStars };
+  };
+  it('fewer marks than last time: a star, once', async () => {
+    expect(await review(take(2), ['爱'])).toMatchObject({ res: { bonus: true }, stars: 4 });
+  });
+  it('as many or more: none', async () => {
+    expect((await review(take(1), ['爱'])).stars).toBe(3);
+    expect((await review(take(1), ['爱', '我'])).stars).toBe(3);
+  });
+  it('clean both times: a star', async () => {
+    expect((await review(take(0), [])).stars).toBe(4);
+  });
+  it('no baseline (a first read, a cut-short read, or one already starred at the lesson): none', async () => {
+    expect((await review(take(), [])).stars).toBe(3);
+  });
+});
+
 describe('多读一遍 takes (final review I6): listed, never the queue take, tidied after 14 days', () => {
   const extra = (id: string, passageId: string, at: number) => rec(id, { kind: 'passage', passageId, extra: true }, at);
   it("an extra round after the lesson leaves the lesson's take (with his answer) waiting", () => {

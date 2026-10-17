@@ -125,3 +125,33 @@ The step is 写一写 (`src/session/writing.ts`, `src/activities/writing/*`).
 ## 9. Out of scope
 
 Free writing of sentences. Speech-recognition scoring. The parent loop (resumes next). Changes to 认新字 or 朗读.
+
+## 10. Amendment 2026-10-17: the 15-minute lesson again, and the second lesson spaced out
+
+Parent decision, 2026-10-17, from the learning-rules review (Cepeda et al. 2006 on spacing).
+
+- **Default lesson length:** `DEFAULT_SETTINGS.sessionMinutes` = **15**. Settings migration `lessonVersion` 9 moves the v8 default back to 15:
+  - a v8 install on exactly 20 minutes;
+  - an older install that v8 would have moved from 15 to 20, which now stays at 15.
+
+  A 20 chosen before v8 was the parent's own, and it stays. So does any other length.
+- **At 15 minutes:**
+
+  | Step | Time / amount |
+  |---|---|
+  | 认新字 | ~3 min |
+  | 练一练 | box `15 × 1/3` = 5 min. 说一句 comes by item 9 and item 18 (`SENTENCE_BY` 12 → 9, scaled to the shorter box) |
+  | 写一写 | 4 characters (`writeCharTarget`, unchanged: about 4 minutes are left at about a minute a character) |
+  | 朗读 | ~3 min |
+
+- **Extra lessons are review only:** no new words and no new meaning starts.
+  - **What it reviews:** cards due today, plus cards due by the end of tomorrow that he hasn't answered today.
+  - **When nothing is due:** a practice-only round of his 8 weakest words, ranked by lowest reading stability.
+  - **Production steps:** Say, 说一句 and 写一写 run as usual for words he has met.
+- **The second lesson waits:** Home offers 再学一课 only once 2 hours have passed since the last lesson ended. "The last lesson" means the later of the day's lesson's start plus its active time, and `kid.starredUpTo`.
+  - **Until then:** the done card and Truffle say when to come back:
+    - 「过一会再来！」 if it opens before noon;
+    - 「下午再来！」 if it opens before 18:00;
+    - 「晚上再来！」 after that;
+    - 「明天见！」 if it opens after midnight.
+  - **The parent area:** its Today tab can start a review lesson at once, after the day's lesson.

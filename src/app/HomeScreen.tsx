@@ -39,6 +39,7 @@ import { storyStep } from '../story/progress';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { meterShown, normalizeMeter } from '../fun/meter';
 import { RiverTrack } from '../ui/RiverTrack';
+import { extraOpensAt, extraWaitLine } from '../session/extraGap';
 
 interface HomeData {
   know: Knowledge;
@@ -162,6 +163,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const doneToday = !!todaySession?.completed;
   // the path's chest is done only when nothing is owed: a second chest he left unopened is still there to claim (rewards spec §3)
   const chestOpened = k.lastChestDate === today && normalizeMeter(k.meter).owed === 0;
+  // 再学一课 waits 2 hours after the last lesson (learning rules 2026-10-17): until then Truffle says when to come back
+  const waitLine = todaySession && doneToday ? extraWaitLine(extraOpensAt(todaySession, k.starredUpTo), now()) : null;
   const shown = meterShown(k, today); // the small boat on the reward card: a new day's meter has the bank in it
   const hasCards = data.know.cards.some((c) => c.kind === 'recognise');
   const days = streak(data.sessions, today);
@@ -257,7 +260,11 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
             <div class="card done-card">
               <p class="done-today"><Label zh="今天完成了！" /> <InkIcon name="party" size={30} /></p>
               {/* one ~15-minute lesson is the day's; another is offered softly — Truffle asks, the button is the quiet one — his choice (spec 2026-10-11 §4): never the streak or the chest */}
-              <button type="button" class="btn btn--secondary" onClick={() => { primeSpeech(); go({ name: 'session', free: false, extra: true }); }}><Label zh="再学一课" /></button>
+              {waitLine ? (
+                <p class="done-card__later"><Label zh={waitLine} /></p>
+              ) : (
+                <button type="button" class="btn btn--secondary" onClick={() => { primeSpeech(); go({ name: 'session', free: false, extra: true }); }}><Label zh="再学一课" /></button>
+              )}
               {hasCards && (
                 <button type="button" class="btn btn--secondary" onClick={() => play(true)}><Label zh="再玩一会儿" /></button>
               )}
@@ -302,7 +309,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       <div class="home__pet">
         {/* a tap here plays with him (spec 2026-10-04 §4.5); his room is the 松露 tab */}
         <div class="home__pet-touch">
-          <Pet kid={k} mood={sleepy ? 'sleepy' : doneToday ? 'pleased' : 'sulk'} size={150} bubble={said ?? (sleepy ? null : doneToday && chestOpened ? OFFER : worldLine(world, today))} react={propPlay.react} lookAt={propPlay.lookAt} />
+          <Pet kid={k} mood={sleepy ? 'sleepy' : doneToday ? 'pleased' : 'sulk'} size={150} bubble={said ?? (sleepy ? null : doneToday && chestOpened ? waitLine ?? OFFER : worldLine(world, today))} react={propPlay.react} lookAt={propPlay.lookAt} />
         </div>
       </div>
       {arrival && (

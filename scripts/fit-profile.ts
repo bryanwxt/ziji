@@ -23,6 +23,8 @@ export interface FitProfileOptions {
   speakingLast?: 'langdu' | 'story' | null;
   langdu?: boolean; // 朗读 is parked (parent, 2026-10-05): its own flows switch it on
   doneToday?: boolean;
+  doneMinutesAgo?: number; // when today's lesson ended (default 180): 再学一课 opens 2 hours after it (learning rules 2026-10-17)
+  extraMastered?: boolean; // a word newly writable since the day's lesson: the next extra lesson moves the boat (rewards spec §9)
   world?: WorldId;
   pin?: boolean; // false: stop at the PIN set-up
   pinCode?: string; // a test PIN the sweep can type to reach the parent area (else the gate never opens)
@@ -81,7 +83,12 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
   const today = localDateKey(o.now);
   const yesterday = localDateKey(new Date(t - 86_400_000));
   await saveSession(db, { ...createSessionRecord(emptyPlan, yesterday, t - 86_400_000), completed: true, completedSteps: ['flashcards', 'writing'] });
-  if (o.doneToday) await saveSession(db, { ...createSessionRecord({ ...emptyPlan, steps: ['flashcards', 'choose', 'components', 'writing', 'speaking'] }, today, t - 3_600_000), completed: true, completedSteps: ['flashcards', 'choose', 'components', 'writing', 'speaking'] });
+  const doneAt = t - (o.doneMinutesAgo ?? 180) * 60_000;
+  if (o.doneToday) await saveSession(db, { ...createSessionRecord({ ...emptyPlan, steps: ['flashcards', 'choose', 'components', 'writing', 'speaking'] }, today, doneAt), completed: true, completedSteps: ['flashcards', 'choose', 'components', 'writing', 'speaking'] });
+  if (o.extraMastered) {
+    const w = words[5]!; // placed, so he reads it; its write card passed a minute ago, after the day's lesson's stars
+    await putCards(db, [{ id: `${w.id}:write`, wordId: w.id, kind: 'write', fsrs: seededKnownCard(o.now), passed: t - 60_000 }]);
+  }
   if (o.kid !== false) {
     const world = o.world ?? 'bamboo';
     await saveKid(db, {
@@ -90,6 +97,7 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
       world,
       speakingLast: o.speakingLast ?? null,
       lastChestDate: o.doneToday ? today : null,
+      ...(o.doneToday ? { starredUpTo: doneAt } : {}),
       bonusStars: 3,
       ...(o.meter ? { meter: { ...EMPTY_METER, day: today, ...o.meter } } : {}),
       ...(o.bank ? { bank: o.bank } : {}),

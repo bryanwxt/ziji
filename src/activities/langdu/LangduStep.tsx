@@ -143,7 +143,7 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
     if (finished.current) return; // a double tap on 完成 saves the reading once
     finished.current = true;
     model.stop();
-    onDone({ read: betterTake(takes), meaning });
+    onDone({ read: betterTake(takes, passage.text), meaning });
   };
   const swapped = useRef(false);
   const swap = () => {
@@ -206,6 +206,8 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
             {passage.image && <Picture src={passage.image} />}
             <h2 class="langdu__title"><Label zh={passage.title} /></h2>
           </div>
+          {/* the question he answers after reading, shown first: a purpose to read for (Therrien 2004; learning rules 2026-10-17) */}
+          {question && <p class="langdu__purpose"><Label zh="读的时候想一想：" /><Label zh={question.q} fade /></p>}
           {passage.words?.length ? <NewWords words={passage.words} /> : null}
           <KeepPinyin chars={nameChars}>
             <Sentences sentences={sentences} current={model.current} onTap={(i) => replay(i, model.heardAll)} />

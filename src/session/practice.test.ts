@@ -54,6 +54,13 @@ describe('what a word can be asked', () => {
     const items = planPractice(rec, new Map(), new Map([...byId, [paused.id, paused]]), words, false, mulberry32(1));
     expect(new Set(items.map((x) => x.wordId))).toEqual(new Set([id('山')]));
   });
+  it('an extra lesson’s weakest-words round is never graded, even on a use rung (learning rules 2026-10-17)', () => {
+    const weak = ['很', '山', '火'].map(id);
+    const rec = createSessionRecord(plan({ weakIds: weak }), '2026-10-06', 0);
+    const items = planPractice(rec, new Map(weak.map((w) => [w, 3])), byId, words, true, mulberry32(1));
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((x) => x.grades === null)).toBe(true);
+  });
   it('free play: words he knows, never graded', () => {
     const cards = ['河', '他', '山', '火', '很'].map((t) => makeCard(id(t), 'recognise', new Date(2026, 9, 1), true));
     const items = planFreePlay(cards, words, new Map(), false, mulberry32(2));

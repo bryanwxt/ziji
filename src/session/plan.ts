@@ -1,4 +1,4 @@
-import { endOfLocalDay } from '../lib/date';
+import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
 import { shuffle, type Rng } from '../lib/random';
 import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
@@ -32,9 +32,29 @@ export interface PlanInput {
   now: Date;
   practised?: ReadonlyMap<string, number>; // words answered in lessons → when last; placement guesses aren't here
   newPerDay?: number; // today's pace (spec 2026-10-05 §2.2); without one, the pace's start under the ceiling
+  extra?: boolean; // an extra lesson: review only (learning rules 2026-10-17), see extraCards
 }
 
-export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: ~6.7 of the usual 20 minutes, 朗读 takes ~3 (production practice spec §6)
+/** Words in an extra lesson's round of his weakest words, when nothing is due or near due (learning rules 2026-10-17). */
+export const WEAK_ROUND_WORDS = 8;
+
+/**
+ * An extra lesson reviews what is due by the end of tomorrow too (learning rules 2026-10-17; Cepeda et al. 2006: a second lesson of
+ * new words is massed practice): a card due tomorrow that he hasn't answered today counts as due at the end of today. A card he
+ * answered today stays where its review put it — the same card again today is massing, not spacing.
+ */
+export function extraCards(cards: CardRecord[], now: Date): CardRecord[] {
+  const endToday = endOfLocalDay(now);
+  const endTomorrow = endOfLocalDay(addDays(startOfLocalDay(now), 1)).getTime();
+  const dayStart = startOfLocalDay(now).getTime();
+  return cards.map((c) => {
+    const due = c.fsrs.due.getTime();
+    const seenToday = !!c.fsrs.last_review && new Date(c.fsrs.last_review).getTime() >= dayStart;
+    return due > endToday.getTime() && due <= endTomorrow && !seenToday ? { ...c, fsrs: { ...c.fsrs, due: endToday } } : c;
+  });
+}
+
+export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: 5 of the usual 15 minutes, 朗读 takes ~3 (learning rules 2026-10-17)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
 /** Hear cards reviewed in one lesson at most (spec 2026-10-06 §3.2). */
@@ -46,7 +66,8 @@ export const SAY_PER_LESSON = 6;
 /** 说一句 cards in one lesson at most (production practice spec §4). */
 export const SENTENCE_PER_LESSON = 2;
 
-export function buildSessionPlan({ cards, words, settings, now, practised = new Map(), newPerDay }: PlanInput): SessionPlan {
+export function buildSessionPlan({ cards: stored, words, settings, now, practised = new Map(), newPerDay, extra = false }: PlanInput): SessionPlan {
+  const cards = extra ? extraCards(stored, now) : stored;
   const active = words.filter((w) => !w.paused);
   const byId = new Map(active.map((w) => [w.id, w]));
   const activeIds = new Set(active.map((w) => w.id));
@@ -71,7 +92,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
   const dueRecognise = dueAll.filter((c) => !placementCheck(c) || checks.has(c));
   // a real backlog pauses new words; first rechecks of placement guesses (never practised, or marked placed) don't
   const backlog = dueAll.filter((c) => !placementCheck(c) && practised.has(c.wordId)).length;
-  const perDay = newPerDay ?? Math.min(settings.newPerDay, PACE_START);
+  const perDay = extra ? 0 : newPerDay ?? Math.min(settings.newPerDay, PACE_START); // an extra lesson takes no new words
   const newLimit = backlog > BACKLOG_PAUSE || !settings.activities.newwords ? 0 : perDay;
 
   // Meaning practice: due meaning cards, and begun words that have a 组词 cue but no meaning card yet.
@@ -120,7 +141,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
       .map((w) => w.id),
   ].filter(canSentence).slice(0, SENTENCE_PER_LESSON);
 
-  return {
+  const plan: SessionPlan = {
     steps,
     reviewWordIds: dueRecognise.slice(0, REVIEW_CAP).map((c) => c.wordId),
     newWordIds: newWords.map((w) => w.id),
@@ -136,7 +157,7 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     hearReviewIds: dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
     understandReviewIds: dueOf(understand).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'understand'); }).slice(0, UNDERSTAND_REVIEW_CAP).map((c) => c.wordId),
     meaningReviewIds: dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
-    newMeaningIds: active
+    newMeaningIds: extra ? [] : active // an extra lesson starts nothing new, meaning practice included
       .filter((w) => readPassed.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)
       .sort(meaningOrder)
       .slice(0, NEW_MEANING_PER_DAY)
@@ -144,4 +165,14 @@ export function buildSessionPlan({ cards, words, settings, now, practised = new 
     sayIds,
     sentenceIds,
   };
+  if (!extra) return plan;
+  // nothing due or near due: a short practice-only round of his weakest words (lowest reading stability), never graded
+  const nothing = !plan.reviewWordIds.length && !plan.hearReviewIds?.length && !plan.understandReviewIds?.length && !plan.meaningReviewIds?.length;
+  if (!nothing) return plan;
+  const weakIds = recognise
+    .filter((c) => byId.has(c.wordId) && !c.placed && c.fsrs.reps > 0)
+    .sort((a, b) => a.fsrs.stability - b.fsrs.stability || a.wordId.localeCompare(b.wordId))
+    .slice(0, WEAK_ROUND_WORDS)
+    .map((c) => c.wordId);
+  return { ...plan, weakIds };
 }

@@ -16,7 +16,8 @@ vi.mock('../ui/motion', () => ({ burst: vi.fn(), flyAlong: vi.fn(async () => {})
 
 const DAY = '2026-10-02';
 const plan: SessionPlan = { steps: ['newwords'], reviewWordIds: [], newWordIds: [], flashTimeBoxMs: 0, writeCandidates: [], writeCount: 0 };
-const lesson = (startedAt: number, extra = false): SessionRecord => ({ ...createSessionRecord(plan, DAY, startedAt), completed: true, completedSteps: ['newwords'], ...(extra ? { extra: true } : {}) });
+/** An extra lesson newly masters one word unless `mastered` says otherwise (it moves the boat only then, amended 2026-10-17). */
+const lesson = (startedAt: number, extra = false, mastered = 1): SessionRecord => ({ ...createSessionRecord(plan, DAY, startedAt), completed: true, completedSteps: ['newwords'], ...(extra ? { extra: true, produced: { write: mastered, say: 0 } } : {}) });
 const hold = () => new Promise((r) => setTimeout(r, 1300));
 const river = () => document.querySelector('svg.river');
 
@@ -46,12 +47,21 @@ describe('the river meter on the Celebration (rewards spec §3)', () => {
     expect(kid.meter).toMatchObject({ owed: 0, chestsToday: 1, halves: 0, day: DAY });
     expect(kid.lastChestDate).toBe(DAY);
   });
-  it('after one extra lesson: the boat half way and 再学一课就能开宝箱！, no chest', async () => {
+  it('after one extra lesson that mastered a word: the boat half way and 再学会几个字，就能开宝箱！, no chest', async () => {
     await show({ lastChestDate: DAY, meter: { ...EMPTY_METER, chestsToday: 1, day: DAY, lesson: 10 } }, lesson(20, true));
     next();
     await waitFor(() => expect(river()?.getAttribute('data-halves')).toBe('1'));
-    expect(screen.getByText('再学一课就能开宝箱！')).toBeTruthy();
+    expect(screen.getByLabelText('再学会几个字，就能开宝箱！')).toBeTruthy();
     expect(screen.queryByRole('button', { name: '按住打开宝箱' })).toBeNull();
+  });
+  it('an extra lesson that mastered nothing new: the boat stays, praise and a kind line, never a telling-off (amended 2026-10-17)', async () => {
+    const { app } = await show({ lastChestDate: DAY, meter: { ...EMPTY_METER, halves: 1, chestsToday: 1, day: DAY, lesson: 10 } }, lesson(20, true, 0));
+    next();
+    expect(await screen.findByText('你学得很认真！')).toBeTruthy();
+    expect(screen.getByLabelText('多学会几个字，小船就走！')).toBeTruthy();
+    expect(river()?.getAttribute('data-halves')).toBe('1');
+    expect(screen.queryByRole('button', { name: '按住打开宝箱' })).toBeNull();
+    expect((await getKid(app.db))!.meter).toMatchObject({ halves: 1, lesson: 20 }); // counted: a reload never counts it again
   });
   it('after two extra lessons: the second chest, then 明天再开宝箱！', async () => {
     const { app } = await show({ lastChestDate: DAY, meter: { ...EMPTY_METER, halves: 1, chestsToday: 1, day: DAY, lesson: 20 } }, lesson(30, true));

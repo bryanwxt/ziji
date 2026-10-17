@@ -53,6 +53,12 @@ export function practiceWords(rec: SessionRecord, rungs: ReadonlyMap<string, num
     const from = listenOnly ? 3 : startRung(rungs.get(wordId) ?? 0);
     revision.push({ wordId, isNew: false, from, appearances: from === 1 ? 2 : 1, gradesRecognise: reading.has(wordId), gradesMeaning: meaning.has(wordId), gradesHear: hearing.has(wordId), gradesUnderstand: understanding.has(wordId), due: reading.has(wordId) || meaningDue.has(wordId) || hearing.has(wordId) || understanding.has(wordId) });
   }
+  // an extra lesson with nothing due: his weakest words, twice each, graded by nothing (learning rules 2026-10-17)
+  for (const wordId of rec.plan.weakIds ?? []) {
+    if (seen.has(wordId)) continue;
+    seen.add(wordId);
+    revision.push({ wordId, isNew: false, from: startRung(rungs.get(wordId) ?? 0), appearances: 2, gradesRecognise: false, gradesMeaning: false });
+  }
   return [...fresh, ...revision];
 }
 
@@ -129,12 +135,13 @@ export function withSay(items: PracticeItem[], sayIds: string[]): PracticeItem[]
   return out;
 }
 
-/** 说一句 comes by this many items in (and the second by twice it): a round is cut by its time box, ~6.7 minutes at 20. */
-export const SENTENCE_BY = 12;
+/** 说一句 comes by this many items in (and the second by twice it): a round is cut by its time box, 5 minutes at the usual 15
+ *  (12 at 20 minutes' 6.7, scaled to 15: learning rules 2026-10-17). */
+export const SENTENCE_BY = 9;
 
 /**
  * Puts the 说一句 cards into the round (production practice spec §4): at most 2, and one for every three items at most, spread
- * like the Say cards but never later than the 12th and 24th item, so the time box reaches them (measured: a P2 round of ~200
+ * like the Say cards but never later than the 9th and 18th item, so the time box reaches them (measured: a P2 round of ~200
  * items lost its second one at half-way); never beside the same word or another card he records. Like a Say card it grades
  * nothing in the lesson: the parent confirms the take.
  */
@@ -193,7 +200,10 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
   });
   const say = canSay ? (rec.plan.sayIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id); }) : [];
   const sentence = canSay ? (rec.plan.sentenceIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id) && canAskRung(w, 'sentence'); }) : [];
-  return withSentence(withSay(withFish(round, fish), say), sentence);
+  // the weakest-words round is practice only: a use question on it never rates his meaning card (learning rules 2026-10-17)
+  const weak = new Set(rec.plan.weakIds ?? []);
+  const graded = weak.size ? round.map((x) => (weak.has(x.wordId) ? { ...x, grades: null } : x)) : round;
+  return withSentence(withSay(withFish(graded, fish), say), sentence);
 }
 
 /** 再玩一会儿: a round of words he has begun, from their own rungs, twice each; practice only. */

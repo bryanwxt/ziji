@@ -94,12 +94,22 @@ describe('daily 朗读 step', () => {
     expect((await getKid(app.db))!.reading.history['pp:1']?.reads).toBe(1);
   });
 
-  it('a louder read than last time earns a bonus star; the first read of a passage does not', async () => {
+  it('a complete re-read, its last take not yet reviewed, earns a bonus star at once (learning rules 2026-10-17)', async () => {
     const app = await setup();
-    await addRecording(app.db, { id: 'old', createdAt: 1, prompt: { kind: 'passage', passageId: 'pp:1' }, blob: new Blob(['o']), mime: 'audio/mp4', durationSec: 5, level: 0.05 });
+    await addRecording(app.db, { id: 'old', createdAt: 1, prompt: { kind: 'passage', passageId: 'pp:1' }, blob: new Blob(['o']), mime: 'audio/mp4', durationSec: 9, level: 0.5 }); // slower and louder before: neither matters
     renderWithApp(<SessionScreen free={false} />, app);
     await readThrough();
     await waitFor(async () => expect((await getKid(app.db))!.bonusStars).toBe(1));
+  });
+  it('the last take was reviewed: no star yet; the new take keeps its misreads to compare at review', async () => {
+    const app = await setup();
+    await addRecording(app.db, { id: 'old', createdAt: 1, prompt: { kind: 'passage', passageId: 'pp:1' }, blob: new Blob(['o']), mime: 'audio/mp4', durationSec: 5, review: 'ok', misread: ['爱', '妈'] });
+    renderWithApp(<SessionScreen free={false} />, app);
+    await readThrough();
+    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    const saved = (await listRecordings(app.db)).find((r) => r.id !== 'old' && r.prompt.kind === 'passage')!;
+    expect(saved.misreadsBefore).toBe(2);
+    expect((await getKid(app.db))!.bonusStars).toBe(0);
   });
 });
 
@@ -280,7 +290,7 @@ describe('finishing 朗读 always ends the lesson (final review I4, I6)', () => 
     const app = await setup();
     const take = (id: string, createdAt: number, level: number, extra = false) => ({ id, createdAt, prompt: { kind: 'passage' as const, passageId: 'pp:1', ...(extra ? { extra: true as const } : {}) }, blob: new Blob(['o']), mime: 'audio/mp4', durationSec: 5, level });
     await addRecording(app.db, take('lesson', 1, 0.05));
-    await addRecording(app.db, take('extra', 2, 0.5, true)); // a loud extra round: not the baseline
+    await addRecording(app.db, { ...take('extra', 2, 0.5, true), review: 'ok', misread: ['爱'] }); // a reviewed extra round: not the baseline
     renderWithApp(<SessionScreen free={false} />, app);
     await readThrough();
     expect(await screen.findByText('太棒了！')).toBeTruthy();

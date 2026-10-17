@@ -45,8 +45,11 @@ const GOALS_WAIT_MS = 1500;
 /** A second tap on 继续 this soon after a phase change is the same double tap: it never skips the phase just shown. */
 const TAP_GAP_MS = 300;
 
-/** The boat in this Celebration (rewards spec §3): where it sails from, where the meter ends, and whether today's 2 chests are earned. */
-interface River { from: number; left: number; capped: boolean }
+/** The boat in this Celebration (rewards spec §3): where it sails from, where the meter ends, whether today's 2 chests are
+ *  earned, and whether this lesson moved it (an extra lesson moves it only for words newly mastered, amended 2026-10-17). */
+interface River { from: number; left: number; capped: boolean; counted?: boolean; added?: number }
+/** The heading when an extra lesson mastered nothing new: praise for the work, never a telling-off (learning rules 2026-10-17). */
+export const RESTING_TITLE = '你学得很认真！';
 
 interface Sequence {
   order: Phase[]; // a phase may come twice: two chests in one lesson
@@ -98,7 +101,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
       const { kid: kidNow, fill } = await settleMeter(db, rec, localDateKey(now())).catch(async () => ({ kid: (await getKid(db).catch(() => null)) ?? DEFAULT_KID, fill: null }));
       const m = kidNow.meter;
       const river: River = fill
-        ? { from: fill.from, left: fill.left, capped: fill.capped }
+        ? { from: fill.from, left: fill.left, capped: fill.capped, counted: fill.counted, added: fill.added }
         : { from: m.halves, left: m.halves, capped: m.day === rec.date && m.chestsToday >= CHESTS_PER_DAY };
       const order: Phase[] = ['stars'];
       // every chest earned and not yet opened (one an earlier lesson left too), else how far the boat got
@@ -233,7 +236,8 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const isLast = at === seq.order.length - 1;
   const chestNo = seq.order.slice(0, at).filter((p) => p === 'chest').length;
   const lastChest = seq.order.lastIndexOf('chest') === at;
-  const boatLine = meterLine(seq.river); // 再学一课就能开宝箱！ or 明天再开宝箱！
+  const boatLine = meterLine(seq.river); // 再学会几个字，就能开宝箱！, 多学会几个字，小船就走！ or 明天再开宝箱！
+  const resting = !seq.river.capped && seq.river.counted === true && seq.river.added === 0; // the lesson moved nothing
   const afterOpen = chest && lastChest ? boatLine : null; // under an opened last chest: where the meter now is
   const opened = chest ? (lastChest ? seq.river.left : 0) : null; // where the boat waits once the chest is open
   const def = seq.power ? powerDef(seq.power.id)! : null;
@@ -269,9 +273,10 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
         )}
         {phase === 'river' && (
           <>
-            <h1><Label zh={seq.river.capped ? '今天的宝箱都开了！' : seq.river.left > 0 ? '小船走到一半了！' : '小船出发了！'} /></h1>
+            <h1><Label zh={seq.river.capped ? '今天的宝箱都开了！' : resting ? RESTING_TITLE : seq.river.left > 0 ? '小船走到一半了！' : '小船出发了！'} /></h1>
             <RiverTrack from={seq.river.from} to={seq.river.left} />
-            {boatLine && <p class="celebrate__line"><Label zh={boatLine} /></p>}
+            {/* each clause kept whole: a phone breaks after the comma, never before the last character (多学会几个字，/ 小船就走！) */}
+            {boatLine && <p class="celebrate__line celebrate__line--clauses" aria-label={boatLine}>{boatLine.split(/(?<=，)/).map((part) => <span key={part} class="celebrate__clause"><Label zh={part} /></span>)}</p>}
           </>
         )}
         {phase === 'goals' && (

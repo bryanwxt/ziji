@@ -5,6 +5,7 @@ import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type Settings } from '../types';
 import { buildSessionPlan } from './plan';
 import { PACE_START } from './pace';
+import { writeCharTarget } from './writing';
 /** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
 const DISTINCT = Array.from('一二三四五六七八九十人大小山水火木日月田上下中天地子女手口目耳心土石云雨花草米竹虫鱼羊牛马鸟');
 
@@ -192,8 +193,10 @@ describe('the lesson (spec 2026-10-05 §2)', () => {
     expect(plan.writeItems!.find((i) => i.wordId === 'b:澡')).toMatchObject({ pass: 'trace', readOnly: true });
     expect(buildSessionPlan({ cards, words: ws, settings: settings({ activities: { ...DEFAULT_SETTINGS.activities, writing: false } }), now }).writeWordIds).toEqual([]);
   });
-  it('练一练 has a third of the default 20 minutes (production practice spec §6)', () => {
-    expect(buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) }).practiceTimeBoxMs).toBe(Math.round((20 * 60_000) / 3));
+  it('练一练 has a third of the default 15 minutes, and 写一写 4 characters (learning rules 2026-10-17)', () => {
+    const plan = buildSessionPlan({ cards: [], words: builtinWords(0), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 6) });
+    expect(plan.practiceTimeBoxMs).toBe(5 * 60_000);
+    expect(writeCharTarget(DEFAULT_SETTINGS.sessionMinutes)).toBe(4);
   });
   it('with 新字 switched off there are no new words', () => {
     const settings = { ...DEFAULT_SETTINGS, activities: { ...DEFAULT_SETTINGS.activities, newwords: false } };
