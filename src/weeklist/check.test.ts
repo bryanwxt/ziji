@@ -8,7 +8,7 @@ import { freshDb, makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_KID, type WeekItem, type WeekList, type Word } from '../types';
 import { checkQueue, finishCheck, recordCheckAnswer } from './check';
 import { reteachIds, listPracticeItems } from './plan';
-import { countdownLine, notSolid, readinessLine } from './readiness';
+import { CLASS_BEHIND_AT, checkTable, countdownLine, notSolid, readinessLine } from './readiness';
 
 const item = (wordId: string, text: string, over: Partial<WeekItem> = {}): WeekItem => ({ wordId, text, from: 'grid', addedStatus: 'new', ...over });
 const sheet = (over: Partial<WeekList> = {}): WeekList => ({
@@ -198,5 +198,32 @@ describe('readinessLine (spec §8.3)', () => {
     expect(r.weak).toHaveLength(5);
     expect(readinessLine(l, words, { classLeft: 0, classKnown: true, catchupSlower: true, reviewsDue: 3 }).line).toBe('List 0/7 ready · class on track · catch-up slower this week · 3 reviews due');
     expect(readinessLine(l, words, { classLeft: 0, classKnown: false, catchupSlower: false, reviewsDue: 0 }).line).toBe('List 0/7 ready · 0 reviews due');
+  });
+  it("the class shortfall's weekday is the homework day the parent set", () => {
+    expect(readinessLine({ ...l, homeworkDue: '2026-11-05' }, words, { classLeft: 3, classKnown: true, catchupSlower: false, reviewsDue: 0 }).line).toContain('class: 3 left by Thu');
+  });
+  it('far behind his class (more than CLASS_BEHIND_AT short): no big number, a pointer to Progress', () => {
+    expect(readinessLine(l, words, { classLeft: CLASS_BEHIND_AT, classKnown: true, catchupSlower: false, reviewsDue: 0 }).line).toContain(`class: ${CLASS_BEHIND_AT} left by Fri`);
+    expect(readinessLine(l, words, { classLeft: CLASS_BEHIND_AT + 1, classKnown: true, catchupSlower: false, reviewsDue: 0 }).line).toBe('List 0/7 ready · behind class — see Progress · 0 reviews due');
+  });
+});
+
+describe('checkTable (spec §8.3): each item, its check result and where it is now', () => {
+  it('not yet first, then ready, then solid, each in list order; never asked shows as such', () => {
+    const l = sheet();
+    const words = wordsOf(l);
+    const checked: WeekList = { ...l,
+      check: { at: 10, day: '2026-11-04', done: true, results: { 'p:a': { form: 'dapei', correct: true }, 'p:b': { form: 'dapei', correct: true }, 'p:f': { form: 'read', correct: false }, 'p:c': { form: 'meaning', correct: true } } },
+      items: l.items.map((i) => (i.wordId === 'p:c' ? { ...i, rightDays: ['2026-11-05', '2026-11-06'] } : i.wordId === 'p:b' ? { ...i, missedOn: '2026-11-05', last: { read: { at: 20, correct: false } } } : i)) };
+    const rows = checkTable(checked, words);
+    expect(rows.map((r) => [r.text, r.check, r.now])).toEqual([
+      ['萝卜', '✓ 搭配', 'not yet'], // right in the check, wrong since
+      ['雨伞', 'not asked', 'not yet'],
+      ['开心', 'not asked', 'not yet'],
+      ['小河', '✗ read', 'not yet'],
+      ['钓鱼', 'not asked', 'not yet'],
+      ['拔', '✓ 搭配', 'solid'],
+      ['跳绳', '✓ meaning', 'solid'],
+    ]);
   });
 });

@@ -18,7 +18,8 @@ import { fitDoubts, parentSentenceProblems, proposeFit, proposeFits, sentenceFor
 import { itemStatus, matchText } from '../weeklist/match';
 import { parseWeekList, weekIsWord, type DraftItem, type DraftPair, type WeekDraft } from '../weeklist/parse';
 import { activeLists, CLOSE_AFTER_DAYS, HEADROOM } from '../weeklist/plan';
-import { notSolid } from '../weeklist/readiness';
+import { checkTable, notSolid } from '../weeklist/readiness';
+import { WeekReadiness } from './WeekReadiness';
 import { saveWeekList } from '../weeklist/save';
 import { loadCedictWords } from '../weeklist/cedictWords';
 
@@ -104,6 +105,7 @@ export function WeekPanel() {
   useEffect(() => { void reload(); }, []);
 
   const byText = useMemo(() => new Map(stored.map((w) => [w.text, w])), [stored]);
+  const byId = useMemo(() => new Map(stored.map((w) => [w.id, w])), [stored]);
   const [dictionary, setDictionary] = useState<ReadonlySet<string> | null>(null); // CC-CEDICT's headwords, fetched for this panel only
   const [dictTried, setDictTried] = useState(false); // Read waits for the try (a cached file is quick; offline, it fails fast)
   useEffect(() => {
@@ -327,6 +329,7 @@ export function WeekPanel() {
   return (
     <section class="panel week">
       <h2>This week’s words (本周词语)</h2>
+      <WeekReadiness lists={lists} />
       {!draft && (
         <>
           <p class="week__how">Copy the text from a photo of the sheet with Live Text: long-press the text → Select All → Copy. Then paste it here. ZiJi finds the words and 搭配, and gets him ready by the day you pick.</p>
@@ -459,7 +462,7 @@ export function WeekPanel() {
         </div>
       )}
       {message && <p class="week__message" role="status">{message}</p>}
-      <WeekLists lists={lists} now={now()} onChanged={reload} db={db} />
+      <WeekLists lists={lists} now={now()} onChanged={reload} db={db} words={byId} />
     </section>
   );
 
@@ -480,7 +483,7 @@ export function WeekPanel() {
  * The lists: the ones running, each with where it stands, edit and close; closed and finished ones under a collapsed Past lists,
  * read-only, where a list can be deleted for good (spec §10: a list the parent removes is closed and kept).
  */
-function WeekLists({ lists, now, onChanged, db }: { lists: WeekList[]; now: Date; onChanged: () => Promise<void>; db: ReturnType<typeof useApp>['db'] }) {
+function WeekLists({ lists, now, onChanged, db, words }: { lists: WeekList[]; now: Date; onChanged: () => Promise<void>; db: ReturnType<typeof useApp>['db']; words: ReadonlyMap<string, Word> }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [asking, setAsking] = useState<string | null>(null); // the list whose Close or Delete is asking
   const [showPast, setShowPast] = useState(false);
@@ -498,6 +501,7 @@ function WeekLists({ lists, now, onChanged, db }: { lists: WeekList[]; now: Date
             <p class="week__list-days"><span>Ready by {day(l.readyBy)}</span> · <span>homework {day(l.homeworkDue)}</span></p>
             <p class={`week__list-status ${running ? '' : 'is-past'}`}>{listStatus(l, now)}</p>
             <p class="week__list-counts">{l.items.length} words · {l.pairs.length} 搭配 · {l.fits.length} fill-ins</p>
+            {l.check && <CheckResults list={l} words={words} />}
             {asking === l.id
               ? (
                 <div class="week__confirm" role="group" aria-label={running ? 'Close the list?' : 'Delete the list?'}>
@@ -596,5 +600,33 @@ function ListEditor({ list, now, db, onDone }: { list: WeekList; now: Date; db: 
         <button type="button" class="btn btn--ghost" onClick={() => void onDone()}>Cancel</button>
       </div>
     </div>
+  );
+}
+
+/**
+ * After the check (spec §8.3): each item, its answer in the check (✓/✗ and the form, or not asked) and where it is now — not yet,
+ * ready or solid — the ones that need help first, so the parent sees exactly which words to help with.
+ */
+function CheckResults({ list, words }: { list: WeekList; words: ReadonlyMap<string, Word> }) {
+  const rows = checkTable(list, words);
+  const results = Object.entries(list.check?.results ?? {}).filter(([k]) => list.items.some((i) => i.wordId === k));
+  const right = results.filter(([, r]) => r.correct).length;
+  const help = rows.filter((r) => r.now === 'not yet').length;
+  return (
+    <details class="week__results" open>
+      <summary>{`Check: ${right} of ${results.length} right · ${help ? `${help} need help` : 'none need help'}`}</summary>
+      <table class="table week__results-table" aria-label={`Check results for ${list.name}`}>
+        <thead><tr><th>Word</th><th>Check</th><th>Now</th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.wordId} class={r.now === 'not yet' ? 'is-help' : ''}>
+              <td class="hanzi" lang="zh-CN">{r.text}</td>
+              <td>{r.check}</td>
+              <td>{r.now}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
   );
 }

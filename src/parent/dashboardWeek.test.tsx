@@ -29,7 +29,7 @@ describe('Dashboard: the weekly list readiness line', () => {
     renderWithApp(<Dashboard onNavigate={onNavigate} />, a);
     const box = await waitFor(() => { const el = document.querySelector('.dash__week'); expect(el).toBeTruthy(); return el!; });
     expect(box.textContent).toContain('第九课 · ready by Wed 4 Nov · homework Fri 6 Nov');
-    expect(box.textContent).toMatch(/List 1\/3 ready · (class on track · |class: \d+ left by Fri · )?catch-up slower this week · 1 reviews due — weak: 小河, 风筝/);
+    expect(box.textContent).toMatch(/List 1\/3 ready · (class on track · |class: \d+ left by Fri · |behind class — see Progress · )?catch-up slower this week · 1 reviews due — weak: 小河, 风筝/);
     fireEvent.click(screen.getByText('Open 本周词语'));
     expect(onNavigate).toHaveBeenCalledWith('week');
   });

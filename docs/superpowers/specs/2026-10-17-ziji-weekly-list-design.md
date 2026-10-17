@@ -658,6 +658,7 @@ Board and match answers grade the left word's `meaning` card (`recordUse`, sourc
 - Tomorrow that item's boost asks **the same form** first, with a different sentence or board when one exists.
 - **Every lesson after the check** gives each not-solid item a re-teaching card the day after a miss and a reserved 练一练 item, until it is solid or the list closes (§2.1).
 - **On homework day** (Friday), Home also shows a 1-minute optional card, 「再看一次」, holding only the check's misses that are still not right. It is ungraded.
+  - **Deferred (coordinator, 2026-10-17):** not built in this round. The reserved 练一练 items and the re-teaching cards already practise these words every lesson.
 
 ### 8.3 Readiness
 
@@ -685,6 +686,12 @@ The parent's line, on Dashboard and at the top of 本周词语:
 | Weak | Up to five, the list's not-ready items and pairs, worst first. |
 
 After the check, a small table lists each item with the form it was asked in and ✓ or ✗.
+- **As built (2026-10-17):** the table is on each list's card in 本周词语. Each row has the item, its check answer (✓/✗ and the form, or "not asked") and its status now (not yet, ready or solid). The rows that need help (not yet) come first.
+- **The class part (2026-10-17):**
+  - It counts this week's class lane only: his class lesson and the one before (`schoolNeed`), characters and their ladder 词语. These are the ones still unstarted on homework day at today's numbers (`listBudget().classShort`). Catch-up lessons are never counted.
+  - When that is more than 10 (about two days at his pace), the line says "behind class — see Progress" instead of the number.
+  - The weekday is the homework day the parent set.
+- The line shows on Today, with **Open 本周词语**, and at the top of 本周词语 for each running list.
 
 ## 9. Home countdown
 
@@ -699,6 +706,7 @@ The child sees one line on Home, under the reward card, with pinyin through `Lab
 | Two lists | The nearest ready-by day. One line only. |
 
 - The line is never red and never counts down in hours. It is a gentle nudge, as the rest of Home is.
+- **Room on Home (coordinator ruling, 2026-10-17):** while the line or the 考考自己 card shows, 今日一字 (the word of the day) is hidden, so the one-screen Home fits at every size. On the ready-by day the card reads 「本周词语」 with a 「考考自己」 button, never a second 开始 beside the path's.
 - The class lane is **not** shown to him on Home. He sees the split on the 认新字 card tags instead: 「本周」 for list words, beside the existing 「课本 二上·12」 and 「补 一上·5」.
 - **Layout:**
   - It must fit the one-screen Home at all six sizes (`npm run fit`, 0 problems).

@@ -61,6 +61,28 @@ export function countdownLine(lists: WeekList[], words: ReadonlyMap<string, Word
   return left ? `还要再看 ${left} 个词` : `本周词语：${l.items.length} 个都会了！`;
 }
 
+/** More class words short than this by homework day (about two days at his pace) reads "behind class — see Progress" (spec §8.3). */
+export const CLASS_BEHIND_AT = 10;
+
+/** One row of the parent's after-check table (spec §8.3): the item, its check answer, and where it is now. */
+export interface CheckRow { wordId: string; text: string; check: string; now: 'not yet' | 'ready' | 'solid' }
+const FORM_NAME: Record<WeekForm, string> = { read: 'read', meaning: 'meaning', fit: '选词填空', dapei: '搭配' };
+
+/** After the check: every item with ✓/✗ and the form it was asked in (or "not asked"), and now ready, not yet or solid; the
+ *  ones that need help (not yet) first, each group in list order. */
+export function checkTable(list: WeekList, words: ReadonlyMap<string, Word>): CheckRow[] {
+  const rank = { 'not yet': 0, ready: 1, solid: 2 } as const;
+  return list.items
+    .map((it): CheckRow => {
+      const r = list.check?.results[it.wordId];
+      const now = isSolid(it, list) ? 'solid' : isReady(it, list, words.get(it.wordId)) ? 'ready' : 'not yet';
+      return { wordId: it.wordId, text: it.text, check: r ? `${r.correct ? '✓' : '✗'} ${FORM_NAME[r.form]}` : 'not asked', now };
+    })
+    .map((row, i) => ({ row, i }))
+    .sort((a, b) => rank[a.row.now] - rank[b.row.now] || a.i - b.i)
+    .map((x) => x.row);
+}
+
 /** How bad an item's answers are, for the weak list (worst first): missed in the check, then answered wrong, then never asked. */
 function weakness(item: WeekItem, list: WeekList): number {
   if (list.check?.results[item.wordId]?.correct === false) return 0;
@@ -80,7 +102,9 @@ export function readinessLine(list: WeekList, words: ReadonlyMap<string, Word>, 
   const badPairs = list.pairs.filter((p) => p.last && !p.last.correct).map((p) => `${p.left}—${p.right}`);
   const worst = weakItems.filter((it) => weakness(it, list) <= 1).map((it) => it.text);
   const rest = weakItems.filter((it) => weakness(it, list) > 1).map((it) => it.text);
-  const cls = !i.classKnown ? [] : i.classLeft > 0 ? [`class: ${i.classLeft} left by ${EN_DAYS[parseDateKey(list.homeworkDue).getDay()]}`] : ['class on track'];
+  // classLeft: this week's class lane (his class lesson and the one before, characters and their 词语) still unstarted on homework
+  // day at today's numbers; far behind, a number that big alarms more than it tells: Progress shows where he is
+  const cls = !i.classKnown ? [] : i.classLeft > CLASS_BEHIND_AT ? ['behind class — see Progress'] : i.classLeft > 0 ? [`class: ${i.classLeft} left by ${EN_DAYS[parseDateKey(list.homeworkDue).getDay()]}`] : ['class on track'];
   const parts = [`List ${ready}/${list.items.length} ready`, ...cls, ...(i.catchupSlower ? ['catch-up slower this week'] : []), `${i.reviewsDue} reviews due`];
   return {
     head: `${list.name} · ready by ${enDay(list.readyBy)} · homework ${enDay(list.homeworkDue)}`,

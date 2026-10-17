@@ -209,3 +209,11 @@ describe('buildSessionPlan with a list (spec §5)', () => {
     expect(on.writeCount).toBe(Math.max(1, Math.floor(off.writeCount / 2)));
   });
 });
+
+describe('schoolNeed counts only his class window (spec §5.3)', () => {
+  it('the class lesson and the one before, unstarted; never catch-up lessons, never ahead', () => {
+    const at: Record<string, number> = { a: 3, b: 4, c: 5, d: 5, e: 6 };
+    const ws = Object.keys(at).map((t) => ({ id: `b:${t}`, text: t }));
+    expect(schoolNeed(ws, new Set(['b:d']), 5, (w) => at[w.text])).toBe(2); // b (4) and c (5); a is catch-up, e is ahead, d begun
+  });
+});

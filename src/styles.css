@@ -1936,3 +1936,13 @@ button.langdu__sentence { cursor: pointer; }
 .check__stars { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 24px; }
 .check__misses { min-height: 0; overflow-y: auto; align-self: stretch; align-items: center; }
 .home__cards .week-check .btn .label__cells { flex-wrap: nowrap; }
+/* the weekly list's readiness line for the parent (weekly list spec §8.3): a tight card on Today and atop 本周词语 */
+.dash__week { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 14px; border: 2px solid var(--line); border-radius: var(--radius); background: #fff; }
+.dash__week p { margin: 0; line-height: 1.4; }
+.dash__week .small-btn { margin-top: 4px; }
+/* after the check: each item, its check answer and where it is now; the ones needing help marked */
+.week__results summary { cursor: pointer; font-weight: 700; font-size: 15px; padding: 4px 0; }
+.week__results-table { width: 100%; font-size: 15px; }
+.week__results-table td, .week__results-table th { padding: 4px 6px; }
+.week__results-table .hanzi { font-size: 20px; }
+.week__results-table tr.is-help td { color: var(--orange-ink); font-weight: 700; }

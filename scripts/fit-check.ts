@@ -598,6 +598,19 @@ async function sweep(size: Size) {
     results.push({ size: size.name, flow: 'parent-week-line', step: 0, sig: 'today', problems: sideways > 1 ? [`page scrolls sideways ${sideways}px`] : [] });
     await snap(p, size, 'parent-week-line', '.dash__week');
   });
+  await run('parent-week-results', AFTERNOON, { weekList: 'checked', pinCode: FIT_PIN }, async (p) => {
+    await tabTo(p, '家长');
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.waitForSelector('.dash__week', { timeout: 15_000 });
+    await snap(p, size, 'parent-week-line-checked', '.dash__week');
+    await p.click('.parent__tabs .tab:has-text("Content")');
+    await p.click('.segmented__opt:has-text("This week")');
+    await p.waitForSelector('.week .dash__week', { timeout: 15_000 });
+    await snap(p, size, 'parent-week-top', '.week h2');
+    await snap(p, size, 'parent-week-results', '.week__results');
+    const sideways = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    results.push({ size: size.name, flow: 'parent-week-results', step: 0, sig: 'week', problems: sideways > 1 ? [`page scrolls sideways ${sideways}px`] : [] });
+  });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });
   await run('room', AFTERNOON, {}, async (p) => {
