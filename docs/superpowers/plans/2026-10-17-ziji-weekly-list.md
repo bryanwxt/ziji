@@ -1943,6 +1943,13 @@ git commit -m "Weekly list: the parent's 本周词语 — paste, preview, wrong 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
+**As built (Task 6, 2026-10-17).** The panel follows this task with these changes; see `.superpowers/sdd/task-6-report.md`.
+- Read waits for his words and cards to load. Items show in two groups: "New to him" (new or learning; English input only for a new word with no gloss, checked by `glossProblems`) and "He knows" (known or placed). Items can be unticked, retyped (✎), fixed with a look-alike suggestion, or split.
+- 搭配 rows are grouped under their theme headings, with "check the pairing" on column-read pairs. Each 搭配 row and each 选词填空 row needs **Fine**, or **Remove**; one **All fine** confirms every row. Save waits until no row is left to check. A pair with fewer than three wrong partners is shown and not saved.
+- Dates: homework due changes ready-by to its default unless the parent set ready-by. A past homework day is refused with a message. A clamped ready-by is explained. The plan line is `planLine`, plus "Only 1 day — …" and **Move ready-by later**.
+- Save uses `saveWeekList` (a re-paste with the same name and dates updates that list; the preview says so). Edits to a saved list (name, dates, removing words and 搭配) go through `updateWeekList`. Delete asks on the page, never `confirm()`, and deletes the record; the words stay. Lists past their close date show under "Past lists".
+- `listStatus(list, now)` gives each list's line. `.segmented` is 5 columns (3 on a phone).
+
 ---
 
 ### Task 7: The 认新词 word card, verbs through their pairs, and re-teaching cards

@@ -13,6 +13,8 @@ import { launchWebKit } from './launch-webkit';
 const PORT = Number(process.env.FIT_PORT ?? 4174); // FIT_PORT: another worktree's sweep may hold 4174
 const BASE = `http://127.0.0.1:${PORT}/`;
 const OUT = 'fit-shots';
+/** An invented weekly sheet as Live Text gives it (never the parent's): a grid, 生字 he has, then 搭配 under two themes, the second read a cell a line. */
+const WEEK_SHEET = ['P2-L33-复习', '考考自己', '一、词语', '公园 草地 蝴蝶 跑步', '整齐 热闹 干净 安静', '帮助 告诉 闪闪亮', '二、生字', '手 书 开 出', '三、词语搭配', '早餐', '吃 面包', '喝 牛奶', '煎 鸡蛋', '游乐场', '放', '风筝', '踢', '足球', '荡', '秋千', '©2026 Example Publisher Pte Ltd.'].join('\n');
 const AFTERNOON = new Date(2026, 9, 6, 16, 0);
 const EVENING = new Date(2026, 9, 6, 21, 0); // timeOfDay() calls this 'evening': the darkest wash
 const SIZES = [
@@ -500,7 +502,7 @@ async function sweep(size: Size) {
     await snap(p, size, 'parent-fit', 'button:has-text("Use these")');
     await tab('Content');
     await p.waitForSelector('.segmented');
-    for (const [i, part] of ['Words', 'From a worksheet', 'Reading texts', 'Pictures'].entries()) {
+    for (const [i, part] of ['This week', 'Words', 'From a worksheet', 'Reading texts', 'Pictures'].entries()) {
       await p.click(`.segmented__opt:has-text("${part}")`);
       await p.waitForTimeout(200);
       await fits();
@@ -515,6 +517,45 @@ async function sweep(size: Size) {
     await snap(p, size, 'parent-settings-top', '.parent__tabs');
     await snap(p, size, 'parent-settings', '#st-class-now');
     await snap(p, size, 'parent-backup', '#parent-backup');
+  });
+  // 本周词语 (weekly list spec 2026-10-17 §3): empty, a pasted sheet's preview (two theme groups, one read column-wise and
+  // flagged), the wrong answers to confirm, All fine, saved, and delete's own confirm; a screenshot each, never sideways
+  await run('parent-week', AFTERNOON, { pinCode: FIT_PIN }, async (p) => {
+    await tabTo(p, '家长');
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.click('.parent__tabs .tab:has-text("Content")');
+    await p.click('.segmented__opt:has-text("This week")');
+    await p.waitForSelector('#week-paste');
+    let step = 0;
+    const sideways = async () => results.push({ size: size.name, flow: 'parent-week', step: step++, sig: await p.evaluate(() => document.querySelector('.week h3')?.textContent ?? 'empty'), problems: await p.evaluate(() => {
+      const out: string[] = [];
+      if (document.documentElement.scrollWidth > innerWidth + 1) out.push(`page scrolls sideways ${document.documentElement.scrollWidth - innerWidth}px`);
+      for (const el of document.querySelectorAll('.week button, .week input')) { const r = el.getBoundingClientRect(); if (r.width && (r.left < -1 || r.right > innerWidth + 1)) out.push(`off screen: ${el.textContent || el.getAttribute('aria-label')}`); }
+      return out;
+    }) });
+    await sideways();
+    await snap(p, size, 'parent-week-0-empty', '.parent__tabs');
+    await p.fill('#week-paste', WEEK_SHEET);
+    await p.click('.week__read:not([disabled])');
+    await p.waitForSelector('.week__preview');
+    await sideways();
+    await snap(p, size, 'parent-week-1-preview', '.week__meta');
+    await snap(p, size, 'parent-week-2-words', '.week__items');
+    await snap(p, size, 'parent-week-3-dapei', '.week__group');
+    await snap(p, size, 'parent-week-4-fills', '[aria-label="选词填空"]');
+    await p.click('.week__allfine');
+    await sideways();
+    await snap(p, size, 'parent-week-5-allfine', '.week__bar');
+    await p.click('.week__bar .btn--primary');
+    await p.waitForSelector('.week__list');
+    await sideways();
+    await snap(p, size, 'parent-week-6-saved', '.week__lists');
+    await p.click('.week__list button:has-text("Delete")');
+    await snap(p, size, 'parent-week-7-delete', '.week__confirm');
+    await p.click('.week__list button:has-text("Keep it")');
+    await p.click('.week__list button:has-text("Edit")');
+    await sideways();
+    await snap(p, size, 'parent-week-8-edit', '.week__editor');
   });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });

@@ -59,9 +59,13 @@ describe('the parent area in five tabs', () => {
     const order = [...document.querySelectorAll('.parent__section-title')].map((h) => h.textContent);
     expect(order).toEqual(['School', 'Skills', 'Memory']);
     for (const p of ['school', 'skills', 'memory'] as const) expect(document.getElementById(placeId(p))).toBeTruthy(); // where a shortcut would scroll
-    // Content: four parts
+    // Content: five parts, 本周词语 first (weekly list spec 2026-10-17 §3.1)
     fireEvent.click(tab(/Content/));
     const parts = within(screen.getByRole('tablist', { name: 'Content' }));
+    expect(parts.getAllByRole('tab').map((t) => t.textContent)).toEqual(['This week', 'Words', 'From a worksheet', 'Reading texts', 'Pictures']);
+    fireEvent.click(parts.getByRole('tab', { name: 'This week' })); // an earlier test may have left another part
+    expect(await heading('This week’s words (本周词语)')).toBeTruthy();
+    fireEvent.click(parts.getByRole('tab', { name: 'Words' }));
     expect(await heading('Add a school word list (听写)')).toBeTruthy();
     fireEvent.click(parts.getByRole('tab', { name: 'From a worksheet' }));
     expect(await heading('From a worksheet')).toBeTruthy();
@@ -100,7 +104,7 @@ describe('the parent area in five tabs', () => {
 
   it('every old tab has a home, and its section is there', () => {
     expect(new Set(Object.values(HOME))).toEqual(new Set(['today', 'progress', 'content', 'rewards', 'settings']));
-    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'words'].sort());
+    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'week', 'words'].sort());
   });
 });
 
