@@ -5,6 +5,7 @@ import moe from '../content/moe2024.json';
 import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { TALK_PROMPTS } from '../content/talkPrompts';
 import { addDays, localDateKey } from '../lib/date';
+import type { PassageQuestion } from '../types';
 import { p2Readable } from '../../scripts/check-content';
 import { hookRank, markSeen, pickDay, readingCard, swapCard, themeForWords, THINK, wordStarter, type PickInput, type TalkWord } from './pick';
 
@@ -103,7 +104,7 @@ describe('shared reading (spec §4: 谁 / 为什么 / 你觉得)', () => {
     });
   });
   it('a passage with a 谁 question and no 为什么 one: an open why', () => {
-    expect(readingCard(P01, 2)).toMatchObject({ open: '谁是老师？', followUps: ['故事里的人为什么这样做？你是从哪一句知道的？', THINK[2]!.zh], answers: ['妈妈', null, null] });
+    expect(readingCard(P01, 2)).toMatchObject({ open: '谁是老师？', followUps: ['书里的人做了一件什么事？他为什么这样做？你从哪一句知道的？', THINK[2]!.zh], answers: ['妈妈', null, null] });
   });
   it('a parent text without a question: all three open', () => {
     expect(readingCard({ id: 'pp:a', title: '我的学校', questions: [] }, 5)).toMatchObject({ id: 'r:pp:a:1', open: '《我的学校》里有谁？', answers: [null, null, null] });
@@ -120,5 +121,45 @@ describe('themes and templates', () => {
     const cards = [wordStarter({ text: '大', zuci: [], from: 'class' }), wordStarter({ text: '大', example: '我家很大。', zuci: [], from: 'list' }), ...THINK.map((_, k) => readingCard({ id: 'x', title: '大', questions: [] }, k))];
     const text = cards.flatMap((c) => [c.open, ...c.followUps, c.pattern, c.sample]).join('');
     expect([...new Set(Array.from(text).filter((ch) => /\p{Script=Han}/u.test(ch) && !readable.has(ch)))]).toEqual([]);
+  });
+});
+
+describe('review fixes (2026-10-18)', () => {
+  const word = (text: string): TalkWord => ({ text, zuci: [], from: 'class' });
+  it('a common character finds no starter through a longer word: 子 is not 粽子, 不 not 对不起, 人 not 机器人, 气 not 天气', () => {
+    expect(hookRank('粽子', '子')).toBeNull();
+    expect(hookRank('对不起', '不')).toBeNull();
+    expect(hookRank('机器人', '人')).toBeNull();
+    expect(hookRank('天气', '气')).toBeNull();
+    expect(hookRank('生气', '气')).toBeNull();
+    for (const t of ['子', '不', '人', '气']) expect(pickDay({ ...base, words: [word(t)] })[0]!.id).toBe(`w:${t}`);
+  });
+  it('a doubled word still finds its starter first (爷爷 for 爷); a word his character only starts comes after his own starter', () => {
+    expect(hookRank('爷爷', '爷')).toBe(1);
+    expect(hookRank('鸡蛋', '鸡')).toBe(3);
+    expect(hookRank('蛋糕', '糕')).toBeNull(); // not the head
+    expect(pickDay({ ...base, words: [word('鸡')] })[0]!.id).toBe('w:鸡');
+    const cards = pickDay({ ...base, words: [word('鸡')] });
+    const next = swapCard(cards, 0, { ...base, words: [word('鸡')], seen: markSeen({}, cards, TODAY) });
+    expect(next[0]).toMatchObject({ kind: 'word', id: 't30', word: '鸡' });
+  });
+  it('a passage told as 「我」: the questions say whose 我 it is', () => {
+    const q = (text: string, answer: 0 | 1 | 2 = 0): PassageQuestion => ({ q: text, choices: ['a', 'b', 'c'], answer, sentence: 0 });
+    const card = readingCard({ id: 'x', title: '上学', questions: [q('谁给我唱生日歌？'), q('我在车上为什么站着？', 1)] }, 0);
+    expect(card.open).toBe('书里，谁给「我」唱生日歌？');
+    expect(card.followUps[0]).toBe('书里的「我」在车上为什么站着？');
+    expect(readingCard({ id: 'x', title: '一家', questions: [q('我们常常一起做什么？')] }, 0).open).toBe('书里的「我们」常常一起做什么？');
+    expect(readingCard({ id: 'x', title: '一家', questions: [q('早上七点，我做什么？')] }, 0).open).toBe('书里，早上七点，「我」做什么？');
+    expect(readingCard(P17, 0).open).toBe('牛爷爷做了什么？');
+    expect(readingCard({ id: 'x', title: '夜', questions: [q('谁说“别怕，我在你身边”？')] }, 0).open).toBe('谁说“别怕，我在你身边”？');
+  });
+  it('the open questions talk about 书里, never a vague 故事里', () => {
+    const card = readingCard({ id: 'x', title: '大', questions: [] }, 0);
+    expect(card.followUps[0]).toBe('书里的人做了一件什么事？他为什么这样做？你从哪一句知道的？');
+    for (const t of THINK) expect(t.zh).not.toContain('故事');
+  });
+  it('a class word\'s sentence is 「有一句话」; 书上 is for his list\'s own sentence', () => {
+    expect(wordStarter({ text: '借', example: '我可以借你的笔吗？', zuci: [], from: 'class' }).followUps[1]).toBe('有一句话：「我可以借你的笔吗？」你也用『借』说一句。');
+    expect(wordStarter({ text: '借', example: '我可以借你的笔吗？', zuci: [], from: 'list' }).followUps[1]).toBe('书上有一句：「我可以借你的笔吗？」你也用『借』说一句。');
   });
 });

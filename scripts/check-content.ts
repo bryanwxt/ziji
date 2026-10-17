@@ -228,7 +228,8 @@ const ERHUA = /哪儿|一会儿|玩儿|点儿|这儿|那儿/;
 /**
  * The talk prompts (parent loop spec §3): unique ids; every field there; 2–3 follow-ups; one of the six patterns, with its
  * first part in the sample; a known theme, at least 6 starters each; an opening that isn't a yes/no question (…吗？); an English
- * line without Chinese; no 儿化 and no blocked word (src/content/blocked.ts); at least one hook; every Han character one a P2 child reads (`readable`).
+ * line without Chinese; no 儿化 and no blocked word (src/content/blocked.ts); a sample that passes the passage word gate (wordProblems, its
+ * hooks taught: it is what he could say); at least one hook; every Han character one a P2 child reads (`readable`).
  */
 export function checkTalkPrompts(prompts: readonly TalkPrompt[], themes: readonly TalkTheme[], patterns: readonly string[], readable: ReadonlySet<string>): string[] {
   const problems: string[] = [];
@@ -247,6 +248,8 @@ export function checkTalkPrompts(prompts: readonly TalkPrompt[], themes: readonl
     const text = [p.open, ...p.followUps, p.sample, ...p.hooks].join('');
     if (ERHUA.test(text)) problems.push(`${p.id}: 儿化`);
     for (const w of BLOCKED) if (text.includes(w)) problems.push(`${p.id}: blocked word ${w}`);
+    // his answer: the passage word gate, with the starter's own topic words (its hooks) taught, as a passage's 生词 are
+    for (const w of wordProblems(p.sample, p.hooks)) problems.push(`${p.id}: sample: ${w}`);
     const outside = [...new Set(Array.from(text).filter((ch) => HAN.test(ch) && !readable.has(ch)))];
     if (outside.length) problems.push(`${p.id}: uses ${outside.join('')} beyond P2`);
   }

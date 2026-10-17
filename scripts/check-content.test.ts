@@ -156,6 +156,12 @@ describe('talk prompts (parent loop spec §3)', () => {
     const p = TALK_PROMPTS[0]!;
     expect(checkTalkPrompts([{ ...p, sample: '我觉得他不是笨蛋，因为他会做。' }], TALK_THEMES, TALK_PATTERNS, readable)).toContain('t01: blocked word 笨蛋');
   });
+  it('flags a sample word beyond a P2 child (the passage word gate; the parent\'s questions may go further)', () => {
+    const p = TALK_PROMPTS[0]!;
+    expect(checkTalkPrompts([{ ...p, sample: '我最喜欢和哥哥一起玩，因为水龙头坏了。' }], TALK_THEMES, TALK_PATTERNS, readable)).toContain('t01: sample: 水龙头: not a word for a P2 child (HSK 7)');
+    expect(checkTalkPrompts([{ ...p, open: '你会关水龙头吗？我们一家人怎么节约用水？' }], TALK_THEMES, TALK_PATTERNS, readable).filter((x) => x.includes('sample'))).toEqual([]);
+    expect(checkTalkPrompts([{ ...p, sample: '我最喜欢和哥哥一起玩，因为水龙头坏了。', hooks: ['水龙头'] }], TALK_THEMES, TALK_PATTERNS, readable).filter((x) => x.includes('sample'))).toEqual([]); // its topic word
+  });
   it('the allow-list is only the Singapore theme words his lists lack', () => {
     const bare = p2Readable(BUILTIN, (moe as { lessons: { term: string; read: string }[] }).lessons);
     expect(Array.from(TALK_ALLOWED).filter((c) => bare.has(c))).toEqual([]);

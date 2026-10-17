@@ -6,7 +6,7 @@ import { parseDateKey } from '../lib/date';
 import { mulberry32, seedFromString, shuffle, type Rng } from '../lib/random';
 import type { PassageQuestion, TalkCard, TalkKind, TalkPrompt, TalkTheme } from '../types';
 
-/** A card shown this many days ago or fewer comes back only when its kind has nothing else (spec §4). */
+/** A card shown fewer than this many days ago (0–13) comes back only when its kind has nothing else (spec §4); 14 days ago can. */
 export const NO_REPEAT_DAYS = 14;
 /** A theme used this many days ago or fewer waits while another theme hasn't been (spec §4). */
 export const THEME_GAP_DAYS = 6;
@@ -32,17 +32,28 @@ export interface PickInput {
 const daysAgo = (day: string, today: string) => Math.round((parseDateKey(today).getTime() - parseDateKey(day).getTime()) / 86_400_000);
 const fresh = (id: string, seen: PickInput['seen'], today: string) => !seen[id] || daysAgo(seen[id]!, today) >= NO_REPEAT_DAYS;
 
-/** How well a starter's hook fits his word: 0 the same word; 1 a hook word holding his character (爷爷 for 爷); 2 his word
- *  holding a hook of two or more characters (新年 in 过新年); null none. A one-character hook never matches inside a longer word. */
-export function hookRank(hook: string, word: string): 0 | 1 | 2 | null {
+/** Characters too common to say what a longer hook is about: 子 is not about 粽子, nor 人 about 机器人 (review 2026-10-18). */
+const COMMON = new Set(Array.from('一不子人上下中小大心天气生学开会日了的是有在和我你他她它们个来去说看好多家年月水火山出地时后前里头老能要到这那就也都'));
+
+/** How well a starter's hook fits his word:
+ *  - 0: the same word;
+ *  - 1: the hook doubles his character (爷爷 for 爷);
+ *  - 2: his word holds a hook of two or more characters (新年 in 过新年);
+ *  - 3: the hook starts with his character, unless it is a common one (鸡蛋 for 鸡; not 生气 for 生). It ranks after his own
+ *    word starter (wordOptions);
+ *  - null: none. A one-character hook never matches inside a longer word, and a character never matches the end of a hook. */
+export function hookRank(hook: string, word: string): 0 | 1 | 2 | 3 | null {
   if (hook === word) return 0;
-  const h = Array.from(hook).length, w = Array.from(word).length;
-  if (w === 1 && hook.includes(word)) return 1;
-  if (h >= 2 && word.includes(hook)) return 2;
+  const h = Array.from(hook), w = Array.from(word);
+  if (w.length === 1 && h.every((c) => c === word)) return 1;
+  if (h.length >= 2 && word.includes(hook)) return 2;
+  if (w.length === 1 && h[0] === word && !COMMON.has(word)) return 3;
   return null;
 }
+/** Hook ranks his own word starter goes ahead of. */
+const WEAK_HOOK = 3;
 const bestHook = (p: TalkPrompt, word: string): number | null => {
-  const ranks = p.hooks.map((h) => hookRank(h, word)).filter((r): r is 0 | 1 | 2 => r !== null);
+  const ranks = p.hooks.map((h) => hookRank(h, word)).filter((r): r is 0 | 1 | 2 | 3 => r !== null);
   return ranks.length ? Math.min(...ranks) : null;
 };
 
@@ -64,7 +75,7 @@ const fromPrompt = (p: TalkPrompt, kind: TalkKind, word?: string): TalkCard => (
 export function wordStarter(w: TalkWord): TalkCard {
   const x = `『${w.text}』`;
   const followUps = w.example
-    ? [`用${x}说一说你自己的事。`, `书上有一句：「${w.example}」你也用${x}说一句。`, `${x}还可以和哪些字一起用？`]
+    ? [`用${x}说一说你自己的事。`, `${w.from === 'list' ? '书上有一句' : '有一句话'}：「${w.example}」你也用${x}说一句。`, `${x}还可以和哪些字一起用？`]
     : [`用${x}说一说你自己的事。`, `${x}可以和哪些字一起用？`];
   const where = w.from === 'list' ? "This week's list word" : 'A new word from class';
   return {
@@ -79,12 +90,21 @@ export function wordStarter(w: TalkWord): TalkCard {
 
 /** The 你觉得 question a shared-reading card ends on; 「换一个」 moves to the next. */
 export const THINK: readonly { zh: string; en: string }[] = [
-  { zh: '你觉得故事里谁做得最好？为什么？', en: 'Who in the story did best? Why?' },
-  { zh: '如果你是故事里的人，你会怎么做？', en: 'If he were in the story, what would he do?' },
+  { zh: '你觉得书里谁做得最好？为什么？', en: 'Who in the story did best? Why?' },
+  { zh: '如果你是书里的人，你会怎么做？', en: 'If he were in the story, what would he do?' },
   { zh: '你有没有碰到过这样的事？说一说。', en: 'Has something like this happened to him?' },
-  { zh: '你觉得故事后来会怎么样？', en: 'What does he think happens next?' },
+  { zh: '你觉得书里的事后来会怎么样？', en: 'What does he think happens next?' },
 ];
-const WHY_OPEN = '故事里的人为什么这样做？你是从哪一句知道的？';
+const WHY_OPEN = '书里的人做了一件什么事？他为什么这样做？你从哪一句知道的？';
+
+/** A passage told as 「我」 (38 of 88): read aloud by the parent, 我 would mean the parent. Say whose 我 it is: 「我」家有… →
+ *  书里的「我」家有…; 谁给我… → 书里，谁给「我」…. */
+export function bookVoice(q: string): string {
+  // a 我 inside someone's words (“别怕，我在你身边”) is theirs, and stays as it is
+  const quoted = q.split(/(“[^”]*”)/).map((part) => (part.startsWith('“') ? part : part.replace(/我们|我/g, (m) => `「${m}」`))).join('');
+  if (quoted === q) return q;
+  return quoted.startsWith('「我') ? `书里的${quoted}` : `书里，${quoted}`;
+}
 
 /**
  * Shared reading of today's passage (spec §4, dialogic reading): read it together, then 谁 — the passage's 谁 question, else its
@@ -100,9 +120,9 @@ export function readingCard(p: TalkPassage, k: number): TalkCard {
   const think = THINK[k % THINK.length]!;
   return {
     kind: 'reading', id: `r:${p.id}:${k % THINK.length}`, passageId: p.id,
-    open: who ? who.q : `《${p.title}》里有谁？`,
+    open: who ? bookVoice(who.q) : `《${p.title}》里有谁？`,
     en: `Shared reading: read 《${p.title}》 together, taking turns a sentence each, then ask who, why, and what he thinks. Last question: ${think.en}`,
-    followUps: [why ? why.q : WHY_OPEN, think.zh],
+    followUps: [why ? bookVoice(why.q) : WHY_OPEN, think.zh],
     pattern: '我觉得…因为…',
     sample: '',
     answers: [who ? answer(who) : null, why ? answer(why) : null, null],
@@ -119,7 +139,8 @@ function pickFrom(options: readonly TalkCard[], input: PickInput, onScreen: Read
 
 const lastShown = (ids: readonly string[], seen: PickInput['seen']) => ids.reduce((m, id) => ((seen[id] ?? '') > m ? seen[id]! : m), '');
 
-/** His words' cards: for each word in order, the starters about it (best hook, then least recently shown), then its own. */
+/** His words' cards: for each word in order, the starters about it (best hook, then least recently shown), with its own word
+ *  starter ahead of the weak ones (a hook his character only starts). */
 function wordOptions(input: PickInput, rng: Rng): TalkCard[] {
   const bank = input.bank ?? TALK_PROMPTS;
   const out: TalkCard[] = [];
@@ -129,9 +150,10 @@ function wordOptions(input: PickInput, rng: Rng): TalkCard[] {
       .map((p) => ({ p, rank: bestHook(p, w.text) }))
       .filter((x): x is { p: TalkPrompt; rank: number } => x.rank !== null)
       .sort((a, b) => a.rank - b.rank || (input.seen[a.p.id] ?? '').localeCompare(input.seen[b.p.id] ?? ''));
-    for (const { p } of hooked) if (!have.has(p.id)) { have.add(p.id); out.push(fromPrompt(p, 'word', w.text)); }
-    const own = wordStarter(w);
-    if (!have.has(own.id)) { have.add(own.id); out.push(own); }
+    const push = (c: TalkCard) => { if (!have.has(c.id)) { have.add(c.id); out.push(c); } };
+    for (const { p } of hooked.filter((x) => x.rank < WEAK_HOOK)) push(fromPrompt(p, 'word', w.text));
+    push(wordStarter(w));
+    for (const { p } of hooked.filter((x) => x.rank >= WEAK_HOOK)) push(fromPrompt(p, 'word', w.text));
   }
   return out;
 }
