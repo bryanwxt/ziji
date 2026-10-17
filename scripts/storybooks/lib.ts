@@ -106,11 +106,13 @@ export function importStory(file: string, md: string, entry: StoryEntry): Import
   const licence = entry.licence ?? story.licence;
   if (licence.includes('NC') !== story.licence.includes('NC')) throw new Error(`${file}: manifest licence ${licence} but the story says ${story.licence}`);
   const credit: PassageCredit = { title: story.title, text: story.text, illustration: story.illustration, translation: story.translation, licence, adapted: edits.length > 0, source: sourceUrl(file) };
+  // the title he reads takes the story's edits too (我的小猫猫在哪儿 → 在哪里, review 2026-10-17); the credit keeps the original
+  const title = edits.reduce((t, e) => t.split(e.from).join(e.to), story.title);
   const passages: Passage[] = (whole ? kept : []).map((c, i, all) => {
-    const names = entry.names.filter((n) => (story.title + c.text).includes(n)); // the title shows with every part
+    const names = entry.names.filter((n) => (title + c.text).includes(n)); // the title shows with every part
     return {
       id: `gsb:${id}-${c.chunk}`,
-      title: all.length > 1 ? `${story.title}（${i + 1}）` : story.title,
+      title: all.length > 1 ? `${title}（${i + 1}）` : title,
       text: c.text,
       term: c.term!,
       source: 'gsb',

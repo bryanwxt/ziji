@@ -5,7 +5,7 @@
   "0004": {"level": 2, "include": false, "why": "a cheat with no real consequence (the goat runs off without paying the fare)", "names": [], "edits": [{"from": "多给了一点儿", "to": "多给了一点", "why": "Singapore usage: 一点, not 一点儿"}, {"from": "一点儿都不急", "to": "一点都不急", "why": "Singapore usage: 一点, not 一点儿"}]},
   "0006": {"level": 3, "names": ["阿南西", "尼亚美"]},
   "0008": {"level": 1, "names": []},
-  "0009": {"level": 1, "names": []},
+  "0009": {"level": 1, "names": [], "edits": [{"from": "在哪儿", "to": "在哪里", "why": "Singapore usage: 哪里, not 哪儿"}]},
   "0027": {"level": 2, "licence": "CC BY 4.0", "names": []},
   "0030": {"level": 1, "names": [], "edits": [{"from": "我感到很有趣", "to": "我觉得很有趣", "why": "smoother: 觉得 with 有趣, not 感到"}]},
   "0052": {"level": 5, "include": false, "why": "heavy: bereavement, a cruel stepmother, a runaway child", "names": ["辛波薇亚", "阿妮塔"], "edits": [{"from": "一点儿也不开心", "to": "一点也不开心", "why": "Singapore usage: 一点, not 一点儿"}]},

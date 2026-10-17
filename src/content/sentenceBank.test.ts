@@ -37,7 +37,7 @@ describe('the sentence bank', () => {
     const sentences = SENTENCE_BANK.flatMap((i) => [...i.gaps.map((g) => fillGap(g, i.word)), i.misuse]);
     expect(new Set(sentences).size).toBe(sentences.length);
   });
-  it('HSK 1 covers its 103 words', () => expect(BANK_1).toHaveLength(103));
+  it('HSK 1 covers its 103 words but 一会儿 (review 2026-10-17: his book says 一会, never 儿化)', () => expect(BANK_1).toHaveLength(102));
   it('HSK 2 covers its 86 words', () => expect(BANK_2).toHaveLength(86));
   it('HSK 3–4 cover their 77 words, and the bank holds about 250 words', () => {
     expect(BANK_3).toHaveLength(77);
@@ -51,7 +51,7 @@ describe('wrong choices that would be right (review of plan 13)', () => {
   const RIGHT_TOO: [string, string, string][] = [
     ['说', '请你＿慢一点。', '吃'], ['玩', '下课了，我们去外面＿。', '读'], ['让', '老师＿我们读课文。', '给'], ['让', '妈妈＿我早点睡觉。', '给'],
     ['安静', '请大家＿一点。', '热情'], ['经常', '我＿去图书馆看书。', '刚才'], ['经常', '他＿帮助别人。', '马上'], ['竟然', '我没想到，他＿来了。', '按时'],
-    ['坐', '请＿下。', '写'], ['环境', '我们要保护＿。', '机器'], ['一会儿', '请等＿。', '星期天'], ['所以', '他病了，＿没来上学。', '而且'],
+    ['坐', '请＿下。', '写'], ['环境', '我们要保护＿。', '机器'], ['所以', '他病了，＿没来上学。', '而且'],
     // from a second read of the bank
     ['喝', '爷爷天天＿茶。', '吃'], ['已经', '我＿做完作业了。', '马上'], ['关心', '妈妈很＿我。', '放心'], ['应该', '我们＿帮助别人。', '刚才'],
     ['可能', '他今天没来，＿病了。', '忽然'], ['必须', '你＿九点前回家。', '一般'], ['终于', '我＿写完作业了。', '本来'],

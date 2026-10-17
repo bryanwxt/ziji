@@ -12,8 +12,9 @@ import { BLOCKED } from './blocked';
 export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[] }).chars;
 /** Changes when the built-in content or its fixes below change: only then does a launch rewrite the 3,000 built-in words.
  *  readingFixes.test pins a hash of both, so a content change without a bump fails the tests. */
-export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.15`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists;
-// .11: 蚂蚁拇狐狸 and readable 组词; .12: the content audit (the blocklist, the readings his lessons use, 组词 a child knows first); .13: 该死 blocked; .14: the neutral tone on word cards (朋友 早上 名字 …); .15: 甲 and 丁 as the 1st and 4th labels (甲乙丙丁)
+export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.16`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists;
+// .11: 蚂蚁拇狐狸 and readable 组词; .12: the content audit (the blocklist, the readings his lessons use, 组词 a child knows first); .13: 该死 blocked; .14: the neutral tone on word cards (朋友 早上 名字 …); .15: 甲 and 丁 as the 1st and 4th labels (甲乙丙丁);
+// .16: review 2026-10-17 (his lesson's word and sense first: 巴士 on 士, 青菜 on 青, 一首歌 on 首; child 组词 before adult ones; no 儿化)
 /** 朗读's built-in passages (spec 2026-10-15 §2): ours, then the Global Storybooks chunks (scripts/import-storybooks.ts). */
 export const PASSAGES: Passage[] = [...(passages as Passage[]), ...(storybooks as unknown as { passages: Passage[] }).passages];
 
@@ -133,7 +134,8 @@ export const MEANING_FIXES: Record<string, string> = {
 export const EXAMPLE_FIXES: Record<string, string> = {
   ...SWEEP_PINYIN,
   包子: 'bāo zi', 种植: 'zhòng zhí', // 种植 is planting (zhòng); pinyin-pro reads zhǒng (review 2026-10-15)
-  // 儿化: the 儿 joins the syllable before it (nǎr), written as its own "r" so each character keeps a slot (content sweep)
+  // 儿化: the 儿 joins the syllable before it (nǎr), written as its own "r" so each character keeps a slot (content sweep). His
+  // cards show none of these since review 2026-10-17 (blocked.ts ERHUA: 哪里, not 哪儿); kept for a word a parent adds
   哪儿: 'nǎ r', 那儿: 'nà r', 这儿: 'zhè r', 一块儿: 'yí kuài r', 玩儿: 'wán r', 好玩儿: 'hǎo wán r', 男孩儿: 'nán hái r',
   女孩儿: 'nǚ hái r', 鸟儿: 'niǎo r', 画儿: 'huà r', 味儿: 'wèi r', 聊天儿: 'liáo tiān r', 贪玩儿: 'tān wán r', 打盹儿: 'dǎ dǔn r',
   兜儿: 'dōu r', 馅儿: 'xiàn r', 冰棍儿: 'bīng gùn r', 大腕儿: 'dà wàn r', 离谱儿: 'lí pǔ r',

@@ -7,12 +7,12 @@ const texts = (ch: string, readable: string) => familyOf(ch, new Set(readable)).
 
 describe('familyOf: words of a character he can read (spec 2026-10-12 §5)', () => {
   it('only words whose every other character he reads', () => {
-    expect(texts('生', '男女气先日')).toEqual(['男生', '女生', '生气', '先生', '生日']);
+    expect(texts('生', '男女气先日')).toEqual(['生日', '男生', '女生', '生气', '先生']); // 生日 his card's first 组词 (review 2026-10-17)
     expect(texts('生', '')).toEqual([]);
   });
-  it('a word needs English (学生 has none in the glossary)', () => {
-    expect(glossFor('学生')).toBeUndefined();
-    expect(texts('生', '学中')).toEqual([]);
+  it('a word needs English (中学 has none in the glossary)', () => {
+    expect(glossFor('中学')).toBeUndefined();
+    expect(texts('学', '中')).toEqual([]);
   });
   it('ordered by HSK level, then length (门口 1, 出门 2, 大门 2, 串门 7, 五花八门 7)', () => {
     expect(texts('门', '口出大串五花八')).toEqual(['门口', '出门', '大门', '串门', '五花八门']);

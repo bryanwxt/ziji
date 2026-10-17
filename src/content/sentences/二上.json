@@ -2197,19 +2197,6 @@
 ]
 },
 {
-"word": "空儿",
-"s": [
-{
-"zh": "你有空儿吗？",
-"en": "Are you free?"
-},
-{
-"zh": "我明天有空儿，我们去玩。",
-"en": "I am free tomorrow, let's go and play."
-}
-]
-},
-{
 "word": "彩色",
 "s": [
 {
@@ -2453,19 +2440,6 @@
 {
 "zh": "哪些小朋友要去？",
 "en": "Which children are going?"
-}
-]
-},
-{
-"word": "哪儿",
-"s": [
-{
-"zh": "你要去哪儿？",
-"en": "Where are you going?"
-},
-{
-"zh": "我的书包在哪儿？",
-"en": "Where is my schoolbag?"
 }
 ]
 },
@@ -4056,19 +4030,6 @@
 ]
 },
 {
-"word": "味儿",
-"s": [
-{
-"zh": "这是什么味儿？",
-"en": "What is this smell?"
-},
-{
-"zh": "鸡汤的味儿真好。",
-"en": "The chicken soup tastes really good."
-}
-]
-},
-{
 "word": "风味",
 "s": [
 {
@@ -5428,7 +5389,7 @@
 "en": "Mum asks me to go and buy vegetables."
 },
 {
-"zh": "爸爸让我玩一会儿。",
+"zh": "爸爸让我玩一会。",
 "en": "Dad lets me play for a while."
 }
 ]
@@ -5664,6 +5625,214 @@
 {
 "zh": "这座桥去年建成。",
 "en": "This bridge was built last year."
+}
+]
+},
+{
+"word": "专心",
+"s": [
+{
+"zh": "上课要专心听讲。",
+"en": "Pay attention in class."
+},
+{
+"zh": "他专心地写作业。",
+"en": "He does his homework with focus."
+}
+]
+},
+{
+"word": "很远",
+"s": [
+{
+"zh": "外婆家很远。",
+"en": "Grandma's house is far away."
+},
+{
+"zh": "我家到学校很远。",
+"en": "My home is far from school."
+}
+]
+},
+{
+"word": "迷路",
+"s": [
+{
+"zh": "小狗迷路了。",
+"en": "The puppy got lost."
+},
+{
+"zh": "我在商场里迷路了。",
+"en": "I got lost in the mall."
+}
+]
+},
+{
+"word": "等一等",
+"s": [
+{
+"zh": "等一等，我还没好！",
+"en": "Wait, I'm not ready yet!"
+},
+{
+"zh": "请等一等我。",
+"en": "Please wait for me."
+}
+]
+},
+{
+"word": "好极了",
+"s": [
+{
+"zh": "你画得好极了！",
+"en": "You drew it really well!"
+},
+{
+"zh": "今天天气好极了！",
+"en": "The weather is great today!"
+}
+]
+},
+{
+"word": "很冷",
+"s": [
+{
+"zh": "冷气开了，房间很冷。",
+"en": "The air-con is on, and the room is cold."
+},
+{
+"zh": "外面很冷，要穿大衣。",
+"en": "It's cold outside, so wear a coat."
+}
+]
+},
+{
+"word": "很热",
+"s": [
+{
+"zh": "今天天气很热。",
+"en": "It is very hot today."
+},
+{
+"zh": "中午的太阳很热。",
+"en": "The noon sun is very hot."
+}
+]
+},
+{
+"word": "热水",
+"s": [
+{
+"zh": "我用热水洗脸。",
+"en": "I wash my face with hot water."
+},
+{
+"zh": "妈妈给我一杯热水。",
+"en": "Mum gives me a cup of hot water."
+}
+]
+},
+{
+"word": "淋湿",
+"s": [
+{
+"zh": "下雨了，我的衣服淋湿了。",
+"en": "It rained and my clothes got wet."
+},
+{
+"zh": "小鸟被雨淋湿了。",
+"en": "The bird got soaked by the rain."
+}
+]
+},
+{
+"word": "鸟窝",
+"s": [
+{
+"zh": "大树上有一个鸟窝。",
+"en": "There is a bird's nest in the big tree."
+},
+{
+"zh": "鸟窝里有三个蛋。",
+"en": "There are three eggs in the nest."
+}
+]
+},
+{
+"word": "消防员",
+"s": [
+{
+"zh": "消防员在灭火。",
+"en": "The firefighters are putting out the fire."
+},
+{
+"zh": "我想做消防员。",
+"en": "I want to be a firefighter."
+}
+]
+},
+{
+"word": "闻一闻",
+"s": [
+{
+"zh": "你闻一闻，好香啊！",
+"en": "Take a sniff, it smells so good!"
+},
+{
+"zh": "小狗闻一闻就走了。",
+"en": "The puppy sniffed and walked off."
+}
+]
+},
+{
+"word": "尝一尝",
+"s": [
+{
+"zh": "你尝一尝这个汤。",
+"en": "Have a taste of this soup."
+},
+{
+"zh": "妈妈让我尝一尝。",
+"en": "Mum let me have a taste."
+}
+]
+},
+{
+"word": "大树",
+"s": [
+{
+"zh": "大树下很凉快。",
+"en": "It is cool under the big tree."
+},
+{
+"zh": "公园里有一棵大树。",
+"en": "There is a big tree in the park."
+}
+]
+},
+{
+"word": "摸一摸",
+"s": [
+{
+"zh": "我想摸一摸小猫。",
+"en": "I want to stroke the kitten."
+},
+{
+"zh": "你摸一摸，它的毛很长。",
+"en": "Feel it, its fur is long."
+}
+]
+},
+{
+"word": "掉下",
+"s": [
+{
+"zh": "叶子从树上掉下来了。",
+"en": "A leaf fell from the tree."
+},
+{
+"zh": "我的笔掉下去了。",
+"en": "My pencil fell down."
 }
 ]
 }

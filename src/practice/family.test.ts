@@ -21,7 +21,7 @@ describe('the 找一家人 board (spec 2026-10-12 §5)', () => {
       expect(b.distractors).toHaveLength(4);
       for (const d of b.distractors) { expect(d.text).not.toContain('生'); expect(b.tiles).toContain(d.text); expect(d.en).toBeTruthy(); }
     }
-    expect(familyBoard(w('生'), K, mulberry32(1))!.family.map((f) => f.text)).toEqual(['先生', '女生']);
+    expect(familyBoard(w('生'), K, mulberry32(1))!.family.map((f) => f.text)).toEqual(['生气', '男生']); // content 1.16: 生日 leads 生's 组词
   });
   it("carries the card's reading, so the question says the character at it (final review M2)", () => {
     expect(familyBoard(w('生'), K, mulberry32(1))!.reading).toBe('shēng');
