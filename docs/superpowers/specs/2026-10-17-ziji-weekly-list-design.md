@@ -1,6 +1,6 @@
 # ZiJi this week's word list (本周词语): front-loaded, ready by midweek, with the class and revision kept — design
 
-Date: 2026-10-17 · Base: main at 7bd686c (after PR #34) · Branch: `feat/weekly-list`
+Date: 2026-10-17 · Base: main at c5e7b21 (after PR #35) · Approved by the parent 2026-10-17, with one amendment (§2.1) · Branch: `feat/weekly-list`
 
 ## 1. Why
 
@@ -50,7 +50,7 @@ The parent also asked (2026-10-17) for two things to keep going:
 
 ## 2. Decisions for the parent
 
-Each decision has a recommendation, and the spec is written to it. These are the parent's to change.
+**Approved (parent, 2026-10-17):** all 11 recommendations are accepted as written, with one amendment (§2.1). The spec is written to them.
 
 1. **Front-loading pace.** How fast do the list's *new* words arrive?
    - **Recommendation:** at **pace + 2 a day, never above the ceiling** (`settings.newPerDay`, default 8). At his current pace of 4–5, that is 6–7 a day. The list finishes in `ceil(new ÷ that)` days, at most the days before ready-by.
@@ -79,7 +79,7 @@ Each decision has a recommendation, and the spec is written to it. These are the
    - **Recommendation:** **both stay active**. The one ready soonest goes first, and a word on both counts once, for the earlier list. Home counts down to the nearest ready-by day.
    - **Alternative:** the new list replaces the old one, and the old list's unlearned words go back to the normal order.
 7. **Words not ready by homework day.**
-   - **Recommendation:** for **7 more days** they stay at list priority, in the new-word queue and in light review. Then they become ordinary words in normal SRS.
+   - **Accepted:** for **7 more days** they stay at list priority, in the new-word queue and in the guaranteed practice of §2.1. Then they become ordinary words in normal SRS.
 8. **Writing.**
    - **Recommendation:** new parent words from a list are **not writeable** (the importer defaults to writeable). The parent can tick them in Words. Built-in characters keep their own 写一写 schedule.
 9. **Words without English.**
@@ -91,6 +91,22 @@ Each decision has a recommendation, and the spec is written to it. These are the
     - **Recommendation:** the preview shows each fill-in row with its proposed decoys. **All fine** confirms them in one tap, and a tap swaps one decoy.
     - Rows that aren't confirmed are not asked: the item falls back to read, meaning or 搭配. Confusable words (抓/捉/抢) are exactly the ones a machine can't be sure don't fit, so confirming is the only way to make the question safe.
     - **Alternative:** ask unconfirmed rows too, accepting that now and then a right answer is marked wrong. Not recommended.
+
+### 2.1 Amendment (parent, 2026-10-17): unready words keep being practised
+
+The parent's words: "Even if not fully understood by Wednesday the words should continue to be revised later into the week instead of dropping off."
+
+After the ready-by check, list items fall into two groups.
+
+**Not solid:** missed in the check, not yet asked, or not ready (§8.3). These are **actively practised every day** until they are ready, through homework day and for the 7 days after it (decision 7). Being first in the review order is not enough.
+
+- **Re-teaching card.** The next lesson's 认新字 opens with the item's word or pair card again (§7.1, §7.2), marked 「再认一次」. It takes **no new-word slot**. There are at most 6 a lesson, missed in the check first. An item gets a re-teaching card on the day after each miss, never twice in a row without a miss in between.
+- **A guaranteed slot in 练一练.** Every not-solid item gets **one list item in every lesson**, in the form it missed (§8.2), then rotating through the others (§7.6). These **reserved items** are planned before the boost share is sized and are never cut by it. They are capped at 8; when there are more than 8, the ones with the oldest last answer go first and the rest rotate the next day. They are interleaved with due revision. Due revision still comes first in the first-appearance order, and his reviews are counted into the round's fit as before (§5.1).
+- An item becomes solid after a right answer on **two different days** after the check, with no miss since. Being right once could be luck, and two days matches the ladder's own pass rule.
+
+**Solid:** the item passed the check and has no later miss. These get **light review** through Friday, as §6.3 describes: FSRS order with list cards first in the window, and no extra items.
+
+When the list closes, 7 days after homework day, items still not solid become ordinary words.
 
 ## 3. The parent flow
 
@@ -196,7 +212,7 @@ Re-pasting the same sheet while its list is active **updates** that list: it add
 
 ## 4. Data model and migration
 
-There is a new object store, **`weekLists`**, keyed by `id`. `DB_VERSION` goes from 4 to 5, and the store is added to `LIST_STORES`, so backups include it with no other change.
+There is a new object store, **`weekLists`**, keyed by `id`. `DB_VERSION` goes from 5 to 6 (v5 is PR #35's log indexes and `restorePoints`), and the store is added to `LIST_STORES`, so backups include it with no other change.
 
 ```ts
 /** A list from school or tuition to learn by a day (weekly list spec 2026-10-17). Its words stay ordinary words. */
@@ -218,7 +234,13 @@ export interface WeekItem {
   text: string;               // as on the sheet (for the parent's view if the word is later deleted)
   from: 'grid' | 'pair' | 'both';
   addedStatus: 'new' | 'learning' | 'known' | 'placed'; // at Add, for the parent's summary; the planner recomputes
+  last?: Partial<Record<WeekForm, WeekAnswer>>;         // his latest answer in each form since the list arrived (§8.3)
+  rightDays?: string[];       // days with a right answer after the check (solid at 2, §2.1)
+  missedOn?: string;          // the last day it was missed after the check (a re-teaching card the next day, §2.1)
 }
+
+export type WeekForm = 'read' | 'meaning' | 'fit' | 'dapei';
+export interface WeekAnswer { at: number; correct: boolean }
 
 export interface WeekPair {
   left: string;               // verb or adjective (摘, 圆圆的)
@@ -251,7 +273,7 @@ Other changes:
   - `newWordLanes` may now say `'list'`, which the 认新字 tag reads as 「本周」.
 - **Repo:** `allWeekLists`, `activeWeekLists(now)`, `putWeekList` and `deleteWeekList`.
 - **Migration:**
-  - The v4 → v5 upgrade only creates the empty store.
+  - The v5 → v6 upgrade only creates the empty store.
   - There is nothing to move: lists made earlier through From a worksheet stay as they are and are not weekly lists.
 
 **Deleting a word in Words** leaves its list items, which then show as "removed". The planner skips them.
@@ -308,7 +330,7 @@ The deadline is real, but so is the backlog.
 - **H** = 2 if yesterday's round didn't run out and he is not in a backlog pause, else 0.
 - **front days** = the days from the list's arrival to ready-by − 1, at most `ceil(totalNew ÷ min(P + H, newPerDay))`. Decision 1 sets the rate.
 - **remaining** = list words with status **new**, not yet begun.
-- **list today** = `min(remaining, P + H − schoolFloor)`, spread as `ceil(remaining ÷ front days left)` when that is less.
+- **list today** = `min(remaining, P + H − schoolFloor)`. There is no spreading: front-loading wants the words as early as the rate allows (ruling at plan time, 2026-10-17).
   - `schoolFloor` is 0 on a front-load day.
   - It is `min(P, schoolNeed ÷ schoolDaysLeft)` once the class lane must catch up before homework due (§5.3).
 - **MOE today** = `P − list today`, or `P + H − list today` (at least 0) on a front-load day. `pickNewWords` splits this between the school and catch-up lanes as it does now, but the **school lane is filled first** while `schoolNeed > 0`.
@@ -386,8 +408,8 @@ FSRS sets a due date for when recall drops to the target, 0.9. So a list card wh
 The only thing to guarantee is that **list cards due between ready-by and homework due are taken on time**:
 
 - In `buildSessionPlan`, due list cards in that window are **sorted first** among due cards, so `REVIEW_CAP` (60) and the other caps can never leave them out.
-- The check's misses are due the next day (§8.2), so they come back on Thursday and again whenever FSRS says.
-- That is the "light list review". **No pin after ready-by:** pinning again would cost reviews without raising the 0.9 floor.
+- The check's misses are due the next day (§8.2). They come back on Thursday and keep getting re-teaching cards and reserved items daily until solid (§2.1).
+- For items that passed, that is the "light list review". **No pin after ready-by:** pinning again would cost reviews without raising the 0.9 floor.
 - **Extra lessons** (`extraCards`) must not pull a list card due on ready-by into the day before. That would mass it before the check. List cards are left out of the "due tomorrow" pull on ready-by − 1.
 
 ### 6.4 List boost items
@@ -623,7 +645,7 @@ Board and match answers grade the left word's `meaning` card (`recordUse`, sourc
   - 练一练 that day **leaves out list words' due cards**, which the check grades instead. If he never opens the check, those cards stay due.
 - **No 都不对** and no retries in the check: it measures.
 - A miss shows the miss sheet. The question does not come back in the check.
-- **Stars:** about one per 20 items, through the existing `bonusStars`. The river meter counts it like 多读一遍.
+- **Rewards follow mastery, not completion** (learning rules #34, Deci, Koestner & Ryan 1999). One `bonusStars` star goes to each item that is right in the check and was not ready before it. Finishing the check earns nothing by itself and does not move the river meter.
 - **Saving:** results go to `WeekList.check` as each answer is given, so stopping and resuming works.
 
 ### 8.2 Misses come back
@@ -632,7 +654,8 @@ Board and match answers grade the left word's `meaning` card (`recordUse`, sourc
 - `bringForward` makes it **due at the start of tomorrow**, so the Thursday lesson takes it among the first due cards (§6.3).
 - A missed 搭配 or 选词填空 brings the word's `meaning` card forward the same way.
 - Tomorrow that item's boost asks **the same form** first, with a different sentence or board when one exists.
-- **On homework day** (Friday), Home shows a 1-minute optional card, 「再看一次」, holding only the check's misses that are still not right. It is ungraded.
+- **Every lesson after the check** gives each not-solid item a re-teaching card the day after a miss and a reserved 练一练 item, until it is solid or the list closes (§2.1).
+- **On homework day** (Friday), Home also shows a 1-minute optional card, 「再看一次」, holding only the check's misses that are still not right. It is ungraded.
 
 ### 8.3 Readiness
 
@@ -692,7 +715,7 @@ Decision 6:
 ## 11. Backup and restore
 
 - **Export:** `weekLists` joins `LIST_STORES`, so backups carry it.
-- **Restoring a backup made before v5** (no `weekLists`): `applyBackup` keeps stores that are absent from the file. That would leave today's lists pointing at word ids the restored `words` store may not have. So **`weekLists` is cleared** when the backup has none, and the parent sees "Weekly lists weren't in this backup".
+- **Restoring a backup made before v6** (no `weekLists`): `applyBackup` keeps stores that are absent from the file. That would leave today's lists pointing at word ids the restored `words` store may not have. So **`weekLists` is cleared** when the backup has none, and the parent sees "Weekly lists weren't in this backup". `restoreWithUndo` (PR #35) exports `LIST_STORES` before it restores, so undoing a restore brings the lists back.
 - **Restoring a backup from a newer app** into an older one: `readBackup` refuses unknown stores with "not a ZiJi backup". Change it to say "made by a newer version — update the app" when `dbVersion > DB_VERSION`, the same message the raw dump already gives.
 - **Raw dump:** covers the store with no change.
 - **Privacy:** the lists hold class material. They stay on the iPad and in the parent's backups, never in the repo or the public site (importer plan, Global Constraints).
@@ -722,8 +745,8 @@ The fixtures use **other words**. Nothing is copied from the Berries sheet.
 | **Check** (`CheckScreen.test.tsx`) | • Asks every item once, in mixed forms (搭配, 选词填空, meaning, read), with each pair asked once, weakest first. <br>• No pinyin, no spoken answer, no 都不对, no retries, no `SHOW_AFTER`; misses shown only on the end summary. <br>• Grades the first answer of the day; that day's 练一练 leaves out list due cards. <br>• Resumes after a stop. <br>• Misses due at the start of tomorrow; the 搭配 miss is the first boost item. <br>• Readiness after the check. |
 | **Parent** (`weekPanel.test.tsx`) | • Paste → preview → Add, with the plan line naming words that won't fit. <br>• Wrong-partner swap. <br>• Dashboard readiness line: list, class, reviews, weak. <br>• Delete keeps words. |
 | **Home** (`home.test.tsx` additions) | • Countdown text by phase, with the weekday from ready-by and the nearest of two lists. <br>• No line after homework due. <br>• `npm run fit` at 0. <br>• WebKit screenshots of Home with the line, and of the check. |
-| **Backup** (`backup.test.ts` additions) | • Round trip with lists. <br>• A pre-v5 backup clears `weekLists`. <br>• A newer `dbVersion` gives the newer-version message. <br>• DB upgrade from v4 keeps all data. |
-| **Content gates** | • `contentGate.test.ts` and the no-儿化 test stay green: list content is the parent's, and nothing is generated from HSK for it. <br>• New test: `proposeWrong` never returns a `BLOCKED` word. |
+| **Backup** (`backup.test.ts` additions) | • Round trip with lists. <br>• A pre-v6 backup clears `weekLists`. <br>• Undoing a restore brings the lists back. <br>• A newer `dbVersion` gives the newer-version message. <br>• DB upgrade from v5 keeps all data and indexes. |
+| **Content gates** | • `contentGate.test.ts` and `src/noErhua.test.ts` stay green. Its `SCOPE` gains `weeklist/`, because the countdown and check lines are built there. <br>• The gates stay green: list content is the parent's, and nothing is generated from HSK for it. <br>• New test: `proposeWrong` never returns a `BLOCKED` word. |
 
 ## 13. Out of scope
 
@@ -739,4 +762,4 @@ The fixtures use **other words**. Nothing is copied from the Berries sheet.
 | Status | Files |
 |---|---|
 | **New** | `src/weeklist/{parse,match,dates,plan,schedule,dapei,fit,readiness}.ts` and their tests <br>`src/parent/WeekPanel.tsx` <br>`src/app/CheckScreen.tsx` <br>`src/app/WeekCountdown.tsx` |
-| **Changed** | `src/types.ts` (`WeekList`…, `SessionPlan` fields) <br>`src/store/db.ts` (v5, store) and `repo.ts` <br>`src/store/backup.ts` (§11) <br>`src/session/plan.ts` and `lanes.ts` (quota, lanes, ordering, the ready-by day's exclusions) <br>`src/session/record.ts` (`pinDue` in `reviewCard`; `beginNewWord` on Read) <br>`src/session/practice.ts` (boost items, interleaved through `buildRound`) <br>`src/practice/pairs.ts` (list pairs in `dapeiQuestion`; a `match` board with a decoy) <br>`src/activities/practice/PracticeQuestion.tsx` (the `match` board; list `fit` items) <br>`src/activities/flashcards/FlashcardStep.tsx` (word card: example row, mark, `leadPair`) <br>`src/content/kidGloss.ts` and `src/audio/speech.ts` (`leadPair` beside `boundPair`, `loneSpoken`) <br>`src/activities/choose/UseQuestion.tsx` and `src/activities/practice/PairGame.tsx` (check mode: no pinyin, no hints) <br>`src/practice/useItems.ts` (school-file sentences as a source for list words) <br>`src/session/writing.ts` (half the characters on front-load days) <br>`src/parent/ParentArea.tsx` and `Dashboard.tsx` <br>`src/app/HomeScreen.tsx` <br>`src/session/lanes.ts` `laneTag` (「本周」) |
+| **Changed** | `src/types.ts` (`WeekList`…, `SessionPlan` fields) <br>`src/store/db.ts` (v6, store) and `repo.ts` <br>`src/store/backup.ts` (§11) <br>`src/session/plan.ts` and `lanes.ts` (quota, lanes, ordering, the ready-by day's exclusions) <br>`src/session/record.ts` (`pinDue` in `reviewCard`; `beginNewWord` on Read) <br>`src/session/practice.ts` (boost items, interleaved through `buildRound`) <br>`src/practice/pairs.ts` (list pairs in `dapeiQuestion`; a `match` board with a decoy) <br>`src/activities/practice/PracticeQuestion.tsx` (the `match` board; list `fit` items) <br>`src/activities/flashcards/FlashcardStep.tsx` (word card: example row, mark, `leadPair`) <br>`src/content/kidGloss.ts` and `src/audio/speech.ts` (`leadPair` beside `boundPair`, `loneSpoken`) <br>`src/activities/choose/UseQuestion.tsx` and `src/activities/practice/PairGame.tsx` (check mode: no pinyin, no hints) <br>`src/practice/useItems.ts` (school-file sentences as a source for list words) <br>`src/session/writing.ts` (half the characters on front-load days) <br>`src/parent/ParentArea.tsx` and `Dashboard.tsx` <br>`src/app/HomeScreen.tsx` <br>`src/session/lanes.ts` `laneTag` (「本周」) |
