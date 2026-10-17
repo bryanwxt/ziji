@@ -21,8 +21,9 @@ import { SpeakButton } from '../../ui/SpeakButton';
 import { BoundWord } from '../../ui/BoundWord';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { LookAlikeWhy, PinyinWhy, RadicalHint } from '../../ui/stage/WhyLine';
-import { firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
+import { alike, firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor, questionMeaning } from '../../content/glossary';
+import { ambiguousByEar } from './homophones';
 import { boundPair, inBoundSense, kidGlossReading } from '../../content/kidGloss';
 import { meaningCue, pickSoundAlikes, usageLine, wordCue, type MeaningCue } from './meaning';
 import { InkIcon } from '../../ui/icons/InkIcon';
@@ -84,7 +85,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const pair = list?.lead ?? boundPair(word.text); // a list verb's English questions show its list pair the same way (fix round 2026-10-17)
   const pairPy = list?.lead ? list.leadReading : pair ? kidGlossReading(pair) : undefined;
   // none: the right answer is left out and 都不对 is right; real: the right answer itself, shown after (production practice spec §5)
-  const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null; none: boolean; showsNone: boolean; real: string } => {
+  const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null; none: boolean; showsNone: boolean; real: string; shown?: boolean } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
     const pickOptions = (options: string[], real: string) => noneOfThese === 'answer' ? noneChoices(options, real) : noneOfThese === 'decoy' ? noneDecoyChoices(options, real) : options;
     // Meaning: which character fits its 组词 word (same-sound choices). Without a cue it falls back to reading.
@@ -96,12 +97,16 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     }
     // the word ladder (spec 2026-10-06 §3.2): he hears it, or reads it, and picks its meaning in English
     if (ask === 'hear' || ask === 'meaningRead') {
-      // always four: six English meanings crowd a phone and drag in obscure glosses (parent, 2026-10-12)
-      const options = meaningChoices(word, pool, rng);
+      const hear = ask === 'hear' && voice && !bare; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
+      // always four: six English meanings crowd a phone and drag in obscure glosses (parent, 2026-10-12); heard, none of them
+      // comes from, or fits, a word said like it (homophones.ts, parent 2026-10-17: 她 heard, "he, him" marked wrong)
+      const options = meaningChoices(word, pool, rng, undefined, hear);
       if (options) {
-        const hear = ask === 'hear' && voice && !bare; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
         const real = firstSense(questionMeaning(word)!);
-        return { listen: hear, cue: null, answer: noneOfThese === 'answer' ? NONE_OF_THESE : real, options: pickOptions(options, real), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead', none: noneOfThese === 'answer', showsNone: !!noneOfThese, real };
+        // a common word said the same means something else (她 / 他 / 它): heard alone he can't know which was meant, so he sees
+        // it too — still said, still the Hear rung (homophones.ts)
+        const shown = hear && ambiguousByEar(word, pool, alike);
+        return { listen: hear, cue: null, answer: noneOfThese === 'answer' ? NONE_OF_THESE : real, options: pickOptions(options, real), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead', none: noneOfThese === 'answer', showsNone: !!noneOfThese, real, shown };
       }
     }
     // a bound character is heard as its pair (番茄): its pair's other character is never a wrong choice (蚂蚁 said, 蚁 offered)
@@ -190,7 +195,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const mood: TruffleMood = phase === 'feedback' ? resting : 'neutral'; // still while he answers (spec 2026-10-11 §5)
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害！', content: '呼噜～' };
   // a list word or pair is a 词, not a 字 (weekly list spec §7.1)
-  const bubble = phase === 'intro' ? (item.reteach ? '再认一次！' : again ? '再看一遍！' : list && (list.lead || Array.from(word.text).length > 1) ? '新词来了！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : Array.from(word.text).length > 1 ? '这个词怎么读？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
+  const bubble = phase === 'intro' ? (item.reteach ? '再认一次！' : again ? '再看一遍！' : list && (list.lead || Array.from(word.text).length > 1) ? '新词来了！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? (quiz.shown ? '听一听，看一看，是什么意思？' : '听一听，是什么意思？') : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : Array.from(word.text).length > 1 ? '这个词怎么读？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
     if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : quiz.mode === 'hear' ? 'hear' : 'read', picked: choice ?? undefined });
@@ -255,7 +260,14 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                 </div>
               ) : (
                 <>
-                  {quiz.listen ? <SpeakButton text={quiz.mode && pair ? pair : word.text} reading={quiz.mode && pair ? (list?.lead ? pairPy : undefined) : word.pinyin} big />
+                  {quiz.listen && !quiz.shown ? <SpeakButton text={quiz.mode && pair ? pair : word.text} reading={quiz.mode && pair ? (list?.lead ? pairPy : undefined) : word.pinyin} big />
+                    // a heard word with a common sound-alike (她 / 他): seen as well, its speaker beside it
+                    : quiz.shown ? (
+                      <div class="flash__heard">
+                        {pair ? <div class="hanzi hanzi--q hanzi--pair" data-q style={`--len:${Array.from(pair).length}`}><BoundWord pair={pair} ch={word.text} /></div> : <div class="hanzi hanzi--q" data-q>{word.text}</div>}
+                        <SpeakButton text={pair ?? word.text} reading={pair ? (list?.lead ? pairPy : undefined) : word.pinyin} />
+                      </div>
+                    )
                     // an English question on a bound character asks about its pair, the character picked out in it; never the lone character
                     : quiz.mode && pair ? <div class="hanzi hanzi--q hanzi--pair" data-q style={`--len:${Array.from(pair).length}`}><BoundWord pair={pair} ch={word.text} /></div>
                     : <div class="hanzi hanzi--q" data-q>{word.text}</div>}

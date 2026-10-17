@@ -1,6 +1,7 @@
 import { pinyin } from 'pinyin-pro';
 import { splitSyllable, isSyllable } from '../activities/flashcards/pinyinTraps';
 import { syllableTone, toneless, withTone } from '../activities/flashcards/tones';
+import { readingsOf, soundsLike } from '../activities/flashcards/homophones';
 import { BUILTIN, schoolTerm } from '../content';
 import { boundPair } from '../content/kidGloss';
 import { shuffle, type Rng } from '../lib/random';
@@ -103,6 +104,7 @@ export function lookAlikes(word: Word, pool: Word[], rng: Rng): string[] | null 
   const info = INFO.get(word.text);
   if (!info) return null;
   const sound = toneless(word.pinyin);
+  const heard = [word.pinyin.trim().toLowerCase()]; // what Truffle says: the card's reading
   const said = new Set([...(boundPair(word.text) ?? ''), ...(word.examples ?? []).flatMap((e) => Array.from(e.text))]);
   const term = TERMS.indexOf(schoolTerm(word.text) ?? '');
   const near = (ch: string) => { const t = TERMS.indexOf(schoolTerm(ch) ?? ''); return t >= 0 && (term < 0 || t <= term + 1); };
@@ -115,7 +117,8 @@ export function lookAlikes(word: Word, pool: Word[], rng: Rng): string[] | null 
     const sharing = chars.filter((ch) => {
       if (ch === word.text || said.has(ch)) return false;
       const c = INFO.get(ch);
-      return !!c && (c.radical === part || c.components.includes(part)) && toneless(c.pinyin) !== sound && Math.abs(c.strokes - info.strokes) <= 5;
+      // any reading of it said like his (地 is dì and de): heard alone, both would be right (homophones.ts)
+      return !!c && (c.radical === part || c.components.includes(part)) && toneless(c.pinyin) !== sound && !soundsLike(heard, readingsOf(ch, c.pinyin), false) && Math.abs(c.strokes - info.strokes) <= 5;
     });
     // four different sounds: three 马 characters all said ma would give away the one that isn't (骑 among 妈 蚂 吗)
     const sounds = new Set([sound]);

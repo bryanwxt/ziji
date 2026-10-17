@@ -84,7 +84,7 @@ function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: As
   switch (ask) {
     case 'read': return Array.from(word.text).length === 1 || word.source === 'parent'; // reading aloud: characters and his own lists; ladder 词语 are read for meaning
     case 'listen': return voice && Array.from(word.text).length === 1;
-    case 'hear': return voice && meaningChoices(word, pool, mulberry32(1)) !== null;
+    case 'hear': return voice && meaningChoices(word, pool, mulberry32(1), undefined, true) !== null;
     case 'understand': return voice && understandItem(word, mulberry32(1)) !== null;
     case 'meaningRead': return meaningChoices(word, pool, mulberry32(1)) !== null;
     case 'word': return wordCue(word) !== null;

@@ -28,7 +28,7 @@ describe('a lesson on the ladder (spec 2026-10-06 §3.2)', () => {
     await screen.findByText('我记住了！');
     const shown = words.find((w) => w.text === document.querySelector('.intro__card')?.getAttribute('data-word'))!;
     fireEvent.click(screen.getByText('我记住了！'));
-    expect(await screen.findByText('听一听，是什么意思？')).toBeTruthy();
+    expect(await screen.findByText(/^听一听，(看一看，)?是什么意思？$/)).toBeTruthy(); // a word from a 同音字 set is seen too (homophones.ts)
     fireEvent.click(screen.getByText(firstSense(cardMeaning(shown)!))); // right: a miss shows the card again first
     fireEvent.click(await screen.findByText('继续'));
     await waitFor(async () => expect((await allCards(app.db)).some((c) => c.kind === 'hear')).toBe(true));

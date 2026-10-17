@@ -1,12 +1,12 @@
-import { pinyin } from 'pinyin-pro';
 import { wordComponents } from '../../content';
 import { trapReadings } from './pinyinTraps';
 import { questionMeaning } from '../../content/glossary';
+import { heardReadings, readingsOf, soundAlikes, soundsLike, wordReadings } from './homophones';
 import { shuffle, type Rng } from '../../lib/random';
 import type { Word } from '../../types';
 
 export { syllableTone, toneless, withTone } from './tones';
-import { syllableTone, toneless, withTone } from './tones';
+import { syllableTone, withTone } from './tones';
 
 const lengthOf = (w: Word) => Array.from(w.text).length;
 
@@ -21,10 +21,16 @@ export const FEW_WRONG = 3;
 /** Five wrong options when the picker found five, else three of them. */
 export const fiveOrThree = <T>(wrong: T[]): T[] => wrong.slice(0, wrong.length >= MANY_WRONG ? MANY_WRONG : FEW_WRONG);
 
+/** Not said like the target's spoken reading in any tone, by any reading of its own (地 is dì and de: never a choice when 的 is said). */
+const soundsApart = (target: Word) => {
+  const mine = heardReadings(target);
+  return (w: Word) => !soundsLike(mine, wordReadings(w), false);
+};
+
 /** Different in sound, near his level (within two levels up): the look-alikes worth showing. */
 function nearOf(target: Word, pool: Word[]): Word[] {
-  const sound = toneless(target.pinyin);
-  const eligible = pool.filter((w) => lengthOf(w) === lengthOf(target) && w.text !== target.text && toneless(w.pinyin) !== sound);
+  const apart = soundsApart(target);
+  const eligible = pool.filter((w) => lengthOf(w) === lengthOf(target) && w.text !== target.text && apart(w));
   return target.level === null ? eligible : eligible.filter((w) => (w.level ?? 9) <= target.level! + 2);
 }
 
@@ -45,8 +51,8 @@ export function pickLookAlikes(target: Word, pool: Word[], rng: Rng): Word[] {
 }
 
 export function pickCharacterDistractors(target: Word, pool: Word[], rng: Rng, n = 3): Word[] {
-  const sound = toneless(target.pinyin);
-  const eligible = pool.filter((w) => lengthOf(w) === lengthOf(target) && w.text !== target.text && toneless(w.pinyin) !== sound);
+  const apart = soundsApart(target);
+  const eligible = pool.filter((w) => lengthOf(w) === lengthOf(target) && w.text !== target.text && apart(w));
   // near his level first: a first-level word never gets an HSK 7–9 look-alike while nearer ones are there (sweep)
   const near = target.level === null ? eligible : eligible.filter((w) => (w.level ?? 9) <= target.level! + 2);
   const tiers = [
@@ -68,12 +74,9 @@ export function pickCharacterDistractors(target: Word, pool: Word[], rng: Rng, n
   return picked;
 }
 
-/** Readings 一 and 不 take before other tones (一个 yí, 一天 yì, 不是 bú) — dictionaries list only yī and bù. */
-const TONE_CHANGE: Record<string, string[]> = { 一: ['yí', 'yì'], 不: ['bú'], 七: ['qí'], 八: ['bá'] }; // 七/八 take 2nd tone before a 4th in many children's speech
-
 export function pickPinyinDistractors(target: Word, pool: Word[], rng: Rng, n = 3): string[] {
   // A polyphonic character's other readings are right too — never offer them as wrong.
-  const readings = Array.from(target.text).length === 1 ? [...pinyin(target.text, { multiple: true, type: 'array' }), ...(TONE_CHANGE[target.text] ?? [])] : [];
+  const readings = Array.from(target.text).length === 1 ? readingsOf(target.text) : [];
   const syllables = target.pinyin.split(' ');
   // the toneless form is his word said in 轻声 (爸爸 bà ba): never offered as wrong
   const toneless = syllables.map((s) => syllableTone(s).base).join(' ');
@@ -159,15 +162,17 @@ export const alike = (a: string, b: string): boolean => {
 /**
  * Hear / read-for-meaning (spec 2026-10-06 §3.2): its English meaning and three others (or `others`) unlike it and each other,
  * near its place in his order. Only words that take an English question are asked or offered (questionMeaning: kid glosses,
- * never a grammar word); none for a word that takes none.
+ * never a grammar word); none for a word that takes none. `byEar`: he only hears the word, so no choice comes from a word that
+ * sounds like it, or means what a word that sounds like it means (homophones.ts: 她 heard, never "he, him" nor "it").
  */
-export function meaningChoices(word: Word, pool: Word[], rng: Rng, others = FEW_WRONG): string[] | null {
+export function meaningChoices(word: Word, pool: Word[], rng: Rng, others = FEW_WRONG, byEar = false): string[] | null {
   const full = questionMeaning(word);
   if (!full) return null;
   const answer = firstSense(full);
-  const seen = [answer];
+  const mine = byEar ? heardReadings(word) : [];
+  const seen = [answer, ...(byEar ? soundAlikes(word, pool).map((e) => e.gloss) : [])];
   const near = pool
-    .filter((w) => w.id !== word.id && w.text !== word.text && !w.paused && !!questionMeaning(w))
+    .filter((w) => w.id !== word.id && w.text !== word.text && !w.paused && !!questionMeaning(w) && !(byEar && soundsLike(mine, wordReadings(w))))
     .sort((a, b) => Math.abs((a.rank ?? 1e9) - (word.rank ?? 0)) - Math.abs((b.rank ?? 1e9) - (word.rank ?? 0)))
     .slice(0, 60);
   const wrong: string[] = [];
