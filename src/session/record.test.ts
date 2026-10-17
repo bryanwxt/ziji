@@ -169,7 +169,7 @@ describe('final review I2: a lowered ceiling applies today', () => {
 });
 
 describe('an extra lesson (parent, 2026-10-05: more than one lesson a day; the baseline stays one)', () => {
-  it('is a fresh real lesson with the next new words; today\'s lesson stays as it was', async () => {
+  it('is a fresh real lesson with no new words (review only, learning rules 2026-10-17); today\'s lesson stays as it was', async () => {
     const db = await freshDb();
     await putWords(db, builtinWords(0).slice(0, 20));
     const today = await startOrResumeSession(db, now);
@@ -181,8 +181,9 @@ describe('an extra lesson (parent, 2026-10-05: more than one lesson a day; the b
     expect(extra.extra).toBe(true);
     expect(extra.free).toBe(false);
     expect(extra.completed).toBe(false);
-    expect(extra.plan.newWordIds.length).toBeGreaterThan(0);
-    expect(extra.plan.newWordIds.some((id) => today.plan.newWordIds.includes(id))).toBe(false);
+    expect(today.plan.newWordIds.length).toBeGreaterThan(0);
+    expect(extra.plan.newWordIds).toEqual([]);
+    expect((await getSettings(db)).pace?.perDay).toBeDefined(); // the day's pace was the daily lesson's; the extra never moved it
     expect(await getSession(db, '2026-10-02')).toEqual(done); // never saved over the day's lesson
   });
 });

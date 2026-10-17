@@ -236,17 +236,21 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
   return rec;
 }
 
-async function planNow(db: AppDb, now: Date) {
+async function planNow(db: AppDb, now: Date, extra = false) {
   await openMissingRungs(db, now);
   const [cards, words, settings, practised] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db)]);
-  return buildSessionPlan({ cards, words: [...words, ...ladderWordsBesides(words)], settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
+  const all = [...words, ...ladderWordsBesides(words)];
+  // an extra lesson never asks the pace: it takes no new words (learning rules 2026-10-17)
+  if (extra) return buildSessionPlan({ cards, words: all, settings, now, practised, extra: true });
+  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
 }
 
 /**
- * Another lesson after today's (parent, 2026-10-05: more than one a day, the baseline stays one): planned fresh from where he
- * is now, so it brings the next new words and what is due. Graded like any lesson, but never saved over the day's record:
+ * Another lesson after today's (parent, 2026-10-05: more than one a day, the baseline stays one). Review only (learning rules
+ * 2026-10-17; Cepeda et al. 2006): no new words — what is due or due by tomorrow, and the practice and production steps for words
+ * he has met; with nothing due, a short round of his weakest words. Graded like any lesson, but never saved over the day's record:
  * the day, its streak and its chest stay the first lesson's. Leaving one part-way keeps his answers; the next starts afresh.
  */
 export async function startExtraLesson(db: AppDb, now: Date): Promise<SessionRecord> {
-  return { ...createSessionRecord(await planNow(db, now), localDateKey(now), now.getTime()), extra: true };
+  return { ...createSessionRecord(await planNow(db, now, true), localDateKey(now), now.getTime()), extra: true };
 }

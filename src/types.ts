@@ -164,6 +164,7 @@ export interface SessionPlan {
   newWordMeaningIds?: string[]; // today's new words that have a cue: their meaning question comes in the same lesson (spec §20 part 2)
   sayIds?: string[]; // words to say aloud in 练一练, best first (spec 2026-10-11 §4); plans saved before it have none
   sentenceIds?: string[]; // words for 说一句 in 练一练, best first (production practice spec §4); plans saved before it have none
+  weakIds?: string[]; // an extra lesson with nothing due or near due: his weakest words, practice only (learning rules 2026-10-17)
   writeWordIds?: string[]; // the words 写一写 covers today (production practice spec §3): 练一练 leaves out their 组词 taps; plans saved before it have none
 }
 

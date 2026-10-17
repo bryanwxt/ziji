@@ -53,6 +53,12 @@ export function practiceWords(rec: SessionRecord, rungs: ReadonlyMap<string, num
     const from = listenOnly ? 3 : startRung(rungs.get(wordId) ?? 0);
     revision.push({ wordId, isNew: false, from, appearances: from === 1 ? 2 : 1, gradesRecognise: reading.has(wordId), gradesMeaning: meaning.has(wordId), gradesHear: hearing.has(wordId), gradesUnderstand: understanding.has(wordId), due: reading.has(wordId) || meaningDue.has(wordId) || hearing.has(wordId) || understanding.has(wordId) });
   }
+  // an extra lesson with nothing due: his weakest words, twice each, graded by nothing (learning rules 2026-10-17)
+  for (const wordId of rec.plan.weakIds ?? []) {
+    if (seen.has(wordId)) continue;
+    seen.add(wordId);
+    revision.push({ wordId, isNew: false, from: startRung(rungs.get(wordId) ?? 0), appearances: 2, gradesRecognise: false, gradesMeaning: false });
+  }
   return [...fresh, ...revision];
 }
 
@@ -193,7 +199,10 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
   });
   const say = canSay ? (rec.plan.sayIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id); }) : [];
   const sentence = canSay ? (rec.plan.sentenceIds ?? []).filter((id) => { const w = wordsById.get(id); return !!w && !w.paused && !today.has(id) && canAskRung(w, 'sentence'); }) : [];
-  return withSentence(withSay(withFish(round, fish), say), sentence);
+  // the weakest-words round is practice only: a use question on it never rates his meaning card (learning rules 2026-10-17)
+  const weak = new Set(rec.plan.weakIds ?? []);
+  const graded = weak.size ? round.map((x) => (weak.has(x.wordId) ? { ...x, grades: null } : x)) : round;
+  return withSentence(withSay(withFish(graded, fish), say), sentence);
 }
 
 /** 再玩一会儿: a round of words he has begun, from their own rungs, twice each; practice only. */
