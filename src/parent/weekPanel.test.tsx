@@ -71,6 +71,21 @@ describe('WeekPanel: paste and preview (spec §3.2–3.5)', () => {
     expect(screen.getAllByText('check the pairing')).toHaveLength(2);
   });
 
+  it('a column-read sheet says so, and counts what needs checking (fix round 2026-10-17)', async () => {
+    await setup();
+    await read(['> 词语', '• 词语搭配', '早餐', '吃', '面包', '喝', '牛奶', '©2026 Example Publisher Pte Ltd.', '草地', '跑步', '蜻蜓', '饼干'].join('\n'));
+    expect(screen.getByText(/read this sheet column by column/)).toBeTruthy();
+    expect(screen.getByText(/To check: 2 搭配 pairings/)).toBeTruthy();
+    expect(screen.getAllByText('check the pairing')).toHaveLength(2);
+  });
+
+  it('a pair written noun first is reordered and says so', async () => {
+    await setup();
+    await read(['> 词语', '草地', '> 词语搭配', '面包 吃'].join('\n'));
+    expect(within(screen.getByRole('group', { name: '搭配' })).getByText('吃 — 面包')).toBeTruthy();
+    expect(screen.getByText('reordered to verb first: check it')).toBeTruthy();
+  });
+
   it('default days: ready by Wednesday, homework Friday; and the plan line', async () => {
     await setup();
     await read();

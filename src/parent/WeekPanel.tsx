@@ -69,7 +69,8 @@ const FLAG_TEXT = (it: DraftItem, f: DraftItem['flags'][number], isWord: (w: str
       : f === 'blocked' ? (it.reason ?? 'blocked')
         : 'unpaired on the sheet — check it';
 const NOTE_TEXT = (n: string) =>
-  n.startsWith('too long: ') ? `Left out (over 4 characters): ${n.slice(10)}`
+  n === 'columns' ? 'Live Text read this sheet column by column, so ZiJi has guessed which 搭配 halves go together and dropped themes it could not place. Check each pairing below: ⇄ swaps, Remove drops one.'
+  : n.startsWith('too long: ') ? `Left out (over 4 characters): ${n.slice(10)}`
     : n === 'sentences' ? 'This page also has sentences; use From a worksheet for those.'
       : n === 'idioms' ? 'This page also has 成语; use From a worksheet for those.'
         : 'This page also has a passage; use From a worksheet for that.';
@@ -225,6 +226,8 @@ export function WeekPanel() {
   const knownItems = items.filter((it) => !fresh.includes(it));
   const livePairs = pairs.filter((p) => !p.removed && p.wrong.length === 3);
   const liveFits = kept.map((it) => [it.text, fits[it.text]] as const).filter(([, f]) => f?.fit && !f.removed);
+  const pairingsToCheck = pairs.filter((p) => p.check && !p.removed).length;
+  const wordsToCheck = kept.filter((it) => it.flags.length > 0).length;
   const toCheck = livePairs.filter((p) => !p.ok).length + liveFits.filter(([, f]) => !f!.ok).length;
   const allFine = () => {
     setPairs((ps) => ps.map((p) => (p.removed ? p : { ...p, ok: true })));
@@ -357,6 +360,9 @@ export function WeekPanel() {
               <input id="week-due" type="date" value={homework} min={today} onInput={(e) => setHomeworkDay(inputValue(e))} />
             </div>
           </div>
+          {(pairingsToCheck > 0 || wordsToCheck > 0) && (
+            <p class="week__warn">To check: {[pairingsToCheck && `${pairingsToCheck} 搭配 pairing${pairingsToCheck === 1 ? '' : 's'}`, wordsToCheck && `${wordsToCheck} word${wordsToCheck === 1 ? '' : 's'}`].filter(Boolean).join(', ')}, marked below.</p>
+          )}
           {past && <p class="week__refuse" role="alert">Homework day is already past. Pick today or a later day.</p>}
           {!past && effReady && effReady !== readyBy && <p class="week__note">Ready by moves to {day(effReady)}: at least two days to learn, and before homework day.</p>}
           {same && <p class="week__note">“{same.name}” is already a list with these days. Saving adds to it.</p>}
@@ -397,7 +403,7 @@ export function WeekPanel() {
                   return (
                     <li key={`${i}`} class={`week__row ${p.removed ? 'is-off' : ''} ${p.ok && !p.removed ? 'is-ok' : ''}`}>
                       <span class="hanzi week__pair" lang="zh-CN">{p.left} — {p.right}</span>
-                      {p.check && <span class="week__flag">check the pairing</span>}
+                      {p.check && <span class="week__flag">{p.swapped ? 'reordered to verb first: check it' : 'check the pairing'}</span>}
                       {!p.removed && (
                         <>
                           <span class="week__wrongs">

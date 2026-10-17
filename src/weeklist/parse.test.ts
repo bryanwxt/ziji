@@ -171,3 +171,75 @@ describe('weekIsWord with the CC-CEDICT headwords, once loaded (follow-up 2026-1
     expect(weekIsWord(undefined, new Set(['蜻蜓']))('书跑')).toBe(false);
   });
 });
+
+// Fix round 2026-10-17 (the parent's first real sheet): invented sheets of the same two shapes, never the tuition sheet itself.
+describe('a clean sheet whose 词语 heading is itself a dictionary word', () => {
+  const DICT = new Set(['词语', '公园', '草地', '秋千', '书包', '帮助', '告诉', '安静', '干净', '热闹', '整齐', '草莓', '跑步', '高兴', '鸡蛋', '牛奶', '面包', '足球', '皮球', '包子', '果汁', '风筝']);
+  const isW = weekIsWord(undefined, DICT);
+  const CLEAN = [
+    '小小测验 Q3-L08', '',
+    '词语', '公园 草地 秋千 炸 书包', '帮助 告诉 安静 干净 热闹', '整齐 草莓 跑步 高兴 闪闪亮', '',
+    '词语搭配', '早餐', '煎 鸡蛋', '喝 牛奶', '香香的 面包', '炸 包子', '',
+    '操场', '踢 足球', '拍 皮球', '果汁 店', '荡 秋千',
+  ].join('\n');
+  const d = parseWeekList(CLEAN, isW, DICT, new Date(2026, 9, 20));
+  it('names the list by the title line that carries its page code', () => {
+    expect(d.title).toBe('小小测验 Q3-L08');
+  });
+  it('keeps the whole grid, then the pair halves that are words', () => {
+    expect(d.items.filter((i) => i.from !== 'pair').map((i) => i.text)).toEqual(['公园', '草地', '秋千', '炸', '书包', '帮助', '告诉', '安静', '干净', '热闹', '整齐', '草莓', '跑步', '高兴', '闪闪亮']);
+    expect(d.items.map((i) => i.text)).toEqual(expect.arrayContaining(['煎', '鸡蛋', '喝', '牛奶', '面包', '包子', '踢', '足球', '拍', '皮球', '果汁', '店']));
+    expect(d.items.map((i) => i.text)).not.toContain('香香的');
+  });
+  it('reads every pair in order under its theme, and keeps a noun + noun pair as written', () => {
+    expect(d.pairs.map((p) => `${p.group}:${p.left}-${p.right}${p.check ? '?' : ''}`)).toEqual([
+      '早餐:煎-鸡蛋', '早餐:喝-牛奶', '早餐:香香的-面包', '早餐:炸-包子', '操场:踢-足球', '操场:拍-皮球', '操场:果汁-店', '操场:荡-秋千',
+    ]);
+  });
+  it('reorders only a noun before a verb, and flags it', () => {
+    const r = parseWeekList('> 词语搭配\n皮球 拍\n面包 香香的', isW, DICT);
+    expect(r.pairs).toEqual([{ left: '拍', right: '皮球', check: true, swapped: true }, { left: '香香的', right: '面包', check: true, swapped: true }]);
+  });
+});
+
+describe('a raw Live Text dump read column by column, 搭配 before the grid', () => {
+  const DICT = new Set(['词语', '公园', '草地', '秋千', '书包', '帮助', '告诉', '安静', '干净', '热闹', '整齐', '草莓', '跑步', '高兴', '鸡蛋', '牛奶', '面包', '足球', '皮球', '包子', '苹果', '蛋糕', '鸡腿', '果汁', '花生', '红色', '风筝']);
+  const isW = weekIsWord(undefined, DICT);
+  const GRID = ['公园', '草地', '秋千', '炸', '书包', '帮助', '告诉', '安静', '干净', '热闹', '整齐', '草莓', '跑步', '高兴', '闪闪亮'];
+  const DUMP = [
+    'Q3', '小小测捡', '小小测验', '一、复习（第1-9课）', '> 词语', '• 词语搭配',
+    '早餐', '煎', '鸡蛋', '喝', '牛奶', '香香', '面包', '操场', '踢', '足球', '拍', '皮球',
+    '吃', '摘', '甜甜', '炸', '果汁', '包子', '苹果', '蛋糕', '鸡腿', '店',
+    '百力果', '©2026 Example Publisher Pte Ltd. All Rights Reserved.', '想象。表达。自信',
+    ...GRID.filter((w) => w !== '炸'), // Live Text dropped a grid cell
+    '挖', '红色', '花生', '草莓', '放', '荡', '风筝', '秋千',
+  ].join('\n');
+  const d = parseWeekList(DUMP, isW, DICT, new Date(2026, 9, 20));
+  const texts = d.items.map((i) => i.text);
+  it('names it by the title line nearest the first heading', () => {
+    expect(d.title).toBe('小小测验');
+  });
+  it('recovers every grid word as an item, unflagged', () => {
+    for (const w of GRID) expect(texts).toContain(w);
+    for (const w of GRID) expect(d.items.find((i) => i.text === w)!.flags).not.toContain('checkPair');
+  });
+  it('drops the noise: brand, copyright, slogan, the misread line above the title, and theme headings', () => {
+    for (const w of ['Q3', '小小测捡', '百力果', '想象', '表达', '自信', '早餐', '操场']) expect(texts).not.toContain(w);
+  });
+  it('never invents a word: a reduplicated half that lost its 的 stays as read, and is no item', () => {
+    expect(d.pairs.some((p) => p.left === '香香' && p.right === '面包')).toBe(true);
+    expect(texts).not.toContain('香香');
+    expect(texts).not.toContain('香香的');
+  });
+  it('pairs what the column structure makes clear, every one flagged to check', () => {
+    expect(d.pairs.map((p) => `${p.group ?? ''}:${p.left}-${p.right}`)).toEqual([
+      '早餐:煎-鸡蛋', '早餐:喝-牛奶', '早餐:香香-面包', '操场:踢-足球', '操场:拍-皮球',
+      ':吃-包子', ':摘-苹果', ':甜甜-蛋糕', ':炸-鸡腿', ':果汁-店',
+      ':挖-花生', ':红色-草莓', ':放-风筝', ':荡-秋千',
+    ]);
+    expect(d.pairs.every((p) => p.check)).toBe(true);
+  });
+  it('tells the parent the sheet was read column by column', () => {
+    expect(d.notes).toContain('columns');
+  });
+});
