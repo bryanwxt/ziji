@@ -29,13 +29,11 @@ async function read(text = SHEET) {
   await screen.findByRole('heading', { name: /New to him/ });
 }
 const save = () => screen.getByRole('button', { name: /^Save/ }) as HTMLButtonElement;
-/** All fine, then Fine on each row it leaves for its own look (a doubtful decoy: fix round 2026-10-17). */
+const allFineButton = () => screen.getByRole('button', { name: /^(All fine|Accept all anyway)/ }) as HTMLButtonElement;
+/** All fine, then Accept all anyway for the rows it left to check (parent ruling 2026-10-17). */
 function confirmAll() {
-  fireEvent.click(screen.getByRole('button', { name: 'All fine' }));
-  for (const r of document.querySelectorAll<HTMLElement>('li.is-doubt:not(.is-ok):not(.is-off)')) {
-    const fine = within(r).queryByRole('button', { name: 'Fine' });
-    if (fine) fireEvent.click(fine);
-  }
+  fireEvent.click(allFineButton());
+  if (allFineButton().textContent === 'Accept all anyway') fireEvent.click(allFineButton());
 }
 
 describe('WeekPanel: paste and preview (spec §3.2–3.5)', () => {
@@ -116,7 +114,7 @@ describe('WeekPanel: confirming the wrong answers', () => {
     await setup();
     await read();
     expect(save().disabled).toBe(true);
-    expect(screen.getByText(/to check/)).toBeTruthy();
+    expect(screen.getAllByText(/to check/).length).toBeGreaterThan(0);
     confirmAll();
     expect(save().disabled).toBe(false);
   });
@@ -284,16 +282,58 @@ describe('WeekPanel: fill-in rows and joining (follow-up 2026-10-17)', () => {
     expect(within(row as HTMLElement).getByText('check this one')).toBeTruthy();
   });
 
-  it('All fine leaves a row with a doubtful decoy for its own Fine (fix round 2026-10-17)', async () => {
+  it('All fine says how many it leaves, confirms the rest and takes her to the first to check; then Accept all anyway (parent ruling 2026-10-17)', async () => {
     await setup();
     await read(['一、词语', '整齐 热闹 干净 安静 高兴 公园 草地'].join('\n'));
-    fireEvent.click(screen.getByRole('button', { name: 'All fine' }));
-    const row = screen.getByRole('list', { name: '选词填空' }).querySelector('li[data-word="整齐"]')! as HTMLElement;
-    expect(row.classList.contains('is-ok')).toBe(false);
+    const rows = screen.getByRole('list', { name: '选词填空' });
+    const flagged = [...rows.querySelectorAll<HTMLElement>('li.is-doubt')];
+    expect(flagged.length).toBeGreaterThan(0);
+    expect(allFineButton().textContent).toBe(`All fine (${flagged.length} to check)`);
+    fireEvent.click(allFineButton());
+    expect(rows.querySelectorAll('li:not(.is-doubt):not(.is-ok):not(.is-off)')).toHaveLength(0); // every safe row confirmed
+    expect(flagged[0]!.classList.contains('is-focus')).toBe(true);
+    expect(flagged[0]!.classList.contains('is-ok')).toBe(false);
     expect(save().disabled).toBe(true);
-    for (const r of screen.getByRole('list', { name: '选词填空' }).querySelectorAll<HTMLElement>('li.is-doubt:not(.is-ok)')) fireEvent.click(within(r).getByRole('button', { name: 'Fine' }));
-    expect(row.classList.contains('is-ok')).toBe(true);
+    expect(screen.getByRole('status').textContent).toMatch(/^To save: Fine on (the|each) marked row/);
+    expect(allFineButton().textContent).toBe('Accept all anyway');
+    fireEvent.click(allFineButton());
+    for (const r of flagged) expect(r.classList.contains('is-ok')).toBe(true);
     expect(save().disabled).toBe(false);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('Fine on the highlighted row moves the highlight to the next row to check', async () => {
+    await setup();
+    await read(['一、词语', '整齐 热闹 干净 安静 高兴 公园 草地'].join('\n'));
+    const flagged = [...screen.getByRole('list', { name: '选词填空' }).querySelectorAll<HTMLElement>('li.is-doubt')];
+    fireEvent.click(allFineButton());
+    fireEvent.click(within(flagged[0]!).getByRole('button', { name: 'Fine' }));
+    expect(flagged[0]!.classList.contains('is-focus')).toBe(false);
+    if (flagged[1]) expect(flagged[1].classList.contains('is-focus')).toBe(true);
+  });
+
+  it('Save says why it can\'t save, beside it', async () => {
+    await setup();
+    await read();
+    expect(save().disabled).toBe(true);
+    expect(screen.getByRole('status').textContent).toBe('To save: tap All fine, or Fine on each row.');
+    confirmAll();
+    fireEvent.input(screen.getByLabelText('Name'), { target: { value: ' ' } });
+    expect(screen.getByRole('status').textContent).toBe('Give the list a name.');
+  });
+
+  it('a word with no school sentence gets one from the list bank, and a short list borrows decoys from his started words', async () => {
+    const app = await makeAppData({ now: () => MONDAY });
+    await putCards(app.db, ['书包', '老师', '电视', '眼睛', '月亮'].map((t) => makeCard(`w:${t}`, 'recognise', new Date(2026, 9, 25), true)));
+    renderWithApp(<WeekPanel />, app);
+    await read(['一、词语', '玉米 香肠 鸡翅 气球'].join('\n'));
+    const rows = screen.getByRole('list', { name: '选词填空' });
+    expect(rows.querySelector('li[data-word="气球"]')!.textContent).toContain('吹得大大的'); // the list bank's sentence
+    const corn = rows.querySelector<HTMLElement>('li[data-word="玉米"]')!; // 「我喜欢吃＿。」
+    const decoys = within(corn).getAllByRole('button', { name: /^✗ / }).map((b) => b.textContent!.slice(2));
+    expect(decoys).toHaveLength(3);
+    for (const d of decoys) expect(['香肠', '鸡翅']).not.toContain(d); // food: they fit 吃 too
+    expect(corn.classList.contains('is-doubt')).toBe(false);
   });
 
   it('a real word in the CC-CEDICT list (loaded on demand) is not flagged', async () => {

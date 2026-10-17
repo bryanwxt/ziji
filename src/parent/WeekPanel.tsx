@@ -2,7 +2,7 @@
 // 本周词语 (weekly list spec 2026-10-17 §3): paste a sheet, check the preview, confirm the wrong answers, set the days, save.
 // Then the lists, each with where it stands, edited or deleted. Lists stay on the iPad. The parent area is English.
 import { ChevronDown } from 'lucide-preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { HSK_WORDS } from '../content';
 import { glossProblems } from '../content/kidGloss';
@@ -14,7 +14,8 @@ import { allCards, allWeekLists, allWords, deleteWeekList, updateWeekList } from
 import type { CardRecord, ItemStatus, WeekFit, WeekList, WeekPair, Word } from '../types';
 import { proposeWrong } from '../weeklist/dapei';
 import { clampReadyBy, daysBetween, defaultDates, pastDue, weekdayZh } from '../weeklist/dates';
-import { fitDoubts, parentSentenceProblems, proposeFit, proposeFits, sentenceFor } from '../weeklist/fit';
+import { fitDoubts, parentSentenceProblems, proposeFit, proposeFits, sentenceFor, type ExtraSentences } from '../weeklist/fit';
+import { loadExtraSentences } from '../weeklist/extraSentences';
 import { itemStatus, matchText } from '../weeklist/match';
 import { parseWeekList, weekIsWord, type DraftItem, type DraftPair, type WeekDraft } from '../weeklist/parse';
 import { activeLists, CLOSE_AFTER_DAYS, frontLoadPreview } from '../weeklist/plan';
@@ -119,6 +120,16 @@ export function WeekPanel() {
     return () => clearTimeout(slow);
   }, []);
   const isWord = useMemo(() => weekIsWord((w) => byText.has(w), dictionary), [byText, dictionary]);
+  // the list sentence bank and Tatoeba (parent ruling 2026-10-17), loaded for this panel only; Read waits for them as for the dictionary
+  const [extra, setExtra] = useState<ExtraSentences | undefined>(undefined);
+  const [extraTried, setExtraTried] = useState(false);
+  useEffect(() => {
+    const slow = setTimeout(() => setExtraTried(true), 3000);
+    void loadExtraSentences().then((x) => { clearTimeout(slow); setExtra(x ?? undefined); setExtraTried(true); });
+    return () => clearTimeout(slow);
+  }, []);
+  /** Built-in and ladder words he has started: decoys borrowed when the list runs short (parent ruling 2026-10-17). */
+  const known = useMemo(() => stored.filter((w) => w.source === 'builtin' && (cards.has(`${w.id}:recognise`) || cards.has(`${w.id}:hear`))), [stored, cards]);
   const wordFor = (t: string) => matchText(t, byText, now().getTime(), () => t);
   const statusOf = (t: string): ItemStatus => { const w = byText.get(t); return w ? itemStatus(w.id, cards) : 'new'; };
 
@@ -135,8 +146,8 @@ export function WeekPanel() {
     const out = { ...rows };
     for (const w of mates) {
       if (out[w.text]) continue;
-      const s = sentenceFor(w);
-      out[w.text] = blankRow(s ? proposeFit(w, mates, ps, s, new Set(), usage(out)) : null);
+      const s = sentenceFor(w, extra);
+      out[w.text] = blankRow(s ? proposeFit(w, mates, ps, s, new Set(), usage(out), known) : null);
     }
     return out;
   };
@@ -155,8 +166,10 @@ export function WeekPanel() {
     setReadyBy(dates.readyBy);
     setReadyTouched(false);
     setPairs(d.pairs.map((p) => ({ ...p, wrong: proposeWrong(p, d.pairs), skipped: [], removed: false, ok: false })));
-    const all = proposeFits(d.items.map((it) => wordFor(it.text).word), d.pairs); // decoys spread over the whole list
+    const all = proposeFits(d.items.map((it) => wordFor(it.text).word), d.pairs, known, extra); // decoys spread over the whole list
     setFits(Object.fromEntries([...all].map(([t, fit]) => [t, blankRow(fit)])));
+    setPointed(false);
+    setFocusRow(null);
     setMessage(null);
   };
   const cancel = () => { setDraft(null); setItems([]); setPairs([]); setFits({}); };
@@ -204,18 +217,24 @@ export function WeekPanel() {
     return { ...flipped, wrong: proposeWrong(flipped, pairsAsDraft()), skipped: [], ok: false };
   });
   const setFit = (t: string, change: (f: FitRow) => FitRow) => setFits((fs) => ({ ...fs, [t]: change(fs[t]!) }));
+  /** Fine on a row; on the highlighted one, the highlight moves to the next row still to check. */
+  const fineRow = (t: string) => {
+    const was = fits[t]!.ok;
+    setFit(t, (x) => ({ ...x, ok: !x.ok }));
+    if (!was && focusRow === t) setFocusRow(flaggedOpen.find((x) => x !== t) ?? null);
+  };
   const mates = () => items.filter((it) => !off.has(it.text)).map((it) => wordFor(it.text).word);
   const swapDecoy = (t: string, bad: string) => setFits((fs) => {
     const f = fs[t]!;
     if (!f.fit) return fs;
     const skipped = [...f.skipped, bad];
-    const fit = proposeFit(wordFor(t).word, mates(), pairsAsDraft(), { text: f.fit.sentence, source: f.fit.source }, new Set(skipped), usage(fs, t));
+    const fit = proposeFit(wordFor(t).word, mates(), pairsAsDraft(), { text: f.fit.sentence, source: f.fit.source, ...(f.fit.ref !== undefined ? { ref: f.fit.ref } : {}) }, new Set(skipped), usage(fs, t), known);
     return { ...fs, [t]: { ...f, skipped, fit, ok: false } };
   });
   const ownSentence = (t: string, s: string) => setFits((fs) => {
     const f = fs[t]!;
     const good = s.trim() && parentSentenceProblems(s.trim(), t).length === 0;
-    const fit = good ? proposeFit(wordFor(t).word, mates(), pairsAsDraft(), { text: s.trim().replace(t, BLANK), source: 'parent' }, new Set(), usage(fs, t)) : null;
+    const fit = good ? proposeFit(wordFor(t).word, mates(), pairsAsDraft(), { text: s.trim().replace(t, BLANK), source: 'parent' }, new Set(), usage(fs, t), known) : null;
     return { ...fs, [t]: { ...f, own: s, ok: false, ...(fit ? { fit, skipped: [] } : {}) } };
   });
 
@@ -229,11 +248,31 @@ export function WeekPanel() {
   const pairingsToCheck = pairs.filter((p) => p.check && !p.removed).length;
   const wordsToCheck = kept.filter((it) => it.flags.length > 0).length;
   const toCheck = livePairs.filter((p) => !p.ok).length + liveFits.filter(([, f]) => !f!.ok).length;
+  const draftPairs = pairsAsDraft();
+  const doubtsOf = (t: string, f: FitRow) => (f.fit && !f.removed ? fitDoubts(f.fit, t, draftPairs) : []);
+  const flaggedOpen = liveFits.filter(([t, f]) => !f!.ok && doubtsOf(t, f!).length > 0).map(([t]) => t);
+  const safeOpen = toCheck - flaggedOpen.length;
+  // An honest All fine (parent ruling 2026-10-17): it confirms the safe rows and takes her to the first row to check; once she has
+  // been shown them, the same button reads Accept all anyway and confirms those too.
+  const [pointed, setPointed] = useState(false);
+  const [focusRow, setFocusRow] = useState<string | null>(null);
+  const anyway = pointed && safeOpen === 0 && flaggedOpen.length > 0;
+  const allFineLabel = anyway ? 'Accept all anyway' : flaggedOpen.length ? `All fine (${flaggedOpen.length} to check)` : 'All fine';
   const allFine = () => {
+    if (anyway) {
+      setFits((fs) => Object.fromEntries(Object.entries(fs).map(([t, f]) => [t, f.fit && !f.removed ? { ...f, ok: true } : f])));
+      setFocusRow(null);
+      return;
+    }
     setPairs((ps) => ps.map((p) => (p.removed ? p : { ...p, ok: true })));
-    // a row with a look-alike, a near-synonym or a decoy seen in that spot needs its own Fine (fix round 2026-10-17)
-    setFits((fs) => Object.fromEntries(Object.entries(fs).map(([t, f]) => [t, f.fit && !f.removed && !fitDoubts(f.fit, t).length ? { ...f, ok: true } : f])));
+    // a row with a risky decoy no safe one could replace needs a look first (fix round 2026-10-17)
+    setFits((fs) => Object.fromEntries(Object.entries(fs).map(([t, f]) => [t, f.fit && !f.removed && !doubtsOf(t, f).length ? { ...f, ok: true } : f])));
+    if (flaggedOpen.length) { setPointed(true); setFocusRow(flaggedOpen[0]!); }
   };
+  const list = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    if (focusRow) list.current?.querySelector<HTMLElement>(`li[data-word="${focusRow}"]`)?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+  }, [focusRow]);
   const englishProblems = (t: string) => { const e = english[t]?.trim(); return e ? glossProblems(e) : []; };
   const badEnglish = kept.some((it) => englishProblems(it.text).length > 0);
   const today = localDateKey(now());
@@ -252,6 +291,10 @@ export function WeekPanel() {
   const blocker = !kept.length ? 'Tick at least one word.' : !name.trim() ? 'Give the list a name.' : !homework ? 'Pick the homework day.'
     : badEnglish ? 'Fix the English marked above, or clear it.' : null;
   const canSave = !busy && !blocker && !past && !toCheck;
+  // Save never looks stuck (parent ruling 2026-10-17): when it can't save, a short line beside it says why
+  const why = canSave ? null : busy ? 'Saving…' : blocker ?? (past ? 'Homework day is past: pick a later day above.'
+    : anyway ? `To save: Fine on ${flaggedOpen.length === 1 ? 'the marked row' : 'each marked row'}, or Accept all anyway.`
+      : 'To save: tap All fine, or Fine on each row.');
 
   const setHomeworkDay = (v: string) => {
     setHomework(v);
@@ -392,7 +435,7 @@ export function WeekPanel() {
           )}
 
           <h3>Check the wrong answers</h3>
-          <p class="week__hint">ZiJi made these wrong answers from the list. Tap one that is actually right to swap it. Fine confirms a row; All fine confirms them all. Rows marked “check this one” have a wrong answer that may fit, looks like the answer or means much the same: All fine leaves those for you to look at one by one.</p>
+          <p class="week__hint">ZiJi made these wrong answers from the list. Tap one that is actually right to swap it. Fine confirms a row; All fine confirms them all. Rows marked “check this one” have a wrong answer that may fit, looks like the answer or means much the same, and ZiJi had no safer one to swap in: All fine takes you to each, and then reads Accept all anyway. Rows marked Tatoeba use a sentence from tatoeba.org.</p>
           {pairs.length > 0 && <h4 class="week__sub">搭配 ({livePairs.length})</h4>}
           {groups.map(([g, idx]) => (
             <div key={g} role="group" aria-label={g || '搭配'} class="week__group">
@@ -426,20 +469,21 @@ export function WeekPanel() {
           ))}
 
           <h4 class="week__sub">选词填空 ({liveFits.length})</h4>
-          <ul class="week__rows" aria-label="选词填空">
+          <ul class="week__rows" aria-label="选词填空" ref={list}>
             {kept.filter((it) => fits[it.text]?.fit).map((it) => {
               const f = fits[it.text]!;
               const [before, after] = f.fit!.sentence.split(BLANK);
-              const doubt = f.removed ? [] : fitDoubts(f.fit!, it.text);
+              const doubt = doubtsOf(it.text, f);
               return (
-                <li key={it.text} data-word={it.text} class={`week__row ${f.removed ? 'is-off' : ''} ${f.ok && !f.removed ? 'is-ok' : ''} ${doubt.length ? 'is-doubt' : ''}`}>
+                <li key={it.text} data-word={it.text} class={`week__row ${f.removed ? 'is-off' : ''} ${f.ok && !f.removed ? 'is-ok' : ''} ${doubt.length ? 'is-doubt' : ''} ${focusRow === it.text && !f.ok ? 'is-focus' : ''}`}>
                   <span class="hanzi week__sentence" lang="zh-CN">{before}<span class="week__blank">{it.text}</span>{after}</span>
+                  {f.fit!.source === 'tatoeba' && <span class="week__src" title={`Tatoeba sentence ${f.fit!.ref ?? ''}, CC BY 2.0 FR`}>Tatoeba</span>}
                   {doubt.length > 0 && <span class="week__doubt" title={`${doubt.join(', ')} may fit too`}>check this one</span>}
                   {!f.removed && (
                     <>
                       <span class="week__wrongs">{f.fit!.wrong.map((d) => <button key={d} type="button" class={`week__chip ${doubt.includes(d) ? 'is-doubt' : ''}`} lang="zh-CN" onClick={() => swapDecoy(it.text, d)}>✗ {d}</button>)}</span>
                       <span class="week__rowbtns">
-                        <button type="button" class={`small-btn week__fine ${f.ok ? 'is-on' : ''}`} aria-pressed={f.ok} onClick={() => setFit(it.text, (x) => ({ ...x, ok: !x.ok }))}>{f.ok ? '✓ Fine' : 'Fine'}</button>
+                        <button type="button" class={`small-btn week__fine ${f.ok ? 'is-on' : ''}`} aria-pressed={f.ok} onClick={() => fineRow(it.text)}>{f.ok ? '✓ Fine' : 'Fine'}</button>
                         <button type="button" class="link" onClick={() => setFit(it.text, (x) => ({ ...x, editing: !x.editing }))}>Edit</button>
                         <button type="button" class="link" onClick={() => setFit(it.text, (x) => ({ ...x, removed: true }))}>Remove</button>
                       </span>
@@ -464,10 +508,10 @@ export function WeekPanel() {
           <div class="week__bar">
             <div class="week__bar-top">
               <p class="week__count" aria-live="polite">{toCheck ? `${toCheck} row${toCheck === 1 ? '' : 's'} to check` : 'Wrong answers checked ✓'}</p>
-              {blocker && <p class="week__hint">{blocker}</p>}
+              {why && <p class="week__why" role="status">{why}</p>}
               <button type="button" class="link week__cancel" onClick={cancel}>Cancel</button>
             </div>
-            <button type="button" class="btn week__allfine" disabled={!toCheck} onClick={allFine}>All fine</button>
+            <button type="button" class={`btn week__allfine ${anyway ? 'is-anyway' : ''}`} disabled={!toCheck} onClick={allFine}>{allFineLabel}</button>
             <button type="button" class="btn btn--primary week__save" disabled={!canSave} onClick={() => void save()}>Save {kept.length} words</button>
           </div>
         </div>

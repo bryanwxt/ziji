@@ -16,7 +16,10 @@
 - **LXGW WenKai (霞鹜文楷)** — [lxgw/LxgwWenKai](https://github.com/lxgw/LxgwWenKai), SIL Open Font License 1.1. Subset to the app's characters as `public/fonts/wenkai.woff2`; licence text in `public/fonts/LXGWWenKai-OFL.txt`.
 - **Lucide icons** — via `lucide-preact`, ISC License (portions derived from Feather, MIT License).
 - **Nunito** — via `@fontsource/nunito`, SIL Open Font License 1.1.
-- Read-aloud passages marked ZiJi were written for this project.
+- Read-aloud passages marked ZiJi were written for this project. The weekly list's sentence bank (`src/content/weekSentences.json`) was written for this project too.
+- **Tatoeba** — Sentences from Tatoeba ([tatoeba.org](https://tatoeba.org)), [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/). A filtered
+  subset of the Mandarin sentences (`src/content/tatoeba.json`, built by `scripts/build-tatoeba.ts`) offers a weekly-list fill-in sentence for a word
+  with none of the app's own; each keeps its Tatoeba sentence id (`https://tatoeba.org/sentences/show/<id>`), and a parent confirms each before it is asked.
 - **Global Storybooks Chinese** — [global-asp/sbc-source](https://github.com/global-asp/sbc-source) (commit `be28dab`) and its pictures
   ([global-asp/gsn-imagebank](https://github.com/global-asp/gsn-imagebank), commit `0df4097`), from the African Storybook. Each story keeps its own
   licence — [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) or

@@ -12,9 +12,10 @@ describe('proposeFit (spec §7.3)', () => {
     expect(f.wrong).toHaveLength(3);
     for (const d of f.wrong) { expect(mates.map((m) => m.text)).toContain(d); expect([...d]).toHaveLength(2); expect(d).not.toBe('整齐'); }
   });
-  it('confusables (shared character) come first', () => {
+  it('confusables (a shared radical) come first; a look-alike (a shared character) is swapped out while a safe one is left', () => {
     const f = proposeFit(w('告诉'), ['帮助', '跑步', '告别'].concat('认识').map(w), [], { text: '妈妈＿我要早睡。', source: 'parent' })!;
-    expect(f.wrong.slice(0, 2).sort()).toEqual(['告别', '认识'].sort()); // 告 shared; 讠 shared with 诉
+    expect(f.wrong[0]).toBe('认识'); // 讠 shared with 诉
+    expect(f.wrong).not.toContain('告别'); // 告 shared: parent ruling 2026-10-17
   });
   it('null when fewer than three decoys exist', () => {
     expect(proposeFit(w('干净'), mates.slice(0, 2), [], { text: '很＿。', source: 'parent' })).toBeNull();

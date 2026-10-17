@@ -544,8 +544,11 @@ async function sweep(size: Size) {
     await snap(p, size, 'parent-week-3-dapei', '.week__group');
     await snap(p, size, 'parent-week-4-fills', '[aria-label="选词填空"]');
     await p.click('.week__allfine');
-    // rows with a doubtful decoy need their own Fine (fix round 2026-10-17)
-    for (const fine of await p.$$('li.is-doubt:not(.is-ok):not(.is-off) .week__fine')) await fine.click();
+    // rows with a doubtful decoy: All fine takes her to the first, then reads Accept all anyway (parent ruling 2026-10-17)
+    if (await p.$('li.is-doubt:not(.is-ok):not(.is-off)')) {
+      await snap(p, size, 'parent-week-5a-tocheck', '.week__bar');
+      await p.click('.week__allfine');
+    }
     await sideways();
     await snap(p, size, 'parent-week-5-allfine', '.week__bar');
     await p.click('.week__bar .btn--primary');

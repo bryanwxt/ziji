@@ -53,6 +53,24 @@ describe('saveWeekList', () => {
     expect(after.pairs.find((p) => p.left === '煎')!.last).toEqual({ at: 1, correct: true });
     expect(after.fits.map((f) => f.sentence)).toEqual(['他在＿＿。', '星星＿＿。']);
   });
+  it('re-pasting a saved sheet merges in the new sentence rows and loses no answer (parent ruling 2026-10-17)', async () => {
+    const db = await freshDb();
+    const l = await saveWeekList(db, draft(), now); // saved before the list bank: no fill-ins
+    const stored = (await allWeekLists(db))[0]!;
+    const answered = { last: { fit: { at: 1, correct: true } }, rightDays: ['2026-10-19'] };
+    await db.put('weekLists', { ...stored, items: stored.items.map((i) => (i.text === '跑' ? { ...i, ...answered } : i)), check: { at: 2, day: '2026-10-21', results: { [stored.items[0]!.wordId]: { form: 'read', correct: true } }, done: false } } as typeof stored);
+    const rows = [
+      { wordId: '跑', sentence: '他＿得很快。', source: 'list' as const, wrong: ['书包', '老师', '电视'] as [string, string, string], outside: ['书包', '老师', '电视'] },
+      { wordId: '闪闪亮', sentence: '星星＿的。', source: 'tatoeba' as const, ref: 42, wrong: ['红通通', '绿油油', '白花花'] as [string, string, string] },
+    ];
+    await saveWeekList(db, draft({ fits: rows }), now); // the same name and days: the same list
+    const after = await allWeekLists(db);
+    expect(after).toHaveLength(1);
+    expect(after[0]!.id).toBe(l.id);
+    expect(after[0]!.items.find((i) => i.text === '跑')).toMatchObject(answered);
+    expect(after[0]!.check?.results[stored.items[0]!.wordId]).toEqual({ form: 'read', correct: true });
+    expect(after[0]!.fits.map((f) => [f.source, f.ref, f.outside?.length])).toEqual([['list', undefined, 3], ['tatoeba', 42, undefined]]);
+  });
   it('a fit row keyed by text gets the word id', async () => {
     const db = await freshDb();
     await putWords(db, [makeWord('跑')]);

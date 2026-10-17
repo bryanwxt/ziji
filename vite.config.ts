@@ -51,7 +51,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest,woff2}', 'worlds/*.webp', 'passages/*.webp'], // One River's paintings and thumbnails (spec 2026-10-13 §4) and the library's pictures (spec 2026-10-15 §7): offline
         // the FSRS optimizer (SRS tuning spec §6.2) loads only when the parent taps Fit: never precached, runtime-cached below
-        globIgnores: ['**/fsrs_browser*', '**/workerHelpers*'],
+        // the weekly list's sentences (list bank, Tatoeba): loaded only by the parent's 本周词语 panel, never precached either
+        globIgnores: ['**/fsrs_browser*', '**/workerHelpers*', '**/weekSentences-*', '**/tatoeba-*'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
@@ -65,6 +66,12 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.endsWith('/data/cedict-words.txt'),
             handler: 'CacheFirst',
             options: { cacheName: 'cedict-words', expiration: { maxEntries: 1 }, cacheableResponse: { statuses: [200] } },
+          },
+          {
+            // the list sentence bank and Tatoeba (parent ruling 2026-10-17): kept after first use, like the headwords
+            urlPattern: ({ url }) => /\/assets\/(weekSentences|tatoeba)-[^/]*\.js$/.test(url.pathname),
+            handler: 'CacheFirst', // hashed names: a new build is a new URL
+            options: { cacheName: 'week-sentences', expiration: { maxEntries: 4 }, cacheableResponse: { statuses: [200] } },
           },
           {
             urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/npm\/hanzi-writer-data@/,

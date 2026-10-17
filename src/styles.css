@@ -1907,6 +1907,11 @@ button.langdu__sentence { cursor: pointer; }
 .parent .panel.week { overflow: visible; } /* not a scroller: the Save bar sticks to the page's bottom edge */
 .week__row.is-doubt { background: var(--gold-soft); border-left-color: var(--gold-edge); }
 .week__row.is-doubt.is-ok { border-left-color: var(--green); }
+/* All fine took her here (parent ruling 2026-10-17): the row to look at next */
+.week__row.is-focus { outline: 3px solid var(--gold-edge); outline-offset: -3px; box-shadow: 0 0 0 4px var(--gold-soft); }
+.week__src { padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft, #555); font-size: 12px; font-weight: 700; }
+.week__why { flex: 1 1 100%; order: 3; margin: 2px 0 0; color: #92400e; font-size: 14px; font-weight: 700; }
+.week__allfine.is-anyway:not(:disabled) { background: var(--gold-soft); border-color: var(--gold-edge); color: #713f12; box-shadow: 0 var(--edge) 0 var(--gold-edge); }
 .week__doubt { padding: 2px 10px; border-radius: 999px; background: var(--gold); color: #713f12; font-size: 13px; font-weight: 800; white-space: nowrap; }
 .week__chip.is-doubt { border-color: var(--gold-edge); background: #fff; color: #92400e; }
 .week__past { align-self: flex-start; margin-top: 8px; }
