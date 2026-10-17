@@ -467,8 +467,11 @@ export interface TalkCard {
   answers?: (string | null)[]; // kind 'reading': the passage's answer to the open question and each follow-up (null: open-ended)
 }
 
-/** The day's picks, stored once made so Today shows the same three all day (spec §4). */
-export interface TalkDay { date: string; cards: TalkCard[] }
+/** One of the day's three places: null only when there is nothing at all to put there (an empty bank), so slots never shift. */
+export type TalkSlot = TalkCard | null;
+
+/** The day's picks, stored once made so Today shows the same three all day (spec §4). Always three long, in slot order. */
+export interface TalkDay { date: string; cards: TalkSlot[] }
 
 /** One 「✓ 聊了」 (spec §5): when, and the minutes if a chip was picked. Never shown to the child. */
 export interface TalkLog { id: string; at: number; minutes?: number }

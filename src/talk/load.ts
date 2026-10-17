@@ -9,7 +9,7 @@ import { addDays, localDateKey, startOfLocalDay } from '../lib/date';
 import { introducedNewWords } from '../session/runner';
 import type { AppDb } from '../store/db';
 import { allSessions, allWeekLists, allWords, getKid, getSettings, listParentPassages, updateSettings } from '../store/repo';
-import type { Settings, TalkCard, Word } from '../types';
+import type { Settings, TalkSlot, Word } from '../types';
 import { sentenceFor } from '../weeklist/fit';
 import { activeLists } from '../weeklist/plan';
 import { isReady } from '../weeklist/readiness';
@@ -86,24 +86,24 @@ async function pickInput(db: AppDb, now: Date, settings: Settings): Promise<Pick
   return { today: localDateKey(now), seen: settings.talkSeen ?? {}, words, passage };
 }
 
-async function keep(db: AppDb, settings: Settings, today: string, cards: TalkCard[]): Promise<TalkCard[]> {
+async function keep(db: AppDb, settings: Settings, today: string, cards: TalkSlot[]): Promise<TalkSlot[]> {
   await updateSettings(db, { talkDay: { date: today, cards }, talkSeen: markSeen(settings.talkSeen ?? {}, cards, today) });
   return cards;
 }
 
-/** Today's three: picked once a day and kept; the reading slot follows a passage read after they were picked. */
-export async function todayTalk(db: AppDb, now: Date): Promise<TalkCard[]> {
+/** Today's three, in slot order (an empty slot is null): picked once a day and kept; the reading slot follows a passage read after they were picked. */
+export async function todayTalk(db: AppDb, now: Date): Promise<TalkSlot[]> {
   const settings = await getSettings(db);
   const today = localDateKey(now);
   const input = await pickInput(db, now, settings);
   const stored = settings.talkDay?.date === today ? settings.talkDay.cards : null;
   const cards = stored ? followPassage(stored, input) : pickDay(input);
-  if (stored && cards.every((c, i) => c.id === stored[i]?.id)) return stored;
+  if (stored && cards.length === stored.length && cards.every((c, i) => c?.id === stored[i]?.id)) return stored;
   return keep(db, settings, today, cards);
 }
 
 /** 「换一个」 on one card: the next of its kind, kept. */
-export async function swapTalk(db: AppDb, now: Date, slot: number): Promise<TalkCard[]> {
+export async function swapTalk(db: AppDb, now: Date, slot: number): Promise<TalkSlot[]> {
   const cards = await todayTalk(db, now);
   const settings = await getSettings(db);
   return keep(db, settings, localDateKey(now), swapCard(cards, slot, await pickInput(db, now, settings)));

@@ -15,12 +15,12 @@ const YE: TalkWord = { text: '爷', gloss: 'grandfather', zuci: ['爷爷'], from
 const JIE: TalkWord = { text: '借', gloss: 'to borrow', example: '我可以借你的笔吗？', zuci: ['借书'], from: 'list' };
 const TODAY = '2026-10-19';
 const base: PickInput = { today: TODAY, seen: {}, words: [YE], passage: P17 };
-const ids = (cards: { id: string }[]) => cards.map((c) => c.id);
+const ids = (cards: readonly ({ id: string } | null)[]) => cards.map((c) => c?.id ?? null);
 const daysBefore = (n: number) => localDateKey(addDays(new Date(2026, 9, 19), -n));
 
 describe("the day's three cards (parent loop spec §4)", () => {
   it('his word (a starter about it), shared reading of today\'s passage, a rotating theme', () => {
-    expect(pickDay(base).map((c) => [c.kind, c.id, c.theme, c.word])).toEqual([
+    expect(pickDay(base).map((c) => [c!.kind, c!.id, c!.theme, c!.word])).toEqual([
       ['word', 't04', 'family', '爷'],
       ['reading', 'r:p17:0', undefined, undefined],
       ['theme', 't12', 'school', undefined],
@@ -45,7 +45,7 @@ describe("the day's three cards (parent loop spec §4)", () => {
   });
   it('朗读 off (or nothing read) and no words yet: theme starters fill those slots, each a different theme', () => {
     const cards = pickDay({ ...base, words: [], passage: null });
-    expect(cards.map((c) => [c.kind, c.id, c.theme])).toEqual([['theme', 't53', 'singapore'], ['theme', 't12', 'school'], ['theme', 't61', 'environment']]);
+    expect(cards.map((c) => [c!.kind, c!.id, c!.theme])).toEqual([['theme', 't53', 'singapore'], ['theme', 't12', 'school'], ['theme', 't61', 'environment']]);
   });
   it('the same input picks the same three', () => {
     expect(pickDay(base)).toEqual(pickDay(structuredClone(base)));
@@ -85,11 +85,20 @@ describe("the day's three cards (parent loop spec §4)", () => {
       const today = localDateKey(addDays(new Date(2026, 9, 1), day));
       const cards = pickDay({ today, seen, words: [], passage: P17 });
       seen = markSeen(seen, cards, today);
-      shown.push(...cards.map((c) => ({ day, id: c.id, theme: c.theme })));
+      shown.push(...cards.map((c) => ({ day, id: c!.id, theme: c!.theme })));
     }
     const bank = shown.filter((s) => s.theme);
     for (const s of bank) expect(bank.filter((x) => x.id === s.id && x.day !== s.day && Math.abs(x.day - s.day) < 14)).toEqual([]);
     expect(new Set(shown.filter((s) => s.day < 5).map((s) => s.theme).filter(Boolean)).size).toBe(9);
+  });
+  it('an empty bank leaves a slot empty in its place, so the slots never shift (review finding 4)', () => {
+    const cards = pickDay({ ...base, words: [], bank: [] });
+    expect(cards).toHaveLength(3);
+    expect(cards.map((c) => c?.id ?? null)).toEqual([null, 'r:p17:0', null]);
+    const seen = markSeen({}, cards, TODAY);
+    expect(seen).toEqual({ 'r:p17:0': TODAY });
+    expect(swapCard(cards, 0, { ...base, words: [], bank: [], seen }).map((c) => c?.id ?? null)).toEqual([null, 'r:p17:0', null]);
+    expect(swapCard(cards, 1, { ...base, words: [], bank: [], seen }).map((c) => c?.id ?? null)).toEqual([null, 'r:p17:1', null]);
   });
   it('remembers what was shown for 60 days', () => {
     expect(markSeen({ t01: daysBefore(59), t02: daysBefore(60) }, [{ id: 't03' }], TODAY)).toEqual({ t01: daysBefore(59), t03: TODAY });

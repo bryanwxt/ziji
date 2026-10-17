@@ -1,6 +1,6 @@
 // Share (parent loop spec §5): the iPad share sheet, else the clipboard; and the plain text it sends.
-import type { TalkCard } from '../types';
-import { KIND_EN, KIND_LABEL } from './pick';
+import type { TalkCard, TalkSlot } from '../types';
+import { KIND_EN, KIND_LABEL, onlyCards } from './pick';
 import { shortDate, type WeekRange, type WeekSummary } from './week';
 
 /** 'manual': neither the sheet nor the clipboard took it; the UI shows the text read-only and pre-selected, to copy by hand. */
@@ -61,7 +61,7 @@ export const shareNote = (r: ShareResult): string | null =>
   r === 'copied' ? 'Copied. Paste it into a message.' : r === 'manual' ? 'Could not share or copy here. The text is below: select it and copy.' : null;
 
 /** Today's three as a message: each card's label, question, English line, follow-ups (with the passage's answers), pattern. */
-export function todayText(cards: readonly TalkCard[], today: string): string {
+export function todayText(cards: readonly TalkSlot[], today: string): string {
   const block = (c: TalkCard, n: number) => {
     const ans = (i: number) => (c.answers?.[i] ? `（书上：${c.answers[i]}）` : '');
     return [
@@ -72,7 +72,7 @@ export function todayText(cards: readonly TalkCard[], today: string): string {
       `试试用：${c.pattern}`,
     ].join('\n');
   };
-  return [`聊一聊 · ${shortDate(today)}`, ...cards.map((c, i) => block(c, i + 1))].join('\n\n');
+  return [`聊一聊 · ${shortDate(today)}`, ...onlyCards(cards).map((c, i) => block(c, i + 1))].join('\n\n');
 }
 
 const join = (xs: readonly string[]) => (xs.length ? xs.join('、') : '—');

@@ -72,9 +72,9 @@ describe('the day is kept (spec §4)', () => {
     expect(await todayTalk(db, new Date(2026, 9, 19, 23))).toEqual(first);
     const s = await getSettings(db);
     expect(s.talkDay).toEqual({ date: '2026-10-19', cards: first });
-    expect(Object.keys(s.talkSeen!).sort()).toEqual(first.map((c) => c.id).sort());
+    expect(Object.keys(s.talkSeen!).sort()).toEqual(first.map((c) => c!.id).sort());
     const next = await todayTalk(db, new Date(2026, 9, 20, 8));
-    expect(next.filter((c) => first.some((f) => f.id === c.id))).toEqual([]);
+    expect(next.filter((c) => first.some((f) => f!.id === c!.id))).toEqual([]);
   });
   it('a swap is kept; the swapped-out card counts as shown', async () => {
     const db = await freshDb();

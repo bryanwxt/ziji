@@ -84,6 +84,11 @@ describe('the shared text', () => {
       '试试用：我觉得…因为…',
     ].join('\n'));
   });
+  it('an empty slot is left out and the rest are numbered in turn', () => {
+    const card = wordStarter({ text: '借', gloss: 'borrow', zuci: [], from: 'list' });
+    expect(todayText([null, card, null], '2026-10-19')).toBe(todayText([card], '2026-10-19'));
+    expect(todayText([null, card, null], '2026-10-19')).toContain('\n\n1. 他的词 His words\n');
+  });
   it('the week', () => {
     const s: WeekSummary = {
       talk: { days: 1, minutes: 10, times: 1 }, lessons: 5, langduDays: 4,

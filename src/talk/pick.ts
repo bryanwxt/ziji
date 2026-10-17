@@ -4,7 +4,7 @@
 import { TALK_PROMPTS, TALK_THEMES } from '../content/talkPrompts';
 import { parseDateKey } from '../lib/date';
 import { mulberry32, seedFromString, shuffle, type Rng } from '../lib/random';
-import type { PassageQuestion, TalkCard, TalkKind, TalkPrompt, TalkTheme } from '../types';
+import type { PassageQuestion, TalkCard, TalkKind, TalkPrompt, TalkSlot, TalkTheme } from '../types';
 
 /** A card shown fewer than this many days ago (0–13) comes back only when its kind has nothing else (spec §4); 14 days ago can. */
 export const NO_REPEAT_DAYS = 14;
@@ -184,23 +184,26 @@ function fill(slot: number, cards: readonly (TalkCard | null)[], input: PickInpu
   return pickFrom(own, input, onScreen) ?? pickFrom(themeOptions(input, rng, busy), input, onScreen);
 }
 
+/** The cards actually there, empty slots left out. */
+export const onlyCards = <C extends Pick<TalkCard, 'id'>>(cards: readonly (C | null)[]): C[] => cards.filter((c): c is C => !!c);
+
 /** The day's three: the same input always picks the same three (the shuffle is seeded from the day). */
-export function pickDay(input: PickInput): TalkCard[] {
+export function pickDay(input: PickInput): TalkSlot[] {
   const rng = mulberry32(seedFromString(input.today));
-  const cards: (TalkCard | null)[] = [null, null, null];
+  const cards: TalkSlot[] = [null, null, null];
   for (let slot = 0; slot < SLOTS.length; slot++) cards[slot] = fill(slot, cards, input, rng);
-  return cards.filter((c): c is TalkCard => !!c);
+  return cards; // always SLOTS.length long: a slot with nothing at all (an empty bank) stays null in its place
 }
 
 /** 「换一个」: the slot's next candidate (the cards on screen were shown today, so `input.seen` has them); nothing left, unchanged. */
-export function swapCard(cards: readonly TalkCard[], slot: number, input: PickInput): TalkCard[] {
+export function swapCard(cards: readonly TalkSlot[], slot: number, input: PickInput): TalkSlot[] {
   const rng = mulberry32(seedFromString(`${input.today}#${slot}`));
-  const next = fill(slot, cards, { ...input, seen: { ...input.seen, ...Object.fromEntries(cards.map((c) => [c.id, input.today])) } }, rng, true);
+  const next = fill(slot, cards, { ...input, seen: { ...input.seen, ...Object.fromEntries(onlyCards(cards).map((c) => [c.id, input.today])) } }, rng, true);
   return next ? cards.map((c, i) => (i === slot ? next : c)) : [...cards];
 }
 
 /** The reading slot once today's passage is read (load.ts): picked again for the passage when it shows anything else. */
-export function followPassage(cards: readonly TalkCard[], input: PickInput): TalkCard[] {
+export function followPassage(cards: readonly TalkSlot[], input: PickInput): TalkSlot[] {
   const slot = SLOTS.indexOf('reading');
   if (!input.passage || cards[slot]?.passageId === input.passage.id) return [...cards];
   const next = fill(slot, cards, input, mulberry32(seedFromString(`${input.today}#${slot}`)));
@@ -208,7 +211,7 @@ export function followPassage(cards: readonly TalkCard[], input: PickInput): Tal
 }
 
 /** What was shown: today's cards marked, anything not shown in SEEN_KEEP_DAYS forgotten. */
-export function markSeen(seen: Readonly<Record<string, string>>, cards: readonly Pick<TalkCard, 'id'>[], today: string): Record<string, string> {
+export function markSeen(seen: Readonly<Record<string, string>>, cards: readonly (Pick<TalkCard, 'id'> | null)[], today: string): Record<string, string> {
   const kept = Object.entries(seen).filter(([, day]) => daysAgo(day, today) < SEEN_KEEP_DAYS);
-  return { ...Object.fromEntries(kept), ...Object.fromEntries(cards.map((c) => [c.id, today])) };
+  return { ...Object.fromEntries(kept), ...Object.fromEntries(onlyCards(cards).map((c) => [c.id, today])) };
 }
