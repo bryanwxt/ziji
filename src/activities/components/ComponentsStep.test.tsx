@@ -35,11 +35,11 @@ describe('ComponentsStep — 字辨 in the pond (spec §20 part 8)', () => {
     fireEvent.click(screen.getByText('继续'));
     expect(onDone).toHaveBeenCalled();
   });
-  it('a chosen character with the same radical: its other part is the difference (银 艮 · 铁 失)', () => {
+  it('a chosen character with the same radical: its other part is the difference, when he knows it (银 · 铁 失: 艮 is no part to him)', () => {
     const same = { wordId: 'p:3', word: '银行', index: 0, answer: '银', options: ['银', '铁', '根', '很'] };
     render(<ComponentsStep items={[same]} kid={DEFAULT_KID} onAnswer={vi.fn()} onDone={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '铁' }));
-    expect(document.querySelector('.sheet .why--look')!.getAttribute('data-text')).toBe('银 艮 · 铁 失');
+    expect(document.querySelector('.sheet .why--look')!.getAttribute('data-text')).toBe('银 · 铁 失');
   });
   it('a catch keeps the answer\'s radical row', () => {
     render(<ComponentsStep items={[item]} kid={DEFAULT_KID} onAnswer={vi.fn()} onDone={vi.fn()} />);

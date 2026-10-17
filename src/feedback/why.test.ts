@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../content';
 import { makeWord } from '../test/fixtures';
-import { differingParts, pinyinSlip } from './why';
+import { differingParts, knownPart, lookAlike, partsToShow, pinyinSlip } from './why';
 
 const w = (t: string) => builtinWords(0).find((x) => x.text === t)!;
 
@@ -52,5 +52,32 @@ describe('pinyinSlip: what kind of pinyin slip (spec 2026-10-12 §3)', () => {
     expect(pinyinSlip(w('河'), 'dà')).toEqual({ kind: 'other' });
     expect(pinyinSlip(makeWord('认识', { pinyin: 'rèn shi' }), 'rén shí')).toEqual({ kind: 'other' });
     expect(pinyinSlip(makeWord('认识', { pinyin: 'rèn shi' }), 'rèn')).toEqual({ kind: 'other' });
+  });
+});
+
+describe('only parts a P1–P3 child knows (review 2026-10-17: 商 → 口 丷 冏 meant nothing)', () => {
+  it('a known part is a radical with a meaning or a character his book teaches by 三下', () => {
+    for (const p of ['氵', '扌', '口', '可', '青', '生', '失']) expect(knownPart(p), p).toBe(true);
+    for (const p of ['丷', '冏', '彐', '昜', '艮', '亠']) expect(knownPart(p), p).toBe(false);
+  });
+  it('two characters look alike only when what they share is the bulk of each (衣 · 商 share only 亠: no)', () => {
+    expect(lookAlike('根', '跟')).toBe(true);
+    expect(lookAlike('衣', '商')).toBe(false);
+    expect(lookAlike('商', '衣')).toBe(false);
+    expect(lookAlike('河', '何')).toBe(true);
+    expect(lookAlike('扫', '扬')).toBe(true);
+    expect(lookAlike('生', '星')).toBe(true);
+    expect(lookAlike('大', '小')).toBe(false);
+  });
+  it('a decomposition is shown only when every part in it is known', () => {
+    expect(partsToShow('河', '何')).toEqual({ kind: 'sum', parts: [{ part: '氵', own: true }, { part: '可', own: false }] });
+    expect(partsToShow('扫', '扬')).toBeNull(); // 彐
+    expect(partsToShow('根', '跟')).toEqual({ kind: 'own', parts: ['木'] }); // no sum with 艮 in it, but 木 alone
+    expect(partsToShow('商', '衣')).toBeNull(); // 丷 冏
+    expect(partsToShow('铁', '银')).toEqual({ kind: 'sum', parts: [{ part: '钅', own: false }, { part: '失', own: true }] });
+    expect(partsToShow('生', '人')).toBeNull();
+    expect(partsToShow('银', '铁')).toBeNull(); // 艮
+    expect(partsToShow('生', '星')).toBeNull(); // nothing of its own
+    expect(partsToShow('星', '生')).toEqual({ kind: 'sum', parts: [{ part: '日', own: true }, { part: '生', own: false }] });
   });
 });
