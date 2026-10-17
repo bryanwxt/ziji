@@ -3,7 +3,7 @@ import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/da
 import { canAskRung, fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
 import { findWord } from '../ladder/words';
 import { ladderWordsBesides } from '../content/ladder';
-import { newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
+import { localDayGap, newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
 import { LISTEN_MS, slowLines, USE_READING_MS, type SlowLines } from '../srs/slow';
 import type { AppDb } from '../store/db';
 import { addReviewLog, allCards, allSessions, allWeekLists, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsForCard, logsForWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
@@ -11,7 +11,8 @@ import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecor
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
-import { applyQuickChecks, pinDue } from '../weeklist/schedule';
+import { applyQuickChecks, pinDue, PINNED_KINDS } from '../weeklist/schedule';
+import { activeLists } from '../weeklist/plan';
 
 export { LISTEN_MS, USE_READING_MS };
 
@@ -46,10 +47,20 @@ export async function isProduced(db: AppDb, wordId: string): Promise<boolean> {
   return cards.some((c) => c?.passed !== undefined);
 }
 
+/** A list word's card reviewed in Review state before FSRS scheduled it (its due was brought forward for an active list). */
+async function earlyListReview(db: AppDb, card: CardRecord | undefined, now: Date): Promise<boolean> {
+  if (!card?.fsrs.last_review || card.fsrs.state !== State.Review || !PINNED_KINDS.has(card.kind)) return false;
+  if (localDayGap(card.fsrs.last_review, now) >= card.fsrs.scheduled_days) return false;
+  return activeLists(await allWeekLists(db), now).some((l) => l.items.some((i) => i.wordId === card.wordId));
+}
+
 /** Rates a tap answer (spec §3.1: Hard until produced, Hard when slow for him), logs it with the card's state, and settles its rung. */
 async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, ratedMs: number, now: Date, extra: Pick<ReviewLog, 'source' | 'placedCheck'> = {}): Promise<CardRecord> {
-  const state = (await getCard(db, `${wordId}:${kind}`))?.fsrs.state ?? State.New; // the card before this review
-  const produced = o.correct && (await isProduced(db, wordId));
+  const was = await getCard(db, `${wordId}:${kind}`);
+  const state = was?.fsrs.state ?? State.New; // the card before this review
+  // a right answer on a list word's review that came early (pinned to the ready-by day or a quick check, weekly list spec §6.1–6.2)
+  // rates Good, not Hard: being asked early isn't his doing, and Hard would raise its difficulty
+  const produced = o.correct && ((await earlyListReview(db, was, now)) || (await isProduced(db, wordId)));
   const rating = toRating({ kind, correct: o.correct, responseMs: ratedMs, produced, state, slowMs: o.slow?.[kind] });
   const { card, before } = await reviewCard(db, wordId, kind, rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind, at: now.getTime(), rating, correct: o.correct, responseMs: o.responseMs, ...before, ...extra });
@@ -251,8 +262,13 @@ async function planNow(db: AppDb, now: Date, extra = false) {
   // an extra lesson never asks the pace: it takes no new words (learning rules 2026-10-17)
   if (extra) return buildSessionPlan({ cards, words: all, settings, now, practised, extra: true, lists });
   // the last two days' rounds: one that ran out takes the list's headroom away, two spill its words (weekly list spec §5.1)
-  const rounds = sessions.filter((s) => !s.free && s.date < localDateKey(now) && s.completedSteps.includes('practice')).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2).map(ranOut);
-  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings), lists, ranOut: [rounds[0] ?? false, rounds[1] ?? false] });
+  // yesterday's and the day before's rounds (a round that didn't finish 练一练, or no lesson, didn't run out)
+  const ranOn = (back: number) => {
+    const date = localDateKey(addDays(startOfLocalDay(now), -back));
+    const s = sessions.find((x) => !x.free && x.date === date && x.completedSteps.includes('practice'));
+    return !!s && ranOut(s);
+  };
+  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings), lists, ranOut: [ranOn(1), ranOn(2)] });
 }
 
 /**

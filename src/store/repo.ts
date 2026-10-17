@@ -298,3 +298,19 @@ export async function putWeekList(db: AppDb, l: WeekList): Promise<void> {
   await db.put('weekLists', l);
 }
 export const deleteWeekList = (db: AppDb, id: string) => db.delete('weekLists', id);
+/**
+ * Changes one list in a single readwrite transaction: `change` gets the list as stored now (with every answer recorded so far)
+ * and returns it changed. Use this, not read → await → put, so answers recorded in between are never overwritten (weekly list
+ * fix round 2026-10-17). `change` must be synchronous. Undefined when the list is gone.
+ */
+export async function updateWeekList(db: AppDb, id: string, change: (l: WeekList) => WeekList): Promise<WeekList | undefined> {
+  const tx = db.transaction('weekLists', 'readwrite');
+  const was = await tx.store.get(id);
+  if (!was) {
+    await tx.done;
+    return undefined;
+  }
+  const next = change(was);
+  await Promise.all([tx.store.put(next), tx.done]);
+  return next;
+}

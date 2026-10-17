@@ -37,6 +37,7 @@ Lists are records in a new IndexedDB store, `weekLists` (DB v6). They point at e
 - In 考考自己: one question per item; no pinyin, no spoken answer, no 都不对, no retries, no `SHOW_AFTER`. One `bonusStars` star for each item that is right in the check and was not ready before it. Finishing earns nothing by itself and does not move the river meter.
 - Child-facing Chinese never uses 儿化. `src/noErhua.test.ts`'s `SCOPE` gains `weeklist/`.
 - The parent area may scroll and keeps English labels. Child screens stay one screen: `npm run fit` stays at 0 problems. Every layout change is checked in **WebKit** (playwright-core 1.52), not only Chromium.
+- **Writing a list (fix round 2026-10-17):** never read a list, await, then put the whole record back; answers recorded in between would be lost. Change list fields with `updateWeekList(db, id, (stored) => changed)` from `src/store/repo.ts`, one readwrite transaction whose callback gets the list as stored now. This applies to Task 6's edits and Task 9's `recordCheckAnswer` and `finishCheck`. `noteListAnswer` already writes in one transaction.
 - Commit after each task with the trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Never push or deploy without the parent's go-ahead in chat.
 
 ## Review Focus
@@ -1017,7 +1018,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: `WeekList` and `ItemStatus` (Task 1); `itemStatus` (Task 3); `bookLesson` (`lanes.ts`); `classLessonAt` (`curriculum.ts`); `PACE_MIN` (`pace.ts`); `localDateKey`, `addDays`, `parseDateKey` (`lib/date.ts`); `daysBetween` (Task 2).
 - Produces:
   - `activeLists(lists: WeekList[], now: Date): WeekList[]` (not closed, now ≤ homeworkDue + 7 days, ordered by readyBy)
-  - `listOwner(lists: WeekList[]): Map<string, WeekList>` (wordId → the earliest active list it is on)
+  - `listOwner(lists: WeekList[], now: Date): Map<string, WeekList>` (wordId → the earliest list whose ready-by hasn't passed, else the earliest; spec §10, fix round)
   - `interface ListBudget { listIds: string[]; listQuota: number; total: number; frontLoad: boolean; schoolFirst: number }`
   - `listBudget(i: { lists: WeekList[]; cards: ReadonlyMap<string, CardRecord>; now: Date; pace: number; ceiling: number; ranOutYesterday: boolean; ranOutTwice: boolean; backlog: boolean; schoolNeed: number }): ListBudget`
   - `schoolNeed(words: Word[], started: ReadonlySet<string>, classAt: number | null): number`
@@ -1517,7 +1518,7 @@ export async function applyQuickChecks(db: AppDb, now: Date): Promise<void> {
   const lists = activeLists(await allWeekLists(db), now).filter((l) => localDateKey(now) < l.readyBy);
   if (!lists.length) return;
   const cards = new Map((await allCards(db)).map((c) => [c.id, c]));
-  const owner = listOwner(lists);
+  const owner = listOwner(lists, now);
   const moved: CardRecord[] = [];
   for (const l of lists) for (const [wordId, day] of quickCheckDates(l, cards, now)) {
     if (owner.get(wordId) !== l) continue;
@@ -2295,7 +2296,7 @@ export const MAX_RESERVED = 8;
 const ASK_OF: Record<WeekForm, PracticeItem['ask']> = { read: 'read', meaning: 'meaningRead', fit: 'fit', dapei: 'match' };
 
 export function listPracticeItems(lists: WeekList[], words: ReadonlyMap<string, Word>, now: Date, begunIds: ReadonlySet<string>): PracticeItem[] {
-  const owner = listOwner(lists);
+  const owner = listOwner(lists, now);
   const reserved: PracticeItem[] = [];
   const boost: PracticeItem[] = [];
   const day = localDateKey(now);
@@ -2782,8 +2783,8 @@ In `Dashboard.tsx`, load `allWeekLists` with the rest. For each `activeLists(...
 
 where `r = readinessLine(l, words, { classOnTrack, classLeft, catchupSlower, reviewsDue })`:
 - `reviewsDue`: the due cards counted the way `dueTomorrow` counts, but for today.
-- `classLeft`: `schoolNeed(...)` from `src/weeklist/plan.ts`, using `know.words`, the started set and `classLessonAt(now(), settings)`.
-- `classOnTrack`: `classLeft <= pace × (days to homework + 1)`.
+- `classLeft`: `listBudget(...).classShort` from `src/weeklist/plan.ts` (fix round 2026-10-17): the class words still unstarted on homework day at today's numbers. Feed it the same inputs as the planner (`schoolNeed(know.words, started, classLessonAt(now(), settings))`, today's pace, the ceiling, the run-out flags).
+- `classOnTrack`: `classLeft === 0`.
 - `catchupSlower`: true while the list has new words before its ready-by.
 
 - [ ] **Step 9: Widen the no-儿化 scope**

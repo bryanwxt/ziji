@@ -38,6 +38,7 @@ export async function noteListAnswer(db: AppDb, wordId: string, form: WeekForm, 
       const next = { ...it, last: { ...it.last, [form]: { at: now.getTime(), correct } } };
       if (!after) return next;
       if (!correct) return { ...next, missedOn: day, rightDays: [] };
+      if (day === it.missedOn) return next; // right again on the day of a miss: not a day of its own (§2.1)
       return { ...next, rightDays: [...new Set([...(it.rightDays ?? []), day])] };
     });
     const pairs = pair

@@ -35,6 +35,15 @@ describe('listBudget (spec §5.2)', () => {
   it('a backlog pause with the list taught: nothing at all', () => {
     expect(listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: [list({ items: [] })], backlog: true }).total).toBe(0);
   });
+  it('a backlog pause after ready-by is not a front-load day', () => {
+    const b = listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: [list()], backlog: true });
+    expect([b.listQuota, b.frontLoad]).toEqual([3, false]);
+  });
+  it('classShort: what his class lane will still lack on homework day at these numbers (0 in the example week)', () => {
+    expect(listBudget({ ...base, lists: [list()] }).classShort).toBe(0);
+    expect(listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: [list({ items: [] })], schoolNeed: 13 }).classShort).toBe(3); // Thu–Fri at 5
+    expect(listBudget({ ...base, lists: [list()], schoolNeed: 20 }).classShort).toBe(3); // 1 a day on Mon–Tue, then 15
+  });
   it('after the front-load days the school lane goes first until schoolNeed is met by homework day', () => {
     const wed = new Date(2026, 9, 21, 9);
     const b = listBudget({ ...base, now: wed, lists: [list({ items: [] })] });
@@ -68,7 +77,23 @@ describe('two lists', () => {
   it('a shared word belongs to the earlier list', () => {
     const a = list({ id: 'wl:a', readyBy: '2026-10-21' });
     const b = list({ id: 'wl:b', readyBy: '2026-10-28', homeworkDue: '2026-10-30' });
-    expect(listOwner(activeLists([b, a], mon)).get('p:0')?.id).toBe('wl:a');
+    expect(listOwner(activeLists([b, a], mon), mon).get('p:0')?.id).toBe('wl:a');
+  });
+  it('a shared word is the earlier list\'s until its ready-by, then the later list\'s (spec §10)', () => {
+    const a = list({ id: 'wl:a', items: list().items.slice(0, 3) });
+    const b = list({ id: 'wl:b', createdAt: mon.getTime() + 1, readyBy: '2026-10-28', homeworkDue: '2026-10-30', items: list().items.slice(2, 5) });
+    const open = activeLists([a, b], mon);
+    expect(listOwner(open, new Date(2026, 9, 21, 20)).get('p:2')?.id).toBe('wl:a'); // a's check day: still a's
+    expect(listOwner(open, new Date(2026, 9, 22, 9)).get('p:2')?.id).toBe('wl:b');
+    expect(listOwner(open, new Date(2026, 9, 22, 9)).get('p:0')?.id).toBe('wl:a'); // on a only: a's, past its ready-by
+    // still new on Thursday: taught for b, before b's ready-by
+    const thu = listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: open });
+    expect(thu.listIds).toContain('p:2');
+    expect(thu.frontLoad).toBe(true);
+    // on b's ready-by day its check grades the shared word: left out of 练一练
+    const card = makeCard('p:2', 'recognise', new Date(2026, 9, 28, 6), true);
+    const plan = buildSessionPlan({ cards: [card], words: words(5), settings: DEFAULT_SETTINGS, now: new Date(2026, 9, 28, 9), newPerDay: 5, lists: [a, b] });
+    expect(plan.reviewWordIds).toEqual([]);
   });
   it('a list closes 7 days after homework, or when the parent closes it', () => {
     expect(activeLists([list()], new Date(2026, 9, 30, 9))).toHaveLength(1);
@@ -154,6 +179,26 @@ describe('buildSessionPlan with a list (spec §5)', () => {
     const thu = new Date(2026, 9, 22, 9);
     const cards = [makeCard('b:x', 'recognise', new Date(2026, 9, 20), true), makeCard('p:0', 'recognise', new Date(2026, 9, 22, 6), true)];
     expect(buildSessionPlan({ cards, words: [...words(1), makeWord('x')], settings, now: thu, newPerDay: 5, lists: [list()] }).reviewWordIds[0]).toBe('p:0');
+  });
+  it('list cards in the homework window never squeeze revision: the cap is for the rest', () => {
+    const thu = new Date(2026, 9, 22, 9);
+    const rev = Array.from({ length: 70 }, (_, i) => makeWord(`字${i}`, { id: `b:${i}`, rank: i }));
+    const cards = [
+      ...rev.map((w, i) => makeCard(w.id, 'recognise', new Date(2026, 9, 21, 6, i), true)),
+      ...words(5).map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 22, 6), true)),
+    ];
+    const plan = buildSessionPlan({ cards, words: [...words(14), ...rev], settings, now: thu, newPerDay: 5, lists: [list()] });
+    expect(plan.reviewWordIds.slice(0, 5)).toEqual(['p:0', 'p:1', 'p:2', 'p:3', 'p:4']);
+    expect(plan.reviewWordIds.filter((id) => id.startsWith('b:'))).toHaveLength(60);
+  });
+  it('list cards are left out of the backlog count', () => {
+    const thu = new Date(2026, 9, 22, 9);
+    const rev = Array.from({ length: 35 }, (_, i) => makeWord(`字${i}`, { id: `b:${i}`, rank: i }));
+    const extra = Array.from({ length: 10 }, (_, i) => makeWord(`新${i}`, { id: `b:n${i}`, rank: 100 + i }));
+    const cards = [...rev, ...words(10)].map((w) => makeCard(w.id, 'recognise', new Date(2026, 9, 21, 6), true));
+    const practised = new Map([...rev, ...words(10)].map((w) => [w.id, 0]));
+    const plan = buildSessionPlan({ cards, words: [...words(14), ...rev, ...extra], settings, now: thu, newPerDay: 5, practised, lists: [list()] });
+    expect(plan.newWordIds.some((id) => id.startsWith('b:n'))).toBe(true); // 35 practised due, not 45: no pause
   });
   it('a front-load day writes half the characters', () => {
     const ws = [...words(14), ...Array.from('一二三四五六七八九十').map((t, i) => makeWord(t, { rank: i }))];

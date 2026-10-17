@@ -7,16 +7,22 @@ import { LESSONS, taughtAt } from '../content/curriculum';
 import { buildSessionPlan } from '../session/plan';
 import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type CardRecord, type SessionPlan, type WeekList, type Word } from '../types';
+import { daysBetween, defaultDates } from './dates';
 import { pinDue, quickCheckDates } from './schedule';
 
 const day = (d: number, h = 9) => new Date(2026, 9, 19 + d, h);
 
 type Row = { list: number; school: number; catchup: number; reviews: number; listReviews: number; checked: number };
 
-/** Runs Mon–Sun. `takeCheck`: he does 考考自己 on Wednesday, all right (it grades each list card due that day). */
-function week(takeCheck: boolean): Row[] {
+/**
+ * Runs from the day the list arrives (0 = Monday) to Sunday, with the dates the parent screen proposes (defaultDates).
+ * `takeCheck`: he does 考考自己 on the ready-by day, all right (it grades each list card due that day).
+ */
+function week(takeCheck: boolean, arrive = 0): Row[] {
+  const { readyBy, homeworkDue } = defaultDates(day(arrive));
+  const checkDay = daysBetween('2026-10-19', readyBy);
   const items = Array.from({ length: 32 }, (_, i) => ({ wordId: `p:${i}`, text: `词${i}`, from: 'grid' as const, addedStatus: 'new' as const }));
-  const list: WeekList = { id: 'wl:1', name: 'L', createdAt: day(0, 0).getTime(), readyBy: '2026-10-21', homeworkDue: '2026-10-23', items, pairs: [], fits: [] };
+  const list: WeekList = { id: 'wl:1', name: 'L', createdAt: day(arrive, 0).getTime(), readyBy, homeworkDue, items, pairs: [], fits: [] };
   const charsOf = (lesson: number) => Array.from(LESSONS[lesson]!.read).filter((c) => taughtAt(c) === lesson);
   const ch = (t: string): Word => makeWord(t, { id: `b:${t}`, rank: taughtAt(t)! * 100 + 1 });
   // his class's window: 二下·16 (34), ·17 (35), ·18 (36) — all begun but 8 of ·17
@@ -35,7 +41,7 @@ function week(takeCheck: boolean): Row[] {
   let cards: CardRecord[] = [...known, ...placed, ...revision, ...begun.map((c) => makeCard(`b:${c}`, 'recognise', far, true))];
 
   const rows: Row[] = [];
-  for (let d = 0; d < 7; d++) {
+  for (let d = arrive; d < 7; d++) {
     const now = day(d);
     const endOfDay = new Date(2026, 9, 19 + d, 23, 59).getTime();
     // the day's quick checks (applyQuickChecks, run before each plan): known list words brought forward, never later
@@ -43,7 +49,7 @@ function week(takeCheck: boolean): Row[] {
     cards = cards.map((c) => { const to = c.kind === 'recognise' ? moves.get(c.wordId) : undefined; return to && c.fsrs.due > to ? { ...c, fsrs: { ...c.fsrs, due: to } } : c; });
     const plan: SessionPlan = buildSessionPlan({ cards, words: ws, settings: DEFAULT_SETTINGS, now, newPerDay: 5, lists: [list] });
     const lanes = Object.values(plan.newWordLanes ?? {});
-    const checked = takeCheck && d === 2 ? cards.filter((c) => c.wordId.startsWith('p:') && c.fsrs.due.getTime() <= endOfDay).map((c) => c.wordId) : [];
+    const checked = takeCheck && d === checkDay ? cards.filter((c) => c.wordId.startsWith('p:') && c.fsrs.due.getTime() <= endOfDay).map((c) => c.wordId) : [];
     rows.push({
       list: plan.listNewIds?.length ?? 0,
       school: lanes.filter((l) => l === 'school').length,
@@ -75,6 +81,21 @@ describe('an example week (spec §5.4)', () => {
     // 练一练 — the check grades all 32, each pinned to Wednesday
     expect(rows.map((r) => r.listReviews)).toEqual([11, 14, 0, 0, 0, 0, 0]);
     expect(rows[2]!.checked).toBe(32);
+  });
+  it('a Wednesday list (ready by Thursday): 7 on Wednesday, the check Thursday, the rest after it, his class first on Friday', () => {
+    const rows = week(true, 2);
+    expect(rows.map((r) => r.list)).toEqual([7, 0, 1, 5, 1]);
+    expect(rows.map((r) => r.school)).toEqual([0, 4, 4, 0, 0]);
+    expect(rows.map((r) => r.catchup)).toEqual([0, 1, 0, 0, 4]);
+    expect(rows[1]!.checked).toBe(25); // Thursday's check: 7 taught, 14 known, 4 placed; the 7 untaught come after it
+  });
+  it('a Thursday list (ready by Friday, homework day): 7 on Thursday, the check Friday, the rest after homework', () => {
+    const rows = week(true, 3);
+    expect(rows.map((r) => r.list)).toEqual([7, 0, 5, 2]);
+    expect(rows.map((r) => r.school)).toEqual([1, 5, 0, 2]);
+    expect(rows.map((r) => r.catchup)).toEqual([0, 0, 0, 1]);
+    // one day before homework can't start all 8 class words at his pace: 6 by Friday (1 under the ceiling Thursday, 5 Friday),
+    // the 2 left on Sunday — best effort, and the parent's line shows the shortfall (classShort)
   });
   it('he never opens the check: the list cards stay due and come first on Thursday (review focus 4)', () => {
     const rows = week(false);

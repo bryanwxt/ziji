@@ -76,7 +76,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   // weekly lists (weekly list spec 2026-10-17 §5–6): on its ready-by day a list's reading cards are the check's; from then to
   // homework day its due cards go first; an extra lesson the day before never pulls them into today
   const open = activeLists(lists, now);
-  const owner = listOwner(open);
+  const owner = listOwner(open, now);
   const day = localDateKey(now);
   const tomorrow = localDateKey(addDays(startOfLocalDay(now), 1));
   const cards = extra ? extraCards(stored, now, new Set(open.filter((l) => l.readyBy === tomorrow).flatMap((l) => l.items.map((i) => i.wordId)))) : stored;
@@ -92,6 +92,8 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     list
       .filter((c) => activeIds.has(c.wordId) && c.fsrs.due.getTime() <= cutoff && !leftForCheck(c))
       .sort((a, b) => Number(homeworkWindow(b.wordId)) - Number(homeworkWindow(a.wordId)) || a.fsrs.due.getTime() - b.fsrs.due.getTime());
+  // a cap is for the rest: list cards due between ready-by and homework day come on top, so they never squeeze revision out (§6.3)
+  const capped = (due: CardRecord[], cap: number) => [...due.filter((c) => homeworkWindow(c.wordId)), ...due.filter((c) => !homeworkWindow(c.wordId)).slice(0, cap)];
 
   const recognise = ofKind('recognise');
   const hear = ofKind('hear');
@@ -110,7 +112,8 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   ]);
   const dueRecognise = dueAll.filter((c) => !placementCheck(c) || checks.has(c));
   // a real backlog pauses new words; first rechecks of placement guesses (never practised, or marked placed) don't
-  const backlog = dueAll.filter((c) => !placementCheck(c) && practised.has(c.wordId)).length;
+  // list cards (weekly list spec §5.1) don't count: a week of list words must not pause his class words
+  const backlog = dueAll.filter((c) => !placementCheck(c) && practised.has(c.wordId) && !owner.has(c.wordId)).length;
   const perDay = extra ? 0 : newPerDay ?? Math.min(settings.newPerDay, PACE_START); // an extra lesson takes no new words
 
   // Meaning practice: due meaning cards, and begun words that have a 组词 cue but no meaning card yet.
@@ -173,7 +176,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
 
   const plan: SessionPlan = {
     steps,
-    reviewWordIds: dueRecognise.slice(0, REVIEW_CAP).map((c) => c.wordId),
+    reviewWordIds: capped(dueRecognise, REVIEW_CAP).map((c) => c.wordId),
     newWordIds: newWords.map((w) => w.id),
     newWordLanes,
     flashTimeBoxMs: 0, // only lessons saved before 2026-10-05 time-boxed 认一认
@@ -184,9 +187,9 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     writeWordIds: writeUnits.map((u) => u.wordId),
     // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
     // only words that can be asked by ear: a card that can't be asked would stay due and hold a slot forever (final review I1)
-    hearReviewIds: dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
-    understandReviewIds: dueOf(understand).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'understand'); }).slice(0, UNDERSTAND_REVIEW_CAP).map((c) => c.wordId),
-    meaningReviewIds: dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
+    hearReviewIds: capped(dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }), HEAR_REVIEW_CAP).map((c) => c.wordId),
+    understandReviewIds: capped(dueOf(understand).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'understand'); }), UNDERSTAND_REVIEW_CAP).map((c) => c.wordId),
+    meaningReviewIds: capped(dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }), MEANING_REVIEW_CAP).map((c) => c.wordId),
     newMeaningIds: extra ? [] : active // an extra lesson starts nothing new, meaning practice included
       .filter((w) => readPassed.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)
       .sort(meaningOrder)

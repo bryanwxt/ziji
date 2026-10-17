@@ -31,6 +31,8 @@ describe('pinDue (spec §6.2)', () => {
   it('the earliest ready-by of two lists; a closed list pins nothing', () => {
     const later = { ...list, id: 'wl:2', readyBy: '2026-10-28', homeworkDue: '2026-10-30' };
     expect(pinDue(card('recognise', new Date(2026, 10, 9)), [later, list], mon).fsrs.due).toEqual(new Date(2026, 9, 21));
+    // after the first list's ready-by, the later list's day (spec §10)
+    expect(pinDue(card('recognise', new Date(2026, 10, 9)), [later, list], new Date(2026, 9, 22, 18)).fsrs.due).toEqual(new Date(2026, 9, 28));
     expect(pinDue(card('recognise', new Date(2026, 9, 28)), [{ ...list, closedAt: 1 }], mon).fsrs.due).toEqual(new Date(2026, 9, 28));
   });
 });

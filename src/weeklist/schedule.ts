@@ -54,7 +54,7 @@ export async function applyQuickChecks(db: AppDb, now: Date): Promise<void> {
   const before = lists.filter((l) => localDateKey(now) < l.readyBy);
   if (!before.length) return;
   const cards = new Map((await allCards(db)).map((c) => [c.id, c]));
-  const owner = listOwner(lists);
+  const owner = listOwner(lists, now);
   const moved: CardRecord[] = [];
   for (const l of before) for (const [wordId, day] of quickCheckDates(l, cards, now)) {
     if (owner.get(wordId) !== l) continue;

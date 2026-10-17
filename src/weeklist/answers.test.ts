@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { allWeekLists, putWeekList } from '../store/repo';
+import { allWeekLists, putWeekList, updateWeekList } from '../store/repo';
 import { freshDb } from '../test/fixtures';
 import type { WeekList } from '../types';
 import { formOf, noteListAnswer } from './answers';
@@ -40,6 +40,30 @@ describe('list answers and readiness (spec §8.3, §2.1)', () => {
     await putWeekList(db, { ...base, check: { at, day: '2026-10-21', results: { 'b:a': { form: 'read', correct: false } }, done: false } });
     await noteListAnswer(db, 'b:a', 'read', false, new Date(2026, 9, 21, 17, 1));
     expect((await first(db)).items[0]!.missedOn).toBe('2026-10-21');
+  });
+  it('a right answer on the day of a miss does not count toward solid', async () => {
+    const db = await freshDb();
+    await putWeekList(db, { ...base, check: { at: 0, day: '2026-10-21', results: { 'b:a': { form: 'read', correct: false } }, done: true } });
+    await noteListAnswer(db, 'b:a', 'read', false, new Date(2026, 9, 22, 9));
+    await noteListAnswer(db, 'b:a', 'read', true, new Date(2026, 9, 22, 10));
+    await noteListAnswer(db, 'b:a', 'read', true, new Date(2026, 9, 23, 10));
+    const l = await first(db);
+    expect([l.items[0]!.rightDays, isSolid(l.items[0]!, l)]).toEqual([['2026-10-23'], false]);
+  });
+  it('two answers at once both land; so does a field update beside them', async () => {
+    const db = await freshDb();
+    await putWeekList(db, { ...base, items: [...base.items, { wordId: 'b:b', text: 'b', from: 'grid', addedStatus: 'new' }] });
+    await Promise.all([
+      noteListAnswer(db, 'b:a', 'read', true, new Date(2026, 9, 19, 9)),
+      noteListAnswer(db, 'b:b', 'read', false, new Date(2026, 9, 19, 9)),
+      updateWeekList(db, 'wl:1', (l) => ({ ...l, name: 'Renamed' })),
+    ]);
+    const l = await first(db);
+    expect([l.name, l.items[0]!.last?.read?.correct, l.items[1]!.last?.read?.correct]).toEqual(['Renamed', true, false]);
+  });
+  it('updateWeekList: nothing for a list that is gone', async () => {
+    const db = await freshDb();
+    expect(await updateWeekList(db, 'wl:x', (l) => l)).toBeUndefined();
   });
   it('a later miss undoes solid; two more right days restore it', async () => {
     const db = await freshDb();

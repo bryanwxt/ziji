@@ -346,11 +346,12 @@ The status of each list word, recomputed every plan:
 
 ### 5.3 The class lane and the catch-up lane
 
-- **schoolNeed** is the unstarted words of his class lesson and the one before it (`classLessonAt`, `bookLesson`, as `pickNewWords`' school pool), counted once a week at the list's arrival.
+- **schoolNeed** is the unstarted words of his class lesson and the one before it (`classLessonAt`, `bookLesson`, as `pickNewWords`' school pool). It is **recounted at every plan** (fix round 2026-10-17), so a class that moves on a lesson mid-week is followed, and the day's school share spreads what is still unstarted over the days left to homework.
 - **Counted once:**
   - A list word whose `bookLesson` is in the school window is taken from the list quota but **tagged `'school'`** in `newWordLanes`. It lowers `schoolNeed` too.
   - A list word in the catch-up range counts as list only. Either way it takes one slot.
-- **The school lane is protected over the week.** After the front-load days, the school lane goes first each day until `schoolNeed` is 0, which happens by homework due at the latest.
+- **The school lane is protected over the week.** After the front-load days, the school lane goes first each day until `schoolNeed` is 0. When the days after the check at his pace can't start it all, the shortfall moves onto the front-load days: first the room under the ceiling, then the list, but only as far as the list still finishes before ready-by. Leftover list words after ready-by also wait behind the class lane until homework day.
+  - **This is best effort at his pace, never above the ceiling.** A short week (a Thursday list) or a class lane two lessons behind can leave words unstarted on homework day. `listBudget` reports that number as `classShort`, and the parent's readiness line shows it ("class: 2 left by Fri", §8.3).
 - **The catch-up lane yields.** It gets what is left. In a list week it runs about one list's worth of new words slower.
   - The parent's line says "catch-up slower this week", not "behind": this is his early-term gap, not his class.
 - **No class lesson known** (`classAt === null`): there is no school lane, so MOE is all catch-up and simply yields.
@@ -399,6 +400,7 @@ Applied in `reviewCard` (`src/session/record.ts`) through one pure helper, `pinD
 - **Which cards:** a list word's `recognise`, `hear`, `understand` and `meaning` cards. Not `write`, `say` or `sentence`.
 - **The rule:** when a review **before the ready-by day** gives a due date later than ready-by, the due date is set to the **start of the ready-by day**. That date is never before tomorrow.
 - **What stays the same:** stability, difficulty and the state are unchanged. FSRS handles an earlier review on its own terms: a shorter elapsed time gives a smaller stability gain, so nothing is lost.
+- **Rating an early review (fix round 2026-10-17).** A right, unhurried answer on a list word's card that is in Review and was asked before FSRS scheduled it (pinned here, or a quick check, §6.1) rates **Good**, not the usual Hard for a word not yet produced. Being asked early isn't his doing, and Hard would raise the card's difficulty for nothing. A slow answer is still Hard, and a miss is still Again.
 - **The effect:** every list card is reviewed on the ready-by day, by the check.
 
 ### 6.3 Ready-by to homework due: light review, high retention
