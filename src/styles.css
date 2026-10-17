@@ -945,6 +945,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   :root { --pet-home: clamp(100px, 14dvh, 150px); }
   .home__title { display: none; } /* no room under the cards; the 开始 bubble names the next step */
   .home__path .path { padding-bottom: 18px; } /* six stops reach the road: sit above the world's taps on it (the race car) */
+  .home--done .home__path .path { padding-bottom: 40px; } /* the done card pushes the stops down: four of them hid the frog (sweep 2026-10-17) */
 }
 
 /* Lessons: the whole world behind every step; 继续 and feedback float as a card with ground around it */
@@ -1818,3 +1819,4 @@ button.langdu__sentence { cursor: pointer; }
 /* the parent's backup reminder on Home (review 2026-10-17): one quiet line across the cards, not a thing for him to tap */
 .parent-nudge { grid-column: 1 / -1; margin: 0; justify-self: start; display: inline-flex; align-items: flex-end; gap: 8px; padding: 2px 10px 3px; font-size: 14px; font-weight: 700; color: var(--ink-soft); background: color-mix(in srgb, var(--paper) 88%, transparent); border: 1.5px dashed var(--line-strong); border-radius: 10px; pointer-events: none; }
 .parent-nudge .label { font-size: 16px; }
+.setup-tip { margin: 6px 0 0; max-width: 520px; font-size: 14px; line-height: 1.3; }

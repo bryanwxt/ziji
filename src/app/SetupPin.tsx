@@ -35,7 +35,7 @@ export function SetupPin({ onDone }: { onDone?: () => void }) {
         <PinPad key={first === null ? 'first' : 'confirm'} onComplete={(p) => void complete(p)} error={error} />
         {/* first run in a browser tab (review 2026-10-17): on iOS only the Home Screen app escapes Safari's 7-day clearing */}
         {!onDone && !isInstalled() && (
-          <p class="hint setup-tip">Tip: add 字己 to the Home Screen (Share → Add to Home Screen) and open it from there. Safari can clear a website's data after 7 days unused; the Home Screen app keeps his progress.</p>
+          <p class="hint setup-tip">Tip: Share → Add to Home Screen, and open the app from there. Safari may clear a site's data after 7 days unused.</p>
         )}
       </div>
     </div>
