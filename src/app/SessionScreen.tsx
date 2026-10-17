@@ -8,7 +8,7 @@ import { buildZibianRound, lookAlikeChars, zibianCount, type ZibianItem } from '
 import { ChooseStep } from '../activities/choose/ChooseStep';
 import { WrapupStep } from '../activities/choose/WrapupStep';
 import { planWrapup, wrapupTargets } from '../session/wrapup';
-import { endOfLocalDay } from '../lib/date';
+import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
 import { FlashcardStep, introIdiom, type FlashResult } from '../activities/flashcards/FlashcardStep';
 import { chooseCount, planChoose } from '../practice/choose';
 import { fitItem, usageItem, type UseItem } from '../practice/useItems';
@@ -42,7 +42,7 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
-import { beginNewWord, bringForward, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { beginNewWord, bringForward, recordMeaningOnce, recordRecognitionOnce, ratedToday, setLessonLists, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import type { SlowLines } from '../srs/slow';
 import { meaningCredit } from '../session/writeCredit';
 import { settleLessonStars } from '../session/stars';
@@ -51,7 +51,10 @@ import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, sendBack, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
-import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
+import { formOf, noteListAnswer, noteListPairAnswer } from '../weeklist/answers';
+import { activeLists } from '../weeklist/plan';
+import type { PracticeItem } from '../session/round';
+import { addAnswer, allWeekLists, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
 import { DEFAULT_KID, type KidState, type OralInfo, type ReadingHistory, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
@@ -115,6 +118,17 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const latest = useRef<SessionRecord | null>(null);
   const latestStep = useRef(-1);
   const planning = useRef(false); // 练一练's round is being built (it reads his rungs)
+  // the weekly lists, read once for the lesson (final review 2026-10-17): every rating pins by them, and 练一练 notes only list words
+  const listWordIds = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void allWeekLists(db).then((lists) => {
+      if (!alive) return;
+      setLessonLists(lists);
+      listWordIds.current = new Set(activeLists(lists, now()).flatMap((l) => l.items.map((i) => i.wordId)));
+    });
+    return () => { alive = false; setLessonLists(null); };
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -255,8 +269,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   /** Sent back to learn by a missed placement recheck in this lesson: nothing more of it is graded today (review M1). */
   const gone = (wordId: string) => !!(latest.current ?? rec)?.sentBack?.includes(wordId);
   /** A reading answer; true when it sent the word back to learn (spec 2026-10-14): its cards are gone, so the lesson forgets them too. */
-  const gradeReading = async (wordId: string, outcome: Parameters<typeof recordRecognition>[2]): Promise<boolean> => {
-    const card = await recordRecognition(db, wordId, outcome, now());
+  // once: 练一练's grade, never a second rating of the day (a list's reserved read item and the word's due item, final review 2026-10-17)
+  const gradeReading = async (wordId: string, outcome: Parameters<typeof recordRecognition>[2], once = false): Promise<boolean> => {
+    const card = once ? await recordRecognitionOnce(db, wordId, outcome, now()) : await recordRecognition(db, wordId, outcome, now());
+    if (!card) return false;
     if (await getCard(db, card.id)) {
       state!.know.cardsById.set(card.id, card);
       return false;
@@ -294,13 +310,19 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     once(async () => {
       const item = flashItem!;
       let sent = false;
+      // a weekly list word (weekly list spec §8.3, §2.1): every 认新字 answer counts toward its readiness; a re-teaching card is
+      // asked but grades no card (it is a retry)
+      const onList = !!item.reteach || !!rec.plan.listNewIds?.includes(item.wordId);
+      // right after its card: an echo, never counted as learned (fix round 2026-10-17); a re-teaching card's right answer is noted
+      if (onList && !rec.free && r.asked === 'read') await noteListAnswer(db, item.wordId, 'read', r.correct, now(), undefined, { echo: true, reteach: !!item.reteach });
       if (!item.retry && !rec.free && !gone(item.wordId)) {
         const outcome = { correct: r.correct, responseMs: r.responseMs, slow: state.slow };
-        // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing
+        // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing. A list
+        // word begins on Read (weekly list spec §6.4)
         const fresh = item.isNew ? know.wordsById.get(item.wordId) : undefined;
         if (fresh) {
           // a word met today is begun whatever he could be asked (final review C1)
-          const card = await beginNewWord(db, fresh, r.asked, outcome, now());
+          const card = await beginNewWord(db, fresh, r.asked, outcome, now(), { list: onList });
           know.cardsById.set(card.id, card);
         } else if (r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
         else if (r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
@@ -327,18 +349,23 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       if (!rec.free && !item.retry && !gone(item.wordId)) {
         // a sentence takes reading time first: that doesn't make a right answer slow (as in 选一选)
         const outcome = { correct: r.correct, responseMs: r.asked === 'use' || r.inContext ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs, slow: state.slow };
+        // a weekly list's read or meaning item grades his reading card when it is that card's first answer of the day (weekly list
+        // spec §6.4, §8.2; a miss rates Again)
+        const readCard = know.cardsById.get(`${item.wordId}:recognise`);
+        const grades = item.grades ?? (item.list && (item.list.form === 'read' || item.list.form === 'meaning') && readCard && !ratedToday(readCard, now()) ? 'recognise' : null);
         if (item.grades === 'understand' && r.asked === 'understand') know.cardsById.set(`${item.wordId}:understand`, await recordUnderstand(db, item.wordId, { correct: r.correct, responseMs: r.responseMs, slow: state.slow }, now()));
         else if (item.grades === 'hear' && r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
-        else if (item.grades === 'recognise') sent = await gradeReading(item.wordId, outcome);
-        else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
+        else if (grades === 'recognise') sent = await gradeReading(item.wordId, outcome, true);
+        else if (item.grades === 'meaning' && r.asked === 'meaning') { const c = await recordMeaningOnce(db, item.wordId, outcome, now()); if (c) know.cardsById.set(c.id, c); }
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs, state.slow));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
-        if (item.ask !== 'fish' && item.ask !== 'understand') await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b)
+        if (item.ask !== 'fish' && item.ask !== 'understand' && !item.list) await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b); a weekly list's extra item isn't a ladder rung
         if (r.asked === 'zibian') {
           await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'zibian', correct: r.correct });
           if (r.correct) await clearConfusion(db, item.wordId);
           else await bringForward(db, item.wordId, know.cardsById.has(`${item.wordId}:write`) ? 'write' : 'recognise', now());
         }
+        await noteListPractice(item, r);
       }
       if (!r.correct) await rememberConfusion(item.wordId, r.picked);
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
@@ -348,6 +375,36 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const next = afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom);
       await commit(sent ? sendBack(next, item.wordId) : next);
     })();
+
+  /**
+   * A 练一练 answer on a weekly list word (weekly list spec 2026-10-17 §7.5, §8.2, §8.3): every answer on a list word counts toward
+   * its readiness, a 搭配 or board pair by pair. A list item grades no card itself: its 选词填空 or 搭配 rates the word's meaning
+   * card when that is its first answer of the day (recordUse; only a meaning card he already has, so no rung opens early), and a
+   * miss brings the card forward to the start of tomorrow.
+   */
+  const noteListPractice = async (item: PracticeItem, r: PracticeResult) => {
+    if (!item.list && listWordIds.current && !listWordIds.current.has(item.wordId)) return; // not a list word: nothing to note
+    const tomorrow = startOfLocalDay(addDays(now(), 1));
+    // the day it was met or re-taught, an answer is an echo of its card (fix round 2026-10-17)
+    const echo = new Set([...(rec.plan.reteachIds ?? []), ...rec.plan.newWordIds]);
+    const rateUse = async (wordId: string, correct: boolean) => {
+      if (!rec.extra && know.cardsById.has(`${wordId}:meaning`)) know.cardsById.set(`${wordId}:meaning`, await recordUse(db, wordId, correct, now(), r.responseMs, state.slow));
+      if (!correct) await bringForward(db, wordId, 'meaning', tomorrow);
+    };
+    if (item.list && r.listPairs?.length) {
+      for (const p of r.listPairs) {
+        const left = await noteListPairAnswer(db, item.list.listId, p, p.correct, now(), { echo });
+        if (left) await rateUse(left, p.correct);
+      }
+      return;
+    }
+    const form = item.list?.form ?? formOf(item.ask);
+    if (!form) return;
+    await noteListAnswer(db, item.wordId, form, r.correct, now(), undefined, { echo });
+    if (!item.list) return;
+    if (form === 'fit') await rateUse(item.wordId, r.correct);
+    else if (!r.correct) await bringForward(db, item.wordId, form === 'read' ? 'recognise' : 'meaning', tomorrow);
+  };
 
   /** A Say card (spec 2026-10-11 §3) or a 说一句 (production practice spec §4): keep the take for the parent and schedule its card; a refused microphone (after its note) drops the lesson's Say and 说一句 cards (§7). */
   const onSayDone = (r: SayResult | SaySkip) =>
@@ -522,7 +579,9 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <FlashcardStep
           key={rec.flashIndex}
           item={flashItem}
-          ask={step === 'newwords' ? 'hear' : undefined} // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2)
+          // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2); a weekly list word begins on Read (weekly list spec §6.4)
+          ask={step === 'newwords' ? (flashItem.reteach || rec.plan.listNewIds?.includes(flashWord.id) ? 'read' : 'hear') : undefined}
+          list={rec.plan.listCards?.[flashWord.id]}
           reintroOnMiss={step === 'newwords'}
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
           word={flashWord}
@@ -557,6 +616,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           confused={state.confusions.get(practiceWord.id)}
           knownChars={know.knownChars}
           level={level}
+          listCard={rec.plan.listCards?.[practiceWord.id]}
           onDone={(r) => void onPracticeDone(r)}
         />
       )}

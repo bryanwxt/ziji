@@ -13,6 +13,7 @@ export type Route =
   | { name: 'setupPin' }
   | { name: 'petSetup' }
   | { name: 'langdu' }
+  | { name: 'check'; listId: string } // 考考自己 on a weekly list's ready-by day (weekly list spec 2026-10-17 §8.1)
   | { name: 'story'; part: 'setup' | 'payoff'; chapter: number; then: Route }; // the Word Thief chapter around a lesson (3c)
 
 export interface AppData {

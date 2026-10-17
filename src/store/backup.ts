@@ -38,6 +38,7 @@ export interface BackupPreview {
   who: BackupWho;
   counts: { words: number; cards: number; sessions: number; recordings: number };
   hasMedia: boolean;
+  listsMissing: boolean; // a backup from before weekly lists (v6): restoring it clears this device's lists (weekly list spec §11)
 }
 
 /** The stores a backup holds: every list store; the restore point is never among them. */
@@ -131,6 +132,8 @@ export async function exportBackup(db: AppDb, opts: { includeMedia: boolean; now
   return JSON.stringify(file);
 }
 
+const listsMissing = (file: BackupFile) => 'words' in file.stores && !('weekLists' in file.stores);
+
 /** Validates without writing anything. Throws BackupError with a parent-friendly message. */
 export function readBackup(text: string): BackupPreview {
   let file: BackupFile;
@@ -143,8 +146,8 @@ export function readBackup(text: string): BackupPreview {
   if (!file || typeof file !== 'object' || file.format !== BACKUP_FORMAT || !file.stores || typeof file.stores !== 'object') {
     throw new BackupError(NOT_A_BACKUP);
   }
-  if (file.formatVersion > BACKUP_FORMAT_VERSION) {
-    throw new BackupError(NEWER);
+  if (file.formatVersion > BACKUP_FORMAT_VERSION || (typeof file.dbVersion === 'number' && file.dbVersion > DB_VERSION)) {
+    throw new BackupError(NEWER); // a newer build's stores and records would not fit this one: update the app first
   }
   for (const [name, rows] of Object.entries(file.stores)) {
     if (!(LIST_STORES as readonly string[]).includes(name) || !Array.isArray(rows)) throw new BackupError(NOT_A_BACKUP);
@@ -159,6 +162,7 @@ export function readBackup(text: string): BackupPreview {
     who,
     counts: { words: count('words'), cards: count('cards'), sessions: count('sessions'), recordings: count('recordings') },
     hasMedia: 'recordings' in file.stores,
+    listsMissing: listsMissing(file),
   };
 }
 
@@ -209,6 +213,9 @@ export async function applyBackup(db: AppDb, preview: BackupPreview): Promise<vo
     ops.push(store.clear());
     for (const row of rows) ops.push(store.put(row as never));
   }
+  // a backup from before v6 has no weekly lists, and its words replace the parent words they point at: clear them too (weekly
+  // list spec 2026-10-17 §11); undoing the restore brings them back from the restore point
+  if (listsMissing(file)) ops.push(tx.objectStore('weekLists').clear());
   if (settings) ops.push(tx.objectStore('settings').put(settings, 'main'));
   if (kid) ops.push(tx.objectStore('kid').put(kid, 'main'));
   await Promise.all([...ops, tx.done]);

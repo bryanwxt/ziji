@@ -13,6 +13,8 @@ import { launchWebKit } from './launch-webkit';
 const PORT = Number(process.env.FIT_PORT ?? 4174); // FIT_PORT: another worktree's sweep may hold 4174
 const BASE = `http://127.0.0.1:${PORT}/`;
 const OUT = 'fit-shots';
+/** An invented weekly sheet as Live Text gives it (never the parent's): a grid, 生字 he has, then 搭配 under two themes, the second read a cell a line. */
+const WEEK_SHEET = ['P2-L33-复习', '考考自己', '一、词语', '公园 草地 蝴蝶 跑步', '整齐 热闹 干净 安静', '帮助 告诉 闪闪亮', '二、生字', '手 书 开 出', '三、词语搭配', '早餐', '吃 面包', '喝 牛奶', '煎 鸡蛋', '游乐场', '放', '风筝', '踢', '足球', '荡', '秋千', '©2026 Example Publisher Pte Ltd.'].join('\n');
 const AFTERNOON = new Date(2026, 9, 6, 16, 0);
 const EVENING = new Date(2026, 9, 6, 21, 0); // timeOfDay() calls this 'evening': the darkest wash
 const SIZES = [
@@ -500,7 +502,7 @@ async function sweep(size: Size) {
     await snap(p, size, 'parent-fit', 'button:has-text("Use these")');
     await tab('Content');
     await p.waitForSelector('.segmented');
-    for (const [i, part] of ['Words', 'From a worksheet', 'Reading texts', 'Pictures'].entries()) {
+    for (const [i, part] of ['This week', 'Words', 'From a worksheet', 'Reading texts', 'Pictures'].entries()) {
       await p.click(`.segmented__opt:has-text("${part}")`);
       await p.waitForTimeout(200);
       await fits();
@@ -515,6 +517,99 @@ async function sweep(size: Size) {
     await snap(p, size, 'parent-settings-top', '.parent__tabs');
     await snap(p, size, 'parent-settings', '#st-class-now');
     await snap(p, size, 'parent-backup', '#parent-backup');
+  });
+  // 本周词语 (weekly list spec 2026-10-17 §3): empty, a pasted sheet's preview (two theme groups, one read column-wise and
+  // flagged), the wrong answers to confirm, All fine, saved, and Close's own confirm; a screenshot each, never sideways
+  await run('parent-week', AFTERNOON, { pinCode: FIT_PIN }, async (p) => {
+    await tabTo(p, '家长');
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.click('.parent__tabs .tab:has-text("Content")');
+    await p.click('.segmented__opt:has-text("This week")');
+    await p.waitForSelector('#week-paste');
+    let step = 0;
+    const sideways = async () => results.push({ size: size.name, flow: 'parent-week', step: step++, sig: await p.evaluate(() => document.querySelector('.week h3')?.textContent ?? 'empty'), problems: await p.evaluate(() => {
+      const out: string[] = [];
+      if (document.documentElement.scrollWidth > innerWidth + 1) out.push(`page scrolls sideways ${document.documentElement.scrollWidth - innerWidth}px`);
+      for (const el of document.querySelectorAll('.week button, .week input')) { const r = el.getBoundingClientRect(); if (r.width && (r.left < -1 || r.right > innerWidth + 1)) out.push(`off screen: ${el.textContent || el.getAttribute('aria-label')}`); }
+      return out;
+    }) });
+    await sideways();
+    await snap(p, size, 'parent-week-0-empty', '.parent__tabs');
+    await p.fill('#week-paste', WEEK_SHEET);
+    await p.click('.week__read:not([disabled])');
+    await p.waitForSelector('.week__preview');
+    await sideways();
+    await snap(p, size, 'parent-week-1-preview', '.week__meta');
+    await snap(p, size, 'parent-week-2-words', '.week__items');
+    await snap(p, size, 'parent-week-3-dapei', '.week__group');
+    await snap(p, size, 'parent-week-4-fills', '[aria-label="选词填空"]');
+    await p.click('.week__allfine');
+    // rows with a doubtful decoy need their own Fine (fix round 2026-10-17)
+    for (const fine of await p.$$('li.is-doubt:not(.is-ok):not(.is-off) .week__fine')) await fine.click();
+    await sideways();
+    await snap(p, size, 'parent-week-5-allfine', '.week__bar');
+    await p.click('.week__bar .btn--primary');
+    await p.waitForSelector('.week__list');
+    await sideways();
+    await snap(p, size, 'parent-week-6-saved', '.week__lists');
+    await p.click('.week__list button:has-text("Close")');
+    await snap(p, size, 'parent-week-7-close', '.week__confirm');
+    await p.click('.week__list button:has-text("Keep it")');
+    await p.click('.week__list button:has-text("Edit")');
+    await sideways();
+    await snap(p, size, 'parent-week-8-edit', '.week__editor');
+  });
+  // the weekly list on Home and 考考自己 (weekly list spec 2026-10-17 §8.1, §9): the countdown line (before and after the day's
+  // lesson), the ready-by day's card, every question of the check (no pinyin on any), its end sheet, and the parent's readiness
+  // line on Today
+  await run('home-week', AFTERNOON, { weekList: 'countdown' }, (p) => check(p, size, 'home-week', 0));
+  await run('home-week-done', AFTERNOON, { weekList: 'countdown', doneToday: true }, (p) => check(p, size, 'home-week-done', 0));
+  await run('check', AFTERNOON, { weekList: 'check' }, async (p) => {
+    await check(p, size, 'home-check', 0);
+    await p.click('.week-check button');
+    let tries = 0;
+    for (let i = 0; i < 20; i++) {
+      await p.waitForSelector('.check .stage__card', { timeout: 15_000 });
+      if (await p.$('.check--done')) break;
+      await check(p, size, 'check', i);
+      const py = await p.evaluate(() => [...document.querySelectorAll('.stage__card .label__py, .stage__card .pinyin')].map((e) => e.textContent ?? '').filter((t) => t.trim()).join(' '));
+      if (py) results.push({ size: size.name, flow: 'check', step: i, sig: 'pinyin', problems: [`pinyin on a check question: ${py}`] });
+      if (await p.$('.pairs')) {
+        // a board: join each left tile, trying the right tiles in turn (a wrong join lets go)
+        for (let guard = 0; guard < 40 && (await p.$('.check .pairs')); guard++) {
+          const left = await p.$('.pairs__col--left .pair__tile:not(.is-matched):not([disabled])');
+          if (!left) break;
+          await left.click();
+          const rights = await p.$$('.pairs__col--right .pair__tile:not(.is-matched):not([disabled])');
+          if (rights.length) await rights[tries++ % rights.length]!.click();
+          await p.waitForTimeout(60);
+        }
+      } else await p.click('.stage__card .choice >> nth=0');
+      await p.waitForTimeout(400); // the answer is saved, then the next question comes
+    }
+    await p.waitForSelector('.check--done', { timeout: 15_000 });
+    await check(p, size, 'check-done', 0);
+  });
+  await run('parent-week-line', AFTERNOON, { weekList: 'countdown', pinCode: FIT_PIN }, async (p) => {
+    await tabTo(p, '家长');
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.waitForSelector('.dash__week', { timeout: 15_000 });
+    const sideways = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    results.push({ size: size.name, flow: 'parent-week-line', step: 0, sig: 'today', problems: sideways > 1 ? [`page scrolls sideways ${sideways}px`] : [] });
+    await snap(p, size, 'parent-week-line', '.dash__week');
+  });
+  await run('parent-week-results', AFTERNOON, { weekList: 'checked', pinCode: FIT_PIN }, async (p) => {
+    await tabTo(p, '家长');
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.waitForSelector('.dash__week', { timeout: 15_000 });
+    await snap(p, size, 'parent-week-line-checked', '.dash__week');
+    await p.click('.parent__tabs .tab:has-text("Content")');
+    await p.click('.segmented__opt:has-text("This week")');
+    await p.waitForSelector('.week .dash__week', { timeout: 15_000 });
+    await snap(p, size, 'parent-week-top', '.week h2');
+    await snap(p, size, 'parent-week-results', '.week__results');
+    const sideways = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    results.push({ size: size.name, flow: 'parent-week-results', step: 0, sig: 'week', problems: sideways > 1 ? [`page scrolls sideways ${sideways}px`] : [] });
   });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });

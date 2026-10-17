@@ -13,6 +13,16 @@ const PROSE = /[，。！？；“”]/;
 const CIRCLED = /^[\u2460-\u2473\u2776-\u277F]/; // numbered instructions: ①–⑳ and ❶–❿
 const HEADER = /^(?:[一二三四五六七八九十]+、|>|➤|▶|\d+[.、])?\s*(.*)$/;
 
+/** A page code (P2-L41), as the line starts; null when it has none. A weekly list names itself by it (weekly list spec §3.2 rule 1). */
+export const pageCode = (line: string): string | null => PAGE_CODE.exec(line.trim())?.[0].toUpperCase() ?? null;
+/** Copyright, brand or instruction text: never a sheet's title. */
+export const isFurniture = (line: string): boolean => COPYRIGHT.test(line) || INSTRUCTION.test(line) || MAYBE_INSTRUCTION.test(line);
+/** Does this line start a section (a marked heading, or one naming a section)? */
+export const isSectionHeading = (line: string): boolean => {
+  const t = line.replace(/[\u3000\t]+/g, ' ').trim();
+  return /^(?:[一二三四五六七八九十]+、|>|➤|▶)/.test(t) || (!/[。！？，]/.test(t) && sectionOf(HEADER.exec(t)![1]!) !== null);
+};
+
 function sectionOf(heading: string): Section | null {
   if (/成语/.test(heading)) return 'idioms';
   if (/搭配/.test(heading)) return 'pairs';
@@ -27,16 +37,21 @@ function sectionOf(heading: string): Section | null {
  * Live Text output → content lines tagged with the section they sit in. Headings set the section and are dropped.
  * A heading without a marker (一、 > ➤ ▶) is one only when it isn't itself a word (名字 and 句子 are words in a table).
  */
-export function cleanLines(text: string, isWord: (w: string) => boolean = () => false): { line: string; section: Section }[] {
-  const out: { line: string; section: Section }[] = [];
+export function cleanLines(text: string, isWord: (w: string) => boolean = () => false, opts: { keepNumbered?: boolean } = {}): { line: string; section: Section; gap?: true }[] {
+  const out: { line: string; section: Section; gap?: true }[] = [];
   const beforeFirstHeading: { line: string; section: Section }[] = []; // brand and title lines atop a worksheet
+  let gap = false; // page furniture (copyright, brand) was dropped just before: Live Text may have jumped to another block of the page
   let section: Section = 'words';
   let seenHeading = false;
   let inPassage = false; // the last kept line was prose: what follows may continue it
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.replace(/[\u3000\t]+/g, ' ').trim();
+    if (line && COPYRIGHT.test(line)) { gap = seenHeading; continue; } // a Latin copyright line too: furniture between blocks
     if (!line || !HAN.test(line)) continue; // pinyin-only and Latin lines
-    if (PAGE_CODE.test(line) || COPYRIGHT.test(line) || OPTIONS.test(line) || BLANK.test(line) || INSTRUCTION.test(line) || CIRCLED.test(line)) continue;
+    // keepNumbered (a weekly list, spec 2026-10-17 §3.2): in a 词语, 生字 or 搭配 table, ① 欺负 and (1) 街道 are numbered cells, not choices
+    const numberedCell = opts.keepNumbered && (section === 'words' || section === 'chars' || section === 'pairs') && seenHeading;
+    if (PAGE_CODE.test(line) || COPYRIGHT.test(line)) { gap = seenHeading; continue; }
+    if ((OPTIONS.test(line) && !numberedCell) || BLANK.test(line) || INSTRUCTION.test(line) || (CIRCLED.test(line) && !numberedCell)) continue;
     const heading = HEADER.exec(line)![1]!;
     if (/^第.+课$/.test(heading)) {
       out.push({ line: heading, section: 'other' }); // the lesson title names the import
@@ -52,7 +67,9 @@ export function cleanLines(text: string, isWord: (w: string) => boolean = () => 
     }
     if (!inPassage && !LONE_WORD.test(line) && MAYBE_INSTRUCTION.test(line)) continue;
     inPassage = PROSE.test(line) || Array.from(line).length > 12;
-    (seenHeading ? out : beforeFirstHeading).push({ line, section });
+    if (seenHeading) out.push({ line, section, ...(gap ? { gap: true as const } : {}) });
+    else beforeFirstHeading.push({ line, section });
+    gap = false;
   }
   // A page with section headings: what sits above the first one is the page's own title. Plain pasted text keeps everything.
   return seenHeading ? out : [...out, ...beforeFirstHeading];

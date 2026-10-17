@@ -2,7 +2,7 @@ import { Rating } from 'ts-fsrs';
 import { addDays, endOfLocalDay, localDateKey, parseDateKey } from '../lib/date';
 import { goneWord, ladderWords } from '../content/ladder';
 import { isOwned, rungOf, type RungKind } from '../ladder/rungs';
-import type { CardRecord, ReviewLog, SessionRecord, Word } from '../types';
+import type { CardRecord, ReviewLog, SessionRecord, WeekList, Word } from '../types';
 
 export interface Knowledge {
   words: Word[];
@@ -72,7 +72,7 @@ const weekOf = (d: Date): string => localDateKey(addDays(d, -((d.getDay() + 6) %
  * missed day in a calendar week (Mon–Sun) is forgiven as a rest day — it doesn't add to the count — and a second missed day in
  * the same week ends the streak. `rest`: the forgiven days, only those with a finished day before them (newest first).
  */
-export function streakDays(sessions: SessionRecord[], today: string): { count: number; rest: string[] } {
+export function streakDays(sessions: SessionRecord[], today: string, practised: ReadonlySet<string> = new Set()): { count: number; rest: string[] } {
   const done = new Set(sessions.filter((s) => s.completed && !s.free).map((s) => s.date));
   let day = parseDateKey(today);
   if (!done.has(today)) day = addDays(day, -1);
@@ -86,6 +86,8 @@ export function streakDays(sessions: SessionRecord[], today: string): { count: n
       count++;
       rest.push(...pending);
       pending = [];
+    } else if (practised.has(key)) {
+      // a day with only 考考自己 (parent ruling 2026-10-17): practice, not a rest day — the streak goes on through it, no longer
     } else {
       const week = weekOf(day);
       if (used.has(week)) break;
@@ -97,7 +99,12 @@ export function streakDays(sessions: SessionRecord[], today: string): { count: n
   return { count, rest };
 }
 
-export const streak = (sessions: SessionRecord[], today: string): number => streakDays(sessions, today).count;
+export const streak = (sessions: SessionRecord[], today: string, practised?: ReadonlySet<string>): number => streakDays(sessions, today, practised).count;
+
+/** Days he answered in a weekly list's 考考自己 (parent ruling 2026-10-17): practice, though not the day's lesson. */
+export function practisedDays(lists: readonly WeekList[]): Set<string> {
+  return new Set(lists.filter((l) => l.check && Object.keys(l.check.results).length > 0).map((l) => l.check!.day));
+}
 
 /** One star per finished activity; 用一用 closes the lesson but isn't a star of its own; 练一练 counts two (it replaces 选一选, 钓鱼 and 用一用, spec 2026-10-05). */
 export const starsOf = (steps: readonly string[]) => steps.reduce((n, s) => n + (s === 'wrapup' ? 0 : s === 'practice' ? 2 : 1), 0);
@@ -140,6 +147,13 @@ export function troubleWords(logs: ReviewLog[], limit = 10, keep: (wordId: strin
     .slice(0, limit);
 }
 
+/** Cards due by the end of today, his active words' (the weekly list's readiness line, spec 2026-10-17 §8.3). */
+export function dueToday(cards: CardRecord[], words: Word[], now: Date): number {
+  const active = new Set(words.filter((w) => !w.paused).map((w) => w.id));
+  const to = endOfLocalDay(now).getTime();
+  return cards.filter((c) => active.has(c.wordId) && c.fsrs.due.getTime() <= to).length;
+}
+
 export function dueTomorrow(cards: CardRecord[], words: Word[], now: Date): number {
   const active = new Set(words.filter((w) => !w.paused).map((w) => w.id));
   const from = endOfLocalDay(now).getTime();
@@ -147,16 +161,19 @@ export function dueTomorrow(cards: CardRecord[], words: Word[], now: Date): numb
   return cards.filter((c) => active.has(c.wordId) && c.fsrs.due.getTime() > from && c.fsrs.due.getTime() <= to).length;
 }
 
-export interface WeekDay { label: string; date: string; done: boolean; today: boolean; rest: boolean }
+export interface WeekDay { label: string; date: string; done: boolean; today: boolean; rest: boolean; practised?: boolean }
 
-/** This week, Monday first: which days a (non-free) lesson was finished, and the streak's rest day (休息日, spec 2026-10-11 §5). */
-export function weekDays(sessions: SessionRecord[], today: string): WeekDay[] {
+/**
+ * This week, Monday first: which days a (non-free) lesson was finished, the streak's rest day (休息日, spec 2026-10-11 §5), and
+ * the days with only 考考自己 (`practised`, parent ruling 2026-10-17: active, never 休).
+ */
+export function weekDays(sessions: SessionRecord[], today: string, practisedOn: ReadonlySet<string> = new Set()): WeekDay[] {
   const done = new Set(sessions.filter((s) => s.completed && !s.free).map((s) => s.date));
-  const rest = new Set(streakDays(sessions, today).rest);
+  const rest = new Set(streakDays(sessions, today, practisedOn).rest);
   const day = parseDateKey(today);
   const monday = addDays(day, -((day.getDay() + 6) % 7));
   return [...'一二三四五六日'].map((label, i) => {
     const date = localDateKey(addDays(monday, i));
-    return { label, date, done: done.has(date), today: date === today, rest: rest.has(date) };
+    return { label, date, done: done.has(date), today: date === today, rest: rest.has(date), practised: !done.has(date) && practisedOn.has(date) };
   });
 }

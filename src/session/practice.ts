@@ -18,6 +18,7 @@ import { idiomOf, idiomsFor, isIdiomWord, type Idiom } from '../content/chengyu'
 import { idiomFitItem, idiomGap, idiomZuju } from '../practice/idioms';
 import { familyBoard } from '../practice/family';
 import { withNoneOfThese } from '../practice/noneOfThese';
+import { ITEM_MS, withList, withListNone } from '../weeklist/practice';
 
 const idiomCache = new WeakMap<Word[], Map<string, Idiom[]>>();
 /** The 成语 for a word at his level, worked out once per word list (planning asks each word several times). */
@@ -203,7 +204,10 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
   // the weakest-words round is practice only: a use question on it never rates his meaning card (learning rules 2026-10-17)
   const weak = new Set(rec.plan.weakIds ?? []);
   const graded = weak.size ? round.map((x) => (weak.has(x.wordId) ? { ...x, grades: null } : x)) : round;
-  return withSentence(withSay(withFish(graded, fish), say), sentence);
+  // a weekly list's items (weekly list spec §6.4, §7.6, §2.1): interleaved, reserved ones always, boost as far as the box holds
+  const box = Math.floor((rec.plan.practiceTimeBoxMs ?? 5 * 60_000) / ITEM_MS);
+  const listed = (rec.plan.listItems ?? []).filter((x) => { const w = wordsById.get(x.wordId); return !!w && !w.paused && !today.has(x.wordId); });
+  return withList(withSentence(withSay(withFish(graded, fish), say), sentence), withListNone(listed, today, rng), box);
 }
 
 /** 再玩一会: a round of words he has begun, from their own rungs, twice each; practice only. */

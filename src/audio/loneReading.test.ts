@@ -34,7 +34,6 @@ const NEVER_LONE: Record<string, string> = {
   'activities/flashcards/FlashcardStep.tsx: quiz.cue.kind === \'sentence\' ? `${quiz.cue.before}，，${quiz.cue.after}` : quiz.cue.full': 'a cue line',
   'activities/flashcards/FlashcardStep.tsx: quiz.cue.full': 'a cue line',
   'activities/flashcards/FlashcardStep.tsx: phase === \'feedback\' ? quiz.cue.full : `${quiz.cue.before}，，${quiz.cue.after}`': 'a cue line',
-  'activities/flashcards/FlashcardStep.tsx: pair': "a bound character's pair",
   'story/StoryScreen.tsx: zh': "a story line",
   'story/StoryScreen.tsx: question.zh': 'a question',
   'story/StoryScreen.tsx: c': "a question's choice, keyed by its text in the clip inventory",

@@ -11,7 +11,7 @@ import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Label } from '../../ui/Label';
 import { burst, flyAlong } from '../../ui/motion';
-import type { CardRecord, FlashItem, KidState, Word } from '../../types';
+import type { CardRecord, FlashItem, KidState, ListCard, Word } from '../../types';
 import { Closeup } from '../../app/Closeup';
 import { isHardRecognition, reactionMood } from '../../fun/mood';
 import { Pet } from '../../ui/Pet';
@@ -59,6 +59,10 @@ interface Props {
   idiom?: Idiom | null;
   /** 练一练: a 组词 gap or English meaning asked without its answer, 「都不对」 right (production practice spec §5) */
   noneOfThese?: 'answer' | 'decoy';
+  /** a weekly list word's card (weekly list spec 2026-10-17 §7.1–7.2): its pair for a verb, an example sentence, the new character marked */
+  list?: ListCard;
+  /** 考考自己 (weekly list spec 2026-10-17 §8.1): no pinyin, nothing said, no right or wrong or usage line shown; a pick answers at once */
+  bare?: boolean;
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
@@ -75,9 +79,10 @@ function missedPick(choice: string | null, quiz: { cue: MeaningCue | null; mode:
   return pinyinPickNote(word, choice, pool);
 }
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese, list, bare = false }: Props) {
   // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
-  const pair = boundPair(word.text);
+  const pair = list?.lead ?? boundPair(word.text); // a list verb's English questions show its list pair the same way (fix round 2026-10-17)
+  const pairPy = list?.lead ? list.leadReading : pair ? kidGlossReading(pair) : undefined;
   // none: the right answer is left out and 都不对 is right; real: the right answer itself, shown after (production practice spec §5)
   const quiz = useMemo((): { listen: boolean; cue: MeaningCue | null; answer: string; options: string[]; cheer: string; comfort: string; mode: 'hear' | 'meaningRead' | null; none: boolean; showsNone: boolean; real: string } => {
     const rng = mulberry32((Date.now() ^ word.text.codePointAt(0)!) >>> 0);
@@ -94,7 +99,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       // always four: six English meanings crowd a phone and drag in obscure glosses (parent, 2026-10-12)
       const options = meaningChoices(word, pool, rng);
       if (options) {
-        const hear = ask === 'hear' && voice; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
+        const hear = ask === 'hear' && voice && !bare; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
         const real = firstSense(questionMeaning(word)!);
         return { listen: hear, cue: null, answer: noneOfThese === 'answer' ? NONE_OF_THESE : real, options: pickOptions(options, real), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead', none: noneOfThese === 'answer', showsNone: !!noneOfThese, real };
       }
@@ -103,12 +108,13 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     const inPair = (w: Word) => !!pair && w.text !== word.text && pair.includes(w.text);
     const five = pickLookAlikes(word, pool, rng).filter((w) => !inPair(w));
     const lookAlikes = five.length ? five : pickCharacterDistractors(word, pool, rng).filter((w) => !inPair(w));
-    const listen = voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
+    const listen = !bare && voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
     const answer = listen ? word.text : word.pinyin;
     const wrong = listen ? lookAlikes.map((w) => w.text) : fiveOrThree(pickPinyinDistractors(word, pool, rng, MANY_WRONG));
     return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null, none: false, showsNone: false, real: answer };
   }, [word.id]);
-  const [phase, setPhase] = useState<Phase>(item.isNew && !item.retry ? 'intro' : 'quiz');
+  // a re-teaching card (weekly list spec §2.1) opens on the card again, like a new word
+  const [phase, setPhase] = useState<Phase>((item.isNew && !item.retry) || item.reteach ? 'intro' : 'quiz');
   const [choice, setChoice] = useState<string | null>(null);
   const [again, setAgain] = useState(false);
   const againAt = useRef(0); // when the card came back after a miss: a double tap on 继续 must not skip it (sweep)
@@ -117,29 +123,40 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   // what he reacts to (spec 2026-10-04 §4.4): a new word when it is shown, then each answer
   const reactN = useRef(0);
   // a new word surprises him; nothing else moves him until an answer is settled (spec 2026-10-11 §5: no peek at a question)
-  const [react, setReact] = useState<Reaction | null>(() => (item.isNew && !item.retry ? { kind: 'newWord', key: ++reactN.current } : null));
+  const [react, setReact] = useState<Reaction | null>(() => ((item.isNew && !item.retry) || item.reteach ? { kind: 'newWord', key: ++reactN.current } : null));
+  // a list verb is said as its pair, at the pair's reading (weekly list spec §7.2): 炒 → 炒青菜
+  const sayWord = () => (list?.lead ? speak(list.lead, { reading: list.leadReading }) : speak(word.text, { reading: word.pinyin }));
   const quizAt = useRef(performance.now());
   const petRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef(new Map<string, HTMLButtonElement>());
 
   useEffect(() => {
     if (phase === 'intro') {
-      speak(word.text, { reading: word.pinyin });
-      // then every 词语 and the 成语 the card shows, in order, each after the last (parent, 2026-10-05: only the first was read)
-      for (const text of introSpoken(word, idiom)) speak(text, { queue: true });
+      sayWord();
+      // then every 词语 and the 成语 the card shows, in order, each after the last (parent, 2026-10-05: only the first was read);
+      // a list card's example sentence takes their place (weekly list spec §7.1)
+      if (list?.example) speak(list.example.text, { queue: true, reading: list.example.pinyin });
+      else if (!list?.lead) for (const text of introSpoken(word, list ? null : idiom)) speak(text, { queue: true });
     }
     if (phase === 'quiz') {
       quizAt.current = performance.now();
+      if (bare) return;
       // A class sentence is read around its blank: saying the word would give the answer away (its choices don't share its sound).
       if (quiz.cue) speak(quiz.cue.kind === 'sentence' ? `${quiz.cue.before}，，${quiz.cue.after}` : quiz.cue.full);
+      else if (quiz.listen && quiz.mode) sayWord(); // heard for its meaning: a list verb as its pair
       else if (quiz.listen) speak(word.text, { reading: word.pinyin });
     }
   }, [phase]);
 
   const choose = (option: string) => {
-    if (phase !== 'quiz') return;
+    if (phase !== 'quiz' || (bare && choice !== null)) return;
     const correct = option === quiz.answer;
     setChoice(option);
+    if (bare) {
+      const responseMs = Math.round(performance.now() - quizAt.current);
+      onDone({ correct, hard: false, responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: quiz.mode === 'hear' ? 'hear' : 'read', picked: option });
+      return;
+    }
     const hard = isHardRecognition(card?.fsrs);
     setResult({ correct, hard, responseMs: Math.round(performance.now() - quizAt.current) });
     setReact({ kind: !correct ? 'wrong' : hard ? 'hard' : combo + 1 >= 3 ? 'streak' : 'right', key: ++reactN.current });
@@ -158,10 +175,11 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       playSfx('wrong');
     }
     if (quiz.cue) speak(quiz.cue.full);
-    else if (!quiz.listen || !correct) speak(word.text, { reading: word.pinyin });
+    else if (!quiz.listen || !correct) sayWord();
   };
 
   const optionState = (o: string) => {
+    if (bare) return o === choice ? 'is-picked' : '';
     if (phase !== 'feedback') return '';
     if (o === quiz.answer) return o === choice ? 'is-eaten' : 'is-answer';
     return o === choice ? 'is-wrong' : 'is-dim';
@@ -171,7 +189,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   // his reaction is a beat in the rig (REACTIONS[kind].holdMs), then he rests on his own mood while the answer stays up
   const mood: TruffleMood = phase === 'feedback' ? resting : 'neutral'; // still while he answers (spec 2026-10-11 §5)
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害！', content: '呼噜～' };
-  const bubble = phase === 'intro' ? (again ? '再看一遍！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
+  // a list word or pair is a 词, not a 字 (weekly list spec §7.1)
+  const bubble = phase === 'intro' ? (item.reteach ? '再认一次！' : again ? '再看一遍！' : list && (list.lead || Array.from(word.text).length > 1) ? '新词来了！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : Array.from(word.text).length > 1 ? '这个词怎么读？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
     if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : quiz.mode === 'hear' ? 'hear' : 'read', picked: choice ?? undefined });
@@ -195,7 +214,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
           // a 都不对 question shows the real answer, right or wrong (production practice spec §5)
           detail={result.correct && !quiz.none ? undefined : (
             <>
-              <MeaningNote lead right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? kidGlossReading(pair) : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={result.correct ? null : missedPick(choice, quiz, word, pool)} why={
+              <MeaningNote lead right={quiz.cue ? quiz.cue.full : quiz.mode && pair ? pair : word.text} rightPinyin={quiz.cue ? quiz.cue.pinyin : quiz.mode && pair ? pairPy : word.pinyin} rightMeaning={quiz.showsNone && quiz.mode ? quiz.real : undefined} picked={result.correct ? null : missedPick(choice, quiz, word, pool)} why={
                 /* why (spec 2026-10-12 §3): English choices → the radical; the 组词 gap → the look-alike part, else the radical;
                   find the character → the look-alike part; its reading → the kind of pinyin slip */
                 result.correct ? null
@@ -217,7 +236,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
         truffle={<div ref={petRef}><Pet kid={kid} mood={mood} bubble={bubble} size={180} lookAt={phase === 'quiz' ? 0.8 : 0} calm={phase === 'quiz'} react={react} /></div>}
         sheet={sheet}
       >
-        {phase === 'intro' ? <Intro word={word} idiom={idiom} /> : (
+        {phase === 'intro' ? <Intro word={word} idiom={list ? null : idiom} list={list} /> : (
           <>
             <div class="flash__prompt">
               {quiz.cue ? (
@@ -236,7 +255,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                 </div>
               ) : (
                 <>
-                  {quiz.listen ? <SpeakButton text={quiz.mode && pair ? pair : word.text} reading={quiz.mode && pair ? undefined : word.pinyin} big />
+                  {quiz.listen ? <SpeakButton text={quiz.mode && pair ? pair : word.text} reading={quiz.mode && pair ? (list?.lead ? pairPy : undefined) : word.pinyin} big />
                     // an English question on a bound character asks about its pair, the character picked out in it; never the lone character
                     : quiz.mode && pair ? <div class="hanzi hanzi--q hanzi--pair" data-q style={`--len:${Array.from(pair).length}`}><BoundWord pair={pair} ch={word.text} /></div>
                     : <div class="hanzi hanzi--q" data-q>{word.text}</div>}
@@ -252,7 +271,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                     type="button"
                     class={`choice press ${optionState(o)}${o === NONE_OF_THESE && quiz.showsNone ? ' choice--none' : ''}`}
                     lang={quiz.mode && !(o === NONE_OF_THESE && quiz.showsNone) ? 'en' : undefined}
-                    disabled={phase === 'feedback'}
+                    disabled={phase === 'feedback' || (bare && choice !== null)}
                     onClick={() => choose(o)}
                     ref={(el) => {
                       if (el) optionRefs.current.set(o, el);
@@ -364,14 +383,20 @@ export function introIdiom(word: Word, idioms: Idiom[]): Idiom | null {
   return idioms.find((i) => !shown.some((t) => t.includes(i.text)) && inBoundSense(word.text, i.text)) ?? null;
 }
 
-function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
-  // never the one the usage line already shows; all of them feed the meaning questions
-  const { line, listed } = cardRows(word, idiom);
-  const pair = boundPair(word.text);
+function Intro({ word, idiom, list }: { word: Word; idiom: Idiom | null; list?: ListCard }) {
+  // never the one the usage line already shows; all of them feed the meaning questions. A list card's example sentence takes
+  // the place of its 词语 rows, and a verb's list pair the place of everything under it (weekly list spec §7.1–7.2)
+  const rows = cardRows(word, idiom);
+  const { line, listed } = list?.example || list?.lead ? { line: null, listed: [] } : rows;
+  // a list verb leads with its list pair (炒青菜) the way a bound character leads with its own (番茄)
+  const pair = list?.lead ?? boundPair(word.text);
+  const pairReading = list?.lead ? list.leadReading : pair ? kidGlossReading(pair) : undefined;
+  const pairMark: [number, number] = list?.lead ? list.mark ?? [0, 1] : [Array.from(pair ?? '').indexOf(word.text), 1];
   const long = Array.from(pair ?? word.text).length > 1;
+  const meaning = list?.leadGloss ?? cardMeaning(word);
   return (
     <div class="intro">
-      <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}`} data-word={word.text}>
+      <div class={`intro__card${idiom ? ' intro__card--idiom' : ''}${list ? ' intro__card--list' : ''}`} data-word={word.text}>
         <div class="intro__head">
           {pair ? (
             // a bound character (parent 2026-10-15): its pair leads, the character he learns in orange, its pinyin over it. One
@@ -379,15 +404,15 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
             // 新字 step say which character is new
             <div class="intro__char intro__char--bound">
               {/* each syllable over its own character (parent 2026-10-15: one centred string drifted off wide characters) */}
-              <div class="hanzi hanzi--xl hanzi--long hanzi--pair intro__word" style={`--len:${Array.from(pair).length}`}><Label zh={pair} py={kidGlossReading(pair)} mark={[Array.from(pair).indexOf(word.text), 1]} /></div>
-              <SpeakButton text={pair} />
+              <div class="hanzi hanzi--xl hanzi--long hanzi--pair intro__word" style={`--len:${Array.from(pair).length}`}><Label zh={pair} py={pairReading} mark={pairMark} /></div>
+              <SpeakButton text={pair} reading={list?.lead ? pairReading : undefined} />
             </div>
           ) : (
             <div class="intro__char">
               {/* the character first; its pinyin 2 s later (spec 2026-10-12 §4, Chung 2003) */}
               {/* a school 成语 or 词语 shrinks to one line (final review I3), each syllable over its own character (parent
                   2026-10-15: "yǔ yī" as one centred string drifted off 雨衣's wide characters) */}
-              {long ? <div class="hanzi hanzi--xl hanzi--long intro__word" style={`--len:${Array.from(word.text).length}`}><Label zh={word.text} py={word.pinyin} /></div> : (
+              {long ? <div class="hanzi hanzi--xl hanzi--long intro__word" style={`--len:${Array.from(word.text).length}`}><Label zh={word.text} py={word.pinyin} mark={list?.mark} /></div> : (
                 <>
                   <div class="pinyin pinyin--later">{word.pinyin}</div>
                   <div class="hanzi hanzi--xl">{word.text}</div>
@@ -397,8 +422,19 @@ function Intro({ word, idiom }: { word: Word; idiom: Idiom | null }) {
             </div>
           )}
         </div>
-        {cardMeaning(word) && <p class="intro__en" lang="en">{cardMeaning(word)}</p>}
-        {hanChars(word.text).length <= 2 && hanChars(word.text).map((ch) => { // a 成语's four characters' parts would crowd the card
+        {meaning && <p class="intro__en" lang="en">{meaning}</p>}
+        {list?.example && (
+          // one short sentence using the word, the word picked out in it, with its own speak button (weekly list spec §7.1)
+          <div class="intro__group">
+            <div class="intro__example word-row word-row--long" lang="zh">
+              <div class="word-row__line">
+                <span class="hanzi word-row__zh"><Label zh={list.example.text} py={list.example.pinyin} mark={markOf(list.example.text, word.text)} /></span>
+                <SpeakButton text={list.example.text} reading={list.example.pinyin} small />
+              </div>
+            </div>
+          </div>
+        )}
+        {!list?.lead && hanChars(word.text).length <= 2 && hanChars(word.text).map((ch) => { // a 成语's four characters' parts would crowd the card
           const info = getCharInfo(ch);
           const parts = info?.components ?? [];
           // only parts that teach something: a radical with a meaning (亻 person, 氵 water). Fragments like 夕's 勹 + 丶

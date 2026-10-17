@@ -3,8 +3,9 @@ import { useApp } from '../app/AppContext';
 import { voiceTier } from '../audio/voiceTier';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
 import { addDays, localDateKey } from '../lib/date';
-import { dueTomorrow, minutesPerDay, streak, troubleWords, weeklyAccuracy, wordOf } from '../stats/stats';
-import { allSessions, listRecordings, logsSince } from '../store/repo';
+import { dueTomorrow, minutesPerDay, practisedDays, streak, troubleWords, weeklyAccuracy, wordOf } from '../stats/stats';
+import { allSessions, allWeekLists, listRecordings, logsSince } from '../store/repo';
+import { WeekReadiness } from './WeekReadiness';
 import { takeWord, waitingTakes } from '../session/say';
 import type { ReviewLog, SessionRecord } from '../types';
 import { MinutesChart } from './MinutesChart';
@@ -16,6 +17,7 @@ const BACKUP_NUDGE_DAYS = 14;
 interface Data {
   know: Knowledge;
   sessions: SessionRecord[];
+  practised: Set<string>; // days with only 考考自己 keep the streak (parent ruling 2026-10-17)
   logs: ReviewLog[];
   recordings: number;
   takes: number; // Say takes waiting for the parent (spec 2026-10-11 §6)
@@ -30,7 +32,7 @@ export function Dashboard({ onNavigate, waiting }: { onNavigate: (place: ParentP
   useEffect(() => {
     void (async () => {
       const t = now();
-      const [know, sessions, logs, all] = await Promise.all([loadKnowledge(db), allSessions(db), logsSince(db, addDays(t, -42).getTime()), listRecordings(db)]);
+      const [know, sessions, logs, all, lists] = await Promise.all([loadKnowledge(db), allSessions(db), logsSince(db, addDays(t, -42).getTime()), listRecordings(db), allWeekLists(db)]);
       const takes = waitingTakes(all).length;
       // Say takes have their own queue and tidy themselves: they aren't counted toward "Tidy up" (final review I5)
       const recordings = all.filter((r) => takeWord(r) === null).length;
@@ -40,7 +42,7 @@ export function Dashboard({ onNavigate, waiting }: { onNavigate: (place: ParentP
       } catch {
         micDenied = false; // Safari versions without the microphone permission query
       }
-      setD({ know, sessions, logs, recordings, takes, micDenied });
+      setD({ know, sessions, practised: practisedDays(lists), logs, recordings, takes, micDenied });
     })();
   }, []);
 
@@ -81,6 +83,7 @@ export function Dashboard({ onNavigate, waiting }: { onNavigate: (place: ParentP
           <button type="button" class="small-btn" onClick={() => onNavigate('backup')}>Back up now</button>
         </p>
       )}
+      <WeekReadiness onOpen={() => onNavigate('week')} />
       {d.recordings > KEEP_RECORDINGS && (
         <p class="warning">
           There are {d.recordings} recordings.{' '}
@@ -88,7 +91,7 @@ export function Dashboard({ onNavigate, waiting }: { onNavigate: (place: ParentP
         </p>
       )}
       <div class="tiles">
-        <div class="tile"><span class="tile__value">{streak(d.sessions, today)} 🔥</span><span class="tile__label">Day streak</span></div>
+        <div class="tile"><span class="tile__value">{streak(d.sessions, today, d.practised)} 🔥</span><span class="tile__label">Day streak</span></div>
         <div class="tile">
           <span class="tile__value">{d.know.known} / {settings.targetRecognise}</span>
           <span class="tile__label">Characters recognised</span>

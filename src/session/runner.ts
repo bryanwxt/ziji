@@ -12,7 +12,11 @@ export const MAX_STEP_MS = 10 * 60_000;
 
 export function createSessionRecord(plan: SessionPlan, date: string, now: number, free = false): SessionRecord {
   // 认新字 (spec 2026-10-05 §2.1): each new word's card, then its recall. 练一练 builds its own round when it starts.
-  const flashQueue: FlashItem[] = plan.newWordIds.map((wordId) => ({ wordId, isNew: true, retry: false }));
+  // a weekly list's re-teaching cards come first (weekly list spec §2.1): shown again, asked, never graded
+  const flashQueue: FlashItem[] = [
+    ...(plan.reteachIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: true, reteach: true })),
+    ...plan.newWordIds.map((wordId): FlashItem => ({ wordId, isNew: true, retry: false })),
+  ];
   return {
     date, startedAt: now, activeMs: 0, free, plan, stepIndex: 0,
     flashQueue, flashIndex: 0, flashElapsedMs: 0, writeIndex: 0, writeDone: 0,
@@ -159,7 +163,14 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   };
   if (next.practiceIndex! >= queue.length) return finishStep(next);
   // what time left for tomorrow: only due revision never reached counts (new words' later rungs, retries and meaning starts don't)
-  if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) return finishStep({ ...next, practiceLeft: queue.slice(next.practiceIndex!).filter((x) => x.due).length });
+  if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) {
+    const rest = queue.slice(next.practiceIndex!);
+    const left = (rec.practiceLeft ?? 0) + rest.filter((x) => x.due).length;
+    // a weekly list's reserved item is never cut (weekly list spec §2.1): the unasked ones come next, and then the step ends
+    const owed = rest.filter((x) => x.list?.reserved && !x.retry);
+    if (owed.length) return { ...next, practiceQueue: [...queue.slice(0, next.practiceIndex!), ...owed], practiceLeft: left };
+    return finishStep({ ...next, practiceLeft: left });
+  }
   return next;
 }
 

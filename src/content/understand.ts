@@ -40,6 +40,8 @@ export function allowedChars(term: string): Set<string> {
 }
 
 export const sentencesFor = (text: string): Sentence[] => BY_WORD.get(text) ?? [];
+/** Every school sentence, for corpus checks (a weekly list's 选词填空: is this word seen after 很, in this spot). */
+export const allSchoolSentences = (): string[] => [...BY_WORD.values()].flat().map((s) => s.zh);
 
 /** The hearable words of a term, characters and ladder 词语, in ladder order (what the writer works through). */
 export function inScopeWords(term: string): Word[] {

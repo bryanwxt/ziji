@@ -7,6 +7,7 @@ import { HomeScreen } from './app/HomeScreen';
 import { PetSetup } from './app/PetSetup';
 import { PlacementScreen } from './app/PlacementScreen';
 import { LangduScreen } from './app/LangduScreen';
+import { CheckScreen } from './app/CheckScreen';
 import { SessionScreen } from './app/SessionScreen';
 import { SetupPin } from './app/SetupPin';
 import { CollectionScreen } from './app/CollectionScreen';
@@ -81,6 +82,8 @@ function Screen({ route }: { route: Route }) {
       return <Wardrobe />;
     case 'langdu':
       return <LangduScreen />;
+    case 'check':
+      return <CheckScreen key={route.listId} listId={route.listId} />;
     case 'story':
       return <StoryScreen key={`${route.part}:${route.chapter}`} part={route.part} chapter={route.chapter} then={route.then} />;
     case 'home':

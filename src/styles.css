@@ -456,10 +456,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .parent__more { align-self: flex-start; }
 .parent__more svg { transition: transform var(--dur-fast); transform: rotate(-90deg); }
 .parent__more svg.is-open { transform: none; }
-.segmented { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; background: var(--line); padding: 4px; border-radius: 16px; }
+.segmented { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; background: var(--line); padding: 4px; border-radius: 16px; }
 .segmented__opt { border: none; background: none; padding: 8px 6px; border-radius: 12px; min-height: 44px; min-width: 0; font-weight: 800; color: var(--ink-soft); line-height: 1.15; }
 .segmented__opt.is-active { background: #fff; color: var(--ink); box-shadow: 0 2px 0 var(--line-strong); }
-@media (max-width: 599px) { .segmented { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 599px) { .segmented { grid-template-columns: repeat(3, minmax(0, 1fr)); } } /* five parts: 3 + 2 on a phone */
 .parent__body { display: flex; flex-direction: column; gap: 16px; max-width: 980px; width: 100%; margin: 0 auto; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .tile, .panel { background: #fff; border: 2px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -1820,3 +1820,129 @@ button.langdu__sentence { cursor: pointer; }
 .parent-nudge { grid-column: 1 / -1; margin: 0; justify-self: start; display: inline-flex; align-items: flex-end; gap: 8px; padding: 2px 10px 3px; font-size: 14px; font-weight: 700; color: var(--ink-soft); background: color-mix(in srgb, var(--paper) 88%, transparent); border: 1.5px dashed var(--line-strong); border-radius: 10px; pointer-events: none; }
 .parent-nudge .label { font-size: 16px; }
 .setup-tip { margin: 6px 0 0; max-width: 520px; font-size: 14px; line-height: 1.3; }
+
+/* 本周词语 (weekly list spec 2026-10-17 §3): paste, preview, confirm the wrong answers, save; then the lists. The parent area scrolls. */
+.week h3 { margin: 14px 0 0; font-size: 19px; }
+.week__how { margin: 0; padding: 12px 14px; background: var(--blue-soft); border-radius: 12px; color: var(--ink); line-height: 1.4; }
+.week__read { align-self: flex-start; min-width: 160px; }
+.week__preview { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.week__meta { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: end; }
+.week__meta input { min-height: 44px; font: inherit; min-width: 0; width: 100%; box-sizing: border-box; }
+.week__hint { margin: 0; color: var(--ink-soft); font-size: 15px; }
+.week__note { margin: 0; color: var(--blue-ink); font-size: 15px; }
+.week__refuse { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--orange-soft); color: var(--orange-ink); font-weight: 800; }
+.week__plan { padding: 12px 14px; border-radius: 12px; background: var(--green-soft); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.week__plan p { margin: 0; line-height: 1.4; }
+.week__warn { color: var(--orange-ink); font-weight: 800; }
+.week__items { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 8px; }
+.week__item { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 14px; background: #fff; min-width: 0; }
+.week__item.is-off { opacity: 0.45; }
+.week__item-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.week__tick { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; flex: none; }
+.week__tick input, .week__unpause input { width: 22px; height: 22px; }
+.week__word { font-size: 26px; line-height: 1.1; }
+.week__retype { width: 6em; min-height: 40px; font: inherit; font-size: 20px; padding: 2px 8px; border: 2px solid var(--blue); border-radius: 10px; }
+.week__pinyin { color: var(--ink-soft); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.week__status { flex: none; margin-left: auto; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 800; background: var(--line); color: var(--ink-soft); white-space: nowrap; }
+.week__status--known { background: var(--green-soft); color: var(--green-ink); }
+.week__status--placed { background: var(--gold-soft); color: #92400e; }
+.week__gloss { color: var(--ink); font-size: 15px; }
+.week__english input { width: 100%; box-sizing: border-box; min-height: 40px; padding: 6px 10px; border: 2px dashed var(--line-strong); border-radius: 10px; font: inherit; font-size: 15px; background: #fff; }
+.week__flag { color: var(--orange-ink); font-size: 14px; }
+.week__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.week__unpause { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; min-height: 44px; }
+.week__notes { margin: 0; padding-left: 20px; color: var(--ink-soft); font-size: 15px; }
+.week__sub { margin: 6px 0 0; font-size: 17px; }
+.week__group { display: flex; flex-direction: column; gap: 4px; }
+.week__theme { margin: 4px 0 0; font-family: var(--hanzi); font-weight: 400; font-size: 20px; color: var(--blue-ink); }
+.week__rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.week__row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 4px 8px 10px; border-bottom: 1px solid var(--line); border-left: 4px solid transparent; }
+.week__row.is-ok { border-left-color: var(--green); }
+.week__row.is-off { opacity: 0.5; }
+.week__row.is-off .week__pair, .week__row.is-off .week__sentence { text-decoration: line-through; }
+.week__pair { font-size: 22px; min-width: 5.5em; }
+.week__sentence { font-size: 20px; flex: 1 1 14em; min-width: 0; }
+.week__blank { padding: 0 4px; margin: 0 2px; border-bottom: 2px solid var(--green); color: var(--green-ink); }
+.week__wrongs { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.week__chip { min-height: 44px; padding: 4px 12px; border-radius: 999px; border: 2px solid #fecaca; background: #fff5f5; color: #b91c1c; font-family: var(--hanzi); font-size: 19px; }
+.week__chip--add { border-color: var(--line-strong); background: #fff; color: var(--ink); }
+.week__chip.is-off { border-color: var(--line); background: var(--line); color: var(--ink-soft); text-decoration: line-through; }
+.week__rowbtns { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.week__fine.is-on { background: var(--green-soft); border-color: var(--green); color: var(--green-ink); box-shadow: 0 3px 0 var(--green); }
+.week__own { flex: 1 1 100%; }
+.week__own input { font-size: 18px; }
+.week__nofit { display: flex; flex-direction: column; gap: 8px; }
+.week__bar { position: sticky; bottom: 0; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px 12px; margin: 6px -16px -16px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: #fff; border-top: 2px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.06); }
+.week__bar .btn { min-height: 52px; padding: 8px 20px; font-size: 18px; }
+.week__bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; min-width: 0; }
+.week__count { margin: 0; font-weight: 800; }
+.week__cancel { margin-left: auto; }
+.week__bar-top .week__hint { flex: 1 1 100%; order: 3; }
+.week__allfine:not(:disabled) { background: var(--blue-soft); border-color: var(--blue); color: var(--blue-ink); box-shadow: 0 var(--edge) 0 var(--blue); }
+.week__retype-btn { flex: none; min-width: 44px; min-height: 44px; margin-left: auto; border: none; background: none; color: var(--ink-soft); font-size: 18px; border-radius: 10px; }
+.week__status + .week__retype-btn { margin-left: 0; }
+.week__chip--plain { border-color: var(--line-strong); background: #fff; color: var(--ink); }
+.week__list.is-editing { grid-column: 1 / -1; }
+.week__list-days span { white-space: nowrap; }
+.week__message { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--green-soft); color: var(--green-ink); font-weight: 800; }
+.week__lists { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.week__list { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 2px solid var(--line); border-radius: 16px; background: #fff; min-width: 0; }
+.week__list-name { margin: 0; font-size: 19px; }
+.week__list p { margin: 0; }
+.week__list-days, .week__list-counts { color: var(--ink-soft); font-size: 15px; }
+.week__list-status { font-weight: 800; color: var(--green-ink); }
+.week__list-status.is-past { color: var(--ink-soft); }
+.week__confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; background: var(--orange-soft); }
+.week__confirm p { flex: 1 1 100%; font-weight: 800; }
+.week__danger { border-color: var(--orange-ink); color: var(--orange-ink); box-shadow: 0 3px 0 var(--orange-ink); }
+.week__editor { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 599px) {
+  .week__meta { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .week__name { grid-column: 1 / -1; }
+  .week__rowbtns { margin-left: 0; }
+  .week__bar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .week__bar-top { grid-column: 1 / -1; }
+  .week__bar .btn { padding: 8px 10px; }
+}
+.parent .panel.week { overflow: visible; } /* not a scroller: the Save bar sticks to the page's bottom edge */
+.week__row.is-doubt { background: var(--gold-soft); border-left-color: var(--gold-edge); }
+.week__row.is-doubt.is-ok { border-left-color: var(--green); }
+.week__doubt { padding: 2px 10px; border-radius: 999px; background: var(--gold); color: #713f12; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.week__chip.is-doubt { border-color: var(--gold-edge); background: #fff; color: #92400e; }
+.week__past { align-self: flex-start; margin-top: 8px; }
+.week__list.is-past { background: var(--page); }
+.week__meta input:disabled { color: var(--ink-soft); background: var(--line); }
+
+/* A weekly list's 认新词 card (weekly list spec 2026-10-17 §7.1): the pinyin over every character shows at once, never later or
+   faded, on its first day and every day; its example sentence sits where the 词语 rows would */
+.intro__card--list .intro__word .label__py, .intro__card--list .pinyin--later { animation: none; opacity: 1; }
+.intro__example .word-row__zh .label__cell--mark .label__ch { color: var(--orange-ink); }
+.intro__example .word-row__zh, .intro__example .label__cells { text-wrap: balance; } /* a long example breaks evenly, not one character alone (fix round 2026-10-17) */
+
+/* the weekly list on Home (weekly list spec 2026-10-17 §9): one line under the reward card, never red; on the ready-by day the
+   考考自己 card with its own start (§8.1) */
+.home__cards .week-countdown { justify-self: center; margin: 0; padding: 4px 14px; border-radius: 999px; background: var(--surface); border: 2px solid var(--line-strong); font-size: clamp(16px, 2.2vw, 20px); color: var(--ink); }
+.home__cards .week-countdown .label__cells { flex-wrap: nowrap; }
+.home__cards .week-check { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px 8px 16px; }
+.week-check__line { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 22px; }
+.week-check__line .label__cells { flex-wrap: nowrap; }
+@media (max-width: 599px) {
+  .home__cards .week-countdown { font-size: 16px; padding: 3px 12px; }
+  .home__cards .week-check .btn { min-height: 48px; padding: 6px 14px; font-size: 18px; }
+  .week-check__line { font-size: 19px; }
+}
+/* 考考自己's end (§8.1): the stars for newly ready words, then each miss with its pinyin and English */
+.check__end { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; min-height: 0; flex: 1; }
+.check__stars { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 24px; }
+.check__misses { min-height: 0; overflow-y: auto; align-self: stretch; align-items: center; }
+.home__cards .week-check .btn .label__cells { flex-wrap: nowrap; }
+/* the weekly list's readiness line for the parent (weekly list spec §8.3): a tight card on Today and atop 本周词语 */
+.dash__week { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 14px; border: 2px solid var(--line); border-radius: var(--radius); background: #fff; }
+.dash__week p { margin: 0; line-height: 1.4; }
+.dash__week .small-btn { margin-top: 4px; }
+/* after the check: each item, its check answer and where it is now; the ones needing help marked */
+.week__results summary { cursor: pointer; font-weight: 700; font-size: 15px; padding: 4px 0; }
+.week__results-table { width: 100%; font-size: 15px; }
+.week__results-table td, .week__results-table th { padding: 4px 6px; }
+.week__results-table .hanzi { font-size: 20px; }
+.week__results-table tr.is-help td { color: var(--orange-ink); font-weight: 700; }

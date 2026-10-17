@@ -3,14 +3,16 @@ import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/da
 import { canAskRung, fastLimit, nextRung, passedAt, RUNG_CARD, rungOf } from '../ladder/rungs';
 import { findWord } from '../ladder/words';
 import { ladderWordsBesides } from '../content/ladder';
-import { newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
+import { localDayGap, newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
 import { LISTEN_MS, slowLines, USE_READING_MS, type SlowLines } from '../srs/slow';
 import type { AppDb } from '../store/db';
-import { addReviewLog, allCards, allSessions, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsForCard, logsForWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
-import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, Word } from '../types';
+import { addReviewLog, allCards, allSessions, allWeekLists, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsForCard, logsForWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
+import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, WeekList, Word } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
+import { applyQuickChecks, pinDue, PINNED_KINDS } from '../weeklist/schedule';
+import { activeLists } from '../weeklist/plan';
 
 export { LISTEN_MS, USE_READING_MS };
 
@@ -28,12 +30,22 @@ export async function lessonSlowLines(db: AppDb, now: Date = new Date()): Promis
   }
 }
 
+/**
+ * The weekly lists of the lesson on screen, read once when it opens (final review 2026-10-17): every rating needs them (pinDue,
+ * earlyListReview), and a lesson can't change them. SessionScreen sets them and clears them when it closes; null elsewhere (the
+ * check, tests), where each rating reads them.
+ */
+let lessonLists: WeekList[] | null = null;
+export const setLessonLists = (lists: WeekList[] | null) => { lessonLists = lists; };
+const listsNow = async (db: AppDb) => lessonLists ?? allWeekLists(db);
+
 /** Reviews a card (made now if it is the first) and returns it with what it was before, for the log (spec §4). */
 async function reviewCard(db: AppDb, wordId: string, kind: CardKind, rating: Grade, now: Date): Promise<{ card: CardRecord; before: CardSnapshot }> {
   const id = `${wordId}:${kind}`;
   const existing = await getCard(db, id);
   const was = existing?.fsrs ?? newCard(now);
-  const card: CardRecord = { ...(existing ?? {}), id, wordId, kind, fsrs: review(was, rating, now) }; // keeps its pass
+  // keeps its pass; a list word's card waits no later than its list's ready-by day (weekly list spec §6.2)
+  const card: CardRecord = pinDue({ ...(existing ?? {}), id, wordId, kind, fsrs: review(was, rating, now) }, await listsNow(db), now);
   await putCards(db, [card]);
   return { card, before: snapshot(was, now) };
 }
@@ -44,10 +56,20 @@ export async function isProduced(db: AppDb, wordId: string): Promise<boolean> {
   return cards.some((c) => c?.passed !== undefined);
 }
 
+/** A list word's card reviewed in Review state before FSRS scheduled it (its due was brought forward for an active list). */
+async function earlyListReview(db: AppDb, card: CardRecord | undefined, now: Date): Promise<boolean> {
+  if (!card?.fsrs.last_review || card.fsrs.state !== State.Review || !PINNED_KINDS.has(card.kind)) return false;
+  if (localDayGap(card.fsrs.last_review, now) >= card.fsrs.scheduled_days) return false;
+  return activeLists(await listsNow(db), now).some((l) => l.items.some((i) => i.wordId === card.wordId));
+}
+
 /** Rates a tap answer (spec §3.1: Hard until produced, Hard when slow for him), logs it with the card's state, and settles its rung. */
 async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, ratedMs: number, now: Date, extra: Pick<ReviewLog, 'source' | 'placedCheck'> = {}): Promise<CardRecord> {
-  const state = (await getCard(db, `${wordId}:${kind}`))?.fsrs.state ?? State.New; // the card before this review
-  const produced = o.correct && (await isProduced(db, wordId));
+  const was = await getCard(db, `${wordId}:${kind}`);
+  const state = was?.fsrs.state ?? State.New; // the card before this review
+  // a right answer on a list word's review that came early (pinned to the ready-by day or a quick check, weekly list spec §6.1–6.2)
+  // rates Good, not Hard: being asked early isn't his doing, and Hard would raise its difficulty
+  const produced = o.correct && ((await earlyListReview(db, was, now)) || (await isProduced(db, wordId)));
   const rating = toRating({ kind, correct: o.correct, responseMs: ratedMs, produced, state, slowMs: o.slow?.[kind] });
   const { card, before } = await reviewCard(db, wordId, kind, rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind, at: now.getTime(), rating, correct: o.correct, responseMs: o.responseMs, ...before, ...extra });
@@ -122,15 +144,17 @@ export async function settleRung(db: AppDb, wordId: string, kind: CardKind, now:
  * voice today), a word that can be heard gets its hear card for tomorrow, ungraded; a word with no English (a school list word)
  * starts on its Read rung, graded by that reading.
  */
-export async function beginNewWord(db: AppDb, word: Word, asked: 'hear' | 'read' | 'meaning', outcome: TapOutcome, now: Date): Promise<CardRecord> {
+export async function beginNewWord(db: AppDb, word: Word, asked: 'hear' | 'read' | 'meaning', outcome: TapOutcome, now: Date, { list = false } = {}): Promise<CardRecord> {
   if (asked === 'hear') return recordHear(db, word.id, outcome, now);
   if (!canAskRung(word, 'hear')) return recordRecognition(db, word.id, outcome, now);
+  // a weekly list word begins on Read (weekly list spec §6.4): its reading is graded, and its Hear rung opens as below
+  const read = list && asked === 'read' ? await recordRecognition(db, word.id, outcome, now) : null;
   const id = `${word.id}:hear`;
   const have = await getCard(db, id);
-  if (have) return have;
+  if (have) return read ?? have;
   const card: CardRecord = { id, wordId: word.id, kind: 'hear', fsrs: { ...newCard(now), due: addDays(startOfLocalDay(now), 1) } };
   await putCards(db, [card]);
-  return card;
+  return read ?? card;
 }
 
 /** Any passed rung whose next rung has no card gets one (a placement re-run or a lost card can't strand a word: final review I5). */
@@ -170,7 +194,7 @@ export const recordUnderstand = (db: AppDb, wordId: string, outcome: TapOutcome,
 export const recordHear = (db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> =>
   rateTap(db, wordId, 'hear', outcome, outcome.responseMs, now);
 
-const ratedToday = (c: CardRecord | undefined, now: Date) => !!c?.fsrs.last_review && localDateKey(c.fsrs.last_review) === localDateKey(now);
+export const ratedToday = (c: CardRecord | undefined, now: Date) => !!c?.fsrs.last_review && localDateKey(c.fsrs.last_review) === localDateKey(now);
 
 /** Brings a card forward so the next lesson includes it; never pushes it later. */
 export async function bringForward(db: AppDb, wordId: string, kind: CardKind, due: Date): Promise<void> {
@@ -216,7 +240,7 @@ export async function markWriteSkipped(db: AppDb, wordId: string, now: Date): Pr
 }
 
 /** Today's number of new words, worked out once a day from the last few lessons and saved for the Skills panel (spec 2026-10-05 §2.2). */
-async function todaysPace(db: AppDb, now: Date, settings: Settings): Promise<number> {
+async function todaysPace(db: AppDb, now: Date, settings: Settings, save = true): Promise<number> {
   const today = localDateKey(now);
   if (settings.pace?.day === today) return Math.min(settings.pace.perDay, settings.newPerDay); // a ceiling lowered today applies today
   if (settings.newPerDay <= 0) return 0; // new words switched off: his pace is kept for when they come back (sweep)
@@ -224,7 +248,7 @@ async function todaysPace(db: AppDb, now: Date, settings: Settings): Promise<num
   const logs = await logsSince(db, addDays(now, -(LOOKBACK_DAYS + 1)).getTime());
   const rounds = sessions.filter((s) => s.completedSteps.includes('practice')).slice(0, 2).map(ranOut);
   const pace = nextPace({ prev: settings.pace?.perDay ?? null, ceiling: settings.newPerDay, kept: keptRecent(sessions, logs, today), ranOut: [rounds[0] ?? false, rounds[1] ?? false] });
-  await updateSettings(db, { pace: { day: today, ...pace } });
+  if (save) await updateSettings(db, { pace: { day: today, ...pace } });
   return pace.perDay;
 }
 
@@ -241,14 +265,30 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
   return rec;
 }
 
-async function planNow(db: AppDb, now: Date, extra = false) {
-  await openMissingRungs(db, now);
-  const [cards, words, settings, practised] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db)]);
+async function planNow(db: AppDb, now: Date, extra = false, preview = false) {
+  if (!preview) {
+    await openMissingRungs(db, now);
+    await applyQuickChecks(db, now); // a list's known words come up as due reviews before its ready-by (weekly list spec §6.1)
+  }
+  const [cards, words, settings, practised, lists, sessions] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db), allWeekLists(db), allSessions(db)]);
   const all = [...words, ...ladderWordsBesides(words)];
   // an extra lesson never asks the pace: it takes no new words (learning rules 2026-10-17)
-  if (extra) return buildSessionPlan({ cards, words: all, settings, now, practised, extra: true });
-  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
+  if (extra) return buildSessionPlan({ cards, words: all, settings, now, practised, extra: true, lists });
+  // the last two days' rounds: one that ran out takes the list's headroom away, two spill its words (weekly list spec §5.1)
+  // yesterday's and the day before's rounds (a round that didn't finish 练一练, or no lesson, didn't run out)
+  const ranOn = (back: number) => {
+    const date = localDateKey(addDays(startOfLocalDay(now), -back));
+    const s = sessions.find((x) => !x.free && x.date === date && x.completedSteps.includes('practice'));
+    return !!s && ranOut(s);
+  };
+  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings, !preview), lists, ranOut: [ranOn(1), ranOn(2)] });
 }
+
+/**
+ * Today's plan as a lesson now would make it, for the parent's view (the weekly list's readiness line, spec §8.3: its class
+ * shortfall at today's numbers). Writes nothing: no rungs opened, no quick checks moved, today's pace not saved.
+ */
+export const previewPlan = (db: AppDb, now: Date) => planNow(db, now, false, true);
 
 /**
  * Another lesson after today's (parent, 2026-10-05: more than one a day, the baseline stays one). Review only (learning rules
@@ -258,4 +298,26 @@ async function planNow(db: AppDb, now: Date, extra = false) {
  */
 export async function startExtraLesson(db: AppDb, now: Date): Promise<SessionRecord> {
   return { ...createSessionRecord(await planNow(db, now, true), localDateKey(now), now.getTime()), extra: true };
+}
+
+/**
+ * A round's meaning question: the day's first rating of the card, as recordMeaning; already rated today (a weekly list's
+ * 选词填空 or 搭配 rated it first, fix round 2026-10-17), a miss only brings it forward, so one lesson never rates it twice.
+ */
+/**
+ * 练一练's reading grade, once a day (final review 2026-10-17): a list word's reserved read item and its own due-revision item can
+ * both grade the reading card in one lesson. The day's first answer rates it; a later one rates nothing (null), and a miss brings
+ * the card forward to tonight, as recordMeaningOnce does.
+ */
+export async function recordRecognitionOnce(db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord | null> {
+  if (!ratedToday(await getCard(db, `${wordId}:recognise`), now)) return recordRecognition(db, wordId, outcome, now);
+  if (!outcome.correct) await bringForward(db, wordId, 'recognise', endOfLocalDay(now));
+  return null;
+}
+
+export async function recordMeaningOnce(db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord | undefined> {
+  const existing = await getCard(db, `${wordId}:meaning`);
+  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, outcome, now);
+  if (!outcome.correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
+  return getCard(db, `${wordId}:meaning`);
 }

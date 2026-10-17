@@ -92,3 +92,18 @@ export function buildGlossary(phrases: { text: string; pinyin: string }[], dict:
   }
   return { glossary, missing };
 }
+
+/**
+ * Every simplified headword of 2–4 Han characters, once, sorted (weekly list: a pasted word that is a real word is never flagged
+ * unknown). The date comes from CC-CEDICT's `#! date=` header line.
+ */
+export function cedictWords(text: string): { date: string | null; words: string[] } {
+  const date = /^#! date=(\d{4}-\d{2}-\d{2})/m.exec(text)?.[1] ?? null;
+  const words = new Set<string>();
+  for (const line of text.split('\n')) {
+    if (!line || line.startsWith('#')) continue;
+    const simplified = line.split(' ')[1];
+    if (simplified && /^\p{Script=Han}{2,4}$/u.test(simplified)) words.add(simplified);
+  }
+  return { date, words: [...words].sort() };
+}

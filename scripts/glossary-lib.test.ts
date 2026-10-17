@@ -54,3 +54,12 @@ describe('glossary from CC-CEDICT', () => {
     expect(buildGlossary([{ text: '男孩儿', pinyin: 'nán háir' }], parseCedict(SAMPLE)).glossary['男孩儿']).toBe('boy');
   });
 });
+
+describe('the CC-CEDICT headword list (weekly list, unknown-word gap)', () => {
+  it('keeps simplified Han headwords of 2–4 characters, once each, sorted; the date from the header', async () => {
+    const { cedictWords } = await import('./glossary-lib');
+    const out = cedictWords(['#! date=2026-10-01T00:00:00Z', SAMPLE, '蝴蝶 蝴蝶 [hu2 die2] /butterfly/', '一路平安無事 一路平安无事 [x] /x/', 'A貨 A货 [A huo4] /fake/'].join('\n'));
+    expect(out.date).toBe('2026-10-01');
+    expect(out.words).toEqual(['一半', '大人', '家伙', '男孩', '男孩儿', '病人', '蝴蝶'].sort());
+  });
+});

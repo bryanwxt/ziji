@@ -14,10 +14,10 @@ export interface ImportDraft {
 const SENT_END = /[。！？!?”"」]$/;
 const HAN_ONLY = /^\p{Script=Han}{1,4}$/u;
 
-interface Token { text: string; joinable: boolean } // a 生字 cell is never joined to its neighbour
+export interface Token { text: string; joinable: boolean } // a 生字 cell is never joined to its neighbour
 
 /** Greedy join: consecutive joinable tokens that together make a known word (up to 4 characters) become that word. */
-function joinTokens(tokens: Token[], isWord: (w: string) => boolean): { text: string; parts?: string[] }[] {
+export function joinTokens(tokens: Token[], isWord: (w: string) => boolean): { text: string; parts?: string[] }[] {
   const out: { text: string; parts?: string[] }[] = [];
   for (let i = 0; i < tokens.length; ) {
     let taken = 1;

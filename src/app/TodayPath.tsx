@@ -12,10 +12,17 @@ interface Props {
   started: boolean;
   onStart: () => void;
   speakingName?: string; // today's speaking activity: 朗读 or 看图说话 (they alternate)
+  newwordsName?: string; // 认新词 when the lesson opens on a weekly list's word card (newwordsName)
 }
 
-export function TodayPath({ nodes, started, onStart, speakingName = '朗读' }: Props) {
-  const name = (k: PathKind) => (k === 'speaking' ? speakingName : NAME[k]);
+/** 认新字's name today: 认新词 when its first card is a weekly list's word or pair card (weekly list spec §7.1). */
+export function newwordsName(rec: { flashQueue: { wordId: string }[]; plan: { listCards?: Record<string, unknown> } } | undefined): string {
+  const first = rec?.flashQueue[0]?.wordId;
+  return first && rec?.plan.listCards?.[first] ? '认新词' : '认新字';
+}
+
+export function TodayPath({ nodes, started, onStart, speakingName = '朗读', newwordsName: wordsName = NAME.newwords }: Props) {
+  const name = (k: PathKind) => (k === 'speaking' ? speakingName : k === 'newwords' ? wordsName : NAME[k]);
   const verb = started ? '继续' : '开始';
 
   return (

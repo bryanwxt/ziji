@@ -9,11 +9,14 @@ import { glossProblems } from '../src/content/kidGloss';
 import { NO_ENGLISH, NO_ENGLISH_GROUPS } from '../src/content/grammarWords';
 import { builtinWords } from '../src/content/index';
 import { ladderWords } from '../src/content/ladder';
+import { readingOf } from '../src/content/wordGate';
 
 const dir = new URL('./kidgloss/', import.meta.url);
 const rows = new Map<string, [string, string]>();
 /** bound character → the pair it is taught and asked through (chars.tsv's fourth column) */
 const bound = new Map<string, string>();
+/** extra.tsv: everyday words beyond his lessons that a weekly list may bring (parent ruling 2026-10-17), kept though out of scope */
+const extra = new Set<string>();
 const problems: string[] = [];
 for (const file of readdirSync(dir).filter((f) => f.endsWith('.tsv')).sort()) {
   readFileSync(new URL(file, dir), 'utf8').split('\n').forEach((line, i) => {
@@ -23,6 +26,12 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith('.tsv')).sort()) {
     if (rows.has(text)) problems.push(`${file}:${i + 1}: ${text} twice`);
     rows.set(text, [reading, gloss]);
     if (pair) bound.set(text, pair);
+    if (file === 'extra.tsv') {
+      extra.add(text);
+      if (pair) problems.push(`${file}:${i + 1}: ${text}: no bound pairs here`);
+      if (reading !== readingOf(text)) problems.push(`${file}:${i + 1}: ${text} written for ${reading}, the app reads ${readingOf(text)}`);
+      for (const p of glossProblems(gloss)) problems.push(`${text} "${gloss}": ${p}`);
+    }
   });
 }
 
@@ -36,7 +45,7 @@ for (const w of scope) {
 }
 for (const [ch, pair] of bound) for (const p of boundProblems(ch, pair, rows)) problems.push(`bound ${ch} → ${pair}: ${p}`);
 // a bound pair keeps its gloss even when nothing else asks for it: the card and the questions read it
-const kept = (t: string) => inScope.has(t) || [...bound.values()].includes(t);
+const kept = (t: string) => inScope.has(t) || [...bound.values()].includes(t) || extra.has(t);
 const stale = [...rows.keys()].filter((t) => !kept(t));
 
 const out = {

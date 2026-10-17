@@ -1,4 +1,4 @@
-import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
+import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/date';
 import { shuffle, type Rng } from '../lib/random';
 import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
@@ -7,7 +7,8 @@ import { classLessonAt, courseOf } from '../content/curriculum';
 import { bookLesson, pickNewWords } from './lanes';
 import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
-import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
+import { activeLists, isReadyByDay, listBudget, paceRate, listCardFor, listOwner, listPracticeItems, reteachIds, schoolNeed } from '../weeklist/plan';
+import type { ActivityKind, CardKind, CardRecord, FlashItem, ListCard, SessionPlan, Settings, StepKind, WeekList, Word } from '../types';
 
 export const REVIEW_CAP = 60;
 export const BACKLOG_PAUSE = 40;
@@ -33,6 +34,8 @@ export interface PlanInput {
   practised?: ReadonlyMap<string, number>; // words answered in lessons → when last; placement guesses aren't here
   newPerDay?: number; // today's pace (spec 2026-10-05 §2.2); without one, the pace's start under the ceiling
   extra?: boolean; // an extra lesson: review only (learning rules 2026-10-17), see extraCards
+  lists?: WeekList[]; // weekly lists (weekly list spec 2026-10-17 §5); active ones are picked here
+  ranOut?: [boolean, boolean]; // the last two rounds ran out of time (yesterday first): no list headroom, then spill (§5.1)
 }
 
 /** Words in an extra lesson's round of his weakest words, when nothing is due or near due (learning rules 2026-10-17). */
@@ -43,17 +46,22 @@ export const WEAK_ROUND_WORDS = 8;
  * new words is massed practice): a card due tomorrow that he hasn't answered today counts as due at the end of today. A card he
  * answered today stays where its review put it — the same card again today is massing, not spacing.
  */
-export function extraCards(cards: CardRecord[], now: Date): CardRecord[] {
+export function extraCards(cards: CardRecord[], now: Date, skip: ReadonlySet<string> = new Set()): CardRecord[] {
   const endToday = endOfLocalDay(now);
   const endTomorrow = endOfLocalDay(addDays(startOfLocalDay(now), 1)).getTime();
   const dayStart = startOfLocalDay(now).getTime();
   return cards.map((c) => {
+    if (skip.has(c.wordId)) return c; // a list's card due on its ready-by day waits for the check (weekly list spec §6.3)
     const due = c.fsrs.due.getTime();
     const seenToday = !!c.fsrs.last_review && new Date(c.fsrs.last_review).getTime() >= dayStart;
     return due > endToday.getTime() && due <= endTomorrow && !seenToday ? { ...c, fsrs: { ...c.fsrs, due: endToday } } : c;
   });
 }
 
+/** 练一练's extra time on a front-load day, paid for by half of 写一写 (weekly list spec §5.1). */
+export const LIST_PRACTICE_MS = 2 * 60_000;
+/** 练一练's extra time for each list word over pace + 2 on a big front-load day (parent ruling 2026-10-17: ~20 min is fine). */
+export const LIST_WORD_PRACTICE_MS = 30_000;
 export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: 5 of the usual 15 minutes, 朗读 takes ~3 (learning rules 2026-10-17)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
@@ -66,8 +74,18 @@ export const SAY_PER_LESSON = 6;
 /** 说一句 cards in one lesson at most (production practice spec §4). */
 export const SENTENCE_PER_LESSON = 2;
 
-export function buildSessionPlan({ cards: stored, words, settings, now, practised = new Map(), newPerDay, extra = false }: PlanInput): SessionPlan {
-  const cards = extra ? extraCards(stored, now) : stored;
+export function buildSessionPlan({ cards: stored, words, settings, now, practised = new Map(), newPerDay, extra = false, lists = [], ranOut = [false, false] }: PlanInput): SessionPlan {
+  // weekly lists (weekly list spec 2026-10-17 §5–6): on its ready-by day a list's reading cards are the check's; from then to
+  // homework day its due cards go first; an extra lesson the day before never pulls them into today
+  const open = activeLists(lists, now);
+  const owner = listOwner(open, now);
+  const day = localDateKey(now);
+  const tomorrow = localDateKey(addDays(startOfLocalDay(now), 1));
+  const cards = extra ? extraCards(stored, now, new Set(open.filter((l) => l.readyBy === tomorrow).flatMap((l) => l.items.map((i) => i.wordId)))) : stored;
+  const checkToday = new Set(isReadyByDay(open, now).flatMap((l) => l.items.map((i) => i.wordId)));
+  // only the cards 考考自己 grades wait for it (its reading and meaning, §8.1); hear, understand, write and the rest come as usual (final review 2026-10-17)
+  const leftForCheck = (c: CardRecord) => checkToday.has(c.wordId) && (c.kind === 'recognise' || c.kind === 'meaning');
+  const homeworkWindow = (id: string) => { const l = owner.get(id); return !!l && day > l.readyBy && day <= l.homeworkDue; };
   const active = words.filter((w) => !w.paused);
   const byId = new Map(active.map((w) => [w.id, w]));
   const activeIds = new Set(active.map((w) => w.id));
@@ -75,8 +93,10 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const ofKind = (kind: CardKind) => cards.filter((c) => c.kind === kind);
   const dueOf = (list: CardRecord[]) =>
     list
-      .filter((c) => activeIds.has(c.wordId) && c.fsrs.due.getTime() <= cutoff)
-      .sort((a, b) => a.fsrs.due.getTime() - b.fsrs.due.getTime());
+      .filter((c) => activeIds.has(c.wordId) && c.fsrs.due.getTime() <= cutoff && !leftForCheck(c))
+      .sort((a, b) => Number(homeworkWindow(b.wordId)) - Number(homeworkWindow(a.wordId)) || a.fsrs.due.getTime() - b.fsrs.due.getTime());
+  // a cap is for the rest: list cards due between ready-by and homework day come on top, so they never squeeze revision out (§6.3)
+  const capped = (due: CardRecord[], cap: number) => [...due.filter((c) => homeworkWindow(c.wordId)), ...due.filter((c) => !homeworkWindow(c.wordId)).slice(0, cap)];
 
   const recognise = ofKind('recognise');
   const hear = ofKind('hear');
@@ -88,12 +108,16 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   // first rechecks of placed characters (spec 2026-10-14): 10 a lesson, in the school order their due times keep
   const placementCheck = (c: CardRecord) => c.placed === true;
   const dueAll = dueOf(recognise);
-  const checks = new Set(dueAll.filter(placementCheck).slice(0, PLACEMENT_CHECKS_PER_LESSON));
+  // a list word's recheck is its quick check (weekly list spec §5.2): it doesn't count toward the 10
+  const checks = new Set([
+    ...dueAll.filter((c) => placementCheck(c) && !owner.has(c.wordId)).slice(0, PLACEMENT_CHECKS_PER_LESSON),
+    ...dueAll.filter((c) => placementCheck(c) && owner.has(c.wordId)),
+  ]);
   const dueRecognise = dueAll.filter((c) => !placementCheck(c) || checks.has(c));
   // a real backlog pauses new words; first rechecks of placement guesses (never practised, or marked placed) don't
-  const backlog = dueAll.filter((c) => !placementCheck(c) && practised.has(c.wordId)).length;
+  // list cards (weekly list spec §5.1) don't count: a week of list words must not pause his class words
+  const backlog = dueAll.filter((c) => !placementCheck(c) && practised.has(c.wordId) && !owner.has(c.wordId)).length;
   const perDay = extra ? 0 : newPerDay ?? Math.min(settings.newPerDay, PACE_START); // an extra lesson takes no new words
-  const newLimit = backlog > BACKLOG_PAUSE || !settings.activities.newwords ? 0 : perDay;
 
   // Meaning practice: due meaning cards, and begun words that have a 组词 cue but no meaning card yet.
   const meaning = ofKind('meaning');
@@ -104,12 +128,43 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const begunChars = new Set(active.filter((w) => started.has(w.id) && Array.from(w.text).length === 1).map((w) => w.text));
   // two lanes (spec 2026-10-11 §5): his class's lesson and catch-up from 一上, after the words listed for him
   const classAt = classLessonAt(now, settings);
-  const { words: newWords, lanes: newWordLanes } = pickNewWords({ candidates: active.filter((x) => !started.has(x.id)).sort(newWordOrder), n: newLimit, classAt, begunChars });
-  // spec 2026-10-05 §2: no separate 用一用; a day with no new words starts at 练一练 (no empty 认新字 stop, no star for it)
-  const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0);
+  // a weekly list (weekly list spec §5): front-loaded, his class lane protected, catch-up yields; never in an extra lesson
+  const budget = extra || !open.length ? null : listBudget({
+    lists: open, cards: new Map(cards.map((c) => [c.id, c])), now, pace: perDay, ceiling: settings.newPerDay,
+    ranOutYesterday: ranOut[0], ranOutTwice: ranOut[0] && ranOut[1], backlog: backlog > BACKLOG_PAUSE,
+    schoolNeed: schoolNeed(active, started, classAt),
+    candidates: new Set(active.filter((x) => !started.has(x.id)).map((x) => x.id)),
+  });
+  // a backlog pauses new words — but a list's, at most 3 (weekly list spec §5.1); new words switched off pause both
+  const newLimit = !settings.activities.newwords ? 0 : budget ? budget.total : backlog > BACKLOG_PAUSE ? 0 : perDay;
+  const picked = pickNewWords({
+    candidates: active.filter((x) => !started.has(x.id)).sort(newWordOrder), n: newLimit, classAt, begunChars,
+    listIds: budget?.listIds ?? [], listQuota: budget?.listQuota ?? 0, schoolFirst: budget?.schoolFirst ?? 0,
+  });
+  const { listTaken } = picked;
+  // list slots it couldn't fill (a word it can't take: a ladder 词语 not yet unlocked, say) go back to MOE only up to his pace,
+  // never above it on a list's account (final review 2026-10-17)
+  // (a backlog pause keeps MOE words waiting: only the list's come)
+  const moeCap = !budget ? Infinity : backlog > BACKLOG_PAUSE ? 0 : Math.max(budget.total - budget.listQuota, perDay - listTaken.length);
+  const listSet = new Set(listTaken);
+  let moeLeft = moeCap;
+  const newWords = picked.words.filter((w) => listSet.has(w.id) || moeLeft-- > 0);
+  const newWordLanes = Object.fromEntries(Object.entries(picked.lanes).filter(([id]) => newWords.some((w) => w.id === id)));
+  const frontLoad = !!budget?.frontLoad && listTaken.length > 0;
+  // re-teaching cards (weekly list spec §2.1): a not-solid list item's card again the day after a miss, first in 认新字, with no
+  // new-word slot; never in an extra lesson. Today's list words and they get the list word card (§7.1–7.2)
+  const reteach = extra || !open.length ? [] : reteachIds(open, now).filter((id) => byId.has(id) && !newWords.some((w) => w.id === id));
+  const listIdsAll = new Set(open.flatMap((l) => l.items.map((i) => i.wordId)));
+  const listCards: Record<string, ListCard> = {};
+  // 练一练's list items (spec §6.4, §2.1): boost for begun words not ready, reserved for items not solid after the check; extra
+  // lessons too (both are review). Their words keep their card, so a list verb is said as its pair there too (§7.2)
+  const listItems = open.length ? listPracticeItems(open, byId, now, started) : [];
+  for (const id of [...reteach, ...newWords.filter((w) => listIdsAll.has(w.id)).map((w) => w.id), ...listItems.map((x) => x.wordId)]) listCards[id] ??= listCardFor(byId.get(id)!, open, begunChars);
+  // spec 2026-10-05 §2: no separate 用一用; a day with no new words (and no re-teaching cards) starts at 练一练 (no empty 认新字 stop, no star for it)
+  const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0 || reteach.length > 0);
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
   const writeUnits = settings.activities.writing
-    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: writeCharTarget(settings.sessionMinutes) })
+    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: frontLoad ? Math.max(1, Math.floor(writeCharTarget(settings.sessionMinutes) / 2)) : writeCharTarget(settings.sessionMinutes) }) // half on a front-load day (weekly list spec §5.1)
     : [];
   const writeItems = orderWriteItems(writeUnits);
   // Say (spec 2026-10-11 §4): due Say cards first, then words whose Read has passed and that have no Say card yet — his class's
@@ -143,20 +198,20 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
 
   const plan: SessionPlan = {
     steps,
-    reviewWordIds: dueRecognise.slice(0, REVIEW_CAP).map((c) => c.wordId),
+    reviewWordIds: capped(dueRecognise, REVIEW_CAP).map((c) => c.wordId),
     newWordIds: newWords.map((w) => w.id),
     newWordLanes,
     flashTimeBoxMs: 0, // only lessons saved before 2026-10-05 time-boxed 认一认
-    practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE),
+    practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE) + (frontLoad ? LIST_PRACTICE_MS + LIST_WORD_PRACTICE_MS * Math.max(0, listTaken.length - paceRate(perDay, settings.newPerDay)) : 0),
     writeCandidates: writeUnits.map((u) => ({ wordId: u.wordId, isNew: u.isNew })),
     writeItems,
     writeCount: writeItems.length,
     writeWordIds: writeUnits.map((u) => u.wordId),
     // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
     // only words that can be asked by ear: a card that can't be asked would stay due and hold a slot forever (final review I1)
-    hearReviewIds: dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }).slice(0, HEAR_REVIEW_CAP).map((c) => c.wordId),
-    understandReviewIds: dueOf(understand).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'understand'); }).slice(0, UNDERSTAND_REVIEW_CAP).map((c) => c.wordId),
-    meaningReviewIds: dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }).slice(0, MEANING_REVIEW_CAP).map((c) => c.wordId),
+    hearReviewIds: capped(dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }), HEAR_REVIEW_CAP).map((c) => c.wordId),
+    understandReviewIds: capped(dueOf(understand).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'understand'); }), UNDERSTAND_REVIEW_CAP).map((c) => c.wordId),
+    meaningReviewIds: capped(dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }), MEANING_REVIEW_CAP).map((c) => c.wordId),
     newMeaningIds: extra ? [] : active // an extra lesson starts nothing new, meaning practice included
       .filter((w) => readPassed.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)
       .sort(meaningOrder)
@@ -164,6 +219,12 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
       .map((w) => w.id),
     sayIds,
     sentenceIds,
+    listNewIds: listTaken,
+    ...(reteach.length ? { reteachIds: reteach } : {}),
+    ...(Object.keys(listCards).length ? { listCards } : {}),
+    ...(listItems.length ? { listItems } : {}),
+    frontLoad,
+    ...(budget ? { classShort: budget.classShort } : {}),
   };
   if (!extra) return plan;
   // nothing due or near due: a short practice-only round of his weakest words (lowest reading stability), never graded

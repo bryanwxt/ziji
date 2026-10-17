@@ -8,10 +8,11 @@ import { wordOfTheDay } from '../fun/wordOfDay';
 import { goalProgress, nextGoal } from '../fun/rewards';
 import { localDateKey } from '../lib/date';
 import { stepsOn } from '../session/plan';
-import { streak, totalStars, weekDays } from '../stats/stats';
+import { practisedDays, streak, totalStars, weekDays } from '../stats/stats';
 import { pickExample } from '../activities/writing/cue';
 import { WeekStrip } from './WeekStrip';
-import { allSessions, getKid, listParentPassages, listRewards, saveKid, updateKid } from '../store/repo';
+import { WeekCountdown } from './WeekCountdown';
+import { allSessions, allWeekLists, getKid, listParentPassages, listRewards, saveKid, updateKid } from '../store/repo';
 import { readToday } from '../langdu/history';
 import { pickPassage } from '../langdu/pick';
 import { readerAt } from '../langdu/level';
@@ -33,7 +34,7 @@ import { settleJourney } from '../placement/journey';
 import { TabBar } from '../ui/TabBar';
 import { useApp } from './AppContext';
 import { loadKnowledge, type Knowledge } from './knowledge';
-import { TodayPath } from './TodayPath';
+import { newwordsName, TodayPath } from './TodayPath';
 import { backupNudgeDays } from '../parent/backupNudge';
 import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
@@ -45,6 +46,7 @@ import { extraOpensAt, extraWaitLine } from '../session/extraGap';
 interface HomeData {
   know: Knowledge;
   sessions: SessionRecord[];
+  practised: Set<string>; // days with only 考考自己: active on the strip, the streak kept (parent ruling 2026-10-17)
   goals: RewardGoal[];
   parentPassages: ParentPassage[];
 }
@@ -65,12 +67,13 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const [propPlay, setPropPlay] = useState<{ react: { kind: ReactionKind; key: number } | null; lookAt: number }>({ react: null, lookAt: 0 }); // Truffle and his props
   const lookTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => { clearTimeout(saidTimer.current); clearTimeout(lookTimer.current); }, []);
+  const [weekShown, setWeekShown] = useState(false); // this week's word list line or 考考自己 card is on Home
   const [journeyKid, setJourneyKid] = useState<KidState | null>(null); // the kid as saved by the journey update, until the app refreshes
 
   useEffect(() => enterSafeScreen(), []);
 
   useEffect(() => {
-    void Promise.all([loadKnowledge(db), allSessions(db), listRewards(db), listParentPassages(db)]).then(([know, sessions, goals, parentPassages]) => setData({ know, sessions, goals, parentPassages }));
+    void Promise.all([loadKnowledge(db), allSessions(db), listRewards(db), listParentPassages(db), allWeekLists(db)]).then(([know, sessions, goals, parentPassages, lists]) => setData({ know, sessions, practised: practisedDays(lists), goals, parentPassages }));
   }, []);
 
   // The dragon dozes off when nobody is around; any tap wakes it.
@@ -168,7 +171,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const waitLine = todaySession && doneToday ? extraWaitLine(extraOpensAt(todaySession, k.starredUpTo), now()) : null;
   const shown = meterShown(k, today); // the small boat on the reward card: a new day's meter has the bank in it
   const hasCards = data.know.cards.some((c) => c.kind === 'recognise');
-  const days = streak(data.sessions, today);
+  const days = streak(data.sessions, today, data.practised);
   const wotd = wordOfTheDay({
     plannedNew: (todaySession?.plan.newWordIds ?? []).map((id) => data.know.wordsById.get(id)?.text ?? ''),
     knownChars: data.know.knownChars,
@@ -229,7 +232,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         <span class="stat stat--star" aria-label={`${stars} 颗星`}><Star size={24} strokeWidth={2.75} /> {stars}</span>
         <div class="home__week">
           <span class="seal" aria-hidden="true"><span>字</span><span>己</span></span>
-          <WeekStrip days={weekDays(data.sessions, today)} />
+          <WeekStrip days={weekDays(data.sessions, today, data.practised)} />
         </div>
         <span class="spacer" />
         <span class="home__who">
@@ -260,6 +263,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
               </>
             )}
           </div>
+          {/* this week's word list (weekly list spec 2026-10-17 §9): one line, or on its ready-by day the 考考自己 card */}
+          <WeekCountdown onShown={setWeekShown} />
           {doneToday && chestOpened && (
             <div class="card done-card">
               <p class="done-today"><Label zh="今天完成了！" /> <InkIcon name="party" size={30} /></p>
@@ -274,7 +279,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
               )}
             </div>
           )}
-          {wotd && (
+          {wotd && !weekShown && ( // a running weekly list's line takes the word of the day's room (one-screen Home)
             <div class="card wotd">
               <button type="button" class="wotd__main" aria-label={`今日一字：${wotd}`} onClick={() => speak(wotd, { reading: wotdWord?.pinyin })}>
                 <span class="label-tag">今日一字</span>
@@ -304,6 +309,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
           {steps.length || todaySession ? (
             <TodayPath
               speakingName={speakingKind === 'story' ? '看图说话' : '朗读'}
+              newwordsName={newwordsName(todaySession)}
               nodes={nodes}
               started={!!todaySession}
               onStart={() => play(false)}

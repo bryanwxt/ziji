@@ -60,6 +60,13 @@ export default defineConfig({
             options: { cacheName: 'optimizer', expiration: { maxEntries: 8 }, cacheableResponse: { statuses: [200] } },
           },
           {
+            // CC-CEDICT's headwords (weekly list): fetched only by the parent's 本周词语 panel, never precached (.txt is not in
+            // globPatterns); kept after first use so a later paste offline still knows 蝴蝶
+            urlPattern: ({ url }) => url.pathname.endsWith('/data/cedict-words.txt'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'cedict-words', expiration: { maxEntries: 1 }, cacheableResponse: { statuses: [200] } },
+          },
+          {
             urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/npm\/hanzi-writer-data@/,
             handler: 'CacheFirst',
             options: {

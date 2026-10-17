@@ -14,6 +14,7 @@ import { Pet } from '../../ui/Pet';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { LookAlikeWhy } from '../../ui/stage/WhyLine';
 import { CLUE_EN } from '../../content/bank/clueEn';
+import { NONE_OF_THESE, noneChoices, noneDecoyChoices } from '../../practice/noneOfThese';
 
 interface Props {
   item: UseItem;
@@ -22,17 +23,22 @@ interface Props {
   closing?: boolean; // the last try at this word missed: Truffle closes it kindly
   onAnswer: (correct: boolean, responseMs: number) => void;
   onNext: () => void;
+  /** a 选一选 asked without its answer, 「都不对」 right, or with 都不对 as a wrong choice (a weekly list's, fix round 2026-10-17) */
+  none?: 'answer' | 'decoy';
+  /** 考考自己 (weekly list spec 2026-10-17 §8.1): no pinyin, nothing said, no right or wrong shown; a pick answers and goes on */
+  bare?: boolean;
 }
 
 /** One word-in-use question (spec §20 part 4): which word fits the sentence, or which sentence uses the word right. */
-export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Props) {
+export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext, none, bare = false }: Props) {
   const [choice, setChoice] = useState<string | null>(null);
   const shownAt = useRef(performance.now());
   const lines = useMemo(() => {
     const rng = mulberry32((Date.now() ^ item.word.codePointAt(0)!) >>> 0);
     return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), order: item.kind === 'usage' ? shuffle([item.right, item.wrong], rng) : [] };
   }, [item]);
-  const answer = item.kind === 'fit' ? item.word : item.right;
+  const answer = item.kind === 'fit' ? (none === 'answer' ? NONE_OF_THESE : item.word) : item.right;
+  const options = item.kind !== 'fit' ? [] : none === 'answer' ? noneChoices(item.options, item.word) : none === 'decoy' ? noneDecoyChoices(item.options, item.word) : item.options;
   const correct = choice === answer;
   const done = choice !== null;
   useEffect(() => {
@@ -43,6 +49,11 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
     if (done) return;
     setChoice(option);
     const right = option === answer;
+    if (bare) {
+      onAnswer(right, Math.round(performance.now() - shownAt.current));
+      onNext();
+      return;
+    }
     if (right) {
       playSfx('correct');
       const r = el.getBoundingClientRect();
@@ -51,7 +62,7 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
     speak(fullSentence(item)); // the whole sentence, once he has answered (spec §19 part 3)
     onAnswer(right, Math.round(performance.now() - shownAt.current));
   };
-  const state = (o: string) => (!done ? '' : o === answer ? (o === choice ? 'is-eaten is-right' : 'is-answer') : o === choice ? 'is-wrong' : 'is-dim');
+  const state = (o: string) => (!done ? '' : bare ? (o === choice ? 'is-picked' : '') : o === answer ? (o === choice ? 'is-eaten is-right' : 'is-answer') : o === choice ? 'is-wrong' : 'is-dim');
   const ask = item.kind === 'fit' ? '哪个词对？' : '哪句话用对了？';
   const multi = item.kind === 'fit' && item.options.some((o) => Array.from(o).length > 1);
   // a fill-in of four characters or fewer is a word question: question-sized, not sentence-sized (spec 2026-10-04 §3)
@@ -60,20 +71,20 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? (closing ? '明天再来！' : null) : (bubble ?? ask)} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
-      sheet={!done ? (
+      truffle={bare ? <Pet kid={kid} mood="neutral" bubble={ask} size={180} calm /> : <Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? (closing ? '明天再来！' : null) : (bubble ?? ask)} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
+      sheet={!done || bare ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (
         <FeedbackSheet
           tone={correct ? 'good' : 'oops'}
           title={closing ? '明天再来！' : correct ? lines.cheer : lines.comfort}
           detail={
-            correct && !item.pair ? undefined : (
+            correct && !item.pair && !none ? undefined : ( // a 都不对 question shows the real answer, right or wrong
               <>
                 {!correct && item.kind !== 'fit' && <span class="hanzi">{fullSentence(item)}</span>} {/* a 选一选 card already shows its sentence filled in */}
                 {item.pair && <span class="pair hanzi">{`${item.word} + ${item.pair}`}</span>}
                 {/* single characters: the part that tells them apart (spec 2026-10-12 §3), the note's third row */}
-                {!correct && <MeaningNote right={item.word} picked={item.kind === 'fit' ? choice : null} rightMeaning={item.kind === 'fit' ? item.meaning : undefined}
+                {(!correct || !!none) && <MeaningNote lead={!!none} right={item.word} picked={correct || item.kind !== 'fit' ? null : (choice && item.glosses?.[choice] ? { zh: choice, en: item.glosses[choice] } : choice)} rightMeaning={item.kind === 'fit' ? item.meaning : undefined}
                   why={item.kind === 'fit' && choice && Array.from(item.word).length === 1 && Array.from(choice).length === 1 ? <LookAlikeWhy right={item.word} picked={choice} /> : null} />}
                 {!correct && item.kind === 'fit' && item.clue && <span class="clue hanzi">{item.clue}</span>}
                 {!correct && item.kind === 'fit' && item.clue && CLUE_EN[item.word] && <span class="clue__en" lang="en">{CLUE_EN[item.word]}</span>}
@@ -89,13 +100,13 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
         <>
           <div class="flash__prompt">
             <div class={`meaning-cue meaning-cue--sentence${short ? ' meaning-cue--short' : ''}`} lang="zh" data-q={short || undefined} style={`--len:${Array.from(item.before + item.word + item.after).length}`}>
-              <Label zh={`${item.before}${done ? item.word : '＿'.repeat(Array.from(item.word).length)}${item.after}`} fade />
-              <SpeakButton text={done ? fullSentence(item) : `${item.before}，，${item.after}`} />
+              <Label zh={`${item.before}${done && !bare ? item.word : '＿'.repeat(item.blankWidth ?? Array.from(item.word).length)}${item.after}`} fade {...(bare ? { pinyinFor: () => false } : {})} />
+              {!bare && <SpeakButton text={done ? fullSentence(item) : `${item.before}，，${item.after}`} />}
             </div>
           </div>
           <div class={`choices stagger choices--hanzi${multi ? ' choices--words' : ''}`}>
-                {item.options.map((o) => (
-                  <button key={o} type="button" class={`choice press ${state(o)}`} disabled={done} onClick={(e) => choose(o, e.currentTarget)}>
+                {options.map((o) => (
+                  <button key={o} type="button" class={`choice press ${state(o)}${o === NONE_OF_THESE && none ? ' choice--none' : ''}`} disabled={done} onClick={(e) => choose(o, e.currentTarget)}>
                     {o}
                   </button>
                 ))}
@@ -106,9 +117,9 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext }: Pr
           {lines.order.map((s) => (
             <div class="usage-row" key={s}>
               <button type="button" class={`choice usage-opt press ${state(s)}`} disabled={done} onClick={(e) => choose(s, e.currentTarget)}>
-                <Label zh={s} fade peek={false} />
+                <Label zh={s} fade peek={false} {...(bare ? { pinyinFor: () => false } : {})} />
               </button>
-              <SpeakButton text={s} />
+              {!bare && <SpeakButton text={s} />}
             </div>
           ))}
         </div>

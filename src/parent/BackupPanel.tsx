@@ -74,7 +74,8 @@ export function BackupPanel() {
       await restoreWithUndo(db, preview, now()); // what was here is kept first: Undo puts it back (review 2026-10-17)
       await afterRestore();
       setPreview(null);
-      setStatus('Backup restored.');
+      // a backup from before weekly lists (v6) clears this device's lists (weekly list spec 2026-10-17 §11); Undo brings them back
+      setStatus(preview.listsMissing ? "Backup restored. Weekly lists weren't in this backup." : 'Backup restored.');
     } catch (e) {
       setStatus(`Restore failed: ${String(e)}. Your current data was not changed.`);
     }
@@ -144,6 +145,7 @@ export function BackupPanel() {
               {preview.counts.words} words, {preview.counts.cards} cards, {preview.counts.sessions} sessions,{' '}
               {preview.hasMedia ? `${preview.counts.recordings} recordings` : 'no recordings'}.
             </p>
+            {preview.listsMissing && <p>This backup is from before weekly lists and has no weekly lists: restoring it removes this week’s lists (本周词语) from this device. His words and progress in the backup are restored as usual.</p>}
             <p>Restoring replaces the current data of the same kinds. What is here now is kept on this device first, so the restore can be undone.</p>
             <button type="button" class={`btn ${differs.length ? 'btn--red' : 'btn--primary'}`} onClick={() => void restore()}>Replace with this backup</button>
           </div>

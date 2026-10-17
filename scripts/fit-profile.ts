@@ -6,14 +6,14 @@ import { COSTUMES } from '../src/fun/costumes';
 import { EMPTY_METER, type Meter } from '../src/fun/meter';
 import { ACCESSORIES } from '../src/fun/pet';
 import { WORLDS, type WorldId } from '../src/fun/worlds';
-import { localDateKey } from '../src/lib/date';
+import { addDays, localDateKey } from '../src/lib/date';
 import { hashPin } from '../src/lib/hash';
 import { applyPlacement } from '../src/placement/apply';
 import { seededKnownCard } from '../src/srs/scheduler';
 import { createSessionRecord } from '../src/session/runner';
 import { exportBackup } from '../src/store/backup';
 import { openAppDb } from '../src/store/db';
-import { addReviewLog, putCards, putWords, saveKid, saveParentPassage, saveReward, saveSession, seedBuiltinWords, updateSettings } from '../src/store/repo';
+import { addReviewLog, putCards, putWeekList, putWords, saveKid, saveParentPassage, saveReward, saveSession, seedBuiltinWords, updateSettings } from '../src/store/repo';
 import { makeReviewHistory } from '../src/test/reviewHistory';
 import { DEFAULT_KID, DEFAULT_SETTINGS, EMPTY_READING, type ActivityKind, type SessionPlan } from '../src/types';
 
@@ -35,6 +35,7 @@ export interface FitProfileOptions {
   ownsAll?: boolean; // every costume and accessory owned: the chest gives stars (sweep: that prize was never screenshotted)
   meter?: Partial<Meter>; // the river meter as a test wants it (rewards spec §3); its day is today
   bank?: number;
+  weekList?: 'countdown' | 'check' | 'checked'; // a weekly list (weekly list spec 2026-10-17 §9): ready by in two days (Home's countdown), today (the 考考自己 card), or yesterday with the check taken (the parent's results table)
   schoolText?: boolean; // false: no parent text, and one of our passages read yesterday, so 朗读 reads a Global Storybooks passage (its turn: a picture, a credit line, 下一篇; spec 2026-10-15)
 }
 
@@ -105,7 +106,30 @@ export async function buildFitProfile(o: FitProfileOptions): Promise<string> {
       ...(o.ownsAll ? { ownedCostumes: COSTUMES.map((c) => c.id), ownedAccessories: [...ACCESSORIES] } : {}),
     });
   }
+  if (o.weekList) await seedWeekList(db, o.now, o.weekList);
   const json = await exportBackup(db, { includeMedia: false, now: t });
   db.close();
   return json;
+}
+
+/** An invented weekly list (never a sheet's): grid words, three pairs that make a 连一连 board, one more pair, a 选词填空 row. */
+async function seedWeekList(db: Awaited<ReturnType<typeof openAppDb>>, now: Date, when: 'countdown' | 'check' | 'checked') {
+  const P = (text: string, pinyin: string, meaning?: string) => ({ id: `p:wk-${text}`, text, pinyin, ...(meaning ? { meaning } : {}), level: null, rank: null, source: 'parent' as const, writeable: false, paused: false, createdAt: now.getTime() - 86_400_000 });
+  const words = [P('风筝', 'fēng zheng', 'kite'), P('雨伞', 'yǔ sǎn', 'umbrella'), P('小河', 'xiǎo hé', 'stream'), P('钓鱼', 'diào yú', 'to fish'), P('书包', 'shū bāo', 'school bag'),
+    P('闪闪亮', 'shǎn shǎn liàng', 'sparkly'), P('拔', 'bá', 'to pull up'), P('萝卜', 'luó bo', 'radish'), P('摘', 'zhāi', 'to pick'), P('苹果', 'píng guǒ', 'apple'), P('浇', 'jiāo', 'to water'), P('花朵', 'huā duǒ', 'flower'), P('放', 'fàng')];
+  await putWords(db, words);
+  const today = localDateKey(now);
+  await putWeekList(db, {
+    id: 'wl:fit', name: 'P2-L33-复习', createdAt: now.getTime() - 86_400_000,
+    readyBy: when === 'check' ? today : when === 'checked' ? localDateKey(addDays(now, -1)) : localDateKey(addDays(now, 2)), homeworkDue: localDateKey(addDays(now, when === 'countdown' ? 4 : 2)),
+    ...(when === 'checked' ? { check: { at: now.getTime() - 86_400_000, day: localDateKey(addDays(now, -1)), done: true, results: Object.fromEntries(words.map((w, i) => [w.id, { form: 'read' as const, correct: i % 3 !== 1 }])) } } : {}),
+    items: words.map((w) => ({ wordId: w.id, text: w.text, from: 'grid' as const, addedStatus: 'new' as const })),
+    pairs: [
+      { left: '拔', right: '萝卜', wrong: ['苹果', '花朵', '书包'], reading: 'bá luó bo' },
+      { left: '摘', right: '苹果', wrong: ['萝卜', '花朵', '书包'], reading: 'zhāi píng guǒ' },
+      { left: '浇', right: '花朵', wrong: ['萝卜', '苹果', '书包'], reading: 'jiāo huā duǒ' },
+      { left: '放', right: '风筝', wrong: ['萝卜', '苹果', '书包'], reading: 'fàng fēng zheng' },
+    ],
+    fits: [{ wordId: 'p:wk-雨伞', sentence: '下雨了，我打着＿上学。', source: 'parent', wrong: ['小河', '钓鱼', '书包'] }],
+  });
 }

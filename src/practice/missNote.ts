@@ -50,6 +50,17 @@ export function choiceGloss(text: string, pool: readonly Word[] = []): string | 
   return chengyuOf(text)?.meaning ?? parent?.meaning ?? kidGloss(text) ?? CHOICE_GLOSS[text] ?? (dict ? shortGloss(dict) : undefined);
 }
 
+/** A weekly list pair's English (weekly list spec 2026-10-17 §7.5): the whole phrase's when it has one, else each half's first
+ *  sense, "pick → beans" (a parent word's own English from `pool`). */
+export function pairGloss(left: string, right: string, pool: readonly Word[] = []): string | undefined {
+  const whole = choiceGloss(left + right, pool);
+  if (whole) return whole;
+  const sense = (t: string) => { const g = choiceGloss(t, pool); return g ? shortGloss(g) : undefined; };
+  const a = sense(left);
+  const b = sense(right);
+  return a && b ? `${a} → ${b}` : (a ?? b);
+}
+
 /** A Chinese choice he picked: 都不对 said plainly; a bound character as its pair (番 → 番茄 tomato, 番 marked); a word or
  *  character with its English; a lone character with none still named (he may not know how to say it). Null for anything
  *  else (a made-up 组词). */
