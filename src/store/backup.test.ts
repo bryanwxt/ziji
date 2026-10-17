@@ -166,9 +166,9 @@ describe('sweep: restoring an older backup', () => {
     const target = await freshDb();
     await applyBackup(target, readBackup(text));
     const s = await getSettings(target);
-    expect(s.lessonVersion).toBe(8);
+    expect(s.lessonVersion).toBe(9);
     expect(s.course).toBe('both'); // spec 2026-10-11 §6
-    expect(s.sessionMinutes).toBe(20); // the old default 30 became 15 (spec 2026-10-11 §4), and 15 becomes 20 (production practice §6)
+    expect(s.sessionMinutes).toBe(15); // the old default 30 became 15 (spec 2026-10-11 §4), 15 became 20 (production practice §6), and 20 is 15 again (learning rules 2026-10-17)
     expect(s.activities).toMatchObject({ newwords: true, practice: true, writing: true, speaking: true });
     expect(s.newPerDay).toBe(8);
   });

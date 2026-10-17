@@ -16,7 +16,7 @@ describe('repo', () => {
     expect(await getSettings(db)).toEqual(DEFAULT_SETTINGS);
     await updateSettings(db, { newPerDay: 7 });
     expect((await getSettings(db)).newPerDay).toBe(7);
-    expect((await getSettings(db)).sessionMinutes).toBe(20); // the 20-minute lesson (production practice spec §6)
+    expect((await getSettings(db)).sessionMinutes).toBe(15); // the 15-minute lesson (learning rules 2026-10-17)
   });
 
   it('seeds only missing built-in words and keeps existing flags', async () => {

@@ -385,6 +385,7 @@ async function sweep(size: Size) {
   // Home: not started, and done-for-today with every optional card; world taps in every world
   await run('home', AFTERNOON, {}, (p) => check(p, size, 'home', 0));
   await run('home-done', AFTERNOON, { doneToday: true }, (p) => check(p, size, 'home-done', 0));
+  await run('home-done-later', AFTERNOON, { doneToday: true, doneMinutesAgo: 30 }, (p) => check(p, size, 'home-done-later', 0)); // 晚上再来！ in 再学一课's place (learning rules 2026-10-17)
   await run('home-evening', EVENING, { world: 'home' }, (p) => check(p, size, 'home-evening', 0)); // the first world's evening
   for (const w of WORLDS) {
     await run(`home-${w.id}`, AFTERNOON, { world: w.id }, (p) => check(p, size, `home-${w.id}`, 0));
@@ -563,13 +564,16 @@ async function sweep(size: Size) {
   await run('lesson', AFTERNOON, { langdu: true }, async (p) => { await startLesson(p); await walkLesson(p, size, 'lesson'); }); // every step in order, 朗读 too, then the chest
   // the chest's stars prize; new words only, as the walker can't trace a character and stopped at 写一写, short of the chest
   await run('chest-stars', AFTERNOON, { ownsAll: true, activities: only('newwords') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-stars'); });
-  // the river meter after an extra lesson (rewards spec §3): half way, the day's second chest, and the cap — at every size
-  const extra = (halves: number, chestsToday: number) => ({ doneToday: true, activities: only('newwords'), meter: { halves, chestsToday } });
+  // the river meter after an extra lesson (rewards spec §3, §9): half way, the day's second chest, the cap, and a lesson that
+  // mastered nothing — at every size. Extra lessons are review only (no 认新字), so they run 练一练; `mastered` seeds a word
+  // newly writable since the day's lesson, which moves the boat
+  const extra = (halves: number, chestsToday: number, mastered = true) => ({ doneToday: true, activities: only('practice'), meter: { halves, chestsToday }, extraMastered: mastered });
   const extraLesson = async (p: Page) => {
     await p.click('.done-card button:has-text("再学一课")');
     await p.waitForSelector('.lessonbar, .celebrate', { timeout: 15_000 });
   };
-  await run('extra-half', AFTERNOON, extra(0, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-half'); }); // 再学一课就能开宝箱！
+  await run('extra-half', AFTERNOON, extra(0, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-half'); }); // 再学会几个字，就能开宝箱！
+  await run('extra-resting', AFTERNOON, extra(1, 1, false), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-resting'); }); // 你学得很认真！ 多学会几个字，小船就会走！
   await run('extra-chest', AFTERNOON, extra(1, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-chest'); }); // the second chest, then 明天再开宝箱！
   await run('extra-capped', AFTERNOON, extra(0, 2), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-capped'); }); // 明天再开宝箱！
   // yesterday's bank (a full meter) and today's first lesson: two chest phases in one Celebration (rewards ruling 2)

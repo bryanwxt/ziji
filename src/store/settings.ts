@@ -12,10 +12,12 @@ import { getSettings, updateSettings } from './repo';
  * 朗读 back (v7, spec 2026-10-12 §7): 朗读 is switched on once, with the lesson's speaking step (Activities) it runs in; a parent who
  * turns either off later keeps it off.
  * The 20-minute lesson (v8, production practice spec §6): a lesson on exactly 15 minutes becomes 20; any other length stays.
+ * The 15-minute lesson again (v9, learning rules 2026-10-17): a lesson on the v8 default — exactly 20 minutes on v8, or moved
+ * there by v8 — becomes 15; any other length stays (a 20 chosen before v8 was the parent's own).
  */
 export function migrateSettings(s: Settings): Partial<Settings> | null {
   const v = s.lessonVersion ?? 1;
-  if (v >= 8) return null;
+  if (v >= 9) return null;
   const patch: Partial<Settings> = {};
   if (v < 7) {
     if (v < 4) {
@@ -31,8 +33,12 @@ export function migrateSettings(s: Settings): Partial<Settings> | null {
     patch.langdu = true;
     patch.activities = { ...(patch.activities ?? s.activities), speaking: true }; // 朗读 runs in the speaking step: both switches on (final review M2)
   }
-  if ((patch.sessionMinutes ?? s.sessionMinutes) === 15) patch.sessionMinutes = 20; // v8: the old default only
-  patch.lessonVersion = 8;
+  // v8: the old default 15 became 20; v9: the v8 default 20 becomes 15 — a 20 the parent chose before v8 stays
+  const before = patch.sessionMinutes ?? s.sessionMinutes;
+  const onDefault20 = v < 8 ? before === 15 : before === 20;
+  if (onDefault20) patch.sessionMinutes = 15;
+  if (patch.sessionMinutes === s.sessionMinutes) delete patch.sessionMinutes; // a round trip back to where it was
+  patch.lessonVersion = 9;
   return patch;
 }
 

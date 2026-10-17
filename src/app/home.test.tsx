@@ -110,6 +110,24 @@ describe('HomeScreen', () => {
     await waitFor(() => expect(document.querySelector('.home__pet .pet__bubble')?.textContent).toContain('想再学一课吗？'));
     expect(screen.getByText('再学一课').closest('button')!.className).toContain('btn--secondary');
   });
+  it('right after the day’s lesson: no 再学一课 yet, Truffle says when (learning rules 2026-10-17); 再玩一会儿 stays', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02', greetedOn: '2026-10-02' } }); // 9:00
+    await saveSession(app.db, { ...done('2026-10-02', ['newwords', 'practice']), startedAt: new Date(2026, 9, 2, 8, 30).getTime(), activeMs: 15 * 60_000 });
+    await putCards(app.db, [makeCard('b:大', 'recognise', new Date(2026, 9, 5))]);
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天完成了！');
+    expect(screen.queryByText('再学一课')).toBeNull();
+    expect(document.querySelector('.done-card')?.textContent).toContain('等一会儿再来！'); // open at 10:45
+    await waitFor(() => expect(document.querySelector('.home__pet .pet__bubble')?.textContent).toContain('等一会儿再来！'));
+    expect(screen.getByText('再玩一会儿')).toBeTruthy();
+  });
+  it('an extra lesson just finished (his stars this morning) closes it again for 2 hours', async () => {
+    const app = await makeAppData({ kid: { ...DEFAULT_KID, lastChestDate: '2026-10-02', starredUpTo: new Date(2026, 9, 2, 8, 50).getTime() } });
+    await saveSession(app.db, done('2026-10-02', ['newwords']));
+    renderWithApp(<HomeScreen />, app);
+    await screen.findByText('今天完成了！');
+    expect(screen.queryByText('再学一课')).toBeNull();
+  });
   it('before the day’s lesson is done he does not ask', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, greetedOn: '2026-10-02' } });
     renderWithApp(<HomeScreen />, app);

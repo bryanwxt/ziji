@@ -37,6 +37,13 @@ describe('buildFitProfile', () => {
     const kid = p.file.kid as Parameters<typeof openChest>[0];
     expect(openChest(kid, '2026-10-06').result.kind).toBe('stars');
   });
+  it('can seed when the day’s lesson ended, and a word mastered since (learning rules 2026-10-17)', async () => {
+    const p = readBackup(await buildFitProfile({ now: NOW, doneToday: true, doneMinutesAgo: 30, extraMastered: true }));
+    const kid = p.file.kid as { starredUpTo?: number };
+    expect(kid.starredUpTo).toBe(NOW.getTime() - 30 * 60_000);
+    const cards = (p.file.stores.cards ?? []) as { kind: string; passed?: number }[];
+    expect(cards.some((c) => c.kind === 'write' && c.passed === NOW.getTime() - 60_000)).toBe(true);
+  });
   it('can seed the river meter and the bank (rewards spec §3)', async () => {
     const p = readBackup(await buildFitProfile({ now: NOW, doneToday: true, meter: { halves: 1, chestsToday: 1 }, bank: 1 }));
     const kid = p.file.kid as { meter: { halves: number; chestsToday: number; owed: number; lesson: number | null }; bank: number };

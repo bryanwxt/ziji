@@ -5,6 +5,7 @@ import { SkillsPanel } from './SkillsPanel';
 import { BackupPanel } from './BackupPanel';
 import { Credits } from './Credits';
 import { Dashboard } from './Dashboard';
+import { ExtraLessonButton } from './ExtraLessonButton';
 import { ImportPanel } from './ImportPanel';
 import { ListenPanel } from './ListenPanel';
 import { waitingTakes } from '../session/say';
@@ -93,7 +94,7 @@ export function ParentArea() {
         <main class="parent__body" role="tabpanel" id="parent-panel" aria-labelledby={`parent-tab-${tab}`}>
           {tab === 'today' && (
             <>
-              <div id={placeId('dashboard')} class="parent__section"><Dashboard onNavigate={navigate} waiting={waiting ?? undefined} /></div>
+              <div id={placeId('dashboard')} class="parent__section"><Dashboard onNavigate={navigate} waiting={waiting ?? undefined} /><ExtraLessonButton /></div>
               <div id={placeId('listen')} class="parent__section"><ListenPanel onReviewed={() => void countWaiting()} /></div>
               <div id={placeId('recordings')} class="parent__section">
                 <button type="button" class="btn btn--ghost parent__more" aria-expanded={allRecordings} aria-controls="parent-recordings-panel" onClick={() => setAllRecordings((o) => !o)}>

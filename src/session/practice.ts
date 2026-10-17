@@ -135,12 +135,13 @@ export function withSay(items: PracticeItem[], sayIds: string[]): PracticeItem[]
   return out;
 }
 
-/** 说一句 comes by this many items in (and the second by twice it): a round is cut by its time box, ~6.7 minutes at 20. */
-export const SENTENCE_BY = 12;
+/** 说一句 comes by this many items in (and the second by twice it): a round is cut by its time box, 5 minutes at the usual 15
+ *  (12 at 20 minutes' 6.7, scaled to 15: learning rules 2026-10-17). */
+export const SENTENCE_BY = 9;
 
 /**
  * Puts the 说一句 cards into the round (production practice spec §4): at most 2, and one for every three items at most, spread
- * like the Say cards but never later than the 12th and 24th item, so the time box reaches them (measured: a P2 round of ~200
+ * like the Say cards but never later than the 9th and 18th item, so the time box reaches them (measured: a P2 round of ~200
  * items lost its second one at half-way); never beside the same word or another card he records. Like a Say card it grades
  * nothing in the lesson: the parent confirms the take.
  */
