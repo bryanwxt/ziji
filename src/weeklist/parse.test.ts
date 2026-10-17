@@ -57,4 +57,35 @@ describe('parseWeekList', () => {
   it('rejects a token longer than four characters', () => {
     expect(parseWeekList('> 词语\n高高兴兴地', isWord, KNOWN).items).toEqual([]);
   });
+  it('a lone token that is also a pair half on the sheet is no heading (rule 6): unpaired for the parent', () => {
+    const h = parseWeekList(['> 词语搭配', '牛奶', '吃 面包 喝 牛奶'].join('\n'), isWord, KNOWN);
+    expect(h.pairs).toEqual([{ left: '吃', right: '面包' }, { left: '喝', right: '牛奶' }]);
+    expect(h.unpaired).toEqual(['牛奶']);
+  });
+  it('rejoins a word Live Text split into cells (rule 3), and keeps the parts for Split', () => {
+    const j = parseWeekList(['> 词语', '苹 果 跑步', '书', '包'].join('\n'), isWord, KNOWN);
+    expect(j.items.map((i) => i.text)).toEqual(['苹果', '跑步', '书包']);
+    expect(j.items[0]!.parts).toEqual(['苹', '果']);
+    expect(j.items[1]!.parts).toBeUndefined();
+  });
+  it('never joins 生字 cells', () => {
+    expect(parseWeekList(['> 生字', '苹 果'].join('\n'), isWord, KNOWN).items.map((i) => i.text)).toEqual(['苹', '果']);
+  });
+});
+
+describe('the suggested name (rule 1)', () => {
+  const day = new Date(2026, 9, 20, 9);
+  it('the sheet title above the first heading, with its page code', () => {
+    expect(parseWeekList(ROW_WISE, isWord, KNOWN, day).title).toBe('考考自己 Q3-L12');
+  });
+  it('a page code alone', () => {
+    expect(parseWeekList(['K1-L07-复习', '> 词语', '跑步'].join('\n'), isWord, KNOWN, day).title).toBe('K1-L07');
+  });
+  it('a title alone; brand, slogan and copyright lines are never the name', () => {
+    expect(parseWeekList(['百力果', '想象·表达·自信', '小小练习', '> 词语', '跑步'].join('\n'), isWord, KNOWN, day).title).toBe('小小练习');
+  });
+  it('nothing usable: a date-based name', () => {
+    expect(parseWeekList('> 词语\n跑步', isWord, KNOWN, day).title).toBe('10月20日的词语');
+    expect(parseWeekList('跑步 书包', isWord, KNOWN, day).title).toBe('10月20日的词语');
+  });
 });

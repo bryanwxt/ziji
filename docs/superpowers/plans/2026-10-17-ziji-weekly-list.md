@@ -31,7 +31,7 @@ Lists are records in a new IndexedDB store, `weekLists` (DB v6). They point at e
 - `DB_VERSION` goes 5 → 6. The v6 step only creates `weekLists`, and `weekLists` joins `LIST_STORES`.
 - The lesson stays about 15 minutes. Due revision always comes before list extras in 练一练's first-appearance order.
 - Front-load rate: `min(pace + 2, settings.newPerDay)` a day, and `+2` only when yesterday's 练一练 didn't run out (`ranOut`). In a backlog pause (more than 40 practised cards due), list words come at most `PACE_MIN` (3) a day and MOE words wait.
-- Default dates: homework due on the coming Friday, ready by homework due − 2. Ready-by is clamped to between creation + 2 days and homework due − 1. A Thursday list for Friday homework is ready the same day.
+- Default dates: homework due on the coming Friday, ready by homework due − 2. Ready-by is clamped to between creation + 2 days and homework due − 1. A Thursday list for Friday homework is ready by Friday (spec §3.3; when homework − 1 is today, ready-by is homework day).
 - Pin rule: a list word's `recognise`, `hear`, `understand` or `meaning` card reviewed **before** ready-by is never due after the start of the ready-by day. It is never due before tomorrow. Stability is unchanged.
 - After the check, a not-solid item gets **one reserved 练一练 item in every lesson** (at most 8, never cut by the boost share) and a re-teaching card in 认新字 on the day after each miss (at most 6, no new-word slot). It becomes solid after right answers on 2 different days after the check, with no miss since. This lasts until 7 days after homework due.
 - In 考考自己: one question per item; no pinyin, no spoken answer, no 都不对, no retries, no `SHOW_AFTER`. One `bonusStars` star for each item that is right in the check and was not ready before it. Finishing earns nothing by itself and does not move the river meter.
@@ -306,8 +306,10 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   - `type ItemFlag = 'unknown' | 'phrase' | 'blocked' | 'checkPair'`
   - `interface DraftItem { text: string; from: 'grid' | 'pair' | 'both'; flags: ItemFlag[]; suggestion?: string; reason?: string }`
   - `interface DraftPair { left: string; right: string; group?: string; check?: true }`
-  - `interface WeekDraft { title: string | null; items: DraftItem[]; pairs: DraftPair[]; unpaired: string[]; notes: string[] }`
-  - `parseWeekList(text: string, isWord: (w: string) => boolean, dict?: Iterable<string>): WeekDraft`
+  - `interface WeekDraft { title: string; items: DraftItem[]; pairs: DraftPair[]; unpaired: string[]; notes: string[] }` (title: the suggested name, from `sheetTitle`)
+  - `parseWeekList(text: string, isWord: (w: string) => boolean, dict?: Iterable<string>, now?: Date): WeekDraft`
+  - `sheetTitle(text: string, now: Date): string`: the title line above the first heading plus its page code (`考考自己 P2-L41`), else `10月20日的词语`
+  - `DraftItem.parts?`: the cells `joinTokens` rejoined (rule 3), for Split
   - `isAdjPhrase(t: string): boolean` (ends in 的)
   - `defaultDates(now: Date): { homeworkDue: string; readyBy: string }`
   - `clampReadyBy(created: Date, readyBy: string, homeworkDue: string): string`
@@ -398,8 +400,8 @@ describe('weekly list dates (spec §3.3)', () => {
   it('a Wednesday list: ready-by moves to two days on, at most homework − 1', () => {
     expect(defaultDates(new Date(2026, 9, 21, 9))).toEqual({ homeworkDue: '2026-10-23', readyBy: '2026-10-22' });
   });
-  it('a Thursday list for Friday homework is ready the same day', () => {
-    expect(clampReadyBy(new Date(2026, 9, 22, 9), '2026-10-20', '2026-10-23')).toBe('2026-10-22');
+  it('a Thursday list for Friday homework is ready by Friday (spec §3.3)', () => {
+    expect(clampReadyBy(new Date(2026, 9, 22, 9), '2026-10-20', '2026-10-23')).toBe('2026-10-23');
   });
   it('names weekdays', () => {
     expect(weekdayZh('2026-10-21')).toBe('星期三');
@@ -419,7 +421,7 @@ Expected: FAIL. `./parse` and `./dates` can't be resolved.
 ```ts
 // src/weeklist/dates.ts
 // A list's two days (weekly list spec 2026-10-17 §3.3): homework due (default the coming Friday) and ready by (default two days
-// before it, at least two days after the list arrives, at most the day before homework — the same day when that is all there is).
+// before it, at least two days after the list arrives, at most the day before homework — homework day itself when the day before is already today).
 import { addDays, localDateKey, parseDateKey, startOfLocalDay } from '../lib/date';
 
 const FRIDAY = 5;
@@ -430,7 +432,9 @@ export const daysBetween = (a: string, b: string): number => Math.round((parseDa
 
 export function clampReadyBy(created: Date, readyBy: string, homeworkDue: string): string {
   const today = localDateKey(created);
-  const latest = daysBetween(today, homeworkDue) >= 1 ? localDateKey(addDays(parseDateKey(homeworkDue), -1)) : homeworkDue;
+  const tomorrow = localDateKey(addDays(startOfLocalDay(created), 1));
+  const dayBefore = localDateKey(addDays(parseDateKey(homeworkDue), -1));
+  const latest = dayBefore >= tomorrow ? dayBefore : homeworkDue; // a Thursday list for Friday: ready by Friday
   const earliest = localDateKey(addDays(startOfLocalDay(created), 2));
   let r = readyBy < earliest ? earliest : readyBy;
   if (r > latest) r = latest;
@@ -551,6 +555,11 @@ function isHeading(token: string, after: string[]): boolean {
 ```
 
 A one-token line inside a column-wise block is never mistaken for a heading: the buffer is odd after a left cell, so only the cell after a completed pair can be a heading, and only if an even run of cells follows it.
+
+**Closed after review (2026-10-17):** the shipped `parse.ts` also covers three spec rules that the code above left out. Treat `src/weeklist/parse.ts` as the reference.
+- **Rule 1:** `sheetTitle` names the list.
+- **Rule 3:** grid tokens go through the importer's `joinTokens`, now exported; 生字 cells are never joined.
+- **Rule 6:** a lone token that is a half of any pairs line read across is never a heading. It goes to `unpaired` instead.
 
 - [ ] **Step 5: Run the tests to make sure they pass**
 
@@ -1752,7 +1761,7 @@ export function WeekPanel() {
   const read = () => {
     const d = parseWeekList(text, isWord, [...HSK_WORDS.keys()]);
     setDraft(d);
-    setName(d.title ?? 'This week');
+    setName(d.title); // never empty: the sheet's title or a date-based name
     setDates(defaultDates(now()));
     setOff(new Set());
     setPairs(d.pairs.map((p) => ({ ...p, wrong: proposeWrong(p, d.pairs), skipped: new Set(), on: true })));

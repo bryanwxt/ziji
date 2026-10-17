@@ -13,6 +13,16 @@ const PROSE = /[，。！？；“”]/;
 const CIRCLED = /^[\u2460-\u2473\u2776-\u277F]/; // numbered instructions: ①–⑳ and ❶–❿
 const HEADER = /^(?:[一二三四五六七八九十]+、|>|➤|▶|\d+[.、])?\s*(.*)$/;
 
+/** A page code (P2-L41), as the line starts; null when it has none. A weekly list names itself by it (weekly list spec §3.2 rule 1). */
+export const pageCode = (line: string): string | null => PAGE_CODE.exec(line.trim())?.[0].toUpperCase() ?? null;
+/** Copyright, brand or instruction text: never a sheet's title. */
+export const isFurniture = (line: string): boolean => COPYRIGHT.test(line) || INSTRUCTION.test(line) || MAYBE_INSTRUCTION.test(line);
+/** Does this line start a section (a marked heading, or one naming a section)? */
+export const isSectionHeading = (line: string): boolean => {
+  const t = line.replace(/[\u3000\t]+/g, ' ').trim();
+  return /^(?:[一二三四五六七八九十]+、|>|➤|▶)/.test(t) || (!/[。！？，]/.test(t) && sectionOf(HEADER.exec(t)![1]!) !== null);
+};
+
 function sectionOf(heading: string): Section | null {
   if (/成语/.test(heading)) return 'idioms';
   if (/搭配/.test(heading)) return 'pairs';
