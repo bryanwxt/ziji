@@ -1,4 +1,4 @@
-import type { BuiltinChar, Passage, PassageQuestion } from '../src/types';
+import type { BuiltinChar, Passage, PassageQuestion, TalkPrompt, TalkTheme } from '../src/types';
 import { HSK_WORDS, MOE_TERMS, schoolTerm } from '../src/content';
 import { BLOCK_REASON, BLOCKED } from '../src/content/blocked';
 import { glossProblems, kidGloss } from '../src/content/kidGloss';
@@ -220,4 +220,45 @@ export function checkOwnPassages(passages: Passage[]): string[] {
     }
   }
   return problems;
+}
+
+/** 儿化 the app never says (src/noErhua.test.ts): Singapore usage. */
+const ERHUA = /哪儿|一会儿|玩儿|点儿|这儿|那儿/;
+
+/**
+ * The talk prompts (parent loop spec §3): unique ids; every field there; 2–3 follow-ups; one of the six patterns, with its
+ * first part in the sample; a known theme, at least 6 starters each; an opening that isn't a yes/no question (…吗？); an English
+ * line without Chinese; no 儿化 and no blocked word (src/content/blocked.ts); at least one hook; every Han character one a P2 child reads (`readable`).
+ */
+export function checkTalkPrompts(prompts: readonly TalkPrompt[], themes: readonly TalkTheme[], patterns: readonly string[], readable: ReadonlySet<string>): string[] {
+  const problems: string[] = [];
+  const ids = new Set<string>();
+  for (const p of prompts) {
+    if (ids.has(p.id)) problems.push(`duplicate talk prompt ${p.id}`);
+    ids.add(p.id);
+    if (!p.open.trim() || !p.en.trim() || !p.sample.trim()) problems.push(`${p.id}: missing open, en or sample`);
+    if (p.followUps.length < 2 || p.followUps.length > 3 || p.followUps.some((f) => !f.trim())) problems.push(`${p.id}: needs 2–3 follow-ups`);
+    if (!patterns.includes(p.pattern)) problems.push(`${p.id}: pattern ${p.pattern} is not one of the six`);
+    else if (!p.sample.includes(p.pattern.split('…')[0]!)) problems.push(`${p.id}: the sample does not use ${p.pattern}`);
+    if (!themes.includes(p.theme)) problems.push(`${p.id}: unknown theme ${p.theme}`);
+    if (/吗？$/.test(p.open)) problems.push(`${p.id}: a yes/no opening`);
+    if (HAN.test(p.en)) problems.push(`${p.id}: the English line holds Chinese`);
+    if (!p.hooks.length) problems.push(`${p.id}: no hooks`);
+    const text = [p.open, ...p.followUps, p.sample, ...p.hooks].join('');
+    if (ERHUA.test(text)) problems.push(`${p.id}: 儿化`);
+    for (const w of BLOCKED) if (text.includes(w)) problems.push(`${p.id}: blocked word ${w}`);
+    const outside = [...new Set(Array.from(text).filter((ch) => HAN.test(ch) && !readable.has(ch)))];
+    if (outside.length) problems.push(`${p.id}: uses ${outside.join('')} beyond P2`);
+  }
+  for (const t of themes) {
+    const n = prompts.filter((p) => p.theme === t).length;
+    if (n < 6) problems.push(`theme ${t} has ${n} starters, expected at least 6`);
+  }
+  return problems;
+}
+
+/** The characters a P2 child reads, for the talk prompts: HSK 1–3, his reading lists up to 二下, and `allowed`. */
+export function p2Readable(chars: readonly BuiltinChar[], lessons: readonly { term: string; read: string }[], allowed = ''): Set<string> {
+  const terms = ['一上', '一下', '二上', '二下'];
+  return new Set([...chars.filter((c) => c.level <= 3).map((c) => c.char), ...lessons.filter((l) => terms.includes(l.term)).flatMap((l) => Array.from(l.read)), ...Array.from(allowed)]);
 }

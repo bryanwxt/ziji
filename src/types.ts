@@ -360,6 +360,8 @@ export interface Settings {
   baselines?: Partial<Record<Skill, number>>; // % right on his class worksheets, typed in by the parent (stays on the iPad)
   pace?: { day: string; perDay: number; reason: string }; // today's new words per day and why (spec 2026-10-05 §2.2)
   contentVersion?: string; // the built-in content last written to this install (src/content CONTENT_VERSION)
+  talkDay?: TalkDay; // today's three talk cards (parent loop spec §4); another day's are picked afresh
+  talkSeen?: Record<string, string>; // each talk card id → the last day it was shown (no repeat within 14 days), kept 60 days
   fsrs?: FsrsFit; // his fitted FSRS parameters (SRS tuning spec §6.2); absent: the defaults
 }
 
@@ -431,6 +433,45 @@ export const DEFAULT_KID: KidState = {
   finds: DEFAULT_FINDS,
   meter: EMPTY_METER,
 };
+
+/** The PSLE conversation themes the talk prompts cover (parent loop spec §3). */
+export type TalkTheme = 'family' | 'school' | 'friends' | 'food' | 'festivals' | 'singapore' | 'environment' | 'technology' | 'feelings';
+
+/** A conversation starter for the parent (parent loop spec §3): a topic, follow-ups and a pattern, not a script. */
+export interface TalkPrompt {
+  id: string; // 't01'…
+  theme: TalkTheme;
+  open: string; // the opening question, Chinese, P2-level
+  en: string; // one English line, for a grandparent or helper
+  followUps: string[]; // 2–3 open follow-ups
+  pattern: string; // one of TALK_PATTERNS, to nudge toward
+  sample: string; // what a P2 answer could sound like
+  hooks: string[]; // words it is about: picked for his words (hookRank)
+}
+
+/** Which of the day's three a card is (spec §4): his word, shared reading of today's 朗读 passage, a rotating theme. */
+export type TalkKind = 'word' | 'reading' | 'theme';
+
+/** One of the day's cards. `id`: a bank starter's ('t07'), a word starter's ('w:借'), a shared-reading card's ('r:p17:2'). */
+export interface TalkCard {
+  kind: TalkKind;
+  id: string;
+  theme?: TalkTheme; // bank starters
+  word?: string; // kind 'word': the word it is about
+  passageId?: string; // kind 'reading'
+  open: string;
+  en: string;
+  followUps: string[];
+  pattern: string;
+  sample: string; // '' on a shared-reading card: its answers are the passage's
+  answers?: (string | null)[]; // kind 'reading': the passage's answer to the open question and each follow-up (null: open-ended)
+}
+
+/** The day's picks, stored once made so Today shows the same three all day (spec §4). */
+export interface TalkDay { date: string; cards: TalkCard[] }
+
+/** One 「✓ 聊了」 (spec §5): when, and the minutes if a chip was picked. Never shown to the child. */
+export interface TalkLog { id: string; at: number; minutes?: number }
 
 export interface RewardGoal {
   id: string;

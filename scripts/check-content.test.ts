@@ -6,7 +6,8 @@ import { BUILTIN, PASSAGES } from '../src/content';
 import moe from '../src/content/moe2024.json';
 import { PASSAGE_QUESTIONS } from '../src/content/passageQuestions';
 import type { Passage, PassageQuestion } from '../src/types';
-import { checkContent, checkOwnPassages, checkPassageQuestions, questionProblems, topWord, wordProblems } from './check-content';
+import { TALK_ALLOWED, TALK_PATTERNS, TALK_PROMPTS, TALK_THEMES } from '../src/content/talkPrompts';
+import { checkContent, checkOwnPassages, checkPassageQuestions, checkTalkPrompts, p2Readable, questionProblems, topWord, wordProblems } from './check-content';
 
 const dataDir = join(process.cwd(), 'node_modules', 'hanzi-writer-data');
 const hasStrokeFile = (ch: string) => existsSync(join(dataDir, `${ch}.json`));
@@ -131,5 +132,33 @@ describe('our passages (spec 2026-10-15 §2.2)', () => {
   it('no duplicate text, no two sentences opening alike', () => {
     expect(checkOwnPassages([p21, { ...p21, id: 'p22' }])).toContain('p22: the same text as p21');
     expect(checkOwnPassages([p49, { ...p33, id: 'p34', text: '今天早上，闹钟没有响，' + p33.text }])).toContain('p34: "今天早上，闹钟没有响，星期天，天气很好，我跟爸爸去公园放风筝。" opens like a sentence of p49');
+  });
+});
+
+describe('talk prompts (parent loop spec §3)', () => {
+  const readable = p2Readable(BUILTIN, (moe as { lessons: { term: string; read: string }[] }).lessons, TALK_ALLOWED);
+  it('80 starters, at least 6 per theme, every field there, one of the six patterns, P2 characters, no 儿化', () => {
+    expect(TALK_PROMPTS).toHaveLength(80);
+    expect(checkTalkPrompts(TALK_PROMPTS, TALK_THEMES, TALK_PATTERNS, readable)).toEqual([]);
+  });
+  it('every pattern is used at least 10 times', () => {
+    for (const p of TALK_PATTERNS) expect(TALK_PROMPTS.filter((t) => t.pattern === p).length).toBeGreaterThanOrEqual(10);
+  });
+  it('flags a duplicate id, a thin starter, an unknown pattern, a hard character, 儿化, a yes/no opening and a thin theme', () => {
+    const p = TALK_PROMPTS[0]!;
+    const bad = { ...p, open: '你喜欢玩吗？', followUps: ['为什么？'], pattern: '因为…所以…', sample: '我喜欢一会儿去鬱金香公园。' };
+    expect(checkTalkPrompts([p, bad], TALK_THEMES, TALK_PATTERNS, readable)).toEqual(expect.arrayContaining([
+      'duplicate talk prompt t01', 't01: needs 2–3 follow-ups', 't01: pattern 因为…所以… is not one of the six', 't01: a yes/no opening',
+      't01: 儿化', 't01: uses 鬱 beyond P2', 'theme school has 0 starters, expected at least 6',
+    ]));
+  });
+  it('flags a blocked word (the content gate every surface uses)', () => {
+    const p = TALK_PROMPTS[0]!;
+    expect(checkTalkPrompts([{ ...p, sample: '我觉得他不是笨蛋，因为他会做。' }], TALK_THEMES, TALK_PATTERNS, readable)).toContain('t01: blocked word 笨蛋');
+  });
+  it('the allow-list is only the Singapore theme words his lists lack', () => {
+    const bare = p2Readable(BUILTIN, (moe as { lessons: { term: string; read: string }[] }).lessons);
+    expect(Array.from(TALK_ALLOWED).filter((c) => bare.has(c))).toEqual([]);
+    expect(TALK_ALLOWED).toBe('榴莲刹端粽笼舟');
   });
 });
