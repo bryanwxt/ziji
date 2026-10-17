@@ -61,6 +61,8 @@ interface Props {
   noneOfThese?: 'answer' | 'decoy';
   /** a weekly list word's card (weekly list spec 2026-10-17 §7.1–7.2): its pair for a verb, an example sentence, the new character marked */
   list?: ListCard;
+  /** 考考自己 (weekly list spec 2026-10-17 §8.1): no pinyin, nothing said, no right or wrong or usage line shown; a pick answers at once */
+  bare?: boolean;
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
@@ -77,7 +79,7 @@ function missedPick(choice: string | null, quiz: { cue: MeaningCue | null; mode:
   return pinyinPickNote(word, choice, pool);
 }
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese, list }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese, list, bare = false }: Props) {
   // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
   const pair = list?.lead ?? boundPair(word.text); // a list verb's English questions show its list pair the same way (fix round 2026-10-17)
   const pairPy = list?.lead ? list.leadReading : pair ? kidGlossReading(pair) : undefined;
@@ -97,7 +99,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
       // always four: six English meanings crowd a phone and drag in obscure glosses (parent, 2026-10-12)
       const options = meaningChoices(word, pool, rng);
       if (options) {
-        const hear = ask === 'hear' && voice; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
+        const hear = ask === 'hear' && voice && !bare; // no voice: he reads it for meaning instead (asked 'read', never graded as hearing)
         const real = firstSense(questionMeaning(word)!);
         return { listen: hear, cue: null, answer: noneOfThese === 'answer' ? NONE_OF_THESE : real, options: pickOptions(options, real), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: hear ? 'hear' : 'meaningRead', none: noneOfThese === 'answer', showsNone: !!noneOfThese, real };
       }
@@ -106,7 +108,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     const inPair = (w: Word) => !!pair && w.text !== word.text && pair.includes(w.text);
     const five = pickLookAlikes(word, pool, rng).filter((w) => !inPair(w));
     const lookAlikes = five.length ? five : pickCharacterDistractors(word, pool, rng).filter((w) => !inPair(w));
-    const listen = voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
+    const listen = !bare && voice && lookAlikes.length >= 3 && (ask ? ask === 'listen' : (card?.fsrs.reps ?? 0) % 2 === 0);
     const answer = listen ? word.text : word.pinyin;
     const wrong = listen ? lookAlikes.map((w) => w.text) : fiveOrThree(pickPinyinDistractors(word, pool, rng, MANY_WRONG));
     return { listen, cue: null, answer, options: shuffle([answer, ...wrong], rng), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null, none: false, showsNone: false, real: answer };
@@ -138,6 +140,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     }
     if (phase === 'quiz') {
       quizAt.current = performance.now();
+      if (bare) return;
       // A class sentence is read around its blank: saying the word would give the answer away (its choices don't share its sound).
       if (quiz.cue) speak(quiz.cue.kind === 'sentence' ? `${quiz.cue.before}，，${quiz.cue.after}` : quiz.cue.full);
       else if (quiz.listen && quiz.mode) sayWord(); // heard for its meaning: a list verb as its pair
@@ -146,9 +149,14 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   }, [phase]);
 
   const choose = (option: string) => {
-    if (phase !== 'quiz') return;
+    if (phase !== 'quiz' || (bare && choice !== null)) return;
     const correct = option === quiz.answer;
     setChoice(option);
+    if (bare) {
+      const responseMs = Math.round(performance.now() - quizAt.current);
+      onDone({ correct, hard: false, responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: quiz.mode === 'hear' ? 'hear' : 'read', picked: option });
+      return;
+    }
     const hard = isHardRecognition(card?.fsrs);
     setResult({ correct, hard, responseMs: Math.round(performance.now() - quizAt.current) });
     setReact({ kind: !correct ? 'wrong' : hard ? 'hard' : combo + 1 >= 3 ? 'streak' : 'right', key: ++reactN.current });
@@ -171,6 +179,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   };
 
   const optionState = (o: string) => {
+    if (bare) return o === choice ? 'is-picked' : '';
     if (phase !== 'feedback') return '';
     if (o === quiz.answer) return o === choice ? 'is-eaten' : 'is-answer';
     return o === choice ? 'is-wrong' : 'is-dim';
@@ -262,7 +271,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
                     type="button"
                     class={`choice press ${optionState(o)}${o === NONE_OF_THESE && quiz.showsNone ? ' choice--none' : ''}`}
                     lang={quiz.mode && !(o === NONE_OF_THESE && quiz.showsNone) ? 'en' : undefined}
-                    disabled={phase === 'feedback'}
+                    disabled={phase === 'feedback' || (bare && choice !== null)}
                     onClick={() => choose(o)}
                     ref={(el) => {
                       if (el) optionRefs.current.set(o, el);

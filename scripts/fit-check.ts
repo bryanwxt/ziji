@@ -559,6 +559,45 @@ async function sweep(size: Size) {
     await sideways();
     await snap(p, size, 'parent-week-8-edit', '.week__editor');
   });
+  // the weekly list on Home and 考考自己 (weekly list spec 2026-10-17 §8.1, §9): the countdown line (before and after the day's
+  // lesson), the ready-by day's card, every question of the check (no pinyin on any), its end sheet, and the parent's readiness
+  // line on Today
+  await run('home-week', AFTERNOON, { weekList: 'countdown' }, (p) => check(p, size, 'home-week', 0));
+  await run('home-week-done', AFTERNOON, { weekList: 'countdown', doneToday: true }, (p) => check(p, size, 'home-week-done', 0));
+  await run('check', AFTERNOON, { weekList: 'check' }, async (p) => {
+    await check(p, size, 'home-check', 0);
+    await p.click('.week-check button');
+    let tries = 0;
+    for (let i = 0; i < 20; i++) {
+      await p.waitForSelector('.check .stage__card', { timeout: 15_000 });
+      if (await p.$('.check--done')) break;
+      await check(p, size, 'check', i);
+      const py = await p.evaluate(() => [...document.querySelectorAll('.stage__card .label__py, .stage__card .pinyin')].map((e) => e.textContent ?? '').filter((t) => t.trim()).join(' '));
+      if (py) results.push({ size: size.name, flow: 'check', step: i, sig: 'pinyin', problems: [`pinyin on a check question: ${py}`] });
+      if (await p.$('.pairs')) {
+        // a board: join each left tile, trying the right tiles in turn (a wrong join lets go)
+        for (let guard = 0; guard < 40 && (await p.$('.check .pairs')); guard++) {
+          const left = await p.$('.pairs__col--left .pair__tile:not(.is-matched):not([disabled])');
+          if (!left) break;
+          await left.click();
+          const rights = await p.$$('.pairs__col--right .pair__tile:not(.is-matched):not([disabled])');
+          if (rights.length) await rights[tries++ % rights.length]!.click();
+          await p.waitForTimeout(60);
+        }
+      } else await p.click('.stage__card .choice >> nth=0');
+      await p.waitForTimeout(400); // the answer is saved, then the next question comes
+    }
+    await p.waitForSelector('.check--done', { timeout: 15_000 });
+    await check(p, size, 'check-done', 0);
+  });
+  await run('parent-week-line', AFTERNOON, { weekList: 'countdown', pinCode: FIT_PIN }, async (p) => {
+    await tabTo(p, '家长');
+    for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
+    await p.waitForSelector('.dash__week', { timeout: 15_000 });
+    const sideways = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    results.push({ size: size.name, flow: 'parent-week-line', step: 0, sig: 'today', problems: sideways > 1 ? [`page scrolls sideways ${sideways}px`] : [] });
+    await snap(p, size, 'parent-week-line', '.dash__week');
+  });
   // Tabs
   await run('collection', AFTERNOON, {}, async (p) => { await tabTo(p, '字卡'); await check(p, size, 'collection', 0); await p.click('.zika:not(.card--back)'); await check(p, size, 'collection', 1); });
   await run('room', AFTERNOON, {}, async (p) => {

@@ -417,6 +417,25 @@ for (const size of SIZES) {
     if (!(await page.$('.pair-summary__row.is-missed'))) problems.push(`${size.name} week-board missed: the miss is not marked`);
     problems.push(...(await cardClipped(page, `${size.name} week-board missed`)), ...(await sheetFits(page, `${size.name} week-board missed`)), ...(await sheetScrolls(page, `${size.name} week-board missed`)));
   }
+  // 考考自己 (weekly list spec 2026-10-17 §8.1): every form bare — no pinyin on the card, nothing clipped — then the end sheet with its
+  // stars and misses (pinyin over every missed word), three misses fitting and a long list scrolling inside the card only
+  for (const c of ['check-match', 'check-read', 'check-meaning', 'check-fit', 'check-board']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    const py = await page.evaluate(() => [...document.querySelectorAll('.stage__card .label__py, .stage__card .pinyin')].map((e) => e.textContent ?? '').filter((t) => t.trim()).join(' '));
+    if (py) problems.push(`${size.name} ${c}: pinyin on the question (${py})`);
+    if (await page.$('.stage__card .speak')) problems.push(`${size.name} ${c}: a speak button on the question`);
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+  }
+  for (const c of ['check-done', 'check-done-many']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`, c === 'check-done-many' ? '.check__misses' : '')), ...(await sheetFits(page, `${size.name} ${c}`)));
+    const rows = await page.$$eval('.check__misses .pair-summary__row', (rs) => rs.map((r) => !!r.querySelector('.label__py')?.textContent));
+    if (!rows.length || rows.some((x) => !x)) problems.push(`${size.name} ${c}: a miss without its pinyin`);
+  }
   await page.close();
 }
 // every expression × looks: nothing of him pokes out of his box (a seam, an ear, a mark), and a sheet to read by eye

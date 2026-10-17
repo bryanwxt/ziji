@@ -3,8 +3,14 @@ import { useApp } from '../app/AppContext';
 import { voiceTier } from '../audio/voiceTier';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
 import { addDays, localDateKey } from '../lib/date';
-import { dueTomorrow, minutesPerDay, streak, troubleWords, weeklyAccuracy, wordOf } from '../stats/stats';
-import { allSessions, listRecordings, logsSince } from '../store/repo';
+import { dueToday, dueTomorrow, minutesPerDay, streak, troubleWords, weeklyAccuracy, wordOf } from '../stats/stats';
+import { allSessions, allWeekLists, listRecordings, logsSince } from '../store/repo';
+import { classLessonAt } from '../content/curriculum';
+import { ladderWordsBesides } from '../content/ladder';
+import { previewPlan } from '../session/record';
+import { itemStatus } from '../weeklist/match';
+import { activeLists } from '../weeklist/plan';
+import { readinessLine } from '../weeklist/readiness';
 import { takeWord, waitingTakes } from '../session/say';
 import type { ReviewLog, SessionRecord } from '../types';
 import { MinutesChart } from './MinutesChart';
@@ -20,6 +26,7 @@ interface Data {
   recordings: number;
   takes: number; // Say takes waiting for the parent (spec 2026-10-11 §6)
   micDenied: boolean;
+  weeks: ReturnType<typeof readinessLine>[]; // a readiness line per running weekly list (weekly list spec §8.3)
 }
 
 /** The parent's overview. `waiting`: the takes still to review, live, when the queue is on the same page (Today). */
@@ -40,9 +47,29 @@ export function Dashboard({ onNavigate, waiting }: { onNavigate: (place: ParentP
       } catch {
         micDenied = false; // Safari versions without the microphone permission query
       }
-      setD({ know, sessions, logs, recordings, takes, micDenied });
+      setD({ know, sessions, logs, recordings, takes, micDenied, weeks: await weekLines(t, know) });
     })();
   }, []);
+
+  /**
+   * Each running list's line (spec §8.3): its class shortfall from today's plan at today's numbers (listBudget's classShort, worked
+   * out as a lesson now would, writing nothing); catch-up slower while the list still has new words before its ready-by.
+   */
+  const weekLines = async (t: Date, know: Knowledge) => {
+    const lists = activeLists(await allWeekLists(db), t);
+    if (!lists.length) return [];
+    const words = new Map([...know.words, ...ladderWordsBesides(know.words)].map((w) => [w.id, w]));
+    const cards = new Map(know.cards.map((c) => [c.id, c]));
+    // the parent's overview never fails over the class shortfall: without a plan, the class part is left out
+    const classShort = await previewPlan(db, t).then((p) => p.classShort ?? 0, () => null);
+    const classKnown = classShort !== null && classLessonAt(t, settings) !== null;
+    const reviewsDue = dueToday(know.cards, know.words, t);
+    const today = localDateKey(t);
+    return lists.map((l) => readinessLine(l, words, {
+      classLeft: classShort ?? 0, classKnown, reviewsDue,
+      catchupSlower: today < l.readyBy && l.items.some((i) => itemStatus(i.wordId, cards) === 'new'),
+    }));
+  };
 
   if (!d) return <p>Loading…</p>;
   const takes = waiting ?? d.takes;
@@ -81,6 +108,13 @@ export function Dashboard({ onNavigate, waiting }: { onNavigate: (place: ParentP
           <button type="button" class="small-btn" onClick={() => onNavigate('backup')}>Back up now</button>
         </p>
       )}
+      {d.weeks.map((r) => (
+        <div class="dash__week panel" key={r.head}>
+          <p><strong>{r.head}</strong></p>
+          <p>{r.line}{r.weak.length ? ` — weak: ${r.weak.join(', ')}` : ''}</p>
+          <button type="button" class="small-btn" onClick={() => onNavigate('week')}>Open 本周词语</button>
+        </div>
+      ))}
       {d.recordings > KEEP_RECORDINGS && (
         <p class="warning">
           There are {d.recordings} recordings.{' '}

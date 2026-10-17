@@ -25,10 +25,12 @@ interface Props {
   onNext: () => void;
   /** a 选一选 asked without its answer, 「都不对」 right, or with 都不对 as a wrong choice (a weekly list's, fix round 2026-10-17) */
   none?: 'answer' | 'decoy';
+  /** 考考自己 (weekly list spec 2026-10-17 §8.1): no pinyin, nothing said, no right or wrong shown; a pick answers and goes on */
+  bare?: boolean;
 }
 
 /** One word-in-use question (spec §20 part 4): which word fits the sentence, or which sentence uses the word right. */
-export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext, none }: Props) {
+export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext, none, bare = false }: Props) {
   const [choice, setChoice] = useState<string | null>(null);
   const shownAt = useRef(performance.now());
   const lines = useMemo(() => {
@@ -47,6 +49,11 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext, none
     if (done) return;
     setChoice(option);
     const right = option === answer;
+    if (bare) {
+      onAnswer(right, Math.round(performance.now() - shownAt.current));
+      onNext();
+      return;
+    }
     if (right) {
       playSfx('correct');
       const r = el.getBoundingClientRect();
@@ -55,7 +62,7 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext, none
     speak(fullSentence(item)); // the whole sentence, once he has answered (spec §19 part 3)
     onAnswer(right, Math.round(performance.now() - shownAt.current));
   };
-  const state = (o: string) => (!done ? '' : o === answer ? (o === choice ? 'is-eaten is-right' : 'is-answer') : o === choice ? 'is-wrong' : 'is-dim');
+  const state = (o: string) => (!done ? '' : bare ? (o === choice ? 'is-picked' : '') : o === answer ? (o === choice ? 'is-eaten is-right' : 'is-answer') : o === choice ? 'is-wrong' : 'is-dim');
   const ask = item.kind === 'fit' ? '哪个词对？' : '哪句话用对了？';
   const multi = item.kind === 'fit' && item.options.some((o) => Array.from(o).length > 1);
   // a fill-in of four characters or fewer is a word question: question-sized, not sentence-sized (spec 2026-10-04 §3)
@@ -64,8 +71,8 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext, none
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? (closing ? '明天再来！' : null) : (bubble ?? ask)} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
-      sheet={!done ? (
+      truffle={bare ? <Pet kid={kid} mood="neutral" bubble={ask} size={180} calm /> : <Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? (closing ? '明天再来！' : null) : (bubble ?? ask)} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
+      sheet={!done || bare ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (
         <FeedbackSheet
@@ -93,8 +100,8 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext, none
         <>
           <div class="flash__prompt">
             <div class={`meaning-cue meaning-cue--sentence${short ? ' meaning-cue--short' : ''}`} lang="zh" data-q={short || undefined} style={`--len:${Array.from(item.before + item.word + item.after).length}`}>
-              <Label zh={`${item.before}${done ? item.word : '＿'.repeat(item.blankWidth ?? Array.from(item.word).length)}${item.after}`} fade />
-              <SpeakButton text={done ? fullSentence(item) : `${item.before}，，${item.after}`} />
+              <Label zh={`${item.before}${done && !bare ? item.word : '＿'.repeat(item.blankWidth ?? Array.from(item.word).length)}${item.after}`} fade {...(bare ? { pinyinFor: () => false } : {})} />
+              {!bare && <SpeakButton text={done ? fullSentence(item) : `${item.before}，，${item.after}`} />}
             </div>
           </div>
           <div class={`choices stagger choices--hanzi${multi ? ' choices--words' : ''}`}>
@@ -110,9 +117,9 @@ export function UseQuestion({ item, kid, bubble, closing, onAnswer, onNext, none
           {lines.order.map((s) => (
             <div class="usage-row" key={s}>
               <button type="button" class={`choice usage-opt press ${state(s)}`} disabled={done} onClick={(e) => choose(s, e.currentTarget)}>
-                <Label zh={s} fade peek={false} />
+                <Label zh={s} fade peek={false} {...(bare ? { pinyinFor: () => false } : {})} />
               </button>
-              <SpeakButton text={s} />
+              {!bare && <SpeakButton text={s} />}
             </div>
           ))}
         </div>

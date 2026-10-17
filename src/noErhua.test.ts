@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 // Singapore usage (content PR #33): no 儿化 in what the app says to him. Content (its word lists keep 一会儿 and 哪儿 as words to
 // learn) and tests are left out; this covers the app's own lines: buttons, Truffle's bubbles, the worlds.
 const root = new URL('.', import.meta.url).pathname;
-const SCOPE = /^(app|fun|ui|activities|story|town)\/.*\.tsx?$/;
+const SCOPE = /^(app|fun|ui|activities|story|town|weeklist)\/.*\.tsx?$/;
 const ERHUA = /哪儿|一会儿|玩儿|点儿|这儿|那儿/;
 const files = (dir: string): string[] => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? files(join(dir, f)) : [join(dir, f)]));
 

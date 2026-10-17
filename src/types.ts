@@ -171,6 +171,7 @@ export interface SessionPlan {
   listCards?: Record<string, ListCard>; // the list word card for today's list words and re-teaching cards (spec §7.1)
   listItems?: PracticeItem[]; // list items for 练一练, interleaved by withList (spec §6.4, §2.1)
   frontLoad?: boolean; // a day with list new words: 练一练 +2 minutes, 写一写 half (spec §5.1)
+  classShort?: number; // with a weekly list: his class lane's words still unstarted on homework day at today's numbers (spec §5.3, §8.3)
 }
 
 export interface FlashItem {
@@ -483,7 +484,7 @@ export interface WeekFit {
 export interface WeekCheck {
   at: number;
   day: string;
-  results: Record<string, { form: WeekForm; correct: boolean }>; // by wordId, or `${left}|${right}` for a pair asked from a non-item half
+  results: Record<string, { form: WeekForm; correct: boolean; star?: true }>; // by wordId, or `${left}|${right}` for a pair with no half on the list; star: right and not ready before (one bonusStars star)
   done: boolean;
 }
 

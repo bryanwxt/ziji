@@ -17,6 +17,9 @@ interface Props {
   kind: 'pair' | 'match'; // 组词 or 搭配
   kid: KidState;
   onDone: (r: { correct: boolean; responseMs: number; pairs: { left: string; right: string; correct: boolean }[] }) => void; // pairs: each joined at its first try or not
+  /** 考考自己 (weekly list spec 2026-10-17 §8.1): nothing said, no match shown after misses (no SHOW_AFTER), no summary; it ends
+   *  when every pair is joined */
+  bare?: boolean;
 }
 
 const SHOW_AFTER = 3; // misses on one tile before its match is shown (review focus 3)
@@ -32,7 +35,7 @@ const SHOW_AFTER = 3; // misses on one tile before its match is shown (review fo
 /** A colour per matched pair: green, blue, gold, purple (palette inks dark enough for a ✓ on paper). */
 const PAIR_COLOURS = ['#2a9d5c', '#2f7fd8', '#c98a12', '#8a5cd6'];
 
-export function PairGame({ board, kind, kid, onDone }: Props) {
+export function PairGame({ board, kind, kid, onDone, bare = false }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ board.target[0].codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [board]);
   const [picked, setPicked] = useState<number | null>(null); // a left index
   const [joined, setJoined] = useState<Set<string>>(new Set()); // 'L0', 'R2'… joined, right or shown
@@ -53,6 +56,7 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
     if (joined.size < board.pairs.length * 2 || result) return;
     const correct = !Object.values(missed).some((n) => n > 0); // every pair at its first try (production practice spec §5)
     setResult({ correct, responseMs: target.current.ms });
+    if (bare) return onDone({ correct, responseMs: target.current.ms, pairs: board.pairs.map(([l, r]) => ({ left: l, right: r, correct: !(missed[board.left.indexOf(l)] ?? 0) })) });
     playSfx(correct ? 'correct' : 'wrong');
   }, [joined]);
 
@@ -65,7 +69,7 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
     // a character said as a word (爪 → 爪子) is never said as a word on the board, or one ending in a right-hand tile: that
     // would say an answer
     const own = pair && board.readings?.[pair[0] + pair[1]]?.split(/\s+/).slice(0, Array.from(pair[0]).length).join(' '); // a list pair's own reading (炸 zhá)
-    speak(board.left[l]!, { reading: own || (pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!)), avoid: board.pairs.map(([a, b]) => a + b), endings: board.right, alone: true });
+    if (!bare) speak(board.left[l]!, { reading: own || (pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!)), avoid: board.pairs.map(([a, b]) => a + b), endings: board.right, alone: true });
     if (isTarget(l) && !target.current.pickedAt) target.current.pickedAt = performance.now();
   };
   const tapRight = (r: number) => {
@@ -76,13 +80,13 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
       if (isTarget(l)) target.current.ms = Math.round(performance.now() - target.current.pickedAt);
       setJoined(new Set([...joined, `L${l}`, `R${r}`]));
       const joinedAt = board.readings?.[board.left[l]! + board.right[r]!];
-      if (joinedAt) speak(board.left[l]! + board.right[r]!, { reading: joinedAt });
+      if (bare) { /* nothing is said in the check */ } else if (joinedAt) speak(board.left[l]! + board.right[r]!, { reading: joinedAt });
       else speak(board.left[l]! + board.right[r]!);
     } else {
       const n = (missed[l] ?? 0) + 1;
       setMissed({ ...missed, [l]: n });
       if (n >= SHOW_AFTER && partner < 0) setSetAside(new Set([...setAside, `L${l}`])); // a decoy: it has no match to show
-      else if (n >= SHOW_AFTER) {
+      else if (n >= SHOW_AFTER && !bare) {
         setShown(new Set([...shown, `L${l}`, `R${partner}`]));
         setJoined(new Set([...joined, `L${l}`, `R${partner}`]));
       }
@@ -100,8 +104,8 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (result.correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? null : kind === 'pair' ? '连一连，组成词！' : '连一连，哪两个一起用？'} size={180} calm={!done} react={done ? { kind: result.correct ? 'right' : 'wrong', key: 1 } : null} />}
-      sheet={!done ? (
+      truffle={bare ? <Pet kid={kid} mood="neutral" bubble={kind === 'pair' ? '连一连，组成词！' : '连一连，哪两个一起用？'} size={180} calm /> : <Pet kid={kid} mood={done ? (result.correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? null : kind === 'pair' ? '连一连，组成词！' : '连一连，哪两个一起用？'} size={180} calm={!done} react={done ? { kind: result.correct ? 'right' : 'wrong', key: 1 } : null} />}
+      sheet={!done || bare ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (
         <FeedbackSheet

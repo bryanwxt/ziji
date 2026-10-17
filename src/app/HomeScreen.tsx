@@ -11,6 +11,7 @@ import { stepsOn } from '../session/plan';
 import { streak, totalStars, weekDays } from '../stats/stats';
 import { pickExample } from '../activities/writing/cue';
 import { WeekStrip } from './WeekStrip';
+import { WeekCountdown } from './WeekCountdown';
 import { allSessions, getKid, listParentPassages, listRewards, saveKid, updateKid } from '../store/repo';
 import { readToday } from '../langdu/history';
 import { pickPassage } from '../langdu/pick';
@@ -65,6 +66,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const [propPlay, setPropPlay] = useState<{ react: { kind: ReactionKind; key: number } | null; lookAt: number }>({ react: null, lookAt: 0 }); // Truffle and his props
   const lookTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => { clearTimeout(saidTimer.current); clearTimeout(lookTimer.current); }, []);
+  const [weekShown, setWeekShown] = useState(false); // this week's word list line or 考考自己 card is on Home
   const [journeyKid, setJourneyKid] = useState<KidState | null>(null); // the kid as saved by the journey update, until the app refreshes
 
   useEffect(() => enterSafeScreen(), []);
@@ -260,6 +262,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
               </>
             )}
           </div>
+          {/* this week's word list (weekly list spec 2026-10-17 §9): one line, or on its ready-by day the 考考自己 card */}
+          <WeekCountdown onShown={setWeekShown} />
           {doneToday && chestOpened && (
             <div class="card done-card">
               <p class="done-today"><Label zh="今天完成了！" /> <InkIcon name="party" size={30} /></p>
@@ -274,7 +278,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
               )}
             </div>
           )}
-          {wotd && (
+          {wotd && !weekShown && ( // a running weekly list's line takes the word of the day's room (one-screen Home)
             <div class="card wotd">
               <button type="button" class="wotd__main" aria-label={`今日一字：${wotd}`} onClick={() => speak(wotd, { reading: wotdWord?.pinyin })}>
                 <span class="label-tag">今日一字</span>

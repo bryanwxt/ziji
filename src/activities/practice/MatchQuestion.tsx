@@ -22,10 +22,12 @@ interface Props {
   none?: 'answer' | 'decoy';
   /** a weekly list pair (weekly list spec 2026-10-17 §7.5): said at its own reading, a miss shown as two whole phrases (✓ 炒青菜 / ✗ 炒毽子) */
   list?: { reading?: string; gloss?: string };
+  /** 考考自己 (weekly list spec 2026-10-17 §8.1): nothing said, no right or wrong shown; a pick answers at once */
+  bare?: boolean;
 }
 
 /** 搭配 (spec 2026-10-05 §3.2 rung 2): the word and four partners — which one goes with it? The right one joins it. */
-export function MatchQuestion({ question, kid, onDone, none, list }: Props) {
+export function MatchQuestion({ question, kid, onDone, none, list, bare = false }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ question.verb.codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [question]);
   const [choice, setChoice] = useState<string | null>(null);
   const shownAt = useRef(performance.now());
@@ -37,6 +39,7 @@ export function MatchQuestion({ question, kid, onDone, none, list }: Props) {
   const pick = (o: string) => {
     if (done) return;
     setChoice(o);
+    if (bare) return onDone({ correct: o === answer, responseMs: Math.round(performance.now() - shownAt.current) });
     playSfx(o === answer ? 'correct' : 'wrong');
     if (list?.reading) speak(pair, { reading: list.reading });
     else speak(pair);
@@ -47,8 +50,8 @@ export function MatchQuestion({ question, kid, onDone, none, list }: Props) {
   return (
     <Stage
       activity="use"
-      truffle={<Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? null : '哪个一起用？'} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
-      sheet={!done ? (
+      truffle={bare ? <Pet kid={kid} mood="neutral" bubble="哪个一起用？" size={180} calm /> : <Pet kid={kid} mood={done ? (correct ? 'pleased' : 'side') : 'neutral'} bubble={done ? null : '哪个一起用？'} size={180} calm={!done} react={done ? { kind: correct ? 'right' : 'wrong', key: 1 } : null} />}
+      sheet={!done || bare ? (
         <FeedbackSheet actionLabel="继续" disabled onAction={() => {}} />
       ) : (
         <FeedbackSheet
@@ -72,11 +75,11 @@ export function MatchQuestion({ question, kid, onDone, none, list }: Props) {
       <div class="match">
         <span class="match__word hanzi">{question.verb}</span>
         <span class="match__plus" aria-hidden="true">+</span>
-        <span class={`match__slot hanzi${done ? ' is-filled' : ''}`} style={`--n:${Array.from(question.noun).length}`} aria-label={done ? undefined : '空格'}>{done ? question.noun : '？'}</span>
+        <span class={`match__slot hanzi${done && !bare ? ' is-filled' : ''}`} style={`--n:${Array.from(question.noun).length}`} aria-label={done && !bare ? undefined : '空格'}>{done && !bare ? question.noun : '？'}</span>
       </div>
       <div class="choices">
         {options.map((o) => (
-          <button key={o} type="button" class={`choice press${o === NONE_OF_THESE && none ? ' choice--none' : ''}${done ? (o === answer ? ' is-answer' : o === choice ? ' is-wrong' : ' is-dim') : ''}`} disabled={done} onClick={() => pick(o)}>{o}</button>
+          <button key={o} type="button" class={`choice press${o === NONE_OF_THESE && none ? ' choice--none' : ''}${done ? (bare ? (o === choice ? ' is-picked' : '') : o === answer ? ' is-answer' : o === choice ? ' is-wrong' : ' is-dim') : ''}`} disabled={done} onClick={() => pick(o)}>{o}</button>
         ))}
       </div>
     </Stage>

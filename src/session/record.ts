@@ -231,7 +231,7 @@ export async function markWriteSkipped(db: AppDb, wordId: string, now: Date): Pr
 }
 
 /** Today's number of new words, worked out once a day from the last few lessons and saved for the Skills panel (spec 2026-10-05 §2.2). */
-async function todaysPace(db: AppDb, now: Date, settings: Settings): Promise<number> {
+async function todaysPace(db: AppDb, now: Date, settings: Settings, save = true): Promise<number> {
   const today = localDateKey(now);
   if (settings.pace?.day === today) return Math.min(settings.pace.perDay, settings.newPerDay); // a ceiling lowered today applies today
   if (settings.newPerDay <= 0) return 0; // new words switched off: his pace is kept for when they come back (sweep)
@@ -239,7 +239,7 @@ async function todaysPace(db: AppDb, now: Date, settings: Settings): Promise<num
   const logs = await logsSince(db, addDays(now, -(LOOKBACK_DAYS + 1)).getTime());
   const rounds = sessions.filter((s) => s.completedSteps.includes('practice')).slice(0, 2).map(ranOut);
   const pace = nextPace({ prev: settings.pace?.perDay ?? null, ceiling: settings.newPerDay, kept: keptRecent(sessions, logs, today), ranOut: [rounds[0] ?? false, rounds[1] ?? false] });
-  await updateSettings(db, { pace: { day: today, ...pace } });
+  if (save) await updateSettings(db, { pace: { day: today, ...pace } });
   return pace.perDay;
 }
 
@@ -256,9 +256,11 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
   return rec;
 }
 
-async function planNow(db: AppDb, now: Date, extra = false) {
-  await openMissingRungs(db, now);
-  await applyQuickChecks(db, now); // a list's known words come up as due reviews before its ready-by (weekly list spec §6.1)
+async function planNow(db: AppDb, now: Date, extra = false, preview = false) {
+  if (!preview) {
+    await openMissingRungs(db, now);
+    await applyQuickChecks(db, now); // a list's known words come up as due reviews before its ready-by (weekly list spec §6.1)
+  }
   const [cards, words, settings, practised, lists, sessions] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db), allWeekLists(db), allSessions(db)]);
   const all = [...words, ...ladderWordsBesides(words)];
   // an extra lesson never asks the pace: it takes no new words (learning rules 2026-10-17)
@@ -270,8 +272,14 @@ async function planNow(db: AppDb, now: Date, extra = false) {
     const s = sessions.find((x) => !x.free && x.date === date && x.completedSteps.includes('practice'));
     return !!s && ranOut(s);
   };
-  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings), lists, ranOut: [ranOn(1), ranOn(2)] });
+  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings, !preview), lists, ranOut: [ranOn(1), ranOn(2)] });
 }
+
+/**
+ * Today's plan as a lesson now would make it, for the parent's view (the weekly list's readiness line, spec §8.3: its class
+ * shortfall at today's numbers). Writes nothing: no rungs opened, no quick checks moved, today's pace not saved.
+ */
+export const previewPlan = (db: AppDb, now: Date) => planNow(db, now, false, true);
 
 /**
  * Another lesson after today's (parent, 2026-10-05: more than one a day, the baseline stays one). Review only (learning rules

@@ -140,6 +140,13 @@ export function troubleWords(logs: ReviewLog[], limit = 10, keep: (wordId: strin
     .slice(0, limit);
 }
 
+/** Cards due by the end of today, his active words' (the weekly list's readiness line, spec 2026-10-17 §8.3). */
+export function dueToday(cards: CardRecord[], words: Word[], now: Date): number {
+  const active = new Set(words.filter((w) => !w.paused).map((w) => w.id));
+  const to = endOfLocalDay(now).getTime();
+  return cards.filter((c) => active.has(c.wordId) && c.fsrs.due.getTime() <= to).length;
+}
+
 export function dueTomorrow(cards: CardRecord[], words: Word[], now: Date): number {
   const active = new Set(words.filter((w) => !w.paused).map((w) => w.id));
   const from = endOfLocalDay(now).getTime();

@@ -211,6 +211,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     ...(Object.keys(listCards).length ? { listCards } : {}),
     ...(listItems.length ? { listItems } : {}),
     frontLoad,
+    ...(budget ? { classShort: budget.classShort } : {}),
   };
   if (!extra) return plan;
   // nothing due or near due: a short practice-only round of his weakest words (lowest reading stability), never graded

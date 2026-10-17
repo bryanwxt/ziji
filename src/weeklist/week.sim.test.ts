@@ -12,7 +12,7 @@ import { pinDue, quickCheckDates } from './schedule';
 
 const day = (d: number, h = 9) => new Date(2026, 9, 19 + d, h);
 
-type Row = { list: number; school: number; catchup: number; reviews: number; listReviews: number; checked: number };
+type Row = { list: number; school: number; catchup: number; reviews: number; listReviews: number; checked: number; classShort?: number };
 
 /**
  * Runs from the day the list arrives (0 = Monday) to Sunday, with the dates the parent screen proposes (defaultDates).
@@ -57,6 +57,7 @@ function week(takeCheck: boolean, arrive = 0): Row[] {
       reviews: plan.reviewWordIds.length,
       listReviews: plan.reviewWordIds.filter((id) => id.startsWith('p:')).length,
       checked: checked.length,
+      classShort: plan.classShort,
     });
     const due = cards.filter((c) => c.fsrs.due.getTime() <= endOfDay && !c.wordId.startsWith('p:'));
     for (const c of due) expect(plan.reviewWordIds).toContain(c.wordId); // revision is never squeezed out
@@ -81,6 +82,7 @@ describe('an example week (spec §5.4)', () => {
     // 练一练 — the check grades all 32, each pinned to Wednesday
     expect(rows.map((r) => r.listReviews)).toEqual([11, 14, 0, 0, 0, 0, 0]);
     expect(rows[2]!.checked).toBe(32);
+    expect(rows[0]!.classShort).toBe(0); // the parent's line: class on track
   });
   it('a Wednesday list (ready by Thursday): 7 on Wednesday, the check Thursday, the rest after it, his class first on Friday', () => {
     const rows = week(true, 2);
@@ -96,6 +98,7 @@ describe('an example week (spec §5.4)', () => {
     expect(rows.map((r) => r.catchup)).toEqual([0, 0, 0, 1]);
     // one day before homework can't start all 8 class words at his pace: 6 by Friday (1 under the ceiling Thursday, 5 Friday),
     // the 2 left on Sunday — best effort, and the parent's line shows the shortfall (classShort)
+    expect(rows[0]!.classShort).toBe(2);
   });
   it('he never opens the check: the list cards stay due and come first on Thursday (review focus 4)', () => {
     const rows = week(false);
