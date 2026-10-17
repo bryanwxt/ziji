@@ -1976,7 +1976,21 @@ button.langdu__sentence { cursor: pointer; }
 .talk__chips .chip { min-height: 44px; padding: 6px 14px; font-weight: 800; }
 .talk__chips .chip.is-on { background: var(--green); }
 .talk__done { min-height: 48px; }
-.talk__week, .talk__nudge { margin: 0; flex-basis: 100%; color: var(--ink-soft); }
+.talk__nudge { margin: 0; flex-basis: 100%; color: var(--ink-soft); }
+.talk__week { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; color: var(--ink-soft); }
+.talk__week p { margin: 0; }
 .share-note { display: flex; flex-direction: column; gap: 8px; flex-basis: 100%; min-width: 0; }
 .share-note p { margin: 0; }
 .share-note__text { width: 100%; box-sizing: border-box; font: inherit; font-size: 16px; line-height: 1.4; padding: 10px 12px; border: 2px solid var(--line); border-radius: var(--radius-sm); background: #fff; color: var(--ink); resize: vertical; }
+
+/* Week summary on Progress (parent loop spec §5.3) */
+.segmented--two { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 420px; }
+@media (max-width: 599px) { .segmented.segmented--two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.week-summary__range { margin: 0; font-weight: 800; }
+.week-summary__rows { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; }
+.week-summary__rows dt { font-weight: 800; color: var(--ink-soft); }
+.week-summary__rows dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.week-summary__read { display: inline-block; margin-right: 10px; }
+.week-summary__focus { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--gold-soft); }
+.week-summary__focus p { margin: 0; line-height: 1.4; }
+.week-summary__share { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }

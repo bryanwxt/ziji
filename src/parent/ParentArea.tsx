@@ -19,6 +19,7 @@ import { RewardsPanel } from './RewardsPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { TalkSection } from './TalkSection';
 import { WeekPanel } from './WeekPanel';
+import { WeekSummaryPanel } from './WeekSummaryPanel';
 import { WordsPanel } from './WordsPanel';
 
 /** The parent area's five tabs (parent, 2026-10-15: thirteen scrolled sideways on a phone). */
@@ -26,11 +27,11 @@ export type ParentTab = 'today' | 'progress' | 'content' | 'rewards' | 'settings
 /** The five parts of Content, picked by its segmented control; 本周词语 first (weekly list spec 2026-10-17 §3.1). */
 export type ContentPart = 'week' | 'words' | 'import' | 'passages' | 'pictures';
 /** A place a shortcut can go: each of the old tabs, now a section of one of the five. */
-export type ParentPlace = 'dashboard' | 'talk' | 'listen' | 'recordings' | 'school' | 'skills' | 'memory' | ContentPart | 'rewards' | 'settings' | 'backup' | 'credits';
+export type ParentPlace = 'dashboard' | 'talk' | 'listen' | 'recordings' | 'summary' | 'school' | 'skills' | 'memory' | ContentPart | 'rewards' | 'settings' | 'backup' | 'credits';
 
 export const HOME: Record<ParentPlace, ParentTab> = {
   dashboard: 'today', talk: 'today', listen: 'today', recordings: 'today',
-  school: 'progress', skills: 'progress', memory: 'progress',
+  summary: 'progress', school: 'progress', skills: 'progress', memory: 'progress',
   week: 'content', words: 'content', import: 'content', passages: 'content', pictures: 'content',
   rewards: 'rewards',
   settings: 'settings', backup: 'settings', credits: 'settings',
@@ -98,7 +99,7 @@ export function ParentArea() {
           {tab === 'today' && (
             <>
               <div id={placeId('dashboard')} class="parent__section">
-                <Dashboard onNavigate={navigate} waiting={waiting ?? undefined} talk={<div id={placeId('talk')}><TalkSection /></div>} />
+                <Dashboard onNavigate={navigate} waiting={waiting ?? undefined} talk={<div id={placeId('talk')}><TalkSection onNavigate={navigate} /></div>} />
                 <ExtraLessonButton />
               </div>
               <div id={placeId('listen')} class="parent__section"><ListenPanel onReviewed={() => void countWaiting()} /></div>
@@ -110,7 +111,12 @@ export function ParentArea() {
               </div>
             </>
           )}
-          {tab === 'progress' && <SkillsPanel school={<ProgressTab />} />}
+          {tab === 'progress' && (
+            <>
+              <div id={placeId('summary')} class="parent__section"><WeekSummaryPanel onNavigate={navigate} /></div>
+              <SkillsPanel school={<ProgressTab />} />
+            </>
+          )}
           {tab === 'content' && (
             <>
               <div class="segmented" role="tablist" aria-label="Content">

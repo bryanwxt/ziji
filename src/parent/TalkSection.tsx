@@ -10,6 +10,7 @@ import { KIND_EN, KIND_LABEL } from '../talk/pick';
 import { shareText, todayText, type ShareResult } from '../talk/share';
 import { talkNudge, talkTotals, weekRange, type TalkTotals } from '../talk/week';
 import type { TalkLog, TalkSlot } from '../types';
+import type { ParentPlace } from './ParentArea';
 import { ShareNote } from './ShareNote';
 
 export const MINUTE_CHIPS = [5, 10, 15] as const;
@@ -49,8 +50,11 @@ export function TalkCards({ cards, onSwap, busy = false }: { cards: readonly Tal
   );
 }
 
-/** 「✓ 聊了」 with an optional minutes chip (picked first, cleared after), and Undo for the newest talk. */
-export function TalkLogger({ week, saving, undoable, onLog, onUndo }: { week: TalkTotals; saving: boolean; undoable: boolean; onLog: (minutes?: number) => void; onUndo: () => void }) {
+/** 「✓ 聊了」 with an optional minutes chip (picked first, cleared after), and Undo for the newest talk; the week so far, with
+ *  `onWeek` its link to the Week summary. */
+export function TalkLogger({ week, saving, undoable, onLog, onUndo, onWeek }: {
+  week: TalkTotals; saving: boolean; undoable: boolean; onLog: (minutes?: number) => void; onUndo: () => void; onWeek?: () => void;
+}) {
   const [minutes, setMinutes] = useState<number | null>(null);
   return (
     <div class="talk__log">
@@ -63,13 +67,17 @@ export function TalkLogger({ week, saving, undoable, onLog, onUndo }: { week: Ta
         ✓ <span lang="zh-CN">聊了</span> We talked
       </button>
       {undoable && <button type="button" class="small-btn" disabled={saving} onClick={onUndo}>Undo</button>}
-      <p class="talk__week">This week: {week.days} day{week.days === 1 ? '' : 's'} · {week.minutes} min</p>
+      <div class="talk__week">
+        <p>This week: {week.days} day{week.days === 1 ? '' : 's'} · {week.minutes} min</p>
+        {onWeek && <button type="button" class="small-btn" onClick={onWeek}>Week summary</button>}
+      </div>
     </div>
   );
 }
 
-/** The Today section. `onLogged`: a talk was logged or undone (the top line looks again). */
-export function TalkSection({ onLogged, undoMs = UNDO_MS }: { onLogged?: () => void; undoMs?: number }) {
+/** The Today section. `onNavigate`: the Week summary link (Progress); `onLogged`: a talk was logged or undone (the top line
+ *  looks again). */
+export function TalkSection({ onNavigate, onLogged, undoMs = UNDO_MS }: { onNavigate: (place: ParentPlace) => void; onLogged?: () => void; undoMs?: number }) {
   const { db, now } = useApp();
   const [cards, setCards] = useState<TalkSlot[] | null>(null);
   const [talks, setTalks] = useState<TalkLog[]>([]);
@@ -133,7 +141,8 @@ export function TalkSection({ onLogged, undoMs = UNDO_MS }: { onLogged?: () => v
         <button type="button" class="small-btn" onClick={share}>Share today’s</button>
         <ShareNote result={shared} text={text} label="Today’s talk, to copy" />
       </div>
-      <TalkLogger week={talkTotals(talks, week.start, week.end)} saving={saving} undoable={!!last} onLog={(m) => void log(m)} onUndo={() => void undo()} />
+      <TalkLogger week={talkTotals(talks, week.start, week.end)} saving={saving} undoable={!!last} onLog={(m) => void log(m)} onUndo={() => void undo()}
+        onWeek={() => onNavigate('summary')} />
     </section>
   );
 }

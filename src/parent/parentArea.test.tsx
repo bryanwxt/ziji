@@ -58,9 +58,10 @@ describe('the parent area in five tabs', () => {
     // Progress: School (his book's lists and the placement), Skills, Memory
     fireEvent.click(tab(/Progress/));
     for (const h of ['School', 'MOE progress', 'Placement', 'Skills', 'Memory', 'Fit to his memory', /Remembered after a gap/, /Missed most/]) expect(await heading(h)).toBeTruthy();
+    expect(await heading('Week summary')).toBeTruthy();
     const order = [...document.querySelectorAll('.parent__section-title')].map((h) => h.textContent);
-    expect(order).toEqual(['School', 'Skills', 'Memory']);
-    for (const p of ['school', 'skills', 'memory'] as const) expect(document.getElementById(placeId(p))).toBeTruthy(); // where a shortcut would scroll
+    expect(order).toEqual(['Week summary', 'School', 'Skills', 'Memory']);
+    for (const p of ['summary', 'school', 'skills', 'memory'] as const) expect(document.getElementById(placeId(p))).toBeTruthy(); // where a shortcut would scroll
     // Content: five parts, 本周词语 first (weekly list spec 2026-10-17 §3.1)
     fireEvent.click(tab(/Content/));
     const parts = within(screen.getByRole('tablist', { name: 'Content' }));
@@ -106,7 +107,7 @@ describe('the parent area in five tabs', () => {
 
   it('every old tab has a home, and its section is there', () => {
     expect(new Set(Object.values(HOME))).toEqual(new Set(['today', 'progress', 'content', 'rewards', 'settings']));
-    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'talk', 'week', 'words'].sort());
+    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'summary', 'talk', 'week', 'words'].sort());
   });
 });
 
@@ -141,5 +142,11 @@ describe("the overview's shortcuts land on the right tab and section", () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Listen & confirm' }));
     expect(tab(/Today/).getAttribute('aria-selected')).toBe('true');
     await lands('listen');
+  });
+  it('Week summary opens Progress at the summary', async () => {
+    enter(await open());
+    fireEvent.click(await screen.findByRole('button', { name: 'Week summary' }));
+    expect(tab(/Progress/).getAttribute('aria-selected')).toBe('true');
+    await lands('summary');
   });
 });

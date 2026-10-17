@@ -14,10 +14,11 @@ const NOW = new Date(2026, 9, 19, 20);
 async function open(undoMs?: number) {
   const app = await makeAppData({ now: () => NOW });
   await saveKid(app.db, { ...DEFAULT_KID, reading: { ...EMPTY_READING, history: { p17: { reads: 1, lastRead: '2026-10-19', rest: 3, q: 1 } } } });
+  const onNavigate = vi.fn();
   const onLogged = vi.fn();
-  renderWithApp(<TalkSection onLogged={onLogged} undoMs={undoMs} />, app);
+  renderWithApp(<TalkSection onNavigate={onNavigate} onLogged={onLogged} undoMs={undoMs} />, app);
   await screen.findByRole('heading', { name: /聊一聊 Talk/ });
-  return { app, onLogged };
+  return { app, onNavigate, onLogged };
 }
 const cards = () => screen.getAllByRole('listitem').filter((li) => li.classList.contains('talk__card'));
 
@@ -110,8 +111,10 @@ describe('聊一聊 on Today', () => {
     expect(await screen.findByRole('button', { name: 'Undo' })).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull(), { timeout: 1000 });
   });
-  it('the 2-day note before the first talk', async () => {
-    await open();
+  it('the 2-day note, and Week summary goes to Progress', async () => {
+    const { onNavigate } = await open();
     expect(screen.getByText('No talk logged yet.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Week summary' }));
+    expect(onNavigate).toHaveBeenCalledWith('summary');
   });
 });
