@@ -20,3 +20,20 @@ export function pathNodes(steps: StepKind[], completedSteps: StepKind[], chestOp
   if (current) current.state = 'current';
   return nodes;
 }
+
+/** The stop a step shows as: a lesson saved before 2026-10-05 had 认一认, 选一选 and 钓鱼; the path names them as today's
+ *  lesson does, so Home never switches names between before and after a lesson (review 2026-10-17). */
+const STOP_OF: Partial<Record<PathKind, PathKind>> = { flashcards: 'newwords', choose: 'practice', components: 'practice' };
+
+/** The path's stops with one set of names: old steps merged into today's (done when all of it is, current when any of it is). */
+export function lessonStops(nodes: PathNode[]): PathNode[] {
+  const out: PathNode[] = [];
+  for (const n of nodes) {
+    const kind = STOP_OF[n.kind] ?? n.kind;
+    const had = out.find((x) => x.kind === kind);
+    if (!had) { out.push({ kind, state: n.state }); continue; }
+    if (had.state === 'current' || n.state === 'current') had.state = 'current';
+    else if (had.state !== n.state) had.state = 'upcoming';
+  }
+  return out;
+}

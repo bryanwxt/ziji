@@ -661,7 +661,8 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .room__tabs { display: flex; gap: 10px; }
 .room__tabs .chip { min-height: 52px; min-width: 110px; font-size: 22px; justify-content: center; }
 .room__tabs .chip.is-on { background: var(--green); }
-.powers { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; width: 100%; max-width: 760px; }
+.powers-panel { width: 100%; max-width: 760px; }
+.powers { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; width: 100%; }
 .power-row { min-height: 64px; height: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 4px; padding: 8px 14px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); }
 .power-row.is-on { background: var(--green-soft); }
 .power-row:disabled { border-style: dashed; box-shadow: 4px 4px 0 var(--line-strong); } /* locked, but full contrast: what it is and how to get it (review 2026-10-17) */
@@ -684,9 +685,14 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .outfit.is-on { background: var(--green-soft); }
 .outfit:disabled { border-style: dashed; box-shadow: 4px 4px 0 var(--line-strong); cursor: default; }
 /* a prize not won yet: its shape in solid ink, and where it comes from (review 2026-10-17: pale padlocks said nothing) */
-.is-silhouette { filter: brightness(0); }
+/* painted ink by attribute, not a CSS filter: WebKit dropped the filter on all but the first row of tiles */
+.is-silhouette [fill]:not([fill="none"]) { fill: var(--ink) !important; }
+.is-silhouette [stroke]:not([stroke="none"]) { stroke: var(--ink) !important; }
+.is-silhouette [data-part="shadow"], .is-silhouette image { visibility: hidden; }
 .outfit__tag { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px 2px; font-size: 16px; line-height: 1.1; background: var(--gold-soft); border: 2px solid var(--ink); border-radius: 999px; color: var(--ink); }
 .outfit__tag .label { font-size: 16px; }
+.outfit__tag, .power-row__need, .place__lock { white-space: nowrap; }
+.outfit__tag .label__cells, .power-row__need .label__cells, .place__lock .label__cells { flex-wrap: nowrap; }
 .outfit__preview { display: block; width: 64px; height: 64px; }
 .outfit__preview .truffle { width: 64px; height: auto; }
 .outfit__swatch { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid var(--ink); display: grid; place-items: center; font-size: 16px; background: var(--line); }
@@ -1255,10 +1261,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
   .path__name .label__cells, .path__bubble .label__cells { flex-wrap: nowrap; }
 }
 @media (max-width: 599px) {
-  /* six stops across a phone: icons only (their names are the buttons' labels), and 开始 stays on one line */
-  .home .path__name { display: none; }
+  /* five stops across a phone, each with its name (review 2026-10-17: icons alone said nothing), and 开始 on one line */
+  .home .path__name { white-space: nowrap; font-size: 16px; padding: 0 4px 2px; }
+  .home .path__name .label__cells { flex-wrap: nowrap; }
   .path__bubble { white-space: nowrap; }
   .path__bubble .label__cells { flex-wrap: nowrap; }
+  .home .path__bubble { top: auto; bottom: calc(100% + 12px); } /* above the lifted current stop, never over it (review 2026-10-17: 开始 hid 字) */
 }
 
 /* ===== Stage (spec 2026-10-04 §3) ===== */

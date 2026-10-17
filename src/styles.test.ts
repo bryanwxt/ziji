@@ -326,7 +326,8 @@ describe("Truffle's room: locked tiles are full contrast (review 2026-10-17)", (
     expect(css).not.toMatch(/\.outfit:disabled \{[^}]*opacity/);
     expect(css).not.toMatch(/\.power-row:disabled \{[^}]*opacity/);
     expect(css).not.toMatch(/\.place\.is-locked \.place__thumb \{[^}]*opacity/);
-    expect(css).toMatch(/\.is-silhouette \{[^}]*filter: brightness\(0\)/);
+    expect(css).toMatch(/\.is-silhouette \[fill\]:not\(\[fill="none"\]\) \{[^}]*fill: var\(--ink\)/);
+    expect(css).not.toMatch(/\.is-silhouette[^{]*\{[^}]*filter:/); // WebKit dropped a filter on most tiles
     expect(css).toMatch(/\.outfit__tag \{[^}]*font-size: 16px/);
   });
 });

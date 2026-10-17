@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { enterSafeScreen } from '../pwa';
 import { pinyin } from 'pinyin-pro';
 import { primeSpeech, speak } from '../audio/speech';
-import { pathNodes } from '../fun/path';
+import { lessonStops, pathNodes } from '../fun/path';
 import { wordOfTheDay } from '../fun/wordOfDay';
 import { goalProgress, nextGoal } from '../fun/rewards';
 import { localDateKey } from '../lib/date';
@@ -182,7 +182,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
     ? todaySession?.completedSteps.includes('speaking') ? k.speakingLast ?? 'story' : nextSpeaking(k.speakingLast, canRead, true)
     : canRead || (!!todaySession?.completedSteps.includes('speaking') && readToday(k.reading, today)) ? 'langdu' : null;
   const steps = (todaySession?.plan.steps ?? stepsOn(settings)).filter((s) => s !== 'speaking' || speakingKind !== null);
-  const nodes = pathNodes(steps, todaySession?.completedSteps ?? [], chestOpened, doneToday);
+  const nodes = lessonStops(pathNodes(steps, todaySession?.completedSteps ?? [], chestOpened, doneToday)); // one set of names (review 2026-10-17)
   // 多读一遍 only once today's 朗读 is done (or the lesson has no speaking step): an extra round first would use up the lesson's passage
   const extraRound = canRead && (!steps.includes('speaking') || !!todaySession?.completedSteps.includes('speaking'));
   const wotdWord = wotd ? data.know.wordsById.get(`b:${wotd}`) : undefined;

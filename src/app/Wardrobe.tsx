@@ -181,7 +181,10 @@ export function Wardrobe() {
             })}
           </div>
         ) : (
-          <div class="powers scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
+          // the grid inside the scroller, not the scroller itself: WebKit sized a scrolling grid's rows to their min-height, so a
+          // row's hint line printed over its border on iPhone (review 2026-10-17)
+          <div class="powers-panel scroll-panel" role="tabpanel" id="room-panel" aria-labelledby={`room-tab-${tab}`}>
+            <div class="powers">
             {POWERS.map((p) => {
               const pr = progress?.find((x) => x.id === p.id);
               const tier = k.powerTiersSeen[p.id] ?? 0;
@@ -208,6 +211,7 @@ export function Wardrobe() {
                 </button>
               );
             })}
+            </div>
           </div>
         )}
       </div>
