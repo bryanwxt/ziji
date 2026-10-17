@@ -163,3 +163,11 @@ describe('weekIsWord also knows the school sentence words and pinyin-pro words (
     expect(isW('书跑')).toBe(false);
   });
 });
+
+describe('weekIsWord with the CC-CEDICT headwords, once loaded (follow-up 2026-10-17)', () => {
+  it('a word in the injected set is a word; without it, today\'s answer', () => {
+    expect(weekIsWord()('蝴蝶')).toBe(false);
+    expect(weekIsWord(undefined, new Set(['蝴蝶', '秋千']))('蝴蝶')).toBe(true);
+    expect(weekIsWord(undefined, new Set(['蝴蝶']))('书跑')).toBe(false);
+  });
+});

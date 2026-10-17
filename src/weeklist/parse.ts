@@ -39,8 +39,9 @@ const CHARS = new Set(BUILTIN.map((c) => c.char));
  * Is this a word ZiJi knows (spec §3.2 rule 12): HSK, a built-in character or a glossary word (面条, 青菜), or one the caller adds
  * (his stored words). The parent screen reads a paste with this.
  */
-export const weekIsWord = (extra: (w: string) => boolean = () => false) => (w: string): boolean =>
-  HSK_WORDS.has(w) || CHARS.has(w) || glossFor(w) !== undefined || sentencesFor(w).length > 0 || !!ladderWord(ladderId(w)) || pinyinProWord(w) || extra(w);
+export const weekIsWord = (extra: (w: string) => boolean = () => false, dictionary?: ReadonlySet<string> | null) => (w: string): boolean =>
+  HSK_WORDS.has(w) || CHARS.has(w) || glossFor(w) !== undefined || sentencesFor(w).length > 0 || !!ladderWord(ladderId(w)) || pinyinProWord(w)
+  || !!dictionary?.has(w) || extra(w); // dictionary: CC-CEDICT's headwords (cedictWords.ts), once the parent panel has them
 
 /**
  * A word in pinyin-pro's own dictionary (follow-up 2026-10-17): its segmenter keeps it whole. That dictionary holds only words it

@@ -6,9 +6,10 @@ import { allWeekLists, allWords, getWeekList, putCards, updateWeekList } from '.
 import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import type { WeekList } from '../types';
+import { resetCedictWords } from '../weeklist/cedictWords';
 import { listStatus, planLine, WeekPanel } from './WeekPanel';
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); resetCedictWords(); });
 
 // Invented, shaped like Live Text on a weekly sheet: a page code, a grid, and 搭配 under two theme headings.
 const SHEET = ['P9-L01-练习', '一、词语', '草地 跑步 蝴蝶', '二、词语搭配', '早餐', '吃 面包', '喝 牛奶', '公园', '放 风筝', '踢 足球'].join('\n');
@@ -258,6 +259,13 @@ describe('WeekPanel: fill-in rows and joining (follow-up 2026-10-17)', () => {
     expect(decoys.sort()).toEqual(['安静', '干净', '热闹'].sort());
     expect(row.classList.contains('is-doubt')).toBe(true);
     expect(within(row as HTMLElement).getByText('check this one')).toBeTruthy();
+  });
+
+  it('a real word in the CC-CEDICT list (loaded on demand) is not flagged', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('蝴蝶\n秋千\n')));
+    await setup();
+    await read(['一、词语', '蝴蝶 秋千 草地'].join('\n'));
+    expect(screen.queryByText(/ZiJi doesn’t know|not in ZiJi’s dictionary/)).toBeNull();
   });
 
   it('two cells Live Text split can be joined', async () => {

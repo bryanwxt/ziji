@@ -20,6 +20,7 @@ import { parseWeekList, weekIsWord, type DraftItem, type DraftPair, type WeekDra
 import { activeLists, CLOSE_AFTER_DAYS, HEADROOM } from '../weeklist/plan';
 import { notSolid } from '../weeklist/readiness';
 import { saveWeekList } from '../weeklist/save';
+import { loadCedictWords } from '../weeklist/cedictWords';
 
 /** The preview's plan line (spec §3.5), naming the new words that won't be taught before the check. */
 export function planLine(i: { newCount: number; known: number; placed: number; rate: number; days: number; readyBy: string; homeworkDue: string; names: string[] }): string {
@@ -103,7 +104,14 @@ export function WeekPanel() {
   useEffect(() => { void reload(); }, []);
 
   const byText = useMemo(() => new Map(stored.map((w) => [w.text, w])), [stored]);
-  const isWord = useMemo(() => weekIsWord((w) => byText.has(w)), [byText]);
+  const [dictionary, setDictionary] = useState<ReadonlySet<string> | null>(null); // CC-CEDICT's headwords, fetched for this panel only
+  const [dictTried, setDictTried] = useState(false); // Read waits for the try (a cached file is quick; offline, it fails fast)
+  useEffect(() => {
+    const slow = setTimeout(() => setDictTried(true), 3000); // a slow network: Read without it; it joins when it lands
+    void loadCedictWords().then((d) => { clearTimeout(slow); setDictionary(d); setDictTried(true); });
+    return () => clearTimeout(slow);
+  }, []);
+  const isWord = useMemo(() => weekIsWord((w) => byText.has(w), dictionary), [byText, dictionary]);
   const wordFor = (t: string) => matchText(t, byText, now().getTime(), () => t);
   const statusOf = (t: string): ItemStatus => { const w = byText.get(t); return w ? itemStatus(w.id, cards) : 'new'; };
 
@@ -325,7 +333,7 @@ export function WeekPanel() {
             <label for="week-paste">Paste the sheet</label>
             <textarea id="week-paste" rows={7} lang="zh-CN" value={text} onInput={(e) => setText((e.currentTarget as HTMLTextAreaElement).value)} />
           </div>
-          <button type="button" class="btn btn--primary week__read" disabled={!text.trim() || !loaded} onClick={read}>Read</button>
+          <button type="button" class="btn btn--primary week__read" disabled={!text.trim() || !loaded || !dictTried} onClick={read}>Read</button>
         </>
       )}
 
