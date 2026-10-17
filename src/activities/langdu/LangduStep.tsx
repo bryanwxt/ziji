@@ -46,6 +46,9 @@ interface Props {
   onDone: (r: LangduResult) => void;
 }
 
+/** 开始朗读 waits at most this long for the model's first sentence */
+export const START_AFTER_MS = 10_000;
+
 const BUBBLE: Record<LangduPart, string> = { warmup: '你好！', listen: '听我读！', read: '大声读！', compare: '比一比！', meaning: '想一想！' };
 
 /**
@@ -130,6 +133,19 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
     else model.stop(); // he reads, compares or answers: the model is quiet until asked
   }, [part]);
 
+  // 开始朗读 comes alive once the model has read its first sentence, or after START_AFTER_MS with no voice (review 2026-10-17:
+  // waiting for the whole passage was too long); tapping it stops the model
+  const [canStart, setCanStart] = useState(false);
+  const firstRead = useRef<number | null>(null);
+  useEffect(() => {
+    if (model.current !== null && firstRead.current === null) firstRead.current = model.current;
+    else if (firstRead.current !== null && model.current !== firstRead.current) setCanStart(true);
+  }, [model.current]);
+  useEffect(() => {
+    const t = setTimeout(() => setCanStart(true), START_AFTER_MS);
+    return () => clearTimeout(t);
+  }, []);
+
   useEffect(() => {
     if (read.state === 'done' && read.result && part === 'read') {
       playSfx('star');
@@ -193,7 +209,7 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
         sheet={
           <FeedbackSheet
             actionLabel="开始朗读"
-            disabled={!model.heardAll}
+            disabled={!model.heardAll && !canStart}
             onAction={() => setPart('read')}
             // 下一篇 waits for the read-through like 开始朗读: never the only live button while the model reads (review, 2026-10-15)
             aside={onSwap && <button type="button" class="btn langdu__next" disabled={!model.heardAll} onClick={swap}><Label zh="下一篇" /></button>}
@@ -327,8 +343,22 @@ function NewWords({ words }: { words: readonly PassageWord[] }) {
 
 /** The passage a sentence at a time: buttons that replay (listen, compare), plain text to read from (read). */
 function Sentences({ sentences, current, onTap }: { sentences: string[]; current: number | null; onTap?: (i: number) => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  // a fade at the bottom while there is more below (review 2026-10-17: a long passage was cut mid-line with no cue)
+  const measure = () => {
+    const el = box.current;
+    if (el) setMore(el.scrollTop + el.clientHeight < el.scrollHeight - 2);
+  };
+  useEffect(measure, [sentences]);
+  // the lit sentence a third of the way down the box: the box scrolls, never the screen
+  useEffect(() => {
+    const el = box.current;
+    const lit = current === null ? null : (el?.children[current] as HTMLElement | undefined);
+    if (el && lit && typeof el.scrollTo === 'function') el.scrollTo({ top: lit.offsetTop - el.clientHeight / 3, behavior: 'smooth' });
+  }, [current]);
   return (
-    <div class="passage langdu__passage langdu__sentences">
+    <div ref={box} class={`passage langdu__passage langdu__sentences${more ? ' has-more' : ''}`} onScroll={measure}>
       {sentences.map((s, i) =>
         onTap ? (
           <button key={i} type="button" class={`langdu__sentence${current === i ? ' is-reading' : ''}`} aria-current={current === i ? 'true' : undefined} onClick={() => onTap(i)}>
