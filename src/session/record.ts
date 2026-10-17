@@ -6,7 +6,7 @@ import { ladderWordsBesides } from '../content/ladder';
 import { newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
 import { LISTEN_MS, slowLines, USE_READING_MS, type SlowLines } from '../srs/slow';
 import type { AppDb } from '../store/db';
-import { addReviewLog, allCards, allSessions, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
+import { addReviewLog, allCards, allSessions, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsForCard, logsForWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
 import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, Word } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
@@ -70,7 +70,7 @@ export async function recordRecognition(db: AppDb, wordId: string, outcome: TapO
   }
   // truly unstarted (review I1): every card of the word goes — a passed hear rung would reopen its Read card — but a write card he
   // has answered (his handwriting stays his); 认新字 gives the hear card back when it teaches the word again
-  const written = (await db.getAll('reviewLogs')).some((l) => l.wordId === wordId && l.kind === 'write');
+  const written = (await logsForWord(db, wordId)).some((l) => l.kind === 'write');
   const gone = (await allCards(db)).filter((c) => c.wordId === wordId && !(c.kind === 'write' && written));
   await deleteCards(db, gone.map((c) => c.id));
   return rest;
@@ -138,12 +138,17 @@ export async function openMissingRungs(db: AppDb, now: Date): Promise<number> {
   const cards = await allCards(db);
   const have = new Set(cards.map((c) => c.id));
   const made: CardRecord[] = [];
-  const confirmed = new Set((await db.getAll('reviewLogs')).filter((l) => l.kind === 'hear' && l.correct).map((l) => l.wordId)); // heard right, for real
+  // heard right, for real: asked only for a guessed card, from its word's Hear card's own logs (not every log)
+  const heard = new Map<string, boolean>();
+  const confirmed = async (wordId: string) => {
+    if (!heard.has(wordId)) heard.set(wordId, (await logsForCard(db, `${wordId}:hear`)).some((l) => l.kind === 'hear' && l.correct));
+    return heard.get(wordId)!;
+  };
   for (const c of cards) {
     const rung = rungOf(c.kind);
     if (!rung) continue;
     // a Hear placement guess waits for a real right answer: hundreds placed at once would open hundreds of rungs tomorrow (final review I1)
-    if (c.guess && !confirmed.has(c.wordId)) continue;
+    if (c.guess && !(await confirmed(c.wordId))) continue;
     const word = await findWord(db, c.wordId);
     // a rung that can no longer be asked (its sentences were removed) never strands the word: the next rung opens (plan 2b)
     if (!c.passed && !(word && !canAskRung(word, rung))) continue;

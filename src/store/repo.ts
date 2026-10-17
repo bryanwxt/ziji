@@ -139,19 +139,24 @@ export async function deleteCards(db: AppDb, ids: string[]): Promise<void> {
 /** The words he has answered in lessons, by card kind: practising a word's meaning doesn't make its reading practised. */
 /** Every answer on one card, oldest first (a rung's pass is worked out from them). */
 export async function logsForCard(db: AppDb, cardId: string): Promise<ReviewLog[]> {
-  return (await db.getAll('reviewLogs')).filter((l) => l.cardId === cardId).sort((a, b) => a.at - b.at);
+  return (await db.getAllFromIndex('reviewLogs', 'byCard', cardId)).sort((a, b) => a.at - b.at);
 }
 
 export async function practisedByKind(db: AppDb): Promise<Map<CardKind, Set<string>>> {
   const out = new Map<CardKind, Set<string>>();
-  for (const l of await db.getAll('reviewLogs')) (out.get(l.kind) ?? out.set(l.kind, new Set()).get(l.kind)!).add(l.wordId);
+  // one log per card is enough (a card is one word and one kind): the byCard index visits each card once, not every log
+  for (let c = await db.transaction('reviewLogs').store.index('byCard').openCursor(null, 'nextunique'); c; c = await c.continue()) {
+    const l = c.value;
+    (out.get(l.kind) ?? out.set(l.kind, new Set()).get(l.kind)!).add(l.wordId);
+  }
   return out;
 }
 
 /** Words he has actually answered in a lesson (any review logged), with when he last did. Placement guesses have none. */
 export async function practisedWords(db: AppDb): Promise<Map<string, number>> {
   const out = new Map<string, number>();
-  for (const l of await db.getAll('reviewLogs')) out.set(l.wordId, Math.max(out.get(l.wordId) ?? 0, l.at));
+  // every log's time counts (a restored backup's ids need not follow time), so this one still reads them all, in one pass
+  for (let c = await db.transaction('reviewLogs').store.openCursor(); c; c = await c.continue()) out.set(c.value.wordId, Math.max(out.get(c.value.wordId) ?? 0, c.value.at));
   return out;
 }
 
@@ -161,6 +166,16 @@ export async function addAnswer(db: AppDb, a: AnswerLog): Promise<void> {
 }
 
 export const answersSince = (db: AppDb, sinceMs: number) => db.getAllFromIndex('answers', 'byAt', IDBKeyRange.lowerBound(sinceMs));
+
+/** Every answer on one word, any kind. */
+export const logsForWord = (db: AppDb, wordId: string) => db.getAllFromIndex('reviewLogs', 'byWord', wordId);
+
+/** The cards with at least one answer logged, by id (keys only: no log is read). */
+export async function answeredCardIds(db: AppDb): Promise<Set<string>> {
+  const out = new Set<string>();
+  for (let c = await db.transaction('reviewLogs').store.index('byCard').openKeyCursor(null, 'nextunique'); c; c = await c.continue()) out.add(c.key);
+  return out;
+}
 
 export const logsSince = (db: AppDb, sinceMs: number) =>
   db.getAllFromIndex('reviewLogs', 'byAt', IDBKeyRange.lowerBound(sinceMs));

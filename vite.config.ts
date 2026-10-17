@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { configDefaults, defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
@@ -6,7 +7,20 @@ import { VitePWA } from 'vite-plugin-pwa';
 /** .test.ts files that need a DOM (document, HTMLElement, matchMedia, AudioContext stand-ins): they run with the .tsx tests in jsdom */
 const DOM_TS = ['src/audio/context.test.ts', 'src/audio/micFailure.test.ts', 'src/audio/recorder.test.ts', 'src/audio/sfx.test.ts', 'src/lib/files.test.ts', 'src/ui/motion.test.ts'];
 
+/** The commit this build is from, and its date (src/build.ts): 'dev' outside a git checkout. */
+const git = (args: string, fallback: string) => {
+  try {
+    return execSync(`git ${args}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export default defineConfig({
+  define: {
+    __BUILD_HASH__: JSON.stringify(git('rev-parse --short HEAD', 'dev')),
+    __BUILD_DATE__: JSON.stringify(git('log -1 --format=%cs', new Date().toISOString().slice(0, 10))),
+  },
   base: process.env.BASE_PATH ?? '/',
   // story-trial.html: the animated-page trial for the parent (2026-10-08), outside the app; index.html is the app
   build: { rollupOptions: { input: { main: 'index.html', trial: 'story-trial.html' } } },

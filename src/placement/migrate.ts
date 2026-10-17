@@ -3,7 +3,7 @@
 // and re-spread from today in school order, at most 10 a day, never earlier than they were due.
 import { addDays, startOfLocalDay } from '../lib/date';
 import type { AppDb } from '../store/db';
-import { allCards, allWords, getSettings, putCards, updateSettings } from '../store/repo';
+import { allCards, allWords, answeredCardIds, getSettings, putCards, updateSettings } from '../store/repo';
 import type { CardRecord } from '../types';
 import { MAX_FIRST_CHECKS_PER_DAY, schoolOrder } from './placement';
 
@@ -16,10 +16,10 @@ export async function markOldPlacement(db: AppDb, now: Date): Promise<number> {
   const at = settings.placementResult?.at;
   let marked: CardRecord[] = [];
   if (at !== undefined) {
-    const [cards, words, logs] = await Promise.all([allCards(db), allWords(db), db.getAll('reviewLogs')]);
-    // its first recheck is a reading log on this card; an answer by ear or meaning doesn't count (review M4). A card earned in
-    // lessons, or passed on the ladder, has reading logs, so it is never marked
-    const answered = new Set(logs.filter((l) => l.kind === 'recognise').map((l) => l.cardId));
+    // the byCard index's keys only, not every log (review 2026-10-17)
+    const [cards, words, answered] = await Promise.all([allCards(db), allWords(db), answeredCardIds(db)]);
+    // its first recheck is a log on this (reading) card; an answer by ear or meaning is on another card and doesn't count (review
+    // M4). A card earned in lessons, or passed on the ladder, has reading logs, so it is never marked
     const byId = new Map(words.map((w) => [w.id, w]));
     const old = cards.filter((c) => c.kind === 'recognise' && !c.placed && c.passed !== undefined && c.passed <= at + MINUTE && !answered.has(c.id) && byId.has(c.wordId));
     old.sort((a, b) => schoolOrder(byId.get(a.wordId)!, byId.get(b.wordId)!));

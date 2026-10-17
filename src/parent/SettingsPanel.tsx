@@ -14,6 +14,7 @@ import { MicTest } from './MicTest';
 import { seedBuiltinWords, updateSettings } from '../store/repo';
 import { builtinWords, type Course } from '../content';
 import type { ActivityKind, OralInfo, Settings } from '../types';
+import { BUILD } from '../build';
 
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   newwords: '认新字: new words, first',
@@ -189,6 +190,7 @@ export function SettingsPanel() {
         <button type="button" class="btn" onClick={() => go({ name: 'placement' })}>Re-run placement check</button>
         <button type="button" class="btn" onClick={() => setChangingPin(true)}>Change PIN</button>
       </div>
+      <p class="hint">App version {BUILD.hash} · {BUILD.date}</p>
     </section>
   );
 }
