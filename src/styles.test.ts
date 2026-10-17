@@ -320,3 +320,13 @@ describe('choice colours (review 2026-10-17): only an answered tile is coloured'
     expect(inkLayer).not.toMatch(/\.choice\.is-oops[^{]*\{[^}]*opacity: 0\./);
   });
 });
+
+describe("Truffle's room: locked tiles are full contrast (review 2026-10-17)", () => {
+  it('a locked outfit, power or place is not faded; its prize is an ink silhouette', () => {
+    expect(css).not.toMatch(/\.outfit:disabled \{[^}]*opacity/);
+    expect(css).not.toMatch(/\.power-row:disabled \{[^}]*opacity/);
+    expect(css).not.toMatch(/\.place\.is-locked \.place__thumb \{[^}]*opacity/);
+    expect(css).toMatch(/\.is-silhouette \{[^}]*filter: brightness\(0\)/);
+    expect(css).toMatch(/\.outfit__tag \{[^}]*font-size: 16px/);
+  });
+});

@@ -190,12 +190,12 @@ describe('Wardrobe', () => {
     expect(shelves).not.toContain('希腊');
     expect(shelves).not.toContain('以前的衣服');
   });
-  it('an owned costume shows a small Truffle wearing it; a locked one shows the lock', async () => {
+  it('an owned costume shows a small Truffle wearing it; a locked one only its silhouette (review 2026-10-17)', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedCostumes: ['tiger'] } });
     renderWithApp(<Wardrobe />, app);
     const tiger = await screen.findByRole('button', { name: '虎' });
     expect(tiger.querySelector('svg.truffle')?.getAttribute('data-outfit')).toBe('tiger');
-    expect(screen.getByRole('button', { name: '牛' }).querySelector('svg.truffle')).toBeNull();
+    expect(screen.getByRole('button', { name: '牛' }).querySelector('.is-silhouette svg.truffle')).toBeTruthy();
   });
   it('accessories he has not won yet are locked', async () => {
     const app = await makeAppData({ kid: { ...DEFAULT_KID, ownedAccessories: ['scarf'] } });

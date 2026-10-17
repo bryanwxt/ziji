@@ -664,13 +664,14 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .powers { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; width: 100%; max-width: 760px; }
 .power-row { min-height: 64px; height: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 4px; padding: 8px 14px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); }
 .power-row.is-on { background: var(--green-soft); }
-.power-row:disabled { opacity: 0.55; box-shadow: 4px 4px 0 var(--line-strong); border-color: var(--line-strong); }
+.power-row:disabled { border-style: dashed; box-shadow: 4px 4px 0 var(--line-strong); } /* locked, but full contrast: what it is and how to get it (review 2026-10-17) */
 .power-row__mark { font-size: 28px; }
 .power-row__name { font-size: 30px; flex: 1; text-align: left; }
 .power-row__pips { display: flex; gap: 4px; }
 .power-row__pips i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); }
 .power-row__count { font-weight: 900; font-size: 16px; min-width: 52px; text-align: right; }
 .power-row__top { display: flex; align-items: center; gap: 10px; }
+.power-row__need { display: flex; align-items: center; gap: 4px; font-size: 16px; color: var(--ink); text-align: left; }
 .power-row__ready { display: flex; align-items: center; gap: 4px; font-size: 16px; color: var(--green-ink); text-align: left; }
 .card--gold .zika__stars { color: var(--ink); }
 
@@ -681,7 +682,11 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .outfit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px; }
 .outfit { min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); }
 .outfit.is-on { background: var(--green-soft); }
-.outfit:disabled { opacity: 0.5; box-shadow: 4px 4px 0 var(--line-strong); border-color: var(--line-strong); }
+.outfit:disabled { border-style: dashed; box-shadow: 4px 4px 0 var(--line-strong); cursor: default; }
+/* a prize not won yet: its shape in solid ink, and where it comes from (review 2026-10-17: pale padlocks said nothing) */
+.is-silhouette { filter: brightness(0); }
+.outfit__tag { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px 2px; font-size: 16px; line-height: 1.1; background: var(--gold-soft); border: 2px solid var(--ink); border-radius: 999px; color: var(--ink); }
+.outfit__tag .label { font-size: 16px; }
 .outfit__preview { display: block; width: 64px; height: 64px; }
 .outfit__preview .truffle { width: 64px; height: auto; }
 .outfit__swatch { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid var(--ink); display: grid; place-items: center; font-size: 16px; background: var(--line); }
@@ -693,6 +698,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 
 .inkicon { display: inline-block; vertical-align: middle; flex: none; overflow: visible; }
 .acc-thumb { display: block; overflow: visible; }
+.acc-thumb__box { display: block; }
 .outfit__name .label { font-size: 16px; }
 .outfits__none { display: flex; align-items: center; gap: 14px; }
 .outfits__none .outfit { width: 96px; }
@@ -723,8 +729,9 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .place { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 8px 10px; background: var(--surface); color: var(--ink); border: var(--panel-border); border-radius: 16px; box-shadow: 4px 4px 0 var(--ink); font-size: 20px; }
 .place[aria-pressed="true"] { background: var(--green-soft); outline: 3px solid var(--ink); outline-offset: 2px; }
 .place__thumb { display: block; width: 100%; aspect-ratio: 9 / 8; object-fit: cover; object-position: center bottom; border: 2.5px solid var(--ink); border-radius: 10px; background: var(--paper); }
-.place.is-locked .place__thumb { filter: grayscale(1); opacity: 0.45; }
-.place__lock { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; color: var(--ink-soft); }
+.place.is-locked .place__thumb { filter: grayscale(1); }
+.place.is-locked { border-style: dashed; }
+.place__lock { display: inline-flex; align-items: center; gap: 4px; font-size: 16px; color: var(--ink); }
 
 /* ===== 朗读 coach (spec §16) ===== */
 .meter { display: flex; align-items: center; gap: 14px; width: min(520px, 100%); }
