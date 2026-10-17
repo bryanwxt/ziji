@@ -18,7 +18,7 @@ const OWED_MAX = 4;
 
 export const HALF_LINE = '再学会几个字，就能开宝箱！';
 /** An extra lesson that mastered nothing new: never a telling-off (learning rules 2026-10-17). */
-export const RESTING_LINE = '多学会几个字，小船就会走！';
+export const RESTING_LINE = '多学会几个字，小船就走！';
 export const CAPPED_LINE = '明天再开宝箱！';
 
 /**

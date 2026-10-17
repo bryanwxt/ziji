@@ -155,7 +155,7 @@ Parent decision, 2026-10-17, from the learning-rules review. Completion-continge
 - **Daily cap and bank:** unchanged. At most 2 chests a day, and halves past the cap wait in the bank, up to 1 meter.
 - **An extra lesson that earns nothing** still counts as counted, so a celebration shown again never counts it twice. The boat stays where it is.
   - The heading is 「你学得很认真！」, which praises the work.
-  - The line is 「多学会几个字，小船就会走！」. Both are shown with pinyin, and neither is ever a telling-off.
+  - The line is 「多学会几个字，小船就走！」. Both are shown with pinyin, and neither is ever a telling-off.
 - **Half-way line:** 「再学一课就能开宝箱！」 becomes 「再学会几个字，就能开宝箱！」, because another lesson alone no longer moves the boat.
 - **快到了 goals:** still shown after every lesson, an extra lesson that earned nothing included.
 - **Data:** none new. `MeterFill` gains `added`, the halves this lesson added, and `Lesson` gains `mastered`.

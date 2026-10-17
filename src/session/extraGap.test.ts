@@ -12,7 +12,7 @@ describe('the second lesson is spaced out (learning rules 2026-10-17; Cepeda et 
     expect(extraOpensAt(rec(at(8)), at(7).getTime())).toBe(at(10, 15).getTime()); // yesterday's stars: the day's lesson counts
   });
   it('says when, in words he knows: later this morning, this afternoon, this evening, or tomorrow', () => {
-    expect(extraWaitLine(at(10).getTime(), at(9))).toBe('等一会儿再来！');
+    expect(extraWaitLine(at(10).getTime(), at(9))).toBe('过一会再来！');
     expect(extraWaitLine(at(13).getTime(), at(9))).toBe('下午再来！');
     expect(extraWaitLine(at(19).getTime(), at(17))).toBe('晚上再来！');
     expect(extraWaitLine(new Date(2026, 9, 3, 0, 30).getTime(), at(22, 30))).toBe('明天见！');

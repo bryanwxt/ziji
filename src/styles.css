@@ -1112,7 +1112,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .hold__label { font-size: 16px; }
 /* the celebration's prize screens on a phone: the headline on one line, a smaller dressed-up Truffle and chest, 继续 on screen */
 .celebrate .truffle { width: min(calc(var(--pet) * 1.6), 22dvh); height: auto; }
-.celebrate:has(> .celebrate__line) .truffle { width: min(calc(var(--pet) * 1.6), 15dvh); } /* a line under the stars or the boat (会写 1 个新字, 小船就会走): a smaller Truffle keeps 继续 on screen */
+.celebrate__line--clauses { display: flex; flex-wrap: wrap; justify-content: center; } .celebrate__clause { display: inline-flex; } .celebrate__clause .label__cells { flex-wrap: nowrap; }
+.celebrate:has(> .celebrate__line) .truffle { width: min(calc(var(--pet) * 1.6), 15dvh); } /* a line under the stars or the boat (会写 1 个新字, 小船就走): a smaller Truffle keeps 继续 on screen */
 .prize__stars { display: inline-flex; gap: 4px; }
 .prize__stars svg { width: clamp(44px, 8dvh, 72px); height: auto; }
 @media (max-width: 599px) {

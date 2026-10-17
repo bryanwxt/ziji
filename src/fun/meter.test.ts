@@ -25,7 +25,7 @@ describe('extra lessons fill by mastery, not by finishing (learning rules 2026-1
     expect(a.fill).toMatchObject({ counted: true, added: 0, from: 0, left: 0, chests: 0, capped: false });
     expect(a.kid.meter.lesson).toBe(2);
     expect(meterLine(a.fill)).toBe(RESTING_LINE);
-    expect(RESTING_LINE).toBe('多学会几个字，小船就会走！');
+    expect(RESTING_LINE).toBe('多学会几个字，小船就走！');
   });
   it('the first daily lesson still fills it, mastered or not', () => {
     expect(run([{ kind: 'first', day: '2026-10-15', key: 1, mastered: 0 }]).fill).toMatchObject({ added: 2, chests: 1 });

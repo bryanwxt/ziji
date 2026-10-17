@@ -236,7 +236,7 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
   const isLast = at === seq.order.length - 1;
   const chestNo = seq.order.slice(0, at).filter((p) => p === 'chest').length;
   const lastChest = seq.order.lastIndexOf('chest') === at;
-  const boatLine = meterLine(seq.river); // 再学会几个字，就能开宝箱！, 多学会几个字，小船就会走！ or 明天再开宝箱！
+  const boatLine = meterLine(seq.river); // 再学会几个字，就能开宝箱！, 多学会几个字，小船就走！ or 明天再开宝箱！
   const resting = !seq.river.capped && seq.river.counted === true && seq.river.added === 0; // the lesson moved nothing
   const afterOpen = chest && lastChest ? boatLine : null; // under an opened last chest: where the meter now is
   const opened = chest ? (lastChest ? seq.river.left : 0) : null; // where the boat waits once the chest is open
@@ -275,7 +275,8 @@ export function Celebration({ rec }: { rec: SessionRecord }) {
           <>
             <h1><Label zh={seq.river.capped ? '今天的宝箱都开了！' : resting ? RESTING_TITLE : seq.river.left > 0 ? '小船走到一半了！' : '小船出发了！'} /></h1>
             <RiverTrack from={seq.river.from} to={seq.river.left} />
-            {boatLine && <p class="celebrate__line"><Label zh={boatLine} /></p>}
+            {/* each clause kept whole: a phone breaks after the comma, never before the last character (多学会几个字，/ 小船就走！) */}
+            {boatLine && <p class="celebrate__line celebrate__line--clauses" aria-label={boatLine}>{boatLine.split(/(?<=，)/).map((part) => <span key={part} class="celebrate__clause"><Label zh={part} /></span>)}</p>}
           </>
         )}
         {phase === 'goals' && (

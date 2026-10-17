@@ -51,14 +51,14 @@ describe('the river meter on the Celebration (rewards spec §3)', () => {
     await show({ lastChestDate: DAY, meter: { ...EMPTY_METER, chestsToday: 1, day: DAY, lesson: 10 } }, lesson(20, true));
     next();
     await waitFor(() => expect(river()?.getAttribute('data-halves')).toBe('1'));
-    expect(screen.getByText('再学会几个字，就能开宝箱！')).toBeTruthy();
+    expect(screen.getByLabelText('再学会几个字，就能开宝箱！')).toBeTruthy();
     expect(screen.queryByRole('button', { name: '按住打开宝箱' })).toBeNull();
   });
   it('an extra lesson that mastered nothing new: the boat stays, praise and a kind line, never a telling-off (amended 2026-10-17)', async () => {
     const { app } = await show({ lastChestDate: DAY, meter: { ...EMPTY_METER, halves: 1, chestsToday: 1, day: DAY, lesson: 10 } }, lesson(20, true, 0));
     next();
     expect(await screen.findByText('你学得很认真！')).toBeTruthy();
-    expect(screen.getByText('多学会几个字，小船就会走！')).toBeTruthy();
+    expect(screen.getByLabelText('多学会几个字，小船就走！')).toBeTruthy();
     expect(river()?.getAttribute('data-halves')).toBe('1');
     expect(screen.queryByRole('button', { name: '按住打开宝箱' })).toBeNull();
     expect((await getKid(app.db))!.meter).toMatchObject({ halves: 1, lesson: 20 }); // counted: a reload never counts it again

@@ -20,5 +20,5 @@ export function extraWaitLine(opensAt: number, now: Date): string | null {
   const open = new Date(opensAt);
   if (localDateKey(open) !== localDateKey(now)) return '明天见！';
   const h = open.getHours();
-  return h < 12 ? '等一会儿再来！' : h < 18 ? '下午再来！' : '晚上再来！';
+  return h < 12 ? '过一会再来！' : h < 18 ? '下午再来！' : '晚上再来！';
 }

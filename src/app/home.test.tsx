@@ -117,8 +117,8 @@ describe('HomeScreen', () => {
     renderWithApp(<HomeScreen />, app);
     await screen.findByText('今天完成了！');
     expect(screen.queryByText('再学一课')).toBeNull();
-    expect(document.querySelector('.done-card')?.textContent).toContain('等一会儿再来！'); // open at 10:45
-    await waitFor(() => expect(document.querySelector('.home__pet .pet__bubble')?.textContent).toContain('等一会儿再来！'));
+    expect(document.querySelector('.done-card')?.textContent).toContain('过一会再来！'); // open at 10:45
+    await waitFor(() => expect(document.querySelector('.home__pet .pet__bubble')?.textContent).toContain('过一会再来！'));
     expect(screen.getByText('再玩一会儿')).toBeTruthy();
   });
   it('an extra lesson just finished (his stars this morning) closes it again for 2 hours', async () => {

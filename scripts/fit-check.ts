@@ -565,15 +565,15 @@ async function sweep(size: Size) {
   // the chest's stars prize; new words only, as the walker can't trace a character and stopped at 写一写, short of the chest
   await run('chest-stars', AFTERNOON, { ownsAll: true, activities: only('newwords') }, async (p) => { await startLesson(p); await walkLesson(p, size, 'chest-stars'); });
   // the river meter after an extra lesson (rewards spec §3, §9): half way, the day's second chest, the cap, and a lesson that
-  // mastered nothing — at every size. Extra lessons are review only (no 认新字), so they run 练一练; `mastered` seeds a word
-  // newly writable since the day's lesson, which moves the boat
-  const extra = (halves: number, chestsToday: number, mastered = true) => ({ doneToday: true, activities: only('practice'), meter: { halves, chestsToday }, extraMastered: mastered });
+  // mastered nothing — at every size. Extra lessons are review only (no 认新字), so they run a short 朗读 (练一练's review round took
+  // over 6 minutes a size to walk); `mastered` seeds a word newly writable since the day's lesson, which moves the boat
+  const extra = (halves: number, chestsToday: number, mastered = true) => ({ doneToday: true, activities: only('speaking'), langdu: true, speakingLast: 'story' as const, meter: { halves, chestsToday }, extraMastered: mastered });
   const extraLesson = async (p: Page) => {
     await p.click('.done-card button:has-text("再学一课")');
     await p.waitForSelector('.lessonbar, .celebrate', { timeout: 15_000 });
   };
   await run('extra-half', AFTERNOON, extra(0, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-half'); }); // 再学会几个字，就能开宝箱！
-  await run('extra-resting', AFTERNOON, extra(1, 1, false), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-resting'); }); // 你学得很认真！ 多学会几个字，小船就会走！
+  await run('extra-resting', AFTERNOON, extra(1, 1, false), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-resting'); }); // 你学得很认真！ 多学会几个字，小船就走！
   await run('extra-chest', AFTERNOON, extra(1, 1), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-chest'); }); // the second chest, then 明天再开宝箱！
   await run('extra-capped', AFTERNOON, extra(0, 2), async (p) => { await extraLesson(p); await walkLesson(p, size, 'extra-capped'); }); // 明天再开宝箱！
   // yesterday's bank (a full meter) and today's first lesson: two chest phases in one Celebration (rewards ruling 2)

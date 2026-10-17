@@ -150,7 +150,7 @@ Parent decision, 2026-10-17, from the learning-rules review (Cepeda et al. 2006 
   - **Production steps:** Say, 说一句 and 写一写 run as usual for words he has met.
 - **The second lesson waits:** Home offers 再学一课 only once 2 hours have passed since the last lesson ended. "The last lesson" means the later of the day's lesson's start plus its active time, and `kid.starredUpTo`.
   - **Until then:** the done card and Truffle say when to come back:
-    - 「等一会儿再来！」 if it opens before noon;
+    - 「过一会再来！」 if it opens before noon;
     - 「下午再来！」 if it opens before 18:00;
     - 「晚上再来！」 after that;
     - 「明天见！」 if it opens after midnight.
