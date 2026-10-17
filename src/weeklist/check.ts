@@ -144,7 +144,7 @@ export async function recordCheckAnswer(db: AppDb, listId: string, q: CheckQuest
 }
 
 /** Marks the check done (§8.1): how many right of the results, and the stars its answers earned. Earns nothing by itself. */
-export async function finishCheck(db: AppDb, listId: string, _now: Date): Promise<{ right: number; total: number; stars: number }> {
+export async function finishCheck(db: AppDb, listId: string): Promise<{ right: number; total: number; stars: number }> {
   const l = await updateWeekList(db, listId, (x) => (x.check ? { ...x, check: { ...x.check, done: true } } : x));
   if (!l?.check) return { right: 0, total: 0, stars: 0 };
   const results = Object.values(l.check.results);

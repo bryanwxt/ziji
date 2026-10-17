@@ -83,6 +83,8 @@ const daysIncl = (a: string, b: string) => Math.max(0, daysBetween(a, b) + 1);
 export function listBudget(i: {
   lists: WeekList[]; cards: ReadonlyMap<string, CardRecord>; now: Date; pace: number; ceiling: number;
   ranOutYesterday: boolean; ranOutTwice: boolean; backlog: boolean; schoolNeed: number;
+  /** the planner's new-word candidates (unstarted, not paused, still present): a list word outside it can't take a slot */
+  candidates?: ReadonlySet<string>;
 }): ListBudget {
   const today = localDateKey(i.now);
   const owner = listOwner(i.lists, i.now);
@@ -92,7 +94,7 @@ export function listBudget(i: {
   let need = 0; // of them, words still to teach before their ready-by
   let readyBy: string | null = null; // the nearest ready-by with words still to teach
   for (const l of i.lists) {
-    const fresh = l.items.filter((it) => owner.get(it.wordId) === l && itemStatus(it.wordId, i.cards) === 'new').map((it) => it.wordId);
+    const fresh = l.items.filter((it) => owner.get(it.wordId) === l && itemStatus(it.wordId, i.cards) === 'new' && (!i.candidates || i.candidates.has(it.wordId))).map((it) => it.wordId);
     if (!fresh.length || today === l.readyBy) continue;
     listIds.push(...fresh);
     if (today < l.readyBy) {
@@ -153,7 +155,6 @@ export function schoolNeed(
   return words.filter((w) => { const at = lessonOf(w); return !started.has(w.id) && (at === classAt || at === classAt - 1); }).length;
 }
 
-export const dayAfter = (key: string) => localDateKey(addDays(parseDateKey(key), 1));
 
 /** Re-teaching cards in one lesson at most (spec §2.1). */
 export const MAX_RETEACH = 6;

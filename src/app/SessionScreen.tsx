@@ -42,7 +42,7 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
-import { beginNewWord, bringForward, recordMeaningOnce, ratedToday, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { beginNewWord, bringForward, recordMeaningOnce, recordRecognitionOnce, ratedToday, setLessonLists, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import type { SlowLines } from '../srs/slow';
 import { meaningCredit } from '../session/writeCredit';
 import { settleLessonStars } from '../session/stars';
@@ -52,8 +52,9 @@ import {
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, sendBack, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
 import { formOf, noteListAnswer, noteListPairAnswer } from '../weeklist/answers';
+import { activeLists } from '../weeklist/plan';
 import type { PracticeItem } from '../session/round';
-import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
+import { addAnswer, allWeekLists, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
 import { DEFAULT_KID, type KidState, type OralInfo, type ReadingHistory, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
 import { sessionProgress } from '../session/progress';
@@ -117,6 +118,17 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   const latest = useRef<SessionRecord | null>(null);
   const latestStep = useRef(-1);
   const planning = useRef(false); // 练一练's round is being built (it reads his rungs)
+  // the weekly lists, read once for the lesson (final review 2026-10-17): every rating pins by them, and 练一练 notes only list words
+  const listWordIds = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void allWeekLists(db).then((lists) => {
+      if (!alive) return;
+      setLessonLists(lists);
+      listWordIds.current = new Set(activeLists(lists, now()).flatMap((l) => l.items.map((i) => i.wordId)));
+    });
+    return () => { alive = false; setLessonLists(null); };
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -257,8 +269,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
   /** Sent back to learn by a missed placement recheck in this lesson: nothing more of it is graded today (review M1). */
   const gone = (wordId: string) => !!(latest.current ?? rec)?.sentBack?.includes(wordId);
   /** A reading answer; true when it sent the word back to learn (spec 2026-10-14): its cards are gone, so the lesson forgets them too. */
-  const gradeReading = async (wordId: string, outcome: Parameters<typeof recordRecognition>[2]): Promise<boolean> => {
-    const card = await recordRecognition(db, wordId, outcome, now());
+  // once: 练一练's grade, never a second rating of the day (a list's reserved read item and the word's due item, final review 2026-10-17)
+  const gradeReading = async (wordId: string, outcome: Parameters<typeof recordRecognition>[2], once = false): Promise<boolean> => {
+    const card = once ? await recordRecognitionOnce(db, wordId, outcome, now()) : await recordRecognition(db, wordId, outcome, now());
+    if (!card) return false;
     if (await getCard(db, card.id)) {
       state!.know.cardsById.set(card.id, card);
       return false;
@@ -341,7 +355,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         const grades = item.grades ?? (item.list && (item.list.form === 'read' || item.list.form === 'meaning') && readCard && !ratedToday(readCard, now()) ? 'recognise' : null);
         if (item.grades === 'understand' && r.asked === 'understand') know.cardsById.set(`${item.wordId}:understand`, await recordUnderstand(db, item.wordId, { correct: r.correct, responseMs: r.responseMs, slow: state.slow }, now()));
         else if (item.grades === 'hear' && r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
-        else if (grades === 'recognise') sent = await gradeReading(item.wordId, outcome);
+        else if (grades === 'recognise') sent = await gradeReading(item.wordId, outcome, true);
         else if (item.grades === 'meaning' && r.asked === 'meaning') { const c = await recordMeaningOnce(db, item.wordId, outcome, now()); if (c) know.cardsById.set(c.id, c); }
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs, state.slow));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
@@ -369,6 +383,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
    * miss brings the card forward to the start of tomorrow.
    */
   const noteListPractice = async (item: PracticeItem, r: PracticeResult) => {
+    if (!item.list && listWordIds.current && !listWordIds.current.has(item.wordId)) return; // not a list word: nothing to note
     const tomorrow = startOfLocalDay(addDays(now(), 1));
     // the day it was met or re-taught, an answer is an echo of its card (fix round 2026-10-17)
     const echo = new Set([...(rec.plan.reteachIds ?? []), ...rec.plan.newWordIds]);

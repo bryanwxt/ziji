@@ -39,6 +39,20 @@ describe('saveWeekList', () => {
     expect((await allWords(db)).filter((x) => x.text === '闪闪亮')).toHaveLength(1);
     expect((await allWeekLists(db))[0]!.items.map((i) => i.text)).toEqual(['跑', '闪闪亮', '书包']);
   });
+  it('a re-paste merges pairs by left|right and fill-ins by word: old ones and their answers kept (final review 2026-10-17)', async () => {
+    const db = await freshDb();
+    const pair = (left: string, right: string) => ({ left, right, wrong: ['皮球', '风筝', '书包'] as [string, string, string] });
+    const fit = (wordId: string, sentence: string) => ({ wordId, sentence, source: 'parent' as const, wrong: ['甲', '乙', '丙'] as [string, string, string] });
+    const l = await saveWeekList(db, draft({ pairs: [pair('煎', '鸡蛋'), pair('喝', '牛奶')], fits: [fit('跑', '他在＿＿。')] }), now);
+    // he answers a pair in between
+    const stored = (await allWeekLists(db))[0]!;
+    await db.put('weekLists', { ...stored, pairs: stored.pairs.map((p) => (p.left === '煎' ? { ...p, last: { at: 1, correct: true } } : p)) });
+    await saveWeekList(db, draft({ pairs: [pair('煎', '鸡蛋'), pair('踢', '足球')], fits: [fit('闪闪亮', '星星＿＿。')] }), now, l.id);
+    const after = (await allWeekLists(db))[0]!;
+    expect(after.pairs.map((p) => `${p.left}|${p.right}`)).toEqual(['煎|鸡蛋', '喝|牛奶', '踢|足球']);
+    expect(after.pairs.find((p) => p.left === '煎')!.last).toEqual({ at: 1, correct: true });
+    expect(after.fits.map((f) => f.sentence)).toEqual(['他在＿＿。', '星星＿＿。']);
+  });
   it('a fit row keyed by text gets the word id', async () => {
     const db = await freshDb();
     await putWords(db, [makeWord('跑')]);

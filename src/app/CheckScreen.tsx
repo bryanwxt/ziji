@@ -71,7 +71,7 @@ export function CheckScreen({ listId }: { listId: string }) {
   const pool = useMemo(() => (state ? [...state.words.values()] : []), [state]);
 
   const finish = async () => {
-    const r = await finishCheck(db, listId, now());
+    const r = await finishCheck(db, listId);
     const l = await getWeekList(db, listId);
     if (l) setEnd({ list: l, stars: r.stars });
   };

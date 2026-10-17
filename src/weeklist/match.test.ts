@@ -47,4 +47,8 @@ describe('itemStatus (spec §5.2)', () => {
     const cards = new Map([known, placed, learning].map((c) => [c.id, c]));
     expect(['b:a', 'b:b', 'b:c', 'b:d'].map((id) => itemStatus(id, cards))).toEqual(['known', 'placed', 'learning', 'new']);
   });
+  it('a word begun by ear (a hear card, no reading card yet) is learning, not new (final review 2026-10-17)', () => {
+    const hear = makeCard('b:e', 'hear', at, true);
+    expect(itemStatus('b:e', new Map([[hear.id, hear]]))).toBe('learning');
+  });
 });

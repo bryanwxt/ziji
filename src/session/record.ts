@@ -7,7 +7,7 @@ import { localDayGap, newCard, review, snapshot, toRating, type TapKind } from '
 import { LISTEN_MS, slowLines, USE_READING_MS, type SlowLines } from '../srs/slow';
 import type { AppDb } from '../store/db';
 import { addReviewLog, allCards, allSessions, allWeekLists, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsForCard, logsForWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
-import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, Word } from '../types';
+import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, WeekList, Word } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
@@ -30,13 +30,22 @@ export async function lessonSlowLines(db: AppDb, now: Date = new Date()): Promis
   }
 }
 
+/**
+ * The weekly lists of the lesson on screen, read once when it opens (final review 2026-10-17): every rating needs them (pinDue,
+ * earlyListReview), and a lesson can't change them. SessionScreen sets them and clears them when it closes; null elsewhere (the
+ * check, tests), where each rating reads them.
+ */
+let lessonLists: WeekList[] | null = null;
+export const setLessonLists = (lists: WeekList[] | null) => { lessonLists = lists; };
+const listsNow = async (db: AppDb) => lessonLists ?? allWeekLists(db);
+
 /** Reviews a card (made now if it is the first) and returns it with what it was before, for the log (spec §4). */
 async function reviewCard(db: AppDb, wordId: string, kind: CardKind, rating: Grade, now: Date): Promise<{ card: CardRecord; before: CardSnapshot }> {
   const id = `${wordId}:${kind}`;
   const existing = await getCard(db, id);
   const was = existing?.fsrs ?? newCard(now);
   // keeps its pass; a list word's card waits no later than its list's ready-by day (weekly list spec §6.2)
-  const card: CardRecord = pinDue({ ...(existing ?? {}), id, wordId, kind, fsrs: review(was, rating, now) }, await allWeekLists(db), now);
+  const card: CardRecord = pinDue({ ...(existing ?? {}), id, wordId, kind, fsrs: review(was, rating, now) }, await listsNow(db), now);
   await putCards(db, [card]);
   return { card, before: snapshot(was, now) };
 }
@@ -51,7 +60,7 @@ export async function isProduced(db: AppDb, wordId: string): Promise<boolean> {
 async function earlyListReview(db: AppDb, card: CardRecord | undefined, now: Date): Promise<boolean> {
   if (!card?.fsrs.last_review || card.fsrs.state !== State.Review || !PINNED_KINDS.has(card.kind)) return false;
   if (localDayGap(card.fsrs.last_review, now) >= card.fsrs.scheduled_days) return false;
-  return activeLists(await allWeekLists(db), now).some((l) => l.items.some((i) => i.wordId === card.wordId));
+  return activeLists(await listsNow(db), now).some((l) => l.items.some((i) => i.wordId === card.wordId));
 }
 
 /** Rates a tap answer (spec §3.1: Hard until produced, Hard when slow for him), logs it with the card's state, and settles its rung. */
@@ -295,6 +304,17 @@ export async function startExtraLesson(db: AppDb, now: Date): Promise<SessionRec
  * A round's meaning question: the day's first rating of the card, as recordMeaning; already rated today (a weekly list's
  * 选词填空 or 搭配 rated it first, fix round 2026-10-17), a miss only brings it forward, so one lesson never rates it twice.
  */
+/**
+ * 练一练's reading grade, once a day (final review 2026-10-17): a list word's reserved read item and its own due-revision item can
+ * both grade the reading card in one lesson. The day's first answer rates it; a later one rates nothing (null), and a miss brings
+ * the card forward to tonight, as recordMeaningOnce does.
+ */
+export async function recordRecognitionOnce(db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord | null> {
+  if (!ratedToday(await getCard(db, `${wordId}:recognise`), now)) return recordRecognition(db, wordId, outcome, now);
+  if (!outcome.correct) await bringForward(db, wordId, 'recognise', endOfLocalDay(now));
+  return null;
+}
+
 export async function recordMeaningOnce(db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord | undefined> {
   const existing = await getCard(db, `${wordId}:meaning`);
   if (!ratedToday(existing, now)) return recordMeaning(db, wordId, outcome, now);

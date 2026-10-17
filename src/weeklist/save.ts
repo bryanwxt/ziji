@@ -50,8 +50,21 @@ export async function saveWeekList(db: AppDb, draft: ApprovedDraft, now: Date, u
     }
     if (!items.some((i) => i.wordId === word.id)) items.push({ wordId: word.id, text: d.text, from: d.from, addedStatus: itemStatus(word.id, cards) });
   }
-  const fits = draft.fits.map((f) => ({ ...f, wordId: byText.get(f.wordId)?.id ?? f.wordId }));
-  const pairs = draft.pairs.filter((p, i) => draft.pairs.findIndex((q) => q.left === p.left && q.right === p.right) === i);
+  const newFits = draft.fits.map((f) => ({ ...f, wordId: byText.get(f.wordId)?.id ?? f.wordId }));
+  const newPairs = draft.pairs.filter((p, i) => draft.pairs.findIndex((q) => q.left === p.left && q.right === p.right) === i);
+  // a re-paste merges, as items do (final review 2026-10-17): pairs by left|right, fill-ins by word. An old one stays; one pasted
+  // again takes the new wrong answers and keeps the answers he gave it (`last`)
+  const key = (p: WeekPair) => `${p.left}|${p.right}`;
+  const pastedPair = new Map(newPairs.map((p) => [key(p), p]));
+  const pairs: WeekPair[] = [
+    ...(old?.pairs ?? []).map((p) => { const n = pastedPair.get(key(p)); return n ? { ...n, ...(p.last ? { last: p.last } : {}) } : p; }),
+    ...newPairs.filter((p) => !(old?.pairs ?? []).some((q) => key(q) === key(p))),
+  ];
+  const pastedFit = new Map(newFits.map((f) => [f.wordId, f]));
+  const fits: WeekFit[] = [
+    ...(old?.fits ?? []).map((f) => pastedFit.get(f.wordId) ?? f),
+    ...newFits.filter((f) => !(old?.fits ?? []).some((q) => q.wordId === f.wordId)),
+  ];
   const list: WeekList = {
     id: old?.id ?? `wl:${newId()}`, name: draft.name, createdAt: old?.createdAt ?? now.getTime(),
     readyBy: draft.readyBy, homeworkDue: draft.homeworkDue, items, pairs, fits, ...(old?.check ? { check: old.check } : {}),

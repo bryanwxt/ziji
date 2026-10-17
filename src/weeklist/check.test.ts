@@ -83,7 +83,7 @@ describe('recordCheckAnswer and finishCheck (spec §8.1–8.2)', () => {
     const q = checkQueue(l2, wordsOf(l2), mulberry32(1));
     for (const x of q) await recordCheckAnswer(db, 'wl:t', x, x.wordId !== 'p:f', WED);
     expect(Object.keys((await allWeekLists(db))[0]!.check!.results).sort()).toEqual(['p:a', 'p:b', 'p:c', 'p:d', 'p:e', 'p:f', 'p:g']);
-    const r = await finishCheck(db, 'wl:t', WED);
+    const r = await finishCheck(db, 'wl:t');
     // 7 items: 小河 missed, 钓鱼 right but ready before; the pair's two halves both count
     expect(r).toEqual({ right: 6, total: 7, stars: 5 });
     const kid = (await getKid(db))!;
@@ -147,7 +147,7 @@ describe('recordCheckAnswer and finishCheck (spec §8.1–8.2)', () => {
     const db = await setUp(l);
     const words = wordsOf(l);
     for (const x of checkQueue(l, words, mulberry32(1))) await recordCheckAnswer(db, 'wl:t', x, x.wordId !== 'p:f', WED);
-    await finishCheck(db, 'wl:t', WED);
+    await finishCheck(db, 'wl:t');
     const stored = await allWeekLists(db);
     const thu = new Date(2026, 10, 5, 17);
     expect(reteachIds(stored, thu)).toEqual(['p:f']);
@@ -157,7 +157,7 @@ describe('recordCheckAnswer and finishCheck (spec §8.1–8.2)', () => {
   });
   it('finishing an empty check earns nothing', async () => {
     const db = await setUp(sheet());
-    expect(await finishCheck(db, 'wl:t', WED)).toEqual({ right: 0, total: 0, stars: 0 });
+    expect(await finishCheck(db, 'wl:t')).toEqual({ right: 0, total: 0, stars: 0 });
     expect((await getKid(db))!.bonusStars).toBe(2);
   });
 });

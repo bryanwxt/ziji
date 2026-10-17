@@ -188,6 +188,35 @@ describe('buildSessionPlan with a list (spec §5)', () => {
     expect(plan.newWordIds).toHaveLength(12); // class and catch-up words wait
     expect(plan.practiceTimeBoxMs).toBe(Math.round(settings.sessionMinutes * 60_000 / 3) + 120_000 + 5 * LIST_WORD_PRACTICE_MS);
   });
+  // final review 2026-10-17: list slots the planner can't fill never go to MOE words above the ceiling
+  const big = () => list({ items: Array.from({ length: 20 }, (_, i) => ({ wordId: `p:${i}`, text: `词${i}`, from: 'grid' as const, addedStatus: 'new' as const })) });
+  const moe = () => Array.from({ length: 12 }, (_, i) => makeWord(`字${i}`, { id: `b:${i}`, rank: i }));
+  it('hear-only list words are learning, not new: no list slots, MOE at his pace, never above the ceiling', () => {
+    const cards = words(20).map((w) => makeCard(w.id, 'hear', new Date(2026, 9, 25), true));
+    const plan = buildSessionPlan({ cards, words: [...words(20), ...moe()], settings, now: mon, newPerDay: 5, lists: [big()] });
+    expect(plan.listNewIds ?? []).toHaveLength(0);
+    expect(plan.newWordIds).toHaveLength(5);
+    expect(plan.frontLoad).toBeFalsy();
+  });
+  it('paused list words take no slots: MOE at his pace, never above the ceiling', () => {
+    const plan = buildSessionPlan({ cards: [], words: [...words(20).map((w) => ({ ...w, paused: true })), ...moe()], settings, now: mon, newPerDay: 5, lists: [big()] });
+    expect(plan.listNewIds ?? []).toHaveLength(0);
+    expect(plan.newWordIds.length).toBeLessThanOrEqual(settings.newPerDay);
+    expect(plan.newWordIds).toHaveLength(5);
+  });
+  it('deleted list words take no slots either', () => {
+    const plan = buildSessionPlan({ cards: [], words: [...words(4), ...moe()], settings, now: mon, newPerDay: 5, lists: [big()] }); // 16 of the 20 gone
+    expect(plan.listNewIds).toHaveLength(4);
+    expect(plan.newWordIds.length).toBeLessThanOrEqual(7); // the list's 4, then MOE up to pace + 2 at most
+  });
+  it('a backlog pause with hear-only list words: no MOE words either', () => {
+    const due = Array.from({ length: 45 }, (_, i) => makeCard(`b:复${i}`, 'recognise', new Date(2026, 9, 18), true));
+    const revision = Array.from({ length: 45 }, (_, i) => makeWord(`复${i}`, { id: `b:复${i}`, rank: 9000 + i }));
+    const cards = [...due, ...words(20).map((w) => makeCard(w.id, 'hear', new Date(2026, 9, 25), true))];
+    const practised = new Map(revision.map((w) => [w.id, 1]));
+    const plan = buildSessionPlan({ cards, words: [...words(20), ...moe(), ...revision], settings, now: mon, newPerDay: 5, lists: [big()], practised });
+    expect(plan.newWordIds).toHaveLength(0);
+  });
   it('without a list, nothing changes', () => {
     const ws = Array.from({ length: 10 }, (_, i) => makeWord(`字${i}`, { id: `b:${i}`, rank: i }));
     const a = buildSessionPlan({ cards: [], words: ws, settings, now: mon, newPerDay: 5 });
@@ -218,6 +247,17 @@ describe('buildSessionPlan with a list (spec §5)', () => {
     const cards = [makeCard('p:0', 'recognise', new Date(2026, 9, 21, 6), true), makeCard('b:x', 'recognise', new Date(2026, 9, 21, 6), true)];
     const plan = buildSessionPlan({ cards, words: [...words(1), makeWord('x')], settings, now: wed, newPerDay: 5, lists: [list()] });
     expect(plan.reviewWordIds).toEqual(['b:x']);
+  });
+  it('ready-by day leaves only what the check grades (reading, meaning): his hear and understand cards still come (final review 2026-10-17)', () => {
+    const wed = new Date(2026, 9, 21, 9);
+    const at = new Date(2026, 9, 21, 6);
+    const book = makeWord('书', { id: 'b:书', rank: 1 });
+    const l = list({ items: [{ wordId: 'b:书', text: '书', from: 'grid', addedStatus: 'known' }] });
+    const cards = (['recognise', 'meaning', 'hear', 'understand'] as const).map((k) => makeCard('b:书', k, at, true));
+    const plan = buildSessionPlan({ cards, words: [book], settings, now: wed, newPerDay: 5, lists: [l] });
+    expect(plan.reviewWordIds).not.toContain('b:书');
+    expect(plan.meaningReviewIds ?? []).not.toContain('b:书');
+    expect(plan.hearReviewIds).toContain('b:书');
   });
   it('due list cards come first among due reviews between ready-by and homework', () => {
     const thu = new Date(2026, 9, 22, 9);

@@ -83,7 +83,8 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const tomorrow = localDateKey(addDays(startOfLocalDay(now), 1));
   const cards = extra ? extraCards(stored, now, new Set(open.filter((l) => l.readyBy === tomorrow).flatMap((l) => l.items.map((i) => i.wordId)))) : stored;
   const checkToday = new Set(isReadyByDay(open, now).flatMap((l) => l.items.map((i) => i.wordId)));
-  const leftForCheck = (c: CardRecord) => checkToday.has(c.wordId) && c.kind !== 'write' && c.kind !== 'say' && c.kind !== 'sentence';
+  // only the cards 考考自己 grades wait for it (its reading and meaning, §8.1); hear, understand, write and the rest come as usual (final review 2026-10-17)
+  const leftForCheck = (c: CardRecord) => checkToday.has(c.wordId) && (c.kind === 'recognise' || c.kind === 'meaning');
   const homeworkWindow = (id: string) => { const l = owner.get(id); return !!l && day > l.readyBy && day <= l.homeworkDue; };
   const active = words.filter((w) => !w.paused);
   const byId = new Map(active.map((w) => [w.id, w]));
@@ -132,13 +133,23 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     lists: open, cards: new Map(cards.map((c) => [c.id, c])), now, pace: perDay, ceiling: settings.newPerDay,
     ranOutYesterday: ranOut[0], ranOutTwice: ranOut[0] && ranOut[1], backlog: backlog > BACKLOG_PAUSE,
     schoolNeed: schoolNeed(active, started, classAt),
+    candidates: new Set(active.filter((x) => !started.has(x.id)).map((x) => x.id)),
   });
   // a backlog pauses new words — but a list's, at most 3 (weekly list spec §5.1); new words switched off pause both
   const newLimit = !settings.activities.newwords ? 0 : budget ? budget.total : backlog > BACKLOG_PAUSE ? 0 : perDay;
-  const { words: newWords, lanes: newWordLanes, listTaken } = pickNewWords({
+  const picked = pickNewWords({
     candidates: active.filter((x) => !started.has(x.id)).sort(newWordOrder), n: newLimit, classAt, begunChars,
     listIds: budget?.listIds ?? [], listQuota: budget?.listQuota ?? 0, schoolFirst: budget?.schoolFirst ?? 0,
   });
+  const { listTaken } = picked;
+  // list slots it couldn't fill (a word it can't take: a ladder 词语 not yet unlocked, say) go back to MOE only up to his pace,
+  // never above it on a list's account (final review 2026-10-17)
+  // (a backlog pause keeps MOE words waiting: only the list's come)
+  const moeCap = !budget ? Infinity : backlog > BACKLOG_PAUSE ? 0 : Math.max(budget.total - budget.listQuota, perDay - listTaken.length);
+  const listSet = new Set(listTaken);
+  let moeLeft = moeCap;
+  const newWords = picked.words.filter((w) => listSet.has(w.id) || moeLeft-- > 0);
+  const newWordLanes = Object.fromEntries(Object.entries(picked.lanes).filter(([id]) => newWords.some((w) => w.id === id)));
   const frontLoad = !!budget?.frontLoad && listTaken.length > 0;
   // re-teaching cards (weekly list spec §2.1): a not-solid list item's card again the day after a miss, first in 认新字, with no
   // new-word slot; never in an extra lesson. Today's list words and they get the list word card (§7.1–7.2)
