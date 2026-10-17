@@ -7,8 +7,10 @@ import { isChildWord, readingOf } from '../content/wordGate';
 import { shuffle, type Rng } from '../lib/random';
 import type { Word } from '../types';
 
-/** `decoys`: the left and the right half that pair with nothing on the board (a 组词 board's; a 搭配 board has none). */
-export interface PairBoard { left: string[]; right: string[]; pairs: [string, string][]; target: [string, string]; decoys?: [string, string] }
+/** `decoys`: the left and the right half that pair with nothing on the board (a 组词 board's; a 搭配 board has none, but a weekly
+ *  list's has a right one, '' on the left). `readings`/`glosses`: a joined pair's pinyin and English when the board knows them
+ *  better than the dictionary (a list pair's own reading, 炸鸡翅's zhá). */
+export interface PairBoard { left: string[]; right: string[]; pairs: [string, string][]; target: [string, string]; decoys?: [string, string]; readings?: Record<string, string>; glosses?: Record<string, string> }
 
 const TWO_CHAR = [...HSK_WORDS.entries()].filter(([w]) => Array.from(w).length === 2);
 
@@ -111,4 +113,34 @@ export function dapeiQuestion(word: Word, rng: Rng): DapeiQuestion | null {
   if (!mine.length) return null;
   const x = shuffle(mine, rng)[0]!;
   return { verb: x.verb, noun: x.noun, options: shuffle([x.noun, ...x.wrong], rng) };
+}
+
+/**
+ * A 连一连 board of a weekly list's pairs (weekly list spec 2026-10-17 §7.5): three pairs whose every cross pair is a confirmed
+ * wrong, and one decoy object that is a confirmed wrong for every left on the board, so the last pair can't be had by
+ * elimination. Null when no such board exists: its pairs are asked one at a time.
+ */
+export function listBoard(pairs: readonly { left: string; right: string; wrong: readonly string[]; reading?: string }[], rng: Rng, gloss: (left: string, right: string) => string | undefined = () => undefined): PairBoard | null {
+  const wrong = (l: string, r: string) => pairs.find((p) => p.left === l)?.wrong.includes(r) ?? false;
+  const own = (l: string, r: string) => pairs.some((p) => p.left === l && p.right === r);
+  const fits = (l: string, r: string) => own(l, r) || !wrong(l, r);
+  const order = shuffle(pairs.map((p) => [p.left, p.right] as [string, string]), rng);
+  for (const target of order) {
+    const b = board(target, order.filter((p) => p !== target), fits, rng);
+    if (!b) continue;
+    const lefts = b.pairs.map(([l]) => l);
+    const decoy = [...new Set(pairs.flatMap((p) => p.wrong))].find((r) => !b.right.includes(r) && lefts.every((l) => wrong(l, r)));
+    if (!decoy) continue;
+    const at = Math.floor(rng() * (b.right.length + 1));
+    const readings: Record<string, string> = {};
+    const glosses: Record<string, string> = {};
+    for (const [l, r] of b.pairs) {
+      const p = pairs.find((x) => x.left === l && x.right === r)!;
+      if (p.reading) readings[l + r] = p.reading;
+      const en = gloss(l, r);
+      if (en) glosses[l + r] = en;
+    }
+    return { ...b, right: [...b.right.slice(0, at), decoy, ...b.right.slice(at)], decoys: ['', decoy], readings, glosses };
+  }
+  return null;
 }

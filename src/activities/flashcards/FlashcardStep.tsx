@@ -178,7 +178,8 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   // his reaction is a beat in the rig (REACTIONS[kind].holdMs), then he rests on his own mood while the answer stays up
   const mood: TruffleMood = phase === 'feedback' ? resting : 'neutral'; // still while he answers (spec 2026-10-11 §5)
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害！', content: '呼噜～' };
-  const bubble = phase === 'intro' ? (item.reteach ? '再认一次！' : again ? '再看一遍！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
+  // a list word or pair is a 词, not a 字 (weekly list spec §7.1)
+  const bubble = phase === 'intro' ? (item.reteach ? '再认一次！' : again ? '再看一遍！' : list && (list.lead || Array.from(word.text).length > 1) ? '新词来了！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? '听一听，是什么意思？' : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
     if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : quiz.mode === 'hear' ? 'hear' : 'read', picked: choice ?? undefined });

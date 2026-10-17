@@ -64,6 +64,11 @@ import { WritingStep } from '../../src/activities/writing/WritingStep';
 import { SentenceCard } from '../../src/activities/say/SentenceCard';
 import { wordCue } from '../../src/activities/flashcards/meaning';
 import zao from 'hanzi-writer-data/澡.json';
+import { listCardFor } from '../../src/weeklist/plan';
+import { fitUseItem } from '../../src/weeklist/fit';
+import { listBoard } from '../../src/practice/pairs';
+import { pairGloss } from '../../src/practice/missNote';
+import type { WeekList, Word } from '../../src/types';
 
 const screen = (body: preact.ComponentChildren) => (
   <div class="screen">
@@ -509,6 +514,41 @@ else if (which === 'none-word' || which === 'none-meaning') {
     const longest = lw.filter((x) => questionMeaning(x)).sort((a, b) => questionMeaning(b)!.length - questionMeaning(a)!.length); // the longest English a question asks (kid glosses)
     render(screen(<FlashcardStep item={{ wordId: longest[0]!.id, isNew: false, retry: false }} ask="meaningRead" word={longest[0]!} pool={longest.slice(0, 4)} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} noneOfThese="answer" onDone={() => {}} />), app);
   }
+}
+else if (which?.startsWith('week-')) {
+  // a weekly list in the lesson (weekly list spec 2026-10-17 §7): its 认新词 cards (a 2-character word, a 3-character ABB word,
+  // a phrase, a verb through its pair), a re-teaching card, 选词填空 from the list and a 连一连 board of its pairs with a decoy.
+  // Invented words, never a sheet's
+  const words = builtinWords(0);
+  const P = (text: string, pinyin: string, meaning: string, sentences?: Word['sentences']): Word => ({ id: `p:${text}`, text, pinyin, meaning, level: null, rank: null, source: 'parent', writeable: false, paused: false, createdAt: 0, ...(sentences ? { sentences } : {}) });
+  const gan = { ...words.find((x) => x.text === '干')!, id: 'w:干净', text: '干净', pinyin: 'gān jìng' };
+  const abb = P('亮晶晶', 'liàng jīng jīng', 'sparkly');
+  const phrase = P('低下头', 'dī xià tóu', 'lower your head', [{ text: '小猫低下头，轻轻地喝水。', pinyin: 'xiǎo māo dī xià tóu qīng qīng de hē shuǐ' }]);
+  const chao = words.find((x) => x.text === '炒')!;
+  const mates = [P('胖乎乎', 'pàng hū hū', 'chubby'), P('毛茸茸', 'máo róng róng', 'fluffy'), P('绿油油', 'lǜ yóu yóu', 'lush green')];
+  const list: WeekList = {
+    id: 'wl:stage', name: 'Stage', createdAt: 0, readyBy: '2026-11-11', homeworkDue: '2026-11-13',
+    items: [gan, abb, phrase, chao, ...mates].map((w) => ({ wordId: w.id, text: w.text, from: 'grid' as const, addedStatus: 'new' as const })),
+    pairs: [
+      { left: '炒', right: '青菜', wrong: ['毽子', '风筝', '书包'], reading: 'chǎo qīng cài' },
+      { left: '踢', right: '毽子', wrong: ['青菜', '风筝', '书包'], reading: 'tī jiàn zi' },
+      { left: '放', right: '风筝', wrong: ['毽子', '青菜', '书包'], reading: 'fàng fēng zheng' },
+    ],
+    fits: [{ wordId: abb.id, sentence: '夜空里的星星＿，好像在眨眼睛。', source: 'parent', wrong: ['胖乎乎', '毛茸茸', '绿油油'] }],
+  };
+  const pool = [...words, abb, phrase, ...mates];
+  const card = (w: Word, begun: string, reteach = false) => (
+    <FlashcardStep item={{ wordId: w.id, isNew: !reteach, retry: reteach, ...(reteach ? { reteach: true as const } : {}) }} ask="read" word={w} pool={pool} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} list={listCardFor(w, [list], new Set(begun))} onDone={() => {}} />
+  );
+  render(screen(
+    which === 'week-card-two' ? card(gan, '干')
+    : which === 'week-card-abb' ? card(abb, '亮')
+    : which === 'week-card-phrase' ? card(phrase, '')
+    : which === 'week-card-pair' ? card(chao, '')
+    : which === 'week-reteach' ? card(abb, '亮晶', true)
+    : which === 'week-fit' ? <UseQuestion item={fitUseItem(list.fits[0]!, abb, () => 0.999, pool)} kid={DEFAULT_KID} onAnswer={() => {}} onNext={() => {}} />
+    : <PairGame board={listBoard(list.pairs, mulberry32(4), (l, r) => pairGloss(l, r, pool))!} kind="match" kid={DEFAULT_KID} onDone={() => {}} />,
+  ), app);
 }
 else render(screen(
   <Stage activity="write" truffle={<Pet kid={DEFAULT_KID} size={180} />} sheet={which === 'good' ? <FeedbackSheet tone="good" title="写得好！" actionLabel="完成" onAction={() => {}} /> : <FeedbackSheet actionLabel="完成" disabled onAction={() => {}} />}>

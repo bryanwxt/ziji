@@ -16,7 +16,7 @@ interface Props {
   board: PairBoard;
   kind: 'pair' | 'match'; // 组词 or 搭配
   kid: KidState;
-  onDone: (r: { correct: boolean; responseMs: number }) => void;
+  onDone: (r: { correct: boolean; responseMs: number; pairs: { left: string; right: string; correct: boolean }[] }) => void; // pairs: each joined at its first try or not
 }
 
 const SHOW_AFTER = 3; // misses on one tile before its match is shown (review focus 3)
@@ -64,7 +64,8 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
     const pair = board.pairs.find(([a]) => a === board.left[l]);
     // a character said as a word (爪 → 爪子) is never said as a word on the board, or one ending in a right-hand tile: that
     // would say an answer
-    speak(board.left[l]!, { reading: pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!), avoid: board.pairs.map(([a, b]) => a + b), endings: board.right, alone: true });
+    const own = pair && board.readings?.[pair[0] + pair[1]]?.split(/\s+/).slice(0, Array.from(pair[0]).length).join(' '); // a list pair's own reading (炸 zhá)
+    speak(board.left[l]!, { reading: own || (pair ? halfReading(pair[0] + pair[1], 0) : readingOf(board.left[l]!)), avoid: board.pairs.map(([a, b]) => a + b), endings: board.right, alone: true });
     if (isTarget(l) && !target.current.pickedAt) target.current.pickedAt = performance.now();
   };
   const tapRight = (r: number) => {
@@ -74,7 +75,9 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
     if (partner === r) {
       if (isTarget(l)) target.current.ms = Math.round(performance.now() - target.current.pickedAt);
       setJoined(new Set([...joined, `L${l}`, `R${r}`]));
-      speak(board.left[l]! + board.right[r]!);
+      const joinedAt = board.readings?.[board.left[l]! + board.right[r]!];
+      if (joinedAt) speak(board.left[l]! + board.right[r]!, { reading: joinedAt });
+      else speak(board.left[l]! + board.right[r]!);
     } else {
       const n = (missed[l] ?? 0) + 1;
       setMissed({ ...missed, [l]: n });
@@ -114,15 +117,15 @@ export function PairGame({ board, kind, kid, onDone }: Props) {
                 const wrong = (missed[board.left.indexOf(l)] ?? 0) > 0;
                 return (
                   <p key={i} class={`pair-summary__row${wrong ? ' is-missed' : ''}`}>
-                    <span class="hanzi"><Label zh={word} py={readingOf(word)} fade /></span>
-                    {choiceGloss(word) && <span lang="en">{choiceGloss(word)}</span>} {/* a board's other 词语 may have only a kid gloss written for it (choiceGloss.ts) */}
+                    <span class="hanzi"><Label zh={word} py={board.readings?.[word] ?? readingOf(word)} fade /></span>
+                    {(board.glosses?.[word] ?? choiceGloss(word)) && <span lang="en">{board.glosses?.[word] ?? choiceGloss(word)}</span>} {/* a board's other 词语 may have only a kid gloss written for it (choiceGloss.ts); a list pair, its halves' English */}
                   </p>
                 );
               })}
             </div>
           )}
           actionLabel="继续"
-          onAction={() => onDone(result)}
+          onAction={() => onDone({ ...result, pairs: board.pairs.map(([l, r]) => ({ left: l, right: r, correct: !(missed[board.left.indexOf(l)] ?? 0) })) })}
         />
       )}
     >

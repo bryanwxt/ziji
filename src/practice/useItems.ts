@@ -8,7 +8,7 @@ import type { Word } from '../types';
  * right (用对了吗). wordId is null for a bank word he doesn't have as a word of his own (practice only, never recorded).
  */
 export type UseItem =
-  | { kind: 'fit'; wordId: string | null; word: string; before: string; after: string; options: string[]; pair?: string; clue?: string; meaning?: string } // meaning: a school word's own English for the sheet
+  | { kind: 'fit'; wordId: string | null; word: string; before: string; after: string; options: string[]; pair?: string; clue?: string; meaning?: string; glosses?: Record<string, string> } // meaning: a school word's own English for the sheet; glosses: a weekly list's choices' own English (a parent word's), for the ✗ row
   | { kind: 'usage'; wordId: string | null; word: string; right: string; wrong: string; pair?: string };
 
 export const fullSentence = (item: UseItem) => (item.kind === 'fit' ? item.before + item.word + item.after : item.right);

@@ -21,8 +21,8 @@ const list: WeekList = {
   id: 'wl:t', name: 'T', createdAt: 0, readyBy: '2026-11-05', homeworkDue: '2026-11-06',
   items: words.map((w) => ({ wordId: w.id, text: w.text, from: 'grid' as const, addedStatus: 'new' as const })),
   pairs: [],
-  fits: [],
-  check: { at: 1, day: '2026-11-05', done: true, results: Object.fromEntries(words.map((w) => [w.id, { form: 'read' as const, correct: w.text !== '亮晶晶' }])) },
+  fits: [{ wordId: 'p:亮晶晶', sentence: '夜空里的星星＿。', source: 'parent', wrong: ['干干净净', '整整齐齐', '高高兴兴'] }],
+  check: { at: 1, day: '2026-11-05', done: true, results: Object.fromEntries(words.map((w) => [w.id, { form: w.text === '亮晶晶' ? 'fit' as const : 'read' as const, correct: w.text !== '亮晶晶' }])) },
 };
 list.items = list.items.map((i) => (i.text === '亮晶晶' ? { ...i, missedOn: '2026-11-05' } : i));
 
@@ -51,5 +51,24 @@ describe('a lesson the day after the check', { timeout: 60_000 }, () => {
     expect((await logsSince(app.db, 0)).filter((l) => l.cardId === 'p:亮晶晶:recognise')).toHaveLength(0);
     const rec = (await getSession(app.db, '2026-11-06'))!;
     expect(rec.flashQueue[0]).toMatchObject({ wordId: 'p:亮晶晶', reteach: true });
+  });
+
+  it('练一练 gives the missed item its reserved slot, in the form it missed; the answer is noted on the list', async () => {
+    const app = await setup();
+    renderWithApp(<SessionScreen free={false} />, app);
+    fireEvent.click(await screen.findByText('我记住了！', {}, { timeout: 15_000 }));
+    fireEvent.click(await screen.findByText('liàng jīng jīng'));
+    fireEvent.click(await screen.findByText('继续'));
+    // 选词填空 from the list: the sentence with its blank, the list's own words as choices
+    await waitFor(() => expect(document.querySelector('.meaning-cue .label')?.getAttribute('data-zh')).toBe('夜空里的星星＿＿＿。'), { timeout: 15_000 });
+    const q = (await getSession(app.db, '2026-11-06'))!.practiceQueue!;
+    expect(q.filter((x) => x.list)).toEqual([expect.objectContaining({ wordId: 'p:亮晶晶', ask: 'fit', list: expect.objectContaining({ form: 'fit', reserved: true }) })]);
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent === '整整齐齐')!);
+    expect([...document.querySelectorAll('.sheet__en-line .sheet__en-zh .label')].map((e) => e.getAttribute('data-zh'))).toEqual(['亮晶晶', '整整齐齐']);
+    fireEvent.click(screen.getByText('继续'));
+    await waitFor(async () => {
+      const item = (await allWeekLists(app.db))[0]!.items.find((i) => i.text === '亮晶晶')!;
+      expect([item.last?.fit?.correct, item.missedOn]).toEqual([false, '2026-11-06']);
+    }, { timeout: 15_000 });
   });
 });

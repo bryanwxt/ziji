@@ -8,7 +8,7 @@ import { buildZibianRound, lookAlikeChars, zibianCount, type ZibianItem } from '
 import { ChooseStep } from '../activities/choose/ChooseStep';
 import { WrapupStep } from '../activities/choose/WrapupStep';
 import { planWrapup, wrapupTargets } from '../session/wrapup';
-import { endOfLocalDay } from '../lib/date';
+import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
 import { FlashcardStep, introIdiom, type FlashResult } from '../activities/flashcards/FlashcardStep';
 import { chooseCount, planChoose } from '../practice/choose';
 import { fitItem, usageItem, type UseItem } from '../practice/useItems';
@@ -51,7 +51,8 @@ import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, sendBack, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
-import { noteListAnswer } from '../weeklist/answers';
+import { formOf, noteListAnswer, noteListPairAnswer } from '../weeklist/answers';
+import type { PracticeItem } from '../session/round';
 import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
 import { DEFAULT_KID, type KidState, type OralInfo, type ReadingHistory, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
@@ -339,12 +340,13 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         else if (item.grades === 'meaning' && r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs, state.slow));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
-        if (item.ask !== 'fish' && item.ask !== 'understand') await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b)
+        if (item.ask !== 'fish' && item.ask !== 'understand' && !item.list) await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b); a weekly list's extra item isn't a ladder rung
         if (r.asked === 'zibian') {
           await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'zibian', correct: r.correct });
           if (r.correct) await clearConfusion(db, item.wordId);
           else await bringForward(db, item.wordId, know.cardsById.has(`${item.wordId}:write`) ? 'write' : 'recognise', now());
         }
+        await noteListPractice(item, r);
       }
       if (!r.correct) await rememberConfusion(item.wordId, r.picked);
       const ready = closeupAllowed(cardsSinceCloseup.current, reducedMotion());
@@ -354,6 +356,33 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const next = afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom);
       await commit(sent ? sendBack(next, item.wordId) : next);
     })();
+
+  /**
+   * A 练一练 answer on a weekly list word (weekly list spec 2026-10-17 §7.5, §8.2, §8.3): every answer on a list word counts toward
+   * its readiness, a 搭配 or board pair by pair. A list item grades no card itself: its 选词填空 or 搭配 rates the word's meaning
+   * card when that is its first answer of the day (recordUse; only a meaning card he already has, so no rung opens early), and a
+   * miss brings the card forward to the start of tomorrow.
+   */
+  const noteListPractice = async (item: PracticeItem, r: PracticeResult) => {
+    const tomorrow = startOfLocalDay(addDays(now(), 1));
+    const rateUse = async (wordId: string, correct: boolean) => {
+      if (!rec.extra && know.cardsById.has(`${wordId}:meaning`)) know.cardsById.set(`${wordId}:meaning`, await recordUse(db, wordId, correct, now(), r.responseMs, state.slow));
+      if (!correct) await bringForward(db, wordId, 'meaning', tomorrow);
+    };
+    if (item.list && r.listPairs?.length) {
+      for (const p of r.listPairs) {
+        const left = await noteListPairAnswer(db, item.list.listId, p, p.correct, now());
+        if (left) await rateUse(left, p.correct);
+      }
+      return;
+    }
+    const form = item.list?.form ?? formOf(item.ask);
+    if (!form) return;
+    await noteListAnswer(db, item.wordId, form, r.correct, now());
+    if (!item.list) return;
+    if (form === 'fit') await rateUse(item.wordId, r.correct);
+    else if (!r.correct) await bringForward(db, item.wordId, form === 'read' ? 'recognise' : 'meaning', tomorrow);
+  };
 
   /** A Say card (spec 2026-10-11 §3) or a 说一句 (production practice spec §4): keep the take for the parent and schedule its card; a refused microphone (after its note) drops the lesson's Say and 说一句 cards (§7). */
   const onSayDone = (r: SayResult | SaySkip) =>
@@ -565,6 +594,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           confused={state.confusions.get(practiceWord.id)}
           knownChars={know.knownChars}
           level={level}
+          listCard={rec.plan.listCards?.[practiceWord.id]}
           onDone={(r) => void onPracticeDone(r)}
         />
       )}

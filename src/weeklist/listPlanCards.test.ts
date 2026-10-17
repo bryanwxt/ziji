@@ -3,6 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildSessionPlan } from '../session/plan';
 import { createSessionRecord } from '../session/runner';
+import { planPractice } from '../session/practice';
+import { mulberry32 } from '../lib/random';
 import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type WeekList } from '../types';
 
@@ -59,5 +61,29 @@ describe('re-teaching cards (spec §2.1)', () => {
   it('never in an extra lesson', () => {
     const plan = buildSessionPlan({ cards: begun, words, settings, now: fri, newPerDay: 5, lists: [after], extra: true });
     expect(plan.reteachIds ?? []).toEqual([]);
+  });
+});
+
+describe('list items reach 练一练 (spec §2.1, §7.6)', () => {
+  it('the day after the check: the missed items have their reserved slots in the round, with their cards for the pair audio', () => {
+    const fri = new Date(2026, 10, 6, 9);
+    const after: WeekList = {
+      ...list,
+      check: { at: 1, day: '2026-11-05', done: true, results: { 'b:炒': { form: 'read', correct: false }, 'p:亮晶晶': { form: 'read', correct: true }, 'p:低下头': { form: 'read', correct: false } } },
+      items: list.items.map((i) => (i.wordId === 'p:亮晶晶' ? i : { ...i, missedOn: '2026-11-05' })),
+    };
+    const cards = [
+      ...['b:炒', 'p:亮晶晶', 'p:低下头'].map((id) => makeCard(id, 'recognise', new Date(2026, 10, 9), true)),
+      ...Array.from({ length: 6 }, (_, i) => makeCard(`b:字${i}`, 'recognise', new Date(2026, 10, 5), true)), // due revision
+    ];
+    const plan = buildSessionPlan({ cards, words, settings, now: fri, newPerDay: 0, lists: [after] });
+    expect(plan.listItems?.map((x) => [x.wordId, x.list?.form, x.list?.reserved])).toEqual([['b:炒', 'read', true], ['p:低下头', 'read', true]]);
+    expect(plan.listCards?.['b:炒']?.lead).toBe('炒青菜');
+    const rec = { ...createSessionRecord(plan, '2026-11-06', fri.getTime()), stepIndex: plan.steps.indexOf('practice') };
+    const byId = new Map(words.map((w) => [w.id, w]));
+    const round = planPractice(rec, new Map(), byId, words, false, mulberry32(3));
+    const listed = round.map((x, i) => (x.list ? i : -1)).filter((i) => i >= 0);
+    expect(listed).toHaveLength(2);
+    expect(Math.min(...listed)).toBeGreaterThan(round.findIndex((x) => !x.due) - 1); // never ahead of the first due items
   });
 });

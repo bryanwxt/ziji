@@ -40,6 +40,7 @@ describe('the 认新词 card (spec §7.1)', () => {
     card(makeWord('低下头', { id: 'p:低下头', source: 'parent', pinyin: 'dī xià tóu' }), {});
     expect(document.querySelector('.intro__card--list')).toBeTruthy();
     expect(cells('.intro__word')).toEqual([['dī', '低'], ['xià', '下'], ['tóu', '头']]);
+    expect(document.querySelector('.pet__bubble .label')!.getAttribute('data-zh')).toBe('新词来了！'); // a word, not a character
     expect(document.querySelector('.intro__example')).toBeNull();
   });
   it('the card says the word, then its example', () => {

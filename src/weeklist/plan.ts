@@ -11,11 +11,15 @@ import { boundPair } from '../content/kidGloss';
 import { bankFor, fillGap } from '../content/sentenceBank';
 import { sentencesFor } from '../content/understand';
 import { readingOf } from '../content/wordGate';
-import { choiceGloss } from '../practice/missNote';
-import type { CardRecord, ListCard, WeekList, WeekPair, Word } from '../types';
+import { pairGloss } from '../practice/missNote';
+import { mulberry32 } from '../lib/random';
+import { listBoard } from '../practice/pairs';
+import type { PracticeItem } from '../session/round';
+import type { CardRecord, ListCard, WeekForm, WeekList, WeekPair, Word } from '../types';
 import { daysBetween } from './dates';
+import { fitStillGood, pairStillGood } from './fit';
 import { itemStatus } from './match';
-import { notSolid } from './readiness';
+import { afterCheck, formsFor, isReady, notSolid } from './readiness';
 
 export const CLOSE_AFTER_DAYS = 7;
 export const HEADROOM = 2;
@@ -155,7 +159,7 @@ export function listCardFor(word: Word, lists: WeekList[], begun: ReadonlySet<st
   const pair = leadPair(word, lists);
   if (pair) {
     const lead = pair.left + pair.right;
-    const gloss = [choiceGloss(pair.left), choiceGloss(pair.right)].filter(Boolean).join(' ');
+    const gloss = pairGloss(pair.left, pair.right);
     return { lead, leadReading: pair.reading ?? readingOf(lead), ...(gloss ? { leadGloss: gloss } : {}), mark: [0, Array.from(pair.left).length] };
   }
   const chars = Array.from(word.text);
@@ -188,4 +192,73 @@ export function reteachIds(lists: WeekList[], now: Date, cap = MAX_RETEACH): str
     }
   }
   return [...inCheck, ...later].slice(0, cap);
+}
+
+/** Boost items in one lesson at most (spec §6.4), and reserved items (§2.1). */
+export const MAX_BOOST = 6;
+export const MAX_RESERVED = 8;
+const ASK_OF: Record<WeekForm, PracticeItem['ask']> = { read: 'read', meaning: 'meaningRead', fit: 'fit', dapei: 'match' };
+
+/**
+ * The list's items for today's 练一练 (spec §6.4, §2.1, §8.2), reserved first, then boost:
+ * - before the check, one boost item for each begun word that isn't ready;
+ * - after it, one reserved item for each item not yet solid (at most MAX_RESERVED, the oldest last answer first);
+ * - none on the ready-by day before the check is done (the check asks them).
+ * The form: the one it missed the day before (after the check), else the weakest — never answered, then last answered wrong, in
+ * read → meaning → 选词填空 → 搭配 order, then rotating. A 选词填空 or 搭配 row is asked only while it is still guess-proof
+ * (fitStillGood, pairStillGood). Pair items of one list that make a board (listBoard) become one 连一连 item.
+ */
+export function listPracticeItems(lists: WeekList[], words: ReadonlyMap<string, Word>, now: Date, begunIds: ReadonlySet<string>): PracticeItem[] {
+  const owner = listOwner(lists, now);
+  const day = localDateKey(now);
+  const yesterday = localDateKey(addDays(now, -1));
+  const reserved: PracticeItem[] = [];
+  const boost: PracticeItem[] = [];
+  for (const l of lists) {
+    if (day === l.readyBy && !l.check?.done) continue; // the check asks them today
+    const after = afterCheck(l, now);
+    const texts = new Set(l.items.map((i) => i.text));
+    const pool = after ? notSolid(l, now) : l.items.filter((it) => begunIds.has(it.wordId) && !isReady(it, l, words.get(it.wordId)));
+    for (const it of pool) {
+      const word = words.get(it.wordId);
+      if (owner.get(it.wordId) !== l || !word || word.paused) continue;
+      const fit = l.fits.find((f) => f.wordId === it.wordId && fitStillGood(f, it.text, texts));
+      const pair = l.pairs.find((p) => p.left === it.text && pairStillGood(p)) ?? l.pairs.find((p) => p.right === it.text && pairStillGood(p));
+      const forms = formsFor(it, l, word).filter((f) => (f !== 'fit' || !!fit) && (f !== 'dapei' || !!pair));
+      const checked = l.check?.results[it.wordId];
+      const missed = after && checked?.correct === false && it.missedOn === yesterday && forms.includes(checked.form) ? checked.form : undefined;
+      const weakest = forms.find((f) => !it.last?.[f]) ?? forms.find((f) => it.last?.[f]?.correct === false) ?? forms[(it.rightDays?.length ?? 0) % forms.length]!;
+      const form = missed ?? weakest;
+      const x: PracticeItem = {
+        wordId: it.wordId, rung: form === 'read' || form === 'meaning' ? 1 : 2, ask: ASK_OF[form], grades: null, retry: false,
+        list: { listId: l.id, form, ...(form === 'dapei' && pair ? { pair } : {}), ...(form === 'fit' && fit ? { fit } : {}), ...(after ? { reserved: true as const } : {}) },
+      };
+      (after ? reserved : boost).push(x);
+    }
+  }
+  return [...boards(reserved).slice(0, MAX_RESERVED), ...boards(boost)];
+}
+
+/** 搭配 items of one list whose pairs make a 连一连 board (spec §7.5): one board item in place of them, where the first of them was. */
+function boards(xs: PracticeItem[]): PracticeItem[] {
+  let out = [...xs];
+  for (;;) {
+    const byList = new Map<string, PracticeItem[]>();
+    for (const x of out) if (x.list?.pair) byList.set(x.list.listId, [...(byList.get(x.list.listId) ?? []), x]);
+    let made = false;
+    for (const group of byList.values()) {
+      const pairs = [...new Map(group.map((x) => [`${x.list!.pair!.left}|${x.list!.pair!.right}`, x.list!.pair!])).values()];
+      if (pairs.length < 3) continue;
+      const b = listBoard(pairs, mulberry32(7));
+      if (!b) continue;
+      const on = new Set(b.pairs.map(([l, r]) => `${l}|${r}`));
+      const taken = group.filter((x) => on.has(`${x.list!.pair!.left}|${x.list!.pair!.right}`));
+      const first = taken[0]!;
+      const { pair: _one, ...ask } = first.list!;
+      const board: PracticeItem = { ...first, list: { ...ask, pairs: pairs.filter((p) => on.has(`${p.left}|${p.right}`)) } };
+      out = out.flatMap((x) => (x === first ? [board] : taken.includes(x) ? [] : [x]));
+      made = true;
+    }
+    if (!made) return out;
+  }
 }

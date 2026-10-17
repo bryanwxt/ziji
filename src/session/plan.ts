@@ -7,7 +7,7 @@ import { classLessonAt, courseOf } from '../content/curriculum';
 import { bookLesson, pickNewWords } from './lanes';
 import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
-import { activeLists, isReadyByDay, listBudget, listCardFor, listOwner, reteachIds, schoolNeed } from '../weeklist/plan';
+import { activeLists, isReadyByDay, listBudget, listCardFor, listOwner, listPracticeItems, reteachIds, schoolNeed } from '../weeklist/plan';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, ListCard, SessionPlan, Settings, StepKind, WeekList, Word } from '../types';
 
 export const REVIEW_CAP = 60;
@@ -143,7 +143,10 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const reteach = extra || !open.length ? [] : reteachIds(open, now).filter((id) => byId.has(id) && !newWords.some((w) => w.id === id));
   const listIdsAll = new Set(open.flatMap((l) => l.items.map((i) => i.wordId)));
   const listCards: Record<string, ListCard> = {};
-  for (const id of [...reteach, ...newWords.filter((w) => listIdsAll.has(w.id)).map((w) => w.id)]) listCards[id] = listCardFor(byId.get(id)!, open, begunChars);
+  // 练一练's list items (spec §6.4, §2.1): boost for begun words not ready, reserved for items not solid after the check; extra
+  // lessons too (both are review). Their words keep their card, so a list verb is said as its pair there too (§7.2)
+  const listItems = open.length ? listPracticeItems(open, byId, now, started) : [];
+  for (const id of [...reteach, ...newWords.filter((w) => listIdsAll.has(w.id)).map((w) => w.id), ...listItems.map((x) => x.wordId)]) listCards[id] ??= listCardFor(byId.get(id)!, open, begunChars);
   // spec 2026-10-05 §2: no separate 用一用; a day with no new words (and no re-teaching cards) starts at 练一练 (no empty 认新字 stop, no star for it)
   const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0 || reteach.length > 0);
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
@@ -206,6 +209,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     listNewIds: listTaken,
     ...(reteach.length ? { reteachIds: reteach } : {}),
     ...(Object.keys(listCards).length ? { listCards } : {}),
+    ...(listItems.length ? { listItems } : {}),
     frontLoad,
   };
   if (!extra) return plan;

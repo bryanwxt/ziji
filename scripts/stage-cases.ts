@@ -368,6 +368,55 @@ for (const size of SIZES) {
   }
   const sideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   if (sideways > 1) problems.push(`${size.name} listen: the page scrolls sideways ${sideways}px`);
+  // a weekly list (weekly list spec 2026-10-17 §7): 认新词 cards for a 2-character word, a 3-character ABB word, a phrase and a verb
+  // through its pair, and a re-teaching card. Each word on one line with its pinyin over every character at once (never later),
+  // nothing clipped; then 选词填空 from the list and a 连一连 board of its pairs, unanswered and after a miss
+  for (const c of ['week-card-two', 'week-card-abb', 'week-card-phrase', 'week-card-pair', 'week-reteach']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForTimeout(500); // well before the 2 s a delayed pinyin would take
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    problems.push(...(await page.evaluate((n) => {
+      const out: string[] = [];
+      const cells = [...document.querySelectorAll('.intro__word .label__cell--zh')];
+      if (!cells.length) return [`${n}: no word on the card`];
+      if (new Set(cells.map((e) => Math.round(e.getBoundingClientRect().top))).size > 1) out.push(`${n}: the word wraps`);
+      for (const e of cells) {
+        const py = e.querySelector('.label__py')!;
+        if (!py.textContent || getComputedStyle(py).animationName !== 'none' || Number(getComputedStyle(py).opacity) < 0.99) { out.push(`${n}: pinyin not shown at once over ${e.querySelector('.label__ch')?.textContent}`); break; }
+      }
+      if (!document.querySelector('.intro__card--list')) out.push(`${n}: not a list card`);
+      return out;
+    }, `${size.name} ${c}`)));
+    if (c !== 'week-card-pair' && c !== 'week-card-two' && !(await page.$('.intro__example .speak'))) problems.push(`${size.name} ${c}: no example sentence with its speak button`);
+    if (c === 'week-card-pair' && (await page.$eval('.intro__word .label', (e) => e.getAttribute('data-zh')).catch(() => '')) !== '炒青菜') problems.push(`${size.name} ${c}: the verb does not lead with its pair`);
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+  }
+  {
+    await page.goto(`file://${dir}/index.html?case=week-fit`);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `fit-shots/stage-cases/week-fit-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} week-fit`)));
+    await page.click('.choice:text-is("胖乎乎")');
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/week-fit-missed-${size.name}.png` });
+    if (!(await page.$('.sheet .sheet__en-picked [lang="en"]:not(:empty)'))) problems.push(`${size.name} week-fit missed: no English beside what he picked`);
+    problems.push(...(await cardClipped(page, `${size.name} week-fit missed`)), ...(await sheetFits(page, `${size.name} week-fit missed`)), ...(await sheetScrolls(page, `${size.name} week-fit missed`)));
+  }
+  {
+    await page.goto(`file://${dir}/index.html?case=week-board`);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `fit-shots/stage-cases/week-board-${size.name}.png` });
+    if ((await page.$$('.pairs__col--right .pair__tile')).length !== 4) problems.push(`${size.name} week-board: not three pairs and a decoy`);
+    problems.push(...(await cardClipped(page, `${size.name} week-board`)));
+    for (const [l, r] of [['炒', '书包'], ['炒', '青菜'], ['踢', '毽子'], ['放', '风筝']]) {
+      await page.click(`.pairs__col--left .pair__tile:text-is("${l}")`);
+      await page.click(`.pairs__col--right .pair__tile:text-is("${r}")`);
+    }
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/week-board-missed-${size.name}.png` });
+    if (!(await page.$('.pair-summary__row.is-missed'))) problems.push(`${size.name} week-board missed: the miss is not marked`);
+    problems.push(...(await cardClipped(page, `${size.name} week-board missed`)), ...(await sheetFits(page, `${size.name} week-board missed`)), ...(await sheetScrolls(page, `${size.name} week-board missed`)));
+  }
   await page.close();
 }
 // every expression × looks: nothing of him pokes out of his box (a seam, an ear, a mark), and a sheet to read by eye

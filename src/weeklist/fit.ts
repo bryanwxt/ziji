@@ -147,8 +147,27 @@ export function parentSentenceProblems(text: string, word: string): string[] {
   return out;
 }
 
-/** A confirmed row as 选一选's question (UseQuestion `fit`). */
-export function fitUseItem(fit: WeekFit, word: Word, rng: Rng): UseItem {
+/** A confirmed row as 选一选's question (UseQuestion `fit`). `pool`: his words, for a parent decoy's own English on the miss sheet. */
+export function fitUseItem(fit: WeekFit, word: Word, rng: Rng, pool: readonly Word[] = []): UseItem {
   const at = fit.sentence.indexOf(BLANK);
-  return { kind: 'fit', wordId: word.id, word: word.text, before: fit.sentence.slice(0, at), after: fit.sentence.slice(at + 1), options: shuffle([word.text, ...fit.wrong], rng), ...(word.meaning && word.source === 'parent' ? { meaning: word.meaning } : {}) };
+  const glosses = Object.fromEntries(fit.wrong.flatMap((d) => { const w = pool.find((x) => x.text === d && x.source === 'parent' && x.meaning); return w ? [[d, w.meaning!]] : []; }));
+  return {
+    kind: 'fit', wordId: word.id, word: word.text, before: fit.sentence.slice(0, at), after: fit.sentence.slice(at + 1), options: shuffle([word.text, ...fit.wrong], rng),
+    ...(word.meaning && word.source === 'parent' ? { meaning: word.meaning } : {}), ...(Object.keys(glosses).length ? { glosses } : {}),
+  };
 }
+
+/**
+ * A confirmed row still guess-proof at the time it is asked (spec §7.3): the blank once; three different decoys, each still a word
+ * on the list (an edit can take one off), none the answer, inside it or holding it, none printed in the sentence, none of another
+ * shape than the answer (rule 6). A row that fails is not asked: the word is asked in its other forms.
+ */
+export function fitStillGood(fit: WeekFit, answer: string, onList: ReadonlySet<string>): boolean {
+  const at = fit.sentence.indexOf(BLANK);
+  if (at < 0 || fit.sentence.indexOf(BLANK, at + 1) >= 0) return false;
+  if (new Set(fit.wrong).size !== 3) return false;
+  return fit.wrong.every((d) => onList.has(d) && d !== answer && !d.includes(answer) && !answer.includes(d) && !fit.sentence.includes(d) && sameShape(answer, d) && !BLOCKED.has(d));
+}
+
+/** A 搭配 still guess-proof when asked (spec §7.4): three different wrong partners, none the right one. */
+export const pairStillGood = (p: { right: string; wrong: readonly string[] }) => new Set(p.wrong).size === 3 && !p.wrong.includes(p.right) && p.wrong.every((w) => !BLOCKED.has(w));
