@@ -1308,6 +1308,8 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .meaning-cue.meaning-cue--sentence { font-size: var(--sentence); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .stage__card .choices { width: min(100%, 560px); }
 .stage__card .flash__prompt { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+/* a heard word with a common sound-alike (她 / 他): the character and its speaker side by side (homophones.ts) */
+.flash__heard { display: flex; align-items: center; gap: 14px; }
 /* Truffle's bubble beside him (phone, upright iPad): its tail points left at him */
 .stage__truffle .pet__bubble::after { left: -7px; bottom: auto; top: 50%; transform: translateY(-50%) rotate(135deg); }
 @media (orientation: landscape) and (min-height: 600px) {

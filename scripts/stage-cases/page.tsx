@@ -349,6 +349,12 @@ else if (which === 'moments' || which === 'river') {
   }
   render(<Moments />, app);
 }
+else if (which === 'hear-seen') {
+  // a heard word with a common sound-alike (parent 2026-10-17: 她 / 他): the character shown beside its speaker
+  const pool = [...builtinWords(0), ...ladderWords()];
+  const w = pool.find((x) => x.text === '她')!;
+  render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask="hear" word={w} pool={pool} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
+}
 else if (which === 'hear' || which === 'hear-long' || which === 'hear-read') {
   // the word ladder's Hear question (spec 2026-10-06 §3.2): English meanings as the choices; hear-long picks the ladder words
   // with the longest English, hear-read the same as a read-for-meaning question

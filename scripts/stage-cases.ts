@@ -93,11 +93,12 @@ for (const size of SIZES) {
   if (Math.abs(neutral - good) > 2) problems.push(`${size.name} sheet: the card shrinks ${Math.round(neutral - good)}px when feedback appears`);
   // 练一练's new questions: pairing, 组句 (also with every tile placed, its longest) and 钓鱼
   mkdirSync('fit-shots/stage-cases', { recursive: true });
-  for (const c of ['pair', 'match', 'build', 'fish', 'hear', 'hear-long', 'hear-read', 'hear-bound', 'hear-bound-read', 'hear-bound-long']) {
+  for (const c of ['pair', 'match', 'build', 'fish', 'hear', 'hear-seen', 'hear-long', 'hear-read', 'hear-bound', 'hear-bound-read', 'hear-bound-long']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(300);
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+    if (c === 'hear-seen' && !(await page.$('.flash__heard .hanzi--q'))) problems.push(`${size.name} hear-seen: 她 not shown beside its speaker`);
     if (c === 'pair') {
       // 8 halves, two of them decoys (production practice spec §5), all on the card at every size
       const tiles = (await page.$$('.pairs--eight .pair__tile')).length;
