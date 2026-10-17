@@ -17,6 +17,7 @@ import { ProgressTab } from './ProgressPanel';
 import { RecordingsPanel } from './RecordingsPanel';
 import { RewardsPanel } from './RewardsPanel';
 import { SettingsPanel } from './SettingsPanel';
+import { TalkSection } from './TalkSection';
 import { WeekPanel } from './WeekPanel';
 import { WordsPanel } from './WordsPanel';
 
@@ -25,10 +26,10 @@ export type ParentTab = 'today' | 'progress' | 'content' | 'rewards' | 'settings
 /** The five parts of Content, picked by its segmented control; 本周词语 first (weekly list spec 2026-10-17 §3.1). */
 export type ContentPart = 'week' | 'words' | 'import' | 'passages' | 'pictures';
 /** A place a shortcut can go: each of the old tabs, now a section of one of the five. */
-export type ParentPlace = 'dashboard' | 'listen' | 'recordings' | 'school' | 'skills' | 'memory' | ContentPart | 'rewards' | 'settings' | 'backup' | 'credits';
+export type ParentPlace = 'dashboard' | 'talk' | 'listen' | 'recordings' | 'school' | 'skills' | 'memory' | ContentPart | 'rewards' | 'settings' | 'backup' | 'credits';
 
 export const HOME: Record<ParentPlace, ParentTab> = {
-  dashboard: 'today', listen: 'today', recordings: 'today',
+  dashboard: 'today', talk: 'today', listen: 'today', recordings: 'today',
   school: 'progress', skills: 'progress', memory: 'progress',
   week: 'content', words: 'content', import: 'content', passages: 'content', pictures: 'content',
   rewards: 'rewards',
@@ -96,7 +97,10 @@ export function ParentArea() {
         <main class="parent__body" role="tabpanel" id="parent-panel" aria-labelledby={`parent-tab-${tab}`}>
           {tab === 'today' && (
             <>
-              <div id={placeId('dashboard')} class="parent__section"><Dashboard onNavigate={navigate} waiting={waiting ?? undefined} /><ExtraLessonButton /></div>
+              <div id={placeId('dashboard')} class="parent__section">
+                <Dashboard onNavigate={navigate} waiting={waiting ?? undefined} talk={<div id={placeId('talk')}><TalkSection /></div>} />
+                <ExtraLessonButton />
+              </div>
               <div id={placeId('listen')} class="parent__section"><ListenPanel onReviewed={() => void countWaiting()} /></div>
               <div id={placeId('recordings')} class="parent__section">
                 <button type="button" class="btn btn--ghost parent__more" aria-expanded={allRecordings} aria-controls="parent-recordings-panel" onClick={() => setAllRecordings((o) => !o)}>

@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { voiceTier } from '../audio/voiceTier';
@@ -24,8 +25,9 @@ interface Data {
   micDenied: boolean;
 }
 
-/** The parent's overview. `waiting`: the takes still to review, live, when the queue is on the same page (Today). */
-export function Dashboard({ onNavigate, waiting }: { onNavigate: (place: ParentPlace) => void; waiting?: number }) {
+/** The parent's overview. `waiting`: the takes still to review, live, when the queue is on the same page (Today). `talk`: 聊一聊,
+ *  under the weekly-list readiness line (parent loop spec, 2026-10-18 update). */
+export function Dashboard({ onNavigate, waiting, talk }: { onNavigate: (place: ParentPlace) => void; waiting?: number; talk?: ComponentChildren }) {
   const { db, now, settings, voice } = useApp();
   const [d, setD] = useState<Data | null>(null);
 
@@ -84,6 +86,7 @@ export function Dashboard({ onNavigate, waiting }: { onNavigate: (place: ParentP
         </p>
       )}
       <WeekReadiness onOpen={() => onNavigate('week')} />
+      {talk}
       {d.recordings > KEEP_RECORDINGS && (
         <p class="warning">
           There are {d.recordings} recordings.{' '}

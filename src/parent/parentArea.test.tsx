@@ -46,6 +46,8 @@ describe('the parent area in five tabs', () => {
     enter(await open());
     // Today: the overview, Listen & confirm, and all recordings behind a toggle
     expect(await screen.findByText('Day streak')).toBeTruthy();
+    expect(await heading(/聊一聊 Talk/)).toBeTruthy();
+    expect(document.getElementById(placeId('talk'))).toBeTruthy();
     expect(await heading('Listen & confirm')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Recordings' })).toBeNull();
     const more = screen.getByRole('button', { name: /All recordings/ });
@@ -104,7 +106,7 @@ describe('the parent area in five tabs', () => {
 
   it('every old tab has a home, and its section is there', () => {
     expect(new Set(Object.values(HOME))).toEqual(new Set(['today', 'progress', 'content', 'rewards', 'settings']));
-    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'week', 'words'].sort());
+    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'talk', 'week', 'words'].sort());
   });
 });
 
