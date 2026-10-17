@@ -32,10 +32,12 @@ describe('run-outs for the list headroom are yesterday and the day before (spec 
     await ranOutOn(db, '2026-10-15');
     expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(7);
   });
-  it('yesterday ran out: no headroom, 5', async () => {
+  // no headroom after yesterday's run-out, but 14 words over two days still need 7 a day (parent ruling 2026-10-17, "more per
+  // day"); the headroom alone is pinned in plan.test.ts
+  it('yesterday ran out: no headroom, but the list still needs 7', async () => {
     const db = await setup();
     await ranOutOn(db, '2026-10-18');
-    expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(5);
+    expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(7);
   });
   it('yesterday and the day before ran out: spill, 4', async () => {
     const db = await setup();

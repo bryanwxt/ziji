@@ -43,6 +43,14 @@ describe('kid glosses (parent 2026-10-15)', () => {
       expect(glossProblems(g), g).not.toEqual([]);
   });
 
+  // a weekly list brings everyday words from beyond his lessons (parent ruling 2026-10-17: 蝴蝶 showed no English after the check)
+  it('an everyday list word beyond his lessons has one too (scripts/kidgloss/extra.tsv)', () => {
+    expect(kidGloss('蝴蝶')).toBe('butterfly');
+    expect(kidGlossReading('蝴蝶')).toBe('hú dié');
+    expect(glossFor('蝴蝶')).toBe('butterfly');
+    expect(glossProblems('butterfly')).toEqual([]);
+  });
+
   it("the parent's examples read as a child would say them", () => {
     expect(kidGloss('河水')).toBe('river water');
     expect(kidGloss('上网')).toBe('go online');

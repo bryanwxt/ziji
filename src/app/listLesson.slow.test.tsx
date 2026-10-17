@@ -63,7 +63,9 @@ describe('a lesson the day after the check', { timeout: 60_000 }, () => {
     await waitFor(() => expect(document.querySelector('.meaning-cue .label')?.getAttribute('data-zh')).toBe('夜空里的星星＿＿。'), { timeout: 15_000 });
     const q = (await getSession(app.db, '2026-11-06'))!.practiceQueue!;
     expect(q.filter((x) => x.list)).toEqual([expect.objectContaining({ wordId: 'p:亮晶晶', ask: 'fit', list: expect.objectContaining({ form: 'fit', reserved: true }) })]);
-    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.choice')].find((b) => b.textContent === '毛茸茸')!);
+    // the choices can mount a beat after the cue: wait for the one to tap (it was missing now and then, 1 run in 5)
+    const pick = await waitFor(() => { const b = [...document.querySelectorAll<HTMLButtonElement>('.choice')].find((x) => x.textContent === '毛茸茸'); expect(b).toBeTruthy(); return b!; }, { timeout: 15_000 });
+    fireEvent.click(pick);
     expect([...document.querySelectorAll('.sheet__en-line .sheet__en-zh .label')].map((e) => e.getAttribute('data-zh'))).toEqual(['亮晶晶', '毛茸茸']);
     fireEvent.click(screen.getByText('继续'));
     await waitFor(async () => {

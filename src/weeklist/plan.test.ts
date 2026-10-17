@@ -1,10 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { pickNewWords } from '../session/lanes';
-import { buildSessionPlan } from '../session/plan';
+import { buildSessionPlan, LIST_WORD_PRACTICE_MS } from '../session/plan';
 import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type CardRecord, type WeekList } from '../types';
-import { activeLists, listBudget, listOwner, schoolNeed } from './plan';
+import { activeLists, frontLoadPreview, listBudget, listOwner, MAX_FRONT_LOAD, schoolNeed } from './plan';
 
 const mon = new Date(2026, 9, 19, 9);
 const list = (over: Partial<WeekList> = {}): WeekList => ({
@@ -19,11 +19,35 @@ describe('listBudget (spec §5.2)', () => {
     const b = listBudget({ ...base, lists: [list()] });
     expect([b.listQuota, b.total, b.frontLoad, b.schoolFirst]).toEqual([7, 7, true, 0]);
   });
+  // parent ruling 2026-10-17 ("more per day"): a big list is spread over the days before ready-by, up to 12 a lesson
+  it('a big list spreads over the days before ready-by: 24 new words in two days is 12 a day, above the ceiling', () => {
+    const b = listBudget({ ...base, lists: [list({ items: Array.from({ length: 24 }, (_, i) => ({ wordId: `p:${i}`, text: `词${i}`, from: 'grid' as const, addedStatus: 'new' as const })) })] });
+    expect([b.listQuota, b.total, b.frontLoad, b.schoolFirst]).toEqual([12, 12, true, 0]); // class words wait these days
+  });
+  it('never more than 12 list words a lesson', () => {
+    const b = listBudget({ ...base, lists: [list({ items: Array.from({ length: 30 }, (_, i) => ({ wordId: `p:${i}`, text: `词${i}`, from: 'grid' as const, addedStatus: 'new' as const })) })] });
+    expect(b.listQuota).toBe(MAX_FRONT_LOAD);
+    expect(MAX_FRONT_LOAD).toBe(12);
+  });
+  it('the last front-load day takes what is left, up to 12', () => {
+    const tue = new Date(2026, 9, 20, 9);
+    const b = listBudget({ ...base, now: tue, lists: [list({ items: Array.from({ length: 11 }, (_, i) => ({ wordId: `p:${i}`, text: `词${i}`, from: 'grid' as const, addedStatus: 'new' as const })) })] });
+    expect([b.listQuota, b.total]).toEqual([11, 11]);
+  });
+  it('never below the old pace + 2 when the list is small', () => {
+    const b = listBudget({ ...base, lists: [list({ items: list().items.slice(0, 9) })] }); // 9 over 2 days spreads to 5, but 7 still come
+    expect(b.listQuota).toBe(7);
+  });
+  it('two run-outs still spill a big list', () => {
+    const b = listBudget({ ...base, lists: [list({ items: Array.from({ length: 24 }, (_, i) => ({ wordId: `p:${i}`, text: `词${i}`, from: 'grid' as const, addedStatus: 'new' as const })) })], ranOutYesterday: true, ranOutTwice: true });
+    expect(b.listQuota).toBe(4);
+  });
   it('never above the ceiling', () => {
     expect(listBudget({ ...base, pace: 7, lists: [list()] }).listQuota).toBe(8);
   });
-  it('no headroom after a run-out', () => {
-    expect(listBudget({ ...base, lists: [list()], ranOutYesterday: true }).total).toBe(5);
+  it('no headroom after a run-out, unless the list needs it to be taught by ready-by (parent ruling 2026-10-17)', () => {
+    expect(listBudget({ ...base, lists: [list({ items: list().items.slice(0, 9) })], ranOutYesterday: true }).total).toBe(5);
+    expect(listBudget({ ...base, lists: [list()], ranOutYesterday: true }).total).toBe(7); // 14 over two days
   });
   it('two run-outs spill: no more than pace − 1 today', () => {
     expect(listBudget({ ...base, lists: [list()], ranOutYesterday: true, ranOutTwice: true }).listQuota).toBe(4);
@@ -70,6 +94,18 @@ describe('listBudget (spec §5.2)', () => {
     const short = list({ items: list().items.slice(0, 10) }); // 10 new over 2 days needs 5 a day: 2 to spare at 7
     const b = listBudget({ ...base, lists: [short], schoolNeed: 24 }); // 9 short over 2 days: 5 a day; 1 from the ceiling, 2 from the list
     expect([b.listQuota, b.total, b.schoolFirst]).toEqual([5, 8, 3]);
+  });
+});
+
+describe('frontLoadPreview (the parent\'s plan line, parent ruling 2026-10-17)', () => {
+  it('a big list: 12 a day and about 20-minute lessons', () => {
+    expect(frontLoadPreview({ pace: 5, ceiling: 8, sessionMinutes: 15, newCount: 24, days: 2 })).toEqual({ rate: 12, minutes: 20 });
+  });
+  it('a list that fits at pace + 2: the usual lesson', () => {
+    expect(frontLoadPreview({ pace: 5, ceiling: 8, sessionMinutes: 15, newCount: 14, days: 2 })).toEqual({ rate: 7, minutes: null });
+  });
+  it('no days before ready-by: the usual rate', () => {
+    expect(frontLoadPreview({ pace: 5, ceiling: 8, sessionMinutes: 15, newCount: 24, days: 0 })).toEqual({ rate: 7, minutes: null });
   });
 });
 
@@ -143,6 +179,14 @@ describe('buildSessionPlan with a list (spec §5)', () => {
     expect(plan.newWordLanes?.['p:0']).toBe('list');
     expect(plan.frontLoad).toBe(true);
     expect(plan.practiceTimeBoxMs).toBe(Math.round(settings.sessionMinutes * 60_000 / 3) + 120_000);
+  });
+  it('a big front-load day gives 练一练 more time for the words over pace + 2 (parent ruling 2026-10-17)', () => {
+    const ws = [...words(24), ...Array.from({ length: 10 }, (_, i) => makeWord(`字${i}`, { id: `b:${i}`, rank: i }))];
+    const big = list({ items: Array.from({ length: 24 }, (_, i) => ({ wordId: `p:${i}`, text: `词${i}`, from: 'grid' as const, addedStatus: 'new' as const })) });
+    const plan = buildSessionPlan({ cards: [], words: ws, settings, now: mon, newPerDay: 5, lists: [big] });
+    expect(plan.listNewIds).toHaveLength(12);
+    expect(plan.newWordIds).toHaveLength(12); // class and catch-up words wait
+    expect(plan.practiceTimeBoxMs).toBe(Math.round(settings.sessionMinutes * 60_000 / 3) + 120_000 + 5 * LIST_WORD_PRACTICE_MS);
   });
   it('without a list, nothing changes', () => {
     const ws = Array.from({ length: 10 }, (_, i) => makeWord(`字${i}`, { id: `b:${i}`, rank: i }));

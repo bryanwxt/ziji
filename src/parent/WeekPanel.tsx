@@ -17,19 +17,23 @@ import { clampReadyBy, daysBetween, defaultDates, pastDue, weekdayZh } from '../
 import { fitDoubts, parentSentenceProblems, proposeFit, proposeFits, sentenceFor } from '../weeklist/fit';
 import { itemStatus, matchText } from '../weeklist/match';
 import { parseWeekList, weekIsWord, type DraftItem, type DraftPair, type WeekDraft } from '../weeklist/parse';
-import { activeLists, CLOSE_AFTER_DAYS, HEADROOM } from '../weeklist/plan';
+import { activeLists, CLOSE_AFTER_DAYS, frontLoadPreview } from '../weeklist/plan';
 import { checkTable, notSolid } from '../weeklist/readiness';
 import { WeekReadiness } from './WeekReadiness';
 import { saveWeekList } from '../weeklist/save';
 import { loadCedictWords } from '../weeklist/cedictWords';
 
 /** The preview's plan line (spec §3.5), naming the new words that won't be taught before the check. */
-export function planLine(i: { newCount: number; known: number; placed: number; rate: number; days: number; readyBy: string; homeworkDue: string; names: string[] }): string {
-  const head = `${i.newCount} new · ${i.known} he knows (quick check) · ${i.placed} to recheck. New words ${i.rate} a day for ${i.days} day${i.days === 1 ? '' : 's'}, check ${weekdayZh(i.readyBy)}, homework ${weekdayZh(i.homeworkDue)}.`;
+export function planLine(i: { newCount: number; known: number; placed: number; rate: number; days: number; readyBy: string; homeworkDue: string; names: string[]; longer?: { from: string; to: string; minutes: number } }): string {
+  // a big list's longer lessons (parent ruling 2026-10-17): "Mon–Tue lessons about 20 min"
+  const longer = !i.longer ? '' : i.longer.from === i.longer.to ? ` ${enDay(i.longer.from)}’s lesson about ${i.longer.minutes} min.` : ` ${enDay(i.longer.from)}–${enDay(i.longer.to)} lessons about ${i.longer.minutes} min.`;
+  const head = `${i.newCount} new · ${i.known} he knows (quick check) · ${i.placed} to recheck. New words ${i.rate} a day for ${i.days} day${i.days === 1 ? '' : 's'}, check ${weekdayZh(i.readyBy)}, homework ${weekdayZh(i.homeworkDue)}.${longer}`;
   if (!i.names.length) return head;
   return `${head} At ${i.rate} a day, ${i.names.length} new word${i.names.length === 1 ? '' : 's'} won’t be taught before ${weekdayZh(i.readyBy)}: ${i.names.join(', ')}. They’ll still be in the check.`;
 }
 
+const EN_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const enDay = (key: string) => EN_DAYS[parseDateKey(key).getDay()]!;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const short = (key: string) => { const d = parseDateKey(key); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; };
 const day = (key: string) => `${weekdayZh(key)} ${short(key)}`;
@@ -236,7 +240,8 @@ export function WeekPanel() {
   const counts = { new: 0, known: 0, placed: 0 };
   for (const it of kept) { const s = statusOf(it.text); if (s === 'new' || s === 'learning') counts.new++; else if (s === 'known') counts.known++; else counts.placed++; }
   const pace = settings.pace?.perDay ?? PACE_START;
-  const rate = Math.max(1, Math.min(pace + HEADROOM, Math.max(settings.newPerDay, pace)));
+  const { rate, minutes } = frontLoadPreview({ pace, ceiling: settings.newPerDay, sessionMinutes: settings.sessionMinutes, newCount: counts.new, days });
+  const longer = minutes && days ? { from: today, to: localDateKey(addDays(parseDateKey(effReady), -1)), minutes } : undefined;
   const newNames = kept.filter((it) => statusOf(it.text) === 'new').map((it) => it.text);
   const late = newNames.slice(rate * days);
   const later = effReady && homework ? clampReadyBy(now(), localDateKey(addDays(parseDateKey(effReady), 1)), homework) : effReady;
@@ -357,7 +362,7 @@ export function WeekPanel() {
           {same && <p class="week__note">“{same.name}” is already a list with these days. Saving adds to it.</p>}
           {!past && effReady && (
             <div class="week__plan">
-              <p>{planLine({ newCount: counts.new, known: counts.known, placed: counts.placed, rate, days, readyBy: effReady, homeworkDue: homework, names: late })}</p>
+              <p>{planLine({ newCount: counts.new, known: counts.known, placed: counts.placed, rate, days, readyBy: effReady, homeworkDue: homework, names: late, longer })}</p>
               {days === 1 && <p class="week__warn">Only 1 day — he’ll see the new words today and the check tomorrow.</p>}
               {late.length > 0 && later > effReady && <button type="button" class="small-btn" onClick={() => { setReadyBy(later); setReadyTouched(true); }}>Move ready-by later ({day(later)})</button>}
             </div>

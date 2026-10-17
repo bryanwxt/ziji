@@ -8,11 +8,11 @@ import { wordOfTheDay } from '../fun/wordOfDay';
 import { goalProgress, nextGoal } from '../fun/rewards';
 import { localDateKey } from '../lib/date';
 import { stepsOn } from '../session/plan';
-import { streak, totalStars, weekDays } from '../stats/stats';
+import { practisedDays, streak, totalStars, weekDays } from '../stats/stats';
 import { pickExample } from '../activities/writing/cue';
 import { WeekStrip } from './WeekStrip';
 import { WeekCountdown } from './WeekCountdown';
-import { allSessions, getKid, listParentPassages, listRewards, saveKid, updateKid } from '../store/repo';
+import { allSessions, allWeekLists, getKid, listParentPassages, listRewards, saveKid, updateKid } from '../store/repo';
 import { readToday } from '../langdu/history';
 import { pickPassage } from '../langdu/pick';
 import { readerAt } from '../langdu/level';
@@ -46,6 +46,7 @@ import { extraOpensAt, extraWaitLine } from '../session/extraGap';
 interface HomeData {
   know: Knowledge;
   sessions: SessionRecord[];
+  practised: Set<string>; // days with only 考考自己: active on the strip, the streak kept (parent ruling 2026-10-17)
   goals: RewardGoal[];
   parentPassages: ParentPassage[];
 }
@@ -72,7 +73,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   useEffect(() => enterSafeScreen(), []);
 
   useEffect(() => {
-    void Promise.all([loadKnowledge(db), allSessions(db), listRewards(db), listParentPassages(db)]).then(([know, sessions, goals, parentPassages]) => setData({ know, sessions, goals, parentPassages }));
+    void Promise.all([loadKnowledge(db), allSessions(db), listRewards(db), listParentPassages(db), allWeekLists(db)]).then(([know, sessions, goals, parentPassages, lists]) => setData({ know, sessions, practised: practisedDays(lists), goals, parentPassages }));
   }, []);
 
   // The dragon dozes off when nobody is around; any tap wakes it.
@@ -170,7 +171,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   const waitLine = todaySession && doneToday ? extraWaitLine(extraOpensAt(todaySession, k.starredUpTo), now()) : null;
   const shown = meterShown(k, today); // the small boat on the reward card: a new day's meter has the bank in it
   const hasCards = data.know.cards.some((c) => c.kind === 'recognise');
-  const days = streak(data.sessions, today);
+  const days = streak(data.sessions, today, data.practised);
   const wotd = wordOfTheDay({
     plannedNew: (todaySession?.plan.newWordIds ?? []).map((id) => data.know.wordsById.get(id)?.text ?? ''),
     knownChars: data.know.knownChars,
@@ -231,7 +232,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         <span class="stat stat--star" aria-label={`${stars} 颗星`}><Star size={24} strokeWidth={2.75} /> {stars}</span>
         <div class="home__week">
           <span class="seal" aria-hidden="true"><span>字</span><span>己</span></span>
-          <WeekStrip days={weekDays(data.sessions, today)} />
+          <WeekStrip days={weekDays(data.sessions, today, data.practised)} />
         </div>
         <span class="spacer" />
         <span class="home__who">

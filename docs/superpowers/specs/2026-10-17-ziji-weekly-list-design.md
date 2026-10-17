@@ -42,7 +42,7 @@ The parent also asked (2026-10-17) for two things to keep going:
 | **Ladder 词语** (`src/content/ladder.ts`: 街道, 排队, 离开…) | These are static and **never stored**. Their progress lives on `w:<text>:<kind>` cards. A parent word with the same text *shadows* the ladder word (`ladderWordsBesides`) and orphans his progress on it. So the list matches ladder words **by their `w:` id**; it never makes a copy. |
 | **Word ladder** (`src/ladder/rungs.ts`) | The rungs are hear → understand → read → use, and each passes on **two different days**. A new word needs at least eight days to reach Use. The ladder can't measure readiness in a week, so the list has its own readiness (§8) and its own practice items (§6.4). |
 | **搭配** (`src/content/dapei.ts`, `practice/pairs.ts` `dapeiQuestion`, `MatchQuestion.tsx`) and **PairGame `kind: 'match'`** | The question shape, the 都不对 variants (`noneOfThese.ts`) and a 搭配 board mode already exist. The board mode is unused today. **Reuse all of them.** Nouns from the same theme often go with each other's verbs (煮萝卜 and 炒花生 are both right), so a list board needs wrong pairings someone has confirmed (§7). |
-| **Glossary** | `glossary.json` holds 8,171 entries and is trimmed to the app's scope. From the sample sheet: <br>• No English anywhere for 共用, 结出, 冰凉, 指着, 低下头, 扁豆, 番茄汤, 包菜, 碰碰车, 鸡翅, 圈圈. <br>• A kid gloss but no dictionary entry for 花生, 气球, 羽毛, 豆芽. <br>The parent fills in what is missing (§3.4). |
+| **Glossary** | `glossary.json` holds 8,171 entries and is trimmed to the app's scope. From the sample sheet: <br>• No English anywhere for 共用, 结出, 冰凉, 指着, 低下头, 扁豆, 番茄汤, 包菜, 碰碰车, 鸡翅, 圈圈. <br>• A kid gloss but no dictionary entry for 花生, 气球, 羽毛, 豆芽. <br>The parent fills in what is missing (§3.4). Everyday words beyond his lessons that lists bring get hand-written kid glosses in `scripts/kidgloss/extra.tsv` (蝴蝶 butterfly, parent ruling 2026-10-17), checked by the same gloss gates. |
 | **Readings** | 炸's card reads zhá (`READING_FIXES`), the sense the sheet uses (炸鸡翅). For a list character whose card reads differently from its 搭配, the 搭配 reading wins on the board (`halfReading`). The preview shows the difference. |
 | **Planner** (`plan.ts`, `lanes.ts`, `pace.ts`) | `pickNewWords` already takes "listed" words first and then splits what is left between the school and catch-up lanes. The list plugs in there, with a daily quota (§5). |
 | **Character-first lessons** (`FlashcardStep` intro card, `UseQuestion`, `meaningCue`, `src/content/sentences/*.json`) | The intro card already lays out multi-character text: `hanzi--long`, `--len`, `Label` with each syllable over its character, and a bound pair with one character marked. A list word card is therefore a reuse (§7.1). 选一选 (`fit`) is already a fill-the-blank question. Its decoys are sound-alikes or the bank's, so the list adds list-mate decoys (§7.3). The school sentence file (1,514 words, 一上–二下) is not yet a `meaningCue` source. It covers 21 of the sample's 30 grid items. |
@@ -58,6 +58,7 @@ The parent also asked (2026-10-17) for two things to keep going:
      - Up to about 21: 3 days.
      - More than fits before ready-by: the parent is told which words won't be taught in time (§3.5).
    - **Why not "≤ 20 in 2 days":** that is 10 a day, above the ceiling of 8 the app paces under. The pace exists because he forgets words that come too fast (`pace.ts`, Burns et al.).
+   - **Amended (parent ruling 2026-10-17, "more per day"):** a big list is spread over the days before ready-by, up to **12 a lesson**, above the ceiling. A list of about 27 items given on Monday (24 new) is then taught by Wednesday's check. The rate is `max(pace + 2, min(12, ceil(new still to teach ÷ days before ready-by)))`. His class words wait those days, revision is still never squeezed, and those lessons run longer, about 20 minutes (§5.1). The parent's plan line says so (§3.5). A list with more than 12 new words a day before ready-by still has the rest taught after the check.
 2. **When the list and the MOE words together exceed the pace.**
    - **Recommendation:**
      - On front-load days the list takes the new-word slots, plus 2 slots of headroom. Headroom applies only when yesterday's 练一练 didn't run out of time.
@@ -203,6 +204,7 @@ The preview has four parts.
 3. **Fill-in rows (选词填空):** one row per item that has a sentence (§7.3), with its blank and three proposed decoys from the list. A tap swaps a decoy. **Fine** confirms a row, and **All fine** confirms every row. An optional field lets the parent type a sentence for an item that has none.
 4. **The plan, in one line:** "14 new · 14 he knows (quick check) · 4 to recheck. New words Mon–Tue (7 a day), check Wed, homework Fri. Class lane continues; catch-up pauses Mon–Tue."
    - When the words don't fit, it names them: "At 7 a day, 4 new words won't be taught before Wed: 争吵, 原谅, 羽毛, 低下头. They'll still be in the check." It offers **Move ready-by later** or **OK**.
+   - When a big list runs over pace + 2 (§5.2), it says how long those lessons get: "New words 12 a day for 2 days, check 星期三, homework 星期五. Mon–Tue lessons about 20 min." (parent ruling 2026-10-17). The estimate is the lesson's minutes plus 1 for each word a day over pace + 2.
 5. **Add.**
    - Add writes the new words, the list record and any unpauses, in one transaction.
    - It then shows a summary.
@@ -301,11 +303,11 @@ Today a lesson runs as follows:
 
 **On a front-load day** (a day with list new words):
 
-- **认新字** takes the list's quota plus whatever is left for MOE (§5.2): 6–8 words, about 3–4 min.
-- **练一练's time box grows by 2 minutes**, to about 7. **写一写 takes half its usual characters** for that day, which pays for it. Writing is not this week's goal, and its due cards keep their place: half the characters means the most-due ones first.
+- **认新字** takes the list's quota plus whatever is left for MOE (§5.2): 6–8 words, about 3–4 min, or up to 12 list words on a big list's days (parent ruling 2026-10-17).
+- **练一练's time box grows by 2 minutes**, to about 7, and by another 30 s for each list word over pace + 2 (`LIST_WORD_PRACTICE_MS`), so a 12-word day's extra cards fit. **写一写 takes half its usual characters** for that day, which pays for it. Writing is not this week's goal, and its due cards keep their place: half the characters means the most-due ones first.
 - **认新字 opens with the list:** list words come first, as word cards (§7.1), then the MOE characters.
 - **Inside 练一练, everything is interleaved** by `buildRound` (§7.6): today's new words, due revision (quick checks are due revision, §6.1) and list boost items (§6.4) take turns. In the first-appearance order, due revision still comes before the boost items, and the boost share is sized to fit the box. So time running out cuts boost items, not revision.
-- **The lesson is still about 15 minutes.** 朗读 is unchanged.
+- **The lesson is still about 15 minutes**, or about 20 on a big list's days (parent ruling 2026-10-17: acceptable). 朗读 is unchanged.
 
 **On other days** the lesson is exactly today's.
 
@@ -330,7 +332,7 @@ The deadline is real, but so is the backlog.
 - **H** = 2 if yesterday's round didn't run out and he is not in a backlog pause, else 0.
 - **front days** = the days from the list's arrival to ready-by − 1, at most `ceil(totalNew ÷ min(P + H, newPerDay))`. Decision 1 sets the rate.
 - **remaining** = list words with status **new**, not yet begun.
-- **list today** = `min(remaining, P + H − schoolFloor)`. There is no spreading: front-loading wants the words as early as the rate allows (ruling at plan time, 2026-10-17).
+- **list today** = `min(remaining, rate − schoolFloor)`, where **rate** = `max(min(P + H, newPerDay), min(12, ceil(remaining before ready-by ÷ days before ready-by)))` (parent ruling 2026-10-17, "more per day": `MAX_FRONT_LOAD`). The spread only ever raises the rate: front-loading still wants the words as early as possible. When it is above the ceiling, there is no room under the ceiling for the class lane, and its words wait those days. Two run-outs still spill (pace − 1).
   - `schoolFloor` is 0 on a front-load day.
   - It is `min(P, schoolNeed ÷ schoolDaysLeft)` once the class lane must catch up before homework due (§5.3).
 - **MOE today** = `P − list today`, or `P + H − list today` (at least 0) on a front-load day. `pickNewWords` splits this between the school and catch-up lanes as it does now, but the **school lane is filled first** while `schoolNeed > 0`.
@@ -382,6 +384,16 @@ The figures below are illustrative. Due counts depend on FSRS.
 | **Total** | **39**, against 35 at a flat 5 a day: the 4 headroom slots, on two days only |
 
 Due revision was due every day and was taken every day.
+
+**A big list (parent ruling 2026-10-17, `week.sim.test.ts`):** with the same week, the per-day list new words are:
+
+| List arriving | List new by day (from arrival) | School lane | Notes |
+|---|---|---|---|
+| Mon, 27 items (24 new, 3 known) | 12, 12, 0, 0, 0, 0, 0 | 0, 0, 3, 3, 2, 0, 0 | all 24 taught before Wednesday's check, which grades all 27 |
+| Mon, 32 items (24 new, 8 known) | 12, 12, 0, … | — | all taught before the check |
+| Mon, 27 items, all new | 12, 12, 0, 2, … | — | 12 a lesson at most: 3 come after the check |
+| Wed, the 32 above (ready by Thu) | 12, 0, 1, 1, 0 | 0, 4, 4, 0, 0 | was 7, 0, 1, 5, 1 |
+| Thu, the 32 above (ready by Fri) | 12, 0, 2, 0 | 0, 5, 2, 1 | was 7, 0, 5, 2; his class is 3 short on Friday (was 2), shown on the parent's line |
 
 ## 6. Scheduling around the deadline
 
@@ -647,7 +659,7 @@ Board and match answers grade the left word's `meaning` card (`recordUse`, sourc
   - 练一练 that day **leaves out list words' due cards**, which the check grades instead. If he never opens the check, those cards stay due.
 - **No 都不对** and no retries in the check: it measures.
 - A miss shows the miss sheet. The question does not come back in the check.
-- **Rewards follow mastery, not completion** (learning rules #34, Deci, Koestner & Ryan 1999). One `bonusStars` star goes to each item that is right in the check and was not ready before it. Finishing the check earns nothing by itself and does not move the river meter.
+- **Rewards follow mastery, not completion** (learning rules #34, Deci, Koestner & Ryan 1999). One `bonusStars` star goes to each item that is right in the check and was not ready before it. Finishing the check earns nothing by itself and does not move the river meter. It is still practice: a day with only the check shows as an active day on Home's week strip, never 休, and keeps the streak going without adding to it (parent ruling 2026-10-17).
 - **Saving:** results go to `WeekList.check` as each answer is given, so stopping and resuming works.
 
 ### 8.2 Misses come back

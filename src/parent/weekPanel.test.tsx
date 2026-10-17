@@ -12,7 +12,7 @@ import { listStatus, planLine, WeekPanel } from './WeekPanel';
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); resetCedictWords(); });
 
 // Invented, shaped like Live Text on a weekly sheet: a page code, a grid, and 搭配 under two theme headings.
-const SHEET = ['P9-L01-练习', '一、词语', '草地 跑步 蝴蝶', '二、词语搭配', '早餐', '吃 面包', '喝 牛奶', '公园', '放 风筝', '踢 足球'].join('\n');
+const SHEET = ['P9-L01-练习', '一、词语', '草地 跑步 蜻蜓', '二、词语搭配', '早餐', '吃 面包', '喝 牛奶', '公园', '放 风筝', '踢 足球'].join('\n');
 const MONDAY = new Date(2026, 9, 19, 9); // Mon 19 Oct 2026
 
 async function setup(now = MONDAY) {
@@ -52,8 +52,8 @@ describe('WeekPanel: paste and preview (spec §3.2–3.5)', () => {
     const known = screen.getByRole('list', { name: /He knows/ });
     expect(within(known).getByText('跑步')).toBeTruthy();
     expect(within(fresh).queryByText('跑步')).toBeNull();
-    expect(within(fresh).getByText('蝴蝶')).toBeTruthy();
-    expect(screen.getByLabelText('English for 蝴蝶 (optional)')).toBeTruthy();
+    expect(within(fresh).getByText('蜻蜓')).toBeTruthy();
+    expect(screen.getByLabelText('English for 蜻蜓 (optional)')).toBeTruthy();
     expect(screen.queryByLabelText('English for 草地 (optional)')).toBeNull(); // it has one
     expect(within(fresh).getByText('grass field')).toBeTruthy();
     expect(screen.getByLabelText('Name')).toHaveProperty('value', 'P9-L01');
@@ -122,7 +122,7 @@ describe('WeekPanel: confirming the wrong answers', () => {
   it('saves the list: new parent words with the English typed, pairs with three wrongs, checked fill-ins; removed rows left out', async () => {
     const app = await setup();
     await read();
-    fireEvent.input(screen.getByLabelText('English for 蝴蝶 (optional)'), { target: { value: 'butterfly' } });
+    fireEvent.input(screen.getByLabelText('English for 蜻蜓 (optional)'), { target: { value: 'dragonfly' } });
     const fills = screen.getByRole('list', { name: '选词填空' });
     const first = fills.querySelector('li')!;
     const removed = first.getAttribute('data-word')!;
@@ -134,29 +134,29 @@ describe('WeekPanel: confirming the wrong answers', () => {
     await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(1));
     const l = (await allWeekLists(app.db))[0]!;
     expect(l).toMatchObject({ name: 'P9-L01', readyBy: '2026-10-21', homeworkDue: '2026-10-23' });
-    expect(l.items.map((i) => i.text)).toEqual(['草地', '跑步', '蝴蝶', '吃', '面包', '喝', '牛奶', '放', '风筝', '踢', '足球']);
+    expect(l.items.map((i) => i.text)).toEqual(['草地', '跑步', '蜻蜓', '吃', '面包', '喝', '牛奶', '放', '风筝', '踢', '足球']);
     expect(l.pairs.map((p) => `${p.left}${p.right}`)).toEqual(['吃面包', '喝牛奶', '放风筝']);
     for (const p of l.pairs) expect(p.wrong).toHaveLength(3);
     expect(l.pairs[0]!.group).toBe('早餐');
     expect(l.fits.length).toBeGreaterThan(0);
     expect(l.fits.map((f) => l.items.find((i) => i.wordId === f.wordId)?.text)).not.toContain(removed);
-    const butterfly = (await allWords(app.db)).find((w) => w.text === '蝴蝶')!;
-    expect(butterfly).toMatchObject({ meaning: 'butterfly', writeable: false, source: 'parent' });
+    const dragonfly = (await allWords(app.db)).find((w) => w.text === '蜻蜓')!;
+    expect(dragonfly).toMatchObject({ meaning: 'dragonfly', writeable: false, source: 'parent' });
     expect(await screen.findByRole('status')).toHaveProperty('textContent', expect.stringMatching(/Saved “P9-L01”: 11 words/));
   });
 
   it('a word unticked is not saved, and English with Chinese in it is refused', async () => {
     const app = await setup();
     await read();
-    fireEvent.input(screen.getByLabelText('English for 蝴蝶 (optional)'), { target: { value: '蝴蝶 fly' } });
+    fireEvent.input(screen.getByLabelText('English for 蜻蜓 (optional)'), { target: { value: '蜻蜓 fly' } });
     confirmAll();
     expect(screen.getByText(/Chinese in the English/)).toBeTruthy();
     expect(save().disabled).toBe(true);
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Include 蝴蝶' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include 蜻蜓' }));
     expect(save().disabled).toBe(false);
     fireEvent.click(save());
     await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(1));
-    expect((await allWeekLists(app.db))[0]!.items.map((i) => i.text)).not.toContain('蝴蝶');
+    expect((await allWeekLists(app.db))[0]!.items.map((i) => i.text)).not.toContain('蜻蜓');
   });
 
   it('a look-alike misread offers its fix', async () => {
@@ -201,17 +201,17 @@ describe('WeekPanel: the lists', () => {
     const l = await saved(app);
     fireEvent.click(await screen.findByRole('button', { name: 'Edit P9-L01' }));
     fireEvent.input(screen.getByLabelText('List name'), { target: { value: '第一周' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Remove 蝴蝶' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove 蜻蜓' }));
     // he answers while the parent is editing
-    const butterfly = l.items.find((i) => i.text === '蝴蝶')!.wordId;
+    const dragonfly = l.items.find((i) => i.text === '蜻蜓')!.wordId;
     const grass = l.items.find((i) => i.text === '草地')!.wordId;
     await updateWeekList(app.db, l.id, (x) => ({ ...x, items: x.items.map((i) => (i.wordId === grass ? { ...i, last: { read: { at: 1, correct: true } } } : i)) }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(async () => expect((await getWeekList(app.db, l.id))?.name).toBe('第一周'));
     const after = (await getWeekList(app.db, l.id))!;
     expect(after.items.find((i) => i.wordId === grass)?.last?.read?.correct).toBe(true);
-    expect(after.items.map((i) => i.wordId)).not.toContain(butterfly);
-    expect(after.fits.map((f) => f.wordId)).not.toContain(butterfly);
+    expect(after.items.map((i) => i.wordId)).not.toContain(dragonfly);
+    expect(after.fits.map((f) => f.wordId)).not.toContain(dragonfly);
   });
 
   it('Close asks on the page (never confirm()), closes the list and keeps it under a collapsed Past lists; delete is in there', async () => {
@@ -234,7 +234,7 @@ describe('WeekPanel: the lists', () => {
     expect(screen.getByText(/Delete “P9-L01” for good\? His words and progress stay/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Delete the list' }));
     await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(0));
-    expect((await allWords(app.db)).map((w) => w.text)).toContain('蝴蝶');
+    expect((await allWords(app.db)).map((w) => w.text)).toContain('蜻蜓');
     expect(native).not.toHaveBeenCalled();
   });
 
@@ -282,18 +282,18 @@ describe('WeekPanel: fill-in rows and joining (follow-up 2026-10-17)', () => {
   });
 
   it('a real word in the CC-CEDICT list (loaded on demand) is not flagged', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('蝴蝶\n秋千\n')));
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('蜻蜓\n秋千\n')));
     await setup();
-    await read(['一、词语', '蝴蝶 秋千 草地'].join('\n'));
+    await read(['一、词语', '蜻蜓 秋千 草地'].join('\n'));
     expect(screen.queryByText(/ZiJi doesn’t know|not in ZiJi’s dictionary/)).toBeNull();
   });
 
   it('two cells Live Text split can be joined', async () => {
     await setup();
-    await read(['一、词语', '草地 蝴 蝶'].join('\n'));
-    fireEvent.click(screen.getByRole('button', { name: 'Join 蝴 and 蝶' }));
-    expect(screen.getByText('蝴蝶')).toBeTruthy();
-    expect(screen.queryByRole('checkbox', { name: 'Include 蝴' })).toBeNull();
+    await read(['一、词语', '草地 蜻 蜓'].join('\n'));
+    fireEvent.click(screen.getByRole('button', { name: 'Join 蜻 and 蜓' }));
+    expect(screen.getByText('蜻蜓')).toBeTruthy();
+    expect(screen.queryByRole('checkbox', { name: 'Include 蜻' })).toBeNull();
   });
 });
 
@@ -301,6 +301,12 @@ describe('planLine and listStatus', () => {
   it('the plan line names the words that will not fit', () => {
     expect(planLine({ newCount: 18, known: 10, placed: 4, rate: 7, days: 2, readyBy: '2026-10-21', homeworkDue: '2026-10-23', names: ['甲', '乙', '丙', '丁'] }))
       .toBe('18 new · 10 he knows (quick check) · 4 to recheck. New words 7 a day for 2 days, check 星期三, homework 星期五. At 7 a day, 4 new words won’t be taught before 星期三: 甲, 乙, 丙, 丁. They’ll still be in the check.');
+  });
+  it('a big list says its longer lessons (parent ruling 2026-10-17)', () => {
+    expect(planLine({ newCount: 24, known: 3, placed: 0, rate: 12, days: 2, readyBy: '2026-10-21', homeworkDue: '2026-10-23', names: [], longer: { from: '2026-10-19', to: '2026-10-20', minutes: 20 } }))
+      .toBe('24 new · 3 he knows (quick check) · 0 to recheck. New words 12 a day for 2 days, check 星期三, homework 星期五. Mon–Tue lessons about 20 min.');
+    expect(planLine({ newCount: 10, known: 0, placed: 0, rate: 10, days: 1, readyBy: '2026-10-22', homeworkDue: '2026-10-23', names: [], longer: { from: '2026-10-21', to: '2026-10-21', minutes: 18 } }))
+      .toBe('10 new · 0 he knows (quick check) · 0 to recheck. New words 10 a day for 1 day, check 星期四, homework 星期五. Wed’s lesson about 18 min.');
   });
   const list = (over: Partial<WeekList> = {}): WeekList => ({ id: 'wl:1', name: 'x', createdAt: 0, readyBy: '2026-10-21', homeworkDue: '2026-10-23', items: [{ wordId: 'b:a', text: 'a', from: 'grid', addedStatus: 'new' }, { wordId: 'b:b', text: 'b', from: 'grid', addedStatus: 'new' }], pairs: [], fits: [], ...over });
   it('says where a list stands', () => {

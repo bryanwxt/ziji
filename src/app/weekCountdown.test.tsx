@@ -58,4 +58,15 @@ describe('Home with a weekly list', () => {
     await waitFor(() => expect(container.querySelector('.home__cards .reward-card + .week-countdown')).toBeTruthy());
     expect(container.querySelector('.wotd')).toBeNull(); // the word of the day makes room for it
   });
+  it('the week strip shows yesterday\'s 考考自己 as an active day, not 休 (parent ruling 2026-10-17)', async () => {
+    const { HomeScreen } = await import('./HomeScreen');
+    const app = await makeAppData({ now: () => new Date(2026, 10, 5, 9) }); // Thursday; the check was Wednesday 4 Nov
+    await putWords(app.db, [makeWord('风筝', { id: 'p:风筝', source: 'parent' }), makeWord('小河', { id: 'p:小河', source: 'parent' })]);
+    await putWeekList(app.db, { ...list, check: { at: 0, day: '2026-11-04', done: true, results: { 'p:风筝': { form: 'read', correct: true } } } });
+    const { container } = renderWithApp(<HomeScreen />, app);
+    await waitFor(() => expect(container.querySelectorAll('.week__day').length).toBe(7));
+    const wed = container.querySelectorAll('.week__day')[2]!;
+    expect(wed.classList.contains('is-done')).toBe(true);
+    expect(wed.classList.contains('is-rest')).toBe(false);
+  });
 });

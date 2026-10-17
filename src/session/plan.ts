@@ -7,7 +7,7 @@ import { classLessonAt, courseOf } from '../content/curriculum';
 import { bookLesson, pickNewWords } from './lanes';
 import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
-import { activeLists, isReadyByDay, listBudget, listCardFor, listOwner, listPracticeItems, reteachIds, schoolNeed } from '../weeklist/plan';
+import { activeLists, isReadyByDay, listBudget, paceRate, listCardFor, listOwner, listPracticeItems, reteachIds, schoolNeed } from '../weeklist/plan';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, ListCard, SessionPlan, Settings, StepKind, WeekList, Word } from '../types';
 
 export const REVIEW_CAP = 60;
@@ -60,6 +60,8 @@ export function extraCards(cards: CardRecord[], now: Date, skip: ReadonlySet<str
 
 /** 练一练's extra time on a front-load day, paid for by half of 写一写 (weekly list spec §5.1). */
 export const LIST_PRACTICE_MS = 2 * 60_000;
+/** 练一练's extra time for each list word over pace + 2 on a big front-load day (parent ruling 2026-10-17: ~20 min is fine). */
+export const LIST_WORD_PRACTICE_MS = 30_000;
 export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: 5 of the usual 15 minutes, 朗读 takes ~3 (learning rules 2026-10-17)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
@@ -189,7 +191,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     newWordIds: newWords.map((w) => w.id),
     newWordLanes,
     flashTimeBoxMs: 0, // only lessons saved before 2026-10-05 time-boxed 认一认
-    practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE) + (frontLoad ? LIST_PRACTICE_MS : 0),
+    practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE) + (frontLoad ? LIST_PRACTICE_MS + LIST_WORD_PRACTICE_MS * Math.max(0, listTaken.length - paceRate(perDay, settings.newPerDay)) : 0),
     writeCandidates: writeUnits.map((u) => ({ wordId: u.wordId, isNew: u.isNew })),
     writeItems,
     writeCount: writeItems.length,
