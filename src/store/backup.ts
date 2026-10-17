@@ -1,6 +1,7 @@
 import { openDB } from 'idb';
 import type { KidState, Settings } from '../types';
-import { DB_NAME, DB_VERSION, LIST_STORES, type AppDb, type ListStore } from './db';
+import { schoolYear } from '../content/curriculum';
+import { DB_NAME, DB_VERSION, LIST_STORES, type AppDb, type ListStore, type RestorePoint } from './db';
 import { applySettingsMigration } from './settings';
 import { migrateToLadder } from '../ladder/migrate';
 import { markOldPlacement } from '../placement/migrate';
@@ -12,11 +13,20 @@ export const RAW_FORMAT = 'hanzi-buddy-raw-dump';
 const NOT_A_BACKUP = 'This file is not a 字己 ZiJi backup.';
 const NEWER = 'This backup was made by a newer version of 字己 ZiJi. Update the app, then try again.';
 
+/** Whose progress a backup holds (review 2026-10-17: two children, one wrong file): the child's name (the pet's without one),
+ *  his school year then, and the device it was saved on. */
+export interface BackupWho {
+  name: string;
+  grade: number | null;
+  device: string | null;
+}
+
 export interface BackupFile {
   format: typeof BACKUP_FORMAT;
   formatVersion: number;
   exportedAt: number;
   dbVersion: number;
+  who?: BackupWho; // backups before 2026-10-17 have none: it is read from their settings and pet
   stores: Partial<Record<ListStore, unknown[]>>;
   settings: unknown;
   kid: unknown;
@@ -25,8 +35,41 @@ export interface BackupFile {
 export interface BackupPreview {
   file: BackupFile;
   exportedAt: number;
+  who: BackupWho;
   counts: { words: number; cards: number; sessions: number; recordings: number };
   hasMedia: boolean;
+}
+
+/** The stores a backup holds: every list store; the restore point is never among them. */
+export const LIST_STORES_IN_BACKUP: readonly string[] = LIST_STORES;
+
+const whoFrom = (settings: Partial<Settings> | null, kid: Partial<KidState> | null, at: Date, device: string | null): BackupWho => ({
+  name: settings?.oral?.name?.trim() || kid?.petName?.trim() || '',
+  grade: settings ? schoolYear(settings, at) : null,
+  device,
+});
+
+/** This device's child, as a backup made now would name him. */
+export async function currentWho(db: AppDb, now: Date, device: string | null): Promise<BackupWho> {
+  const [settings, kid] = await Promise.all([db.get('settings', 'main'), db.get('kid', 'main')]);
+  return whoFrom(settings ?? null, kid ?? null, now, device);
+}
+
+/** What makes a backup another child's: another name, or another school year (another device is fine: his iPhone's copy). */
+export function whoDiffers(file: BackupWho, here: BackupWho): ('name' | 'grade')[] {
+  const out: ('name' | 'grade')[] = [];
+  const a = file.name.trim(), b = here.name.trim();
+  if (a && b && a !== b) out.push('name');
+  if (file.grade !== null && here.grade !== null && file.grade !== here.grade) out.push('grade');
+  return out;
+}
+
+const safe = (s: string) => s.trim().replace(/[\\/:*?"<>|\s]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+/** 「ziji-backup-小明-P2-iPad-2026-10-17.json」: whose it is, at a glance in Files. */
+export function backupFileName(who: BackupWho, date: string): string {
+  const parts = [safe(who.name), who.grade !== null ? `P${who.grade}` : '', who.device ? safe(who.device) : ''].filter(Boolean);
+  return `ziji-backup-${[...parts, date].join('-')}.json`;
 }
 
 export class BackupError extends Error {}
@@ -69,7 +112,7 @@ function decodeValue(value: unknown): unknown {
   return value;
 }
 
-export async function exportBackup(db: AppDb, opts: { includeMedia: boolean; now: number }): Promise<string> {
+export async function exportBackup(db: AppDb, opts: { includeMedia: boolean; now: number; device?: string | null }): Promise<string> {
   const stores: BackupFile['stores'] = {};
   for (const name of LIST_STORES) {
     if (!opts.includeMedia && MEDIA_STORES.includes(name)) continue;
@@ -80,6 +123,7 @@ export async function exportBackup(db: AppDb, opts: { includeMedia: boolean; now
     formatVersion: BACKUP_FORMAT_VERSION,
     exportedAt: opts.now,
     dbVersion: DB_VERSION,
+    who: await currentWho(db, new Date(opts.now), opts.device ?? null),
     stores,
     settings: (await encodeValue(await db.get('settings', 'main'))) ?? null,
     kid: (await encodeValue(await db.get('kid', 'main'))) ?? null,
@@ -106,9 +150,13 @@ export function readBackup(text: string): BackupPreview {
     if (!(LIST_STORES as readonly string[]).includes(name) || !Array.isArray(rows)) throw new BackupError(NOT_A_BACKUP);
   }
   const count = (n: ListStore) => file.stores[n]?.length ?? 0;
+  const who = file.who && typeof file.who.name === 'string'
+    ? { name: file.who.name, grade: typeof file.who.grade === 'number' ? file.who.grade : null, device: typeof file.who.device === 'string' ? file.who.device : null }
+    : whoFrom(decodeValue(file.settings) as Partial<Settings> | null, decodeValue(file.kid) as Partial<KidState> | null, new Date(file.exportedAt || Date.now()), null);
   return {
     file,
     exportedAt: file.exportedAt,
+    who,
     counts: { words: count('words'), cards: count('cards'), sessions: count('sessions'), recordings: count('recordings') },
     hasMedia: 'recordings' in file.stores,
   };
@@ -134,6 +182,7 @@ function fromRawDump(raw: RawDump): BackupFile {
     const main = () => entries.find((r) => r.key === 'main')?.value ?? null;
     if (name === 'settings') settings = main();
     else if (name === 'kid') kid = main();
+    else if (name === 'restorePoints') continue; // the undo copy is no part of his progress
     else stores[name] = entries.map((r) => r.value); // unknown store names are refused by readBackup, as for any backup
   }
   return {
@@ -166,6 +215,28 @@ export async function applyBackup(db: AppDb, preview: BackupPreview): Promise<vo
   await applySettingsMigration(db); // an older backup's settings move to today's at once, not on the next launch (sweep)
   await migrateToLadder(db, new Date()); // a backup from before the ladder moves over too (it checks its own flag)
   await markOldPlacement(db, new Date()); // and an older placement follows the new recheck rules (spec 2026-10-14; its own flag)
+}
+
+const POINT = 'before-restore';
+
+/** What a restore would replace, if one ran on this device and hasn't been undone. */
+export const restorePoint = async (db: AppDb): Promise<RestorePoint | null> => (await db.get('restorePoints', POINT)) ?? null;
+
+/** Restores a backup, keeping what was here first (review 2026-10-17) so undoRestore can put it back. Only the kinds the backup
+ *  replaces are kept: without media, the recordings stay where they are. */
+export async function restoreWithUndo(db: AppDb, preview: BackupPreview, now: Date): Promise<void> {
+  const text = await exportBackup(db, { includeMedia: preview.hasMedia, now: now.getTime() });
+  await db.put('restorePoints', { id: POINT, at: now.getTime(), who: readBackup(text).who, text });
+  await applyBackup(db, preview);
+}
+
+/** Puts back what the last restore replaced, once. */
+export async function undoRestore(db: AppDb): Promise<boolean> {
+  const point = await restorePoint(db);
+  if (!point) return false;
+  await applyBackup(db, readBackup(point.text));
+  await db.delete('restorePoints', POINT);
+  return true;
 }
 
 /** Emergency dump of whatever is on disk, for when the app cannot open its database normally. */

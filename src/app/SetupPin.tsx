@@ -3,6 +3,7 @@ import { hashPin } from '../lib/hash';
 import { updateSettings } from '../store/repo';
 import { PinPad } from '../ui/PinPad';
 import { useApp } from './AppContext';
+import { isInstalled } from '../lib/device';
 
 export function SetupPin({ onDone }: { onDone?: () => void }) {
   const { db, go, refresh } = useApp();
@@ -32,6 +33,10 @@ export function SetupPin({ onDone }: { onDone?: () => void }) {
         <h1>{first === null ? 'For parents: choose a 4-digit PIN' : 'Enter the same PIN again'}</h1>
         <p>The PIN keeps the parent area (progress, word lists, recordings) separate from your child's practice.</p>
         <PinPad key={first === null ? 'first' : 'confirm'} onComplete={(p) => void complete(p)} error={error} />
+        {/* first run in a browser tab (review 2026-10-17): on iOS only the Home Screen app escapes Safari's 7-day clearing */}
+        {!onDone && !isInstalled() && (
+          <p class="hint setup-tip">Tip: add 字己 to the Home Screen (Share → Add to Home Screen) and open it from there. Safari can clear a website's data after 7 days unused; the Home Screen app keeps his progress.</p>
+        )}
       </div>
     </div>
   );

@@ -14,6 +14,15 @@ export interface HanziDB extends DBSchema {
   passages: { key: string; value: ParentPassage };
   answers: { key: number; value: AnswerLog; indexes: { byAt: number } };
   ladder: { key: string; value: LadderEntry };
+  /** what was here before the last restore (review 2026-10-17): a backup's text, so the restore can be undone; never backed up */
+  restorePoints: { key: string; value: RestorePoint };
+}
+
+export interface RestorePoint {
+  id: string;
+  at: number; // when the restore ran
+  who: { name: string; grade: number | null; device: string | null };
+  text: string; // exportBackup's JSON of what it replaced
 }
 
 export type AppDb = IDBPDatabase<HanziDB>;
@@ -64,6 +73,7 @@ export function openAppDb(name: string = DB_NAME, handlers: OpenHandlers = {}): 
         const logs = tx.objectStore('reviewLogs');
         logs.createIndex('byCard', 'cardId');
         logs.createIndex('byWord', 'wordId');
+        db.createObjectStore('restorePoints', { keyPath: 'id' });
       }
     },
   });

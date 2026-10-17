@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { builtinWords } from '../content';
 import { hashPin } from '../lib/hash';
@@ -107,5 +107,15 @@ describe('first launch', () => {
       expect(TERMS[startTerm(classTerm(app.now(), await getSettings(app.db)))]).toBe(start);
       unmount();
     }
+  });
+});
+
+describe('first run: the Home Screen tip for parents (review 2026-10-17)', () => {
+  it('tells the parent to add the app to the Home Screen when it runs in a browser tab; not when changing the PIN', async () => {
+    renderWithApp(<SetupPin />, await makeAppData());
+    expect(document.querySelector('.setup-tip')?.textContent).toMatch(/Add to Home Screen/);
+    cleanup();
+    renderWithApp(<SetupPin onDone={() => {}} />, await makeAppData());
+    expect(document.querySelector('.setup-tip')).toBeNull();
   });
 });

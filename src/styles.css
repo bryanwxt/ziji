@@ -1814,3 +1814,7 @@ button.langdu__sentence { cursor: pointer; }
 .intro__word .label__cell--zh { min-width: 0; }
 .intro__word .label__py { --rest: 1; font-family: var(--font); font-size: min(24px, 0.34em); font-weight: 800; color: var(--ink-soft); min-height: 0; line-height: 1.25; padding: 0 0.1em; animation: later-in 300ms ease-out 2s both; }
 .intro__word .label__cell--mark .label__ch { background: none; border-radius: 0; color: var(--orange-ink); } /* a bound pair's character, as BoundWord marks it */
+
+/* the parent's backup reminder on Home (review 2026-10-17): one quiet line across the cards, not a thing for him to tap */
+.parent-nudge { grid-column: 1 / -1; margin: 0; justify-self: start; display: inline-flex; align-items: flex-end; gap: 8px; padding: 2px 10px 3px; font-size: 14px; font-weight: 700; color: var(--ink-soft); background: color-mix(in srgb, var(--paper) 88%, transparent); border: 1.5px dashed var(--line-strong); border-radius: 10px; pointer-events: none; }
+.parent-nudge .label { font-size: 16px; }
