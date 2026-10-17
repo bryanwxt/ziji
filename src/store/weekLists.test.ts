@@ -12,8 +12,8 @@ const list = (id: string): WeekList => ({
 });
 
 describe('weekLists store (DB v6)', () => {
-  it('is version 6 and backed up', () => {
-    expect(DB_VERSION).toBe(6);
+  it('is version 6 or later and backed up', () => {
+    expect(DB_VERSION).toBeGreaterThanOrEqual(6);
     expect(LIST_STORES).toContain('weekLists');
   });
   it('saves, lists and deletes', async () => {

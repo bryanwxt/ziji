@@ -146,6 +146,7 @@ export function BackupPanel() {
               {preview.hasMedia ? `${preview.counts.recordings} recordings` : 'no recordings'}.
             </p>
             {preview.listsMissing && <p>This backup is from before weekly lists and has no weekly lists: restoring it removes this week’s lists (本周词语) from this device. His words and progress in the backup are restored as usual.</p>}
+            {preview.talksMissing && <p>This backup is from before the talk log (聊一聊): the talks logged on this device are kept.</p>}
             <p>Restoring replaces the current data of the same kinds. What is here now is kept on this device first, so the restore can be undone.</p>
             <button type="button" class={`btn ${differs.length ? 'btn--red' : 'btn--primary'}`} onClick={() => void restore()}>Replace with this backup</button>
           </div>
