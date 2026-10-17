@@ -170,20 +170,12 @@ describe('SessionScreen', { timeout: 60_000 }, () => {
     await waitFor(() => expect(introWord()).toBeTruthy());
     expect(introWord()).not.toBe(paused);
   });
-  it('认新字 says which lesson a new word is from: 补 for catch-up (spec 2026-10-11 §9)', async () => {
+  it('认新字 keeps which lane a new word is from, but shows no 补/课本 label to him (review 2026-10-17)', async () => {
     const app = await setup(); // 2026-10-02: his class is on 二下·16, so today brings 衣 (一上·1) and 茄 (二下·15)
     renderWithApp(<SessionScreen free={false} />, app);
     await waitFor(() => expect(introWord()).toBe('衣'));
-    expect(document.querySelector('.intro__tag')?.textContent).toBe('补 一上·1');
+    expect(document.querySelector('.intro__tag')).toBeNull();
     expect((await getSession(app.db, '2026-10-02'))!.plan.newWordLanes).toEqual({ 'b:衣': 'catchup', 'b:茄': 'school' });
-  });
-  it("认新字 labels his class's lesson 课本 with the lesson (spec 2026-10-11 §9, final review I1)", async () => {
-    const app = await setup(); // the same day: 衣 (catch-up) first, then 茄 from his class's lessons
-    renderWithApp(<SessionScreen free={false} />, app);
-    await waitFor(() => expect(introWord()).toBe('衣'));
-    await learnCurrentWord();
-    await waitFor(() => expect(introWord()).toBe('茄'));
-    expect(document.querySelector('.intro__tag')?.textContent).toBe('课本 二下·15');
   });
   it('a lesson saved before lanes resumes with no label (review focus 3)', async () => {
     const app = await setup();

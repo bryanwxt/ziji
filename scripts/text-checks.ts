@@ -90,7 +90,7 @@ export function textChecks(): string[] {
   }
 
   // 4. a small label's glyphs inside any box that clips them: a calligraphic 补 inks past its advance box (half of it was cut)
-  for (const tag of document.querySelectorAll('.intro__tag, .label-tag')) {
+  for (const tag of document.querySelectorAll('.label-tag')) {
     if (hidden(tag)) continue;
     const range = document.createRange();
     range.selectNodeContents(tag);

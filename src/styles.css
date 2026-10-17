@@ -209,7 +209,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   padding: 22px 44px; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: rise-in var(--dur-slow) var(--spring) backwards;
 }
 /* 认新字's lesson label (spec 2026-10-11 §9): small and quiet, above the character; 16px, the smallest Chinese the fit check allows */
-.intro__tag { margin: 0 0 -6px; padding: 0.3em 0.3em 0; align-self: flex-start; font-family: var(--hanzi); font-size: 16px; line-height: 1.25; color: var(--ink-soft); }
 /* the padding: the tag sits in the card's top-left corner, and the card scrolls, so it clips: 补's 衤 inks left of and above its box
    (parent 2026-10-15: half the 补 was cut off on his iPhone) */
 .parts { font-size: 28px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-family: var(--hanzi); }

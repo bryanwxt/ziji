@@ -623,13 +623,12 @@ describe('the new-word card reads every row (parent, 2026-10-05: only the first 
   });
 });
 
-describe('the lesson label on the 认新字 card (spec 2026-10-11 §9)', () => {
-  it('shows the label it is given, and none without one', () => {
-    render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} lessonTag="课本 二下·17" />);
-    expect(document.querySelector('.intro__card .intro__tag')?.textContent).toBe('课本 二下·17');
-    cleanup();
+describe('the 认新字 card has no lesson label (review 2026-10-17: 「补 一上·1」 means nothing to a child)', () => {
+  it('shows no 课本/补 tag; the lesson is in the parent area instead', () => {
     render(<FlashcardStep {...base} item={{ ...review, isNew: true }} voice={false} onDone={vi.fn()} />);
+    expect(document.querySelector('.intro__card')).toBeTruthy();
     expect(document.querySelector('.intro__tag')).toBeNull();
+    expect(document.body.textContent).not.toMatch(/课本|补 /);
   });
 });
 

@@ -38,6 +38,14 @@ describe('WordsPanel', () => {
     expect(words.find((w) => w.text === '朋友')).toMatchObject({ source: 'parent', listName: '听写 7', writeable: true });
     expect(words.find((w) => w.text === '大')?.listName).toBe('听写 7');
   });
+  it("shows each word's lesson in his book (moved here from the child's 认新字 card, review 2026-10-17)", async () => {
+    const app = await makeAppData();
+    await putWords(app.db, [makeWord('衣', { listName: '听写 1' }), makeWord('朋友', { listName: '听写 1' })]);
+    renderWithApp(<WordsPanel />, app);
+    const row = (await screen.findByText('衣', { selector: 'td' })).closest('tr')!;
+    expect(row.textContent).toContain('一上·1');
+    expect(screen.getByRole('columnheader', { name: 'Book lesson' })).toBeTruthy();
+  });
 });
 
 describe('SettingsPanel zodiac', () => {

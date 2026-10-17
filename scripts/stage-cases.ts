@@ -248,13 +248,14 @@ for (const size of SIZES) {
     if (await page.$('.family, .family__word')) problems.push(`${size.name} intro-full: a 一家人 row is back on the card`);
     problems.push(...(await cardClipped(page, `${size.name} intro-full`)));
   }
-  // the parent's iPhone (2026-10-15): 雨衣's pinyin over each character and its 补 tag whole; 保持's and the longest usage line
+  // the parent's iPhone (2026-10-15): 雨衣's pinyin over each character (no 补 tag since review 2026-10-17); 保持's and the longest usage line
   // with no 。 starting a line and the speak button off the text (cardClipped runs text-checks.ts)
   for (const c of ['intro-raincoat', 'intro-usage', 'intro-usage-long']) {
     await page.goto(`file://${dir}/index.html?case=${c}`);
     await page.waitForTimeout(2400); // its pinyin comes 2 s after the character
     await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
-    for (const sel of ['.intro__tag', '.intro__word .label__cell--zh', ...(c === 'intro-raincoat' ? [] : ['.intro .usage .speak'])]) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
+    if (await page.$('.intro__tag')) problems.push(`${size.name} ${c}: a 课本/补 tag is back on the child's card`);
+    for (const sel of ['.intro__word .label__cell--zh', ...(c === 'intro-raincoat' ? [] : ['.intro .usage .speak'])]) if (!(await page.$(sel))) problems.push(`${size.name} ${c}: no ${sel}`);
     problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
   }
   // a bound character's 认新字 card (parent 2026-10-15): the pair, its character marked once, and the speak button on the card;
