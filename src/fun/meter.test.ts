@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_KID, type KidState } from '../types';
-import { EMPTY_METER, fillMeter, lessonOf, meterLine, meterShown, normalizeBank, normalizeMeter, type Lesson, type MeterFill } from './meter';
+import { EMPTY_METER, EXTRA_MASTERED_FOR_HALF, extraHalves, fillMeter, lessonOf, meterLine, meterShown, normalizeBank, normalizeMeter, RESTING_LINE, type Lesson, type MeterFill } from './meter';
 
 const first = (day: string, key: number): Lesson => ({ kind: 'first', day, key });
-const extra = (day: string, key: number): Lesson => ({ kind: 'extra', day, key });
+/** An extra lesson in which he newly masters enough to move the boat (learning rules 2026-10-17); `mastered` 0: one that coasted. */
+const extra = (day: string, key: number, mastered = EXTRA_MASTERED_FOR_HALF): Lesson => ({ kind: 'extra', day, key, mastered });
 /** The lessons in order; returns the kid after them and the last lesson's fill. */
 function run(lessons: Lesson[], kid: KidState = DEFAULT_KID): { kid: KidState; fill: MeterFill } {
   let k = kid;
@@ -12,16 +13,40 @@ function run(lessons: Lesson[], kid: KidState = DEFAULT_KID): { kid: KidState; f
   return { kid: k, fill: fill! };
 }
 
+describe('extra lessons fill by mastery, not by finishing (learning rules 2026-10-17; Deci, Koestner & Ryan 1999)', () => {
+  it('half a meter for a word newly mastered, at most one half a lesson', () => {
+    expect(extraHalves(0)).toBe(0);
+    expect(extraHalves(1)).toBe(1);
+    expect(extraHalves(5)).toBe(1);
+    expect(extraHalves(undefined)).toBe(0);
+  });
+  it('an extra lesson that masters nothing: counted (it never counts twice), the boat stays, a kind line', () => {
+    const a = run([first('2026-10-15', 1), extra('2026-10-15', 2, 0)]);
+    expect(a.fill).toMatchObject({ counted: true, added: 0, from: 0, left: 0, chests: 0, capped: false });
+    expect(a.kid.meter.lesson).toBe(2);
+    expect(meterLine(a.fill)).toBe(RESTING_LINE);
+    expect(RESTING_LINE).toBe('多学会几个字，小船就会走！');
+  });
+  it('the first daily lesson still fills it, mastered or not', () => {
+    expect(run([{ kind: 'first', day: '2026-10-15', key: 1, mastered: 0 }]).fill).toMatchObject({ added: 2, chests: 1 });
+  });
+  it('lessonOf reads what the lesson newly produced', () => {
+    const rec = { free: false, extra: true, completedSteps: ['practice' as const], date: '2026-10-15', startedAt: 5 };
+    expect(lessonOf({ ...rec, produced: { write: 1, say: 1 } })).toEqual({ kind: 'extra', day: '2026-10-15', key: 5, mastered: 2 });
+    expect(lessonOf(rec)?.mastered).toBe(0);
+  });
+});
+
 describe('the river meter (rewards spec §3)', () => {
   it("the day's first lesson fills it: the boat sails 0 → full, one chest, the meter starts again", () => {
     const { kid, fill } = run([first('2026-10-15', 1)]);
-    expect(fill).toEqual({ counted: true, from: 0, chests: 1, left: 0, capped: false, banked: 0 });
+    expect(fill).toEqual({ counted: true, from: 0, added: 2, chests: 1, left: 0, capped: false, banked: 0 });
     expect(kid.meter).toEqual({ halves: 0, chestsToday: 1, day: '2026-10-15', owed: 1, lesson: 1 });
   });
   it('an extra lesson fills half; a second extra lesson opens the second chest', () => {
     const a = run([first('2026-10-15', 1), extra('2026-10-15', 2)]);
     expect(a.fill).toMatchObject({ from: 0, chests: 0, left: 1, capped: false });
-    expect(meterLine(a.fill)).toBe('再学一课就能开宝箱！');
+    expect(meterLine(a.fill)).toBe('再学会几个字，就能开宝箱！');
     const b = run([extra('2026-10-15', 3)], a.kid);
     expect(b.fill).toMatchObject({ from: 1, chests: 1, left: 0, capped: true });
     expect(b.kid.meter.chestsToday).toBe(2);
@@ -40,7 +65,7 @@ describe('the river meter (rewards spec §3)', () => {
   it("the next day's first lesson adds its 2 on top of the bank: the chests open at once and the leftover stays", () => {
     const banked = { ...DEFAULT_KID, meter: { halves: 0, chestsToday: 2, day: '2026-10-15', owed: 0, lesson: 7 }, bank: 2 };
     const a = run([first('2026-10-16', 8)], banked);
-    expect(a.fill).toEqual({ counted: true, from: 2, chests: 2, left: 0, capped: true, banked: 0 });
+    expect(a.fill).toEqual({ counted: true, from: 2, added: 2, chests: 2, left: 0, capped: true, banked: 0 });
     expect(a.kid.bank).toBe(0);
     const half = { ...DEFAULT_KID, meter: { halves: 1, chestsToday: 1, day: '2026-10-15', owed: 0, lesson: 2 } };
     expect(run([first('2026-10-16', 9)], half).fill).toMatchObject({ from: 1, chests: 1, left: 1, capped: false });
@@ -66,7 +91,7 @@ describe('the river meter (rewards spec §3)', () => {
   });
   it('free play and a lesson with nothing done add nothing', () => {
     const rec = { free: false, extra: false, completedSteps: ['newwords' as const], date: '2026-10-15', startedAt: 5 };
-    expect(lessonOf(rec)).toEqual({ kind: 'first', day: '2026-10-15', key: 5 });
+    expect(lessonOf(rec)).toEqual({ kind: 'first', day: '2026-10-15', key: 5, mastered: 0 });
     expect(lessonOf({ ...rec, extra: true })?.kind).toBe('extra');
     expect(lessonOf({ ...rec, free: true })).toBeNull();
     expect(lessonOf({ ...rec, completedSteps: [] })).toBeNull();

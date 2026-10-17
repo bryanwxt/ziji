@@ -143,3 +143,19 @@ Every prize must reach v3 (`docs/worlds/costumes/standard-v3.png`):
 - Costume trading.
 - Spending stars.
 - Story rewards.
+
+## 9. Amendment 2026-10-17: extra lessons fill the meter by mastery, not by finishing
+
+Parent decision, 2026-10-17, from the learning-rules review. Completion-contingent rewards undermine motivation (Deci, Koestner & Ryan 1999), and extra lessons are now review only, with no new words.
+
+- **First daily lesson:** unchanged. It adds 2 halves, a full chest.
+- **Extra lesson:** adds **1 half when he newly masters at least 1 word in it**, at most 1 half per extra lesson. Finishing alone adds nothing.
+  - "Newly mastered" means a word newly reaching can-write or can-say: the mastery stars' count (`rec.produced.write + rec.produced.say`, settled when the lesson ends; a Say take the parent confirmed since the last lesson counts too).
+  - **Why 1, not 2:** a word passes only on its second day of right answers (§1), so a review-only lesson on the same day passes 0–2 words. A solid extra lesson usually passes one: the extra lesson brings in cards due tomorrow that he hasn't answered today, and a write or Say card one day from passing passes then. A lesson that coasts passes none. Asking for 2 would leave a solid lesson empty-handed most days. Constants: `EXTRA_MASTERED_FOR_HALF = 1`, `EXTRA_HALVES = 1` (`src/fun/meter.ts`).
+- **Daily cap and bank:** unchanged. At most 2 chests a day, and halves past the cap wait in the bank, up to 1 meter.
+- **An extra lesson that earns nothing** still counts as counted, so a celebration shown again never counts it twice. The boat stays where it is.
+  - The heading is 「你学得很认真！」, which praises the work.
+  - The line is 「多学会几个字，小船就会走！」. Both are shown with pinyin, and neither is ever a telling-off.
+- **Half-way line:** 「再学一课就能开宝箱！」 becomes 「再学会几个字，就能开宝箱！」, because another lesson alone no longer moves the boat.
+- **快到了 goals:** still shown after every lesson, an extra lesson that earned nothing included.
+- **Data:** none new. `MeterFill` gains `added`, the halves this lesson added, and `Lesson` gains `mastered`.
