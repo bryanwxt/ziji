@@ -14,12 +14,25 @@ import type { UseItem } from '../practice/useItems';
 import type { WeekFit, Word } from '../types';
 import { isAdjPhrase, type DraftPair } from './parse';
 import { VERB_FAMILY } from './dapei';
+import { categoryOf, sameCategory } from './categories';
+import { isBound } from '../content/kidGloss';
 
 const once = (s: string, w: string) => { const at = s.indexOf(w); return at >= 0 && s.indexOf(w, at + 1) < 0; };
 const blank = (s: string, w: string) => s.replace(w, BLANK);
 
-/** The word's sentence, blanked: his class sentence, the school sentence file, the bank's first gap (spec §7.3). */
-export function sentenceFor(word: Word): { text: string; source: WeekFit['source'] } | null {
+/**
+ * Sentences loaded with the 本周词语 panel (parent ruling 2026-10-17), never in the main bundle: the list sentence bank
+ * (src/content/weekSentences.json, one written for the app per word) and the Tatoeba subset (src/content/tatoeba.json,
+ * scripts/build-tatoeba.ts). Both are proposals the parent confirms like any row.
+ */
+export interface ExtraSentences { bank: Readonly<Record<string, string>>; tatoeba: Readonly<Record<string, readonly { id: number; s: string }[]>> }
+export type FitSentence = { text: string; source: WeekFit['source']; ref?: number };
+
+/**
+ * The word's sentence, blanked: his class sentence, the school sentence file, the bank's first gap (spec §7.3), then the list
+ * sentence bank, then Tatoeba (ours before Tatoeba's, parent ruling 2026-10-17).
+ */
+export function sentenceFor(word: Word, extra?: ExtraSentences): FitSentence | null {
   const ok = (s: string) => once(s, word.text) && Array.from(s).length <= MAX_SENTENCE_CUE && Array.from(s).length >= Array.from(word.text).length + 4;
   const cls = (word.sentences ?? []).find((s) => ok(s.text));
   if (cls) return { text: blank(cls.text, word.text), source: 'class' };
@@ -27,6 +40,10 @@ export function sentenceFor(word: Word): { text: string; source: WeekFit['source
   if (school) return { text: blank(school.zh, word.text), source: 'school' };
   const b = bankFor(word.text);
   if (b && ok(fillGap(b.gaps[0], word.text))) return { text: b.gaps[0].text, source: 'bank' };
+  const ours = extra?.bank[word.text];
+  if (ours && ok(ours)) return { text: blank(ours, word.text), source: 'list' };
+  const t = extra?.tatoeba[word.text]?.find((x) => ok(x.s));
+  if (t) return { text: blank(t.s, word.text), source: 'tatoeba', ref: t.id };
   return null;
 }
 
@@ -51,6 +68,8 @@ const reduplicated = (t: string) => { const c = Array.from(t); return (c.length 
 export function wordKind(text: string, pairs: DraftPair[]): Kind | null {
   const bank = bankFor(text);
   if (bank) return bank.type === 'v' ? 'verb' : bank.type === 'adj' ? 'adj' : bank.type === 'n' ? 'noun' : 'other';
+  if (categoryOf(text)) return 'noun'; // 饮料 before 摊 on a sheet, 碰碰车's doubled 碰: a thing all the same (parent ruling 2026-10-17)
+  if (DEGREE.includes(text)) return 'other';
   if (pairs.some((p) => p.left === text) || VERBS.has(text)) return 'verb';
   if (isAdjPhrase(text) || reduplicated(text)) return 'adj';
   if (pairs.some((p) => p.right === text)) return 'noun';
@@ -100,17 +119,66 @@ export function sameFamily(a: string, b: string): boolean {
   return !!fa && a !== b && [...(familyOf.get(b) ?? [])].some((i) => fa.has(i));
 }
 
+/** Two words under one 搭配 heading of the sheet (食物, 夜市): a blank one fills, the other may too (parent ruling 2026-10-17). */
+export function sameTheme(a: string, b: string, pairs: readonly DraftPair[]): boolean {
+  const themes = (t: string) => new Set(pairs.filter((p) => p.group && (p.left === t || p.right === t)).map((p) => p.group!));
+  const ta = themes(a);
+  return a !== b && ta.size > 0 && [...themes(b)].some((g) => ta.has(g));
+}
+
+/** A shared character, or a shared radical between single characters: a look-alike the parent must look at. */
+function lookAlike(answer: string, d: string): boolean {
+  const ca = Array.from(answer);
+  const cd = Array.from(d);
+  const rad = (c: string) => getCharInfo(c)?.radical;
+  return cd.some((c) => ca.includes(c)) || (ca.length === 1 && cd.length === 1 && !!rad(d) && rad(d) === rad(answer));
+}
+
+/** Characters any word of a kind follows or precedes (我唱, 唱着): seeing a decoy beside one says nothing about the blank. */
+const GENERIC = new Set([...'我你他她它们的了着过得地吗呢吧啊呀是在把被和也都就还又会']);
+/** Seen in the app's sentences right after the character before the blank, or right before the one after it (not a GENERIC one). */
+function seenThere(sentence: string, d: string): boolean {
+  const at = sentence.indexOf(BLANK);
+  const prev = sentence.slice(0, at).match(/\p{Script=Han}$/u)?.[0];
+  const next = sentence.slice(at + 1).match(/^\p{Script=Han}/u)?.[0];
+  if (prev && GENERIC.has(prev)) return !!(next && !GENERIC.has(next) && CORPUS().includes(d + next));
+  if (next && GENERIC.has(next)) return !!(prev && CORPUS().includes(prev + d));
+  return !!((prev && CORPUS().includes(prev + d)) || (next && CORPUS().includes(d + next)));
+}
+
+/**
+ * Why a decoy may fit the blank after all (fix round and parent ruling 2026-10-17): seen in that spot, a look-alike, a
+ * near-synonym, the same 搭配 theme or the same category. A risky decoy is swapped for a safe one before the row is shown; a row
+ * is flagged only when no safe one is left.
+ */
+export function decoyRisky(sentence: string, answer: string, d: string, pairs: readonly DraftPair[] = []): boolean {
+  return seenThere(sentence, d) || lookAlike(answer, d) || sameFamily(answer, d) || sameTheme(answer, d, pairs) || sameCategory(answer, d);
+}
+
+/**
+ * A word he has started that may stand in as a decoy when the list runs short (parent ruling 2026-10-17): only when the
+ * answer's kind is known and this word's is the same, by firmer signs than a gloss — a noun the category map knows (so the
+ * theme rule can judge it), a single character that is a word on its own (a known verb or the bank's), never a bound one.
+ */
+function borrowable(d: string, kind: Kind | null, pairs: DraftPair[]): boolean {
+  if (!kind || BLOCKED.has(d) || isBound(d) || wordKind(d, pairs) !== kind) return false;
+  if (kind === 'noun') return !!categoryOf(d);
+  if (Array.from(d).length === 1) return !!bankFor(d) || VERBS.has(d) || !!VERB_FAMILY[d] || familyOf.has(d);
+  return true;
+}
+
 /** How many rows already use each word as a decoy, and the most any word may be (spread, follow-up 2026-10-17). */
 export const DECOY_CAP = 3;
 
 /**
  * Three list-mates that don't fit the blank (spec §7.3). Never a different part of speech or shape from the answer, when the
- * answer's is known (rule 6: the grammar must not give it away); confusables first, then the least-used decoys. Null when fewer
- * than three are left.
+ * answer's is known (rule 6: the grammar must not give it away). Safe decoys first (decoyRisky: parent ruling 2026-10-17), then
+ * list-mates before his known words (`known`: words he has started, borrowed only when the list runs short), confusables, the
+ * least-used. Null when fewer than three are left.
  */
 export function proposeFit(
-  word: Word, mates: Word[], pairs: DraftPair[], sentence: { text: string; source: WeekFit['source'] }, skip: ReadonlySet<string> = new Set(),
-  used: ReadonlyMap<string, number> = new Map(),
+  word: Word, mates: Word[], pairs: DraftPair[], sentence: FitSentence, skip: ReadonlySet<string> = new Set(),
+  used: ReadonlyMap<string, number> = new Map(), known: readonly Word[] = [],
 ): WeekFit | null {
   const at = sentence.text.indexOf(BLANK);
   const before = sentence.text.slice(0, at);
@@ -118,7 +186,9 @@ export function proposeFit(
   const kind = wordKind(word.text, pairs);
   const len = Array.from(word.text).length;
   const edgeWord = (d: string) => HSK_WORDS.has((before.at(-1) ?? '') + d) || HSK_WORDS.has(d + (after[0] ?? ''));
-  const candidates = [...new Set(mates.map((m) => m.text))].filter((d) => {
+  const onList = new Set(mates.map((m) => m.text));
+  const borrowed = known.map((m) => m.text).filter((d) => !onList.has(d) && Array.from(d).length === len && borrowable(d, kind, pairs));
+  const candidates = [...new Set([...onList, ...borrowed])].filter((d) => {
     if (d === word.text || d.includes(word.text) || word.text.includes(d) || skip.has(d) || BLOCKED.has(d)) return false;
     if ((used.get(d) ?? 0) >= DECOY_CAP) return false;
     if (sentence.text.includes(d)) return false; // already printed in the sentence
@@ -131,21 +201,28 @@ export function proposeFit(
     if (sentencesFor(d).some((s) => s.zh === before + d + after)) return false;
     return true;
   });
-  const pool = candidates;
-  const order = (d: string) => (confusable(word.text, d) ? 0 : 1) * 100 + (used.get(d) ?? 0);
-  const ranked = pool.map((d, i) => [d, order(d), i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([d]) => d);
+  const order = (d: string) => (decoyRisky(sentence.text, word.text, d, pairs) ? 1000 : 0) + (onList.has(d) ? 0 : 200) + (onList.has(d) && confusable(word.text, d) ? 0 : 100) + (used.get(d) ?? 0);
+  const ranked = candidates.map((d, i) => [d, order(d), i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([d]) => d);
   if (ranked.length < 3) return null;
-  return { wordId: word.id, sentence: sentence.text, source: sentence.source, wrong: [ranked[0]!, ranked[1]!, ranked[2]!] };
+  const wrong: [string, string, string] = [ranked[0]!, ranked[1]!, ranked[2]!];
+  const outside = wrong.filter((d) => !onList.has(d));
+  return {
+    wordId: word.id, sentence: sentence.text, source: sentence.source, wrong,
+    ...(sentence.ref !== undefined ? { ref: sentence.ref } : {}), ...(outside.length ? { outside } : {}),
+  };
 }
 
-/** Rows for a whole list, decoys spread so no word is a decoy in more than DECOY_CAP rows. Keyed by the word's text. */
-export function proposeFits(words: Word[], pairs: DraftPair[]): Map<string, WeekFit | null> {
+/**
+ * Rows for a whole list, decoys spread so no word is a decoy in more than DECOY_CAP rows. Keyed by the word's text. `known`: his
+ * started words, borrowed when the list runs short; `extra`: the panel's loaded sentences.
+ */
+export function proposeFits(words: Word[], pairs: DraftPair[], known: readonly Word[] = [], extra?: ExtraSentences): Map<string, WeekFit | null> {
   const used = new Map<string, number>();
   const out = new Map<string, WeekFit | null>();
   for (const w of words) {
     if (out.has(w.text)) continue;
-    const s = sentenceFor(w);
-    const fit = s ? proposeFit(w, words, pairs, s, new Set(), used) : null;
+    const s = sentenceFor(w, extra);
+    const fit = s ? proposeFit(w, words, pairs, s, new Set(), used, known.filter((k) => !words.some((x) => x.text === k.text))) : null;
     for (const d of fit?.wrong ?? []) used.set(d, (used.get(d) ?? 0) + 1);
     out.set(w.text, fit);
   }
@@ -157,10 +234,7 @@ export function proposeFits(words: Word[], pairs: DraftPair[]): Map<string, Week
  * after the character before the blank (很干净), or right before the one after it.
  */
 export function mightFit(fit: WeekFit): string[] {
-  const at = fit.sentence.indexOf(BLANK);
-  const prev = fit.sentence.slice(0, at).match(/\p{Script=Han}$/u)?.[0];
-  const next = fit.sentence.slice(at + 1).match(/^\p{Script=Han}/u)?.[0];
-  return fit.wrong.filter((d) => (prev && CORPUS().includes(prev + d)) || (next && CORPUS().includes(d + next)));
+  return fit.wrong.filter((d) => seenThere(fit.sentence, d));
 }
 
 export function parentSentenceProblems(text: string, word: string): string[] {
@@ -174,16 +248,11 @@ export function parentSentenceProblems(text: string, word: string): string[] {
 }
 
 /**
- * Decoys the parent must look at before confirming (fix round 2026-10-17): ones seen in that spot in the app's sentences
- * (mightFit), look-alikes of the answer (a shared character, or a shared radical between single characters), and near-synonyms.
- * A row with any is left out of All fine.
+ * Decoys the parent must look at before confirming (fix round and parent ruling 2026-10-17): decoyRisky's, which proposeFit
+ * swaps out whenever a safe one is left. All fine leaves a row with any for a look first.
  */
-export function fitDoubts(fit: WeekFit, answer: string): string[] {
-  const seen = mightFit(fit);
-  const ca = Array.from(answer);
-  const rad = (c: string) => getCharInfo(c)?.radical;
-  const lookAlike = (d: string) => { const cd = Array.from(d); return cd.some((c) => ca.includes(c)) || (ca.length === 1 && cd.length === 1 && !!rad(d) && rad(d) === rad(answer)); };
-  return fit.wrong.filter((d) => seen.includes(d) || lookAlike(d) || sameFamily(answer, d));
+export function fitDoubts(fit: WeekFit, answer: string, pairs: readonly DraftPair[] = []): string[] {
+  return fit.wrong.filter((d) => decoyRisky(fit.sentence, answer, d, pairs));
 }
 
 /** The blank of a list's 选词填空 is drawn this many boxes wide whatever the answer's length, so its width tells nothing. */
@@ -202,13 +271,13 @@ export function fitUseItem(fit: WeekFit, word: Word, rng: Rng, pool: readonly Wo
 /**
  * A confirmed row still guess-proof at the time it is asked (spec §7.3): the blank once; three different decoys, each still a word
  * on the list (an edit can take one off), none the answer, inside it or holding it, none printed in the sentence, none of another
- * shape than the answer (rule 6). A row that fails is not asked: the word is asked in its other forms.
+ * shape than the answer (rule 6). A decoy borrowed from his words (`outside`) need not be on the list. A row that fails is not asked: the word is asked in its other forms.
  */
 export function fitStillGood(fit: WeekFit, answer: string, onList: ReadonlySet<string>): boolean {
   const at = fit.sentence.indexOf(BLANK);
   if (at < 0 || fit.sentence.indexOf(BLANK, at + 1) >= 0) return false;
   if (new Set(fit.wrong).size !== 3) return false;
-  return fit.wrong.every((d) => onList.has(d) && Array.from(d).length === Array.from(answer).length && d !== answer && !d.includes(answer) && !answer.includes(d) && !fit.sentence.includes(d) && sameShape(answer, d) && !BLOCKED.has(d));
+  return fit.wrong.every((d) => (onList.has(d) || !!fit.outside?.includes(d)) && Array.from(d).length === Array.from(answer).length && d !== answer && !d.includes(answer) && !answer.includes(d) && !fit.sentence.includes(d) && sameShape(answer, d) && !BLOCKED.has(d));
 }
 
 /** A 搭配 still guess-proof when asked (spec §7.4): three different wrong partners, none the right one. */

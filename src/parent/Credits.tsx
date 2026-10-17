@@ -18,6 +18,7 @@ export function Credits() {
         <li>Lucide icons — ISC License (portions MIT, from Feather).</li>
         <li>Fonts: LXGW WenKai 霞鹜文楷 and Nunito — SIL Open Font License 1.1.</li>
         <li>Passages marked ZiJi were written for this app.</li>
+        <li>Sentences from <a href="https://tatoeba.org" target="_blank" rel="noopener noreferrer">Tatoeba</a> (tatoeba.org), <a href="https://creativecommons.org/licenses/by/2.0/fr/" target="_blank" rel="noopener noreferrer">CC BY 2.0 FR</a>: some weekly-list fill-in sentences, each confirmed by a parent before it is asked.</li>
         <li>
           Read-aloud stories and their pictures from <a href="https://global-asp.github.io/storybooks-chinese/" target="_blank" rel="noopener noreferrer">Global Storybooks</a> (African Storybook), each under its own licence; "adapted" ones have small wording changes:
           <ul class="credits__stories">

@@ -476,8 +476,10 @@ export interface WeekPair {
 export interface WeekFit {
   wordId: string;
   sentence: string;
-  source: 'class' | 'school' | 'bank' | 'parent';
+  source: 'class' | 'school' | 'bank' | 'list' | 'tatoeba' | 'parent'; // list: the list sentence bank (weekSentences.json); tatoeba: tatoeba.json
   wrong: [string, string, string];
+  ref?: number; // a Tatoeba sentence's id, for attribution
+  outside?: string[]; // decoys borrowed from his started words, not on the list (parent ruling 2026-10-17)
 }
 
 /** The 考考自己 on the ready-by day (§8.1): one answer per item, saved as he goes. */

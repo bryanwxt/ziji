@@ -8,7 +8,7 @@ import { DAPEI } from '../content/dapei';
 import { familyOf } from '../content/family';
 import { ladderWords } from '../content/ladder';
 import { fillGap, SENTENCE_BANK } from '../content/sentenceBank';
-import { shownSentences } from '../content/sentenceSources';
+import { shownSentences, weekBankRows } from '../content/sentenceSources';
 import { isChildWord, readingOf } from '../content/wordGate';
 import { collectionCards } from '../fun/collection';
 import { familyDistractors } from '../practice/family';
@@ -90,6 +90,7 @@ export function shownSentenceRows(): { s: string; for: string; surface: string }
   }
   for (const r of [s1a, s1b, s2a, s2b].flat() as { word: string; s: { zh: string }[] }[]) for (const s of r.s) out.push({ s: s.zh, for: r.word, surface: 'understand' });
   for (const c of CHENGYU) for (const s of c.sentences) out.push({ s, for: c.text, surface: '成语 sentence' });
+  for (const r of weekBankRows()) out.push({ s: r.s, for: r.word, surface: 'list sentence bank' });
   for (const p of PASSAGES) for (const s of splitSentences(p.text)) out.push({ s, for: p.id, surface: '朗读 passage' });
   return out;
 }

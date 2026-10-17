@@ -12,6 +12,12 @@ describe('Credits', () => {
     render(<Credits />);
     expect(screen.getByText(/CC-CEDICT .*CC BY-SA 4\.0/)).toBeTruthy();
   });
+  it('credits Tatoeba for the weekly list\'s fallback sentences (CC BY 2.0 FR requires attribution)', () => {
+    render(<Credits />);
+    const li = [...document.querySelectorAll('li')].find((x) => x.textContent!.startsWith('Sentences from Tatoeba (tatoeba.org), CC BY 2.0 FR'))!;
+    expect(li).toBeTruthy();
+    expect([...li.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['https://tatoeba.org', 'https://creativecommons.org/licenses/by/2.0/fr/']);
+  });
   it('credits each Global Storybooks story it reads from: title, people, licence, adapted (CC BY requires attribution)', () => {
     render(<Credits />);
     expect(screen.getByText('Passages marked ZiJi were written for this app.')).toBeTruthy();
