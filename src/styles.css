@@ -1112,6 +1112,7 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .hold__label { font-size: 16px; }
 /* the celebration's prize screens on a phone: the headline on one line, a smaller dressed-up Truffle and chest, 继续 on screen */
 .celebrate .truffle { width: min(calc(var(--pet) * 1.6), 22dvh); height: auto; }
+.celebrate:has(> .celebrate__line) .truffle { width: min(calc(var(--pet) * 1.6), 15dvh); } /* a line under the stars or the boat (会写 1 个新字, 小船就会走): a smaller Truffle keeps 继续 on screen */
 .prize__stars { display: inline-flex; gap: 4px; }
 .prize__stars svg { width: clamp(44px, 8dvh, 72px); height: auto; }
 @media (max-width: 599px) {
@@ -1338,6 +1339,7 @@ button.langdu__sentence { cursor: pointer; }
 .langdu:not(.langdu__listen) .langdu__pic { height: clamp(56px, 11dvh, 140px); } /* on Read the passage comes first */
 @media (max-height: 699px) { .langdu:not(.langdu__listen) .langdu__pic { display: none; } } /* a short phone keeps Read for the text he reads aloud */
 .langdu__purpose { margin: 0; font-size: clamp(18px, 2.6dvh, 22px); font-weight: 700; text-align: center; background: var(--paper); border-radius: 12px; padding: 2px 12px 4px; width: fit-content; max-width: 100%; justify-self: center; align-self: center; } /* the question to read for, on Listen (learning rules 2026-10-17) */
+@media (max-width: 599px) { .langdu__purpose { font-size: 16px; } .langdu__purpose > :first-child { display: none; } } /* a phone: the question alone, on one line, so three lines of the passage still show */
 .langdu__words { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; font-size: 18px; }
 .langdu__words li { display: inline-flex; align-items: flex-end; gap: 6px; }
 .langdu__gloss { color: var(--ink-soft); font-size: 15px; }

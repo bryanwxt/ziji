@@ -385,7 +385,7 @@ async function sweep(size: Size) {
   // Home: not started, and done-for-today with every optional card; world taps in every world
   await run('home', AFTERNOON, {}, (p) => check(p, size, 'home', 0));
   await run('home-done', AFTERNOON, { doneToday: true }, (p) => check(p, size, 'home-done', 0));
-  await run('home-done-later', AFTERNOON, { doneToday: true, doneMinutesAgo: 30 }, (p) => check(p, size, 'home-done-later', 0)); // 晚上再来！ in 再学一课's place (learning rules 2026-10-17)
+  await run('home-done-later', AFTERNOON, { doneToday: true, doneMinutesAgo: 30 }, (p) => check(p, size, 'home-done-later', 0)); // 下午再来！ in 再学一课's place (learning rules 2026-10-17)
   await run('home-evening', EVENING, { world: 'home' }, (p) => check(p, size, 'home-evening', 0)); // the first world's evening
   for (const w of WORLDS) {
     await run(`home-${w.id}`, AFTERNOON, { world: w.id }, (p) => check(p, size, `home-${w.id}`, 0));
