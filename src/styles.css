@@ -552,8 +552,11 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .label-tag { display: inline-block; font-family: var(--font); font-weight: 900; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; background: var(--green); color: var(--ink); border: 2px solid var(--ink); border-radius: 5px; padding: 1px 7px; }
 
 /* Answers */
-.choice, .fishtile, .choice.is-right, .fishtile.is-right, .fishtile.is-on { background: var(--green-soft); }
-.choice.is-oops, .fishtile.is-oops, .choice.is-dim { opacity: 0.45; }
+/* an unanswered tile is paper; green is only the right answer, orange only his wrong pick (review 2026-10-17: every tile used to
+   start green, so each looked "correct" before he answered, and the faded ones after a miss looked like the answer) */
+.choice, .fishtile { background: var(--surface); }
+.choice.is-answer, .choice.is-right, .choice.is-eaten, .fishtile.is-right { background: var(--green-soft); border-color: var(--green-ink); color: var(--green-ink); }
+.choice.is-wrong, .choice.is-oops, .fishtile.is-oops { background: var(--orange-soft); border-color: var(--orange-ink); color: var(--orange-ink); opacity: 1; }
 
 /* Bars */
 .sheet, .tabbar { background: var(--paper); border-top: 3px solid var(--ink); }
