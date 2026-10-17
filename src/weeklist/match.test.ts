@@ -2,7 +2,9 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { State } from 'ts-fsrs';
-import { ladderWords } from '../content/ladder';
+import { glossFor } from '../content/glossary';
+import { kidGlossTexts } from '../content/kidGloss';
+import { ladderWord, ladderWords } from '../content/ladder';
 import { makeCard, makeWord } from '../test/fixtures';
 import { itemStatus, matchText } from './match';
 
@@ -23,6 +25,16 @@ describe('matchText (spec §3.4)', () => {
     expect(m.word).toMatchObject({ id: 'p:u1', source: 'parent', writeable: false, paused: false, createdAt: 7 });
     expect(m.word.listedAt).toBeUndefined();
     expect(m.word.pinyin.split(' ')).toHaveLength(3);
+  });
+});
+
+describe('matchText fills a new word in', () => {
+  it('its meaning from glossFor', () => {
+    const text = kidGlossTexts().find((t) => [...t].length === 2 && !ladderWord(`w:${t}`))!; // a glossed word the ladder lacks
+    const m = matchText(text, new Map(), 1);
+    expect(m.kind).toBe('new');
+    expect(m.word.meaning).toBe(glossFor(text));
+    expect(m.word.meaning).toBeTruthy();
   });
 });
 

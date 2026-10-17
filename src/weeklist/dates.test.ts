@@ -1,7 +1,7 @@
 // src/weeklist/dates.test.ts
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { clampReadyBy, daysBetween, defaultDates, weekdayZh } from './dates';
+import { clampReadyBy, daysBetween, defaultDates, pastDue, weekdayZh } from './dates';
 
 describe('weekly list dates (spec §3.3)', () => {
   it('a Monday list: homework Friday, ready by Wednesday', () => {
@@ -28,4 +28,9 @@ describe('weekly list dates (spec §3.3)', () => {
     expect(weekdayZh('2026-10-25')).toBe('星期天');
   });
   it('counts days', () => expect(daysBetween('2026-10-19', '2026-10-21')).toBe(2));
+  it('a homework day already past: ready-by is never after it, and the UI is told', () => {
+    expect(clampReadyBy(new Date(2026, 9, 22, 9), '2026-10-19', '2026-10-20')).toBe('2026-10-20');
+    expect(pastDue(new Date(2026, 9, 22, 9), '2026-10-20')).toBe(true);
+    expect(pastDue(new Date(2026, 9, 22, 9), '2026-10-22')).toBe(false);
+  });
 });

@@ -560,6 +560,14 @@ A one-token line inside a column-wise block is never mistaken for a heading: the
 - **Rule 1:** `sheetTitle` names the list.
 - **Rule 3:** grid tokens go through the importer's `joinTokens`, now exported; 生字 cells are never joined.
 - **Rule 6:** a lone token that is a half of any pairs line read across is never a heading. It goes to `unpaired` instead.
+- **Fix round:** `src/weeklist/parse.ts` is the reference for these changes.
+  - Column-wise pairs under several headings are read with `readCells`. A heading must leave an even run before the next heading.
+  - An odd row takes the lone cell after it. The tokens of a row left unpaired become `checkPair` items.
+  - Cells split on any non-Han run, and `cleanLines(…, { keepNumbered: true })` keeps ① and (1) cells. Tokens over 4 characters go to `notes` as `too long: …`.
+  - Fixes are strict (look-alike only) when every character is known. Use `weekIsWord(extra)` as the paste's `isWord`.
+  - Pairs are deduplicated, and a title counts only when a section heading follows it.
+- **`saveWeekList`** now reads and writes in one transaction, and reuses an open list with the same name and dates. A cleared meaning stays cleared.
+- **`pastDue(created, homeworkDue)`** is for the parent screen, which must refuse a past homework day.
 
 - [ ] **Step 5: Run the tests to make sure they pass**
 
@@ -1709,7 +1717,7 @@ Expected: FAIL. `./WeekPanel` doesn't exist.
 // 本周词语 (weekly list spec 2026-10-17 §3): paste a sheet, check the preview, set the days, add. Lists stay on the iPad.
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
-import { BUILTIN, HSK_WORDS } from '../content';
+import { HSK_WORDS } from '../content';
 import { ladderWordsBesides } from '../content/ladder';
 import { allCards, allWeekLists, allWords, deleteWeekList } from '../store/repo';
 import type { WeekFit, WeekList, WeekPair, Word } from '../types';
@@ -1717,7 +1725,7 @@ import { clampReadyBy, daysBetween, defaultDates, weekdayZh } from '../weeklist/
 import { proposeWrong } from '../weeklist/dapei';
 import { parentSentenceProblems, proposeFit, sentenceFor } from '../weeklist/fit';
 import { itemStatus, matchText } from '../weeklist/match';
-import { parseWeekList, type DraftPair, type WeekDraft } from '../weeklist/parse';
+import { parseWeekList, weekIsWord, type DraftPair, type WeekDraft } from '../weeklist/parse';
 import { activeLists, HEADROOM } from '../weeklist/plan';
 import { saveWeekList } from '../weeklist/save';
 import { BLANK } from '../content/sentenceBank';
@@ -1755,8 +1763,7 @@ export function WeekPanel() {
   };
   useEffect(() => { void reload(); }, []);
   const byText = useMemo(() => new Map(stored.map((w) => [w.text, w])), [stored]);
-  const chars = useMemo(() => new Set(BUILTIN.map((c) => c.char)), []);
-  const isWord = (w: string) => HSK_WORDS.has(w) || chars.has(w) || byText.has(w);
+  const isWord = useMemo(() => weekIsWord((w) => byText.has(w)), [byText]); // HSK, built-in characters, glossaries (rule 12) and his words
 
   const read = () => {
     const d = parseWeekList(text, isWord, [...HSK_WORDS.keys()]);
@@ -2804,6 +2811,13 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Files:**
 - Modify: `src/store/backup.ts`
 - Test: `src/store/backup.test.ts` (additions)
+
+> **Done early, in the Tasks 1–3 fix round (2026-10-17).** `backup.ts` already has all of this:
+> - `listsMissing`;
+> - `applyBackup` clearing `weekLists` for a file that has `words` but no `weekLists`;
+> - `readBackup` refusing `dbVersion > DB_VERSION` as newer, checked before the store names.
+>
+> The tests are in `src/store/backupWeekLists.test.ts`. Only the `BackupPanel` line is left.
 
 **Interfaces:**
 - Consumes: `LIST_STORES` (now with `weekLists`), `restoreWithUndo` and `undoRestore` (PR #35).

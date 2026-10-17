@@ -37,7 +37,7 @@ function sectionOf(heading: string): Section | null {
  * Live Text output → content lines tagged with the section they sit in. Headings set the section and are dropped.
  * A heading without a marker (一、 > ➤ ▶) is one only when it isn't itself a word (名字 and 句子 are words in a table).
  */
-export function cleanLines(text: string, isWord: (w: string) => boolean = () => false): { line: string; section: Section }[] {
+export function cleanLines(text: string, isWord: (w: string) => boolean = () => false, opts: { keepNumbered?: boolean } = {}): { line: string; section: Section }[] {
   const out: { line: string; section: Section }[] = [];
   const beforeFirstHeading: { line: string; section: Section }[] = []; // brand and title lines atop a worksheet
   let section: Section = 'words';
@@ -46,7 +46,9 @@ export function cleanLines(text: string, isWord: (w: string) => boolean = () => 
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.replace(/[\u3000\t]+/g, ' ').trim();
     if (!line || !HAN.test(line)) continue; // pinyin-only and Latin lines
-    if (PAGE_CODE.test(line) || COPYRIGHT.test(line) || OPTIONS.test(line) || BLANK.test(line) || INSTRUCTION.test(line) || CIRCLED.test(line)) continue;
+    // keepNumbered (a weekly list, spec 2026-10-17 §3.2): in a 词语, 生字 or 搭配 table, ① 欺负 and (1) 街道 are numbered cells, not choices
+    const numberedCell = opts.keepNumbered && (section === 'words' || section === 'chars' || section === 'pairs') && seenHeading;
+    if (PAGE_CODE.test(line) || COPYRIGHT.test(line) || (OPTIONS.test(line) && !numberedCell) || BLANK.test(line) || INSTRUCTION.test(line) || (CIRCLED.test(line) && !numberedCell)) continue;
     const heading = HEADER.exec(line)![1]!;
     if (/^第.+课$/.test(heading)) {
       out.push({ line: heading, section: 'other' }); // the lesson title names the import

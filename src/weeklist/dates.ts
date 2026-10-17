@@ -18,8 +18,12 @@ export function clampReadyBy(created: Date, readyBy: string, homeworkDue: string
   const earliest = localDateKey(addDays(startOfLocalDay(created), 2));
   let r = readyBy < earliest ? earliest : readyBy;
   if (r > latest) r = latest;
-  return r < today ? today : r;
+  const floor = homeworkDue < today ? homeworkDue : today; // never after homework day, even one already past (the UI refuses that)
+  return r < floor ? floor : r;
 }
+
+/** Homework day is already behind (spec §3.3): the parent screen asks for a new date instead of saving. */
+export const pastDue = (created: Date, homeworkDue: string): boolean => homeworkDue < localDateKey(created);
 
 export function defaultDates(now: Date): { homeworkDue: string; readyBy: string } {
   const day = startOfLocalDay(now);

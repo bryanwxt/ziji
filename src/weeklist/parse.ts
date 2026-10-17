@@ -1,119 +1,177 @@
 // src/weeklist/parse.ts
 // A pasted weekly sheet (weekly list spec 2026-10-17 §3.2): the worksheet importer's cleanLines drops the page furniture and tags
 // sections; this pass reads the 词语 grid and the 搭配 pairs, with their theme headings, and flags what the parent should check.
+import { BUILTIN, HSK_WORDS } from '../content';
 import { BLOCK_REASON } from '../content/blocked';
 import { DAPEI } from '../content/dapei';
+import { glossFor } from '../content/glossary';
 import { lookAlike } from '../importer/alike';
 import { cleanLines, isFurniture, isSectionHeading, pageCode } from '../importer/clean';
 import { joinTokens, type Token } from '../importer/parse';
 import { suggestFix } from '../importer/suggest';
+import { VERB_FAMILY } from './dapei';
 
 export type ItemFlag = 'unknown' | 'phrase' | 'blocked' | 'checkPair';
 export interface DraftItem { text: string; from: 'grid' | 'pair' | 'both'; flags: ItemFlag[]; suggestion?: string; reason?: string; parts?: string[] } // parts: the cells Live Text split it into (rule 3), for Split
 export interface DraftPair { left: string; right: string; group?: string; check?: true }
 export interface WeekDraft { title: string; items: DraftItem[]; pairs: DraftPair[]; unpaired: string[]; notes: string[] }
 
-const HAN = /^\p{Script=Han}{1,4}$/u;
-const SPLIT = /[\s、,，/／\-—＋+|｜]+/;
-const VERBS = new Set(DAPEI.map((d) => d.verb));
+const MAX_LEN = 4;
+const SENTENCE = /[，。！？]/;
+const VERBS = new Set([...DAPEI.map((d) => d.verb), ...Object.keys(VERB_FAMILY)]);
 export const isAdjPhrase = (t: string) => Array.from(t).length >= 2 && t.endsWith('的');
+/** A half that leads its pair (§3.2 rule 9): an 「X的」, a single character or a known verb. Never a theme heading. */
+const leads = (t: string) => isAdjPhrase(t) || Array.from(t).length === 1 || VERBS.has(t);
 
-/** Which half leads (§3.2 rule 9): an 「X的」, a single character or a known verb; otherwise the page's order. */
+/** Which half leads; otherwise the page's order. */
 function lead(a: string, b: string): [string, string] {
-  const leads = (t: string) => isAdjPhrase(t) || Array.from(t).length === 1 || VERBS.has(t);
   return !leads(a) && leads(b) ? [b, a] : [a, b];
 }
+
+/** Han runs: numbers, brackets, dashes, colons and stops between cells all split (1.跑步 2.书包, 吃——面包, （帽子）). */
+const hanTokens = (line: string): string[] => line.split(/[^\p{Script=Han}]+/u).filter(Boolean);
+
+const CHARS = new Set(BUILTIN.map((c) => c.char));
+/**
+ * Is this a word ZiJi knows (spec §3.2 rule 12): HSK, a built-in character or a glossary word (面条, 青菜), or one the caller adds
+ * (his stored words). The parent screen reads a paste with this.
+ */
+export const weekIsWord = (extra: (w: string) => boolean = () => false) => (w: string): boolean =>
+  HSK_WORDS.has(w) || CHARS.has(w) || glossFor(w) !== undefined || extra(w);
 
 /** The list's suggested name (§3.2 rule 1): the sheet's title line above its first heading and its page code, else the day's date. */
 export function sheetTitle(text: string, now: Date): string {
   let title: string | null = null;
+  let candidate: string | null = null;
   let code: string | null = null;
   for (const raw of text.split(/\r?\n/)) {
-    const line = raw.replace(/[\u3000\t]+/g, ' ').trim();
+    const line = raw.replace(/[　\t]+/g, ' ').trim();
     if (!line) continue;
     const c = pageCode(line);
     if (c) { code ??= c; continue; }
-    if (isSectionHeading(line)) break;
-    if (!title && /^\p{Script=Han}{2,10}$/u.test(line) && !isFurniture(line)) title = line;
+    if (isSectionHeading(line)) { title = candidate; break; } // a title is only a title when a section heading follows it
+    if (!candidate && /^\p{Script=Han}{2,10}$/u.test(line) && !isFurniture(line)) candidate = line;
   }
   const name = [title, code].filter(Boolean).join(' ');
   return name || `${now.getMonth() + 1}月${now.getDate()}日的词语`;
 }
 
+type Row = { tokens: string[]; line: string };
+
 export function parseWeekList(text: string, isWord: (w: string) => boolean, dict: Iterable<string> = [], now: Date = new Date()): WeekDraft {
   const draft: WeekDraft = { title: sheetTitle(text, now), items: [], pairs: [], unpaired: [], notes: [] };
-  const lines = cleanLines(text, isWord);
+  const note = (n: string) => { if (!draft.notes.includes(n)) draft.notes.push(n); };
   const grid: Token[] = [];
-  // every half of a pairs line read across (two or more tokens): a lone token that is one of them is never a heading (rule 6)
-  const halves = new Set(lines.filter((l) => l.section === 'pairs').map((l) => l.line.split(SPLIT).filter((t) => HAN.test(t))).filter((ts) => ts.length >= 2).flat());
-  let group: string | undefined;
-  let column: string[] = []; // pairs read one cell a line
-  const flushColumn = () => {
-    for (let i = 0; i + 1 < column.length; i += 2) {
-      const [left, right] = lead(column[i]!, column[i + 1]!);
-      draft.pairs.push({ left, right, ...(group ? { group } : {}), check: true });
-    }
-    if (column.length % 2) draft.unpaired.push(column.at(-1)!);
-    column = [];
-  };
-  for (const [i, { line, section }] of lines.entries()) {
+  const rows: Row[] = [];
+  const checkTokens: string[] = []; // tokens of a pairs line left unpaired: items, for the parent to check
+  for (const { line, section } of cleanLines(text, isWord, { keepNumbered: true })) {
     if (section === 'sentences' || section === 'other' || section === 'idioms') {
-      const note = section === 'idioms' ? 'idioms' : section === 'sentences' ? 'sentences' : 'passages';
-      if (!/^第.+课$/.test(line) && !draft.notes.includes(note)) draft.notes.push(note);
+      if (!/^第.+课$/.test(line)) note(section === 'idioms' ? 'idioms' : section === 'sentences' ? 'sentences' : 'passages');
       continue;
     }
-    const tokens = line.split(SPLIT).filter((t) => HAN.test(t));
-    if (section !== 'pairs') { grid.push(...tokens.map((t) => ({ text: t, joinable: section !== 'chars' }))); continue; }
-    // a theme heading: one short token, between pair blocks (the column buffer is even), followed by pairs (§3.2 rule 6)
-    if (tokens.length === 1 && Array.from(tokens[0]!).length <= 3 && column.length % 2 === 0 && !halves.has(tokens[0]!) && isHeading(tokens[0]!, lines.slice(i + 1).filter((l) => l.section === 'pairs').map((l) => l.line))) {
-      flushColumn();
-      group = tokens[0];
+    const all = hanTokens(line);
+    const long = all.filter((t) => Array.from(t).length > MAX_LEN);
+    if (long.length && SENTENCE.test(line)) { note('sentences'); continue; } // a sentence inside a table: From a worksheet's job
+    for (const t of long) note(`too long: ${t}`);
+    const tokens = all.filter((t) => Array.from(t).length <= MAX_LEN);
+    if (!tokens.length) continue;
+    if (section === 'pairs') rows.push({ tokens, line });
+    else grid.push(...tokens.map((t) => ({ text: t, joinable: section !== 'chars' })));
+  }
+
+  // every half of a pairs line read across: a lone token that is one of them is never a heading (rule 6)
+  const halves = new Set(rows.filter((r) => r.tokens.length >= 2).flatMap((r) => r.tokens));
+  const isCandidate = (t: string) => Array.from(t).length <= 3 && !leads(t) && !halves.has(t);
+  const seenPairs = new Set<string>();
+  let group: string | undefined;
+  const pushPair = (a: string, b: string, check: boolean) => {
+    const [left, right] = lead(a, b);
+    if (seenPairs.has(`${left}|${right}`)) return;
+    seenPairs.add(`${left}|${right}`);
+    draft.pairs.push({ left, right, ...(group ? { group } : {}), ...(check ? { check: true as const } : {}) });
+  };
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r]!;
+    if (row.tokens.length === 1) {
+      // a run of lone cells: Live Text reading a table one cell a line, or a heading over the rows that follow
+      let end = r;
+      while (end < rows.length && rows[end]!.tokens.length === 1) end++;
+      readCells(rows.slice(r, end).map((x) => x.tokens[0]!), end < rows.length);
+      r = end - 1;
       continue;
     }
-    if (tokens.length === 1) { column.push(tokens[0]!); continue; }
-    flushColumn();
-    if (tokens.length % 2) { draft.unpaired.push(line); continue; }
-    for (let k = 0; k < tokens.length; k += 2) {
-      const [left, right] = lead(tokens[k]!, tokens[k + 1]!);
-      draft.pairs.push({ left, right, ...(group ? { group } : {}) });
+    let tokens = row.tokens;
+    let check = false;
+    // a row split across lines (吃 面包 喝 / 牛奶): an odd line takes the lone cell after it, unless that cell heads the rows after it
+    const next = rows[r + 1];
+    if (tokens.length % 2 && next?.tokens.length === 1) {
+      const after = rows[r + 2];
+      const heads = isCandidate(next.tokens[0]!) && !!after && after.tokens.length >= 2;
+      if (leads(tokens.at(-1)!) || !heads) { tokens = [...tokens, next.tokens[0]!]; check = true; r++; }
+    }
+    if (tokens.length % 2) { draft.unpaired.push(row.line); checkTokens.push(...tokens); continue; }
+    for (let k = 0; k < tokens.length; k += 2) pushPair(tokens[k]!, tokens[k + 1]!, check);
+  }
+
+  /**
+   * Lone cells, read in pairs, with theme headings among them (rule 6). A heading sits where a pair would start, is a short
+   * non-leading token, and leaves an even run of cells after it up to the next heading (or, last in the run, heads the rows that
+   * follow). Headings are taken wherever the rest still reads cleanly, so 食物/煮/面条/炒/青菜/夜市/套/圈圈/吃/鸡翅 is two groups.
+   */
+  function readCells(cells: string[], rowsFollow: boolean) {
+    const n = cells.length;
+    const memo = new Map<number, boolean>();
+    // can cells[j..] be read as pairs and headings?
+    const ok = (j: number): boolean => {
+      if (j >= n) return j === n;
+      const hit = memo.get(j);
+      if (hit !== undefined) return hit;
+      const v = (isCandidate(cells[j]!) && headed(j + 1)) || ok(j + 2);
+      memo.set(j, v);
+      return v;
+    };
+    // after a heading at k − 1: at least one pair, or the end of the run when rows follow it
+    const headed = (k: number): boolean => (k === n && rowsFollow) || (k + 1 < n && ok(k + 2));
+    let j = 0;
+    while (j < n) {
+      if (isCandidate(cells[j]!) && headed(j + 1)) { group = cells[j]; j++; continue; }
+      if (j + 1 < n) { pushPair(cells[j]!, cells[j + 1]!, true); j += 2; continue; }
+      draft.unpaired.push(cells[j]!);
+      checkTokens.push(cells[j]!);
+      j++;
     }
   }
-  flushColumn();
+
   const seen = new Map<string, DraftItem>();
-  const add = (t: string, from: 'grid' | 'pair', parts?: string[]) => {
+  const add = (t: string, from: 'grid' | 'pair', parts?: string[], flag?: ItemFlag) => {
     if (isAdjPhrase(t)) return; // 「X的」 lives on its pair only (decision 4)
     const had = seen.get(t);
-    if (had) { if (had.from !== from) had.from = 'both'; return; }
+    if (had) {
+      if (had.from !== from) had.from = 'both';
+      if (flag && !had.flags.includes(flag)) had.flags.push(flag);
+      return;
+    }
     const item: DraftItem = { text: t, from, flags: [], ...(parts ? { parts } : {}) };
     const reason = BLOCK_REASON.get(t);
     if (reason) { item.flags.push('blocked'); item.reason = reason; }
     else if (!isWord(t)) {
       const chars = Array.from(t);
-      if (chars.every((c) => isWord(c)) && chars.length >= 3) item.flags.push('phrase');
+      const known = chars.every((c) => isWord(c));
+      if (known && chars.length >= 3) item.flags.push('phrase');
       else {
         item.flags.push('unknown');
-        const fix = suggestFix(t, dict, lookAlike);
+        // real characters: only a look-alike fix (鸡翅 is never "did you mean 鸡蛋"); a misread character: the nearest word
+        const fix = suggestFix(t, dict, lookAlike, known);
         if (fix) item.suggestion = fix;
       }
     }
+    if (flag) item.flags.push(flag);
     seen.set(t, item);
     draft.items.push(item);
   };
   for (const { text: t, parts } of joinTokens(grid, isWord)) add(t, 'grid', parts); // Live Text's split cells rejoined (rule 3)
   for (const p of draft.pairs) { add(p.left, 'pair'); add(p.right, 'pair'); }
+  for (const t of checkTokens) add(t, 'pair', undefined, 'checkPair');
   return draft;
-}
-
-/** A lone token is a heading when the lines after it, up to the next lone token, are pair lines (two or more tokens each). */
-function isHeading(token: string, after: string[]): boolean {
-  const following = after[0]?.split(SPLIT).filter((t) => HAN.test(t)) ?? [];
-  if (following.length >= 2) return true;
-  // column-wise: a heading is followed by an even run of single cells before the next heading or the end
-  let run = 0;
-  for (const l of after) {
-    const ts = l.split(SPLIT).filter((t) => HAN.test(t));
-    if (ts.length !== 1) break;
-    run++;
-  }
-  return run >= 2 && run % 2 === 0 && token.length <= 3;
 }
