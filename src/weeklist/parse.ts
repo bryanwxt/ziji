@@ -4,7 +4,10 @@
 import { BUILTIN, HSK_WORDS } from '../content';
 import { BLOCK_REASON } from '../content/blocked';
 import { DAPEI } from '../content/dapei';
+import { OutputFormat, segment } from 'pinyin-pro';
 import { glossFor } from '../content/glossary';
+import { ladderId, ladderWord } from '../content/ladder';
+import { sentencesFor } from '../content/understand';
 import { lookAlike } from '../importer/alike';
 import { cleanLines, isFurniture, isSectionHeading, pageCode } from '../importer/clean';
 import { joinTokens, type Token } from '../importer/parse';
@@ -37,7 +40,17 @@ const CHARS = new Set(BUILTIN.map((c) => c.char));
  * (his stored words). The parent screen reads a paste with this.
  */
 export const weekIsWord = (extra: (w: string) => boolean = () => false) => (w: string): boolean =>
-  HSK_WORDS.has(w) || CHARS.has(w) || glossFor(w) !== undefined || extra(w);
+  HSK_WORDS.has(w) || CHARS.has(w) || glossFor(w) !== undefined || sentencesFor(w).length > 0 || !!ladderWord(ladderId(w)) || pinyinProWord(w) || extra(w);
+
+/**
+ * A word in pinyin-pro's own dictionary (follow-up 2026-10-17): its segmenter keeps it whole. That dictionary holds only words it
+ * needs for readings (银行, 行长), so it adds a few; the full CC-CEDICT isn't in the repo (glossary.json is its built-in 组词 only).
+ */
+function pinyinProWord(w: string): boolean {
+  if (Array.from(w).length < 2) return false;
+  const parts = segment(w, { format: OutputFormat.AllSegment }) as { origin: string }[];
+  return parts.length === 1 && parts[0]!.origin === w;
+}
 
 /** The list's suggested name (§3.2 rule 1): the sheet's title line above its first heading and its page code, else the day's date. */
 export function sheetTitle(text: string, now: Date): string {

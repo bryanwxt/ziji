@@ -205,20 +205,67 @@ describe('WeekPanel: the lists', () => {
     expect(after.fits.map((f) => f.wordId)).not.toContain(butterfly);
   });
 
-  it('delete asks on the page (never confirm()), and keeps his words', async () => {
+  it('Close asks on the page (never confirm()), closes the list and keeps it under a collapsed Past lists; delete is in there', async () => {
     const app = await setup();
-    await saved(app);
+    const l = await saved(app);
     const native = vi.spyOn(window, 'confirm');
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete P9-L01' }));
-    expect(native).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button', { name: 'Close P9-L01' }));
     expect(screen.getByText(/His words and progress stay/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Keep it' }));
-    expect(await allWeekLists(app.db)).toHaveLength(1);
+    expect((await getWeekList(app.db, l.id))?.closedAt).toBeUndefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Close P9-L01' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close the list' }));
+    await waitFor(async () => expect((await getWeekList(app.db, l.id))?.closedAt).toBe(MONDAY.getTime()));
+    const past = await screen.findByRole('button', { name: /Past lists \(1\)/ });
+    expect(past.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('article', { name: 'P9-L01' })).toBeNull();
+    fireEvent.click(past);
+    expect(within(await screen.findByRole('article', { name: 'P9-L01' })).getByText('Closed')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Delete P9-L01' }));
+    expect(screen.getByText(/Delete “P9-L01” for good\? His words and progress stay/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Delete the list' }));
     await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(0));
     expect((await allWords(app.db)).map((w) => w.text)).toContain('蝴蝶');
-    await waitFor(() => expect(screen.queryByRole('article', { name: 'P9-L01' })).toBeNull());
+    expect(native).not.toHaveBeenCalled();
+  });
+
+  it('once the check has started, ready-by is locked and homework day can only move later', async () => {
+    const app = await setup();
+    const l = await saved(app);
+    await updateWeekList(app.db, l.id, (x) => ({ ...x, check: { at: 1, day: '2026-10-21', results: {}, done: false } }));
+    cleanup();
+    renderWithApp(<WeekPanel />, app);
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit P9-L01' }));
+    expect((screen.getAllByLabelText('Ready by').at(-1) as HTMLInputElement).disabled).toBe(true);
+    expect(screen.getByText(/The check has started/)).toBeTruthy();
+    const due = screen.getAllByLabelText('Homework due').at(-1)!;
+    fireEvent.input(due, { target: { value: '2026-10-22' } });
+    expect(screen.getByRole('alert').textContent).toMatch(/can only move later now/);
+    expect((screen.getByRole('button', { name: 'Save changes' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.input(due, { target: { value: '2026-10-26' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(async () => expect((await getWeekList(app.db, l.id))?.homeworkDue).toBe('2026-10-26'));
+    expect((await getWeekList(app.db, l.id))?.readyBy).toBe('2026-10-21');
+  });
+});
+
+describe('WeekPanel: fill-in rows and joining (follow-up 2026-10-17)', () => {
+  it('adjective rows get adjective decoys, and a row whose decoy may fit is marked to check first', async () => {
+    await setup();
+    await read(['一、词语', '整齐 热闹 干净 安静 公园 草地'].join('\n'));
+    const row = screen.getByRole('list', { name: '选词填空' }).querySelector('li[data-word="整齐"]')!;
+    const decoys = within(row as HTMLElement).getAllByRole('button', { name: /^✗ / }).map((b) => b.textContent!.slice(2));
+    expect(decoys.sort()).toEqual(['安静', '干净', '热闹'].sort());
+    expect(row.classList.contains('is-doubt')).toBe(true);
+    expect(within(row as HTMLElement).getByText('check this one')).toBeTruthy();
+  });
+
+  it('two cells Live Text split can be joined', async () => {
+    await setup();
+    await read(['一、词语', '草地 蝴 蝶'].join('\n'));
+    fireEvent.click(screen.getByRole('button', { name: 'Join 蝴 and 蝶' }));
+    expect(screen.getByText('蝴蝶')).toBeTruthy();
+    expect(screen.queryByRole('checkbox', { name: 'Include 蝴' })).toBeNull();
   });
 });
 

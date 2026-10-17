@@ -519,7 +519,7 @@ async function sweep(size: Size) {
     await snap(p, size, 'parent-backup', '#parent-backup');
   });
   // 本周词语 (weekly list spec 2026-10-17 §3): empty, a pasted sheet's preview (two theme groups, one read column-wise and
-  // flagged), the wrong answers to confirm, All fine, saved, and delete's own confirm; a screenshot each, never sideways
+  // flagged), the wrong answers to confirm, All fine, saved, and Close's own confirm; a screenshot each, never sideways
   await run('parent-week', AFTERNOON, { pinCode: FIT_PIN }, async (p) => {
     await tabTo(p, '家长');
     for (const d of FIT_PIN) await p.click(`.pinpad button[aria-label="${d}"]`);
@@ -550,8 +550,8 @@ async function sweep(size: Size) {
     await p.waitForSelector('.week__list');
     await sideways();
     await snap(p, size, 'parent-week-6-saved', '.week__lists');
-    await p.click('.week__list button:has-text("Delete")');
-    await snap(p, size, 'parent-week-7-delete', '.week__confirm');
+    await p.click('.week__list button:has-text("Close")');
+    await snap(p, size, 'parent-week-7-close', '.week__confirm');
     await p.click('.week__list button:has-text("Keep it")');
     await p.click('.week__list button:has-text("Edit")');
     await sideways();

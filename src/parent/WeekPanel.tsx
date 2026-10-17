@@ -1,6 +1,7 @@
 // src/parent/WeekPanel.tsx
 // 本周词语 (weekly list spec 2026-10-17 §3): paste a sheet, check the preview, confirm the wrong answers, set the days, save.
 // Then the lists, each with where it stands, edited or deleted. Lists stay on the iPad. The parent area is English.
+import { ChevronDown } from 'lucide-preact';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { HSK_WORDS } from '../content';
@@ -13,7 +14,7 @@ import { allCards, allWeekLists, allWords, deleteWeekList, updateWeekList } from
 import type { CardRecord, ItemStatus, WeekFit, WeekList, WeekPair, Word } from '../types';
 import { proposeWrong } from '../weeklist/dapei';
 import { clampReadyBy, daysBetween, defaultDates, pastDue, weekdayZh } from '../weeklist/dates';
-import { parentSentenceProblems, proposeFit, sentenceFor } from '../weeklist/fit';
+import { mightFit, parentSentenceProblems, proposeFit, proposeFits, sentenceFor } from '../weeklist/fit';
 import { itemStatus, matchText } from '../weeklist/match';
 import { parseWeekList, weekIsWord, type DraftItem, type DraftPair, type WeekDraft } from '../weeklist/parse';
 import { activeLists, CLOSE_AFTER_DAYS, HEADROOM } from '../weeklist/plan';
@@ -107,13 +108,20 @@ export function WeekPanel() {
   const statusOf = (t: string): ItemStatus => { const w = byText.get(t); return w ? itemStatus(w.id, cards) : 'new'; };
 
   /** A 选词填空 row for each item that has none yet, its decoys from the list's other items (spec §7.3). */
+  const blankRow = (fit: WeekFit | null): FitRow => ({ fit, skipped: [], removed: false, ok: false, own: '', editing: false });
+  /** How many rows use each word as a decoy, leaving one row out: a new or swapped row spreads its decoys too (DECOY_CAP). */
+  const usage = (rows: Record<string, FitRow>, besides?: string) => {
+    const used = new Map<string, number>();
+    for (const [t, f] of Object.entries(rows)) if (t !== besides && f.fit && !f.removed) for (const d of f.fit.wrong) used.set(d, (used.get(d) ?? 0) + 1);
+    return used;
+  };
   const withFits = (rows: Record<string, FitRow>, its: DraftItem[], ps: DraftPair[]) => {
     const mates = its.map((it) => wordFor(it.text).word);
     const out = { ...rows };
     for (const w of mates) {
       if (out[w.text]) continue;
       const s = sentenceFor(w);
-      out[w.text] = { fit: s ? proposeFit(w, mates, ps, s) : null, skipped: [], removed: false, ok: false, own: '', editing: false };
+      out[w.text] = blankRow(s ? proposeFit(w, mates, ps, s, new Set(), usage(out)) : null);
     }
     return out;
   };
@@ -132,7 +140,8 @@ export function WeekPanel() {
     setReadyBy(dates.readyBy);
     setReadyTouched(false);
     setPairs(d.pairs.map((p) => ({ ...p, wrong: proposeWrong(p, d.pairs), skipped: [], removed: false, ok: false })));
-    setFits(withFits({}, d.items, d.pairs));
+    const all = proposeFits(d.items.map((it) => wordFor(it.text).word), d.pairs); // decoys spread over the whole list
+    setFits(Object.fromEntries([...all].map(([t, fit]) => [t, blankRow(fit)])));
     setMessage(null);
   };
   const cancel = () => { setDraft(null); setItems([]); setPairs([]); setFits({}); };
@@ -149,6 +158,20 @@ export function WeekPanel() {
     setEditing(null);
     if (!t || t === items[i]!.text) return;
     replaceItem(i, [{ text: t, from: items[i]!.from, flags: isWord(t) ? [] : ['unknown'] }]);
+  };
+  const join = (i: number) => {
+    const [a, b] = [items[i]!, items[i + 1]!];
+    const t = a.text + b.text;
+    const its = [...items];
+    its.splice(i, 2, { text: t, from: a.from === b.from ? a.from : 'both', flags: isWord(t) ? [] : ['unknown'], parts: [a.text, b.text] });
+    setItems(its);
+    setFits((f) => withFits(f, its, pairs));
+  };
+  /** Live Text split a word across cells (蝴 | 蝶): offered when the two make a word, or either is flagged, both up to 4 together. */
+  const joinable = (i: number) => {
+    const [a, b] = [items[i], items[i + 1]];
+    if (!a || !b || a.from === 'pair' || b.from === 'pair' || Array.from(a.text + b.text).length > 4) return false;
+    return isWord(a.text + b.text) || a.flags.includes('unknown') || b.flags.includes('unknown');
   };
   const split = (i: number) => replaceItem(i, items[i]!.parts!.map((p) => ({ text: p, from: items[i]!.from, flags: isWord(p) ? [] : ['unknown'] })));
 
@@ -167,16 +190,18 @@ export function WeekPanel() {
   });
   const setFit = (t: string, change: (f: FitRow) => FitRow) => setFits((fs) => ({ ...fs, [t]: change(fs[t]!) }));
   const mates = () => items.filter((it) => !off.has(it.text)).map((it) => wordFor(it.text).word);
-  const swapDecoy = (t: string, bad: string) => setFit(t, (f) => {
-    if (!f.fit) return f;
+  const swapDecoy = (t: string, bad: string) => setFits((fs) => {
+    const f = fs[t]!;
+    if (!f.fit) return fs;
     const skipped = [...f.skipped, bad];
-    const fit = proposeFit(wordFor(t).word, mates(), pairsAsDraft(), { text: f.fit.sentence, source: f.fit.source }, new Set(skipped));
-    return { ...f, skipped, fit, ok: false };
+    const fit = proposeFit(wordFor(t).word, mates(), pairsAsDraft(), { text: f.fit.sentence, source: f.fit.source }, new Set(skipped), usage(fs, t));
+    return { ...fs, [t]: { ...f, skipped, fit, ok: false } };
   });
-  const ownSentence = (t: string, s: string) => setFit(t, (f) => {
+  const ownSentence = (t: string, s: string) => setFits((fs) => {
+    const f = fs[t]!;
     const good = s.trim() && parentSentenceProblems(s.trim(), t).length === 0;
-    const fit = good ? proposeFit(wordFor(t).word, mates(), pairsAsDraft(), { text: s.trim().replace(t, BLANK), source: 'parent' }) : null;
-    return { ...f, own: s, ok: false, ...(fit ? { fit, skipped: [] } : {}) };
+    const fit = good ? proposeFit(wordFor(t).word, mates(), pairsAsDraft(), { text: s.trim().replace(t, BLANK), source: 'parent' }, new Set(), usage(fs, t)) : null;
+    return { ...fs, [t]: { ...f, own: s, ok: false, ...(fit ? { fit, skipped: [] } : {}) } };
   });
 
   // ---- what the preview adds up to
@@ -270,8 +295,9 @@ export function WeekPanel() {
         )}
         {problems.map((p) => <span key={p} class="week__flag">{p}</span>)}
         {it.flags.map((f) => <span key={f} class="week__flag">{FLAG_TEXT(it, f, isWord)}</span>)}
-        {(it.suggestion || it.parts || w.paused) && (
+        {(it.suggestion || it.parts || w.paused || joinable(i)) && (
           <div class="week__actions">
+            {joinable(i) && <button type="button" class="small-btn" lang="zh-CN" aria-label={`Join ${it.text} and ${items[i + 1]!.text}`} onClick={() => join(i)}>Join with {items[i + 1]!.text}</button>}
             {it.suggestion && <button type="button" class="small-btn" onClick={() => replaceItem(i, [{ text: it.suggestion!, from: it.from, flags: [] }])}>Use {it.suggestion}</button>}
             {it.parts && <button type="button" class="small-btn" aria-label={`Split ${it.text}`} onClick={() => split(i)}>Split</button>}
             {w.paused && <label class="week__unpause"><input type="checkbox" checked={!keepPaused.has(it.text)} onChange={() => setKeepPaused((s) => toggled(s, it.text))} /> Unpause (it's paused)</label>}
@@ -343,7 +369,7 @@ export function WeekPanel() {
           )}
 
           <h3>Check the wrong answers</h3>
-          <p class="week__hint">ZiJi made these wrong answers from the list. Tap one that is actually right to swap it. Fine confirms a row; All fine confirms them all.</p>
+          <p class="week__hint">ZiJi made these wrong answers from the list. Tap one that is actually right to swap it. Fine confirms a row; All fine confirms them all. Rows marked “check this one” have a wrong answer that may fit: look at those first.</p>
           {pairs.length > 0 && <h4 class="week__sub">搭配 ({livePairs.length})</h4>}
           {groups.map(([g, idx]) => (
             <div key={g} role="group" aria-label={g || '搭配'} class="week__group">
@@ -381,12 +407,14 @@ export function WeekPanel() {
             {kept.filter((it) => fits[it.text]?.fit).map((it) => {
               const f = fits[it.text]!;
               const [before, after] = f.fit!.sentence.split(BLANK);
+              const doubt = f.removed ? [] : mightFit(f.fit!);
               return (
-                <li key={it.text} data-word={it.text} class={`week__row ${f.removed ? 'is-off' : ''} ${f.ok && !f.removed ? 'is-ok' : ''}`}>
+                <li key={it.text} data-word={it.text} class={`week__row ${f.removed ? 'is-off' : ''} ${f.ok && !f.removed ? 'is-ok' : ''} ${doubt.length ? 'is-doubt' : ''}`}>
                   <span class="hanzi week__sentence" lang="zh-CN">{before}<span class="week__blank">{it.text}</span>{after}</span>
+                  {doubt.length > 0 && <span class="week__doubt" title={`${doubt.join(', ')} may fit too`}>check this one</span>}
                   {!f.removed && (
                     <>
-                      <span class="week__wrongs">{f.fit!.wrong.map((d) => <button key={d} type="button" class="week__chip" lang="zh-CN" onClick={() => swapDecoy(it.text, d)}>✗ {d}</button>)}</span>
+                      <span class="week__wrongs">{f.fit!.wrong.map((d) => <button key={d} type="button" class={`week__chip ${doubt.includes(d) ? 'is-doubt' : ''}`} lang="zh-CN" onClick={() => swapDecoy(it.text, d)}>✗ {d}</button>)}</span>
                       <span class="week__rowbtns">
                         <button type="button" class={`small-btn week__fine ${f.ok ? 'is-on' : ''}`} aria-pressed={f.ok} onClick={() => setFit(it.text, (x) => ({ ...x, ok: !x.ok }))}>{f.ok ? '✓ Fine' : 'Fine'}</button>
                         <button type="button" class="link" onClick={() => setFit(it.text, (x) => ({ ...x, editing: !x.editing }))}>Edit</button>
@@ -439,15 +467,20 @@ export function WeekPanel() {
   }
 }
 
-/** The lists: the ones running, each with where it stands, edit and delete; past ones below, read-only. */
+/**
+ * The lists: the ones running, each with where it stands, edit and close; closed and finished ones under a collapsed Past lists,
+ * read-only, where a list can be deleted for good (spec §10: a list the parent removes is closed and kept).
+ */
 function WeekLists({ lists, now, onChanged, db }: { lists: WeekList[]; now: Date; onChanged: () => Promise<void>; db: ReturnType<typeof useApp>['db'] }) {
   const [editing, setEditing] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [asking, setAsking] = useState<string | null>(null); // the list whose Close or Delete is asking
+  const [showPast, setShowPast] = useState(false);
   const active = activeLists(lists, now);
   const past = lists.filter((l) => !active.includes(l)).sort((a, b) => b.createdAt - a.createdAt);
-  const del = async (id: string) => { await deleteWeekList(db, id); setDeleting(null); await onChanged(); };
+  const close = async (id: string) => { await updateWeekList(db, id, (l) => ({ ...l, closedAt: now.getTime() })); setAsking(null); await onChanged(); };
+  const del = async (id: string) => { await deleteWeekList(db, id); setAsking(null); await onChanged(); };
   const card = (l: WeekList, running: boolean) => (
-    <article key={l.id} class={`week__list ${editing === l.id ? 'is-editing' : ''}`} aria-label={l.name}>
+    <article key={l.id} class={`week__list ${editing === l.id ? 'is-editing' : ''} ${running ? '' : 'is-past'}`} aria-label={l.name}>
       {editing === l.id
         ? <ListEditor list={l} now={now} db={db} onDone={async () => { setEditing(null); await onChanged(); }} />
         : (
@@ -456,18 +489,24 @@ function WeekLists({ lists, now, onChanged, db }: { lists: WeekList[]; now: Date
             <p class="week__list-days"><span>Ready by {day(l.readyBy)}</span> · <span>homework {day(l.homeworkDue)}</span></p>
             <p class={`week__list-status ${running ? '' : 'is-past'}`}>{listStatus(l, now)}</p>
             <p class="week__list-counts">{l.items.length} words · {l.pairs.length} 搭配 · {l.fits.length} fill-ins</p>
-            {deleting === l.id
+            {asking === l.id
               ? (
-                <div class="week__confirm" role="group" aria-label="Delete the list?">
-                  <p>Delete “{l.name}”? His words and progress stay.</p>
-                  <button type="button" class="small-btn week__danger" onClick={() => void del(l.id)}>Delete the list</button>
-                  <button type="button" class="small-btn" onClick={() => setDeleting(null)}>Keep it</button>
+                <div class="week__confirm" role="group" aria-label={running ? 'Close the list?' : 'Delete the list?'}>
+                  {running
+                    ? <p>Close “{l.name}”? It stops being practised and moves to Past lists. His words and progress stay.</p>
+                    : <p>Delete “{l.name}” for good? His words and progress stay.</p>}
+                  {running
+                    ? <button type="button" class="small-btn week__danger" onClick={() => void close(l.id)}>Close the list</button>
+                    : <button type="button" class="small-btn week__danger" onClick={() => void del(l.id)}>Delete the list</button>}
+                  <button type="button" class="small-btn" onClick={() => setAsking(null)}>Keep it</button>
                 </div>
               )
               : (
                 <div class="week__actions">
                   {running && <button type="button" class="small-btn" aria-label={`Edit ${l.name}`} onClick={() => setEditing(l.id)}>Edit</button>}
-                  <button type="button" class="small-btn" aria-label={`Delete ${l.name}`} onClick={() => setDeleting(l.id)}>Delete</button>
+                  {running
+                    ? <button type="button" class="small-btn" aria-label={`Close ${l.name}`} onClick={() => setAsking(l.id)}>Close</button>
+                    : <button type="button" class="small-btn" aria-label={`Delete ${l.name}`} onClick={() => setAsking(l.id)}>Delete</button>}
                 </div>
               )}
           </>
@@ -478,14 +517,22 @@ function WeekLists({ lists, now, onChanged, db }: { lists: WeekList[]; now: Date
   return (
     <>
       {active.length > 0 && <><h3>Lists</h3><div class="week__lists">{active.map((l) => card(l, true))}</div></>}
-      {past.length > 0 && <><h3>Past lists</h3><div class="week__lists">{past.map((l) => card(l, false))}</div></>}
+      {past.length > 0 && (
+        <>
+          <button type="button" class="btn btn--ghost parent__more week__past" aria-expanded={showPast} onClick={() => setShowPast((o) => !o)}>
+            <ChevronDown class={showPast ? 'is-open' : ''} size={20} strokeWidth={3} aria-hidden="true" /> Past lists ({past.length})
+          </button>
+          {showPast && <div class="week__lists">{past.map((l) => card(l, false))}</div>}
+        </>
+      )}
     </>
   );
 }
 
 /**
  * A running list's name, days, words and 搭配. Saved with updateWeekList: one transaction over the list as stored now, so an
- * answer he gives while this is open is never lost (plan Global Constraints, fix round 2026-10-17).
+ * answer he gives while this is open is never lost (plan Global Constraints, fix round 2026-10-17). Once its check has started,
+ * ready-by is fixed and homework day can only move later (the check's answers belong to that day).
  */
 function ListEditor({ list, now, db, onDone }: { list: WeekList; now: Date; db: ReturnType<typeof useApp>['db']; onDone: () => Promise<void> }) {
   const [name, setName] = useState(list.name);
@@ -493,14 +540,15 @@ function ListEditor({ list, now, db, onDone }: { list: WeekList; now: Date; db: 
   const [homework, setHomework] = useState(list.homeworkDue);
   const [gone, setGone] = useState<Set<string>>(new Set()); // wordIds
   const [goneP, setGoneP] = useState<Set<string>>(new Set()); // left|right
+  const locked = !!list.check;
   const past = homework !== list.homeworkDue && pastDue(now, homework);
-  const created = new Date(list.createdAt);
-  const eff = homework ? clampReadyBy(created, readyBy, homework) : readyBy;
-  const ok = name.trim() && homework && !past && list.items.some((i) => !gone.has(i.wordId));
+  const earlier = locked && homework < list.homeworkDue;
+  const eff = locked ? list.readyBy : homework ? clampReadyBy(new Date(list.createdAt), readyBy, homework) : readyBy;
+  const ok = name.trim() && homework && !past && !earlier && list.items.some((i) => !gone.has(i.wordId));
   const save = async () => {
     if (!ok) return;
     await updateWeekList(db, list.id, (l) => ({
-      ...l, name: name.trim(), readyBy: eff, homeworkDue: homework,
+      ...l, name: name.trim(), readyBy: l.check ? l.readyBy : eff, homeworkDue: l.check && homework < l.homeworkDue ? l.homeworkDue : homework,
       items: l.items.filter((i) => !gone.has(i.wordId)),
       pairs: l.pairs.filter((p) => !goneP.has(`${p.left}|${p.right}`)),
       fits: l.fits.filter((f) => !gone.has(f.wordId)),
@@ -511,11 +559,13 @@ function ListEditor({ list, now, db, onDone }: { list: WeekList; now: Date; db: 
     <div class="week__editor">
       <div class="week__meta">
         <div class="field week__name"><label for={`we-name-${list.id}`}>List name</label><input id={`we-name-${list.id}`} value={name} onInput={(e) => setName(inputValue(e))} /></div>
-        <div class="field"><label for={`we-ready-${list.id}`}>Ready by</label><input id={`we-ready-${list.id}`} type="date" value={readyBy} onInput={(e) => setReadyBy(inputValue(e))} /></div>
-        <div class="field"><label for={`we-due-${list.id}`}>Homework due</label><input id={`we-due-${list.id}`} type="date" value={homework} onInput={(e) => setHomework(inputValue(e))} /></div>
+        <div class="field"><label for={`we-ready-${list.id}`}>Ready by</label><input id={`we-ready-${list.id}`} type="date" value={readyBy} disabled={locked} onInput={(e) => setReadyBy(inputValue(e))} /></div>
+        <div class="field"><label for={`we-due-${list.id}`}>Homework due</label><input id={`we-due-${list.id}`} type="date" value={homework} min={locked ? list.homeworkDue : undefined} onInput={(e) => setHomework(inputValue(e))} /></div>
       </div>
-      {past && <p class="week__refuse" role="alert">Homework day is already past. Pick today or a later day.</p>}
-      {!past && eff !== readyBy && <p class="week__note">Ready by moves to {day(eff)}.</p>}
+      {locked && <p class="week__note">The check has started, so its day stays {day(list.readyBy)}, and homework day can only move later.</p>}
+      {earlier && <p class="week__refuse" role="alert">Homework day can only move later now: {day(list.homeworkDue)} or after.</p>}
+      {past && !earlier && <p class="week__refuse" role="alert">Homework day is already past. Pick today or a later day.</p>}
+      {!past && !locked && eff !== readyBy && <p class="week__note">Ready by moves to {day(eff)}.</p>}
       <p class="week__hint">Tap a word or 搭配 to take it off the list. His progress on it stays. To add words, paste the sheet again with this name and these days.</p>
       <div class="week__wrongs">
         {list.items.map((i) => (

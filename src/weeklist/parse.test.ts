@@ -153,3 +153,13 @@ describe('with the production isWord', () => {
     expect(d.pairs.map((p) => `${p.group}:${p.left}${p.right}`)).toEqual(['操场:放风筝', '操场:拍皮球', '厨房:煎鸡蛋']);
   });
 });
+
+describe('weekIsWord also knows the school sentence words and pinyin-pro words (follow-up 2026-10-17)', () => {
+  const isW = weekIsWord();
+  it('a word in pinyin-pro\'s word dictionary is a word', () => {
+    expect(isW('行长')).toBe(true); // pinyin-pro's dictionary (a polyphone word)
+  });
+  it('a nonsense pair of real characters is still unknown', () => {
+    expect(isW('书跑')).toBe(false);
+  });
+});
