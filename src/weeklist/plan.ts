@@ -5,9 +5,17 @@
 import { addDays, localDateKey, parseDateKey } from '../lib/date';
 import { bookLesson } from '../session/lanes';
 import { PACE_MIN } from '../session/pace';
-import type { CardRecord, WeekList } from '../types';
+import { MAX_SENTENCE_CUE } from '../activities/flashcards/meaning';
+import { hanChars } from '../content';
+import { boundPair } from '../content/kidGloss';
+import { bankFor, fillGap } from '../content/sentenceBank';
+import { sentencesFor } from '../content/understand';
+import { readingOf } from '../content/wordGate';
+import { choiceGloss } from '../practice/missNote';
+import type { CardRecord, ListCard, WeekList, WeekPair, Word } from '../types';
 import { daysBetween } from './dates';
 import { itemStatus } from './match';
+import { notSolid } from './readiness';
 
 export const CLOSE_AFTER_DAYS = 7;
 export const HEADROOM = 2;
@@ -121,3 +129,63 @@ export function schoolNeed(
 }
 
 export const dayAfter = (key: string) => localDateKey(addDays(parseDateKey(key), 1));
+
+/** Re-teaching cards in one lesson at most (spec §2.1). */
+export const MAX_RETEACH = 6;
+
+/**
+ * The pair a list verb is taught through (spec §7.2): a single character that is the left half of a pair on an active list, the
+ * first on the page. A bound character (kidGloss.ts: 番 → 番茄) keeps its own pair, so it leads with none here.
+ */
+export function leadPair(word: Word, lists: WeekList[]): WeekPair | null {
+  if (Array.from(word.text).length !== 1 || boundPair(word.text)) return null;
+  for (const l of lists) {
+    const p = l.pairs.find((x) => x.left === word.text);
+    if (p) return p;
+  }
+  return null;
+}
+
+/**
+ * What the 认新词 card shows for a list word (spec §7.1–7.2). A verb with a pair: the pair, at its reading, the verb marked, the
+ * pair's English. Any other word: one short example sentence (his class sentence, the school file, the bank's first gap; at most
+ * MAX_SENTENCE_CUE), and its first unbegun character marked when it has more than one.
+ */
+export function listCardFor(word: Word, lists: WeekList[], begun: ReadonlySet<string>): ListCard {
+  const pair = leadPair(word, lists);
+  if (pair) {
+    const lead = pair.left + pair.right;
+    const gloss = [choiceGloss(pair.left), choiceGloss(pair.right)].filter(Boolean).join(' ');
+    return { lead, leadReading: pair.reading ?? readingOf(lead), ...(gloss ? { leadGloss: gloss } : {}), mark: [0, Array.from(pair.left).length] };
+  }
+  const chars = Array.from(word.text);
+  const at = chars.findIndex((c) => !begun.has(c));
+  const ok = (s: string) => s.includes(word.text) && Array.from(s).length <= MAX_SENTENCE_CUE;
+  const cls = (word.sentences ?? []).find((s) => ok(s.text));
+  const school = sentencesFor(word.text).find((s) => ok(s.zh));
+  const bank = bankFor(word.text);
+  const filled = bank ? fillGap(bank.gaps[0], word.text) : undefined;
+  const text = cls?.text ?? school?.zh ?? (filled && ok(filled) ? filled : undefined);
+  const pinyin = cls?.pinyin && cls.pinyin.trim().split(/\s+/).length === hanChars(cls.text).length ? cls.pinyin : text ? readingOf(text) : '';
+  return {
+    ...(text ? { example: { text, pinyin } } : {}),
+    ...(chars.length > 1 && at >= 0 ? { mark: [at, 1] as [number, number] } : {}),
+  };
+}
+
+/**
+ * Not-solid items whose card 认新字 shows again (spec §2.1): the day after each miss, never two days running without a new miss.
+ * Missed in the check first, then the oldest last answer; at most `cap`.
+ */
+export function reteachIds(lists: WeekList[], now: Date, cap = MAX_RETEACH): string[] {
+  const yesterday = localDateKey(addDays(now, -1));
+  const inCheck: string[] = [];
+  const later: string[] = [];
+  for (const l of lists) {
+    for (const it of notSolid(l, now)) {
+      if (it.missedOn !== yesterday || inCheck.includes(it.wordId) || later.includes(it.wordId)) continue;
+      (l.check?.results[it.wordId]?.correct === false ? inCheck : later).push(it.wordId);
+    }
+  }
+  return [...inCheck, ...later].slice(0, cap);
+}

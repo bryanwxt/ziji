@@ -135,15 +135,17 @@ export async function settleRung(db: AppDb, wordId: string, kind: CardKind, now:
  * voice today), a word that can be heard gets its hear card for tomorrow, ungraded; a word with no English (a school list word)
  * starts on its Read rung, graded by that reading.
  */
-export async function beginNewWord(db: AppDb, word: Word, asked: 'hear' | 'read' | 'meaning', outcome: TapOutcome, now: Date): Promise<CardRecord> {
+export async function beginNewWord(db: AppDb, word: Word, asked: 'hear' | 'read' | 'meaning', outcome: TapOutcome, now: Date, { list = false } = {}): Promise<CardRecord> {
   if (asked === 'hear') return recordHear(db, word.id, outcome, now);
   if (!canAskRung(word, 'hear')) return recordRecognition(db, word.id, outcome, now);
+  // a weekly list word begins on Read (weekly list spec §6.4): its reading is graded, and its Hear rung opens as below
+  const read = list && asked === 'read' ? await recordRecognition(db, word.id, outcome, now) : null;
   const id = `${word.id}:hear`;
   const have = await getCard(db, id);
-  if (have) return have;
+  if (have) return read ?? have;
   const card: CardRecord = { id, wordId: word.id, kind: 'hear', fsrs: { ...newCard(now), due: addDays(startOfLocalDay(now), 1) } };
   await putCards(db, [card]);
-  return card;
+  return read ?? card;
 }
 
 /** Any passed rung whose next rung has no card gets one (a placement re-run or a lost card can't strand a word: final review I5). */

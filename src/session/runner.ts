@@ -12,7 +12,11 @@ export const MAX_STEP_MS = 10 * 60_000;
 
 export function createSessionRecord(plan: SessionPlan, date: string, now: number, free = false): SessionRecord {
   // 认新字 (spec 2026-10-05 §2.1): each new word's card, then its recall. 练一练 builds its own round when it starts.
-  const flashQueue: FlashItem[] = plan.newWordIds.map((wordId) => ({ wordId, isNew: true, retry: false }));
+  // a weekly list's re-teaching cards come first (weekly list spec §2.1): shown again, asked, never graded
+  const flashQueue: FlashItem[] = [
+    ...(plan.reteachIds ?? []).map((wordId): FlashItem => ({ wordId, isNew: false, retry: true, reteach: true })),
+    ...plan.newWordIds.map((wordId): FlashItem => ({ wordId, isNew: true, retry: false })),
+  ];
   return {
     date, startedAt: now, activeMs: 0, free, plan, stepIndex: 0,
     flashQueue, flashIndex: 0, flashElapsedMs: 0, writeIndex: 0, writeDone: 0,

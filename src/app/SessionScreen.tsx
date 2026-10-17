@@ -51,6 +51,7 @@ import {
   addActiveTime, afterFlashAnswer, afterPracticeAnswer, afterWriteWord, createFreePracticeRecord, currentFlashItem, currentPracticeItem, currentStep,
   currentWriteTask, finishStep, finishStepIf, introducedNewWords, sendBack, skipFlashItem, skipPracticeItem, skipSayItems, startPractice, wordMisses,
 } from '../session/runner';
+import { noteListAnswer } from '../weeklist/answers';
 import { addAnswer, clearConfusion, getCard, getConfusions, getKid, getRungs, noteConfusion, keepRecording, getSettings, listParentPassages, listRecordings, noteRung, practisedWords, saveKid, saveSession, updateKid } from '../store/repo';
 import { ladderWordsBesides } from '../content/ladder';
 import { DEFAULT_KID, type KidState, type OralInfo, type ReadingHistory, type Recording, type SessionRecord, type StepKind, type Word } from '../types';
@@ -294,13 +295,18 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     once(async () => {
       const item = flashItem!;
       let sent = false;
+      // a weekly list word (weekly list spec §8.3, §2.1): every 认新字 answer counts toward its readiness; a re-teaching card is
+      // asked but grades no card (it is a retry)
+      const onList = !!item.reteach || !!rec.plan.listNewIds?.includes(item.wordId);
+      if (onList && !rec.free && r.asked === 'read') await noteListAnswer(db, item.wordId, 'read', r.correct, now());
       if (!item.retry && !rec.free && !gone(item.wordId)) {
         const outcome = { correct: r.correct, responseMs: r.responseMs, slow: state.slow };
-        // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing
+        // a new word is graded only by ear (its reading opens when hearing passes); read with no voice, it grades nothing. A list
+        // word begins on Read (weekly list spec §6.4)
         const fresh = item.isNew ? know.wordsById.get(item.wordId) : undefined;
         if (fresh) {
           // a word met today is begun whatever he could be asked (final review C1)
-          const card = await beginNewWord(db, fresh, r.asked, outcome, now());
+          const card = await beginNewWord(db, fresh, r.asked, outcome, now(), { list: onList });
           know.cardsById.set(card.id, card);
         } else if (r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
         else if (r.asked === 'meaning') know.cardsById.set(`${item.wordId}:meaning`, await recordMeaning(db, item.wordId, outcome, now()));
@@ -522,7 +528,9 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         <FlashcardStep
           key={rec.flashIndex}
           item={flashItem}
-          ask={step === 'newwords' ? 'hear' : undefined} // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2)
+          // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2); a weekly list word begins on Read (weekly list spec §6.4)
+          ask={step === 'newwords' ? (flashItem.reteach || rec.plan.listNewIds?.includes(flashWord.id) ? 'read' : 'hear') : undefined}
+          list={rec.plan.listCards?.[flashWord.id]}
           reintroOnMiss={step === 'newwords'}
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
           word={flashWord}

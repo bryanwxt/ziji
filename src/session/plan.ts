@@ -7,8 +7,8 @@ import { classLessonAt, courseOf } from '../content/curriculum';
 import { bookLesson, pickNewWords } from './lanes';
 import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
-import { activeLists, isReadyByDay, listBudget, listOwner, schoolNeed } from '../weeklist/plan';
-import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, WeekList, Word } from '../types';
+import { activeLists, isReadyByDay, listBudget, listCardFor, listOwner, reteachIds, schoolNeed } from '../weeklist/plan';
+import type { ActivityKind, CardKind, CardRecord, FlashItem, ListCard, SessionPlan, Settings, StepKind, WeekList, Word } from '../types';
 
 export const REVIEW_CAP = 60;
 export const BACKLOG_PAUSE = 40;
@@ -138,8 +138,14 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     listIds: budget?.listIds ?? [], listQuota: budget?.listQuota ?? 0, schoolFirst: budget?.schoolFirst ?? 0,
   });
   const frontLoad = !!budget?.frontLoad && listTaken.length > 0;
-  // spec 2026-10-05 §2: no separate 用一用; a day with no new words starts at 练一练 (no empty 认新字 stop, no star for it)
-  const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0);
+  // re-teaching cards (weekly list spec §2.1): a not-solid list item's card again the day after a miss, first in 认新字, with no
+  // new-word slot; never in an extra lesson. Today's list words and they get the list word card (§7.1–7.2)
+  const reteach = extra || !open.length ? [] : reteachIds(open, now).filter((id) => byId.has(id) && !newWords.some((w) => w.id === id));
+  const listIdsAll = new Set(open.flatMap((l) => l.items.map((i) => i.wordId)));
+  const listCards: Record<string, ListCard> = {};
+  for (const id of [...reteach, ...newWords.filter((w) => listIdsAll.has(w.id)).map((w) => w.id)]) listCards[id] = listCardFor(byId.get(id)!, open, begunChars);
+  // spec 2026-10-05 §2: no separate 用一用; a day with no new words (and no re-teaching cards) starts at 练一练 (no empty 认新字 stop, no star for it)
+  const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0 || reteach.length > 0);
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
   const writeUnits = settings.activities.writing
     ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: frontLoad ? Math.max(1, Math.floor(writeCharTarget(settings.sessionMinutes) / 2)) : writeCharTarget(settings.sessionMinutes) }) // half on a front-load day (weekly list spec §5.1)
@@ -198,6 +204,8 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     sayIds,
     sentenceIds,
     listNewIds: listTaken,
+    ...(reteach.length ? { reteachIds: reteach } : {}),
+    ...(Object.keys(listCards).length ? { listCards } : {}),
     frontLoad,
   };
   if (!extra) return plan;

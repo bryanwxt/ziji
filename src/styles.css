@@ -1912,3 +1912,8 @@ button.langdu__sentence { cursor: pointer; }
 .week__past { align-self: flex-start; margin-top: 8px; }
 .week__list.is-past { background: var(--page); }
 .week__meta input:disabled { color: var(--ink-soft); background: var(--line); }
+
+/* A weekly list's 认新词 card (weekly list spec 2026-10-17 §7.1): the pinyin over every character shows at once, never later or
+   faded, on its first day and every day; its example sentence sits where the 词语 rows would */
+.intro__card--list .intro__word .label__py, .intro__card--list .pinyin--later { animation: none; }
+.intro__example .word-row__zh .label__cell--mark .label__ch { color: var(--orange-ink); }
