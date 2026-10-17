@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
-import { readingCard, wordStarter } from './pick';
+import { readingCard, THINK, wordStarter } from './pick';
 import { shareNote, shareText, todayText, weekText } from './share';
 import { weekRange, type WeekSummary } from './week';
 
@@ -29,10 +29,37 @@ describe('Share (parent loop spec §5)', () => {
     expect(writeText).toHaveBeenCalledTimes(2);
     expect(shareNote('copied')).toBe('Copied. Paste it into a message.');
   });
-  it('neither works', async () => {
-    expect(await shareText('hi', {})).toBe('failed');
-    expect(await shareText('hi', { writeText: async () => { throw new Error('denied'); } })).toBe('failed');
-    expect(shareNote('failed')).toBe('This device could not share or copy it.');
+  it('a sheet that says it cannot take the text: straight to the clipboard, the sheet never opened', async () => {
+    const share = vi.fn(async () => {});
+    const writeText = vi.fn(async () => {});
+    expect(await shareText('hi', { canShare: () => false, share, writeText })).toBe('copied');
+    expect(share).not.toHaveBeenCalled();
+    expect(await shareText('hi', { canShare: () => true, share, writeText })).toBe('shared');
+    expect(share).toHaveBeenCalledTimes(1);
+  });
+  it('the sheet opens at once, before anything is awaited (iOS needs the tap)', () => {
+    const share = vi.fn(async () => {});
+    void shareText('hi', { canShare: () => true, share });
+    expect(share).toHaveBeenCalledWith({ text: 'hi' }); // called in the same tick, no await before it
+  });
+  it('the device: the sheet opens at once; no navigator at all is not an error', async () => {
+    const share = vi.fn(async () => {});
+    vi.stubGlobal('navigator', { share, canShare: () => true });
+    try {
+      const r = shareText('hi');
+      expect(share).toHaveBeenCalledWith({ text: 'hi' });
+      expect(await r).toBe('shared');
+      vi.stubGlobal('navigator', undefined);
+      expect(await shareText('hi')).toBe('manual');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+  it('neither works: the text is shown to copy by hand', async () => {
+    expect(await shareText('hi', {})).toBe('manual');
+    expect(await shareText('hi', { writeText: async () => { throw new Error('denied'); } })).toBe('manual');
+    expect(await shareText('hi', { share: async () => { throw new Error('NotAllowedError'); }, writeText: async () => { throw new Error('denied'); } })).toBe('manual');
+    expect(shareNote('manual')).toBe('Could not share or copy here. The text is below: select it and copy.');
   });
 });
 
@@ -51,9 +78,9 @@ describe('the shared text', () => {
       '',
       '2. 一起读 Shared reading',
       '牛爷爷做了什么？（书上：找到了小马）',
-      'Shared reading: read 《小马》 together, taking turns a sentence each, then ask who, why, and what he thinks. Last question: If he were in the story, what would he do?',
+      `Shared reading: read 《小马》 together, taking turns a sentence each, then ask who, why, and what he thinks. Last question: ${THINK[1]!.en}`,
       '· 小马为什么找不到家了？（书上：跑得很远）',
-      '· 如果你是故事里的人，你会怎么做？',
+      `· ${THINK[1]!.zh}`, // 你觉得 is pick's THINK[1], its wording pick's own
       '试试用：我觉得…因为…',
     ].join('\n'));
   });

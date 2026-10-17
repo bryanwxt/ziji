@@ -55,6 +55,17 @@ describe('the focus line, the first that applies', () => {
   });
 });
 
+describe('lessons and 朗读 days', () => {
+  it('a lesson that reached 朗读 but was not finished counts a 朗读 day, not a lesson: 朗读 days can exceed lessons', () => {
+    const r = weekRange(new Date(2026, 9, 21));
+    const s = summarizeWeek({
+      range: r, talks: [], cards: [], logs: [], recordings: [], waiting: 0, textOf: () => undefined, titleOf: () => undefined,
+      sessions: [lesson('2026-10-19', []), { ...lesson('2026-10-20', []), completed: false }],
+    });
+    expect(s).toMatchObject({ lessons: 1, langduDays: 2 });
+  });
+});
+
 describe('the summary from the stores', () => {
   it('lessons, 朗读 days, what newly passed, new and shaky words, the passages and their questions, talk, waiting', async () => {
     const db = await freshDb();

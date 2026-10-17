@@ -3,19 +3,43 @@ import type { TalkCard } from '../types';
 import { KIND_EN, KIND_LABEL } from './pick';
 import { shortDate, type WeekRange, type WeekSummary } from './week';
 
-export type ShareResult = 'shared' | 'copied' | 'cancelled' | 'failed';
-export interface ShareDeps { share?: (data: ShareData) => Promise<void>; writeText?: (text: string) => Promise<void> }
+/** 'manual': neither the sheet nor the clipboard took it; the UI shows the text read-only and pre-selected, to copy by hand. */
+export type ShareResult = 'shared' | 'copied' | 'cancelled' | 'manual';
+export interface ShareDeps {
+  canShare?: (data: ShareData) => boolean;
+  share?: (data: ShareData) => Promise<void>;
+  writeText?: (text: string) => Promise<void>;
+}
 
-const deviceDeps = (): ShareDeps => ({
-  share: typeof navigator.share === 'function' ? (d) => navigator.share(d) : undefined,
-  writeText: typeof navigator.clipboard?.writeText === 'function' ? (t) => navigator.clipboard.writeText(t) : undefined,
-});
+const deviceDeps = (): ShareDeps => {
+  if (typeof navigator === 'undefined' || !navigator) return {};
+  const nav = navigator;
+  return {
+    canShare: typeof nav.canShare === 'function' ? (d) => nav.canShare(d) : undefined,
+    share: typeof nav.share === 'function' ? (d) => nav.share(d) : undefined,
+    writeText: typeof nav.clipboard?.writeText === 'function' ? (t) => nav.clipboard.writeText(t) : undefined,
+  };
+};
 
-/** The share sheet; closing it (AbortError) copies nothing; no sheet, or another failure, copies to the clipboard. */
+/** Whether the sheet says it can take this text; a canShare that throws is taken as a no. */
+const sheetTakes = (deps: ShareDeps, data: ShareData) => {
+  try {
+    return deps.canShare ? deps.canShare(data) !== false : true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * The share sheet, opened before anything is awaited: iOS opens it only inside the tap, so a caller works the text out at render
+ * or load time and calls this first. Closing the sheet (AbortError) copies nothing. No sheet, a sheet that can't take the text,
+ * or any other failure copies to the clipboard; when that fails too, 'manual' (the text is shown to copy by hand).
+ */
 export async function shareText(text: string, deps: ShareDeps = deviceDeps()): Promise<ShareResult> {
-  if (deps.share) {
+  const data: ShareData = { text };
+  if (deps.share && sheetTakes(deps, data)) {
     try {
-      await deps.share({ text });
+      await deps.share(data);
       return 'shared';
     } catch (e) {
       if ((e as { name?: string } | null)?.name === 'AbortError') return 'cancelled';
@@ -26,15 +50,15 @@ export async function shareText(text: string, deps: ShareDeps = deviceDeps()): P
       await deps.writeText(text);
       return 'copied';
     } catch {
-      return 'failed';
+      // the clipboard refused it as well: shown to copy by hand
     }
   }
-  return 'failed';
+  return 'manual';
 }
 
-/** What a Share button says after it ran; nothing after a share or a closed sheet. */
+/** What a Share button says after it ran; nothing after a share or a closed sheet. 'manual' comes with the text shown below it. */
 export const shareNote = (r: ShareResult): string | null =>
-  r === 'copied' ? 'Copied. Paste it into a message.' : r === 'failed' ? 'This device could not share or copy it.' : null;
+  r === 'copied' ? 'Copied. Paste it into a message.' : r === 'manual' ? 'Could not share or copy here. The text is below: select it and copy.' : null;
 
 /** Today's three as a message: each card's label, question, English line, follow-ups (with the passage's answers), pattern. */
 export function todayText(cards: readonly TalkCard[], today: string): string {

@@ -28,7 +28,7 @@ export function talkTotals(talks: readonly TalkLog[], start: number, end: number
 
 /** The last day a talk was logged; null when none ever was. */
 export const lastTalkDay = (talks: readonly TalkLog[]): string | null =>
-  talks.length ? localDateKey(new Date(Math.max(...talks.map((t) => t.at)))) : null;
+  talks.length ? localDateKey(new Date(talks.reduce((m, t) => Math.max(m, t.at), -Infinity))) : null;
 
 const EN_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -53,7 +53,7 @@ export interface WeekReading { passageId: string; title: string; meaning: 'right
 export interface WeekSummary {
   talk: TalkTotals;
   lessons: number; // completed lessons (not free play)
-  langduDays: number; // lessons that finished their 朗读 step
+  langduDays: number; // days whose lesson reached its 朗读 step, finished or not (one session a day), so it can exceed `lessons`
   newly: { read: string[]; write: string[]; say: string[] }; // newly passed this week
   newWords: string[]; // introduced by his lessons this week
   shaky: string[]; // up to 5 missed most this week, all card kinds
@@ -94,7 +94,7 @@ export function summarizeWeek(i: WeekInput): WeekSummary {
   const base = {
     talk: talkTotals(i.talks, range.start, range.end),
     lessons: lessons.filter((s) => s.completed).length,
-    langduDays: lessons.filter((s) => s.completedSteps.includes('speaking')).length, // 看图说话 is parked: the speaking step is 朗读
+    langduDays: lessons.filter((s) => s.completedSteps.includes('speaking')).length, // 看图说话 is parked: the speaking step is 朗读; counted whether or not the lesson was finished
     newly: { read: passed('recognise'), write: passed('write'), say: passed('say') },
     newWords: texts(lessons.flatMap(introducedNewWords), i.textOf),
     shaky: texts(troubleWords(i.logs.filter((l) => inWeek(l.at)), SHAKY_MAX).map((t) => t.wordId), i.textOf),

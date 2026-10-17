@@ -45,7 +45,10 @@ It also has Share, a one-tap 「✓ 聊了」 with minutes and Undo, and a link 
   A slot with nothing of its own takes a theme starter.
 - **Stable all day** (`settings.talkDay`). The reading slot follows a passage read after the cards were picked. **「换一个」** gives the slot's next candidate. There is **no repeat within 14 days** unless a kind has nothing else, and what was shown is kept **60 days** (`settings.talkSeen`).
 - **「✓ 聊了 We talked」**: optional chips **5, 10, 15 min**; more than once a day; minutes add up; **a double tap logs once**; **Undo for 10 s**.
-- **Share:** `navigator.share({ text })`. An AbortError copies nothing and says nothing. Otherwise it copies with **"Copied. Paste it into a message."**, and if neither works it says **"This device could not share or copy it."**
+- **Share:** `navigator.share({ text })`. An AbortError copies nothing and says nothing. Otherwise it copies with **"Copied. Paste it into a message."**
+  - When `navigator.canShare({ text })` is false, it goes straight to the clipboard.
+  - When neither works, `shareText` returns `'manual'` and the note says **"Could not share or copy here. The text is below: select it and copy."** The UI then shows the text in a read-only `<textarea>`, pre-selected, so the parent can copy it by hand.
+  - **iOS opens the sheet only inside the tap** (review of Tasks 3–5). A Share handler (Tasks 6 and 7) works its text out at render or load time and calls `shareText(text)` as its first statement, with no `await` or other async work before it. `shareText` itself calls `navigator.share` before anything is awaited.
 - **The week:** **Monday to Sunday**, with **「上周」** for last week. The focus line is Chinese plus an English line.
 - **Data:** the `talks` store at **DB_VERSION 7** (`keyPath: 'id'`, index `byAt`) is in `LIST_STORES`. A pre-v7 backup **keeps this device's talks** (`talksMissing` in the preview). **No migration.**
 - TypeScript lib is ES2022: no `findLast` / `findLastIndex` / `toSorted`.
