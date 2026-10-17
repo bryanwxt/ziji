@@ -45,7 +45,7 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     const moe = (await import('./moe2024.json')).default;
     const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES, EXTRA_EXAMPLES, [...BLOCKED], moe, ZUCI_DROPS])).digest('hex').slice(0, 16);
     // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
-    const PINNED: Record<string, string> = { '1.15': '566d1ba2af41f785' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes; 1.7 the content sweep; 1.8 the second sweep; 1.9 school order; 1.10 HCL writing lists; 1.11 蚂蚁拇狐狸 and readable 组词 (spec 2026-10-11 §7); 1.12 the content audit (2026-10-15); 1.13 该死 blocked (朗读 content); 1.14 neutral tones on word cards; 1.15 甲 and 丁 as labels (甲乙丙丁)
+    const PINNED: Record<string, string> = { '1.16': '03157a450eb7c63b' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes; 1.7 the content sweep; 1.8 the second sweep; 1.9 school order; 1.10 HCL writing lists; 1.11 蚂蚁拇狐狸 and readable 组词 (spec 2026-10-11 §7); 1.12 the content audit (2026-10-15); 1.13 该死 blocked (朗读 content); 1.14 neutral tones on word cards; 1.15 甲 and 丁 as labels (甲乙丙丁); 1.16 the review of 2026-10-17 (lesson words and senses first, child 组词, no 儿化)
     expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
   });
   it('了 means what it does when read le, not "clear, to finish"', async () => {
@@ -139,11 +139,13 @@ describe('content sweep (parent, 2026-10-05)', () => {
     expect(cardMeaning(byText.get('台')!)).toMatch(/stage/);
     for (const [t, en] of [['鸭子', 'duck'], ['叶子', 'leaf'], ['轮子', 'wheel'], ['黄色', 'yellow'], ['烟花', 'fireworks'], ['玻璃', 'glass'], ['故事', 'story'], ['告诉', 'tell'], ['东西', 'thing, things']]) expect(glossFor(t), t).toBe(en); // a school 词语's kid gloss (kidGloss.json)
   });
-  it('a P2 reading on the cards a child meets: 教 jiāo, 兴 xìng, 漂 piào, 切 qiē; 儿化 written nǎ r', async () => {
-    const { builtinWords } = await import('.');
+  it('a P2 reading on the cards a child meets: 教 jiāo, 兴 xìng, 漂 piào, 切 qiē; no 儿化 (哪里, not 哪儿: review 2026-10-17)', async () => {
+    const { builtinWords, EXAMPLE_FIXES } = await import('.');
     const byText = new Map(builtinWords(0).map((w) => [w.text, w]));
     expect(['教', '兴', '漂', '切'].map((c) => byText.get(c)!.pinyin)).toEqual(['jiāo', 'xìng', 'piào', 'qiē']);
-    expect(byText.get('哪')!.examples!.find((e) => e.text === '哪儿')?.pinyin).toBe('nǎ r');
+    expect(byText.get('哪')!.examples!.map((e) => e.text)).toContain('哪里');
+    expect(builtinWords(0).flatMap((w) => w.examples ?? []).filter((e) => /儿$/.test(e.text) && e.pinyin.endsWith(' r')).map((e) => e.text)).toEqual([]);
+    expect(EXAMPLE_FIXES['哪儿']).toBe('nǎ r'); // kept for a word a parent adds
   });
   it('no card shows a dropped or blocked 组词, and every HSK 1–6 character still has one', async () => {
     const { builtinWords, BLOCKED } = await import('.');

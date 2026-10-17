@@ -274,7 +274,7 @@ for (const size of SIZES) {
     await page.screenshot({ path: `fit-shots/stage-cases/family-${size.name}.png` });
     problems.push(...(await cardClipped(page, `${size.name} family`)));
     await page.click('.choice:text-is("星星")');
-    await page.click('.choice:text-is("先生")');
+    await page.click('.choice:text-is("男生")');
     await page.waitForTimeout(1600);
     await page.screenshot({ path: `fit-shots/stage-cases/family-wrong-${size.name}.png` });
     if (!(await page.$('.family-sum__row.is-missed'))) problems.push(`${size.name} family: the miss is not explained`);

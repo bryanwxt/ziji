@@ -130,19 +130,6 @@
 ]
 },
 {
-"word": "一块儿",
-"s": [
-{
-"zh": "我们一块儿去玩吧！",
-"en": "Let's go and play together!"
-},
-{
-"zh": "我和弟弟一块儿上学。",
-"en": "My little brother and I go to school together."
-}
-]
-},
-{
 "word": "一块",
 "s": [
 {
@@ -2044,12 +2031,12 @@
 "word": "玉",
 "s": [
 {
-"zh": "奶奶有一块玉。",
-"en": "Grandma has a piece of jade."
+"zh": "我喜欢吃黄色的玉米。",
+"en": "I like eating yellow corn."
 },
 {
-"zh": "这块玉是绿色的。",
-"en": "This piece of jade is green."
+"zh": "妈妈买了两根玉米。",
+"en": "Mum bought two cobs of corn."
 }
 ]
 },
@@ -4479,8 +4466,8 @@
 "en": "I made plans with a friend to go to the park."
 },
 {
-"zh": "小明约我明天去游泳。",
-"en": "Xiao Ming invited me to go swimming tomorrow."
+"zh": "大家都要节约用电。",
+"en": "Everyone should save electricity."
 }
 ]
 },
@@ -4518,8 +4505,8 @@
 "en": "There are big waves on the sea."
 },
 {
-"zh": "浪打在石头上。",
-"en": "The waves crash on the rocks."
+"zh": "我们不要浪费水。",
+"en": "We should not waste water."
 }
 ]
 },
@@ -4767,6 +4754,240 @@
 {
 "zh": "我猜明天会下雨。",
 "en": "I guess it will rain tomorrow."
+}
+]
+},
+{
+"word": "折纸",
+"s": [
+{
+"zh": "我会折纸飞机。",
+"en": "I can fold paper planes."
+},
+{
+"zh": "姐姐教我折纸。",
+"en": "My sister teaches me paper folding."
+}
+]
+},
+{
+"word": "跟着",
+"s": [
+{
+"zh": "小鸭跟着鸭妈妈走。",
+"en": "The ducklings follow their mother."
+},
+{
+"zh": "我跟着老师读书。",
+"en": "I read after the teacher."
+}
+]
+},
+{
+"word": "积木",
+"s": [
+{
+"zh": "我和弟弟搭积木。",
+"en": "My brother and I build with blocks."
+},
+{
+"zh": "积木倒了，我们再搭。",
+"en": "The blocks fell down, so we build again."
+}
+]
+},
+{
+"word": "老鹰",
+"s": [
+{
+"zh": "老鹰在天上飞。",
+"en": "The eagle flies in the sky."
+},
+{
+"zh": "小鸡怕老鹰。",
+"en": "Chicks are afraid of eagles."
+}
+]
+},
+{
+"word": "很轻",
+"s": [
+{
+"zh": "这个书包很轻。",
+"en": "This schoolbag is very light."
+},
+{
+"zh": "鸟的羽毛很轻。",
+"en": "A bird's feathers are very light."
+}
+]
+},
+{
+"word": "轻轻",
+"s": [
+{
+"zh": "妈妈轻轻地关上门。",
+"en": "Mum closes the door gently."
+},
+{
+"zh": "他轻轻地摸小猫。",
+"en": "He strokes the kitten gently."
+}
+]
+},
+{
+"word": "一首歌",
+"s": [
+{
+"zh": "我们唱一首歌吧！",
+"en": "Let's sing a song!"
+},
+{
+"zh": "妈妈教我一首歌。",
+"en": "Mum teaches me a song."
+}
+]
+},
+{
+"word": "影子",
+"s": [
+{
+"zh": "我的影子好长。",
+"en": "My shadow is very long."
+},
+{
+"zh": "小狗在追自己的影子。",
+"en": "The puppy is chasing its own shadow."
+}
+]
+},
+{
+"word": "推开",
+"s": [
+{
+"zh": "我推开门走进去。",
+"en": "I push the door open and go in."
+},
+{
+"zh": "他推开窗，看到了彩虹。",
+"en": "He pushed the window open and saw a rainbow."
+}
+]
+},
+{
+"word": "推车",
+"s": [
+{
+"zh": "妈妈推车去买菜。",
+"en": "Mum pushes a cart to buy food."
+},
+{
+"zh": "爸爸帮奶奶推车。",
+"en": "Dad helps Grandma push the cart."
+}
+]
+},
+{
+"word": "亮晶晶",
+"s": [
+{
+"zh": "天上的星星亮晶晶。",
+"en": "The stars in the sky are sparkling."
+},
+{
+"zh": "她的眼睛亮晶晶的。",
+"en": "Her eyes are shining."
+}
+]
+},
+{
+"word": "很近",
+"s": [
+{
+"zh": "学校离我家很近。",
+"en": "School is very near my home."
+},
+{
+"zh": "公园很近，我们走路去。",
+"en": "The park is close, so we walk there."
+}
+]
+},
+{
+"word": "满了",
+"s": [
+{
+"zh": "我的杯子满了。",
+"en": "My cup is full."
+},
+{
+"zh": "箱子满了，放不下了。",
+"en": "The box is full, nothing else fits."
+}
+]
+},
+{
+"word": "一群",
+"s": [
+{
+"zh": "一群小鸟飞过来了。",
+"en": "A flock of birds flew over."
+},
+{
+"zh": "公园里有一群小朋友。",
+"en": "There is a group of children in the park."
+}
+]
+},
+{
+"word": "水桶",
+"s": [
+{
+"zh": "我拿水桶去浇花。",
+"en": "I take the bucket to water the flowers."
+},
+{
+"zh": "水桶里有很多水。",
+"en": "There is a lot of water in the bucket."
+}
+]
+},
+{
+"word": "打断",
+"s": [
+{
+"zh": "别打断别人说话。",
+"en": "Don't interrupt when others are talking."
+},
+{
+"zh": "他打断了我的话。",
+"en": "He interrupted me."
+}
+]
+},
+{
+"word": "断了",
+"s": [
+{
+"zh": "风筝的线断了。",
+"en": "The kite string snapped."
+},
+{
+"zh": "我的绳子断了。",
+"en": "My rope snapped."
+}
+]
+},
+{
+"word": "小摊",
+"s": [
+{
+"zh": "夜市里有很多小摊。",
+"en": "There are lots of stalls at the night market."
+},
+{
+"zh": "我在小摊上买了烤肠。",
+"en": "I bought a sausage at a stall."
 }
 ]
 }

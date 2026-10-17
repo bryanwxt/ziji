@@ -64,8 +64,8 @@ describe('pinyin fades in the questions (spec 2026-10-12 §4)', () => {
   });
   it("the new-word card: its 词语 fade, the new character's own pinyin comes 2 s after it", () => {
     const sheng = builtinWords(0).find((x) => x.text === '生')!;
-    render(<PinyinFade known={known('男')} on><FlashcardStep item={{ wordId: sheng.id, isNew: true, retry: false }} word={sheng} pool={builtinWords(0)} voice={false} kid={kid} resting="sulk" combo={0} closeupReady={false} onDone={vi.fn()} /></PinyinFade>);
-    expect(pys('.usage')).toEqual(['', 'shēng']); // 男生: 男 is read, 生 is new
+    render(<PinyinFade known={known('日')} on><FlashcardStep item={{ wordId: sheng.id, isNew: true, retry: false }} word={sheng} pool={builtinWords(0)} voice={false} kid={kid} resting="sulk" combo={0} closeupReady={false} onDone={vi.fn()} /></PinyinFade>);
+    expect(pys('.usage')).toEqual(['shēng', '']); // 生日: 生 is new, 日 is read
     const own = document.querySelector('.intro__char .pinyin')!;
     expect(own.textContent).toBe('shēng');
     expect(own.classList.contains('pinyin--later')).toBe(true);

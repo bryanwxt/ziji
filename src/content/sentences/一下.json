@@ -1755,19 +1755,6 @@
 ]
 },
 {
-"word": "这儿",
-"s": [
-{
-"zh": "我的笔在这儿。",
-"en": "My pen is here."
-},
-{
-"zh": "你来这儿坐。",
-"en": "Come and sit here."
-}
-]
-},
-{
 "word": "这边",
 "s": [
 {
@@ -1842,19 +1829,6 @@
 {
 "zh": "那只鸟飞走了。",
 "en": "That bird flew away."
-}
-]
-},
-{
-"word": "那儿",
-"s": [
-{
-"zh": "我的球在那儿。",
-"en": "My ball is over there."
-},
-{
-"zh": "你去那儿做什么？",
-"en": "What are you going there for?"
 }
 ]
 },
@@ -4485,27 +4459,27 @@
 ]
 },
 {
-"word": "女孩儿",
+"word": "女孩",
 "s": [
 {
-"zh": "那个女孩儿在唱歌。",
+"zh": "那个女孩在唱歌。",
 "en": "That girl is singing."
 },
 {
-"zh": "那个女孩儿是我妹妹。",
+"zh": "那个女孩是我妹妹。",
 "en": "That girl is my little sister."
 }
 ]
 },
 {
-"word": "男孩儿",
+"word": "男孩",
 "s": [
 {
-"zh": "那个男孩儿在打球。",
+"zh": "那个男孩在打球。",
 "en": "That boy is playing ball."
 },
 {
-"zh": "有个男孩儿在哭。",
+"zh": "有个男孩在哭。",
 "en": "A boy is crying."
 }
 ]

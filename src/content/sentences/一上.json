@@ -1066,19 +1066,6 @@
 ]
 },
 {
-"word": "玩儿",
-"s": [
-{
-"zh": "你来我家玩儿吗？",
-"en": "Are you coming to my house to play?"
-},
-{
-"zh": "我们去山上玩儿。",
-"en": "We go up the hill to have fun."
-}
-]
-},
-{
 "word": "鸟",
 "s": [
 {
@@ -1088,19 +1075,6 @@
 {
 "zh": "一只鸟飞走了。",
 "en": "A bird flew away."
-}
-]
-},
-{
-"word": "鸟儿",
-"s": [
-{
-"zh": "我看见鸟儿在草地上。",
-"en": "I see a bird on the grass."
-},
-{
-"zh": "早上有鸟儿来我家。",
-"en": "In the morning a bird comes to my home."
 }
 ]
 },
@@ -1723,7 +1697,7 @@
 "en": "My sister has a little bird."
 },
 {
-"zh": "我姐在画画儿。",
+"zh": "我姐在画画。",
 "en": "My sister is drawing."
 }
 ]
@@ -2024,19 +1998,6 @@
 {
 "zh": "爸爸画了一头大象。",
 "en": "Dad drew an elephant."
-}
-]
-},
-{
-"word": "画儿",
-"s": [
-{
-"zh": "你看我的画儿！",
-"en": "Look at my drawing!"
-},
-{
-"zh": "姐姐的画儿好看。",
-"en": "My sister's drawing is nice."
 }
 ]
 },
@@ -2906,7 +2867,7 @@
 "en": "What lovely weather we have today!"
 },
 {
-"zh": "花儿多么好看！",
+"zh": "家里的花多么好看！",
 "en": "How pretty the flowers are!"
 }
 ]
@@ -3276,14 +3237,14 @@
 ]
 },
 {
-"word": "好玩儿",
+"word": "好玩",
 "s": [
 {
-"zh": "哥哥的玩具好玩儿。",
+"zh": "哥哥的玩具好玩。",
 "en": "My big brother's toy is fun."
 },
 {
-"zh": "下雨天在家也好玩儿。",
+"zh": "下雨天在家也好玩。",
 "en": "Staying home on a rainy day is fun too."
 }
 ]
@@ -3623,6 +3584,240 @@
 {
 "zh": "地上有好多小草。",
 "en": "There is lots of little grass on the ground."
+}
+]
+},
+{
+"word": "我的",
+"s": [
+{
+"zh": "我的书在书包里。",
+"en": "My books are in my schoolbag."
+},
+{
+"zh": "我的哥哥是大人了。",
+"en": "My older brother is a grown-up now."
+}
+]
+},
+{
+"word": "力气",
+"s": [
+{
+"zh": "爸爸的力气好大！",
+"en": "Dad is so strong!"
+},
+{
+"zh": "我没有力气了。",
+"en": "I have no strength left."
+}
+]
+},
+{
+"word": "八个",
+"s": [
+{
+"zh": "我吃了八个包子。",
+"en": "I ate eight buns."
+},
+{
+"zh": "家里有八个人。",
+"en": "There are eight people at home."
+}
+]
+},
+{
+"word": "十个",
+"s": [
+{
+"zh": "他有十个小车。",
+"en": "He has ten toy cars."
+},
+{
+"zh": "地上有十个石头。",
+"en": "There are ten stones on the ground."
+}
+]
+},
+{
+"word": "不是",
+"s": [
+{
+"zh": "我不是小弟弟了。",
+"en": "I am not a little boy any more."
+},
+{
+"zh": "它不是小鸟，是小虫。",
+"en": "It is not a bird, it is a bug."
+}
+]
+},
+{
+"word": "是的",
+"s": [
+{
+"zh": "是的，我是他哥哥。",
+"en": "Yes, I am his older brother."
+},
+{
+"zh": "是的，我们去看大象。",
+"en": "Yes, we are going to see the elephants."
+}
+]
+},
+{
+"word": "吃了",
+"s": [
+{
+"zh": "我吃了一个大包子。",
+"en": "I ate a big bun."
+},
+{
+"zh": "弟弟吃了两片面包。",
+"en": "My little brother ate two slices of bread."
+}
+]
+},
+{
+"word": "早安",
+"s": [
+{
+"zh": "早安，爸爸妈妈！",
+"en": "Good morning, Mum and Dad!"
+},
+{
+"zh": "我对奶奶说早安。",
+"en": "I say good morning to Grandma."
+}
+]
+},
+{
+"word": "合上",
+"s": [
+{
+"zh": "我合上了书本。",
+"en": "I closed my book."
+},
+{
+"zh": "姐姐把书合上了。",
+"en": "My sister closed the book."
+}
+]
+},
+{
+"word": "画画",
+"s": [
+{
+"zh": "我们在家里画画。",
+"en": "We draw pictures at home."
+},
+{
+"zh": "弟弟在地上画画。",
+"en": "My little brother is drawing on the floor."
+}
+]
+},
+{
+"word": "一本书",
+"s": [
+{
+"zh": "我有一本书。",
+"en": "I have a book."
+},
+{
+"zh": "他在看一本书。",
+"en": "He is reading a book."
+}
+]
+},
+{
+"word": "面条",
+"s": [
+{
+"zh": "我吃了一大口面条。",
+"en": "I took a big mouthful of noodles."
+},
+{
+"zh": "奶奶的面条好吃。",
+"en": "Grandma's noodles are tasty."
+}
+]
+},
+{
+"word": "米粒",
+"s": [
+{
+"zh": "地上有米粒。",
+"en": "There are grains of rice on the floor."
+},
+{
+"zh": "米粒是白的。",
+"en": "Grains of rice are white."
+}
+]
+},
+{
+"word": "八月",
+"s": [
+{
+"zh": "我八月去看奶奶。",
+"en": "In August I go to see Grandma."
+},
+{
+"zh": "八月有好多雨。",
+"en": "It rains a lot in August."
+}
+]
+},
+{
+"word": "十月",
+"s": [
+{
+"zh": "十月，我们去山上玩。",
+"en": "In October we go up the hill to play."
+},
+{
+"zh": "十月的天上有白云。",
+"en": "In October there are white clouds in the sky."
+}
+]
+},
+{
+"word": "好了",
+"s": [
+{
+"zh": "我的画画好了！",
+"en": "My picture is done!"
+},
+{
+"zh": "好了，我们去玩。",
+"en": "OK, let's go and play."
+}
+]
+},
+{
+"word": "和好",
+"s": [
+{
+"zh": "我和弟弟和好了。",
+"en": "My brother and I made up."
+},
+{
+"zh": "他们哭了，又和好了。",
+"en": "They cried, then made up again."
+}
+]
+},
+{
+"word": "我和你",
+"s": [
+{
+"zh": "我和你去看牛。",
+"en": "You and I go to see the cows."
+},
+{
+"zh": "我和你在门口见。",
+"en": "You and I meet at the door."
 }
 ]
 }

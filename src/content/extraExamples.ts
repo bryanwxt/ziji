@@ -55,7 +55,7 @@ const WRITTEN: Record<string, ExtraExample[]> = {
   亿: [['一亿', 'yí yì', 'one hundred million'], ['亿万', 'yì wàn', 'hundreds of millions']],
   长: [['很长', 'hěn cháng', 'very long'], ['长城', 'cháng chéng', 'the Great Wall']],
   为: [['为什么', 'wèi shén me', 'why'], ['因为', 'yīn wèi', 'because']],
-  鸟: [['小鸟', 'xiǎo niǎo', 'little bird'], ['鸟儿', 'niǎo ér', 'bird']],
+  鸟: [['小鸟', 'xiǎo niǎo', 'little bird'], ['鸟窝', 'niǎo wō', 'bird\'s nest']], // not 鸟儿: his book has no 儿化 (review 2026-10-17)
   只: [['一只', 'yì zhī', 'one (animal)'], ['两只', 'liǎng zhī', 'two (animals)']],
   狗: [['小狗', 'xiǎo gǒu', 'puppy; little dog'], ['狗狗', 'gǒu gou', 'doggy']],
   鱼: [['小鱼', 'xiǎo yú', 'little fish'], ['金鱼', 'jīn yú', 'goldfish']],

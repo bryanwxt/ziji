@@ -470,7 +470,7 @@ else if (which === 'hear-bound' || which === 'hear-bound-read' || which === 'hea
   render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'hear-bound' ? 'hear' : 'meaningRead'} word={w} pool={pool} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
 }
 else if (which === 'family') {
-  // 找一家人 (spec 2026-10-12 §5): 生 among 星星, 出去, 在家, 坏人
+  // 找一家人 (spec 2026-10-12 §5): 生气 and 男生 among 星星, 出去, 在家, 坏人
   const w = builtinWords(0).find((x) => x.text === '生')!;
   render(screen(<FamilyQuestion board={familyBoard(w, new Set('男女气先口出学家人'), mulberry32(1))!} kid={DEFAULT_KID} onDone={() => {}} />), app);
 }

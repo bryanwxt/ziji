@@ -85,6 +85,11 @@ describe('importStory', () => {
     expect(s.passages[0]).toMatchObject({ term: '一上', names: ['卡莱'], credit: { adapted: true } }); // counted, the 20 name characters would leave it unlevelled
     expect(s.passages[0]!.text.endsWith('斑马。')).toBe(true);
   });
+  it('the title he reads takes the edits too; the credit keeps the original (0009: 在哪儿 → 在哪里, review 2026-10-17)', () => {
+    const s = importStory('9010_猫在哪儿.md', md('猫在哪儿？', [EASY + '猫在哪儿？']), { level: 1, names: [], edits: [{ from: '在哪儿', to: '在哪里', why: 'Singapore usage' }] });
+    expect(s.passages[0]).toMatchObject({ title: '猫在哪里？', credit: { title: '猫在哪儿？', adapted: true } });
+    expect(s.passages[0]!.text.endsWith('猫在哪里？')).toBe(true);
+  });
 });
 
 describe('the vendored stories (scripts/storybooks/zh at be28dab)', () => {
