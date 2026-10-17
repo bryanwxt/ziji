@@ -1,4 +1,4 @@
-import { addDays, endOfLocalDay, startOfLocalDay } from '../lib/date';
+import { addDays, endOfLocalDay, localDateKey, startOfLocalDay } from '../lib/date';
 import { shuffle, type Rng } from '../lib/random';
 import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
@@ -7,7 +7,8 @@ import { classLessonAt, courseOf } from '../content/curriculum';
 import { bookLesson, pickNewWords } from './lanes';
 import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
-import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, Word } from '../types';
+import { activeLists, isReadyByDay, listBudget, listOwner, schoolNeed } from '../weeklist/plan';
+import type { ActivityKind, CardKind, CardRecord, FlashItem, SessionPlan, Settings, StepKind, WeekList, Word } from '../types';
 
 export const REVIEW_CAP = 60;
 export const BACKLOG_PAUSE = 40;
@@ -33,6 +34,8 @@ export interface PlanInput {
   practised?: ReadonlyMap<string, number>; // words answered in lessons → when last; placement guesses aren't here
   newPerDay?: number; // today's pace (spec 2026-10-05 §2.2); without one, the pace's start under the ceiling
   extra?: boolean; // an extra lesson: review only (learning rules 2026-10-17), see extraCards
+  lists?: WeekList[]; // weekly lists (weekly list spec 2026-10-17 §5); active ones are picked here
+  ranOut?: [boolean, boolean]; // the last two rounds ran out of time (yesterday first): no list headroom, then spill (§5.1)
 }
 
 /** Words in an extra lesson's round of his weakest words, when nothing is due or near due (learning rules 2026-10-17). */
@@ -43,17 +46,20 @@ export const WEAK_ROUND_WORDS = 8;
  * new words is massed practice): a card due tomorrow that he hasn't answered today counts as due at the end of today. A card he
  * answered today stays where its review put it — the same card again today is massing, not spacing.
  */
-export function extraCards(cards: CardRecord[], now: Date): CardRecord[] {
+export function extraCards(cards: CardRecord[], now: Date, skip: ReadonlySet<string> = new Set()): CardRecord[] {
   const endToday = endOfLocalDay(now);
   const endTomorrow = endOfLocalDay(addDays(startOfLocalDay(now), 1)).getTime();
   const dayStart = startOfLocalDay(now).getTime();
   return cards.map((c) => {
+    if (skip.has(c.wordId)) return c; // a list's card due on its ready-by day waits for the check (weekly list spec §6.3)
     const due = c.fsrs.due.getTime();
     const seenToday = !!c.fsrs.last_review && new Date(c.fsrs.last_review).getTime() >= dayStart;
     return due > endToday.getTime() && due <= endTomorrow && !seenToday ? { ...c, fsrs: { ...c.fsrs, due: endToday } } : c;
   });
 }
 
+/** 练一练's extra time on a front-load day, paid for by half of 写一写 (weekly list spec §5.1). */
+export const LIST_PRACTICE_MS = 2 * 60_000;
 export const PRACTICE_SHARE = 1 / 3; // 练一练's share of the lesson: 5 of the usual 15 minutes, 朗读 takes ~3 (learning rules 2026-10-17)
 export const NEW_MEANING_PER_DAY = 12; // words he knows (placed or learned) starting meaning checks each day
 export const MEANING_REVIEW_CAP = 30;
@@ -66,8 +72,17 @@ export const SAY_PER_LESSON = 6;
 /** 说一句 cards in one lesson at most (production practice spec §4). */
 export const SENTENCE_PER_LESSON = 2;
 
-export function buildSessionPlan({ cards: stored, words, settings, now, practised = new Map(), newPerDay, extra = false }: PlanInput): SessionPlan {
-  const cards = extra ? extraCards(stored, now) : stored;
+export function buildSessionPlan({ cards: stored, words, settings, now, practised = new Map(), newPerDay, extra = false, lists = [], ranOut = [false, false] }: PlanInput): SessionPlan {
+  // weekly lists (weekly list spec 2026-10-17 §5–6): on its ready-by day a list's reading cards are the check's; from then to
+  // homework day its due cards go first; an extra lesson the day before never pulls them into today
+  const open = activeLists(lists, now);
+  const owner = listOwner(open);
+  const day = localDateKey(now);
+  const tomorrow = localDateKey(addDays(startOfLocalDay(now), 1));
+  const cards = extra ? extraCards(stored, now, new Set(open.filter((l) => l.readyBy === tomorrow).flatMap((l) => l.items.map((i) => i.wordId)))) : stored;
+  const checkToday = new Set(isReadyByDay(open, now).flatMap((l) => l.items.map((i) => i.wordId)));
+  const leftForCheck = (c: CardRecord) => checkToday.has(c.wordId) && c.kind !== 'write' && c.kind !== 'say' && c.kind !== 'sentence';
+  const homeworkWindow = (id: string) => { const l = owner.get(id); return !!l && day > l.readyBy && day <= l.homeworkDue; };
   const active = words.filter((w) => !w.paused);
   const byId = new Map(active.map((w) => [w.id, w]));
   const activeIds = new Set(active.map((w) => w.id));
@@ -75,8 +90,8 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const ofKind = (kind: CardKind) => cards.filter((c) => c.kind === kind);
   const dueOf = (list: CardRecord[]) =>
     list
-      .filter((c) => activeIds.has(c.wordId) && c.fsrs.due.getTime() <= cutoff)
-      .sort((a, b) => a.fsrs.due.getTime() - b.fsrs.due.getTime());
+      .filter((c) => activeIds.has(c.wordId) && c.fsrs.due.getTime() <= cutoff && !leftForCheck(c))
+      .sort((a, b) => Number(homeworkWindow(b.wordId)) - Number(homeworkWindow(a.wordId)) || a.fsrs.due.getTime() - b.fsrs.due.getTime());
 
   const recognise = ofKind('recognise');
   const hear = ofKind('hear');
@@ -93,7 +108,6 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   // a real backlog pauses new words; first rechecks of placement guesses (never practised, or marked placed) don't
   const backlog = dueAll.filter((c) => !placementCheck(c) && practised.has(c.wordId)).length;
   const perDay = extra ? 0 : newPerDay ?? Math.min(settings.newPerDay, PACE_START); // an extra lesson takes no new words
-  const newLimit = backlog > BACKLOG_PAUSE || !settings.activities.newwords ? 0 : perDay;
 
   // Meaning practice: due meaning cards, and begun words that have a 组词 cue but no meaning card yet.
   const meaning = ofKind('meaning');
@@ -104,12 +118,24 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const begunChars = new Set(active.filter((w) => started.has(w.id) && Array.from(w.text).length === 1).map((w) => w.text));
   // two lanes (spec 2026-10-11 §5): his class's lesson and catch-up from 一上, after the words listed for him
   const classAt = classLessonAt(now, settings);
-  const { words: newWords, lanes: newWordLanes } = pickNewWords({ candidates: active.filter((x) => !started.has(x.id)).sort(newWordOrder), n: newLimit, classAt, begunChars });
+  // a weekly list (weekly list spec §5): front-loaded, his class lane protected, catch-up yields; never in an extra lesson
+  const budget = extra || !open.length ? null : listBudget({
+    lists: open, cards: new Map(cards.map((c) => [c.id, c])), now, pace: perDay, ceiling: settings.newPerDay,
+    ranOutYesterday: ranOut[0], ranOutTwice: ranOut[0] && ranOut[1], backlog: backlog > BACKLOG_PAUSE,
+    schoolNeed: schoolNeed(active, started, classAt),
+  });
+  // a backlog pauses new words — but a list's, at most 3 (weekly list spec §5.1); new words switched off pause both
+  const newLimit = !settings.activities.newwords ? 0 : budget ? budget.total : backlog > BACKLOG_PAUSE ? 0 : perDay;
+  const { words: newWords, lanes: newWordLanes, listTaken } = pickNewWords({
+    candidates: active.filter((x) => !started.has(x.id)).sort(newWordOrder), n: newLimit, classAt, begunChars,
+    listIds: budget?.listIds ?? [], listQuota: budget?.listQuota ?? 0, schoolFirst: budget?.schoolFirst ?? 0,
+  });
+  const frontLoad = !!budget?.frontLoad && listTaken.length > 0;
   // spec 2026-10-05 §2: no separate 用一用; a day with no new words starts at 练一练 (no empty 认新字 stop, no star for it)
   const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0);
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
   const writeUnits = settings.activities.writing
-    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: writeCharTarget(settings.sessionMinutes) })
+    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: frontLoad ? Math.max(1, Math.floor(writeCharTarget(settings.sessionMinutes) / 2)) : writeCharTarget(settings.sessionMinutes) }) // half on a front-load day (weekly list spec §5.1)
     : [];
   const writeItems = orderWriteItems(writeUnits);
   // Say (spec 2026-10-11 §4): due Say cards first, then words whose Read has passed and that have no Say card yet — his class's
@@ -147,7 +173,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     newWordIds: newWords.map((w) => w.id),
     newWordLanes,
     flashTimeBoxMs: 0, // only lessons saved before 2026-10-05 time-boxed 认一认
-    practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE),
+    practiceTimeBoxMs: Math.round(settings.sessionMinutes * 60_000 * PRACTICE_SHARE) + (frontLoad ? LIST_PRACTICE_MS : 0),
     writeCandidates: writeUnits.map((u) => ({ wordId: u.wordId, isNew: u.isNew })),
     writeItems,
     writeCount: writeItems.length,
@@ -164,6 +190,8 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
       .map((w) => w.id),
     sayIds,
     sentenceIds,
+    listNewIds: listTaken,
+    frontLoad,
   };
   if (!extra) return plan;
   // nothing due or near due: a short practice-only round of his weakest words (lowest reading stability), never graded

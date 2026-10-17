@@ -6,7 +6,7 @@ import { ladderWordsBesides } from '../content/ladder';
 import { newCard, review, snapshot, toRating, type TapKind } from '../srs/scheduler';
 import { LISTEN_MS, slowLines, USE_READING_MS, type SlowLines } from '../srs/slow';
 import type { AppDb } from '../store/db';
-import { addReviewLog, allCards, allSessions, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsForCard, logsForWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
+import { addReviewLog, allCards, allSessions, allWeekLists, allWords, deleteCards, getCard, getSession, getSettings, getWord, logsForCard, logsForWord, logsSince, putCards, putWords, saveSession, practisedWords, updateSettings } from '../store/repo';
 import type { CardKind, CardRecord, CardSnapshot, Grade, ReviewLog, SessionRecord, Settings, Word } from '../types';
 import { keptRecent, LOOKBACK_DAYS, nextPace, ranOut } from './pace';
 import { buildSessionPlan } from './plan';
@@ -243,11 +243,13 @@ export async function startOrResumeSession(db: AppDb, now: Date): Promise<Sessio
 
 async function planNow(db: AppDb, now: Date, extra = false) {
   await openMissingRungs(db, now);
-  const [cards, words, settings, practised] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db)]);
+  const [cards, words, settings, practised, lists, sessions] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db), allWeekLists(db), allSessions(db)]);
   const all = [...words, ...ladderWordsBesides(words)];
   // an extra lesson never asks the pace: it takes no new words (learning rules 2026-10-17)
-  if (extra) return buildSessionPlan({ cards, words: all, settings, now, practised, extra: true });
-  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings) });
+  if (extra) return buildSessionPlan({ cards, words: all, settings, now, practised, extra: true, lists });
+  // the last two days' rounds: one that ran out takes the list's headroom away, two spill its words (weekly list spec §5.1)
+  const rounds = sessions.filter((s) => !s.free && s.date < localDateKey(now) && s.completedSteps.includes('practice')).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2).map(ranOut);
+  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings), lists, ranOut: [rounds[0] ?? false, rounds[1] ?? false] });
 }
 
 /**
