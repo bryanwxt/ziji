@@ -50,4 +50,18 @@ customPinyin({
   包子: 'bāo zi', 饺子: 'jiǎo zi', 橙子: 'chéng zi', 虫子: 'chóng zi', 果子: 'guǒ zi', 豆子: 'dòu zi', 刀子: 'dāo zi',
   法子: 'fǎ zi', 剪子: 'jiǎn zi', 窗子: 'chuāng zi', 步子: 'bù zi', 一下子: 'yí xià zi',
   炸鸡: 'zhá jī', 油炸: 'yóu zhá', 种植: 'zhòng zhí', 种花的: 'zhòng huā de', 勒紧: 'lēi jǐn', // 种花的: 写一写's piece (never 种花 alone)
+  // 三上 and 三下 sentences (2026-10-18): 夹 is jiā (pinyin-pro read a lone 夹 jiá: 夹在, 夹菜, 夹到)
+  夹: 'jiā', 夹子: 'jiā zi',
+  // 得 after a verb or adjective is de (it read dé), 地 after an adverb de (it read dì), 子 as a noun suffix zi (it read zǐ)
+  站得: 'zhàn de', 翻得: 'fān de', 吃得: 'chī de', 弹得: 'tán de', 踢得: 'tī de', 吹得: 'chuī de', 考得: 'kǎo de', 画得: 'huà de',
+  说得: 'shuō de', 扔得: 'rēng de', 开得: 'kāi de', 溜得: 'liū de', 跳得: 'tiào de', 惊得: 'jīng de', 大得: 'dà de', 高得: 'gāo de',
+  睡得: 'shuì de', 过得: 'guò de', 叫得: 'jiào de', 听得: 'tīng de', 冷得: 'lěng de', 怕得: 'pà de', 热得: 'rè de', 美得: 'měi de',
+  算得: 'suàn de', 转得: 'zhuàn de', 兴奋得: 'xīng fèn de',
+  自由地: 'zì yóu de', 七嘴八舌地: 'qī zuǐ bā shé de', 吃惊地: 'chī jīng de', 慢慢地: 'màn màn de', 分散地: 'fēn sàn de',
+  笨手笨脚地: 'bèn shǒu bèn jiǎo de', 偷偷地: 'tōu tōu de', 哈哈地: 'hā hā de',
+  李子: 'lǐ zi', 肚子: 'dù zi', 脑子: 'nǎo zi', 板子: 'bǎn zi', 蚊子: 'wén zi', 袋子: 'dài zi', 轮子: 'lún zi', 网子: 'wǎng zi',
+  // 种 (planting) zhòng, 多重 (how heavy) zhòng, 粗心大意 yì (it read yi)
+  种在: 'zhòng zài', 多重: 'duō zhòng', 粗心大意: 'cū xīn dà yì',
+  猩猩: 'xīng xing', 脑袋: 'nǎo dai', 功夫: 'gōng fu', 睡不着: 'shuì bù zháo', 穿得: 'chuān de', 一加一: 'yī jiā yī',
+  乌龟背着重重的壳: 'wū guī bēi zhe zhòng zhòng de ké', 蜗牛背着: 'wō niú bēi zhe', // carrying (bēi), heavy (zhòng)
 });
