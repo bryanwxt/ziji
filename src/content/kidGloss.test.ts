@@ -181,12 +181,14 @@ describe('the sense his lesson teaches (parent 2026-10-16: 丁 showed "family na
     expect(questionMeaning(byText.get('丁')!)).toBe('the 4th (like D)');
   });
 
-  it('李 is a family name in 三上 L2 (陈李吴姓名), not "plum" first', () => {
-    expect(kidGloss('李')).toBe('family name Li');
+  // parent 2026-10-18 (replacing 2026-10-17's 李 "family name Li"): a character that is commonly a family name leads with a real
+  // meaning a child knows (李子 "plum", 胡子 "beard"); 姓李 stays a later 组词. Only 陈 and 吴 have none (otherReadings.test.ts)
+  it('李 is "plum" (李子), its 三上 L2 family name a later 组词', () => {
+    expect(kidGloss('李')).toBe('plum');
   });
 
-  it('no school character reads "family name" unless his lessons teach it as a name', () => {
+  it('no school character reads "family name" unless it has no child-level meaning (陈 吴), or is 姓 itself', () => {
     const named = scope.filter((w) => w.text.length === 1 && /family name/i.test(kidGloss(w.text) ?? '')).map((w) => w.text).sort();
-    expect(named).toEqual(['吴', '姓', '李', '陈'].sort());
+    expect(named).toEqual(['吴', '姓', '陈'].sort());
   });
 });

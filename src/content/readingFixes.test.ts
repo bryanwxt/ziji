@@ -45,7 +45,7 @@ describe('readings a P2 child meets (deferred minors, plans 1 and 5)', () => {
     const moe = (await import('./moe2024.json')).default;
     const hash = createHash('sha256').update(JSON.stringify([data, READING_FIXES, EXAMPLE_FIXES, MEANING_FIXES, EXTRA_EXAMPLES, [...BLOCKED], moe, ZUCI_DROPS])).digest('hex').slice(0, 16);
     // changed builtin.json or a fix table? bump CONTENT_VERSION (so iPads rewrite their built-in words) and pin the new hash here
-    const PINNED: Record<string, string> = { '1.16': '03157a450eb7c63b' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes; 1.7 the content sweep; 1.8 the second sweep; 1.9 school order; 1.10 HCL writing lists; 1.11 蚂蚁拇狐狸 and readable 组词 (spec 2026-10-11 §7); 1.12 the content audit (2026-10-15); 1.13 该死 blocked (朗读 content); 1.14 neutral tones on word cards; 1.15 甲 and 丁 as labels (甲乙丙丁); 1.16 the review of 2026-10-17 (lesson words and senses first, child 组词, no 儿化)
+    const PINNED: Record<string, string> = { '1.17': 'cf2263c2b0eec6be' }; // 1.4 and 1.5 changed how examples are chosen (code); 1.6 added written 组词 and fixes; 1.7 the content sweep; 1.8 the second sweep; 1.9 school order; 1.10 HCL writing lists; 1.11 蚂蚁拇狐狸 and readable 组词 (spec 2026-10-11 §7); 1.12 the content audit (2026-10-15); 1.13 该死 blocked (朗读 content); 1.14 neutral tones on word cards; 1.15 甲 and 丁 as labels (甲乙丙丁);  1.16 the review of 2026-10-17 (lesson words and senses first, child 组词, no 儿化); 1.17 组词 for 二下–三下 characters with none or one, 三下 L12's races, surname characters' real meanings first (胡子 李子)
     expect(`${CONTENT_VERSION} ${hash}`).toBe(`${CONTENT_VERSION} ${PINNED[CONTENT_VERSION]}`);
   });
   it('了 means what it does when read le, not "clear, to finish"', async () => {

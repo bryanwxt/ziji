@@ -4,6 +4,7 @@
 
 /** '<character> <its reading in these words>' → the words, space-separated. */
 export const OTHER_READINGS: Record<string, string> = {
+  '背 bēi': '背书包 背包',
   '中 zhòng': '中奖',
   '为 wéi': '以为 作为 分为 化险为夷 成为 称为 自以为是 行为 见义勇为 认为 迄今为止',
   '乐 yuè': '乐器 乐队 听音乐 音乐 音乐会',
@@ -15,6 +16,7 @@ export const OTHER_READINGS: Record<string, string> = {
   '几 jī': '几乎',
   '分 fèn': '充分 过分',
   '切 qiè': '一切 亲切 密切 迫切',
+  '刹 shā': '刹车',
   '别 biè': '别扭',
   '只 zhǐ': '只好 只是 只有 只能 只要',
   '吗 má': '干吗',
@@ -31,6 +33,7 @@ export const OTHER_READINGS: Record<string, string> = {
   '强 qiǎng': '勉强 强迫',
   '当 dàng': '妥当 恰当',
   '折 zhē': '折腾',
+  '数 shǔ': '数一数',
   '教 jiào': '教堂 教学 教学楼 教室 教师 教授 教材 教练 教育 教训 请教',
   '斗 dǒu': '泰斗',
   '更 gēng': '更换',
@@ -41,6 +44,7 @@ export const OTHER_READINGS: Record<string, string> = {
   '着 zháo': '着急 着火 睡着',
   '种 zhǒng': '各种 多种 种子 种类',
   '空 kòng': '填空 空隙',
+  '系 jì': '系鞋带',
   '笼 lǒng': '笼罩',
   '答 dā': '答应',
   '累 lěi': '拖累 积累',

@@ -4990,5 +4990,304 @@
 "en": "I bought a sausage at a stall."
 }
 ]
+},
+{
+"word": "白纸",
+"s": [
+{
+"zh": "请给我一张白纸。",
+"en": "Please give me a sheet of white paper."
+},
+{
+"zh": "我在白纸上画了一座山。",
+"en": "I drew a hill on the white paper."
+}
+]
+},
+{
+"word": "纸巾",
+"s": [
+{
+"zh": "请给我一张纸巾。",
+"en": "Please give me a tissue."
+},
+{
+"zh": "你带纸巾了吗？",
+"en": "Have you got a tissue?"
+}
+]
+},
+{
+"word": "贴纸",
+"s": [
+{
+"zh": "我的书上有很多贴纸。",
+"en": "My book has lots of stickers."
+},
+{
+"zh": "老师给了我一张贴纸。",
+"en": "The teacher gave me a sticker."
+}
+]
+},
+{
+"word": "搭车",
+"s": [
+{
+"zh": "下雨了，我搭车回家。",
+"en": "It was raining, so I got a ride home."
+},
+{
+"zh": "我们搭车去机场。",
+"en": "We get a ride to the airport."
+}
+]
+},
+{
+"word": "搭巴士",
+"s": [
+{
+"zh": "我每天搭巴士上学。",
+"en": "I take the bus to school every day."
+},
+{
+"zh": "奶奶喜欢搭巴士去市场。",
+"en": "Grandma likes taking the bus to the market."
+}
+]
+},
+{
+"word": "搭积木",
+"s": [
+{
+"zh": "弟弟在搭积木。",
+"en": "My little brother is building with blocks."
+},
+{
+"zh": "我们一起搭积木，搭了一座高楼。",
+"en": "We built a tall building with blocks together."
+}
+]
+},
+{
+"word": "拼图",
+"s": [
+{
+"zh": "我和爸爸一起玩拼图。",
+"en": "Dad and I do a jigsaw puzzle together."
+},
+{
+"zh": "这个拼图有一百块。",
+"en": "This jigsaw puzzle has a hundred pieces."
+}
+]
+},
+{
+"word": "拼音",
+"s": [
+{
+"zh": "我会用拼音读生字。",
+"en": "I can read new words with pinyin."
+},
+{
+"zh": "这个字的拼音是什么？",
+"en": "What is the pinyin for this character?"
+}
+]
+},
+{
+"word": "小鹰",
+"s": [
+{
+"zh": "小鹰在学飞。",
+"en": "The young eagle is learning to fly."
+},
+{
+"zh": "鹰妈妈给小鹰找吃的。",
+"en": "The mother eagle finds food for the eaglet."
+}
+]
+},
+{
+"word": "吐泡泡",
+"s": [
+{
+"zh": "金鱼在水里吐泡泡。",
+"en": "The goldfish is blowing bubbles in the water."
+},
+{
+"zh": "小鱼吐泡泡，真好玩。",
+"en": "The little fish blows bubbles, so fun."
+}
+]
+},
+{
+"word": "小岛",
+"s": [
+{
+"zh": "海上有一个小岛。",
+"en": "There is a little island in the sea."
+},
+{
+"zh": "我们坐船去小岛玩。",
+"en": "We take a boat to play on the little island."
+}
+]
+},
+{
+"word": "岛上",
+"s": [
+{
+"zh": "岛上住着很多小鸟。",
+"en": "Lots of little birds live on the island."
+},
+{
+"zh": "我们在岛上住了两天。",
+"en": "We stayed on the island for two days."
+}
+]
+},
+{
+"word": "逛夜市",
+"s": [
+{
+"zh": "周末我们一家去逛夜市。",
+"en": "At the weekend our family goes to the night market."
+},
+{
+"zh": "逛夜市的时候，我吃了烤肠。",
+"en": "At the night market I ate a grilled sausage."
+}
+]
+},
+{
+"word": "射门",
+"s": [
+{
+"zh": "他一射门，球就进了！",
+"en": "He took a shot and the ball went in!"
+},
+{
+"zh": "我射门的时候太用力了。",
+"en": "I kicked too hard when I shot at goal."
+}
+]
+},
+{
+"word": "射气球",
+"s": [
+{
+"zh": "我玩射气球，射中了三个。",
+"en": "I played the balloon game and hit three."
+},
+{
+"zh": "哥哥最喜欢玩射气球。",
+"en": "My brother loves the balloon shooting game."
+}
+]
+},
+{
+"word": "摊位",
+"s": [
+{
+"zh": "这个摊位卖的鸡饭很好吃。",
+"en": "The chicken rice from this stall is delicious."
+},
+{
+"zh": "夜市里有很多摊位。",
+"en": "There are lots of stalls at the night market."
+}
+]
+},
+{
+"word": "摊子",
+"s": [
+{
+"zh": "奶奶的摊子卖水果。",
+"en": "Grandma's stall sells fruit."
+},
+{
+"zh": "我们在摊子前排队买面。",
+"en": "We queue at the stall to buy noodles."
+}
+]
+},
+{
+"word": "圆圈",
+"s": [
+{
+"zh": "我们手拉手围成一个圆圈。",
+"en": "We hold hands and make a circle."
+},
+{
+"zh": "老师在我的字上画了一个圆圈。",
+"en": "The teacher drew a circle round my character."
+}
+]
+},
+{
+"word": "套圈",
+"s": [
+{
+"zh": "我在夜市玩套圈。",
+"en": "I played ring toss at the night market."
+},
+{
+"zh": "我玩套圈，得到了一个小玩具。",
+"en": "I played ring toss and won a little toy."
+}
+]
+},
+{
+"word": "海岛",
+"s": [
+{
+"zh": "新加坡是一个海岛。",
+"en": "Singapore is an island."
+},
+{
+"zh": "海岛的四周都是海。",
+"en": "An island is surrounded by sea."
+}
+]
+},
+{
+"word": "捡贝壳",
+"s": [
+{
+"zh": "我们在海边捡贝壳。",
+"en": "We collect seashells at the seaside."
+},
+{
+"zh": "妹妹捡贝壳捡了很多。",
+"en": "My little sister collected lots of seashells."
+}
+]
+},
+{
+"word": "浇水",
+"s": [
+{
+"zh": "我每天给小树浇水。",
+"en": "I water the little tree every day."
+},
+{
+"zh": "下雨了，今天不用浇水。",
+"en": "It's raining, so no need to water the plants today."
+}
+]
+},
+{
+"word": "浇花",
+"s": [
+{
+"zh": "爷爷早上在花园里浇花。",
+"en": "Grandpa waters the flowers in the garden in the morning."
+},
+{
+"zh": "我帮妈妈浇花。",
+"en": "I help Mum water the flowers."
+}
+]
 }
 ]

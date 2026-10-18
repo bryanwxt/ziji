@@ -9,6 +9,8 @@ import s1a from './sentences/一上.json';
 import s1b from './sentences/一下.json';
 import s2a from './sentences/二上.json';
 import s2b from './sentences/二下.json';
+import s3a from './sentences/三上.json';
+import s3b from './sentences/三下.json';
 import weekBank from './weekSentences.json';
 
 /** The list sentence bank's sentences (parent ruling 2026-10-17): shown only once the parent confirms a row, gated all the same. */
@@ -20,7 +22,7 @@ export function shownSentences(): string[] {
     for (const g of b.gaps) out.add(fillGap(g, b.word));
     out.add(b.misuse);
   }
-  for (const r of [s1a, s1b, s2a, s2b].flat() as { s: { zh: string }[] }[]) for (const s of r.s) out.add(s.zh);
+  for (const r of [s1a, s1b, s2a, s2b, s3a, s3b].flat() as { s: { zh: string }[] }[]) for (const s of r.s) out.add(s.zh);
   for (const c of CHENGYU) for (const s of c.sentences) out.add(s);
   for (const r of weekBankRows()) out.add(r.s);
   for (const p of PASSAGES) for (const s of splitSentences(p.text)) out.add(s); // 朗读's (spec 2026-10-15 §2.2: pinyin reviewed once)
