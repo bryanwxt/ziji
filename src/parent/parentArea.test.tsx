@@ -2,7 +2,9 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { hashPin } from '../lib/hash';
-import { addRecording } from '../store/repo';
+import { addRecording, putWeekList, putWords } from '../store/repo';
+import { localDateKey } from '../lib/date';
+import { makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS, type Recording } from '../types';
 import { HOME, ParentArea, placeId, type ParentPlace } from './ParentArea';
@@ -155,5 +157,20 @@ describe("the overview's shortcuts land on the right tab and section", () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Go to 聊一聊' }));
     expect(tab(/Today/).getAttribute('aria-selected')).toBe('true');
     await lands('talk');
+  });
+});
+
+describe("Today's top line and the readiness line", () => {
+  it('when Try this goes over the list\'s weak words, the readiness card right below does not repeat them', async () => {
+    const app = await open();
+    const day = (n: number) => localDateKey(new Date(app.now().getTime() + n * 86_400_000));
+    await putWords(app.db, ['风筝', '小河'].map((t) => makeWord(t, { id: `p:${t}`, source: 'parent' })));
+    await putWeekList(app.db, { id: 'wl:t', name: '第九课', createdAt: 0, readyBy: day(1), homeworkDue: day(3), pairs: [], fits: [],
+      items: [{ wordId: 'p:风筝', text: '风筝', from: 'grid', addedStatus: 'new' }, { wordId: 'p:小河', text: '小河', from: 'grid', addedStatus: 'new' }] });
+    enter(app);
+    await waitFor(() => expect(document.querySelector('.try-this__text')?.textContent).toMatch(/^第九课: 2 of 2 not ready .* Go over .*风筝/));
+    const line = await waitFor(() => { const el = document.querySelector('.dash__week-line'); expect(el).toBeTruthy(); return el!; });
+    expect(line.textContent).toContain('List 0/2 ready');
+    expect(line.textContent).not.toContain('weak:');
   });
 });

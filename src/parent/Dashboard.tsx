@@ -26,8 +26,9 @@ interface Data {
 }
 
 /** The parent's overview. `waiting`: the takes still to review, live, when the queue is on the same page (Today). `talk`: 聊一聊,
- *  under the weekly-list readiness line (parent loop spec, 2026-10-18 update). */
-export function Dashboard({ onNavigate, waiting, talk }: { onNavigate: (place: ParentPlace) => void; waiting?: number; talk?: ComponentChildren }) {
+ *  under the weekly-list readiness line (parent loop spec, 2026-10-18 update). `quietWeak`: the list whose weak words the "Try
+ *  this" line above already names (its readiness line leaves them out). */
+export function Dashboard({ onNavigate, waiting, talk, quietWeak }: { onNavigate: (place: ParentPlace) => void; waiting?: number; talk?: ComponentChildren; quietWeak?: string }) {
   const { db, now, settings, voice } = useApp();
   const [d, setD] = useState<Data | null>(null);
 
@@ -85,7 +86,7 @@ export function Dashboard({ onNavigate, waiting, talk }: { onNavigate: (place: P
           <button type="button" class="small-btn" onClick={() => onNavigate('backup')}>Back up now</button>
         </p>
       )}
-      <WeekReadiness onOpen={() => onNavigate('week')} />
+      <WeekReadiness onOpen={() => onNavigate('week')} quietWeak={quietWeak} />
       {talk}
       {d.recordings > KEEP_RECORDINGS && (
         <p class="warning">

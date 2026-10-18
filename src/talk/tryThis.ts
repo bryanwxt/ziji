@@ -31,7 +31,8 @@ export interface TrySignals {
   backupDays: number | null; // days without a backup, once past the 14-day nudge (backupNudgeDays); null: not due
   classLeft: number | null; // class words still unstarted on homework day (a list week only); null: unknown
 }
-export interface TryAction { text: string; button: string | null; place: ParentPlace | null }
+/** `weakOf`: the list whose weak words the line names (Today's readiness line for it then leaves its own out). */
+export interface TryAction { text: string; button: string | null; place: ParentPlace | null; weakOf?: string }
 
 const EN_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const weekday = (key: string) => EN_DAYS[parseDateKey(key).getDay()]!;
@@ -49,7 +50,8 @@ export function tryThis(s: TrySignals): TryAction {
   if (soon) {
     const when = soon.readyBy === s.today ? 'today' : weekday(soon.readyBy);
     const go = soon.weak.length ? ` Go over ${soon.weak.slice(0, 3).join(', ')} with him.` : '';
-    return { text: `${soon.name}: ${soon.notReady} of ${soon.total} not ready for the check ${when === 'today' ? 'today' : `on ${when}`}.${go}`, button: 'Open 本周词语', place: 'week' };
+    const text = `${soon.name}: ${soon.notReady} of ${soon.total} not ready for the check ${when === 'today' ? 'today' : `on ${when}`}.${go}`;
+    return { text, button: 'Open 本周词语', place: 'week', ...(go ? { weakOf: soon.name } : {}) };
   }
   if (!s.lastTalk) return { text: 'Try one of today’s talk prompts below, then tap ✓ 聊了.', button: 'Go to 聊一聊', place: 'talk' };
   if (between(s.lastTalk, s.today) >= TALK_GAP_DAYS) return { text: `No talk logged since ${weekday(s.lastTalk)}. Try today’s shared reading questions at dinner.`, button: 'Go to 聊一聊', place: 'talk' };

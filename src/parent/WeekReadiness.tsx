@@ -16,11 +16,12 @@ import { readinessLine } from '../weeklist/readiness';
 /**
  * One line per running list: its class shortfall from today's plan at today's numbers (listBudget's classShort, worked out as a
  * lesson now would, writing nothing); catch-up slower while the list still has new words before its ready-by. `lists`: reload
- * when they change (the 本周词语 panel's saves). `onOpen`: a way to 本周词语 (Today).
+ * when they change (the 本周词语 panel's saves). `onOpen`: a way to 本周词语 (Today). `quietWeak`: the list whose weak words
+ * Today's "Try this" line already names, so its line leaves them out.
  */
-export function WeekReadiness({ lists, onOpen }: { lists?: WeekList[]; onOpen?: () => void }) {
+export function WeekReadiness({ lists, onOpen, quietWeak }: { lists?: WeekList[]; onOpen?: () => void; quietWeak?: string }) {
   const { db, now, settings } = useApp();
-  const [lines, setLines] = useState<ReturnType<typeof readinessLine>[]>([]);
+  const [lines, setLines] = useState<(ReturnType<typeof readinessLine> & { name: string })[]>([]);
   useEffect(() => {
     void (async () => {
       const t = now();
@@ -34,10 +35,10 @@ export function WeekReadiness({ lists, onOpen }: { lists?: WeekList[]; onOpen?: 
       const classKnown = classShort !== null && classLessonAt(t, settings) !== null;
       const reviewsDue = dueToday(know.cards, know.words, t);
       const today = localDateKey(t);
-      setLines(open.map((l) => readinessLine(l, words, {
+      setLines(open.map((l) => ({ name: l.name, ...readinessLine(l, words, {
         classLeft: classShort ?? 0, classKnown, reviewsDue,
         catchupSlower: today < l.readyBy && l.items.some((i) => itemStatus(i.wordId, cards) === 'new'),
-      })));
+      }) })));
     })();
   }, [lists]);
   return (
@@ -45,7 +46,7 @@ export function WeekReadiness({ lists, onOpen }: { lists?: WeekList[]; onOpen?: 
       {lines.map((r) => (
         <div class="dash__week" key={r.head}>
           <p class="dash__week-head"><strong>{r.head}</strong></p>
-          <p class="dash__week-line">{r.line}{r.weak.length ? ` — weak: ${r.weak.join(', ')}` : ''}</p>
+          <p class="dash__week-line">{r.line}{r.weak.length && r.name !== quietWeak ? ` — weak: ${r.weak.join(', ')}` : ''}</p>
           {onOpen && <button type="button" class="small-btn" onClick={onOpen}>Open 本周词语</button>}
         </div>
       ))}

@@ -68,6 +68,7 @@ export function ParentArea() {
   const [goTo, setGoTo] = useState<ParentPlace | null>(null); // a shortcut's section, scrolled to once its tab shows
   const [waiting, setWaiting] = useState<number | null>(null); // takes to review: the badge on Today
   const [talked, setTalked] = useState(0); // a talk logged or undone: the top line looks again
+  const [quietWeak, setQuietWeak] = useState<string | undefined>(); // the list whose weak words the top line names
   const countWaiting = async () => setWaiting(waitingTakes(await listRecordings(db)).length);
   useEffect(() => {
     void countWaiting();
@@ -113,8 +114,8 @@ export function ParentArea() {
           {tab === 'today' && (
             <>
               <div id={placeId('dashboard')} class="parent__section">
-                <TryThis onNavigate={navigate} waiting={waiting} talked={talked} />
-                <Dashboard onNavigate={navigate} waiting={waiting ?? undefined}
+                <TryThis onNavigate={navigate} waiting={waiting} talked={talked} onAction={(a) => setQuietWeak(a.weakOf)} />
+                <Dashboard onNavigate={navigate} waiting={waiting ?? undefined} quietWeak={quietWeak}
                   talk={<div id={placeId('talk')}><TalkSection onNavigate={navigate} onLogged={() => setTalked((n) => n + 1)} /></div>} />
                 <ExtraLessonButton />
               </div>

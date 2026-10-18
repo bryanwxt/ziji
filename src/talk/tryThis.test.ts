@@ -13,7 +13,9 @@ describe('"This week, try this": the first that applies (2026-10-18 update)', ()
     expect(tryThis({ ...calm, backupDays: 31, lists: [gap], lastTalk: null, takes: 3 })).toEqual({ text: 'No backup for 31 days. Save one to Files now; it takes a minute.', button: 'Back up now', place: 'backup' });
   });
   it('then a list checked within 2 days with words not ready', () => {
-    expect(tryThis({ ...calm, lists: [gap], lastTalk: null, takes: 3, backupDays: 20 })).toEqual({ text: '复习一: 4 of 12 not ready for the check on Wednesday. Go over 街道, 闪闪亮, 雨伞 with him.', button: 'Open 本周词语', place: 'week' });
+    expect(tryThis({ ...calm, lists: [gap], lastTalk: null, takes: 3, backupDays: 20 })).toEqual({ text: '复习一: 4 of 12 not ready for the check on Wednesday. Go over 街道, 闪闪亮, 雨伞 with him.', button: 'Open 本周词语', place: 'week', weakOf: '复习一' });
+    // names no weak words (all not ready are blank): the readiness line keeps its own
+    expect(tryThis({ ...calm, lists: [{ ...gap, weak: [] }] }).weakOf).toBeUndefined();
     expect(tryThis({ ...calm, today: '2026-10-21', lists: [gap] }).text).toBe('复习一: 4 of 12 not ready for the check today. Go over 街道, 闪闪亮, 雨伞 with him.');
   });
   it('then no talk logged today or yesterday (or ever)', () => {
@@ -29,6 +31,7 @@ describe('"This week, try this": the first that applies (2026-10-18 update)', ()
   });
   it('then a list further off; else a calm line with no button', () => {
     expect(tryThis({ ...calm, lists: [{ ...gap, readyBy: '2026-10-22' }] }).text).toBe('复习一: 8 of 12 ready, check on Thursday.');
+    expect(tryThis({ ...calm, lists: [{ ...gap, readyBy: '2026-10-22' }] }).weakOf).toBeUndefined(); // names none: the readiness line keeps them
     expect(tryThis(calm)).toEqual({ text: 'Nothing pressing. Enjoy today’s talk below.', button: null, place: null });
   });
 });
