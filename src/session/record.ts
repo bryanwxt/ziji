@@ -252,14 +252,22 @@ async function todaysPace(db: AppDb, now: Date, settings: Settings, save = true)
   return pace.perDay;
 }
 
+/**
+ * Where a day's lesson stands: done, begun (its plan kept: startOrResumeSession resumes it), or null (none, or untouched: its plan
+ * is rebuilt). A list saved after it was begun or done starts its new words the next day (weekly list, parent ruling 2026-10-18).
+ */
+export function todaysLesson(rec: SessionRecord | undefined): 'done' | 'begun' | null {
+  if (!rec) return null;
+  if (rec.completed) return 'done';
+  return rec.activeMs > 0 || rec.stepIndex > 0 || rec.flashIndex > 0 || rec.writeIndex > 0 ? 'begun' : null;
+}
+
 /** Today's session if one exists (finished or not), otherwise a new plan. Earlier days are never resumed. */
 export async function startOrResumeSession(db: AppDb, now: Date): Promise<SessionRecord> {
   const date = localDateKey(now);
   const existing = await getSession(db, date);
   // An untouched plan is rebuilt, so a parent's settings change applies today rather than tomorrow.
-  if (existing && (existing.completed || existing.activeMs > 0 || existing.stepIndex > 0 || existing.flashIndex > 0 || existing.writeIndex > 0)) {
-    return existing;
-  }
+  if (existing && todaysLesson(existing) !== null) return existing;
   const rec = createSessionRecord(await planNow(db, now), date, now.getTime());
   await saveSession(db, rec);
   return rec;

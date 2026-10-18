@@ -58,7 +58,7 @@ export function extraCards(cards: CardRecord[], now: Date, skip: ReadonlySet<str
   });
 }
 
-/** 练一练's extra time on a front-load day, paid for by half of 写一写 (weekly list spec §5.1). */
+/** 练一练's extra time on a front-load day (weekly list spec §5.1): the lesson runs longer, 写一写 keeps its count (parent ruling 2026-10-18). */
 export const LIST_PRACTICE_MS = 2 * 60_000;
 /** 练一练's extra time for each list word over pace + 2 on a big front-load day (parent ruling 2026-10-17: ~20 min is fine). */
 export const LIST_WORD_PRACTICE_MS = 30_000;
@@ -164,7 +164,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0 || reteach.length > 0);
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
   const writeUnits = settings.activities.writing
-    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: frontLoad ? Math.max(1, Math.floor(writeCharTarget(settings.sessionMinutes) / 2)) : writeCharTarget(settings.sessionMinutes) }) // half on a front-load day (weekly list spec §5.1)
+    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: writeCharTarget(settings.sessionMinutes) }) // never halved on a front-load day: the lesson runs longer (parent ruling 2026-10-18)
     : [];
   const writeItems = orderWriteItems(writeUnits);
   // Say (spec 2026-10-11 §4): due Say cards first, then words whose Read has passed and that have no Say card yet — his class's

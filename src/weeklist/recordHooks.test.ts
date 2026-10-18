@@ -26,18 +26,18 @@ describe('run-outs for the list headroom are yesterday and the day before (spec 
     await updateSettings(db, { pace: { day: '2026-10-19', perDay: 5, reason: 'test' } });
     return db;
   };
-  it('rounds that ran out last week leave the headroom: 7', async () => {
+  // a 14-word list front-loads 12 on Monday (parent rulings 2026-10-18): run-outs take only the headroom, which a small list's
+  // day shows (plan.test.ts); two in a row still spill
+  it('rounds that ran out last week: the list front-loads, 12', async () => {
     const db = await setup();
     await ranOutOn(db, '2026-10-14');
     await ranOutOn(db, '2026-10-15');
-    expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(7);
+    expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(12);
   });
-  // no headroom after yesterday's run-out, but 14 words over two days still need 7 a day (parent ruling 2026-10-17, "more per
-  // day"); the headroom alone is pinned in plan.test.ts
-  it('yesterday ran out: no headroom, but the list still needs 7', async () => {
+  it('yesterday ran out: no headroom, but the list still front-loads 12', async () => {
     const db = await setup();
     await ranOutOn(db, '2026-10-18');
-    expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(7);
+    expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(12);
   });
   it('yesterday and the day before ran out: spill, 4', async () => {
     const db = await setup();

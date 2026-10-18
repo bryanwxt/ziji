@@ -93,9 +93,10 @@ function weakness(item: WeekItem, list: WeekList): number {
 /**
  * The parent's readiness line (spec §8.3) on Today: List x/y ready (pairs aren't counted in y); the class lane on track, or its
  * shortfall by homework day when there is one (listBudget's classShort); catch-up slower while the list is front-loaded; his
- * reviews due today; up to five weak items and pairs, worst first.
+ * reviews due today; up to five weak items and pairs, worst first. `afterCheck`: new words even 20 a lesson won't teach before
+ * the check (parent ruling 2026-10-18).
  */
-export function readinessLine(list: WeekList, words: ReadonlyMap<string, Word>, i: { classLeft: number; classKnown: boolean; catchupSlower: boolean; reviewsDue: number }): { head: string; line: string; weak: string[] } {
+export function readinessLine(list: WeekList, words: ReadonlyMap<string, Word>, i: { classLeft: number; classKnown: boolean; catchupSlower: boolean; reviewsDue: number; afterCheck?: number }): { head: string; line: string; weak: string[] } {
   const notReady = list.items.filter((it) => !isReady(it, list, words.get(it.wordId)));
   const ready = list.items.length - notReady.length;
   const weakItems = [...notReady].sort((a, b) => weakness(a, list) - weakness(b, list));
@@ -105,7 +106,8 @@ export function readinessLine(list: WeekList, words: ReadonlyMap<string, Word>, 
   // classLeft: this week's class lane (his class lesson and the one before, characters and their 词语) still unstarted on homework
   // day at today's numbers; far behind, a number that big alarms more than it tells: Progress shows where he is
   const cls = !i.classKnown ? [] : i.classLeft > CLASS_BEHIND_AT ? ['behind class — see Progress'] : i.classLeft > 0 ? [`class: ${i.classLeft} left by ${EN_DAYS[parseDateKey(list.homeworkDue).getDay()]}`] : ['class on track'];
-  const parts = [`List ${ready}/${list.items.length} ready`, ...cls, ...(i.catchupSlower ? ['catch-up slower this week'] : []), `${i.reviewsDue} reviews due`];
+  const late = i.afterCheck ? [`${i.afterCheck} new word${i.afterCheck === 1 ? '' : 's'} after the check`] : [];
+  const parts = [`List ${ready}/${list.items.length} ready`, ...late, ...cls, ...(i.catchupSlower ? ['catch-up slower this week'] : []), `${i.reviewsDue} reviews due`];
   return {
     head: `${list.name} · ready by ${enDay(list.readyBy)} · homework ${enDay(list.homeworkDue)}`,
     line: parts.join(' · '),

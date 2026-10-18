@@ -4,13 +4,14 @@ import { useApp } from '../app/AppContext';
 import { loadKnowledge } from '../app/knowledge';
 import { classLessonAt } from '../content/curriculum';
 import { ladderWordsBesides } from '../content/ladder';
-import { localDateKey } from '../lib/date';
-import { previewPlan } from '../session/record';
+import { addDays, localDateKey } from '../lib/date';
+import { PACE_START } from '../session/pace';
+import { previewPlan, todaysLesson } from '../session/record';
 import { dueToday } from '../stats/stats';
-import { allWeekLists } from '../store/repo';
+import { allWeekLists, getSession } from '../store/repo';
 import type { WeekList } from '../types';
 import { itemStatus } from '../weeklist/match';
-import { activeLists } from '../weeklist/plan';
+import { activeLists, frontLoadDays, paceRate } from '../weeklist/plan';
 import { readinessLine } from '../weeklist/readiness';
 
 /**
@@ -35,10 +36,18 @@ export function WeekReadiness({ lists, onOpen, quietWeak }: { lists?: WeekList[]
       const classKnown = classShort !== null && classLessonAt(t, settings) !== null;
       const reviewsDue = dueToday(know.cards, know.words, t);
       const today = localDateKey(t);
-      setLines(open.map((l) => ({ name: l.name, ...readinessLine(l, words, {
-        classLeft: classShort ?? 0, classKnown, reviewsDue,
-        catchupSlower: today < l.readyBy && l.items.some((i) => itemStatus(i.wordId, cards) === 'new'),
-      }) })));
+      // new words the front-load days can't take, even at 20 a lesson (parent ruling 2026-10-18): from today's lesson, or
+      // tomorrow's once today's is done or begun
+      const from = todaysLesson(await getSession(db, today)) ? localDateKey(addDays(t, 1)) : today;
+      const rate = paceRate(settings.pace?.perDay ?? PACE_START, settings.newPerDay);
+      setLines(open.map((l) => {
+        const fresh = l.items.filter((i) => itemStatus(i.wordId, cards) === 'new').length;
+        return { name: l.name, ...readinessLine(l, words, {
+          classLeft: classShort ?? 0, classKnown, reviewsDue,
+          catchupSlower: today < l.readyBy && fresh > 0,
+          afterCheck: today < l.readyBy ? frontLoadDays({ rate, left: fresh, from, readyBy: l.readyBy }).late : 0,
+        }) };
+      }));
     })();
   }, [lists]);
   return (
