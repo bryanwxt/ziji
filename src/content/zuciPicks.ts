@@ -328,7 +328,7 @@ export const ZUCI_FIRST: Record<string, ExtraExample[]> = {
   浪: [['浪费', 'làng fèi', 'to waste'], ['海浪', 'hǎi làng', 'sea wave']], 流: [['流水', 'liú shuǐ', 'running water'], ['流利', 'liú lì', 'fluent']],
   断: [['断了', 'duàn le', 'broken; snapped'], ['打断', 'dǎ duàn', 'to interrupt']], 遍: [['遍地', 'biàn dì', 'all over the ground'], ['一遍', 'yí biàn', 'once through']],
   将: [['将来', 'jiāng lái', 'in the future']], 军: [['军人', 'jūn rén', 'soldier'], ['冠军', 'guàn jūn', 'champion']],
-  复: [['复习', 'fù xí', 'to revise (lessons)'], ['重复', 'chóng fù', 'to repeat']], 李: [['姓李', 'xìng lǐ', 'surname Li'], ['李子', 'lǐ zi', 'plum']],
+  复: [['复习', 'fù xí', 'to revise (lessons)'], ['重复', 'chóng fù', 'to repeat']], 李: [['李子', 'lǐ zi', 'plum'], ['行李', 'xíng li', 'luggage'], ['姓李', 'xìng lǐ', 'family name Li']],
   矮: [['很矮', 'hěn ǎi', 'very short']], 意: [['意思', 'yì si', 'meaning'], ['故意', 'gù yì', 'on purpose']],
   辆: [['一辆车', 'yí liàng chē', 'a car']], 按: [['按门铃', 'àn mén líng', 'to ring the doorbell'], ['按时', 'àn shí', 'on time']],
   钟: [['闹钟', 'nào zhōng', 'alarm clock'], ['分钟', 'fēn zhōng', 'minute']], 背: [['后背', 'hòu bèi', 'back (of the body)'], ['背后', 'bèi hòu', 'behind']],
@@ -352,12 +352,26 @@ export const ZUCI_FIRST: Record<string, ExtraExample[]> = {
   // 三下 L12 (国旗 世界 族 印度 其…) is Singapore's races, 华族 马来族 印度族: 印 and 度 meet him only in 印度 (bound)
   印: [['印度', 'yìn dù', 'India'], ['印度族', 'yìn dù zú', 'the Indians']], 度: [['印度', 'yìn dù', 'India'], ['印度族', 'yìn dù zú', 'the Indians']],
   逛: [['逛夜市', 'guàng yè shì', 'to go to the night market']],
+  // parent 2026-10-18: a character that is commonly a family name leads with a real meaning a child knows (胡子 李子), 姓X later;
+  // only one with none (陈 吴) keeps 姓X first, glossed 「family name X」
+  胡: [['胡子', 'hú zi', 'beard'], ['胡萝卜', 'hú luó bo', 'carrot'], ['姓胡', 'xìng hú', 'family name Hu']],
   捡: [['捡贝壳', 'jiǎn bèi ké', 'to collect seashells'], ['捡起', 'jiǎn qǐ', 'to pick up'], ['捡到', 'jiǎn dào', 'to find (on the ground)']],
   盆: [['花盆', 'huā pén', 'flowerpot'], ['脸盆', 'liǎn pén', 'washbasin']], 喷: [['喷水', 'pēn shuǐ', 'to spray water'], ['喷泉', 'pēn quán', 'fountain']],
   篮: [['篮子', 'lán zi', 'basket'], ['篮球', 'lán qiú', 'basketball'], ['花篮', 'huā lán', 'flower basket']],
   竿: [['竹竿', 'zhú gān', 'bamboo pole'], ['鱼竿', 'yú gān', 'fishing rod']],
   晒: [['晒太阳', 'shài tài yáng', 'to sunbathe'], ['晒衣服', 'shài yī fu', 'to dry clothes in the sun']],
   盖: [['盖子', 'gài zi', 'lid'], ['盖上', 'gài shàng', 'to put the lid on']], 搬: [['搬家', 'bān jiā', 'to move house'], ['搬走', 'bān zǒu', 'to carry away']],
+};
+
+/**
+ * Words at a second reading his lessons and his day use (ruling 2026-10-18: cover both readings of a common 多音字): 背书包 bēi
+ * on the bèi card, 数一数 shǔ on the shù card, 系鞋带 jì on the xì card, 刹车 shā on the chà card. Never on the card (one reading
+ * per card, parent 2026-10-05: 调查 on 调 tiáo): each is a ladder 词语 of its own, read its own way (readingAllowlist.ts), like 长大
+ * and 银行. [组词, pinyin as said, English]
+ */
+export const OTHER_READING_ZUCI: Record<string, ExtraExample[]> = {
+  背: [['背书包', 'bēi shū bāo', 'to carry a schoolbag'], ['背包', 'bēi bāo', 'backpack']],
+  数: [['数一数', 'shǔ yi shǔ', 'to count']], 系: [['系鞋带', 'jì xié dài', 'to tie shoelaces']], 刹: [['刹车', 'shā chē', 'to brake']],
 };
 
 /** char → 组词 its card no longer shows (each is still a word elsewhere: a family row, the ladder). */

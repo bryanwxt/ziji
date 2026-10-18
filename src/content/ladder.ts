@@ -5,6 +5,7 @@ import type { Level, Word } from '../types';
 import { dictionaryGloss, glossFor } from './glossary';
 import { builtinWords, cardDroppedExamples, HSK_WORDS, schoolTerm } from './index';
 import { isChildWord, readingOf } from './wordGate';
+import { OTHER_READING_ZUCI } from './zuciPicks';
 
 export const ladderId = (text: string): string => `w:${text}`;
 export const isLadderId = (id: string): boolean => id.startsWith('w:');
@@ -17,6 +18,8 @@ function build(now: number): Word[] {
   const levelOf = new Map(chars.map((w) => [w.text, w.level ?? 7]));
   const found = new Map<string, string>(); // text → pinyin
   for (const c of chars) for (const e of [...(c.examples ?? []), ...cardDroppedExamples(c.text)]) if (Array.from(e.text).length > 1 && !found.has(e.text)) found.set(e.text, e.pinyin);
+  // a 多音字's word at its other reading (背书包 bēi): its own 词语, read its own way (zuciPicks.ts OTHER_READING_ZUCI)
+  for (const [ch, ws] of Object.entries(OTHER_READING_ZUCI)) if (rankOf.has(ch)) for (const [text, py] of ws) if (!found.has(text)) found.set(text, py);
   for (const [text, level] of HSK_WORDS) if (level <= 3 && Array.from(text).length > 1 && !found.has(text) && isChildWord(text)) found.set(text, readingOf(text));
   const rows: { text: string; py: string; last: number; meaning: string }[] = [];
   for (const [text, py] of found) {

@@ -63,5 +63,7 @@ customPinyin({
   // 种 (planting) zhòng, 多重 (how heavy) zhòng, 粗心大意 yì (it read yi)
   种在: 'zhòng zài', 多重: 'duō zhòng', 粗心大意: 'cū xīn dà yì',
   猩猩: 'xīng xing', 脑袋: 'nǎo dai', 功夫: 'gōng fu', 睡不着: 'shuì bù zháo', 穿得: 'chuān de', 一加一: 'yī jiā yī',
+  // a 多音字's other-reading words (zuciPicks.ts OTHER_READING_ZUCI): 背 carrying bēi, 数 counting shǔ, 系 tying jì, 刹车 shā
+  背书包: 'bēi shū bāo', 背包: 'bēi bāo', 数一数: 'shǔ yi shǔ', 系鞋带: 'jì xié dài', 刹车: 'shā chē', 胡萝卜: 'hú luó bo',
   乌龟背着重重的壳: 'wū guī bēi zhe zhòng zhòng de ké', 蜗牛背着: 'wō niú bēi zhe', // carrying (bēi), heavy (zhòng)
 });

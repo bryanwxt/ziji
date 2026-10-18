@@ -718,12 +718,12 @@
 "word": "胡",
 "s": [
 {
-"zh": "我的好朋友姓胡。",
-"en": "My good friend's family name is Hu."
-},
-{
 "zh": "爷爷的白胡子长长的。",
 "en": "Grandpa's white beard is very long."
+},
+{
+"zh": "我的好朋友姓胡。",
+"en": "My good friend's family name is Hu."
 }
 ]
 },
@@ -767,11 +767,24 @@
 ]
 },
 {
+"word": "胡萝卜",
+"s": [
+{
+"zh": "兔子爱吃胡萝卜。",
+"en": "Rabbits love eating carrots."
+},
+{
+"zh": "我不喜欢吃胡萝卜。",
+"en": "I don't like eating carrots."
+}
+]
+},
+{
 "word": "李",
 "s": [
 {
-"zh": "李老师今天穿了红衣服。",
-"en": "Teacher Li is wearing red today."
+"zh": "树上的李子红红的。",
+"en": "The plums on the tree are red."
 },
 {
 "zh": "我的同桌姓李。",
@@ -893,6 +906,19 @@
 {
 "zh": "我们班有三个人姓李。",
 "en": "There are three people named Li in our class."
+}
+]
+},
+{
+"word": "姓胡",
+"s": [
+{
+"zh": "我的同桌姓胡。",
+"en": "My deskmate's family name is Hu."
+},
+{
+"zh": "姓胡的同学是新来的。",
+"en": "The classmate named Hu is new."
 }
 ]
 },
@@ -1885,6 +1911,19 @@
 ]
 },
 {
+"word": "背包",
+"s": [
+{
+"zh": "我的背包是蓝色的。",
+"en": "My backpack is blue."
+},
+{
+"zh": "我们带着背包去爬山。",
+"en": "We take our backpacks and go hiking."
+}
+]
+},
+{
 "word": "后背",
 "s": [
 {
@@ -1894,6 +1933,19 @@
 {
 "zh": "妈妈帮我洗后背。",
 "en": "Mum helps me wash my back."
+}
+]
+},
+{
+"word": "背书包",
+"s": [
+{
+"zh": "我每天背书包上学。",
+"en": "I carry my schoolbag to school every day."
+},
+{
+"zh": "姐姐帮弟弟背书包。",
+"en": "My big sister carries our little brother's schoolbag."
 }
 ]
 },
@@ -3805,6 +3857,19 @@
 {
 "zh": "天气和我们的生活关系很大。",
 "en": "The weather has a lot to do with our lives."
+}
+]
+},
+{
+"word": "系鞋带",
+"s": [
+{
+"zh": "我会自己系鞋带了。",
+"en": "I can tie my shoelaces by myself now."
+},
+{
+"zh": "妈妈教我系鞋带。",
+"en": "Mum teaches me to tie my shoelaces."
 }
 ]
 },

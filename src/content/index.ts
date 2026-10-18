@@ -15,7 +15,7 @@ export const BUILTIN: BuiltinChar[] = (data as unknown as { chars: BuiltinChar[]
 export const CONTENT_VERSION = `${(data as unknown as { version: number }).version}.17`; // .4: 组词 at the card's reading only; .5: 一/不's tone changes count as their reading; .6: written 组词, reading fixes; .7: content sweep; .8: second sweep (HSK 5–9, sentences); .9: school order (MOE 2.0 lists); .10: the HCL writing lists;
 // .11: 蚂蚁拇狐狸 and readable 组词; .12: the content audit (the blocklist, the readings his lessons use, 组词 a child knows first); .13: 该死 blocked; .14: the neutral tone on word cards (朋友 早上 名字 …); .15: 甲 and 丁 as the 1st and 4th labels (甲乙丙丁);
 // .16: review 2026-10-17 (his lesson's word and sense first: 巴士 on 士, 青菜 on 青, 一首歌 on 首; child 组词 before adult ones; no 儿化)
-// .17: 组词 for 二下–三下 characters the HSK list gave none or one (摊位 套圈 逛夜市 捡贝壳 花盆 喷水 大官), and 三下 L12's races (华族 马来族 印度族; 印 度 bound to 印度)
+// .17: 组词 for 二下–三下 characters the HSK list gave none or one (摊位 套圈 逛夜市 捡贝壳 花盆 喷水 大官), and 三下 L12's races (华族 马来族 印度族; 印 度 bound to 印度); 胡 "beard" and 李 "plum" before 姓胡 姓李
 /** 朗读's built-in passages (spec 2026-10-15 §2): ours, then the Global Storybooks chunks (scripts/import-storybooks.ts). */
 export const PASSAGES: Passage[] = [...(passages as Passage[]), ...(storybooks as unknown as { passages: Passage[] }).passages];
 

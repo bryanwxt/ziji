@@ -2,7 +2,7 @@
 // Written for the app, HSK 1–6 characters and his textbook's own: everyday words a P2 child meets, at the card's reading, with their English.
 // [组词, pinyin as said (一/不 with their tone changes, 轻声 toneless), English]
 
-import { ZUCI_FIRST } from './zuciPicks';
+import { OTHER_READING_ZUCI, ZUCI_FIRST } from './zuciPicks';
 
 export type ExtraExample = [text: string, pinyin: string, english: string];
 
@@ -156,5 +156,5 @@ export const EXTRA_EXAMPLES: Record<string, ExtraExample[]> = Object.fromEntries
 
 /** English for the 组词 above, for the cards and the sheet (the HSK glossary only covers its own words). */
 export const EXTRA_GLOSS: Record<string, string> = Object.fromEntries(
-  Object.values(EXTRA_EXAMPLES).flat().map(([text, , english]) => [text, english]),
+  [...Object.values(EXTRA_EXAMPLES), ...Object.values(OTHER_READING_ZUCI)].flat().map(([text, , english]) => [text, english]),
 );

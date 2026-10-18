@@ -728,6 +728,19 @@
 ]
 },
 {
+"word": "刹车",
+"s": [
+{
+"zh": "车子突然刹车了。",
+"en": "The car suddenly braked."
+},
+{
+"zh": "骑车下山要记得刹车。",
+"en": "Remember to brake when you cycle downhill."
+}
+]
+},
+{
 "word": "使",
 "s": [
 {
@@ -3831,6 +3844,19 @@
 {
 "zh": "你知道奶奶的岁数吗？",
 "en": "Do you know how old Grandma is?"
+}
+]
+},
+{
+"word": "数一数",
+"s": [
+{
+"zh": "我们来数一数有几只鸟。",
+"en": "Let's count how many birds there are."
+},
+{
+"zh": "请你数一数，桌上有几本书。",
+"en": "Please count how many books are on the table."
 }
 ]
 },
