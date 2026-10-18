@@ -170,7 +170,7 @@ export interface SessionPlan {
   reteachIds?: string[]; // not-solid list items whose card 认新字 shows again first (spec §2.1); no new-word slot
   listCards?: Record<string, ListCard>; // the list word card for today's list words and re-teaching cards (spec §7.1)
   listItems?: PracticeItem[]; // list items for 练一练, interleaved by withList (spec §6.4, §2.1)
-  frontLoad?: boolean; // a day with list new words: 练一练 +2 minutes, 写一写 half (spec §5.1)
+  frontLoad?: boolean; // a day with list new words: 练一练 +2 minutes and more for each word over pace + 2; 写一写 as usual (spec §5.1)
   classShort?: number; // with a weekly list: his class lane's words still unstarted on homework day at today's numbers (spec §5.3, §8.3)
 }
 

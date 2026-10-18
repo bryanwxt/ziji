@@ -18,8 +18,10 @@ type Row = { list: number; school: number; catchup: number; reviews: number; lis
  * Runs from the day the list arrives (0 = Monday) to Sunday, with the dates the parent screen proposes (defaultDates).
  * `takeCheck`: he does 考考自己 on the ready-by day, all right (it grades each list card due that day).
  */
-function week(takeCheck: boolean, arrive = 0, shape = { fresh: 14, known: 14, placed: 4 }): Row[] {
-  const { readyBy, homeworkDue } = defaultDates(day(arrive));
+function week(takeCheck: boolean, arrive = 0, shape = { fresh: 14, known: 14, placed: 4 }, o: { readyBy?: string; homeworkDue?: string; skip?: number[] } = {}): Row[] {
+  const dates = defaultDates(day(arrive));
+  const readyBy = o.readyBy ?? dates.readyBy;
+  const homeworkDue = o.homeworkDue ?? dates.homeworkDue;
   const checkDay = daysBetween('2026-10-19', readyBy);
   const size = shape.fresh + shape.known + shape.placed;
   const items = Array.from({ length: size }, (_, i) => ({ wordId: `p:${i}`, text: `词${i}`, from: 'grid' as const, addedStatus: 'new' as const }));
@@ -43,6 +45,7 @@ function week(takeCheck: boolean, arrive = 0, shape = { fresh: 14, known: 14, pl
 
   const rows: Row[] = [];
   for (let d = arrive; d < 7; d++) {
+    if (o.skip?.includes(d)) { rows.push({ list: 0, school: 0, catchup: 0, reviews: 0, listReviews: 0, checked: 0 }); continue; } // no lesson
     const now = day(d);
     const endOfDay = new Date(2026, 9, 19 + d, 23, 59).getTime();
     // the day's quick checks (applyQuickChecks, run before each plan): known list words brought forward, never later
@@ -73,49 +76,58 @@ function week(takeCheck: boolean, arrive = 0, shape = { fresh: 14, known: 14, pl
   return rows;
 }
 
-describe('an example week (spec §5.4)', () => {
-  it('list words Mon–Tue at 7, none from Wednesday; the class lane met by Friday; due revision planned every day', () => {
+describe('an example week (spec §5.4, parent rulings 2026-10-18: front-loaded, deadline-safe)', () => {
+  it('list words 12 Monday, 2 Tuesday, none from Wednesday; the class lane met by Friday; due revision planned every day', () => {
     const rows = week(true);
-    expect(rows.map((r) => r.list)).toEqual([7, 7, 0, 0, 0, 0, 0]);
-    expect(rows.map((r) => r.school)).toEqual([0, 0, 3, 3, 2, 0, 0]); // schoolNeed 8, met by Friday
-    expect(rows.map((r) => r.catchup)).toEqual([0, 0, 2, 2, 3, 5, 5]); // catch-up yields: 17 this week
-    // Mon: 7 of the 14 known as quick checks + the 4 placed rechecks; Tue: the other 7 + Monday's 7 new words; Wed: none in
+    expect(rows.map((r) => r.list)).toEqual([12, 2, 0, 0, 0, 0, 0]);
+    expect(rows.map((r) => r.school)).toEqual([0, 3, 3, 2, 0, 0, 0]); // class words wait Monday; schoolNeed 8, met by Thursday
+    expect(rows.map((r) => r.catchup)).toEqual([0, 2, 2, 3, 5, 5, 5]); // catch-up yields
+    // Mon: 7 of the 14 known as quick checks + the 4 placed rechecks; Tue: the other 7 + Monday's 12 new words; Wed: none in
     // 练一练 — the check grades all 32, each pinned to Wednesday
-    expect(rows.map((r) => r.listReviews)).toEqual([11, 14, 0, 0, 0, 0, 0]);
+    expect(rows.map((r) => r.listReviews)).toEqual([11, 19, 0, 0, 0, 0, 0]);
     expect(rows[2]!.checked).toBe(32);
     expect(rows[0]!.classShort).toBe(0); // the parent's line: class on track
   });
-  // parent ruling 2026-10-17 ("more per day"): a big list is spread over the days before ready-by, up to 12 a lesson
-  it('a 27-word Monday list (24 new, 3 known): 12 Monday, 12 Tuesday, every new word taught before Wednesday\'s check', () => {
-    const rows = week(true, 0, { fresh: 24, known: 3, placed: 0 });
-    expect(rows.map((r) => r.list)).toEqual([12, 12, 0, 0, 0, 0, 0]);
-    expect(rows[0]!.list + rows[1]!.list).toBe(24);
-    expect(rows[2]!.checked).toBe(27); // the check grades all 27: 24 taught, 3 known
-    expect(rows.map((r) => r.school)).toEqual([0, 0, 3, 3, 2, 0, 0]); // class words wait Mon–Tue, met by Friday
+  const wed = { readyBy: '2026-10-21', homeworkDue: '2026-10-23' };
+  it('24 new words saved Saturday, Sunday or Monday, ready by Wednesday: 12 and 12 from the first lesson', () => {
+    const sat = week(true, -2, { fresh: 24, known: 3, placed: 0 }, wed);
+    expect(sat.map((r) => r.list)).toEqual([12, 12, 0, 0, 0, 0, 0, 0, 0]);
+    expect(sat[4]!.checked).toBe(27); // Wednesday's check grades all 27: 24 taught, 3 known
+    expect(sat.map((r) => r.school)).toEqual([0, 0, 3, 3, 2, 0, 0, 0, 0]); // class words after the list, met by Wednesday
+    expect(week(true, -1, { fresh: 24, known: 3, placed: 0 }, wed).map((r) => r.list)).toEqual([12, 12, 0, 0, 0, 0, 0, 0]);
+    const mon = week(true, 0, { fresh: 24, known: 3, placed: 0 }, wed);
+    expect(mon.map((r) => r.list)).toEqual([12, 12, 0, 0, 0, 0, 0]);
+    expect(mon[2]!.checked).toBe(27);
+    expect(mon.map((r) => r.school)).toEqual([0, 0, 3, 3, 2, 0, 0]); // class words wait Mon–Tue, met by Friday
   });
-  it('a 32-word Monday list (24 new, 8 known): every new word taught before the check', () => {
-    const rows = week(true, 0, { fresh: 24, known: 8, placed: 0 });
-    expect(rows.map((r) => r.list)).toEqual([12, 12, 0, 0, 0, 0, 0]);
-    expect(rows[2]!.checked).toBe(32);
+  it('a skipped day raises the days after it: 24 saved Sunday, no lesson Monday, 24 on Tuesday (above 12, up to 20) …', () => {
+    const rows = week(true, -1, { fresh: 24, known: 3, placed: 0 }, { ...wed, skip: [0] });
+    expect(rows.map((r) => r.list).slice(0, 3)).toEqual([12, 0, 12]);
+    const big = week(true, -1, { fresh: 30, known: 0, placed: 0 }, { ...wed, skip: [0] });
+    expect(big.map((r) => r.list).slice(0, 3)).toEqual([12, 0, 18]); // 18 left, one day: all of them
+    expect(big[3]!.checked).toBe(30);
   });
-  it('more than 24 new words on a Monday list: 12 a lesson at most, the rest after the check', () => {
+  it('40 new words saved Tuesday, ready by Wednesday: 20 on Tuesday (the ceiling), the rest after the check', () => {
+    const rows = week(true, 1, { fresh: 40, known: 0, placed: 0 }, wed);
+    expect(rows[0]!.list).toBe(20);
+    expect(rows[1]!.list).toBe(0); // the check's day
+    expect(rows.slice(2).reduce((n, r) => n + r.list, 0)).toBeGreaterThan(0); // the rest after it, his class first
+  });
+  it('a 27-new-word Monday list: 14 and 13, deadline-safe above 12', () => {
     const rows = week(true, 0, { fresh: 27, known: 0, placed: 0 });
-    expect(rows.map((r) => r.list).slice(0, 3)).toEqual([12, 12, 0]);
+    expect(rows.map((r) => r.list).slice(0, 3)).toEqual([14, 13, 0]);
   });
-  it('a Wednesday list (ready by Thursday): 12 on Wednesday, the check Thursday, the rest after it, his class first', () => {
+  it('a Wednesday list (ready by Thursday): all 14 on Wednesday, the check Thursday, his class after it', () => {
     const rows = week(true, 2);
-    expect(rows.map((r) => r.list)).toEqual([12, 0, 1, 1, 0]);
+    expect(rows.map((r) => r.list)).toEqual([14, 0, 0, 0, 0]);
     expect(rows.map((r) => r.school)).toEqual([0, 4, 4, 0, 0]);
-    expect(rows.map((r) => r.catchup)).toEqual([0, 1, 0, 4, 5]);
-    expect(rows[1]!.checked).toBe(30); // Thursday's check: 12 taught, 14 known, 4 placed; the 2 untaught come after it
+    expect(rows[1]!.checked).toBe(32); // Thursday's check: 14 taught, 14 known, 4 placed
   });
-  it('a Thursday list (ready by Friday, homework day): 12 on Thursday, the check Friday, the rest after homework', () => {
+  it('a Thursday list (ready by Friday, homework day): all 14 on Thursday, the check Friday', () => {
     const rows = week(true, 3);
-    expect(rows.map((r) => r.list)).toEqual([12, 0, 2, 0]);
-    expect(rows.map((r) => r.school)).toEqual([0, 5, 2, 1]);
-    expect(rows.map((r) => r.catchup)).toEqual([0, 0, 1, 4]);
-    // the list over the ceiling Thursday leaves his class waiting: 5 of 8 by Friday, the 3 left over the weekend — the parent's
-    // line shows the shortfall (classShort)
+    expect(rows.map((r) => r.list)).toEqual([14, 0, 0, 0]);
+    expect(rows.map((r) => r.school)).toEqual([0, 5, 3, 0]);
+    // the list over the ceiling Thursday leaves his class waiting: 5 of 8 by Friday — the parent's line shows the shortfall
     expect(rows[0]!.classShort).toBe(3);
   });
   it('he never opens the check: the list cards stay due and come first on Thursday (review focus 4)', () => {

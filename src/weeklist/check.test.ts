@@ -199,6 +199,10 @@ describe('readinessLine (spec §8.3)', () => {
     expect(readinessLine(l, words, { classLeft: 0, classKnown: true, catchupSlower: true, reviewsDue: 3 }).line).toBe('List 0/7 ready · class on track · catch-up slower this week · 3 reviews due');
     expect(readinessLine(l, words, { classLeft: 0, classKnown: false, catchupSlower: false, reviewsDue: 0 }).line).toBe('List 0/7 ready · 0 reviews due');
   });
+  it('new words even 20 a lesson can\'t teach before the check: how many come after it (parent ruling 2026-10-18)', () => {
+    expect(readinessLine(l, words, { classLeft: 0, classKnown: false, catchupSlower: false, reviewsDue: 0, afterCheck: 4 }).line).toBe('List 0/7 ready · 4 new words after the check · 0 reviews due');
+    expect(readinessLine(l, words, { classLeft: 0, classKnown: false, catchupSlower: false, reviewsDue: 0, afterCheck: 1 }).line).toContain('1 new word after the check');
+  });
   it("the class shortfall's weekday is the homework day the parent set", () => {
     expect(readinessLine({ ...l, homeworkDue: '2026-11-05' }, words, { classLeft: 3, classKnown: true, catchupSlower: false, reviewsDue: 0 }).line).toContain('class: 3 left by Thu');
   });

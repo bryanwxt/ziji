@@ -1,7 +1,7 @@
 // src/weeklist/plan.ts
-// The new-word budget with a weekly list (weekly list spec 2026-10-17 §5): front-load the list at pace + 2 (never above the
-// ceiling, +2 only after a round that fit), or spread over the days before ready-by when that's more, up to 12 a lesson (parent
-// ruling 2026-10-17, "more per day"); protect his class lane over the week, let catch-up yield; revision is never planned away. Pure: the planner and the parent's plan line both use it.
+// The new-word budget with a weekly list (weekly list spec 2026-10-17 §5): front-load the list, up to 12 a lesson from the first
+// lesson, more (up to 20) only when that's the only way to teach it all before ready-by (parent rulings 2026-10-18); protect his
+// class lane over the week, let catch-up yield; revision is never planned away. Pure: the planner and the parent's plan line both use it.
 import { addDays, localDateKey, parseDateKey } from '../lib/date';
 import { bookLesson } from '../session/lanes';
 import { PACE_MIN } from '../session/pace';
@@ -23,24 +23,56 @@ import { afterCheck, formsFor, isReady, notSolid } from './readiness';
 
 export const CLOSE_AFTER_DAYS = 7;
 export const HEADROOM = 2;
-/** The most list words one front-load lesson takes (parent ruling 2026-10-17): a ~27-word Monday list is taught by Wednesday. */
+/**
+ * List words one lesson front-loads (parent ruling 2026-10-18: learn the list early in the week, then class words and revision):
+ * as many new list words as are left, up to 12. More only when that's the only way to teach every word before ready-by.
+ */
 export const MAX_FRONT_LOAD = 12;
+/** The hard ceiling on one lesson's list words (parent ruling 2026-10-18): past it, the rest come after the check. */
+export const MAX_LIST_LESSON = 20;
 
 /** The old front-load rate (spec §5.1): pace + 2, never above the ceiling (unless his pace already is). */
 export const paceRate = (pace: number, ceiling: number, headroom = HEADROOM) => Math.min(pace + headroom, Math.max(ceiling, pace));
 
 /** About how much longer a lesson gets for each list word over pace + 2 (认新字's card and 练一练's extra time). */
 export const LIST_WORD_MINUTES = 1;
+/** How much longer any front-load lesson runs: 练一练's +2 minutes, with 写一写 never halved (parent ruling 2026-10-18). */
+export const FRONT_LOAD_MINUTES = 2;
 
-/** The parent's plan line (spec §3.5): the list's daily rate before ready-by, and the lesson length when that's over pace + 2. */
-export function frontLoadPreview(i: { pace: number; ceiling: number; sessionMinutes: number; newCount: number; days: number }): { rate: number; minutes: number | null } {
-  const base = Math.max(1, paceRate(i.pace, i.ceiling));
-  const rate = i.days > 0 ? frontLoadRate(base, i.newCount, i.days) : base;
-  return { rate, minutes: rate > base ? i.sessionMinutes + (rate - base) * LIST_WORD_MINUTES : null };
+/**
+ * One front-load lesson's list words (spec §5.1, parent rulings 2026-10-18), recomputed each day from what is left: `left` new list
+ * words, `days` lesson days before ready-by counting today's. Front-loaded (up to 12) and deadline-safe (at least what's left
+ * spread over the days), never over 20, never under `rate` (the old pace + 2), never more than are left. A skipped day raises the
+ * days after it by itself.
+ */
+export function frontLoadTake(rate: number, left: number, days: number): number {
+  if (left <= 0) return 0;
+  const needPerDay = Math.ceil(left / Math.max(1, days));
+  return Math.min(left, Math.max(rate, Math.min(MAX_LIST_LESSON, Math.max(Math.min(MAX_FRONT_LOAD, left), needPerDay))));
 }
 
-/** A front-load day's list words: the new words still to teach spread over the days before ready-by, up to 12, never under `rate`. */
-export const frontLoadRate = (rate: number, need: number, days: number) => Math.max(rate, Math.min(MAX_FRONT_LOAD, Math.ceil(need / Math.max(1, days))));
+/** The front-load days as the planner will run them, a lesson a day from `from` to the day before ready-by; `late`: what's left. */
+export function frontLoadDays(i: { rate: number; left: number; from: string; readyBy: string }): { days: { date: string; n: number }[]; late: number } {
+  const days: { date: string; n: number }[] = [];
+  let left = i.left;
+  for (let d = i.from; d < i.readyBy && left > 0; d = localDateKey(addDays(parseDateKey(d), 1))) {
+    const n = frontLoadTake(i.rate, left, daysBetween(d, i.readyBy));
+    days.push({ date: d, n });
+    left -= n;
+  }
+  return { days, late: left };
+}
+
+/**
+ * The parent's plan line (spec §3.5): each front-load day's new words and about how long its lesson runs.
+ * `lessonDone`: today's daily lesson is done (or under way, its plan made): the front-load starts tomorrow.
+ */
+export function frontLoadPreview(i: { pace: number; ceiling: number; sessionMinutes: number; newCount: number; today: string; readyBy: string; lessonDone: boolean }): { days: { date: string; n: number; minutes: number }[]; late: number } {
+  const base = Math.max(1, paceRate(i.pace, i.ceiling));
+  const from = i.lessonDone ? localDateKey(addDays(parseDateKey(i.today), 1)) : i.today;
+  const { days, late } = frontLoadDays({ rate: base, left: i.newCount, from, readyBy: i.readyBy });
+  return { days: days.map((d) => ({ ...d, minutes: i.sessionMinutes + FRONT_LOAD_MINUTES + Math.max(0, d.n - base) * LIST_WORD_MINUTES })), late };
+}
 
 /** Lists still running (not closed, up to 7 days after homework, decision 7), the earliest ready-by first. */
 export function activeLists(lists: WeekList[], now: Date): WeekList[] {
@@ -69,7 +101,7 @@ export interface ListBudget {
   listIds: string[]; // unlearned list words, in list order: the candidates for today's list quota
   listQuota: number; // list words today at most
   total: number; // all new words today
-  frontLoad: boolean; // a day of list new words before ready-by: 练一练 +2 min, 写一写 half (§5.1)
+  frontLoad: boolean; // a day of list new words before ready-by: 练一练 +2 min, 写一写 as usual (§5.1, parent ruling 2026-10-18)
   schoolFirst: number; // his class lane's words before catch-up gets any (§5.3)
   classShort: number; // his class lane's words still unstarted on homework day at these numbers (best effort at his pace, §5.3): the parent's line shows it
 }
@@ -121,28 +153,29 @@ export function listBudget(i: {
     const classShort = homework ? Math.max(0, i.schoolNeed - i.pace * daysIncl(today, homework)) : 0;
     return { listIds, listQuota, total: i.pace, frontLoad: false, schoolFirst, classShort };
   }
-  // a front-load day: the list at `rate`, or spread over the days before ready-by when that's more (up to 12, parent ruling
-  // 2026-10-17); two run-outs spill (pace − 1 today, the rest tomorrow, §5.1)
+  // a front-load day (parent rulings 2026-10-18): the list up to 12, more when the days left before ready-by need it (up to 20);
+  // two run-outs spill (pace − 1 today, the rest tomorrow, §5.1). Today's lesson is one of the days left.
   const front = Math.max(1, daysBetween(today, readyBy!));
-  const listRate = frontLoadRate(rate, need, front);
-  let quota = Math.min(listIds.length, i.ranOutTwice ? Math.max(1, i.pace - 1) : listRate);
-  // the class lane can't wait for after the check when those days at his pace aren't enough: the shortfall is spread over the
-  // front-load days, from the room under the ceiling first, then from the list only by what still lets it finish before ready-by.
-  // A list spread above the ceiling leaves no room: class words wait those days.
+  const take = (left: number, days: number) => frontLoadTake(rate, left, days);
+  let quota = Math.min(listIds.length, i.ranOutTwice ? Math.max(1, i.pace - 1) : take(need, front));
+  // class words wait on front-load days: the list never gives way to them. When the days after the check at his pace aren't
+  // enough, the class lane takes the room under the ceiling a front-load day leaves (a small day's), spread over the days left.
   let schoolFirst = 0;
   let classShort = 0;
-  let total = Math.max(rate, quota);
   if (homework) {
     const after = daysIncl(readyBy!, homework);
-    const floor = Math.ceil(Math.max(0, i.schoolNeed - i.pace * after) / front);
-    const room = Math.min(floor, Math.max(0, cap - Math.max(rate, quota)));
-    const slack = Math.max(0, listRate - Math.ceil(need / front));
-    const fromList = Math.min(floor - room, slack, quota);
-    quota -= fromList;
-    schoolFirst = room + fromList;
-    total = Math.max(rate, quota + schoolFirst);
-    classShort = Math.max(0, i.schoolNeed - schoolFirst * front - i.pace * after);
+    let short = Math.max(0, i.schoolNeed - i.pace * after);
+    let left = need;
+    for (let k = 0; k < front; k++) {
+      const q = k === 0 ? quota : take(left, front - k);
+      const s = Math.min(Math.ceil(short / (front - k)), Math.max(0, cap - Math.max(rate, q)));
+      if (k === 0) schoolFirst = s;
+      short -= s;
+      left -= q;
+    }
+    classShort = short;
   }
+  const total = Math.max(rate, quota + schoolFirst);
   return { listIds, listQuota: quota, total, frontLoad: quota > 0, schoolFirst, classShort };
 }
 

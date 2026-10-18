@@ -241,7 +241,7 @@ In `SessionPlan`, change the `newWordLanes` line and add the fields before the c
   reteachIds?: string[]; // not-solid list items whose card 认新字 shows again first (spec §2.1); no new-word slot
   listCards?: Record<string, ListCard>; // the list word card for today's list words and re-teaching cards (spec §7.1)
   listItems?: PracticeItem[]; // list items for 练一练, interleaved by withList (spec §6.4, §2.1)
-  frontLoad?: boolean; // a day with list new words: 练一练 +2 minutes, 写一写 half (spec §5.1)
+  frontLoad?: boolean; // a day with list new words: 练一练 +2 minutes, 写一写 half (spec §5.1) — superseded 2026-10-18: 写一写 as usual
 ```
 
 In `FlashItem`, add `reteach?: true; // a not-solid list item's card again (weekly list spec §2.1): shown first, asked, never graded`.
@@ -3035,5 +3035,6 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - **List answers live on the list record** (`WeekItem.last`, `rightDays`, `missedOn`), not mined from `reviewLogs`. Review logs keep only the day's first rating, but readiness needs every answer.
 - **The front-load spread** ("`ceil(remaining ÷ days)` when less") is dropped in favour of the plain front-load rate. Front-loading wants the words as early as possible, so the spread never lowers the quota. The spec's §5.2 is updated to match.
   - **Superseded in part (parent ruling 2026-10-17, after Task 11):** the spread now *raises* the rate when the list needs it, up to 12 a lesson (`frontLoadRate`); it still never lowers it.
+  - **Superseded (parent rulings 2026-10-18, branch `fix/front-load-max`):** `frontLoadRate` is replaced by `frontLoadTake(rate, left, daysLeft)` = `min(left, max(rate, min(20, max(min(12, left), ceil(left ÷ daysLeft)))))`, recomputed every plan: 12 a lesson from the first lesson until the list is introduced, above 12 (to `MAX_LIST_LESSON` = 20) only when the days left need it. The class lane no longer takes from the list on a front-load day (only the room under the ceiling). `frontLoadDays` / `frontLoadPreview` run the same rule day by day for the plan line, starting tomorrow when today's lesson is done or begun (`todaysLesson`); the readiness line counts words past 20 a lesson as "after the check". 写一写 is no longer halved on a front-load day (Task 4 step 4 is reverted); the plan line's minutes add 练一练's 2 (`FRONT_LOAD_MINUTES`).
 - **After Task 11 (parent rulings 2026-10-17):** a day with only 考考自己 shows as active on the week strip (never 休) and keeps the streak without adding to it (`practisedDays`); 蝴蝶 gets a kid gloss in the new `scripts/kidgloss/extra.tsv` (everyday list words beyond his lessons).
 - **「再看一次」 on homework day** (spec §8.2) is deferred, as above.

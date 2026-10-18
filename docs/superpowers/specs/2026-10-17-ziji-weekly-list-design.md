@@ -59,6 +59,7 @@ The parent also asked (2026-10-17) for two things to keep going:
      - More than fits before ready-by: the parent is told which words won't be taught in time (§3.5).
    - **Why not "≤ 20 in 2 days":** that is 10 a day, above the ceiling of 8 the app paces under. The pace exists because he forgets words that come too fast (`pace.ts`, Burns et al.).
    - **Amended (parent ruling 2026-10-17, "more per day"):** a big list is spread over the days before ready-by, up to **12 a lesson**, above the ceiling. A list of about 27 items given on Monday (24 new) is then taught by Wednesday's check. The rate is `max(pace + 2, min(12, ceil(new still to teach ÷ days before ready-by)))`. His class words wait those days, revision is still never squeezed, and those lessons run longer, about 20 minutes (§5.1). The parent's plan line says so (§3.5). A list with more than 12 new words a day before ready-by still has the rest taught after the check.
+   - **Amended again (parent rulings 2026-10-18, "the front loading should happen dynamically to cover all words before the due date"):** the list is front-loaded, not spread: up to 12 a lesson from his first lesson after saving, recomputed each day from what is left, and above 12 (at most 20) only when the lesson days left before ready-by need it. A weekend list for Wednesday is now 12, 12 rather than about 6–8 a day. 写一写 is never halved on those days; the lesson runs a few minutes longer (§5.1, §5.2).
 2. **When the list and the MOE words together exceed the pace.**
    - **Recommendation:**
      - On front-load days the list takes the new-word slots, plus 2 slots of headroom. Headroom applies only when yesterday's 练一练 didn't run out of time.
@@ -204,7 +205,9 @@ The preview has four parts.
 3. **Fill-in rows (选词填空):** one row per item that has a sentence (§7.3), with its blank and three proposed decoys from the list. A tap swaps a decoy. **Fine** confirms a row, and **All fine** confirms every row. An optional field lets the parent type a sentence for an item that has none.
 4. **The plan, in one line:** "14 new · 14 he knows (quick check) · 4 to recheck. New words Mon–Tue (7 a day), check Wed, homework Fri. Class lane continues; catch-up pauses Mon–Tue."
    - When the words don't fit, it names them: "At 7 a day, 4 new words won't be taught before Wed: 争吵, 原谅, 羽毛, 低下头. They'll still be in the check." It offers **Move ready-by later** or **OK**.
-   - When a big list runs over pace + 2 (§5.2), it says how long those lessons get: "New words 12 a day for 2 days, check 星期三, homework 星期五. Mon–Tue lessons about 20 min." (parent ruling 2026-10-17). The estimate is the lesson's minutes plus 1 for each word a day over pace + 2.
+   - It names each front-load day's new words and about how long those lessons run (parent rulings 2026-10-18, `frontLoadPreview` runs the planner's rule day by day): "27 new · 3 he knows (quick check) · 0 to recheck. New words: 12 on Sun, 12 on Mon, 3 on Tue · check 星期三, homework 星期五 · Sun–Mon lessons about 22 min, Tue’s about 17 min." The estimate is the lesson's minutes + 2 (练一练's box; 写一写 is never halved) + 1 for each list word over pace + 2.
+   - When today's lesson is done (or begun, its plan kept), the line says "Today’s lesson is done, so the new words start tomorrow." and the days start tomorrow.
+   - Words even 20 a lesson can't teach before ready-by are named ("2 new words won’t be taught before 星期三: … They’ll still be in the check, and come after it."); the readiness line (§8.3) counts them ("4 new words after the check").
 5. **Add.**
    - Add writes the new words, the list record and any unpauses, in one transaction.
    - It then shows a summary.
@@ -303,11 +306,12 @@ Today a lesson runs as follows:
 
 **On a front-load day** (a day with list new words):
 
-- **认新字** takes the list's quota plus whatever is left for MOE (§5.2): 6–8 words, about 3–4 min, or up to 12 list words on a big list's days (parent ruling 2026-10-17).
-- **练一练's time box grows by 2 minutes**, to about 7, and by another 30 s for each list word over pace + 2 (`LIST_WORD_PRACTICE_MS`), so a 12-word day's extra cards fit. **写一写 takes half its usual characters** for that day, which pays for it. Writing is not this week's goal, and its due cards keep their place: half the characters means the most-due ones first.
+- **认新字** takes the list's quota (§5.2): up to 12 list words a lesson from his first lesson after the list is saved, more (up to 20) only when the days left before ready-by need it (parent rulings 2026-10-18).
+- **练一练's time box grows by 2 minutes**, to about 7, and by another 30 s for each list word over pace + 2 (`LIST_WORD_PRACTICE_MS`), so a 12- or 20-word day's extra cards fit.
+- **写一写 keeps its usual count** (`writeCharTarget`, 4 characters at 15 minutes), even on a front-load day: the lesson runs a few minutes longer instead. *(Parent ruling 2026-10-18; it used to take half its characters on a front-load day to pay for 练一练's 2 minutes.)*
 - **认新字 opens with the list:** list words come first, as word cards (§7.1), then the MOE characters.
 - **Inside 练一练, everything is interleaved** by `buildRound` (§7.6): today's new words, due revision (quick checks are due revision, §6.1) and list boost items (§6.4) take turns. In the first-appearance order, due revision still comes before the boost items, and the boost share is sized to fit the box. So time running out cuts boost items, not revision.
-- **The lesson is still about 15 minutes**, or about 20 on a big list's days (parent ruling 2026-10-17: acceptable). 朗读 is unchanged.
+- **The lesson runs longer:** about 15 minutes + 2 (练一练's box, 写一写 not halved) + 1 for each list word over pace + 2 (`FRONT_LOAD_MINUTES`, `LIST_WORD_MINUTES`). With pace 5 and ceiling 8 that is about 22 minutes on a 12-word day and about 30 on a 20-word day. The parent's plan line shows each day's estimate (§3.5). 朗读 is unchanged.
 
 **On other days** the lesson is exactly today's.
 
@@ -332,9 +336,14 @@ The deadline is real, but so is the backlog.
 - **H** = 2 if yesterday's round didn't run out and he is not in a backlog pause, else 0.
 - **front days** = the days from the list's arrival to ready-by − 1, at most `ceil(totalNew ÷ min(P + H, newPerDay))`. Decision 1 sets the rate.
 - **remaining** = list words with status **new**, not yet begun.
-- **list today** = `min(remaining, rate − schoolFloor)`, where **rate** = `max(min(P + H, newPerDay), min(12, ceil(remaining before ready-by ÷ days before ready-by)))` (parent ruling 2026-10-17, "more per day": `MAX_FRONT_LOAD`). The spread only ever raises the rate: front-loading still wants the words as early as possible. When it is above the ceiling, there is no room under the ceiling for the class lane, and its words wait those days. Two run-outs still spill (pace − 1).
-  - `schoolFloor` is 0 on a front-load day.
-  - It is `min(P, schoolNeed ÷ schoolDaysLeft)` once the class lane must catch up before homework due (§5.3).
+- **list today** (`frontLoadTake`, recomputed every plan from what is actually left) = `min(remaining, max(min(P + H, newPerDay), min(20, max(min(12, remaining), ceil(remaining ÷ daysLeft)))))`, where **daysLeft** = the lesson days before ready-by, today's included (today's plan is today's lesson).
+  - **Front-loaded:** up to 12 (`MAX_FRONT_LOAD`) from his first lesson after the list is saved, until every new list word is introduced.
+  - **Deadline-safe:** above 12 only when that is the only way to introduce every word before ready-by (skipped days, a big list arriving late), at most 20 (`MAX_LIST_LESSON`). Past 20 the rest come after the check, and the plan line and readiness line say how many.
+  - **Never under the old rate** (pace + 2, under the ceiling), never more than are left. A skipped day raises the days after it by itself.
+  - A list saved after today's lesson is done (or begun: its plan is kept) starts tomorrow; extra lessons stay review-only. The plan line says so.
+  - Two run-outs still spill (pace − 1).
+  - *(Parent rulings 2026-10-18. Before, the rate spread the list evenly over the days before ready-by, up to 12: a weekend list for Wednesday got about 6–8 a day, below the 12 she meant.)*
+- **schoolFloor:** class words wait on a front-load day; the list never gives way to them. When the days after the check at his pace can't start the class lane, it takes the room under the ceiling that a small front-load day leaves (§5.3).
 - **MOE today** = `P − list today`, or `P + H − list today` (at least 0) on a front-load day. `pickNewWords` splits this between the school and catch-up lanes as it does now, but the **school lane is filled first** while `schoolNeed > 0`.
 
 The status of each list word, recomputed every plan:
@@ -352,7 +361,7 @@ The status of each list word, recomputed every plan:
 - **Counted once:**
   - A list word whose `bookLesson` is in the school window is taken from the list quota but **tagged `'school'`** in `newWordLanes`. It lowers `schoolNeed` too.
   - A list word in the catch-up range counts as list only. Either way it takes one slot.
-- **The school lane is protected over the week.** After the front-load days, the school lane goes first each day until `schoolNeed` is 0. When the days after the check at his pace can't start it all, the shortfall moves onto the front-load days: first the room under the ceiling, then the list, but only as far as the list still finishes before ready-by. Leftover list words after ready-by also wait behind the class lane until homework day.
+- **The school lane is protected over the week.** After the front-load days, the school lane goes first each day until `schoolNeed` is 0. When the days after the check at his pace can't start it all, the shortfall moves onto the front-load days, into the room under the ceiling only: the list never gives way to it (parent ruling 2026-10-18). Leftover list words after ready-by also wait behind the class lane until homework day.
   - **This is best effort at his pace, never above the ceiling.** A short week (a Thursday list) or a class lane two lessons behind can leave words unstarted on homework day. `listBudget` reports that number as `classShort`, and the parent's readiness line shows it ("class: 2 left by Fri", §8.3).
 - **The catch-up lane yields.** It gets what is left. In a list week it runs about one list's worth of new words slower.
   - The parent's line says "catch-up slower this week", not "behind": this is his early-term gap, not his class.
@@ -360,7 +369,7 @@ The status of each list word, recomputed every plan:
 
 ### 5.4 An example week
 
-Suppose a 32-item list arrives on **Monday**, with homework due on **Friday**, so it is ready by **Wednesday**. Of the items, 14 are new, 14 known and 4 placed. His pace is P = 5, his ceiling is 8 and H = 2, so the list goes at 7 a day and the 14 new words take two days. His class lane needs 8 unstarted characters (`schoolNeed` = 8). Normally he has about 15–20 due cards a day.
+Suppose a 32-item list arrives on **Monday**, with homework due on **Friday**, so it is ready by **Wednesday**. Of the items, 14 are new, 14 known and 4 placed. His pace is P = 5, his ceiling is 8 and H = 2. *(Parent rulings 2026-10-18: the list now goes 12 on Monday and 2 on Tuesday, and 写一写 is never halved; the table below is the original 7-a-day sketch, the simulated numbers follow it.)* His class lane needs 8 unstarted characters (`schoolNeed` = 8). Normally he has about 15–20 due cards a day.
 
 The figures below are illustrative. Due counts depend on FSRS.
 
@@ -385,15 +394,20 @@ The figures below are illustrative. Due counts depend on FSRS.
 
 Due revision was due every day and was taken every day.
 
-**A big list (parent ruling 2026-10-17, `week.sim.test.ts`):** with the same week, the per-day list new words are:
+**Simulated (parent rulings 2026-10-18, `week.sim.test.ts`):** the per-day list new words, ready by Wednesday unless said:
 
 | List arriving | List new by day (from arrival) | School lane | Notes |
 |---|---|---|---|
-| Mon, 27 items (24 new, 3 known) | 12, 12, 0, 0, 0, 0, 0 | 0, 0, 3, 3, 2, 0, 0 | all 24 taught before Wednesday's check, which grades all 27 |
-| Mon, 32 items (24 new, 8 known) | 12, 12, 0, … | — | all taught before the check |
-| Mon, 27 items, all new | 12, 12, 0, 2, … | — | 12 a lesson at most: 3 come after the check |
-| Wed, the 32 above (ready by Thu) | 12, 0, 1, 1, 0 | 0, 4, 4, 0, 0 | was 7, 0, 1, 5, 1 |
-| Thu, the 32 above (ready by Fri) | 12, 0, 2, 0 | 0, 5, 2, 1 | was 7, 0, 5, 2; his class is 3 short on Friday (was 2), shown on the parent's line |
+| Mon, the 32 above (14 new) | 12, 2, 0, 0, 0, 0, 0 | 0, 3, 3, 2, 0, 0, 0 | class lane met by Thursday |
+| Sat, 27 items (24 new, 3 known) | 12, 12, 0, 0, 0, 0, 0, 0, 0 | 0, 0, 3, 3, 2, 0, … | taught by Sunday; class words Mon–Wed |
+| Sun, 27 items (24 new) | 12, 12, 0, … | — | |
+| Mon, 27 items (24 new) | 12, 12, 0, 0, 0, 0, 0 | 0, 0, 3, 3, 2, 0, 0 | the check grades all 27 |
+| Sun, 24 new, no lesson Monday | 12, —, 12 | — | the skipped day's words go to Tuesday |
+| Sun, 30 new, no lesson Monday | 12, —, 18 | — | above 12: the only way to teach all 30 before the check |
+| Mon, 27 new | 14, 13, 0, … | — | deadline-safe above 12 |
+| Tue, 40 new | 20, 0 (check), 2, 3, 5, 5 | 0, 3, 3, 2, 0, 0 | 20 is the ceiling: 20 come after the check, his class first |
+| Wed, the 32 above (ready by Thu) | 14, 0, 0, 0, 0 | 0, 4, 4, 0, 0 | |
+| Thu, the 32 above (ready by Fri) | 14, 0, 0, 0 | 0, 5, 3, 0 | his class is 3 short on Friday, shown on the parent's line |
 
 ## 6. Scheduling around the deadline
 

@@ -10,7 +10,8 @@ import { ladderWordsBesides } from '../content/ladder';
 import { BLANK } from '../content/sentenceBank';
 import { addDays, localDateKey, parseDateKey } from '../lib/date';
 import { PACE_START } from '../session/pace';
-import { allCards, allWeekLists, allWords, deleteWeekList, updateWeekList } from '../store/repo';
+import { todaysLesson } from '../session/record';
+import { allCards, allWeekLists, allWords, deleteWeekList, getSession, updateWeekList } from '../store/repo';
 import type { CardRecord, ItemStatus, WeekFit, WeekList, WeekPair, Word } from '../types';
 import { proposeWrong } from '../weeklist/dapei';
 import { clampReadyBy, daysBetween, defaultDates, pastDue, weekdayZh } from '../weeklist/dates';
@@ -24,13 +25,27 @@ import { WeekReadiness } from './WeekReadiness';
 import { saveWeekList } from '../weeklist/save';
 import { loadCedictWords } from '../weeklist/cedictWords';
 
-/** The preview's plan line (spec §3.5), naming the new words that won't be taught before the check. */
-export function planLine(i: { newCount: number; known: number; placed: number; rate: number; days: number; readyBy: string; homeworkDue: string; names: string[]; longer?: { from: string; to: string; minutes: number } }): string {
-  // a big list's longer lessons (parent ruling 2026-10-17): "Mon–Tue lessons about 20 min"
-  const longer = !i.longer ? '' : i.longer.from === i.longer.to ? ` ${enDay(i.longer.from)}’s lesson about ${i.longer.minutes} min.` : ` ${enDay(i.longer.from)}–${enDay(i.longer.to)} lessons about ${i.longer.minutes} min.`;
-  const head = `${i.newCount} new · ${i.known} he knows (quick check) · ${i.placed} to recheck. New words ${i.rate} a day for ${i.days} day${i.days === 1 ? '' : 's'}, check ${weekdayZh(i.readyBy)}, homework ${weekdayZh(i.homeworkDue)}.${longer}`;
-  if (!i.names.length) return head;
-  return `${head} At ${i.rate} a day, ${i.names.length} new word${i.names.length === 1 ? '' : 's'} won’t be taught before ${weekdayZh(i.readyBy)}: ${i.names.join(', ')}. They’ll still be in the check.`;
+/**
+ * The preview's plan line (spec §3.5, parent rulings 2026-10-18): each front-load day's new words, the check and homework days, about
+ * how long those lessons run; the new words that won't be taught before the check. `today`: today's lesson is done or begun, so
+ * the new words start tomorrow.
+ */
+export function planLine(i: { newCount: number; known: number; placed: number; days: { date: string; n: number; minutes: number }[]; readyBy: string; homeworkDue: string; names: string[]; today?: 'done' | 'begun' | null }): string {
+  const counts = `${i.newCount} new · ${i.known} he knows (quick check) · ${i.placed} to recheck.`;
+  const tomorrow = i.today ? ` Today’s lesson ${i.today === 'done' ? 'is done' : 'has begun'}, so the new words start tomorrow.` : '';
+  const when = `check ${weekdayZh(i.readyBy)}, homework ${weekdayZh(i.homeworkDue)}`;
+  // runs of days with the same lesson length: "Sun–Mon lessons about 22 min, Tue’s about 17 min"
+  const runs: { from: string; to: string; minutes: number }[] = [];
+  for (const d of i.days) {
+    const last = runs[runs.length - 1];
+    if (last && last.minutes === d.minutes) last.to = d.date;
+    else runs.push({ from: d.date, to: d.date, minutes: d.minutes });
+  }
+  const lessons = runs.map((r, k) => r.from === r.to ? `${enDay(r.from)}’s${k ? '' : ' lesson'} about ${r.minutes} min` : `${enDay(r.from)}–${enDay(r.to)}${k ? '' : ' lessons'} about ${r.minutes} min`).join(', ');
+  const plan = i.days.length ? ` New words: ${i.days.map((d) => `${d.n} on ${enDay(d.date)}`).join(', ')} · ${when} · ${lessons}.`
+    : i.newCount ? ` No lesson for new words before the check · ${when}.` : ` ${when[0]!.toUpperCase()}${when.slice(1)}.`;
+  const late = !i.names.length ? '' : ` ${i.names.length} new word${i.names.length === 1 ? '' : 's'} won’t be taught before ${weekdayZh(i.readyBy)}: ${i.names.join(', ')}. They’ll still be in the check, and come after it.`;
+  return `${counts}${tomorrow}${plan}${late}`;
 }
 
 const EN_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -100,6 +115,7 @@ export function WeekPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false); // his words and cards: Read waits for them, so a word he knows is never "new"
+  const [todayLesson, setTodayLesson] = useState<'done' | 'begun' | null>(null); // done or begun: a list's new words start tomorrow
 
   const reload = async () => {
     const ws = await allWords(db);
@@ -109,6 +125,8 @@ export function WeekPanel() {
     setLoaded(true);
   };
   useEffect(() => { void reload(); }, []);
+  // where today's lesson stands, looked up afresh for each sheet read (the plan line's first day)
+  useEffect(() => { if (draft) void getSession(db, localDateKey(now())).then((r) => setTodayLesson(todaysLesson(r))); }, [draft]);
 
   const byText = useMemo(() => new Map(stored.map((w) => [w.text, w])), [stored]);
   const byId = useMemo(() => new Map(stored.map((w) => [w.id, w])), [stored]);
@@ -278,14 +296,14 @@ export function WeekPanel() {
   const today = localDateKey(now());
   const effReady = homework ? clampReadyBy(now(), readyBy || homework, homework) : '';
   const past = !!homework && pastDue(now(), homework);
-  const days = effReady ? Math.max(0, daysBetween(today, effReady)) : 0;
   const counts = { new: 0, known: 0, placed: 0 };
   for (const it of kept) { const s = statusOf(it.text); if (s === 'new' || s === 'learning') counts.new++; else if (s === 'known') counts.known++; else counts.placed++; }
   const pace = settings.pace?.perDay ?? PACE_START;
-  const { rate, minutes } = frontLoadPreview({ pace, ceiling: settings.newPerDay, sessionMinutes: settings.sessionMinutes, newCount: counts.new, days });
-  const longer = minutes && days ? { from: today, to: localDateKey(addDays(parseDateKey(effReady), -1)), minutes } : undefined;
+  // new words from his first lesson, today's unless it is done or begun (parent rulings 2026-10-18)
   const newNames = kept.filter((it) => statusOf(it.text) === 'new').map((it) => it.text);
-  const late = newNames.slice(rate * days);
+  const schedule = effReady ? frontLoadPreview({ pace, ceiling: settings.newPerDay, sessionMinutes: settings.sessionMinutes, newCount: newNames.length, today, readyBy: effReady, lessonDone: todayLesson !== null }) : { days: [], late: 0 };
+  const late = newNames.slice(newNames.length - schedule.late);
+  const lessonDays = effReady ? Math.max(0, daysBetween(today, effReady) - (todayLesson ? 1 : 0)) : 0;
   const later = effReady && homework ? clampReadyBy(now(), localDateKey(addDays(parseDateKey(effReady), 1)), homework) : effReady;
   const same = draft ? activeLists(lists, now()).find((l) => l.name === name.trim() && l.readyBy === effReady && l.homeworkDue === homework) : undefined;
   const blocker = !kept.length ? 'Tick at least one word.' : !name.trim() ? 'Give the list a name.' : !homework ? 'Pick the homework day.'
@@ -411,8 +429,8 @@ export function WeekPanel() {
           {same && <p class="week__note">“{same.name}” is already a list with these days. Saving adds to it.</p>}
           {!past && effReady && (
             <div class="week__plan">
-              <p>{planLine({ newCount: counts.new, known: counts.known, placed: counts.placed, rate, days, readyBy: effReady, homeworkDue: homework, names: late, longer })}</p>
-              {days === 1 && <p class="week__warn">Only 1 day — he’ll see the new words today and the check tomorrow.</p>}
+              <p>{planLine({ newCount: counts.new, known: counts.known, placed: counts.placed, days: schedule.days, readyBy: effReady, homeworkDue: homework, names: late, today: todayLesson })}</p>
+              {lessonDays === 1 && <p class="week__warn">Only 1 day — he’ll see the new words {todayLesson ? 'tomorrow' : 'today'} and the check {daysBetween(today, effReady) === 1 ? 'tomorrow' : day(effReady)}.</p>}
               {late.length > 0 && later > effReady && <button type="button" class="small-btn" onClick={() => { setReadyBy(later); setReadyTouched(true); }}>Move ready-by later ({day(later)})</button>}
             </div>
           )}
