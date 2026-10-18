@@ -33,8 +33,9 @@ function problems(w: string, s: string, min: number, max: number): string[] {
 }
 
 describe('the list sentence bank', () => {
-  it('holds 400–800 words, one sentence each', () => {
-    expect(Object.keys(bank).length).toBeGreaterThanOrEqual(400);
+  // 300, not 400: the 三上 and 三下 school sentences (2026-10-18) now cover ~300 words the bank had, and those left it (dead weight)
+  it('holds 300–800 words, one sentence each', () => {
+    expect(Object.keys(bank).length).toBeGreaterThanOrEqual(300);
     expect(Object.keys(bank).length).toBeLessThanOrEqual(800);
   });
   it('every sentence is 8–16 characters, the word once, nothing blocked, no 儿化', () => {
