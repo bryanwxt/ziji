@@ -1962,7 +1962,7 @@ button.langdu__sentence { cursor: pointer; }
 .talk__kind { font-size: 14px; font-weight: 800; color: var(--ink-soft); }
 .talk__open { border: none; background: none; padding: 4px 0; text-align: left; font: inherit; color: var(--ink); min-height: 44px; max-width: 100%; cursor: pointer; }
 .talk__q { font-family: var(--hanzi); font-size: 22px; line-height: 1.4; }
-.talk__open[aria-expanded="false"] .talk__q::after { content: ' ›'; color: var(--ink-soft); }
+.talk__open[aria-expanded="false"]::after { content: ' ›'; color: var(--ink-soft); font-size: 20px; }
 .talk__answer { color: var(--ink-soft); font-size: 15px; }
 .talk__en { font-size: 15px; color: var(--ink-soft); }
 .talk__more { display: flex; flex-direction: column; gap: 4px; font-size: 18px; }
@@ -2000,3 +2000,4 @@ button.langdu__sentence { cursor: pointer; }
 .try-this p { margin: 0; line-height: 1.4; }
 .try-this__head { flex-basis: 100%; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
 .try-this__text { flex: 1 1 18em; min-width: 0; font-size: 17px; font-weight: 700; }
+.week-summary__newly { display: flex; flex-direction: column; gap: 2px; }

@@ -3,7 +3,9 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { addTalk } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
-import { WeekSummaryPanel } from './WeekSummaryPanel';
+import { render } from '@testing-library/preact';
+import { weekRange, type WeekSummary } from '../talk/week';
+import { WeekSummaryPanel, WeekView } from './WeekSummaryPanel';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const NOW = new Date(2026, 9, 22, 20);
@@ -52,5 +54,12 @@ describe('Week summary', () => {
     fireEvent.click(screen.getByRole('tab', { name: /上周/ }));
     await screen.findByText('12 Oct – 18 Oct');
     expect(screen.queryByRole('textbox')).toBeNull();
+  });
+  it('a long newly-can list shows its first 12 and how many more (a placement week can pass dozens)', () => {
+    const many = Array.from('一二三四五六七八九十上下左右大小中');
+    const s: WeekSummary = { talk: { days: 0, minutes: 0, times: 0 }, lessons: 0, langduDays: 0, newly: { read: many, write: [], say: ['森林'] }, newWords: [], shaky: [], reading: [], waiting: 0, focus: { zh: '好', en: 'Good' } };
+    render(<WeekView range={weekRange(NOW)} summary={s} back={0} onBack={vi.fn()} onNavigate={vi.fn()} onShare={vi.fn()} />);
+    expect(screen.getByText(`${many.slice(0, 12).join('、')} +${many.length - 12} more`)).toBeTruthy();
+    expect(screen.getByText('森林')).toBeTruthy();
   });
 });

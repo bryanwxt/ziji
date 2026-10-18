@@ -89,6 +89,10 @@ describe('聊一聊 on Today', () => {
     expect(box.value).toMatch(/^聊一聊 · 19 Oct\n\n1\. 话题 Topic/);
     await waitFor(() => expect(document.activeElement).toBe(box));
     expect([box.selectionStart, box.selectionEnd]).toEqual([0, box.value.length]);
+    // iOS may refuse a focus that comes after the tap: a tap on the text selects all of it again
+    box.setSelectionRange(0, 0);
+    fireEvent.click(box);
+    expect([box.selectionStart, box.selectionEnd]).toEqual([0, box.value.length]);
   });
   it('✓ 聊了 with 10 min logs one talk (a double tap too); the week line adds up; Undo removes it', async () => {
     const { app, onLogged } = await open();

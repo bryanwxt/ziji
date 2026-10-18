@@ -9,6 +9,9 @@ import type { ParentPlace } from './ParentArea';
 import { ShareNote } from './ShareNote';
 
 const list = (xs: readonly string[]) => (xs.length ? xs.join('、') : '—');
+/** Newly-can lists show this many, then "+N more" (a placement week can pass dozens; Share the week sends them all). */
+export const NEWLY_SHOWN = 12;
+const few = (xs: readonly string[]) => (xs.length > NEWLY_SHOWN ? `${xs.slice(0, NEWLY_SHOWN).join('、')} +${xs.length - NEWLY_SHOWN} more` : list(xs));
 
 /** The week's rows (presentational: the WebKit stage case renders it too). `shared`: what Share the week did; `text`: what it
  *  sent, shown to copy by hand when nothing else took it. */
@@ -27,7 +30,11 @@ export function WeekView({ range, summary: s, back, onBack, onNavigate, onShare,
       <dl class="week-summary__rows">
         <dt>Talk</dt><dd>{s.talk.days} day{s.talk.days === 1 ? '' : 's'} · {s.talk.minutes} min</dd>
         <dt>Lessons</dt><dd>{s.lessons} · <span lang="zh-CN">朗读</span> on {s.langduDays} day{s.langduDays === 1 ? '' : 's'}</dd>
-        <dt>Newly can</dt><dd>read <span lang="zh-CN">{list(s.newly.read)}</span> · write <span lang="zh-CN">{list(s.newly.write)}</span> · say <span lang="zh-CN">{list(s.newly.say)}</span></dd>
+        <dt>Newly can</dt><dd class="week-summary__newly">
+          <span>read <span lang="zh-CN">{few(s.newly.read)}</span></span>
+          <span>write <span lang="zh-CN">{few(s.newly.write)}</span></span>
+          <span>say <span lang="zh-CN">{few(s.newly.say)}</span></span>
+        </dd>
         <dt>New words</dt><dd lang="zh-CN">{list(s.newWords)}</dd>
         <dt>Missed most</dt><dd lang="zh-CN">{list(s.shaky)}</dd>
         <dt><span lang="zh-CN">朗读</span></dt>
