@@ -70,6 +70,12 @@ import { listBoard } from '../../src/practice/pairs';
 import { pairGloss } from '../../src/practice/missNote';
 import type { WeekList, Word } from '../../src/types';
 import { CheckEnd, type MissRow } from '../../src/app/CheckScreen';
+import { TalkCards, TalkLogger } from '../../src/parent/TalkSection';
+import { TryLine } from '../../src/parent/TryThis';
+import { WeekView } from '../../src/parent/WeekSummaryPanel';
+import { pickDay } from '../../src/talk/pick';
+import { talkWord } from '../../src/talk/load';
+import { weekRange, type WeekSummary } from '../../src/talk/week';
 
 const screen = (body: preact.ComponentChildren) => (
   <div class="screen">
@@ -364,6 +370,37 @@ else if (which === 'hear' || which === 'hear-long' || which === 'hear-read') {
   const w = which === 'hear' ? builtinWords(0).find((x) => x.text === '门')! : longest[0]!;
   const near = which === 'hear' ? pool : [w, ...longest.slice(1, 4)];
   render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false }} ask={which === 'hear-read' ? 'meaningRead' : 'hear'} word={w} pool={near} voice kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} onDone={() => {}} />), app);
+}
+else if (which === 'talk') {
+  // the parent loop (spec 2026-10-12, 2026-10-18 update): Today's top line (the longest, a list check), 聊一聊 with the longest
+  // word card (a list word with its example) and shared reading of the passage with the longest questions, the reading card
+  // open; logging with Undo showing; the Week summary with every row full
+  const words = builtinWords(0);
+  const qs = Object.entries(PASSAGE_QUESTIONS).sort(([, a], [, b]) => b.map((q) => q.q).join('').length - a.map((q) => q.q).join('').length)[0]!;
+  const p = PASSAGES.find((x) => x.id === qs[0])!;
+  const cards = pickDay({ today: '2026-10-19', seen: {}, words: [talkWord(words.find((w) => w.text === '借')!, 'list')], passage: { id: p.id, title: p.title, questions: qs[1] } });
+  const summary: WeekSummary = {
+    talk: { days: 4, minutes: 45, times: 5 }, lessons: 6, langduDays: 5,
+    newly: { read: ['借', '饿', '饱', '甜', '森', '林', '游', '泳'], write: ['大', '小', '马'], say: ['森林', '游泳'] },
+    newWords: ['借', '饿', '饱', '甜', '森', '林'], shaky: ['饿', '饱', '甜', '森', '泳'],
+    reading: [{ passageId: p.id, title: p.title, meaning: 'missed' }, { passageId: 'p20', title: '我的学校', meaning: 'right' }], waiting: 3,
+    focus: { zh: `多读：他这周的朗读题答错了。和他再读一次《${p.title}》，轮流读，读完问问他故事里发生了什么。`, en: `Read more: he missed the question on 《${p.title}》 this week. Read it again together, taking turns, then ask what happened.` },
+  };
+  render(
+    <div class="screen screen--scroll parent">
+      <main class="parent__body">
+        <TryLine action={{ text: '本周词语 第九课: 11 of 24 not ready for the check on Wednesday. Go over 闪闪亮, 五颜六色, 小心翼翼 with him.', button: 'Open 本周词语', place: 'week' }} onNavigate={() => {}} />
+        <section class="panel talk">
+          <h2><span lang="zh-CN">聊一聊</span> Talk</h2>
+          <TalkCards cards={cards} onSwap={() => {}} />
+          <TalkLogger week={{ days: 1, minutes: 15, times: 2 }} saving={false} undoable onLog={() => {}} onUndo={() => {}} onWeek={() => {}} />
+        </section>
+        <WeekView range={weekRange(new Date(2026, 9, 22))} summary={summary} back={0} onBack={() => {}} onNavigate={() => {}} onShare={() => {}} />
+      </main>
+    </div>,
+    app,
+  );
+  (document.querySelectorAll<HTMLButtonElement>('.talk__open')[1])?.click(); // the shared-reading card open: its tallest state
 }
 else if (which === 'listen') {
   // the parent's review queue (spec 2026-10-11 §6, §8): takes kept in memory — WebKit's test contexts can't store a Blob in IndexedDB
