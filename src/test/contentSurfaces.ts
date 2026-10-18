@@ -21,6 +21,8 @@ import s1a from '../content/sentences/一上.json';
 import s1b from '../content/sentences/一下.json';
 import s2a from '../content/sentences/二上.json';
 import s2b from '../content/sentences/二下.json';
+import s3a from '../content/sentences/三上.json';
+import s3b from '../content/sentences/三下.json';
 
 export interface ShownWord { word: string; py: string; surface: string; via: string }
 
@@ -71,7 +73,7 @@ export function shownWords(): ShownWord[] {
     add(b.word, undefined, 'bank word', b.word);
     for (const g of b.gaps) for (const x of g.wrong) add(x, undefined, 'bank choice', b.word);
   }
-  for (const r of [s1a, s1b, s2a, s2b].flat() as { word: string }[]) add(r.word, undefined, 'understand word', r.word);
+  for (const r of [s1a, s1b, s2a, s2b, s3a, s3b].flat() as { word: string }[]) add(r.word, undefined, 'understand word', r.word);
   for (const c of CHENGYU) add(c.text, chengyuPinyin(c.text), '成语', c.text);
   // a meaning question's choices: the HSK words of a length it may offer (meaning.ts hskChoices)
   for (const [w] of HSK_WORDS) if (isChildWord(w)) add(w, undefined, 'meaning choice', `HSK${HSK_WORDS.get(w)}`);
@@ -88,7 +90,7 @@ export function shownSentenceRows(): { s: string; for: string; surface: string }
     b.gaps.forEach((g) => out.push({ s: fillGap(g, b.word), for: b.word, surface: 'bank' }));
     out.push({ s: b.misuse, for: b.word, surface: 'bank misuse' });
   }
-  for (const r of [s1a, s1b, s2a, s2b].flat() as { word: string; s: { zh: string }[] }[]) for (const s of r.s) out.push({ s: s.zh, for: r.word, surface: 'understand' });
+  for (const r of [s1a, s1b, s2a, s2b, s3a, s3b].flat() as { word: string; s: { zh: string }[] }[]) for (const s of r.s) out.push({ s: s.zh, for: r.word, surface: 'understand' });
   for (const c of CHENGYU) for (const s of c.sentences) out.push({ s, for: c.text, surface: '成语 sentence' });
   for (const r of weekBankRows()) out.push({ s: r.s, for: r.word, surface: 'list sentence bank' });
   for (const p of PASSAGES) for (const s of splitSentences(p.text)) out.push({ s, for: p.id, surface: '朗读 passage' });

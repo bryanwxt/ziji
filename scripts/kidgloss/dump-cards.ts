@@ -9,11 +9,13 @@ import s1a from '../../src/content/sentences/一上.json';
 import s1b from '../../src/content/sentences/一下.json';
 import s2a from '../../src/content/sentences/二上.json';
 import s2b from '../../src/content/sentences/二下.json';
+import s3a from '../../src/content/sentences/三上.json';
+import s3b from '../../src/content/sentences/三下.json';
 
 const only = process.argv[2];
 const words = new Map(builtinWords(0, 'both').map((w) => [w.text, w]));
 const sentences = new Map<string, string[]>();
-for (const r of [s1a, s1b, s2a, s2b].flat() as { word: string; s: { zh: string }[] }[]) sentences.set(r.word, r.s.map((s) => s.zh));
+for (const r of [s1a, s1b, s2a, s2b, s3a, s3b].flat() as { word: string; s: { zh: string }[] }[]) sentences.set(r.word, r.s.map((s) => s.zh));
 const seen = new Set<string>();
 console.log(['lesson', 'char', 'reading', 'gloss', 'bound', 'lesson chars', 'card 组词', 'more 组词', 'sentences'].join('\t'));
 for (const l of LESSONS) {

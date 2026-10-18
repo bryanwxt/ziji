@@ -8,12 +8,14 @@ import s1a from './sentences/一上.json';
 import s1b from './sentences/一下.json';
 import s2a from './sentences/二上.json';
 import s2b from './sentences/二下.json';
+import s3a from './sentences/三上.json';
+import s3b from './sentences/三下.json';
 
-export const SENTENCE_TERMS = ['一上', '一下', '二上', '二下'] as const;
+export const SENTENCE_TERMS = ['一上', '一下', '二上', '二下', '三上', '三下'] as const;
 export interface Sentence { zh: string; en: string }
 interface Row { word: string; s: Sentence[] }
 
-const BY_WORD = new Map<string, Sentence[]>(([s1a, s1b, s2a, s2b] as Row[][]).flat().map((r) => [r.word, r.s]));
+const BY_WORD = new Map<string, Sentence[]>(([s1a, s1b, s2a, s2b, s3a, s3b] as Row[][]).flat().map((r) => [r.word, r.s]));
 const isHan = (c: string) => /\p{Script=Han}/u.test(c);
 const order = (t: string) => MOE_TERMS.indexOf(t);
 

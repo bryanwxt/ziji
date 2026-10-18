@@ -11,6 +11,8 @@ import s1a from './sentences/一上.json';
 import s1b from './sentences/一下.json';
 import s2a from './sentences/二上.json';
 import s2b from './sentences/二下.json';
+import s3a from './sentences/三上.json';
+import s3b from './sentences/三下.json';
 import { sentenceReading } from './storedPinyin';
 
 export { BLOCKED, BLOCK_REASON };
@@ -28,7 +30,7 @@ function vettedWords(): Set<string> {
     for (const d of DAPEI) for (const t of [d.verb, d.noun, d.verb + d.noun, ...d.wrong]) vetted.add(t);
     for (const b of SENTENCE_BANK) for (const t of [b.word, ...b.gaps.flatMap((g) => g.wrong)]) vetted.add(t);
     for (const c of CHENGYU) vetted.add(c.text);
-    for (const r of [s1a, s1b, s2a, s2b].flat() as { word: string }[]) vetted.add(r.word);
+    for (const r of [s1a, s1b, s2a, s2b, s3a, s3b].flat() as { word: string }[]) vetted.add(r.word);
   }
   return vetted;
 }
