@@ -341,6 +341,7 @@ export interface Settings {
   oral: OralInfo;
   lessonVersion?: number; // one-off settings moves for existing installs (src/store/settings.ts)
   placementMarked?: boolean; // an older placement's unrechecked cards marked placed and re-spread (src/placement/migrate.ts)
+  listMeaningsFilled?: boolean; // weekly list words saved without English took their kid glosses, once (src/weeklist/listMeanings.ts)
   readingsReopened?: string; // the content version whose changed readings reopened his Say and Hear cards (src/store/readingMigration.ts)
   ladderMigrated?: boolean; // his cards moved onto the word ladder (spec 2026-10-06 §3.6)
   grade?: number; // his school year (P1 = 1): which MOE term's targets apply (spec 2026-10-06 §3.4)

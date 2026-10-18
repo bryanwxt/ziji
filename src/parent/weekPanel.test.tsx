@@ -4,17 +4,18 @@ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/pr
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildSessionPlan } from '../session/plan';
 import { createSessionRecord } from '../session/runner';
-import { allWeekLists, allWords, getWeekList, putCards, saveSession, updateWeekList } from '../store/repo';
+import { allWeekLists, allWords, getWeekList, getWord, putCards, putWeekList, putWords, saveSession, updateWeekList } from '../store/repo';
 import { makeCard } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS, type WeekList } from '../types';
 import { resetCedictWords } from '../weeklist/cedictWords';
+import { resetCedictGlosses } from '../weeklist/cedictGlosses';
 import { listStatus, planLine, WeekPanel } from './WeekPanel';
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); resetCedictWords(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); resetCedictWords(); resetCedictGlosses(); });
 
 // Invented, shaped like Live Text on a weekly sheet: a page code, a grid, and 搭配 under two theme headings.
-const SHEET = ['P9-L01-练习', '一、词语', '草地 跑步 蜻蜓', '二、词语搭配', '早餐', '吃 面包', '喝 牛奶', '公园', '放 风筝', '踢 足球'].join('\n');
+const SHEET = ['P9-L01-练习', '一、词语', '草地 跑步 蝌蚪', '二、词语搭配', '早餐', '吃 面包', '喝 牛奶', '公园', '放 风筝', '踢 足球'].join('\n');
 const MONDAY = new Date(2026, 9, 19, 9); // Mon 19 Oct 2026
 
 async function setup(now = MONDAY) {
@@ -52,8 +53,8 @@ describe('WeekPanel: paste and preview (spec §3.2–3.5)', () => {
     const known = screen.getByRole('list', { name: /He knows/ });
     expect(within(known).getByText('跑步')).toBeTruthy();
     expect(within(fresh).queryByText('跑步')).toBeNull();
-    expect(within(fresh).getByText('蜻蜓')).toBeTruthy();
-    expect(screen.getByLabelText('English for 蜻蜓 (optional)')).toBeTruthy();
+    expect(within(fresh).getByText('蝌蚪')).toBeTruthy();
+    expect(screen.getByLabelText('English for 蝌蚪 (optional)')).toBeTruthy();
     expect(screen.queryByLabelText('English for 草地 (optional)')).toBeNull(); // it has one
     expect(within(fresh).getByText('grass field')).toBeTruthy();
     expect(screen.getByLabelText('Name')).toHaveProperty('value', 'P9-L01');
@@ -73,7 +74,7 @@ describe('WeekPanel: paste and preview (spec §3.2–3.5)', () => {
 
   it('a column-read sheet says so, and counts what needs checking (fix round 2026-10-17)', async () => {
     await setup();
-    await read(['> 词语', '• 词语搭配', '早餐', '吃', '面包', '喝', '牛奶', '©2026 Example Publisher Pte Ltd.', '草地', '跑步', '蜻蜓', '饼干'].join('\n'));
+    await read(['> 词语', '• 词语搭配', '早餐', '吃', '面包', '喝', '牛奶', '©2026 Example Publisher Pte Ltd.', '草地', '跑步', '蝌蚪', '饼干'].join('\n'));
     expect(screen.getByText(/read this sheet column by column/)).toBeTruthy();
     expect(screen.getByText(/To check: 2 搭配 pairings/)).toBeTruthy();
     expect(screen.getAllByText('check the pairing')).toHaveLength(2);
@@ -149,7 +150,7 @@ describe('WeekPanel: confirming the wrong answers', () => {
   it('saves the list: new parent words with the English typed, pairs with three wrongs, checked fill-ins; removed rows left out', async () => {
     const app = await setup();
     await read();
-    fireEvent.input(screen.getByLabelText('English for 蜻蜓 (optional)'), { target: { value: 'dragonfly' } });
+    fireEvent.input(screen.getByLabelText('English for 蝌蚪 (optional)'), { target: { value: 'tadpole' } });
     const fills = screen.getByRole('list', { name: '选词填空' });
     const first = fills.querySelector('li')!;
     const removed = first.getAttribute('data-word')!;
@@ -161,29 +162,29 @@ describe('WeekPanel: confirming the wrong answers', () => {
     await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(1));
     const l = (await allWeekLists(app.db))[0]!;
     expect(l).toMatchObject({ name: 'P9-L01', readyBy: '2026-10-21', homeworkDue: '2026-10-23' });
-    expect(l.items.map((i) => i.text)).toEqual(['草地', '跑步', '蜻蜓', '吃', '面包', '喝', '牛奶', '放', '风筝', '踢', '足球']);
+    expect(l.items.map((i) => i.text)).toEqual(['草地', '跑步', '蝌蚪', '吃', '面包', '喝', '牛奶', '放', '风筝', '踢', '足球']);
     expect(l.pairs.map((p) => `${p.left}${p.right}`)).toEqual(['吃面包', '喝牛奶', '放风筝']);
     for (const p of l.pairs) expect(p.wrong).toHaveLength(3);
     expect(l.pairs[0]!.group).toBe('早餐');
     expect(l.fits.length).toBeGreaterThan(0);
     expect(l.fits.map((f) => l.items.find((i) => i.wordId === f.wordId)?.text)).not.toContain(removed);
-    const dragonfly = (await allWords(app.db)).find((w) => w.text === '蜻蜓')!;
-    expect(dragonfly).toMatchObject({ meaning: 'dragonfly', writeable: false, source: 'parent' });
+    const tadpole = (await allWords(app.db)).find((w) => w.text === '蝌蚪')!;
+    expect(tadpole).toMatchObject({ meaning: 'tadpole', writeable: false, source: 'parent' });
     expect(await screen.findByRole('status')).toHaveProperty('textContent', expect.stringMatching(/Saved “P9-L01”: 11 words/));
   });
 
   it('a word unticked is not saved, and English with Chinese in it is refused', async () => {
     const app = await setup();
     await read();
-    fireEvent.input(screen.getByLabelText('English for 蜻蜓 (optional)'), { target: { value: '蜻蜓 fly' } });
+    fireEvent.input(screen.getByLabelText('English for 蝌蚪 (optional)'), { target: { value: '蝌蚪 fly' } });
     confirmAll();
     expect(screen.getByText(/Chinese in the English/)).toBeTruthy();
     expect(save().disabled).toBe(true);
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Include 蜻蜓' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include 蝌蚪' }));
     expect(save().disabled).toBe(false);
     fireEvent.click(save());
     await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(1));
-    expect((await allWeekLists(app.db))[0]!.items.map((i) => i.text)).not.toContain('蜻蜓');
+    expect((await allWeekLists(app.db))[0]!.items.map((i) => i.text)).not.toContain('蝌蚪');
   });
 
   it('a look-alike misread offers its fix', async () => {
@@ -228,17 +229,17 @@ describe('WeekPanel: the lists', () => {
     const l = await saved(app);
     fireEvent.click(await screen.findByRole('button', { name: 'Edit P9-L01' }));
     fireEvent.input(screen.getByLabelText('List name'), { target: { value: '第一周' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Remove 蜻蜓' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove 蝌蚪' }));
     // he answers while the parent is editing
-    const dragonfly = l.items.find((i) => i.text === '蜻蜓')!.wordId;
+    const tadpole = l.items.find((i) => i.text === '蝌蚪')!.wordId;
     const grass = l.items.find((i) => i.text === '草地')!.wordId;
     await updateWeekList(app.db, l.id, (x) => ({ ...x, items: x.items.map((i) => (i.wordId === grass ? { ...i, last: { read: { at: 1, correct: true } } } : i)) }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(async () => expect((await getWeekList(app.db, l.id))?.name).toBe('第一周'));
     const after = (await getWeekList(app.db, l.id))!;
     expect(after.items.find((i) => i.wordId === grass)?.last?.read?.correct).toBe(true);
-    expect(after.items.map((i) => i.wordId)).not.toContain(dragonfly);
-    expect(after.fits.map((f) => f.wordId)).not.toContain(dragonfly);
+    expect(after.items.map((i) => i.wordId)).not.toContain(tadpole);
+    expect(after.fits.map((f) => f.wordId)).not.toContain(tadpole);
   });
 
   it('Close asks on the page (never confirm()), closes the list and keeps it under a collapsed Past lists; delete is in there', async () => {
@@ -261,7 +262,7 @@ describe('WeekPanel: the lists', () => {
     expect(screen.getByText(/Delete “P9-L01” for good\? His words and progress stay/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Delete the list' }));
     await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(0));
-    expect((await allWords(app.db)).map((w) => w.text)).toContain('蜻蜓');
+    expect((await allWords(app.db)).map((w) => w.text)).toContain('蝌蚪');
     expect(native).not.toHaveBeenCalled();
   });
 
@@ -351,18 +352,66 @@ describe('WeekPanel: fill-in rows and joining (follow-up 2026-10-17)', () => {
   });
 
   it('a real word in the CC-CEDICT list (loaded on demand) is not flagged', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('蜻蜓\n秋千\n')));
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('蝌蚪\n秋千\n')));
     await setup();
-    await read(['一、词语', '蜻蜓 秋千 草地'].join('\n'));
+    await read(['一、词语', '蝌蚪 秋千 草地'].join('\n'));
     expect(screen.queryByText(/ZiJi doesn’t know|not in ZiJi’s dictionary/)).toBeNull();
   });
 
   it('two cells Live Text split can be joined', async () => {
     await setup();
-    await read(['一、词语', '草地 蜻 蜓'].join('\n'));
-    fireEvent.click(screen.getByRole('button', { name: 'Join 蜻 and 蜓' }));
-    expect(screen.getByText('蜻蜓')).toBeTruthy();
-    expect(screen.queryByRole('checkbox', { name: 'Include 蜻' })).toBeNull();
+    await read(['一、词语', '草地 蝌 蚪'].join('\n'));
+    fireEvent.click(screen.getByRole('button', { name: 'Join 蝌 and 蚪' }));
+    expect(screen.getByText('蝌蚪')).toBeTruthy();
+    expect(screen.queryByRole('checkbox', { name: 'Include 蝌' })).toBeNull();
+  });
+});
+
+/** CC-CEDICT's headwords and short English, as the panel fetches them. */
+const dictionaryFetch = (glosses: string) => vi.fn(async (url: string) => new Response(String(url).endsWith('cedict-glosses.txt') ? glosses : '蝌蚪\n'));
+
+describe('WeekPanel: English from the dictionary (parent 2026-10-18: "共用 meaning is not showing")', () => {
+  it('a new word with no English is prefilled from CC-CEDICT, marked so, and saved as its meaning', async () => {
+    vi.stubGlobal('fetch', dictionaryFetch('# CC-CEDICT\n蝌蚪\ttadpole\n'));
+    const app = await setup();
+    await read();
+    const field = screen.getByLabelText('English for 蝌蚪 (optional)') as HTMLInputElement;
+    await waitFor(() => expect(field.value).toBe('tadpole'));
+    expect(screen.getByText('from dictionary')).toBeTruthy();
+    confirmAll();
+    fireEvent.click(save());
+    await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(1));
+    expect((await allWords(app.db)).find((w) => w.text === '蝌蚪')!.meaning).toBe('tadpole');
+  });
+
+  it('the parent can edit or clear it: an edit is hers, a cleared field saves none', async () => {
+    vi.stubGlobal('fetch', dictionaryFetch('蝌蚪\ttadpole\n'));
+    const app = await setup();
+    await read();
+    const field = screen.getByLabelText('English for 蝌蚪 (optional)') as HTMLInputElement;
+    await waitFor(() => expect(field.value).toBe('tadpole'));
+    fireEvent.input(field, { target: { value: 'baby frog' } });
+    expect(screen.queryByText('from dictionary')).toBeNull();
+    fireEvent.input(field, { target: { value: '' } });
+    confirmAll();
+    fireEvent.click(save());
+    await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(1));
+    expect((await allWords(app.db)).find((w) => w.text === '蝌蚪')!.meaning).toBeUndefined();
+  });
+
+  it('a list saved without English: one tap fills its words from the dictionary', async () => {
+    vi.stubGlobal('fetch', dictionaryFetch('蝌蚪\ttadpole\n螳螂\tmantis\n'));
+    const app = await makeAppData({ now: () => MONDAY });
+    const word = (text: string, meaning?: string) => ({ id: `p:${text}`, text, pinyin: 'x', level: null, rank: null, source: 'parent' as const, writeable: false, paused: false, createdAt: 0, ...(meaning ? { meaning } : {}) });
+    await putWords(app.db, [word('蝌蚪'), word('螳螂'), word('嗯嗯嗯'), word('双方', 'both sides')]);
+    await putWeekList(app.db, { id: 'wl:1', name: 'Q3', createdAt: 0, readyBy: '2026-10-21', homeworkDue: '2026-10-23', pairs: [], fits: [],
+      items: ['蝌蚪', '螳螂', '嗯嗯嗯', '双方'].map((t) => ({ wordId: `p:${t}`, text: t, from: 'grid' as const, addedStatus: 'new' as const })) });
+    renderWithApp(<WeekPanel />, app);
+    fireEvent.click(await screen.findByRole('button', { name: 'Fill missing English from dictionary (2 words)' }));
+    await waitFor(async () => expect((await getWord(app.db, 'p:蝌蚪'))!.meaning).toBe('tadpole'));
+    expect((await getWord(app.db, 'p:螳螂'))!.meaning).toBe('mantis');
+    expect((await getWord(app.db, 'p:嗯嗯嗯'))!.meaning).toBeUndefined();
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Fill missing English/ })).toBeNull());
   });
 });
 

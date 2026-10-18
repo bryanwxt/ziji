@@ -1,5 +1,5 @@
 // 考考自己 (weekly list spec 2026-10-17 §8.1): no pinyin on the questions, saved as he goes, resumable the same day, the misses
-// only at the end with their right answer, pinyin and English. Invented fixtures: 风筝, 小河, 钓鱼, 书包, 雨伞.
+// only at the end with their right answer, pinyin and English. Invented fixtures: 蟋蟀, 蝌蚪, 螳螂, 书包, 雨伞.
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('../audio/speech', () => ({ speak: vi.fn(), stopSpeaking: vi.fn(), primeSpeech: vi.fn() }));
@@ -12,10 +12,10 @@ import { DEFAULT_KID, type WeekList, type Word } from '../types';
 import { CheckScreen } from './CheckScreen';
 
 const parent = (text: string, pinyin: string, meaning?: string): Word => makeWord(text, { id: `p:${text}`, source: 'parent', pinyin, meaning, rank: null, level: null });
-const words = [parent('风筝', 'fēng zheng'), parent('小河', 'xiǎo hé'), parent('钓鱼', 'diào yú'), parent('书包', 'shū bāo'), parent('雨伞', 'yǔ sǎn')];
+const words = [parent('蟋蟀', 'xī shuài'), parent('蝌蚪', 'kē dǒu'), parent('螳螂', 'táng láng'), parent('书包', 'shū bāo'), parent('雨伞', 'yǔ sǎn')];
 const list = (over: Partial<WeekList> = {}): WeekList => ({
   id: 'wl:c', name: 'L', createdAt: 11, readyBy: '2026-11-04', homeworkDue: '2026-11-06',
-  items: [{ wordId: 'p:风筝', text: '风筝', from: 'grid', addedStatus: 'new' }, { wordId: 'p:小河', text: '小河', from: 'grid', addedStatus: 'new' }],
+  items: [{ wordId: 'p:蟋蟀', text: '蟋蟀', from: 'grid', addedStatus: 'new' }, { wordId: 'p:蝌蚪', text: '蝌蚪', from: 'grid', addedStatus: 'new' }],
   pairs: [], fits: [], ...over,
 });
 async function setUp(l: WeekList) {
@@ -63,14 +63,14 @@ describe('CheckScreen (spec §8.1)', () => {
     expect(app.go).toHaveBeenCalledWith({ name: 'home' });
   });
   it('stopping and coming back the same day asks only what is left', async () => {
-    const app = await setUp(list({ check: { at: 1, day: '2026-11-04', done: false, results: { 'p:风筝': { form: 'read', correct: true } } } }));
+    const app = await setUp(list({ check: { at: 1, day: '2026-11-04', done: false, results: { 'p:蟋蟀': { form: 'read', correct: true } } } }));
     renderWithApp(<CheckScreen listId="wl:c" />, app);
-    await waitFor(() => expect(asked()).toBe('小河'));
+    await waitFor(() => expect(asked()).toBe('蝌蚪'));
   });
   it('a 搭配 asked from the list pair: no pinyin, and the pair goes on at once', async () => {
     const l = list({
-      items: ['拔', '萝卜', '书包', '雨伞', '钓鱼'].map((t) => ({ wordId: `p:${t}`, text: t, from: 'pair' as const, addedStatus: 'new' as const })),
-      pairs: [{ left: '拔', right: '萝卜', wrong: ['书包', '雨伞', '钓鱼'] }],
+      items: ['拔', '萝卜', '书包', '雨伞', '螳螂'].map((t) => ({ wordId: `p:${t}`, text: t, from: 'pair' as const, addedStatus: 'new' as const })),
+      pairs: [{ left: '拔', right: '萝卜', wrong: ['书包', '雨伞', '螳螂'] }],
     });
     const app = await setUp(l);
     await putWords(app.db, [parent('拔', 'bá'), parent('萝卜', 'luó bo')]);

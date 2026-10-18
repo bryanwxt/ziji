@@ -1850,6 +1850,8 @@ button.langdu__sentence { cursor: pointer; }
 .week__status--placed { background: var(--gold-soft); color: #92400e; }
 .week__gloss { color: var(--ink); font-size: 15px; }
 .week__english input { width: 100%; box-sizing: border-box; min-height: 40px; padding: 6px 10px; border: 2px dashed var(--line-strong); border-radius: 10px; font: inherit; font-size: 15px; background: #fff; }
+.week__from { display: block; margin-top: 2px; color: var(--ink-soft); font-size: 13px; font-style: italic; }
+.week__fill { margin: 12px 0; }
 .week__flag { color: var(--orange-ink); font-size: 14px; }
 .week__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .week__unpause { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; min-height: 44px; }

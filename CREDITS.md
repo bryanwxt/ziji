@@ -9,7 +9,8 @@
   those derived fields are distributed under the same licence.
 - **CC-CEDICT** — [MDBG and contributors](https://www.mdbg.net/chinese/dictionary?page=cc-cedict), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
   Shortened English glosses in `src/content/glossary.json`, and the simplified headwords of 2–4 characters in `public/data/cedict-words.txt`
-  (the weekly list's word check, loaded only in the parent area); both adaptations are shared under the same licence.
+  (the weekly list's word check, loaded only in the parent area), and their first sense cut to four words in
+  `public/data/cedict-glosses.txt` (English for a list word left blank, also parent area only); these adaptations are shared under the same licence.
 - **Hanzi Writer** — [chanind/hanzi-writer](https://github.com/chanind/hanzi-writer), MIT License.
 - **hanzi-writer-data** stroke data — Arphic Public License (derived from Make Me a Hanzi graphics / Arphic fonts).
 - **pinyin-pro** — MIT License. **ts-fsrs** — MIT License. **canvas-confetti** — ISC License. **idb** — ISC License. **Preact** — MIT License.

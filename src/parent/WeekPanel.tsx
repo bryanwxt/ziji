@@ -24,6 +24,9 @@ import { checkTable, notSolid } from '../weeklist/readiness';
 import { WeekReadiness } from './WeekReadiness';
 import { saveWeekList } from '../weeklist/save';
 import { loadCedictWords } from '../weeklist/cedictWords';
+import { loadCedictGlosses } from '../weeklist/cedictGlosses';
+import { fillMeanings, missingEnglish } from '../weeklist/listMeanings';
+import { kidGloss } from '../content/kidGloss';
 
 /**
  * The preview's plan line (spec §3.5, parent rulings 2026-10-18): each front-load day's new words, the check and homework days, about
@@ -138,6 +141,24 @@ export function WeekPanel() {
     return () => clearTimeout(slow);
   }, []);
   const isWord = useMemo(() => weekIsWord((w) => byText.has(w), dictionary), [byText, dictionary]);
+  // CC-CEDICT's short English (parent 2026-10-18: "共用 meaning is not showing"): a new word with none is prefilled from it,
+  // marked "from dictionary", hers to edit or clear; fetched for this panel only, and it joins whenever it lands
+  const [dictEnglish, setDictEnglish] = useState<ReadonlyMap<string, string> | null>(null);
+  useEffect(() => { void loadCedictGlosses().then(setDictEnglish); }, []);
+  /** The English a new word's field shows: what she typed (or cleared), else the dictionary's. */
+  const englishOf = (t: string): string => english[t] ?? dictEnglish?.get(t) ?? '';
+  const fromDictionary = (t: string) => english[t] === undefined && !!dictEnglish?.get(t);
+  // a list saved before (its English left blank): the words still without English that the dictionary can fill, in one tap
+  const fillable = useMemo(() => {
+    const out = new Map<string, string>();
+    for (const w of missingEnglish(lists, stored, now())) { const e = kidGloss(w.text) ?? dictEnglish?.get(w.text); if (e) out.set(w.text, e); }
+    return out;
+  }, [lists, stored, dictEnglish]);
+  const fillMissing = async () => {
+    const n = await fillMeanings(db, missingEnglish(lists, stored, now()), fillable);
+    setMessage(`Filled English for ${n} word${n === 1 ? '' : 's'} from the dictionary. Edit any under the list's words.`);
+    await reload();
+  };
   // the list sentence bank and Tatoeba (parent ruling 2026-10-17), loaded for this panel only; Read waits for them as for the dictionary
   const [extra, setExtra] = useState<ExtraSentences | undefined>(undefined);
   const [extraTried, setExtraTried] = useState(false);
@@ -326,7 +347,7 @@ export function WeekPanel() {
       const l = await saveWeekList(db, {
         name: name.trim(), readyBy: effReady, homeworkDue: homework,
         items: kept.map((it) => {
-          const e = english[it.text]?.trim();
+          const e = englishOf(it.text).trim();
           const w = byText.get(it.text);
           return { text: it.text, from: it.from, ...(e ? { meaning: e } : {}), ...(w?.paused ? { unpause: !keepPaused.has(it.text) } : {}) };
         }),
@@ -369,8 +390,9 @@ export function WeekPanel() {
         {w.meaning && !needsEnglish && <span class="week__gloss">{w.meaning}</span>}
         {needsEnglish && (
           <label class="week__english">
-            <input placeholder="English (optional, up to 4 words)" aria-label={`English for ${it.text} (optional)`} value={english[it.text] ?? ''}
+            <input placeholder="English (optional, up to 4 words)" aria-label={`English for ${it.text} (optional)`} value={englishOf(it.text)}
               onInput={(e) => { const v = inputValue(e); setEnglish((x) => ({ ...x, [it.text]: v })); }} />
+            {fromDictionary(it.text) && <span class="week__from">from dictionary</span>}
           </label>
         )}
         {problems.map((p) => <span key={p} class="week__flag">{p}</span>)}
@@ -535,6 +557,12 @@ export function WeekPanel() {
         </div>
       )}
       {message && <p class="week__message" role="status">{message}</p>}
+      {!draft && fillable.size > 0 && (
+        <p class="week__fill">
+          <button type="button" class="small-btn" onClick={() => void fillMissing()}>Fill missing English from dictionary ({fillable.size} word{fillable.size === 1 ? '' : 's'})</button>
+          <span class="week__hint"> <span lang="zh-CN">{[...fillable.keys()].slice(0, 6).join(' · ')}</span>{fillable.size > 6 ? ' …' : ''}: words on this week’s lists without English.</span>
+        </p>
+      )}
       <WeekLists lists={lists} now={now()} onChanged={reload} db={db} words={byId} />
     </section>
   );

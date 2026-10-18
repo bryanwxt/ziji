@@ -14,7 +14,7 @@ const PORT = Number(process.env.FIT_PORT ?? 4174); // FIT_PORT: another worktree
 const BASE = `http://127.0.0.1:${PORT}/`;
 const OUT = 'fit-shots';
 /** An invented weekly sheet as Live Text gives it (never the parent's): a grid, 生字 he has, then 搭配 under two themes, the second read a cell a line. */
-const WEEK_SHEET = ['P2-L33-复习', '考考自己', '一、词语', '公园 草地 蝴蝶 跑步', '整齐 热闹 干净 安静', '帮助 告诉 闪闪亮', '二、生字', '手 书 开 出', '三、词语搭配', '早餐', '吃 面包', '喝 牛奶', '煎 鸡蛋', '游乐场', '放', '风筝', '踢', '足球', '荡', '秋千', '©2026 Example Publisher Pte Ltd.'].join('\n');
+const WEEK_SHEET = ['P2-L33-复习', '考考自己', '一、词语', '公园 草地 蝴蝶 跑步', '整齐 热闹 干净 安静', '帮助 告诉 闪闪亮 蝌蚪', '二、生字', '手 书 开 出', '三、词语搭配', '早餐', '吃 面包', '喝 牛奶', '煎 鸡蛋', '游乐场', '放', '风筝', '踢', '足球', '荡', '秋千', '©2026 Example Publisher Pte Ltd.'].join('\n');
 const AFTERNOON = new Date(2026, 9, 6, 16, 0);
 const EVENING = new Date(2026, 9, 6, 21, 0); // timeOfDay() calls this 'evening': the darkest wash
 const SIZES = [
