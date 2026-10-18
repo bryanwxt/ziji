@@ -168,6 +168,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
         board={listB}
         kind="match"
         kid={kid}
+        pool={pool}
         onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning', listPairs: r.pairs })}
       />
     );
@@ -192,6 +193,7 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
         board={board}
         kind="pair"
         kid={kid}
+        pool={pool}
         onDone={(r) => onDone({ correct: r.correct, hard: false, responseMs: r.responseMs, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: false, asked: 'meaning' })}
       />
     );

@@ -4,7 +4,7 @@ import { bootstrap, firstRoute } from './bootstrap';
 import { DEFAULT_KID, DEFAULT_SETTINGS } from './types';
 import { builtinWords, CONTENT_VERSION } from './content';
 import { schedulerParams, setSchedulerParams } from './srs/scheduler';
-import { allCards, getSettings, getWord, putCards, putWords, seedBuiltinWords, updateSettings } from './store/repo';
+import { allCards, getSettings, getWord, putCards, putWeekList, putWords, seedBuiltinWords, updateSettings } from './store/repo';
 import { seededKnownCard } from './srs/scheduler';
 
 
@@ -21,6 +21,18 @@ describe('launch (deferred minor, plan 11)', () => {
     const second = await bootstrap(name);
     expect((await allCards(second.db)).find((c) => c.id === 'b:人:recognise')!.placed).toBe(true);
     expect((await getSettings(second.db)).placementMarked).toBe(true);
+    second.db.close();
+  });
+
+  it('a weekly list word saved without English takes its kid gloss on the next launch (parent 2026-10-18: 共用)', async () => {
+    const name = `boot-${crypto.randomUUID()}`;
+    const first = await bootstrap(name);
+    await updateSettings(first.db, { listMeaningsFilled: undefined });
+    await putWords(first.db, [{ id: 'p:共用', text: '共用', pinyin: 'gòng yòng', level: null, rank: null, source: 'parent', writeable: false, paused: false, createdAt: 0 }]);
+    await putWeekList(first.db, { id: 'wl:1', name: 'L', createdAt: 0, readyBy: '2099-01-01', homeworkDue: '2099-01-02', items: [{ wordId: 'p:共用', text: '共用', from: 'grid', addedStatus: 'new' }], pairs: [], fits: [] });
+    first.db.close();
+    const second = await bootstrap(name);
+    expect((await getWord(second.db, 'p:共用'))!.meaning).toBe('share, use together');
     second.db.close();
   });
 

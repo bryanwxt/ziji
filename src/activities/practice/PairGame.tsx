@@ -4,7 +4,7 @@ import { speak } from '../../audio/speech';
 import { CHEERS, COMFORTS, pickLine } from '../../fun/pet';
 import { mulberry32 } from '../../lib/random';
 import type { PairBoard } from '../../practice/pairs';
-import type { KidState } from '../../types';
+import type { KidState, Word } from '../../types';
 import { choiceGloss } from '../../practice/missNote';
 import { halfReading, readingOf } from '../../content/wordGate';
 import { Label } from '../../ui/Label';
@@ -20,6 +20,8 @@ interface Props {
   /** 考考自己 (weekly list spec 2026-10-17 §8.1): nothing said, no match shown after misses (no SHOW_AFTER), no summary; it ends
    *  when every pair is joined */
   bare?: boolean;
+  /** his words: a weekly list word's own English (its stored meaning) names it on the summary (parent 2026-10-18: 共用) */
+  pool?: readonly Word[];
 }
 
 const SHOW_AFTER = 3; // misses on one tile before its match is shown (review focus 3)
@@ -35,7 +37,7 @@ const SHOW_AFTER = 3; // misses on one tile before its match is shown (review fo
 /** A colour per matched pair: green, blue, gold, purple (palette inks dark enough for a ✓ on paper). */
 const PAIR_COLOURS = ['#2a9d5c', '#2f7fd8', '#c98a12', '#8a5cd6'];
 
-export function PairGame({ board, kind, kid, onDone, bare = false }: Props) {
+export function PairGame({ board, kind, kid, onDone, bare = false, pool = [] }: Props) {
   const lines = useMemo(() => { const rng = mulberry32((Date.now() ^ board.target[0].codePointAt(0)!) >>> 0); return { cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng) }; }, [board]);
   const [picked, setPicked] = useState<number | null>(null); // a left index
   const [joined, setJoined] = useState<Set<string>>(new Set()); // 'L0', 'R2'… joined, right or shown
@@ -122,7 +124,7 @@ export function PairGame({ board, kind, kid, onDone, bare = false }: Props) {
                 return (
                   <p key={i} class={`pair-summary__row${wrong ? ' is-missed' : ''}`}>
                     <span class="hanzi"><Label zh={word} py={board.readings?.[word] ?? readingOf(word)} fade /></span>
-                    {(board.glosses?.[word] ?? choiceGloss(word)) && <span lang="en">{board.glosses?.[word] ?? choiceGloss(word)}</span>} {/* a board's other 词语 may have only a kid gloss written for it (choiceGloss.ts); a list pair, its halves' English */}
+                    {(board.glosses?.[word] ?? choiceGloss(word, pool)) && <span lang="en">{board.glosses?.[word] ?? choiceGloss(word, pool)}</span>} {/* a board's other 词语 may have only a kid gloss written for it (choiceGloss.ts); a list pair, its halves' English */}
                   </p>
                 );
               })}

@@ -43,19 +43,23 @@ export function dictionaryMeaning(word: Word): string | undefined {
   return MEANING_FIXES[word.text] ?? dictionaryGloss(word.text) ?? word.meaning;
 }
 
+/** A school or weekly list word's English for a question: its own meaning, the 成语 list's, else its kid gloss (a list saved
+ *  before the parent typed one, parent 2026-10-18: 共用). */
+const ownMeaning = (word: Word): string | undefined => word.meaning || chengyuOf(word.text)?.meaning || kidGloss(word.text);
+
 /** The English on the 认字 card and everywhere else he reads a word's meaning: a built-in word's kid gloss, else its dictionary
- *  meaning; a school word's own meaning, else the 成语 list's. */
+ *  meaning; a school word's own meaning, else the 成语 list's, its kid gloss, the dictionary's. */
 export function cardMeaning(word: Word): string | undefined {
-  if (word.source !== 'builtin') return word.meaning ?? chengyuOf(word.text)?.meaning; // a school 成语 in the list
+  if (word.source !== 'builtin') return ownMeaning(word) ?? dictionaryGloss(word.text);
   return kidGloss(word.text) ?? dictionaryMeaning(word);
 }
 
 /**
  * The English an English-meaning question asks (hear, 这个词是什么意思, placement 听一听) or offers as a wrong choice: a built-in
- * word's kid gloss only (never the dictionary's: parent 2026-10-15), a school word's own meaning; never a grammar word's
+ * word's kid gloss only (never the dictionary's: parent 2026-10-15), a school word's own meaning (else its kid gloss); never a grammar word's
  * (grammarWords.ts). None: the word takes no English question, and its ladder skips the Hear rung.
  */
 export function questionMeaning(word: Word): string | undefined {
   if (noEnglishQuestion(word.text)) return undefined;
-  return word.source === 'builtin' ? kidGloss(word.text) : cardMeaning(word);
+  return word.source === 'builtin' ? kidGloss(word.text) : ownMeaning(word); // never the dictionary's, as for a built-in word
 }

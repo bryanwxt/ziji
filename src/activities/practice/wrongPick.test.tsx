@@ -119,6 +119,20 @@ describe('练一练 miss sheet: what he picked, with its English', () => {
   });
 });
 
+describe('连一连 miss sheet: a weekly list word shows its stored English (parent 2026-10-18: "共用 meaning is not showing")', () => {
+  // the iPad photo: a 组词 board of the list word 共用 with 双方 and 以后, missed once; 共用 had no English beside it
+  it('the list word’s own meaning (the pool’s parent word) is beside it on the summary', () => {
+    const board = { left: ['双', '以', '共'], right: ['后', '用', '方'], pairs: [['共', '用'], ['双', '方'], ['以', '后']] as [string, string][], target: ['共', '用'] as [string, string] };
+    const listWord = { id: 'p:1', text: '共用', pinyin: 'gòng yòng', level: null, rank: null, source: 'parent' as const, writeable: false, paused: false, createdAt: 0, meaning: 'use it together' };
+    render(<PairGame board={board} kind="pair" kid={DEFAULT_KID} pool={[listWord]} onDone={vi.fn()} />);
+    const tile = (t: string) => screen.getByRole('button', { name: t });
+    fireEvent.click(tile('共')); fireEvent.click(tile('方')); // a miss
+    for (const [l, r] of board.pairs) { fireEvent.click(tile(l)); fireEvent.click(tile(r)); }
+    const row = [...document.querySelectorAll('.pair-summary__row')].find((r) => r.textContent!.includes('共'))!;
+    expect(row.querySelector('[lang="en"]')?.textContent).toBe('use it together');
+  });
+});
+
 describe('练一练 miss sheet: one two-row layout for every question type (parent 2026-10-16)', () => {
   /** ✓ 正确答案 and ✗ 你选的 rows, the same cells in the same order, the speak button only on the right row; the why-line inside */
   const twoRows = () => {

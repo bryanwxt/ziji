@@ -63,7 +63,7 @@ const reduplicated = (t: string) => { const c = Array.from(t); return (c.length 
 /**
  * A word's part of speech, as well as the app can tell (follow-up 2026-10-17): the bank's type, then its place in the list's
  * pairs, its shape (ABB, AABB, 「X的」), the dictionary's "to …" for a verb, being seen after 很 for an adjective, a dictionary
- * gloss for a noun. Null when nothing says.
+ * gloss for a noun (never a kid gloss: it drops "to"). Null when nothing says.
  */
 export function wordKind(text: string, pairs: DraftPair[]): Kind | null {
   const bank = bankFor(text);
@@ -73,7 +73,8 @@ export function wordKind(text: string, pairs: DraftPair[]): Kind | null {
   if (pairs.some((p) => p.left === text) || VERBS.has(text)) return 'verb';
   if (isAdjPhrase(text) || reduplicated(text)) return 'adj';
   if (pairs.some((p) => p.right === text)) return 'noun';
-  const gloss = dictionaryGloss(text) ?? glossFor(text);
+  // the dictionary's English only: a kid gloss drops its "to" (低下头 "lower one's head"), so it can't tell a verb from a noun
+  const gloss = dictionaryGloss(text);
   if (gloss && /^to /i.test(gloss)) return 'verb';
   if (seenAsAdj(text)) return 'adj';
   return gloss ? 'noun' : null;

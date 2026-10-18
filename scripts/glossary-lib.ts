@@ -107,3 +107,43 @@ export function cedictWords(text: string): { date: string | null; words: string[
   }
   return { date, words: [...words].sort() };
 }
+
+const MAX_WORDS = 4;
+/** A dictionary sense as a kid gloss would say it: no usage notes, no leading "to", at most four words (cut at its first comma
+ *  when longer); null when it can't be said so. */
+function shortSense(sense: string, ok: (gloss: string) => boolean): string | null {
+  if (SKIP.test(sense) || /\b(classifier|measure word|surname)\b/i.test(sense)) return null;
+  const tidy = (s: string) => s.trim().replace(/^(fig\.|lit\.)\s*/i, '').replace(/^to\s+(?=\S)/i, '').replace(/[.。]+$/, '').trim();
+  // a note after the meaning stays when it fits ("bear (fruit)"); one before it ("(onom.)") never
+  const noted = tidy(sense.replace(/\[[^\]]*\]/g, '').replace(/\S*\|\S*/g, '').replace(/"/g, '').replace(/^(\s*\([^)]*\))+/, '').replace(/\s+/g, ' '));
+  const plain = tidy(plainSense(sense));
+  const words = (s: string) => s.split(/\s+/).filter(Boolean).length;
+  for (const cand of [noted, plain, plain.split(/,\s*/)[0]!.trim()]) {
+    if (/[()]/.test(cand) && !/^[^()]+\([^()]+\)$/.test(cand)) continue; // one closing note, whole
+    if (cand && words(cand) <= MAX_WORDS && !/[㐀-鿿]/.test(cand) && ok(cand)) return cand;
+  }
+  return null;
+}
+
+/**
+ * CC-CEDICT's English for its 2–4 character simplified headwords (weekly list: a word the parent left without English): the
+ * first sense, within the first ";" part, that a kid gloss could say in at most four words, skipping surnames, classifier
+ * notes, "variant of" and the like, and names (an entry read with a capital). `ok` is the kid
+ * gloss check (glossProblems empty).
+ */
+export function cedictGlosses(text: string, ok: (gloss: string) => boolean = () => true): { date: string | null; glosses: Map<string, string> } {
+  const date = /^#! date=(\d{4}-\d{2}-\d{2})/m.exec(text)?.[1] ?? null;
+  const dict = parseCedict(text);
+  const glosses = new Map<string, string>();
+  for (const [word, entries] of [...dict].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    if (!/^\p{Script=Han}{2,4}$/u.test(word)) continue;
+    const ordered = entries.filter((e) => !/[A-Z]/.test(e.pinyin)); // a name (a place, a person) is no list word
+    found: for (const e of ordered) {
+      for (const s of e.senses) {
+        const g = shortSense(s.split(/;\s*/)[0]!, ok);
+        if (g) { glosses.set(word, g); break found; }
+      }
+    }
+  }
+  return { date, glosses };
+}

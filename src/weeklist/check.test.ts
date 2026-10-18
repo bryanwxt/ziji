@@ -1,5 +1,5 @@
 // @vitest-environment node
-// 考考自己 (weekly list spec 2026-10-17 §8.1–8.2, §9). Invented fixtures: 拔萝卜, 摘苹果, 浇花朵, 雨伞, 跳绳, 开心, 小河, 钓鱼.
+// 考考自己 (weekly list spec 2026-10-17 §8.1–8.2, §9). Invented fixtures: 拔萝卜, 摘苹果, 浇花朵, 雨伞, 跳绳, 开心, 蝌蚪, 螳螂.
 import { describe, expect, it } from 'vitest';
 import { localDateKey, startOfLocalDay } from '../lib/date';
 import { mulberry32 } from '../lib/random';
@@ -13,9 +13,9 @@ import { CLASS_BEHIND_AT, checkTable, countdownLine, notSolid, readinessLine } f
 const item = (wordId: string, text: string, over: Partial<WeekItem> = {}): WeekItem => ({ wordId, text, from: 'grid', addedStatus: 'new', ...over });
 const sheet = (over: Partial<WeekList> = {}): WeekList => ({
   id: 'wl:t', name: '第九课', createdAt: 5, readyBy: '2026-11-04', homeworkDue: '2026-11-06',
-  items: [item('p:a', '拔', { from: 'pair' }), item('p:b', '萝卜', { from: 'pair' }), item('p:c', '跳绳'), item('p:d', '雨伞'), item('p:e', '开心'), item('p:f', '小河'), item('p:g', '钓鱼')],
-  pairs: [{ left: '拔', right: '萝卜', wrong: ['雨伞', '小河', '钓鱼'] }],
-  fits: [{ wordId: 'p:d', sentence: '下雨了，我打着＿上学。', source: 'parent', wrong: ['萝卜', '小河', '钓鱼'] }],
+  items: [item('p:a', '拔', { from: 'pair' }), item('p:b', '萝卜', { from: 'pair' }), item('p:c', '跳绳'), item('p:d', '雨伞'), item('p:e', '开心'), item('p:f', '蝌蚪'), item('p:g', '螳螂')],
+  pairs: [{ left: '拔', right: '萝卜', wrong: ['雨伞', '蝌蚪', '螳螂'] }],
+  fits: [{ wordId: 'p:d', sentence: '下雨了，我打着＿上学。', source: 'parent', wrong: ['萝卜', '蝌蚪', '螳螂'] }],
   ...over,
 });
 const wordsOf = (l: WeekList, meanings: Record<string, string> = { 跳绳: 'skip rope', 开心: 'happy' }): Map<string, Word> =>
@@ -39,7 +39,7 @@ describe('checkQueue (spec §8.1)', () => {
     expect(checkQueue(l, wordsOf(l), mulberry32(l.createdAt)).map((x) => x.key)).toEqual(checkQueue(l, wordsOf(l), mulberry32(l.createdAt)).map((x) => x.key));
   });
   it('a row no longer guess-proof is not asked: the word is asked another way', () => {
-    const l = sheet({ fits: [{ wordId: 'p:d', sentence: '下雨了，我打着＿上学。', source: 'parent', wrong: ['萝卜', '小河', '书包'] }] }); // 书包 is off the list
+    const l = sheet({ fits: [{ wordId: 'p:d', sentence: '下雨了，我打着＿上学。', source: 'parent', wrong: ['萝卜', '蝌蚪', '书包'] }] }); // 书包 is off the list
     expect(checkQueue(l, wordsOf(l), mulberry32(1)).find((x) => x.wordId === 'p:d')!.form).toBe('read');
   });
   it('three pairs that make a board are one 连一连 question for all their halves', () => {
@@ -78,13 +78,13 @@ describe('recordCheckAnswer and finishCheck (spec §8.1–8.2)', () => {
   it('saves as he goes; a star only for each item right and newly ready; the river meter never moves', async () => {
     const before = { read: { at: 1, correct: true } };
     const l = sheet();
-    const l2 = { ...l, items: l.items.map((i) => (i.wordId === 'p:g' ? { ...i, last: before } : i)) }; // 钓鱼 ready already
+    const l2 = { ...l, items: l.items.map((i) => (i.wordId === 'p:g' ? { ...i, last: before } : i)) }; // 螳螂 ready already
     const db = await setUp(l2);
     const q = checkQueue(l2, wordsOf(l2), mulberry32(1));
     for (const x of q) await recordCheckAnswer(db, 'wl:t', x, x.wordId !== 'p:f', WED);
     expect(Object.keys((await allWeekLists(db))[0]!.check!.results).sort()).toEqual(['p:a', 'p:b', 'p:c', 'p:d', 'p:e', 'p:f', 'p:g']);
     const r = await finishCheck(db, 'wl:t');
-    // 7 items: 小河 missed, 钓鱼 right but ready before; the pair's two halves both count
+    // 7 items: 蝌蚪 missed, 螳螂 right but ready before; the pair's two halves both count
     expect(r).toEqual({ right: 6, total: 7, stars: 5 });
     const kid = (await getKid(db))!;
     expect(kid.bonusStars).toBe(2 + 5);
@@ -224,8 +224,8 @@ describe('checkTable (spec §8.3): each item, its check result and where it is n
       ['萝卜', '✓ 搭配', 'not yet'], // right in the check, wrong since
       ['雨伞', 'not asked', 'not yet'],
       ['开心', 'not asked', 'not yet'],
-      ['小河', '✗ read', 'not yet'],
-      ['钓鱼', 'not asked', 'not yet'],
+      ['蝌蚪', '✗ read', 'not yet'],
+      ['螳螂', 'not asked', 'not yet'],
       ['拔', '✓ 搭配', 'solid'],
       ['跳绳', '✓ meaning', 'solid'],
     ]);

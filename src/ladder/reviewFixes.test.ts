@@ -18,7 +18,7 @@ import { canAskRung, nextRung, RUNG_CARD } from './rungs';
 
 const now = new Date('2026-10-06T09:00:00');
 const right = { correct: true, responseMs: 2500 };
-const parentWord = makeWord('欺负', { id: 'p:1', source: 'parent', rank: null, meaning: undefined, listedAt: 1 }); // a school list word: no English
+const parentWord = makeWord('蝌蚪', { id: 'p:1', source: 'parent', rank: null, meaning: undefined, listedAt: 1 }); // a school list word: no English
 
 describe('C1: every word introduced is begun, whatever he could be asked', () => {
   it('a word with no English starts on its Read rung', async () => {

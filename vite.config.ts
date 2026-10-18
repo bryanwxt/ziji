@@ -68,6 +68,12 @@ export default defineConfig({
             options: { cacheName: 'cedict-words', expiration: { maxEntries: 1 }, cacheableResponse: { statuses: [200] } },
           },
           {
+            // CC-CEDICT's short English (weekly list: a word left without English), fetched by the same panel only, kept likewise
+            urlPattern: ({ url }) => url.pathname.endsWith('/data/cedict-glosses.txt'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'cedict-glosses', expiration: { maxEntries: 1 }, cacheableResponse: { statuses: [200] } },
+          },
+          {
             // the list sentence bank and Tatoeba (parent ruling 2026-10-17): kept after first use, like the headwords
             urlPattern: ({ url }) => /\/assets\/(weekSentences|tatoeba)-[^/]*\.js$/.test(url.pathname),
             handler: 'CacheFirst', // hashed names: a new build is a new URL

@@ -63,3 +63,48 @@ describe('the CC-CEDICT headword list (weekly list, unknown-word gap)', () => {
     expect(out.words).toEqual(['一半', '大人', '家伙', '男孩', '男孩儿', '病人', '蝴蝶'].sort());
   });
 });
+
+describe('the CC-CEDICT gloss list (weekly list: English for a word the parent left blank)', () => {
+  const LINES = [
+    '#! date=2026-10-16T00:00:00Z',
+    '共用 共用 [gong4 yong4] /to share the use of; to have joint use of/communal (bathroom)/',
+    '以後 以后 [yi3 hou4] /after/later/',
+    '王府 王府 [Wang2 fu3] /surname Wangfu/',
+    '王府 王府 [wang2 fu3] /prince\'s mansion/',
+    '傢伙 家伙 [jia1 huo5] /variant of 家伙[jia1 huo5]/',
+    '家伙 家伙 [jia1 huo5] /household dish, implement or furniture/domestic animal/',
+    '本子 本子 [ben3 zi5] /CL:本[ben3]/book; notebook/',
+    '长篇大论 长篇大论 [chang2 pian1 da4 lun4] /lengthy speech or article that goes on and on and on/',
+    '病人 病人 [bing4 ren2] /sick person; patient/',
+    '蝶變 蝶变 [die2 bian4] /(fig.) to metamorphose/',
+    '結出 结出 [jie1 chu1] /to bear (fruit)/',
+    '北京 北京 [Bei3 jing1] /Beijing, capital of the People\'s Republic of China/',
+    '蝴 蝴 [hu2] /used in 蝴蝶/',
+    '一路平安無事 一路平安无事 [x] /x/',
+    '喔喔 喔喔 [o1 o1] /(onom.) sth crowing/rooster sound/',
+  ].join('\n');
+  it('2–4 character headwords: the first usable sense, cut to at most four words, no "to"', async () => {
+    const { cedictGlosses } = await import('./glossary-lib');
+    const { date, glosses } = cedictGlosses(LINES);
+    expect(date).toBe('2026-10-16');
+    expect(glosses.get('共用')).toBe('share the use of');
+    expect(glosses.get('以后')).toBe('after');
+    expect(glosses.get('病人')).toBe('sick person');
+    expect(glosses.get('本子')).toBe('book'); // the classifier note skipped
+    expect(glosses.get('王府')).toBe("prince's mansion"); // the surname entry skipped
+    expect(glosses.get('家伙')).toBe('household dish'); // the variant entry skipped; cut at its comma... or its words
+    expect(glosses.get('结出')).toBe('bear (fruit)'); // a closing note kept when it fits
+    expect(glosses.has('北京')).toBe(false); // a name
+    expect(glosses.get('蝶变')).toBe('metamorphose'); // a leading note and its "to" go
+    expect(glosses.has('长篇大论')).toBe(false); // no sense fits in four words
+    expect(glosses.has('蝴')).toBe(false);
+    expect(glosses.has('一路平安无事')).toBe(false);
+  });
+  it('with the kid gloss check, a sense it fails gives way to the next', async () => {
+    const { cedictGlosses } = await import('./glossary-lib');
+    const { glossProblems } = await import('../src/content/kidGloss');
+    const { glosses } = cedictGlosses(LINES, (g) => !glossProblems(g).length);
+    expect(glosses.get('喔喔')).toBe('rooster sound');
+    for (const g of glosses.values()) expect(glossProblems(g)).toEqual([]);
+  });
+});
