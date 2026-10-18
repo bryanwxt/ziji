@@ -17,7 +17,10 @@ import { ProgressTab } from './ProgressPanel';
 import { RecordingsPanel } from './RecordingsPanel';
 import { RewardsPanel } from './RewardsPanel';
 import { SettingsPanel } from './SettingsPanel';
+import { TalkSection } from './TalkSection';
+import { TryThis } from './TryThis';
 import { WeekPanel } from './WeekPanel';
+import { WeekSummaryPanel } from './WeekSummaryPanel';
 import { WordsPanel } from './WordsPanel';
 
 /** The parent area's five tabs (parent, 2026-10-15: thirteen scrolled sideways on a phone). */
@@ -25,11 +28,11 @@ export type ParentTab = 'today' | 'progress' | 'content' | 'rewards' | 'settings
 /** The five parts of Content, picked by its segmented control; 本周词语 first (weekly list spec 2026-10-17 §3.1). */
 export type ContentPart = 'week' | 'words' | 'import' | 'passages' | 'pictures';
 /** A place a shortcut can go: each of the old tabs, now a section of one of the five. */
-export type ParentPlace = 'dashboard' | 'listen' | 'recordings' | 'school' | 'skills' | 'memory' | ContentPart | 'rewards' | 'settings' | 'backup' | 'credits';
+export type ParentPlace = 'dashboard' | 'talk' | 'listen' | 'recordings' | 'summary' | 'school' | 'skills' | 'memory' | ContentPart | 'rewards' | 'settings' | 'backup' | 'credits';
 
 export const HOME: Record<ParentPlace, ParentTab> = {
-  dashboard: 'today', listen: 'today', recordings: 'today',
-  school: 'progress', skills: 'progress', memory: 'progress',
+  dashboard: 'today', talk: 'today', listen: 'today', recordings: 'today',
+  summary: 'progress', school: 'progress', skills: 'progress', memory: 'progress',
   week: 'content', words: 'content', import: 'content', passages: 'content', pictures: 'content',
   rewards: 'rewards',
   settings: 'settings', backup: 'settings', credits: 'settings',
@@ -52,6 +55,8 @@ const PARTS: [ContentPart, string][] = [
   ['passages', 'Reading texts'],
   ['pictures', 'Pictures'],
 ];
+/** How many times (50 ms apart) a shortcut looks for its section before giving up. */
+const SCROLL_TRIES = 20;
 let lastPart: ContentPart = 'week'; // Content opens where the parent left it, for this session
 
 export function ParentArea() {
@@ -62,14 +67,26 @@ export function ParentArea() {
   const [allRecordings, setAllRecordings] = useState(false);
   const [goTo, setGoTo] = useState<ParentPlace | null>(null); // a shortcut's section, scrolled to once its tab shows
   const [waiting, setWaiting] = useState<number | null>(null); // takes to review: the badge on Today
+  const [talked, setTalked] = useState(0); // a talk logged or undone: the top line looks again
+  const [quietWeak, setQuietWeak] = useState<string | undefined>(); // the list whose weak words the top line names
   const countWaiting = async () => setWaiting(waitingTakes(await listRecordings(db)).length);
   useEffect(() => {
     void countWaiting();
   }, []);
   useEffect(() => {
     if (!goTo) return;
-    document.getElementById(placeId(goTo))?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-    setGoTo(null);
+    // a section inside a panel still loading (聊一聊 waits for the overview) shows a moment later: look again for up to a second
+    let tries = 0;
+    const look = () => {
+      const el = document.getElementById(placeId(goTo));
+      if (!el && tries++ < SCROLL_TRIES) return;
+      clearInterval(timer);
+      el?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      setGoTo(null);
+    };
+    const timer = setInterval(look, 50);
+    look();
+    return () => clearInterval(timer);
   }, [goTo, tab, part, allRecordings]);
   const navigate = (p: ParentPlace) => {
     setTab(HOME[p]);
@@ -96,7 +113,12 @@ export function ParentArea() {
         <main class="parent__body" role="tabpanel" id="parent-panel" aria-labelledby={`parent-tab-${tab}`}>
           {tab === 'today' && (
             <>
-              <div id={placeId('dashboard')} class="parent__section"><Dashboard onNavigate={navigate} waiting={waiting ?? undefined} /><ExtraLessonButton /></div>
+              <div id={placeId('dashboard')} class="parent__section">
+                <TryThis onNavigate={navigate} waiting={waiting} talked={talked} onAction={(a) => setQuietWeak(a.weakOf)} />
+                <Dashboard onNavigate={navigate} waiting={waiting ?? undefined} quietWeak={quietWeak}
+                  talk={<div id={placeId('talk')}><TalkSection onNavigate={navigate} onLogged={() => setTalked((n) => n + 1)} /></div>} />
+                <ExtraLessonButton />
+              </div>
               <div id={placeId('listen')} class="parent__section"><ListenPanel onReviewed={() => void countWaiting()} /></div>
               <div id={placeId('recordings')} class="parent__section">
                 <button type="button" class="btn btn--ghost parent__more" aria-expanded={allRecordings} aria-controls="parent-recordings-panel" onClick={() => setAllRecordings((o) => !o)}>
@@ -106,7 +128,12 @@ export function ParentArea() {
               </div>
             </>
           )}
-          {tab === 'progress' && <SkillsPanel school={<ProgressTab />} />}
+          {tab === 'progress' && (
+            <>
+              <div id={placeId('summary')} class="parent__section"><WeekSummaryPanel onNavigate={navigate} /></div>
+              <SkillsPanel school={<ProgressTab />} />
+            </>
+          )}
           {tab === 'content' && (
             <>
               <div class="segmented" role="tablist" aria-label="Content">

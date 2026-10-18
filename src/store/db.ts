@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { AnswerLog, CardRecord, KidState, LadderEntry, ParentPassage, PicturePrompt, Recording, ReviewLog, RewardGoal, SessionRecord, Settings, WeekList, Word } from '../types';
+import type { AnswerLog, CardRecord, KidState, LadderEntry, ParentPassage, PicturePrompt, Recording, ReviewLog, RewardGoal, SessionRecord, Settings, TalkLog, WeekList, Word } from '../types';
 
 export interface HanziDB extends DBSchema {
   words: { key: string; value: Word };
@@ -15,6 +15,7 @@ export interface HanziDB extends DBSchema {
   answers: { key: number; value: AnswerLog; indexes: { byAt: number } };
   ladder: { key: string; value: LadderEntry };
   weekLists: { key: string; value: WeekList };
+  talks: { key: string; value: TalkLog; indexes: { byAt: number } };
   /** what was here before the last restore (review 2026-10-17): a backup's text, so the restore can be undone; never backed up */
   restorePoints: { key: string; value: RestorePoint };
 }
@@ -29,10 +30,10 @@ export interface RestorePoint {
 export type AppDb = IDBPDatabase<HanziDB>;
 
 export const DB_NAME = 'hanzi-buddy'; // pre-rename name; kept so existing progress survives
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 /** Stores holding one record per item (everything except the 'main' singletons). */
-export const LIST_STORES = ['words', 'cards', 'reviewLogs', 'sessions', 'rewards', 'recordings', 'prompts', 'passages', 'answers', 'ladder', 'weekLists'] as const;
+export const LIST_STORES = ['words', 'cards', 'reviewLogs', 'sessions', 'rewards', 'recordings', 'prompts', 'passages', 'answers', 'ladder', 'weekLists', 'talks'] as const;
 export type ListStore = (typeof LIST_STORES)[number];
 
 export interface OpenHandlers {
@@ -77,6 +78,7 @@ export function openAppDb(name: string = DB_NAME, handlers: OpenHandlers = {}): 
         db.createObjectStore('restorePoints', { keyPath: 'id' });
       }
       if (oldVersion < 6) db.createObjectStore('weekLists', { keyPath: 'id' }); // weekly lists (weekly list spec 2026-10-17 §4)
+      if (oldVersion < 7) db.createObjectStore('talks', { keyPath: 'id' }).createIndex('byAt', 'at'); // the parent's 「✓ 聊了」 (parent loop spec §6)
     },
   });
   return open.then((db) => (opened = db));
