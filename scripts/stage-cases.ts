@@ -369,6 +369,34 @@ for (const size of SIZES) {
   }
   const sideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   if (sideways > 1) problems.push(`${size.name} listen: the page scrolls sideways ${sideways}px`);
+  // the parent loop (spec 2026-10-12, 2026-10-18 update): the top line, 聊一聊 and Week summary looked at on every size; every
+  // button big enough to tap; nothing makes the page scroll sideways; nothing in a talk card spills out of it
+  await page.goto(`file://${dir}/index.html?case=talk`);
+  await page.waitForSelector('.talk__more');
+  for (const q of ['.try-this .small-btn', '.talk__open', '.talk__swap', '.talk__chips .chip', '.talk__done', '.talk__log .small-btn', '.week-summary .segmented__opt', '.week-summary .small-btn']) {
+    const els = await page.$$(q);
+    if (!els.length) problems.push(`${size.name} talk: no ${q}`);
+    for (const b of els) {
+      const box = await b.boundingBox();
+      if (!box || Math.min(box.width, box.height) < 43.5) { problems.push(`${size.name} talk: ${q} under 44px (${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'hidden'})`); break; }
+    }
+  }
+  const talkSideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  if (talkSideways > 1) problems.push(`${size.name} talk: the page scrolls sideways ${talkSideways}px`);
+  problems.push(...(await page.evaluate((n) => {
+    for (const card of document.querySelectorAll('.talk__card')) {
+      const c = card.getBoundingClientRect();
+      for (const el of card.querySelectorAll('*')) {
+        const r = el.getBoundingClientRect();
+        if (r.width && (r.left < c.left - 1 || r.right > c.right + 1)) return [`${n} talk: spills out of its card: ${(el.textContent ?? '').trim().slice(0, 12)}`];
+      }
+    }
+    return [];
+  }, size.name)));
+  // the parent area scrolls inside .screen, which WebKit's fullPage misses: the shot grows the viewport to the content, then puts it back
+  await page.setViewportSize({ width: size.width, height: Math.max(size.height, await page.evaluate(() => document.querySelector('.screen')!.scrollHeight)) });
+  await page.screenshot({ path: `fit-shots/stage-cases/talk-${size.name}.png` });
+  await page.setViewportSize({ width: size.width, height: size.height });
   // a weekly list (weekly list spec 2026-10-17 §7): 认新词 cards for a 2-character word, a 3-character ABB word, a phrase and a verb
   // through its pair, and a re-teaching card. Each word on one line with its pinyin over every character at once (never later),
   // nothing clipped; then 选词填空 from the list and a 连一连 board of its pairs, unanswered and after a miss

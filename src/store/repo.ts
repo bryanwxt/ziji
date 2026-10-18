@@ -4,7 +4,7 @@ import { normalizeFinds } from '../fun/finds';
 import { normalizeBank, normalizeMeter } from '../fun/meter';
 import { migrateAccessory } from '../fun/accessories';
 import { migrateReading } from '../langdu/history';
-import { DEFAULT_KID, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type WeekList, type Word } from '../types';
+import { DEFAULT_KID, DEFAULT_SETTINGS, type AnswerLog, type CardKind, type CardRecord, type ParentPassage, type KidState, type PicturePrompt, type Recording, type ReviewLog, type RewardGoal, type SessionRecord, type Settings, type TalkLog, type WeekList, type Word } from '../types';
 import type { AppDb } from './db';
 
 const MAIN = 'main';
@@ -314,3 +314,13 @@ export async function updateWeekList(db: AppDb, id: string, change: (l: WeekList
   await Promise.all([tx.store.put(next), tx.done]);
   return next;
 }
+
+/** A 「✓ 聊了」 (parent loop spec §5). */
+export async function addTalk(db: AppDb, t: TalkLog): Promise<void> {
+  await db.put('talks', t);
+}
+export const deleteTalk = (db: AppDb, id: string) => db.delete('talks', id);
+/** Talks logged in [from, to), oldest first. */
+export const talksBetween = (db: AppDb, from: number, to: number): Promise<TalkLog[]> => db.getAllFromIndex('talks', 'byAt', IDBKeyRange.bound(from, to, false, true));
+/** Every talk logged, oldest first. */
+export const allTalks = (db: AppDb): Promise<TalkLog[]> => db.getAllFromIndex('talks', 'byAt');

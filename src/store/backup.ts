@@ -39,6 +39,7 @@ export interface BackupPreview {
   counts: { words: number; cards: number; sessions: number; recordings: number };
   hasMedia: boolean;
   listsMissing: boolean; // a backup from before weekly lists (v6): restoring it clears this device's lists (weekly list spec §11)
+  talksMissing: boolean; // a backup from before the talk log (v7): restoring it keeps this device's talks (parent loop spec §6)
 }
 
 /** The stores a backup holds: every list store; the restore point is never among them. */
@@ -133,6 +134,8 @@ export async function exportBackup(db: AppDb, opts: { includeMedia: boolean; now
 }
 
 const listsMissing = (file: BackupFile) => 'words' in file.stores && !('weekLists' in file.stores);
+/** A backup from before v7: its restore leaves the talk log as it is (the family's log, not his progress); Undo still covers it. */
+const talksMissing = (file: BackupFile) => 'words' in file.stores && !('talks' in file.stores);
 
 /** Validates without writing anything. Throws BackupError with a parent-friendly message. */
 export function readBackup(text: string): BackupPreview {
@@ -163,6 +166,7 @@ export function readBackup(text: string): BackupPreview {
     counts: { words: count('words'), cards: count('cards'), sessions: count('sessions'), recordings: count('recordings') },
     hasMedia: 'recordings' in file.stores,
     listsMissing: listsMissing(file),
+    talksMissing: talksMissing(file),
   };
 }
 

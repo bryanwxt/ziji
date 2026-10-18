@@ -33,6 +33,18 @@ describe('Dashboard: the weekly list readiness line', () => {
     fireEvent.click(screen.getByText('Open 本周词语'));
     expect(onNavigate).toHaveBeenCalledWith('week');
   });
+  it("when Try this already names the list's weak words, the line leaves them out (the other lists keep theirs)", async () => {
+    const a = await app();
+    await putWeekList(a.db, { ...list, id: 'wl:e', name: '第十课' });
+    renderWithApp(<Dashboard onNavigate={vi.fn()} quietWeak="第九课" />, a);
+    await waitFor(() => expect(document.querySelectorAll('.dash__week')).toHaveLength(2));
+    const boxes = [...document.querySelectorAll('.dash__week')];
+    const nine = boxes.find((b) => b.textContent!.startsWith('第九课'));
+    const ten = boxes.find((b) => b.textContent!.startsWith('第十课'));
+    expect(nine!.textContent).toContain('reviews due');
+    expect(nine!.textContent).not.toContain('weak:');
+    expect(ten!.textContent).toContain('— weak: 小河, 风筝');
+  });
   it('no list, no line', async () => {
     renderWithApp(<Dashboard onNavigate={vi.fn()} />, await app(false));
     await screen.findByText('Day streak');

@@ -2,7 +2,9 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { hashPin } from '../lib/hash';
-import { addRecording } from '../store/repo';
+import { addRecording, putWeekList, putWords } from '../store/repo';
+import { localDateKey } from '../lib/date';
+import { makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_SETTINGS, type Recording } from '../types';
 import { HOME, ParentArea, placeId, type ParentPlace } from './ParentArea';
@@ -46,6 +48,9 @@ describe('the parent area in five tabs', () => {
     enter(await open());
     // Today: the overview, Listen & confirm, and all recordings behind a toggle
     expect(await screen.findByText('Day streak')).toBeTruthy();
+    expect(await screen.findByText('This week, try this')).toBeTruthy();
+    expect(await heading(/聊一聊 Talk/)).toBeTruthy();
+    expect(document.getElementById(placeId('talk'))).toBeTruthy();
     expect(await heading('Listen & confirm')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Recordings' })).toBeNull();
     const more = screen.getByRole('button', { name: /All recordings/ });
@@ -56,9 +61,10 @@ describe('the parent area in five tabs', () => {
     // Progress: School (his book's lists and the placement), Skills, Memory
     fireEvent.click(tab(/Progress/));
     for (const h of ['School', 'MOE progress', 'Placement', 'Skills', 'Memory', 'Fit to his memory', /Remembered after a gap/, /Missed most/]) expect(await heading(h)).toBeTruthy();
+    expect(await heading('Week summary')).toBeTruthy();
     const order = [...document.querySelectorAll('.parent__section-title')].map((h) => h.textContent);
-    expect(order).toEqual(['School', 'Skills', 'Memory']);
-    for (const p of ['school', 'skills', 'memory'] as const) expect(document.getElementById(placeId(p))).toBeTruthy(); // where a shortcut would scroll
+    expect(order).toEqual(['Week summary', 'School', 'Skills', 'Memory']);
+    for (const p of ['summary', 'school', 'skills', 'memory'] as const) expect(document.getElementById(placeId(p))).toBeTruthy(); // where a shortcut would scroll
     // Content: five parts, 本周词语 first (weekly list spec 2026-10-17 §3.1)
     fireEvent.click(tab(/Content/));
     const parts = within(screen.getByRole('tablist', { name: 'Content' }));
@@ -104,7 +110,7 @@ describe('the parent area in five tabs', () => {
 
   it('every old tab has a home, and its section is there', () => {
     expect(new Set(Object.values(HOME))).toEqual(new Set(['today', 'progress', 'content', 'rewards', 'settings']));
-    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'week', 'words'].sort());
+    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'summary', 'talk', 'week', 'words'].sort());
   });
 });
 
@@ -139,5 +145,32 @@ describe("the overview's shortcuts land on the right tab and section", () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Listen & confirm' }));
     expect(tab(/Today/).getAttribute('aria-selected')).toBe('true');
     await lands('listen');
+  });
+  it('Week summary opens Progress at the summary', async () => {
+    enter(await open());
+    fireEvent.click(await screen.findByRole('button', { name: 'Week summary' }));
+    expect(tab(/Progress/).getAttribute('aria-selected')).toBe('true');
+    await lands('summary');
+  });
+  it('the top line opens Today on 聊一聊 when no talk is logged yet', async () => {
+    enter(await open({ lastBackupAt: Date.now() }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Go to 聊一聊' }));
+    expect(tab(/Today/).getAttribute('aria-selected')).toBe('true');
+    await lands('talk');
+  });
+});
+
+describe("Today's top line and the readiness line", () => {
+  it('when Try this goes over the list\'s weak words, the readiness card right below does not repeat them', async () => {
+    const app = await open();
+    const day = (n: number) => localDateKey(new Date(app.now().getTime() + n * 86_400_000));
+    await putWords(app.db, ['风筝', '小河'].map((t) => makeWord(t, { id: `p:${t}`, source: 'parent' })));
+    await putWeekList(app.db, { id: 'wl:t', name: '第九课', createdAt: 0, readyBy: day(1), homeworkDue: day(3), pairs: [], fits: [],
+      items: [{ wordId: 'p:风筝', text: '风筝', from: 'grid', addedStatus: 'new' }, { wordId: 'p:小河', text: '小河', from: 'grid', addedStatus: 'new' }] });
+    enter(app);
+    await waitFor(() => expect(document.querySelector('.try-this__text')?.textContent).toMatch(/^第九课: 2 of 2 not ready .* Go over .*风筝/));
+    const line = await waitFor(() => { const el = document.querySelector('.dash__week-line'); expect(el).toBeTruthy(); return el!; });
+    expect(line.textContent).toContain('List 0/2 ready');
+    expect(line.textContent).not.toContain('weak:');
   });
 });
