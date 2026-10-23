@@ -5,7 +5,7 @@ import { mulberry32, shuffle, type Rng } from '../lib/random';
 import { fitItem } from '../practice/useItems';
 import { zujuFor } from '../content/zuju';
 import { dapeiQuestion, zuciBoard } from '../practice/pairs';
-import type { CardRecord, SessionRecord, Word } from '../types';
+import type { CardRecord, RecallPick, SessionRecord, Word } from '../types';
 import { startRung } from './ladder';
 import { buildRound, type Ask, type PracticeItem, type RoundWord } from './round';
 import { fishItem } from '../activities/components/zibian';
@@ -101,6 +101,7 @@ function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: As
     case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
     case 'family': return false; // 找一家人 takes over a planned rung-2 item (withFamily), never asked from the ladder
     case 'sentence': return false; // 说一句 is added from the plan's sentenceIds (withSentence), never asked from the ladder
+    case 'recall': return false; // 默写 takes over a word's first appearance from the plan's recall (withRecall), never asked from the ladder
   }
 }
 
@@ -158,6 +159,20 @@ export function withSentence(items: PracticeItem[], sentenceIds: string[]): Prac
   return out;
 }
 
+/**
+ * 默写 (real test spec 2026-10-23 §4): each picked word's first appearance becomes its 默写, in the same place, rung and grading,
+ * so the round is no longer and §3's order puts it before anything the time box cuts. A word not in the round gets none.
+ */
+export function withRecall(items: PracticeItem[], picks: readonly RecallPick[]): PracticeItem[] {
+  const out = [...items];
+  for (const p of picks) {
+    const i = out.findIndex((x) => x.wordId === p.wordId && !x.retry);
+    if (i < 0 || out[i]!.ask === 'recall') continue;
+    out[i] = { ...out[i]!, ask: 'recall', recall: { at: p.at, writeId: p.writeId, ask: out[i]!.ask } };
+  }
+  return out;
+}
+
 /** At most two 找一家人 a lesson (spec 2026-10-12 §5). */
 export const MAX_FAMILY = 2;
 
@@ -191,7 +206,9 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
   const today = new Set([...rec.plan.newWordIds, ...introducedNewWords(rec)]);
   // 找一家人 takes up to two rung-2 items, for words with family he reads (`known`: know.knownChars, spec 2026-10-12 §5); about one
   // in five 组词-gap, 搭配 and English-meaning questions then leave their answer out for 「都不对」 (production practice spec §5)
-  const round = withNoneOfThese(withFamily(buildRound(words, can, rng), (id) => {
+  // 默写 (real test spec 2026-10-23 §4) takes its words' first appearances before 找一家人 and 都不对 look at the round
+  const recall = (rec.plan.recall ?? []).filter((p) => { const w = wordsById.get(p.wordId); return !!w && !w.paused && !today.has(p.wordId); });
+  const round = withNoneOfThese(withFamily(withRecall(buildRound(words, can, rng), recall), (id) => {
     const w = wordsById.get(id);
     return !!w && !w.paused && familyBoard(w, known, mulberry32(1)) !== null;
   }), today, rng);

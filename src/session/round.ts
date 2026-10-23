@@ -8,8 +8,9 @@ import { TOP_RUNG, type Rung } from './ladder';
  *  idiom: complete a 成语 that uses the word · idiomFit: pick that 成语 for a sentence · idiomBuild: 组句 with it ·
  *  fish: 钓鱼 for a look-alike he confused (not a rung) · say: he reads the word aloud (the Say rung, spec 2026-10-11 §3) ·
  *  family: 找一家人, in place of a rung-2 word or pair item (spec 2026-10-12 §5; never picked by the ladder) ·
- *  sentence: 说一句, he says a sentence with the word (production practice spec §4; rung 3, never picked by the ladder). */
-export type Ask = 'read' | 'listen' | 'hear' | 'meaningRead' | 'word' | 'pair' | 'match' | 'whole' | 'fit' | 'usage' | 'understand' | 'build' | 'idiom' | 'idiomFit' | 'idiomBuild' | 'fish' | 'say' | 'family' | 'sentence';
+ *  sentence: 说一句, he says a sentence with the word (production practice spec §4; rung 3, never picked by the ladder) ·
+ *  recall: 默写, he writes the character from memory (real test spec 2026-10-23 §4; in place of a first appearance, never picked by the ladder). */
+export type Ask = 'read' | 'listen' | 'hear' | 'meaningRead' | 'word' | 'pair' | 'match' | 'whole' | 'fit' | 'usage' | 'understand' | 'build' | 'idiom' | 'idiomFit' | 'idiomBuild' | 'fish' | 'say' | 'family' | 'sentence' | 'recall';
 export const ASKS: Record<Rung, Ask[]> = {
   1: ['read', 'listen', 'hear', 'meaningRead'], // hear / meaningRead: the word ladder's English meaning (spec 2026-10-06 §3.2)
   2: ['word', 'pair', 'match', 'whole'],
@@ -22,7 +23,10 @@ export type Grades = 'recognise' | 'meaning' | 'use' | 'hear' | 'understand' | '
 
 /** none: its right answer is left out and 「都不对」 is right (production practice spec §5).
  *  due: the first appearance of a word whose revision is due today (pacing counts these when time runs out, spec §2.2). */
-export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean; missed?: boolean; idiom?: string; none?: true | 'answer' | 'decoy'; list?: import('../types').ListAsk } // missed: it came back after a wrong answer (Truffle peeks); idiom: the 成语 a missed rung-5 question asked; list: a weekly list item (weekly list spec §6.4)
+export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean; missed?: boolean; idiom?: string; none?: true | 'answer' | 'decoy'; list?: import('../types').ListAsk; recall?: RecallAsk } // missed: it came back after a wrong answer (Truffle peeks); idiom: the 成语 a missed rung-5 question asked; list: a weekly list item (weekly list spec §6.4); recall: a 默写 (real test spec §4)
+
+/** A 默写 item's character (`at`, `writeId`: see RecallPick) and the question it replaced, asked instead if its strokes can't load. */
+export interface RecallAsk { at: number; writeId: string; ask: Ask }
 
 export interface RoundWord {
   wordId: string;

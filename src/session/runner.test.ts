@@ -375,3 +375,10 @@ describe('a practice round left empty by a word sent back to learn (re-review N1
     expect(currentStep(rec)).toBe('writing');
   });
 });
+
+describe('a missed 默写 (real test spec 2026-10-23 §4)', () => {
+  it('is not asked again: its strokes were shown already', () => {
+    const rec = startPractice(finishStep(createSessionRecord(planOf({ newWordIds: [] }), '2026-10-06', 0)), ['b:a', 'b:b', 'b:c'].map((x) => p(x, { ask: 'recall', recall: { at: 0, writeId: x, ask: 'read' } })));
+    expect(afterPracticeAnswer(rec, false, 40_000).practiceQueue).toHaveLength(3);
+  });
+});
