@@ -37,8 +37,12 @@ export const TAP_KINDS: readonly TapKind[] = ['recognise', 'meaning', 'hear', 'u
 /** The slow line before he has 10 answers of a kind (spec §3.2). */
 export const SLOW_ANSWER_MS = 6000;
 
+/** A right tap faster than this, from the moment the choices appear, is too fast to have read the question (real test spec §6). */
+export const GUESS_MS = 900;
+export const tooFast = (responseMs: number): boolean => responseMs < GUESS_MS;
+
 export type Outcome =
-  | { kind: TapKind; correct: boolean; responseMs: number; produced: boolean; state: State; slowMs?: number }
+  | { kind: TapKind; correct: boolean; responseMs: number; produced: boolean; state: State; slowMs?: number; guess?: boolean }
   | { kind: 'write'; totalMisses: number };
 
 /**
@@ -52,6 +56,7 @@ export function toRating(o: Outcome): Grade {
     return o.totalMisses <= 3 ? Rating.Hard : Rating.Again;
   }
   if (!o.correct) return Rating.Again;
+  if (o.guess) return Rating.Hard; // too fast to have read it: Hard, whatever produced is (real test spec §6)
   if (o.responseMs > (o.slowMs ?? SLOW_ANSWER_MS)) return Rating.Hard;
   const learning = o.state === State.Learning || o.state === State.Relearning;
   return o.produced || learning ? Rating.Good : Rating.Hard;

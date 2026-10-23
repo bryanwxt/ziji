@@ -16,8 +16,9 @@ import { activeLists } from '../weeklist/plan';
 
 export { LISTEN_MS, USE_READING_MS };
 
-/** A tap answer: right or not, how long it took, and this lesson's slow lines (spec §3.2; absent: 6 s). */
-export interface TapOutcome { correct: boolean; responseMs: number; slow?: SlowLines }
+/** A tap answer: right or not, how long it took, and this lesson's slow lines (spec §3.2; absent: 6 s). `guess`: right, but too
+ *  fast to have read the question (real test spec §6): Hard, logged as a guess, so it never counts toward a pass. */
+export interface TapOutcome { correct: boolean; responseMs: number; slow?: SlowLines; guess?: boolean }
 
 /** His slow lines for a lesson (spec §3.2): from all his review logs, once, as the lesson starts. */
 export const SLOW_LOOKBACK_DAYS = 120; // the line needs his last 40 right answers per kind; older ones only slow the read
@@ -70,9 +71,10 @@ async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, 
   // a right answer on a list word's review that came early (pinned to the ready-by day or a quick check, weekly list spec §6.1–6.2)
   // rates Good, not Hard: being asked early isn't his doing, and Hard would raise its difficulty
   const produced = o.correct && ((await earlyListReview(db, was, now)) || (await isProduced(db, wordId)));
-  const rating = toRating({ kind, correct: o.correct, responseMs: ratedMs, produced, state, slowMs: o.slow?.[kind] });
+  const guess = o.correct && !!o.guess;
+  const rating = toRating({ kind, correct: o.correct, responseMs: ratedMs, produced, state, slowMs: o.slow?.[kind], guess });
   const { card, before } = await reviewCard(db, wordId, kind, rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind, at: now.getTime(), rating, correct: o.correct, responseMs: o.responseMs, ...before, ...extra });
+  await addReviewLog(db, { cardId: card.id, wordId, kind, at: now.getTime(), rating, correct: o.correct, responseMs: o.responseMs, ...before, ...extra, ...(guess ? { guess: true as const } : {}) });
   return (await settleRung(db, wordId, kind, now)) ?? card;
 }
 
@@ -203,10 +205,10 @@ export async function bringForward(db: AppDb, wordId: string, kind: CardKind, du
 }
 
 /** A word used in context (选一选, 用对了吗, 用一用): the day's first answer rates its meaning card; a later miss brings it forward. */
-export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date, responseMs = 0, slow?: SlowLines): Promise<CardRecord> {
+export async function recordUse(db: AppDb, wordId: string, correct: boolean, now: Date, responseMs = 0, slow?: SlowLines, guess = false): Promise<CardRecord> {
   const existing = await getCard(db, `${wordId}:meaning`);
   // he reads a sentence (or two) first: that time doesn't make a right answer Hard
-  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs, ratedMs: Math.max(0, responseMs - USE_READING_MS), slow }, now, 'use'); // logged as from 选一选/用一用, so Skills counts it once
+  if (!ratedToday(existing, now)) return recordMeaning(db, wordId, { correct, responseMs, ratedMs: Math.max(0, responseMs - USE_READING_MS), slow, guess }, now, 'use'); // logged as from 选一选/用一用, so Skills counts it once
   if (!correct) await bringForward(db, wordId, 'meaning', endOfLocalDay(now));
   return (await getCard(db, `${wordId}:meaning`))!;
 }

@@ -85,6 +85,7 @@ export interface ReviewLog {
   responseMs?: number;
   misses?: number;
   placedCheck?: true; // the first recheck of a placed card (spec 2026-10-14), for the parent's count of rechecks
+  guess?: true; // a right tap faster than GUESS_MS (real test spec 2026-10-23 §6): rated Hard, and never a day toward a pass
   source?: 'use' | 'write'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use), or from a 组词 written in 写一写 (production practice spec §3)
   // the card as it was before this review (SRS tuning spec §4); logs written before it have none
   state?: State; // New, Learning, Review or Relearning

@@ -231,3 +231,34 @@ describe('the 组词 written in 写一写 rates meaning (production practice spe
     await markTraced(db, 'b:不在', day(6)); // not stored (a ladder 词语): nothing happens
   });
 });
+
+describe('too fast to count (real test spec 2026-10-23 §6)', () => {
+  const yesterday = new Date(2026, 9, 1, 9);
+  const rightYesterday = async (db: Awaited<ReturnType<typeof freshDb>>) => {
+    await putCards(db, [{ id: 'b:大:recognise', wordId: 'b:大', kind: 'recognise', fsrs: { ...seededKnownCard(yesterday, 1) } }]);
+    await addReviewLog(db, { cardId: 'b:大:recognise', wordId: 'b:大', kind: 'recognise', at: yesterday.getTime(), rating: Rating.Good, correct: true, responseMs: 2000 });
+  };
+  it('a guess (899 ms) rates Hard even when produced, is logged as a guess, and settles no rung', async () => {
+    const db = await freshDb();
+    await markProduced(db, 'b:大');
+    await rightYesterday(db);
+    const card = await recordRecognition(db, 'b:大', { correct: true, responseMs: 899, guess: true }, now);
+    const log = (await logsSince(db, now.getTime()))[0]!;
+    expect(log).toMatchObject({ rating: Rating.Hard, correct: true, guess: true });
+    expect(card.passed).toBeUndefined(); // two right days, but today's was a guess
+  });
+  it('a right tap at 901 ms is as before: Good when produced, and the second right day passes the rung', async () => {
+    const db = await freshDb();
+    await markProduced(db, 'b:大');
+    await rightYesterday(db);
+    const card = await recordRecognition(db, 'b:大', { correct: true, responseMs: 901 }, now);
+    expect((await logsSince(db, now.getTime()))[0]!).toMatchObject({ rating: Rating.Good });
+    expect(card.passed).toBe(now.getTime());
+  });
+  it('a 选一选 guess through recordUse rates the meaning card Hard', async () => {
+    const db = await freshDb();
+    await markProduced(db, 'b:很');
+    await recordUse(db, 'b:很', true, now, 500, undefined, true);
+    expect((await logsSince(db, 0)).find((l) => l.kind === 'meaning')).toMatchObject({ rating: Rating.Hard, guess: true });
+  });
+});
