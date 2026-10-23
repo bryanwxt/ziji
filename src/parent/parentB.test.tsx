@@ -174,6 +174,18 @@ describe('BackupPanel restore', () => {
   });
 });
 
+describe('Progress’s 只点选 link left unused (final review T9)', () => {
+  it('leaving the parent area clears it: a later Words panel opens on its usual filter', async () => {
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, pinHash: await hashPin('1111') } });
+    showTapOnlyNext();
+    renderWithApp(<ParentArea />, app);
+    cleanup();
+    renderWithApp(<WordsPanel />, app);
+    const filter = await waitFor(() => { const f = document.querySelector<HTMLSelectElement>('select:has(option[value="tapOnly"])'); expect(f).toBeTruthy(); return f!; });
+    expect(filter.value).toBe('lists');
+  });
+});
+
 describe('ParentArea tabs', () => {
   it('shows five icon tabs as a segmented control, each 中文 and English', async () => {
     const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, pinHash: await hashPin('1111') } });

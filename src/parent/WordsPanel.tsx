@@ -21,8 +21,8 @@ const lessonOf = (w: Word): string => { const at = bookLesson(w); return at === 
 type Filter = 'lists' | `level${1 | 2 | 3 | 4 | 5 | 6 | 7}` | 'paused' | 'tapOnly';
 const MAX_ROWS = 200;
 let openOn: Filter | null = null;
-/** The next Words panel opens on the 只点选 words (Progress's link, real test spec 2026-10-23 §7). */
-export const showTapOnlyNext = () => { openOn = 'tapOnly'; };
+/** The next Words panel opens on the 只点选 words (Progress's link, real test spec 2026-10-23 §7); `false` drops a link left unused. */
+export const showTapOnlyNext = (on = true) => { openOn = on ? 'tapOnly' : null; };
 
 export function WordsPanel() {
   const { db, now } = useApp();

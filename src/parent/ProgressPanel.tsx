@@ -33,9 +33,10 @@ function Bar({ label, have, of, mark }: { label: string; have: number; of: numbe
  * This week from memory against tapping (real test spec 2026-10-23 §7): earlier words written from memory and how many right, and
  * the words only ever tapped right in the last 14 days, with a link to them in Words.
  */
-function MemoryLine({ logs, now, onTapOnly }: { logs: ReviewLog[]; now: Date; onTapOnly?: () => void }) {
+function MemoryLine({ logs, now, ids, onTapOnly }: { logs: ReviewLog[]; now: Date; ids: ReadonlySet<string>; onTapOnly?: () => void }) {
   const week = weekFromMemory(logs, now);
-  const tapOnly = [...wordEvidence(logs, now).values()].filter((e) => e.tapOnly).length;
+  // only words he still has: the same set Words' 只点选 filter shows (final review m6)
+  const tapOnly = [...wordEvidence(logs, now)].filter(([id, e]) => e.tapOnly && ids.has(id)).length;
   return (
     <div class="progress__memory">
       <p lang="zh-CN">从记忆写出：{week.words} 个旧字，{week.right} 个写对</p>
@@ -65,7 +66,7 @@ export function ProgressPanel({ know, settings, now, logs, onTapOnly }: { know: 
   const trend = weeklyTrend(know.cards, 'recognise', now);
   return (
     <section class="panel progress-panel">
-      {logs && <MemoryLine logs={logs} now={now} onTapOnly={onTapOnly} />}
+      {logs && <MemoryLine logs={logs} now={now} ids={new Set(know.words.map((w) => w.id))} onTapOnly={onTapOnly} />}
       <h3>MOE progress</h3>
       <p class="muted">A step counts only after he gets it right on two different days.</p>
       <dl class="progress__counts">

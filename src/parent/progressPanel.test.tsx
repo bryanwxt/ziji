@@ -94,10 +94,16 @@ describe('from memory this week (real test spec 2026-10-23 §7)', () => {
       { cardId: 'b:山:recognise', wordId: 'b:山', kind: 'recognise' as const, at, rating: 3 as const, correct: true },
     ];
     const onTapOnly = vi.fn();
-    render(<ProgressPanel know={summarize([makeWord('门')], [])} settings={DEFAULT_SETTINGS} now={now} logs={logs} onTapOnly={onTapOnly} />);
+    render(<ProgressPanel know={summarize([makeWord('门'), makeWord('山')], [])} settings={DEFAULT_SETTINGS} now={now} logs={logs} onTapOnly={onTapOnly} />);
     expect(screen.getByText('从记忆写出：2 个旧字，1 个写对')).toBeTruthy();
     expect(document.querySelector('.progress__memory')!.textContent).toContain('1 word');
     fireEvent.click(screen.getByText('Show them'));
     expect(onTapOnly).toHaveBeenCalled();
+  });
+  it('只点选 counts only words he still has, the same set Words shows (final review m6)', () => {
+    const at = new Date(2026, 9, 22, 9).getTime();
+    const logs = ['山', '水'].map((t) => ({ cardId: `b:${t}:recognise`, wordId: `b:${t}`, kind: 'recognise' as const, at, rating: 3 as const, correct: true }));
+    render(<ProgressPanel know={summarize([makeWord('山')], [])} settings={DEFAULT_SETTINGS} now={new Date(2026, 9, 23, 18)} logs={logs} />);
+    expect(document.querySelector('.progress__memory')!.textContent).toContain(': 1 word');
   });
 });

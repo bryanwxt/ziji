@@ -73,6 +73,7 @@ export function ParentArea() {
   useEffect(() => {
     void countWaiting();
   }, []);
+  useEffect(() => () => showTapOnlyNext(false), []); // Progress's 只点选 link not followed: the next Words panel opens as usual (final review T9)
   useEffect(() => {
     if (!goTo) return;
     // a section inside a panel still loading (聊一聊 waits for the overview) shows a moment later: look again for up to a second
