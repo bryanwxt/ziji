@@ -371,13 +371,15 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         else if (item.grades === 'meaning' && r.asked === 'meaning') { const c = await recordMeaningOnce(db, item.wordId, outcome, now()); if (c) know.cardsById.set(c.id, c); }
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs, state.slow, guess));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
-        if (asked.ask !== 'fish' && asked.ask !== 'understand' && !item.list && !guess) await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b); a weekly list's extra item isn't a ladder rung; a guess doesn't climb
+        // a listening answer isn't reading progress (plan 2b); a weekly list's extra item isn't a ladder rung; a guess doesn't climb;
+        // nor does a 默写 written (real test spec §8: it doesn't climb the ladder itself) — one that fell back to a tap does
+        if (asked.ask !== 'fish' && asked.ask !== 'understand' && !item.list && !guess && !r.recall) await noteRung(db, item.wordId, item.rung, r.correct, now());
         if (r.asked === 'zibian') {
           await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'zibian', correct: r.correct });
           if (r.correct) await clearConfusion(db, item.wordId);
           else await bringForward(db, item.wordId, know.cardsById.has(`${item.wordId}:write`) ? 'write' : 'recognise', now());
         }
-        await noteListPractice(asked, r);
+        await noteListPractice(asked, r, guess);
       }
       // the second guess of the lesson: the next Truffle says 「慢慢看，想好再点」, once (no penalty, no timer shown)
       const g = afterGuess(guesses.current, guess);
@@ -388,7 +390,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       cardsSinceCloseup.current = r.correct && r.hard && ready ? 0 : cardsSinceCloseup.current + 1;
       if (r.correct) setCorrect((n) => n + 1);
       setCombo(r.correct ? combo + 1 : 0);
-      const next = afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom);
+      const next = afterPracticeAnswer(latest.current ?? rec, r.correct, r.elapsedMs, r.inContext, r.idiom, item.ask === 'recall' && !r.recall); // a 默写 answered as its tap: a miss comes back as that tap
       await commit(sent ? sendBack(next, item.wordId) : next);
     })();
 
@@ -398,13 +400,13 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
    * card when that is its first answer of the day (recordUse; only a meaning card he already has, so no rung opens early), and a
    * miss brings the card forward to the start of tomorrow.
    */
-  const noteListPractice = async (item: PracticeItem, r: PracticeResult) => {
+  const noteListPractice = async (item: PracticeItem, r: PracticeResult, guess = false) => {
     if (!item.list && listWordIds.current && !listWordIds.current.has(item.wordId)) return; // not a list word: nothing to note
     const tomorrow = startOfLocalDay(addDays(now(), 1));
     // the day it was met or re-taught, an answer is an echo of its card (fix round 2026-10-17)
     const echo = new Set([...(rec.plan.reteachIds ?? []), ...rec.plan.newWordIds]);
     const rateUse = async (wordId: string, correct: boolean) => {
-      if (!rec.extra && know.cardsById.has(`${wordId}:meaning`)) know.cardsById.set(`${wordId}:meaning`, await recordUse(db, wordId, correct, now(), r.responseMs, state.slow));
+      if (!rec.extra && know.cardsById.has(`${wordId}:meaning`)) know.cardsById.set(`${wordId}:meaning`, await recordUse(db, wordId, correct, now(), r.responseMs, state.slow, guess));
       if (!correct) await bringForward(db, wordId, 'meaning', tomorrow);
     };
     if (item.list && r.listPairs?.length) {
