@@ -21,7 +21,7 @@ import { SpeakButton } from '../../ui/SpeakButton';
 import { BoundWord } from '../../ui/BoundWord';
 import { MeaningNote } from '../../ui/stage/MeaningNote';
 import { LookAlikeWhy, PinyinWhy, RadicalHint } from '../../ui/stage/WhyLine';
-import { alike, firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
+import { alike, FEW_WRONG, firstSense, fiveOrThree, MANY_WRONG, meaningChoices, pickCharacterDistractors, pickLookAlikes, pickPinyinDistractors } from './distractors';
 import { cardMeaning, glossFor, questionMeaning } from '../../content/glossary';
 import { ambiguousByEar } from './homophones';
 import { boundPair, inBoundSense, kidGlossReading } from '../../content/kidGloss';
@@ -64,6 +64,10 @@ interface Props {
   list?: ListCard;
   /** 考考自己 (weekly list spec 2026-10-17 §8.1): no pinyin, nothing said, no right or wrong or usage line shown; a pick answers at once */
   bare?: boolean;
+  /** the words he has begun, by text: a 组词 gap's choices come from them (real test spec 2026-10-23 §5) */
+  begun?: ReadonlySet<string>;
+  /** a word introduced today: its 组词 gap keeps 4 choices; a revision word gets 6 when 5 qualify (§5) */
+  few?: boolean;
 }
 
 type Phase = 'intro' | 'quiz' | 'feedback';
@@ -80,7 +84,7 @@ function missedPick(choice: string | null, quiz: { cue: MeaningCue | null; mode:
   return pinyinPickNote(word, choice, pool);
 }
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese, list, bare = false }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese, list, bare = false, begun, few = false }: Props) {
   // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
   const pair = list?.lead ?? boundPair(word.text); // a list verb's English questions show its list pair the same way (fix round 2026-10-17)
   const pairPy = list?.lead ? list.leadReading : pair ? kidGlossReading(pair) : undefined;
@@ -92,7 +96,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
     const cue = ask === 'word' ? wordCue(word) : ask ? null : item.mode === 'meaning' ? meaningCue(word) : null;
     // six options where five good wrong ones exist, else four (spec 2026-10-11 §3); a class sentence's own wrong ones stay as they are
     if (cue) {
-      const options = shuffle([word.text, ...(cue.wrong ?? fiveOrThree(pickSoundAlikes(word, cue, pool, rng, MANY_WRONG)))], rng);
+      const options = shuffle([word.text, ...(cue.wrong ?? fiveOrThree(pickSoundAlikes(word, cue, pool, rng, few ? FEW_WRONG : MANY_WRONG, begun)))], rng);
       return { listen: false, cue, answer: noneOfThese === 'answer' ? NONE_OF_THESE : word.text, options: pickOptions(options, word.text), cheer: pickLine(CHEERS, rng), comfort: pickLine(COMFORTS, rng), mode: null, none: noneOfThese === 'answer', showsNone: !!noneOfThese, real: word.text };
     }
     // the word ladder (spec 2026-10-06 §3.2): he hears it, or reads it, and picks its meaning in English

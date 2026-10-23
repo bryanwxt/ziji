@@ -624,6 +624,8 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           knownChars={know.knownChars}
           level={level}
           listCard={rec.plan.listCards?.[practiceWord.id]}
+          begun={know.begunTexts}
+          newToday={rec.plan.newWordIds.includes(practiceWord.id)}
           onDone={(r) => void onPracticeDone(r)}
         />
       )}

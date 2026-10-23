@@ -5,6 +5,7 @@ import { mulberry32 } from '../../lib/random';
 import { BLANK, bankFor, fillGap } from '../../content/sentenceBank';
 import { shuffle, type Rng } from '../../lib/random';
 import { syllableTone, toneless } from './tones';
+import { lookAlikeChars } from '../components/zibian';
 import type { Word } from '../../types';
 
 export interface MeaningCue {
@@ -114,10 +115,28 @@ function hskChoices(length: number): Choice[] {
   return list;
 }
 
-export function pickSoundAlikes(word: Word, cue: MeaningCue, pool: Word[], rng: Rng, n = 3): string[] {
+/** Look-alikes among a gap's choices at most (real test spec 2026-10-23 §5): 草 among 早 and 苹. */
+export const MAX_LOOK_ALIKES = 2;
+
+const wordsOf = new WeakMap<Word[], Set<string>>();
+/** Every word his pool knows as a word: his own (lists, ladder 词语) and every built-in 组词 (their examples), worked out once a pool. */
+function knownWords(pool: Word[]): Set<string> {
+  let out = wordsOf.get(pool);
+  if (!out) wordsOf.set(pool, (out = new Set(pool.flatMap((w) => [w.text, ...(w.examples ?? []).map((e) => e.text)]))));
+  return out;
+}
+
+/**
+ * `begun` (real test spec 2026-10-23 §5): the words he has begun, by text. With it, every choice is one he has begun, so
+ * familiarity can't single out the answer — up to 2 look-alikes of a single character first, then same sound, same initial —
+ * when at least 3 qualify; fewer, and the choices fill from his level as before. No choice makes a word with the cue: HSK, his
+ * own words or a built-in 组词.
+ */
+export function pickSoundAlikes(word: Word, cue: MeaningCue, pool: Word[], rng: Rng, n = 3, begun?: ReadonlySet<string>): string[] {
   const sound = toneless(word.pinyin);
   const initial = sound.match(/^(zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])?/)![0];
-  const fits = (t: string) => HSK_WORDS.has(cue.before + t + cue.after);
+  const known = knownWords(pool);
+  const fits = (t: string) => { const made = cue.before + t + cue.after; return HSK_WORDS.has(made) || known.has(made); };
   const own = new Set(pool.map((w) => w.text));
   const candidates: Choice[] = word.text.length > 1 ? [...pool, ...hskChoices(word.text.length).filter((w) => !own.has(w.text))] : pool;
   // A choice sharing a character with a school word (保证 for 保持) could fit its sentence too, so it's never offered.
@@ -130,8 +149,17 @@ export function pickSoundAlikes(word: Word, cue: MeaningCue, pool: Word[], rng: 
   const sameInitial = (list: Choice[]) => list.filter((w) => toneless(w.pinyin).startsWith(initial || '\u0000'));
   // A school word's choices come from his own class words first (familiar, same kind: 成语 for a 成语), then the HSK list.
   const ownNear = word.text.length > 1 ? near.filter((w) => own.has(w.text)) : [];
-  const tiers = [sameSound(ownNear), ownNear, sameSound(near), sameInitial(near), near, sameSound(eligible), eligible];
   const out: string[] = [];
-  for (const tier of tiers) for (const w of shuffle(tier, rng)) { if (out.length >= n) return out; if (!out.includes(w.text)) out.push(w.text); }
+  const take = (tiers: Choice[][], cap = n) => { for (const tier of tiers) for (const w of shuffle(tier, rng)) { if (out.length >= cap) return; if (!out.includes(w.text)) out.push(w.text); } };
+  if (begun) {
+    const mine = eligible.filter((w) => begun.has(w.text));
+    if (new Set(mine.map((w) => w.text)).size >= Math.min(n, 3)) {
+      const alike = new Set(Array.from(word.text).length === 1 ? lookAlikeChars(word.text) : []);
+      take([mine.filter((w) => alike.has(w.text))], Math.min(MAX_LOOK_ALIKES, n));
+      take([sameSound(mine).filter((w) => !alike.has(w.text)), sameInitial(mine).filter((w) => !alike.has(w.text)), mine.filter((w) => !alike.has(w.text))]);
+      return out;
+    }
+  }
+  take([sameSound(ownNear), ownNear, sameSound(near), sameInitial(near), near, sameSound(eligible), eligible]);
   return out;
 }

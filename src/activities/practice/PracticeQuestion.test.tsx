@@ -176,3 +176,18 @@ describe('找一家人 (spec 2026-10-12 §5)', () => {
     expect(onDone).toHaveBeenCalledWith(null);
   });
 });
+
+describe('组词 gaps he can’t guess (real test spec 2026-10-23 §5)', () => {
+  const cao = pool.find((w) => w.text === '草')!;
+  const begun = new Set(Array.from('草花茶菜早吃次从出车春'));
+  const item = { wordId: cao.id, rung: 2 as const, ask: 'word' as const, grades: 'meaning' as const, retry: false };
+  it('a revision word’s gap has 6 choices, all begun; a word introduced today keeps 4', () => {
+    const { unmount } = render(<PracticeQuestion {...base} word={cao} item={item} begun={begun} onDone={vi.fn()} />);
+    const texts = () => [...document.querySelectorAll('.choice')].map((b) => b.textContent!.trim());
+    expect(texts()).toHaveLength(6);
+    expect(texts().every((t) => begun.has(t))).toBe(true);
+    unmount();
+    render(<PracticeQuestion {...base} word={cao} item={item} begun={begun} newToday onDone={vi.fn()} />);
+    expect(texts()).toHaveLength(4);
+  });
+});
