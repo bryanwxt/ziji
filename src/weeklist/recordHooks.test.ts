@@ -27,7 +27,7 @@ describe('run-outs for the list headroom are yesterday and the day before (spec 
     return db;
   };
   // a 14-word list front-loads 12 on Monday (parent rulings 2026-10-18): run-outs take only the headroom, which a small list's
-  // day shows (plan.test.ts); two in a row still spill
+  // day shows (plan.test.ts); two in a row no longer spill it (parent report 2026-10-23: 3–4 a day)
   it('rounds that ran out last week: the list front-loads, 12', async () => {
     const db = await setup();
     await ranOutOn(db, '2026-10-14');
@@ -39,11 +39,11 @@ describe('run-outs for the list headroom are yesterday and the day before (spec 
     await ranOutOn(db, '2026-10-18');
     expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(12);
   });
-  it('yesterday and the day before ran out: spill, 4', async () => {
+  it('yesterday and the day before ran out: the list still front-loads 12', async () => {
     const db = await setup();
     await ranOutOn(db, '2026-10-17');
     await ranOutOn(db, '2026-10-18');
-    expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(4);
+    expect((await startOrResumeSession(db, today)).plan.listNewIds).toHaveLength(12);
   });
 });
 

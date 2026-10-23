@@ -131,7 +131,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   // a weekly list (weekly list spec §5): front-loaded, his class lane protected, catch-up yields; never in an extra lesson
   const budget = extra || !open.length ? null : listBudget({
     lists: open, cards: new Map(cards.map((c) => [c.id, c])), now, pace: perDay, ceiling: settings.newPerDay,
-    ranOutYesterday: ranOut[0], ranOutTwice: ranOut[0] && ranOut[1], backlog: backlog > BACKLOG_PAUSE,
+    ranOutYesterday: ranOut[0], backlog: backlog > BACKLOG_PAUSE,
     schoolNeed: schoolNeed(active, started, classAt),
     candidates: new Set(active.filter((x) => !started.has(x.id)).map((x) => x.id)),
   });
