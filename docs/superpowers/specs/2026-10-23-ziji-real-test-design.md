@@ -32,10 +32,13 @@ Read from origin/main (2fb03e9 + #43):
 
 **Round order (`buildRound`).** Each pick's preference becomes:
 1. a **due** revision word's first appearance;
-2. a word already climbing that is due again;
+2. a climbing word's **second** appearance, when its gap allows;
 3. the next other first appearance (new words, non-due revision);
-4. the soonest-due waiting word;
-5. the same word again.
+4. a climbing word's third and later appearances;
+5. the soonest-due waiting word;
+6. the same word again.
+
+*(Amended 2026-10-23 at planning: ranking every repeat above new words' first appearances made a 5-minute box cut new words' first appearances on a 12-word day. Only the second appearance keeps that rank; third and later appearances are what time cuts.)*
 
 Words missed in 认新字 (`early`) keep their place at the front. Spacing still holds: a word never comes back sooner than its gap allows, so a new word's 2nd appearance waits behind the due revision rather than being lost.
 
