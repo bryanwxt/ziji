@@ -114,7 +114,7 @@ const daysIncl = (a: string, b: string) => Math.max(0, daysBetween(a, b) + 1);
 
 export function listBudget(i: {
   lists: WeekList[]; cards: ReadonlyMap<string, CardRecord>; now: Date; pace: number; ceiling: number;
-  ranOutYesterday: boolean; ranOutTwice: boolean; backlog: boolean; schoolNeed: number;
+  ranOutYesterday: boolean; backlog: boolean; schoolNeed: number;
   /** the planner's new-word candidates (unstarted, not paused, still present): a list word outside it can't take a slot */
   candidates?: ReadonlySet<string>;
 }): ListBudget {
@@ -137,8 +137,9 @@ export function listBudget(i: {
   const cap = Math.max(i.ceiling, i.pace);
   const head = i.ranOutYesterday || i.backlog ? 0 : HEADROOM;
   const rate = paceRate(i.pace, i.ceiling, head);
-  if (i.backlog) {
-    // a backlog pauses MOE words; a list's still come, at most PACE_MIN a day (§5.1)
+  if (i.backlog && !need) {
+    // a backlog pauses MOE words; list words left after ready-by still come, at most PACE_MIN a day (§5.1). Before ready-by the
+    // list front-loads as usual (below), the other new words wait (parent report 2026-10-23)
     const q = Math.min(PACE_MIN, listIds.length);
     return { listIds, listQuota: q, total: q, frontLoad: q > 0 && need > 0, schoolFirst: 0, classShort: homeworkLeft(i.lists, today) ? i.schoolNeed : 0 };
   }
@@ -153,16 +154,17 @@ export function listBudget(i: {
     const classShort = homework ? Math.max(0, i.schoolNeed - i.pace * daysIncl(today, homework)) : 0;
     return { listIds, listQuota, total: i.pace, frontLoad: false, schoolFirst, classShort };
   }
-  // a front-load day (parent rulings 2026-10-18): the list up to 12, more when the days left before ready-by need it (up to 20);
-  // two run-outs spill (pace − 1 today, the rest tomorrow, §5.1). Today's lesson is one of the days left.
+  // a front-load day (parent rulings 2026-10-18): the list up to 12, more when the days left before ready-by need it (up to 20).
+  // Run-outs and a backlog never cut it (parent report 2026-10-23: two run-outs, which 12 list words make likely, had spilled it to
+  // pace − 1, 3–4 a day): the lesson runs longer, 练一练 keeps what's left for tomorrow. Today's lesson is one of the days left.
   const front = Math.max(1, daysBetween(today, readyBy!));
   const take = (left: number, days: number) => frontLoadTake(rate, left, days);
-  let quota = Math.min(listIds.length, i.ranOutTwice ? Math.max(1, i.pace - 1) : take(need, front));
+  const quota = Math.min(listIds.length, take(need, front));
   // class words wait on front-load days: the list never gives way to them. When the days after the check at his pace aren't
   // enough, the class lane takes the room under the ceiling a front-load day leaves (a small day's), spread over the days left.
   let schoolFirst = 0;
   let classShort = 0;
-  if (homework) {
+  if (homework && !i.backlog) {
     const after = daysIncl(readyBy!, homework);
     let short = Math.max(0, i.schoolNeed - i.pace * after);
     let left = need;
