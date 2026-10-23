@@ -1,3 +1,4 @@
+import { Fragment } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { loadKnowledge, type Knowledge } from '../app/knowledge';
@@ -10,14 +11,18 @@ import { isKnown } from '../srs/scheduler';
 import { applyDictationMistakes } from '../session/dictation';
 import { bookLesson } from '../session/lanes';
 import { lessonLabel } from '../content/curriculum';
-import { deleteWord, putWords } from '../store/repo';
+import { deleteWord, logsSince, putWords } from '../store/repo';
+import { EVIDENCE_DAYS, evidenceLine, wordEvidence, type WordEvidence } from '../stats/fromMemory';
 import type { Word } from '../types';
 
 /** The word's lesson in his book (二下·17), shown here rather than on the child's 认新字 card (review 2026-10-17) */
 const lessonOf = (w: Word): string => { const at = bookLesson(w); return at === undefined ? '—' : lessonLabel(at); };
 
-type Filter = 'lists' | `level${1 | 2 | 3 | 4 | 5 | 6 | 7}` | 'paused';
+type Filter = 'lists' | `level${1 | 2 | 3 | 4 | 5 | 6 | 7}` | 'paused' | 'tapOnly';
 const MAX_ROWS = 200;
+let openOn: Filter | null = null;
+/** The next Words panel opens on the 只点选 words (Progress's link, real test spec 2026-10-23 §7). */
+export const showTapOnlyNext = () => { openOn = 'tapOnly'; };
 
 export function WordsPanel() {
   const { db, now } = useApp();
@@ -27,7 +32,8 @@ export function WordsPanel() {
   const [writeable, setWriteable] = useState(true);
   const [preview, setPreview] = useState<ParseResult | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>('lists');
+  const [filter, setFilter] = useState<Filter>(() => { const f = openOn ?? 'lists'; openOn = null; return f; });
+  const [evidence, setEvidence] = useState<Map<string, WordEvidence>>(new Map()); // from memory or by tapping, the last 14 days (§7)
   const [query, setQuery] = useState('');
   const [mistakes, setMistakes] = useState('');
   const [mistakeMessage, setMistakeMessage] = useState<string | null>(null);
@@ -35,7 +41,10 @@ export function WordsPanel() {
   const [idiomMessage, setIdiomMessage] = useState<string | null>(null);
   const busy = useRef(false);
 
-  const reload = async () => setKnow(await loadKnowledge(db));
+  const reload = async () => {
+    setKnow(await loadKnowledge(db));
+    setEvidence(wordEvidence(await logsSince(db, now().getTime() - EVIDENCE_DAYS * 86_400_000), now()));
+  };
   useEffect(() => {
     void reload();
   }, []);
@@ -95,6 +104,7 @@ export function WordsPanel() {
     .filter((w) => {
       if (filter === 'lists' && w.listName === undefined) return false;
       if (filter === 'paused' && !w.paused) return false;
+      if (filter === 'tapOnly' && !evidence.get(w.id)?.tapOnly) return false;
       if (filter.startsWith('level') && w.level !== Number(filter.slice(5))) return false;
       return !query || w.text.includes(query) || w.pinyin.includes(query);
     })
@@ -215,6 +225,7 @@ export function WordsPanel() {
               <option value="lists">From your lists</option>
               {[1, 2, 3, 4, 5, 6, 7].map((l) => <option key={l} value={`level${l}`}>{`HSK ${l === 7 ? '7–9' : l}`}</option>)}
               <option value="paused">Paused</option>
+              <option value="tapOnly">只点选 (tap only, last 14 days)</option>
             </select>
           </div>
           <div class="field">
@@ -226,7 +237,8 @@ export function WordsPanel() {
           <thead><tr><th>Word</th><th>Pinyin</th><th>List</th><th>Book lesson</th><th>Status</th><th>Write</th><th>Paused</th><th /></tr></thead>
           <tbody>
             {shown.slice(0, MAX_ROWS).map((w) => (
-              <tr key={w.id}>
+              <Fragment key={w.id}>
+              <tr>
                 <td class="hanzi" style={{ fontSize: '24px' }}>{w.text}</td>
                 <td>
                   {w.source === 'parent'
@@ -240,6 +252,9 @@ export function WordsPanel() {
                 <td><input type="checkbox" aria-label={`Pause ${w.text}`} checked={w.paused} onChange={(e) => void update(w, { paused: e.currentTarget.checked })} /></td>
                 <td>{w.source === 'parent' && <button type="button" class="small-btn" onClick={() => void remove(w)}>Delete</button>}</td>
               </tr>
+              {/* from memory against tap only, the last 14 days (real test spec 2026-10-23 §7) */}
+              {evidence.has(w.id) && <tr class="words__evidence"><td colSpan={8} lang="zh-CN">{evidenceLine(evidence.get(w.id)!)}</td></tr>}
+              </Fragment>
             ))}
           </tbody>
         </table>

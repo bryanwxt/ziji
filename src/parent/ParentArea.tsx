@@ -21,7 +21,7 @@ import { TalkSection } from './TalkSection';
 import { TryThis } from './TryThis';
 import { WeekPanel } from './WeekPanel';
 import { WeekSummaryPanel } from './WeekSummaryPanel';
-import { WordsPanel } from './WordsPanel';
+import { showTapOnlyNext, WordsPanel } from './WordsPanel';
 
 /** The parent area's five tabs (parent, 2026-10-15: thirteen scrolled sideways on a phone). */
 export type ParentTab = 'today' | 'progress' | 'content' | 'rewards' | 'settings';
@@ -131,7 +131,7 @@ export function ParentArea() {
           {tab === 'progress' && (
             <>
               <div id={placeId('summary')} class="parent__section"><WeekSummaryPanel onNavigate={navigate} /></div>
-              <SkillsPanel school={<ProgressTab />} />
+              <SkillsPanel school={<ProgressTab onTapOnly={() => { showTapOnlyNext(); navigate('words'); }} />} />
             </>
           )}
           {tab === 'content' && (

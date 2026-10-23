@@ -7,7 +7,9 @@ import { classLessonAt, courseOf, gradeTerms, lessonLabel, listedBy, schoolYear,
 import { MOE_TERMS } from '../content';
 import { wordOf, type Knowledge } from '../stats/stats';
 import { produceChars } from '../stats/produce';
-import type { Settings } from '../types';
+import { EVIDENCE_DAYS, weekFromMemory, wordEvidence } from '../stats/fromMemory';
+import { logsSince } from '../store/repo';
+import type { ReviewLog, Settings } from '../types';
 import { weeklyTrend } from './progress';
 
 const pct = (n: number, of: number) => `${((n / of) * 100).toFixed(1)}%`;
@@ -27,7 +29,26 @@ function Bar({ label, have, of, mark }: { label: string; have: number; of: numbe
   );
 }
 
-export function ProgressPanel({ know, settings, now }: { know: Knowledge; settings: Settings; now: Date }) {
+/**
+ * This week from memory against tapping (real test spec 2026-10-23 §7): earlier words written from memory and how many right, and
+ * the words only ever tapped right in the last 14 days, with a link to them in Words.
+ */
+function MemoryLine({ logs, now, onTapOnly }: { logs: ReviewLog[]; now: Date; onTapOnly?: () => void }) {
+  const week = weekFromMemory(logs, now);
+  const tapOnly = [...wordEvidence(logs, now).values()].filter((e) => e.tapOnly).length;
+  return (
+    <div class="progress__memory">
+      <p lang="zh-CN">从记忆写出：{week.words} 个旧字，{week.right} 个写对</p>
+      <p class="muted">This week (the last 7 days): earlier words written from memory, and how many he got right.</p>
+      <p>
+        <span lang="zh-CN">只点选</span> (right by tapping, never from memory, last 14 days): {tapOnly} word{tapOnly === 1 ? '' : 's'}
+        {tapOnly > 0 && onTapOnly && <> <button type="button" class="small-btn" onClick={onTapOnly}>Show them</button></>}
+      </p>
+    </div>
+  );
+}
+
+export function ProgressPanel({ know, settings, now, logs, onTapOnly }: { know: Knowledge; settings: Settings; now: Date; logs?: ReviewLog[]; onTapOnly?: () => void }) {
   const course = courseOf(settings);
   const endTerm = gradeTerms(schoolYear(settings, now))[1];
   const end = termLessons(endTerm).at(-1);
@@ -44,6 +65,7 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
   const trend = weeklyTrend(know.cards, 'recognise', now);
   return (
     <section class="panel progress-panel">
+      {logs && <MemoryLine logs={logs} now={now} onTapOnly={onTapOnly} />}
       <h3>MOE progress</h3>
       <p class="muted">A step counts only after he gets it right on two different days.</p>
       <dl class="progress__counts">
@@ -83,12 +105,14 @@ export function ProgressPanel({ know, settings, now }: { know: Knowledge; settin
   );
 }
 
-/** The Progress tab: loads his cards, then the panel. */
-export function ProgressTab() {
+/** The Progress tab: loads his cards and the last 14 days' logs, then the panel. `onTapOnly`: open Words on the 只点选 words. */
+export function ProgressTab({ onTapOnly }: { onTapOnly?: () => void } = {}) {
   const { db, now, settings } = useApp();
   const [know, setKnow] = useState<Knowledge | null>(null);
+  const [logs, setLogs] = useState<ReviewLog[] | undefined>();
   useEffect(() => {
     void loadKnowledge(db).then(setKnow);
+    void logsSince(db, now().getTime() - EVIDENCE_DAYS * 86_400_000).then(setLogs);
   }, [db]);
-  return know ? <ProgressPanel know={know} settings={settings} now={now()} /> : <section class="panel progress-panel"><p class="muted">Loading…</p></section>;
+  return know ? <ProgressPanel know={know} settings={settings} now={now()} logs={logs} onTapOnly={onTapOnly} /> : <section class="panel progress-panel"><p class="muted">Loading…</p></section>;
 }

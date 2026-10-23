@@ -1536,6 +1536,9 @@ button.langdu__sentence { cursor: pointer; }
 .progress__counts dd { margin: 0; font-weight: 700; text-align: right; }
 .progress__trend { display: flex; gap: 10px; flex-wrap: wrap; list-style: none; padding: 0; }
 .progress__trend li { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
+/* from memory against tap only (real test spec 2026-10-23 §7): the week's line on Progress, a small line under each word in Words */
+.progress__memory p { margin: 4px 0; }
+.words__evidence td { padding-top: 0; font-size: 14px; color: var(--ink-soft); border-top: none; }
 /* his year's lists as bars, with a mark where his class is (spec 2026-10-11 §8) */
 .progress__bars { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
 .pbar { display: grid; grid-template-columns: 9em 1fr 6.5em; align-items: center; gap: 10px; } /* 认读 reads (taps), 会写 Can write, 会说 Can say */
