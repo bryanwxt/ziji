@@ -15,11 +15,12 @@ export const recallTarget = (minutes: number): number => (minutes < 20 ? RECALL_
  * whose hear or understand card is due (`earIds`: its first appearance is asked by ear), or a placed reading card's first recheck.
  * Each must be a begun character with a write card, or a 词语 all of whose characters are; a 词语 writes the character whose write
  * card is due soonest. Never a character written today already, one cue it can't show (no 组词 gap or sentence), or the same
- * character twice. Order: words whose last right answer was a tap (the longest since he produced it first), then those whose
+ * character twice. A word due only for meaning (not in `readingIds`) needs a 组词 gap: only that cue rates its meaning card, so a
+ * sentence cue would leave the due card unrated (final review I2). Order: words whose last right answer was a tap (the longest since he produced it first), then those whose
  * write card is due, then the rest; `n` at most.
  */
-export function pickRecall({ dueIds, newIds, earIds, words, cards, history, cutoff, now, n }: {
-  dueIds: string[]; newIds: ReadonlySet<string>; earIds: ReadonlySet<string>; words: Word[]; cards: CardRecord[];
+export function pickRecall({ dueIds, readingIds, newIds, earIds, words, cards, history, cutoff, now, n }: {
+  dueIds: string[]; readingIds: ReadonlySet<string>; newIds: ReadonlySet<string>; earIds: ReadonlySet<string>; words: Word[]; cards: CardRecord[];
   history: ReadonlyMap<string, RightHistory>; cutoff: number; now: Date; n: number;
 }): RecallPick[] {
   const byId = new Map(words.filter((w) => !w.paused).map((w) => [w.id, w]));
@@ -45,6 +46,7 @@ export function pickRecall({ dueIds, newIds, earIds, words, cards, history, cuto
     if (writtenToday(write)) continue;
     const cue = writingCue(w, at);
     if (!cue.blanked && !cue.sentence) continue;
+    if (!readingIds.has(id) && !cue.blanked) continue;
     const h = history.get(id);
     const writeDue = write.fsrs.due.getTime() <= cutoff;
     out.push({ pick: { wordId: id, at, writeId: write.wordId }, tier: h?.tapLast ? 0 : writeDue ? 1 : 2, key: h?.tapLast ? h.madeAt : writeDue ? write.fsrs.due.getTime() : 0 });

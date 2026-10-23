@@ -174,7 +174,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const meaningReviewIds = capped(dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }), MEANING_REVIEW_CAP).map((c) => c.wordId);
   // 默写 in 练一练 (real test spec 2026-10-23 §4): earlier words written from memory, on whenever 写一写 and 练一练 are
   const recall = settings.activities.writing && settings.activities.practice ? pickRecall({
-    dueIds: [...reviewWordIds, ...meaningReviewIds], newIds: new Set(newWords.map((w) => w.id)), earIds: new Set([...hearReviewIds, ...understandReviewIds]),
+    dueIds: [...reviewWordIds, ...meaningReviewIds], readingIds: new Set(reviewWordIds), newIds: new Set(newWords.map((w) => w.id)), earIds: new Set([...hearReviewIds, ...understandReviewIds]),
     words: active, cards, history, cutoff, now, n: recallTarget(settings.sessionMinutes),
   }) : [];
   // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level;

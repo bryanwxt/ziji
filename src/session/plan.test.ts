@@ -4,6 +4,8 @@ import { mulberry32 } from '../lib/random';
 import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type Settings } from '../types';
 import { buildSessionPlan } from './plan';
+import { writingCue } from '../activities/writing/cue';
+import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
 import { writeCharTarget } from './writing';
 /** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
@@ -286,6 +288,24 @@ describe('默写 in 练一练: who and how many (real test spec 2026-10-23 §4)'
     const onlyCao = cards.filter((c) => c.kind !== 'write' || c.wordId === 'b:草');
     expect(plan({ cards: onlyCao }).recall).toEqual([{ wordId: 'b:草', at: 0, writeId: 'b:草' }]);
     expect(plan({ cards: onlyCao, words: set.map((w) => (w.text === '草' ? { ...w, examples: [] } : w)) }).recall).toBeUndefined();
+  });
+  it('a word due only for meaning (its reading not due) is written only when its cue is a 组词 gap: a sentence cue would leave its meaning unrated (final review I2)', () => {
+    // a built-in character whose cue is a 组词 gap (no class or bank sentence), and the same with a class sentence
+    const zuciWord = builtinWords(0).find((w) => Array.from(w.text).length === 1 && w.text !== '羊' && writingCue(w).blanked !== null && meaningCue(w) !== null)!;
+    const sentenceWord = { ...zuciWord, sentences: [{ text: `小羊在山上看${zuciWord.text}。`, pinyin: '' }] };
+    expect(writingCue(sentenceWord).blanked).toBeNull();
+    const id = zuciWord.id;
+    // reading not due; meaning due; write card not due
+    const only = [makeCard(id, 'recognise', later, true), makeCard(id, 'meaning', hoursAgo(1), true), makeCard(id, 'write', later, true)];
+    const zuci = plan({ cards: only, words: [zuciWord] });
+    expect(zuci.meaningReviewIds).toEqual([id]);
+    expect(zuci.recall).toEqual([{ wordId: id, at: 0, writeId: id }]);
+    const sentence = plan({ cards: only, words: [sentenceWord] });
+    expect(sentence.meaningReviewIds).toEqual([id]);
+    expect(sentence.recall).toBeUndefined();
+    // its reading due too: a sentence cue is fine, the 默写 rates the reading card
+    const both = plan({ cards: [makeCard(id, 'recognise', hoursAgo(1), true), ...only.slice(1)], words: [sentenceWord] });
+    expect(both.recall).toEqual([{ wordId: id, at: 0, writeId: id }]);
   });
   it('writing off (or 练一练 off): none', () => {
     expect(plan({ settings: settings({ newPerDay: 0, activities: { ...DEFAULT_SETTINGS.activities, writing: false } }) }).recall).toBeUndefined();

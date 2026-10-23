@@ -189,3 +189,21 @@ describe('默写 in the round (real test spec 2026-10-23 §4)', () => {
     expect(planPractice({ ...fresh, flashIndex: 1 }, new Map(), byId, words, false, mulberry32(1)).some((x) => x.ask === 'recall')).toBe(false);
   });
 });
+
+describe('a 默写 word gets no 组词 later in the round (final review m2): it would show the 组词 the 默写 just showed', () => {
+  it('like a word 写一写 covers: no 组词 gap or pairing for it, its fallback included, and the round keeps its length', () => {
+    const due = words.filter((w) => wordCue(w) && askable(w, words, false)('pair')).slice(0, 5).map((w) => w.id);
+    const picks = due.slice(0, 2).map((wordId) => ({ wordId, at: 0, writeId: wordId }));
+    const rungs = new Map(due.map((w) => [w, 2]));
+    const zuciOf = (items: PracticeItem[]) => items.filter((x) => picks.some((p) => p.wordId === x.wordId) && (x.ask === 'word' || x.ask === 'pair' || x.recall?.ask === 'word' || x.recall?.ask === 'pair'));
+    let before = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const without = planPractice(createSessionRecord(plan({ reviewWordIds: due }), '2026-10-06', 0), rungs, byId, words, false, mulberry32(seed));
+      const withPicks = planPractice(createSessionRecord(plan({ reviewWordIds: due, recall: picks }), '2026-10-06', 0), rungs, byId, words, false, mulberry32(seed));
+      before += zuciOf(without).length;
+      expect(zuciOf(withPicks)).toEqual([]);
+      expect(withPicks).toHaveLength(without.length);
+    }
+    expect(before).toBeGreaterThan(0); // without the 默写 they would have been asked
+  });
+});
