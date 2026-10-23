@@ -148,8 +148,8 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   const { listTaken } = picked;
   // list slots it couldn't fill (a word it can't take: a ladder 词语 not yet unlocked, say) go back to MOE only up to his pace,
   // never above it on a list's account (final review 2026-10-17)
-  // (a backlog pause keeps MOE words waiting: only the list's come)
-  const moeCap = !budget ? Infinity : backlog > BACKLOG_PAUSE ? 0 : Math.max(budget.total - budget.listQuota, perDay - listTaken.length);
+  // (a backlog pause keeps MOE words waiting: only the list's and his class lane's come, parent ruling 2026-10-23)
+  const moeCap = !budget ? Infinity : backlog > BACKLOG_PAUSE ? budget.schoolFirst : Math.max(budget.total - budget.listQuota, perDay - listTaken.length);
   const listSet = new Set(listTaken);
   let moeLeft = moeCap;
   const newWords = picked.words.filter((w) => listSet.has(w.id) || moeLeft-- > 0);

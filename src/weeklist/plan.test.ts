@@ -20,7 +20,7 @@ const tue = new Date(2026, 9, 20, 9);
 describe('listBudget (spec §5.2, parent rulings 2026-10-18: front-loaded and deadline-safe)', () => {
   it('front-loads from the first lesson: 14 new words on Monday are 12 today, not 7', () => {
     const b = listBudget({ ...base, lists: [list()] });
-    expect([b.listQuota, b.total, b.frontLoad, b.schoolFirst]).toEqual([12, 12, true, 0]); // class words wait
+    expect([b.listQuota, b.total, b.frontLoad, b.schoolFirst]).toEqual([12, 14, true, 2]); // and 2 of his class's 8 (Mon–Fri), parent ruling 2026-10-23
   });
   it('24 new words: 12 a lesson', () => {
     expect(listBudget({ ...base, lists: [list({ items: items(24) })] }).listQuota).toBe(MAX_FRONT_LOAD);
@@ -44,53 +44,57 @@ describe('listBudget (spec §5.2, parent rulings 2026-10-18: front-loaded and de
     expect(listBudget({ ...base, now: tue, lists: [list({ items: items(40) })] }).listQuota).toBe(20); // the rest after the check
   });
   it('a run-out takes the headroom only: the list still front-loads', () => {
-    expect(listBudget({ ...base, lists: [list({ items: items(9) })], ranOutYesterday: true }).total).toBe(9);
+    expect(listBudget({ ...base, lists: [list({ items: items(9) })], ranOutYesterday: true }).total).toBe(11); // 9 and 2 class words
   });
   it('two run-outs never cut a front-load day: the list still comes before ready-by (parent report 2026-10-23: 3–4 a day)', () => {
     expect(listBudget({ ...base, lists: [list({ items: items(24) })], ranOutYesterday: true }).listQuota).toBe(12);
     expect(listBudget({ ...base, now: tue, lists: [list({ items: items(18) })], ranOutYesterday: true }).listQuota).toBe(18);
   });
-  it('a backlog pause before ready-by: the list front-loads as usual, his other new words wait', () => {
+  it('a backlog pause before ready-by: the list front-loads and his class lane keeps its share; catch-up waits', () => {
     const b = listBudget({ ...base, lists: [list()], backlog: true });
-    expect([b.listQuota, b.total, b.frontLoad, b.schoolFirst]).toEqual([12, 12, true, 0]);
+    expect([b.listQuota, b.total, b.frontLoad, b.schoolFirst]).toEqual([12, 14, true, 2]);
   });
-  it('a backlog pause with the list taught: nothing at all', () => {
-    expect(listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: [list({ items: [] })], backlog: true }).total).toBe(0);
+  it('a backlog pause with the list taught: only his class lane, spread to homework day', () => {
+    expect(listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: [list({ items: [] })], backlog: true }).total).toBe(4); // 8 over Thu–Fri
   });
-  it('a backlog pause after ready-by is not a front-load day', () => {
+  it('a backlog pause after ready-by still front-loads what is left before homework day (parent report 2026-10-23: only 3)', () => {
     const b = listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: [list()], backlog: true });
-    expect([b.listQuota, b.frontLoad]).toEqual([3, false]);
+    expect([b.listQuota, b.frontLoad]).toEqual([12, true]);
   });
-  it('classShort: what his class lane will still lack on homework day at these numbers', () => {
+  it('classShort: none now his class lane is spread to homework day (parent ruling 2026-10-23)', () => {
     expect(listBudget({ ...base, lists: [list()] }).classShort).toBe(0);
-    expect(listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: [list({ items: [] })], schoolNeed: 13 }).classShort).toBe(3); // Thu–Fri at 5
+    expect(listBudget({ ...base, now: new Date(2026, 9, 22, 9), lists: [list({ items: [] })], schoolNeed: 13 }).classShort).toBe(0); // 7 today, 6 Friday
     // 20 class words, 15 by Wed–Fri at 5: 5 short; none Monday (12 list words), 1 Tuesday under the ceiling (2 list words)
-    expect(listBudget({ ...base, lists: [list()], schoolNeed: 20 }).classShort).toBe(4);
+    expect(listBudget({ ...base, lists: [list()], schoolNeed: 20 }).classShort).toBe(0); // 4 a day, Mon–Fri
   });
   it('after the front-load days the school lane goes first until schoolNeed is met by homework day', () => {
     const wed = new Date(2026, 9, 21, 9);
     const b = listBudget({ ...base, now: wed, lists: [list({ items: [] })] });
     expect([b.listQuota, b.total, b.frontLoad, b.schoolFirst]).toEqual([0, 5, false, 3]);
   });
-  it('the ready-by day takes no list words', () => {
-    expect(listBudget({ ...base, now: new Date(2026, 9, 21, 9), lists: [list()] }).listQuota).toBe(0);
+  it('words still untaught on the ready-by day are taught that day, toward homework day (parent report 2026-10-23)', () => {
+    // Wed to Fri, homework day included: 3 lesson days for 14 words, front-loaded at 12
+    expect(listBudget({ ...base, now: new Date(2026, 9, 21, 9), lists: [list()] }).listQuota).toBe(12);
   });
-  it('list words left after the check yield to his class lane until homework day', () => {
+  it('list words left after the check front-load toward homework day, not at his pace (parent report 2026-10-23: 3 a day)', () => {
     const thu = new Date(2026, 9, 22, 9);
-    const b = listBudget({ ...base, now: thu, lists: [list()] }); // 14 still new (two run-outs spilled them)
-    expect([b.listQuota, b.total, b.frontLoad, b.schoolFirst]).toEqual([1, 5, false, 4]);
+    const b = listBudget({ ...base, now: thu, lists: [list()] }); // 14 still new
+    expect([b.listQuota, b.frontLoad]).toEqual([12, true]);
+    const fri = new Date(2026, 9, 23, 9);
+    expect(listBudget({ ...base, now: fri, lists: [list()] }).listQuota).toBe(14); // homework day: all that is left, up to 20
+    expect(listBudget({ ...base, now: fri, lists: [list({ items: items(30) })] }).listQuota).toBe(20);
   });
   it('after homework day the list keeps its priority at the pace (decision 7)', () => {
     const sat = new Date(2026, 9, 24, 9);
     expect(listBudget({ ...base, now: sat, lists: [list()] }).listQuota).toBe(5);
   });
-  it('class words wait on a front-load day: the list never gives way to them', () => {
+  it('a front-load day takes his class share on top: the list never gives way to it (parent ruling 2026-10-23)', () => {
     const b = listBudget({ ...base, lists: [list()], schoolNeed: 24 });
-    expect([b.listQuota, b.total, b.schoolFirst]).toEqual([12, 12, 0]);
+    expect([b.listQuota, b.total, b.schoolFirst]).toEqual([12, 17, 5]); // 24 class words over Mon–Fri
   });
-  it('a small front-load day leaves the room under the ceiling to a class lane too big for the days after the check', () => {
+  it('a small front-load day: his class share is spread over the days to homework day, not the room under the ceiling', () => {
     const b = listBudget({ ...base, now: tue, lists: [list({ items: items(2) })], schoolNeed: 20 }); // 5 short of Wed–Fri at 5
-    expect([b.listQuota, b.total, b.schoolFirst]).toEqual([2, 7, 1]);
+    expect([b.listQuota, b.total, b.schoolFirst]).toEqual([2, 7, 5]); // 20 over Tue–Fri
   });
 });
 
