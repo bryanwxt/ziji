@@ -13,6 +13,7 @@ import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
 import { applyQuickChecks, pinDue, PINNED_KINDS } from '../weeklist/schedule';
 import { activeLists } from '../weeklist/plan';
+import { recallRight } from './writeCredit';
 import { rightHistory } from '../stats/fromMemory';
 
 /** How far back a word's last right answer is looked for, to put tap-only words first in 默写 (real test spec §4). */
@@ -108,10 +109,12 @@ export async function recordRecognition(db: AppDb, wordId: string, outcome: TapO
 export const recordMeaning = (db: AppDb, wordId: string, outcome: TapOutcome & { ratedMs?: number }, now: Date, source?: 'use'): Promise<CardRecord> =>
   rateTap(db, wordId, 'meaning', outcome, outcome.ratedMs ?? outcome.responseMs, now, source ? { source } : {});
 
-export async function recordWriting(db: AppDb, wordId: string, totalMisses: number, now: Date): Promise<CardRecord> {
+/** A word written from memory, rated by its misses. `source: 'recall'`: a 默写 in 练一练 (real test spec 2026-10-23 §4), logged
+ *  with its own right (no hint, at most 1 miss) as `correct`, so the parent can tell it from 写一写's. */
+export async function recordWriting(db: AppDb, wordId: string, totalMisses: number, now: Date, opts: { source?: 'recall'; correct?: boolean } = {}): Promise<CardRecord> {
   const rating = toRating({ kind: 'write', totalMisses });
   const { card, before } = await reviewCard(db, wordId, 'write', rating, now);
-  await addReviewLog(db, { cardId: card.id, wordId, kind: 'write', at: now.getTime(), rating, correct: totalMisses <= 3, misses: totalMisses, ...before });
+  await addReviewLog(db, { cardId: card.id, wordId, kind: 'write', at: now.getTime(), rating, correct: opts.correct ?? totalMisses <= 3, misses: totalMisses, ...before, ...(opts.source ? { source: opts.source } : {}) });
   // written now: a day its strokes failed to load no longer keeps it at the back of the queue (final review I1)
   const word = await getWord(db, wordId);
   if (word?.writeSkippedAt !== undefined) {
@@ -232,6 +235,34 @@ export async function recordWrittenMeaning(db: AppDb, wordId: string, correct: b
   const { card, before } = await reviewCard(db, wordId, 'meaning', rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind: 'meaning', at: now.getTime(), rating, correct, source: 'write', ...before });
   return (await settleRung(db, wordId, 'meaning', now)) ?? card;
+}
+
+/** What a 默写 grades: `writeId` the written character's word (its write card), `reading` the word's reading card is due and its
+ *  first appearance was this item, `meaning` its meaning card is due and the cue was a 组词. */
+export interface RecallGrade { wordId: string; writeId: string; reading: boolean; meaning: boolean }
+
+/**
+ * A 默写 in 练一练 (real test spec 2026-10-23 §4). The character's write card by recordWriting's rule (already rated today: a miss
+ * only brings it forward); the word's due reading card Good when right (it is produced) and Again when not, once a day; its due
+ * meaning card as 写一写's written 组词 is (recordWrittenMeaning). The write card's pass settles as in 写一写, so later right taps
+ * on a word it makes produced rate Good. Returns the cards it changed.
+ */
+export async function recordRecall(db: AppDb, g: RecallGrade, o: { totalMisses: number; hinted: boolean }, now: Date): Promise<CardRecord[]> {
+  const right = recallRight(o);
+  const out: CardRecord[] = [];
+  if (ratedToday(await getCard(db, `${g.writeId}:write`), now)) {
+    if (!right) await bringForward(db, g.writeId, 'write', endOfLocalDay(now));
+  } else out.push(await recordWriting(db, g.writeId, o.totalMisses, now, { source: 'recall', correct: right }));
+  if (g.reading) {
+    if (!ratedToday(await getCard(db, `${g.wordId}:recognise`), now)) {
+      const rating = right ? Rating.Good : Rating.Again;
+      const { card, before } = await reviewCard(db, g.wordId, 'recognise', rating, now);
+      await addReviewLog(db, { cardId: card.id, wordId: g.wordId, kind: 'recognise', at: now.getTime(), rating, correct: right, source: 'recall', ...before });
+      out.push((await settleRung(db, g.wordId, 'recognise', now)) ?? card);
+    } else if (!right) await bringForward(db, g.wordId, 'recognise', endOfLocalDay(now));
+  }
+  if (g.meaning) out.push(await recordWrittenMeaning(db, g.wordId, right, now));
+  return out;
 }
 
 /** A read-only character traced (production practice spec §3): a recent lesson word is traced once, not every lesson. */

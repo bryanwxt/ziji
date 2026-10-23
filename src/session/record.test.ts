@@ -6,7 +6,7 @@ import { builtinWords } from '../content';
 import { seededKnownCard } from '../srs/scheduler';
 import { DEFAULT_SETTINGS } from '../types';
 import { freshDb, makeWord, markProduced } from '../test/fixtures';
-import { bringForward, markTraced, markWriteSkipped, recordMeaning, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession } from './record';
+import { bringForward, markTraced, markWriteSkipped, recordMeaning, recordRecall, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession } from './record';
 /** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
 const DISTINCT = Array.from('一二三四五六七八九十人大小山水火木日月田上下中天地子女手口目耳心土石云雨花草米竹虫鱼羊牛马鸟');
 
@@ -260,5 +260,50 @@ describe('too fast to count (real test spec 2026-10-23 §6)', () => {
     await markProduced(db, 'b:很');
     await recordUse(db, 'b:很', true, now, 500, undefined, true);
     expect((await logsSince(db, 0)).find((l) => l.kind === 'meaning')).toMatchObject({ rating: Rating.Hard, guess: true });
+  });
+});
+
+describe('默写 in 练一练: what it grades (real test spec 2026-10-23 §4)', () => {
+  const g = { wordId: 'b:草', writeId: 'b:草', reading: true, meaning: false };
+  const setup = async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('草')]);
+    await putCards(db, [{ id: 'b:草:recognise', wordId: 'b:草', kind: 'recognise', fsrs: seededKnownCard(new Date(2026, 8, 20), 12) }, { id: 'b:草:write', wordId: 'b:草', kind: 'write', fsrs: seededKnownCard(new Date(2026, 8, 20), 30) }]);
+    return db;
+  };
+  const writeLog = async (db: Awaited<ReturnType<typeof freshDb>>) => (await logsSince(db, now.getTime())).find((l) => l.kind === 'write');
+  it('the write card by its misses: 0 Good, 1–3 Hard, more Again; logged as a recall, right only with at most 1 miss and no hint', async () => {
+    for (const [misses, hinted, rating, correct] of [[0, false, Rating.Good, true], [1, false, Rating.Hard, true], [2, true, Rating.Hard, false], [4, true, Rating.Again, false]] as const) {
+      const db = await setup();
+      await recordRecall(db, g, { totalMisses: misses, hinted }, now);
+      expect(await writeLog(db), `${misses}`).toMatchObject({ rating, correct, misses, source: 'recall' });
+    }
+  });
+  it('the due reading card: Good when right (produced), Again when not', async () => {
+    for (const [misses, rating] of [[0, Rating.Good], [3, Rating.Again]] as const) {
+      const db = await setup();
+      await recordRecall(db, g, { totalMisses: misses, hinted: misses > 1 }, now);
+      expect((await logsSince(db, now.getTime())).find((l) => l.kind === 'recognise')).toMatchObject({ rating, source: 'recall' });
+    }
+  });
+  it('the due meaning card with a 组词 cue: credited as 写一写’s written 组词', async () => {
+    const db = await setup();
+    await recordRecall(db, { ...g, meaning: true }, { totalMisses: 0, hinted: false }, now);
+    expect((await logsSince(db, now.getTime())).find((l) => l.kind === 'meaning')).toMatchObject({ rating: Rating.Good, source: 'write' });
+  });
+  it('its write pass makes later right taps Good: two days right and the word is produced', async () => {
+    const db = await setup();
+    await recordRecall(db, { ...g, reading: false }, { totalMisses: 0, hinted: false }, new Date(2026, 9, 1, 9));
+    await recordRecall(db, { ...g, reading: false }, { totalMisses: 0, hinted: false }, now);
+    expect((await getCard(db, 'b:草:write'))!.passed).toBe(now.getTime());
+    await recordRecognition(db, 'b:草', { correct: true, responseMs: 2000 }, now);
+    expect((await logsSince(db, now.getTime())).find((l) => l.kind === 'recognise')!.rating).toBe(Rating.Good);
+  });
+  it('a write card already rated today: a miss only brings it forward', async () => {
+    const db = await setup();
+    await recordWriting(db, 'b:草', 0, new Date(2026, 9, 2, 8));
+    await recordRecall(db, { ...g, reading: false }, { totalMisses: 4, hinted: true }, now);
+    expect((await logsSince(db, 0)).filter((l) => l.kind === 'write')).toHaveLength(1);
+    expect((await getCard(db, 'b:草:write'))!.fsrs.due.getTime()).toBeLessThanOrEqual(new Date(2026, 9, 2, 23, 59, 59, 999).getTime());
   });
 });
