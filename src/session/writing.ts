@@ -32,10 +32,12 @@ const isReadOnly = (w: Word, written: ReadonlyMap<string, CardRecord>): boolean 
  * words he reads, then characters he reads within reach — a book character once his class has written it, others at his level —
  * going down. Never one he can't read.
  */
-export function pickWriteUnits({ cards, words, newWordIds, practised, level, writeBy, cutoff, target }: {
+export function pickWriteUnits({ cards, words, newWordIds, practised, level, writeBy, cutoff, target, exclude }: {
   cards: CardRecord[]; words: Word[]; newWordIds: string[]; practised: ReadonlyMap<string, number>; level: number;
   /** the book's write position decides the last fallback for a book character (spec 2026-10-11 §6); null class: the level rule */
   writeBy?: { course: Course; classAt: number | null }; cutoff: number; target: number;
+  /** characters 练一练 writes from memory today (real test spec 2026-10-23 §4): never written here as well */
+  exclude?: ReadonlySet<string>;
 }): WriteUnit[] {
   const write = new Map(cards.filter((c) => c.kind === 'write').map((c) => [c.wordId, c]));
   // a character he already writes keeps its write card, even if his course no longer asks for it (writeability only grows)
@@ -65,7 +67,7 @@ export function pickWriteUnits({ cards, words, newWordIds, practised, level, wri
     .sort((a, b) => skippedLast(a, b) || practised.get(b.id)! - practised.get(a.id)!);
   const out: WriteUnit[] = [];
   const seen = new Set<string>();
-  const taken = new Set<string>(); // a character comes once a lesson (final review I2)
+  const taken = new Set<string>(exclude ?? []); // a character comes once a lesson (final review I2), and not after its 默写
   let n = 0;
   const add = (w: Word, isNew: boolean, cap: number, readOnly = false) => {
     const all = hanChars(w.text);

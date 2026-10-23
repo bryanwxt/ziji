@@ -13,6 +13,10 @@ import { buildSessionPlan } from './plan';
 import { createSessionRecord } from './runner';
 import { applyQuickChecks, pinDue, PINNED_KINDS } from '../weeklist/schedule';
 import { activeLists } from '../weeklist/plan';
+import { rightHistory } from '../stats/fromMemory';
+
+/** How far back a word's last right answer is looked for, to put tap-only words first in 默写 (real test spec §4). */
+export const HISTORY_DAYS = 60;
 
 export { LISTEN_MS, USE_READING_MS };
 
@@ -280,10 +284,11 @@ async function planNow(db: AppDb, now: Date, extra = false, preview = false) {
     await openMissingRungs(db, now);
     await applyQuickChecks(db, now); // a list's known words come up as due reviews before its ready-by (weekly list spec §6.1)
   }
-  const [cards, words, settings, practised, lists, sessions] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db), allWeekLists(db), allSessions(db)]);
+  const [cards, words, settings, practised, lists, sessions, recent] = await Promise.all([allCards(db), allWords(db), getSettings(db), practisedWords(db), allWeekLists(db), allSessions(db), logsSince(db, now.getTime() - HISTORY_DAYS * 86_400_000)]);
   const all = [...words, ...ladderWordsBesides(words)];
+  const history = rightHistory(recent); // tap-only words are written from memory first (real test spec 2026-10-23 §4)
   // an extra lesson never asks the pace: it takes no new words (learning rules 2026-10-17)
-  if (extra) return buildSessionPlan({ cards, words: all, settings, now, practised, extra: true, lists });
+  if (extra) return buildSessionPlan({ cards, words: all, settings, now, practised, extra: true, lists, history });
   // the last two days' rounds: one that ran out takes the list's headroom away, two spill its words (weekly list spec §5.1)
   // yesterday's and the day before's rounds (a round that didn't finish 练一练, or no lesson, didn't run out)
   const ranOn = (back: number) => {
@@ -291,7 +296,7 @@ async function planNow(db: AppDb, now: Date, extra = false, preview = false) {
     const s = sessions.find((x) => !x.free && x.date === date && x.completedSteps.includes('practice'));
     return !!s && ranOut(s);
   };
-  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings, !preview), lists, ranOut: [ranOn(1), ranOn(2)] });
+  return buildSessionPlan({ cards, words: all, settings, now, practised, newPerDay: await todaysPace(db, now, settings, !preview), lists, ranOut: [ranOn(1), ranOn(2)], history });
 }
 
 /**
