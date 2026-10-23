@@ -42,9 +42,10 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
-import { beginNewWord, bringForward, recordMeaningOnce, recordRecognitionOnce, ratedToday, setLessonLists, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { beginNewWord, bringForward, recordMeaningOnce, recordRecall, recordRecognitionOnce, ratedToday, setLessonLists, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import type { SlowLines } from '../srs/slow';
 import { meaningCredit } from '../session/writeCredit';
+import { writingCue } from '../activities/writing/cue';
 import { settleLessonStars } from '../session/stars';
 import { afterGuess, GUESS_NUDGE, isGuess } from '../session/guess';
 import { starsOf } from '../stats/stats';
@@ -348,7 +349,9 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         return;
       }
       let sent = false;
-      const guess = isGuess(item, r); // too fast to have read it (real test spec §6): Hard, and no rung
+      // a 默写 whose strokes couldn't load was asked as the question it replaced: that answer is a tap like any other
+      const asked: PracticeItem = item.ask === 'recall' && item.recall && !r.recall ? { ...item, ask: item.recall.ask } : item;
+      const guess = isGuess(asked, r); // too fast to have read it (real test spec §6): Hard, and no rung
       if (!rec.free && !item.retry && !gone(item.wordId)) {
         // a sentence takes reading time first: that doesn't make a right answer slow (as in 选一选)
         const outcome = { correct: r.correct, responseMs: r.asked === 'use' || r.inContext ? Math.max(0, r.responseMs - USE_READING_MS) : r.responseMs, slow: state.slow, guess };
@@ -356,19 +359,25 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         // spec §6.4, §8.2; a miss rates Again)
         const readCard = know.cardsById.get(`${item.wordId}:recognise`);
         const grades = item.grades ?? (item.list && (item.list.form === 'read' || item.list.form === 'meaning') && readCard && !ratedToday(readCard, now()) ? 'recognise' : null);
-        if (item.grades === 'understand' && r.asked === 'understand') know.cardsById.set(`${item.wordId}:understand`, await recordUnderstand(db, item.wordId, { correct: r.correct, responseMs: r.responseMs, slow: state.slow, guess }, now()));
+        if (item.recall && r.recall) {
+          // a 默写 (real test spec 2026-10-23 §4): the character's write card, the word's due reading card, and its due meaning card
+          // when the cue was a 组词
+          const w = know.wordsById.get(item.wordId);
+          const meaning = (rec.plan.meaningReviewIds ?? []).includes(item.wordId) && !!w && writingCue(w, item.recall.at).blanked !== null;
+          for (const c of await recordRecall(db, { wordId: item.wordId, writeId: item.recall.writeId, reading: item.grades === 'recognise', meaning }, r.recall, now())) know.cardsById.set(c.id, c);
+        } else if (item.grades === 'understand' && r.asked === 'understand') know.cardsById.set(`${item.wordId}:understand`, await recordUnderstand(db, item.wordId, { correct: r.correct, responseMs: r.responseMs, slow: state.slow, guess }, now()));
         else if (item.grades === 'hear' && r.asked === 'hear') know.cardsById.set(`${item.wordId}:hear`, await recordHear(db, item.wordId, outcome, now()));
         else if (grades === 'recognise') sent = await gradeReading(item.wordId, outcome, true);
         else if (item.grades === 'meaning' && r.asked === 'meaning') { const c = await recordMeaningOnce(db, item.wordId, outcome, now()); if (c) know.cardsById.set(c.id, c); }
         else if (item.grades === 'use' && r.asked === 'use') know.cardsById.set(`${item.wordId}:meaning`, await recordUse(db, item.wordId, r.correct, now(), r.responseMs, state.slow, guess));
         if (r.asked === 'use') await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'use', correct: r.correct }); // every sentence answer, for the Skills panel
-        if (item.ask !== 'fish' && item.ask !== 'understand' && !item.list && !guess) await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b); a weekly list's extra item isn't a ladder rung; a guess doesn't climb
+        if (asked.ask !== 'fish' && asked.ask !== 'understand' && !item.list && !guess) await noteRung(db, item.wordId, item.rung, r.correct, now()); // a listening answer isn't reading progress (plan 2b); a weekly list's extra item isn't a ladder rung; a guess doesn't climb
         if (r.asked === 'zibian') {
           await addAnswer(db, { at: now().getTime(), wordId: item.wordId, skill: 'zibian', correct: r.correct });
           if (r.correct) await clearConfusion(db, item.wordId);
           else await bringForward(db, item.wordId, know.cardsById.has(`${item.wordId}:write`) ? 'write' : 'recognise', now());
         }
-        await noteListPractice(item, r);
+        await noteListPractice(asked, r);
       }
       // the second guess of the lesson: the next Truffle says 「慢慢看，想好再点」, once (no penalty, no timer shown)
       const g = afterGuess(guesses.current, guess);
