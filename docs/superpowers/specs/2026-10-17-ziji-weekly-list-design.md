@@ -343,6 +343,13 @@ The deadline is real, but so is the backlog.
   - A list saved after today's lesson is done (or begun: its plan is kept) starts tomorrow; extra lessons stay review-only. The plan line says so.
   - Run-outs and a backlog never cut a front-load day: the lesson runs longer, and 练一练 keeps what's left for tomorrow. A backlog pause holds his other new words only. *(Parent report 2026-10-23: two run-outs, which 12 list words make likely, had spilled the list to pace − 1, 3–4 a day, while the plan line promised 12. This replaces §5.1 rule 3's spill and the backlog's list cap of 3 before ready-by; after ready-by, leftover list words still come at most 3 a day in a backlog.)*
   - *(Parent rulings 2026-10-18. Before, the rate spread the list evenly over the days before ready-by, up to 12: a weekend list for Wednesday got about 6–8 a day, below the 12 she meant.)*
+- **Amended 2026-10-23 (parent reports the same day: "still only 3 new words"; "the rate should be dynamic to clear both the list and the school's weekly list by the end of the week").**
+  - Each untaught list word has a deadline. Before ready-by, the deadline is ready-by. From ready-by on, including the ready-by day itself, it is homework day, homework day included. Words still untaught after ready-by keep front-loading (`frontLoadTake`) toward homework day. They no longer come at his pace.
+  - His class lane's unstarted words (`schoolNeed`) are spread evenly over the lesson days left to the nearest homework day, today's included. That share comes on top of the list, every day, including front-load days.
+    - It is not capped by his pace or the ceiling, so both are cleared by the end of the week.
+    - It holds in a backlog pause too. Only catch-up waits.
+    - `classShort` is therefore 0.
+  - These replace schoolFloor below and "class words wait on a front-load day".
 - **schoolFloor:** class words wait on a front-load day; the list never gives way to them. When the days after the check at his pace can't start the class lane, it takes the room under the ceiling that a small front-load day leaves (§5.3).
 - **MOE today** = `P − list today`, or `P + H − list today` (at least 0) on a front-load day. `pickNewWords` splits this between the school and catch-up lanes as it does now, but the **school lane is filled first** while `schoolNeed > 0`.
 
