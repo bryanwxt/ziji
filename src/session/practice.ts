@@ -5,7 +5,7 @@ import { mulberry32, shuffle, type Rng } from '../lib/random';
 import { fitItem } from '../practice/useItems';
 import { zujuFor } from '../content/zuju';
 import { dapeiQuestion, zuciBoard } from '../practice/pairs';
-import type { CardRecord, SessionRecord, Word } from '../types';
+import type { CardRecord, RecallPick, SessionRecord, Word } from '../types';
 import { startRung } from './ladder';
 import { buildRound, type Ask, type PracticeItem, type RoundWord } from './round';
 import { fishItem } from '../activities/components/zibian';
@@ -101,6 +101,7 @@ function canAsk(word: Word, pool: Word[], voice: boolean, level: number, ask: As
     case 'fish': return false; // a 钓鱼 item is added for confused words only (Task 7), never asked from the ladder
     case 'family': return false; // 找一家人 takes over a planned rung-2 item (withFamily), never asked from the ladder
     case 'sentence': return false; // 说一句 is added from the plan's sentenceIds (withSentence), never asked from the ladder
+    case 'recall': return false; // 默写 takes over a word's first appearance from the plan's recall (withRecall), never asked from the ladder
   }
 }
 
@@ -158,6 +159,20 @@ export function withSentence(items: PracticeItem[], sentenceIds: string[]): Prac
   return out;
 }
 
+/**
+ * 默写 (real test spec 2026-10-23 §4): each picked word's first appearance becomes its 默写, in the same place, rung and grading,
+ * so the round is no longer and §3's order puts it before anything the time box cuts. A word not in the round gets none.
+ */
+export function withRecall(items: PracticeItem[], picks: readonly RecallPick[]): PracticeItem[] {
+  const out = [...items];
+  for (const p of picks) {
+    const i = out.findIndex((x) => x.wordId === p.wordId && !x.retry);
+    if (i < 0 || out[i]!.ask === 'recall') continue;
+    out[i] = { ...out[i]!, ask: 'recall', recall: { at: p.at, writeId: p.writeId, ask: out[i]!.ask } };
+  }
+  return out;
+}
+
 /** At most two 找一家人 a lesson (spec 2026-10-12 §5). */
 export const MAX_FAMILY = 2;
 
@@ -183,15 +198,18 @@ export function planPractice(rec: SessionRecord, rungs: ReadonlyMap<string, numb
   // no voice: a word due only for Understand is left for another day — a reading question would grade Use before Read (final review I2)
   const listenOnly = (w: RoundWord) => !!w.gradesUnderstand && !w.gradesRecognise && !w.gradesHear && !w.gradesMeaning;
   const words = practiceWords(rec, rungs).filter((w) => (voice || !listenOnly(w)) && (() => { const can = askable(wordsById.get(w.wordId), pool, voice, level); return can('read') || can('meaningRead'); })());
-  // 写一写 does today's 组词 work for the words it covers (production practice spec §3): no 组词 gap or pairing for them here; the
-  // ladder asks another rung-2 question, or the nearest rung below, so the round keeps its length (plans saved before have none)
-  const written = new Set(rec.plan.writeWordIds ?? []);
-  const can = (id: string, ask: Ask) => !(written.has(id) && (ask === 'word' || ask === 'pair')) && askable(wordsById.get(id), pool, voice, level)(ask);
   // never a word met today: it is said on another day (spec 2026-10-11 §4), and asked with its answer in (production practice spec §5)
   const today = new Set([...rec.plan.newWordIds, ...introducedNewWords(rec)]);
+  // 默写 (real test spec 2026-10-23 §4) takes its words' first appearances before 找一家人 and 都不对 look at the round
+  const recall = (rec.plan.recall ?? []).filter((p) => { const w = wordsById.get(p.wordId); return !!w && !w.paused && !today.has(p.wordId); });
+  // 写一写 does today's 组词 work for the words it covers (production practice spec §3): no 组词 gap or pairing for them here; the
+  // ladder asks another rung-2 question, or the nearest rung below, so the round keeps its length (plans saved before have none)
+  // and a 默写 shows its 组词 too: no 组词 gap or pairing later in the round would be a question (final review m2)
+  const written = new Set([...(rec.plan.writeWordIds ?? []), ...recall.map((p) => p.wordId)]);
+  const can = (id: string, ask: Ask) => !(written.has(id) && (ask === 'word' || ask === 'pair')) && askable(wordsById.get(id), pool, voice, level)(ask);
   // 找一家人 takes up to two rung-2 items, for words with family he reads (`known`: know.knownChars, spec 2026-10-12 §5); about one
   // in five 组词-gap, 搭配 and English-meaning questions then leave their answer out for 「都不对」 (production practice spec §5)
-  const round = withNoneOfThese(withFamily(buildRound(words, can, rng), (id) => {
+  const round = withNoneOfThese(withFamily(withRecall(buildRound(words, can, rng), recall), (id) => {
     const w = wordsById.get(id);
     return !!w && !w.paused && familyBoard(w, known, mulberry32(1)) !== null;
   }), today, rng);

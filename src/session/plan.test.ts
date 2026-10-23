@@ -4,6 +4,8 @@ import { mulberry32 } from '../lib/random';
 import { makeCard, makeWord } from '../test/fixtures';
 import { DEFAULT_SETTINGS, type Settings } from '../types';
 import { buildSessionPlan } from './plan';
+import { writingCue } from '../activities/writing/cue';
+import { meaningCue } from '../activities/flashcards/meaning';
 import { PACE_START } from './pace';
 import { writeCharTarget } from './writing';
 /** One character each (写一写 writes a character once a lesson, spec 2026-10-05 §5). */
@@ -236,5 +238,77 @@ describe("the plan records each new word's lane (spec 2026-10-11 §5)", () => {
     const plan = buildSessionPlan({ cards: [], words: ws, settings: p2, now: new Date(2028, 2, 1, 8), newPerDay: 2 });
     expect(plan.newWordIds).toEqual(['b:衣', 'b:逛']);
     expect(plan.newWordLanes).toEqual({ 'b:衣': 'catchup', 'b:逛': 'catchup' });
+  });
+});
+
+describe('默写 in 练一练: who and how many (real test spec 2026-10-23 §4)', () => {
+  const ink = (ch: string, i: number) => makeWord(ch, { id: `b:${ch}`, rank: i, examples: [{ text: `${ch}子`, pinyin: 'x zi' }] }); // a 组词 cue: ＿子
+  const set = Array.from('草花山水火木').map(ink);
+  const later = new Date(2026, 9, 20);
+  // every one due to read, every one with a write card not due: revision words he writes
+  const cards = set.flatMap((w, i) => [makeCard(w.id, 'recognise', hoursAgo(i + 1), true), makeCard(w.id, 'write', later, true)]);
+  const plan = (over: Partial<Parameters<typeof buildSessionPlan>[0]> = {}) => buildSessionPlan({ cards, words: set, settings: settings({ newPerDay: 0 }), now, ...over });
+  it('3 under 20 minutes, 4 at 20 or more', () => {
+    expect(plan().recall).toHaveLength(3);
+    expect(plan({ settings: settings({ newPerDay: 0, sessionMinutes: 20 }) }).recall).toHaveLength(4);
+  });
+  it('only revision words with a write card; a character writes itself', () => {
+    const noWrite = cards.filter((c) => !(c.kind === 'write' && c.wordId !== 'b:草'));
+    expect(plan({ cards: noWrite }).recall).toEqual([{ wordId: 'b:草', at: 0, writeId: 'b:草' }]);
+  });
+  it('a 词语 all of whose characters he writes: the character whose write card is due soonest', () => {
+    const caohua = makeWord('花草', { id: 'p:1', source: 'parent', rank: null, examples: [{ text: '花草地', pinyin: 'x x x' }] });
+    const only = [makeCard('p:1', 'recognise', hoursAgo(1), true), makeCard('b:花', 'write', later, true), makeCard('b:草', 'write', new Date(2026, 9, 10), true), makeCard('b:花', 'recognise', later, true), makeCard('b:草', 'recognise', later, true)];
+    expect(plan({ cards: only, words: [...set, caohua] }).recall).toEqual([{ wordId: 'p:1', at: 1, writeId: 'b:草' }]);
+  });
+  it('words whose last right answer was a tap come first, the longest since he produced them first; then write cards due', () => {
+    const history = new Map([['b:火', { tapLast: true, madeAt: 50 }], ['b:木', { tapLast: true, madeAt: 0 }]]);
+    const due = cards.map((c) => (c.id === 'b:山:write' ? makeCard('b:山', 'write', hoursAgo(1), true) : c));
+    expect(plan({ cards: due, history }).recall!.map((r) => r.wordId)).toEqual(['b:木', 'b:火', 'b:山']);
+  });
+  it('a character it writes from memory is never written in 写一写 the same lesson; never a word introduced today', () => {
+    const due = cards.map((c) => (c.id === 'b:山:write' ? makeCard('b:山', 'write', hoursAgo(1), true) : c));
+    const fresh = [...set, ...Array.from('土石云').map((ch, i) => ink(ch, 10 + i))];
+    const p = plan({ cards: due, words: fresh, settings: settings({ newPerDay: 3 }) });
+    expect(p.recall!.map((r) => r.wordId)).toContain('b:山');
+    expect(p.writeWordIds).not.toContain('b:山');
+    expect(p.recall!.some((r) => p.newWordIds.includes(r.wordId))).toBe(false);
+  });
+  it('never a character written today already (an earlier lesson’s 写一写)', () => {
+    const written = cards.map((c) => (c.id === 'b:草:write' ? { ...c, fsrs: { ...c.fsrs, last_review: hoursAgo(0.5) } } : c));
+    expect(plan({ cards: written }).recall!.map((r) => r.wordId)).not.toContain('b:草');
+  });
+  it('two due words sharing a character (草 and 花草): the character is written once', () => {
+    const caohua = makeWord('花草', { id: 'p:1', source: 'parent', rank: null, examples: [{ text: '花草地', pinyin: 'x x x' }] });
+    const due = cards.map((c) => (c.id === 'b:草:write' ? makeCard('b:草', 'write', hoursAgo(1), true) : c));
+    const p = plan({ cards: [...due, makeCard('p:1', 'recognise', hoursAgo(1), true)], words: [...set, caohua], settings: settings({ newPerDay: 0, sessionMinutes: 30 }) });
+    expect(p.recall!.filter((r) => r.writeId === 'b:草')).toHaveLength(1);
+  });
+  it('a word whose cue is only spoken (no 组词 gap, no sentence) is never written from memory: by ear alone it could be any same-sound character', () => {
+    const onlyCao = cards.filter((c) => c.kind !== 'write' || c.wordId === 'b:草');
+    expect(plan({ cards: onlyCao }).recall).toEqual([{ wordId: 'b:草', at: 0, writeId: 'b:草' }]);
+    expect(plan({ cards: onlyCao, words: set.map((w) => (w.text === '草' ? { ...w, examples: [] } : w)) }).recall).toBeUndefined();
+  });
+  it('a word due only for meaning (its reading not due) is written only when its cue is a 组词 gap: a sentence cue would leave its meaning unrated (final review I2)', () => {
+    // a built-in character whose cue is a 组词 gap (no class or bank sentence), and the same with a class sentence
+    const zuciWord = builtinWords(0).find((w) => Array.from(w.text).length === 1 && w.text !== '羊' && writingCue(w).blanked !== null && meaningCue(w) !== null)!;
+    const sentenceWord = { ...zuciWord, sentences: [{ text: `小羊在山上看${zuciWord.text}。`, pinyin: '' }] };
+    expect(writingCue(sentenceWord).blanked).toBeNull();
+    const id = zuciWord.id;
+    // reading not due; meaning due; write card not due
+    const only = [makeCard(id, 'recognise', later, true), makeCard(id, 'meaning', hoursAgo(1), true), makeCard(id, 'write', later, true)];
+    const zuci = plan({ cards: only, words: [zuciWord] });
+    expect(zuci.meaningReviewIds).toEqual([id]);
+    expect(zuci.recall).toEqual([{ wordId: id, at: 0, writeId: id }]);
+    const sentence = plan({ cards: only, words: [sentenceWord] });
+    expect(sentence.meaningReviewIds).toEqual([id]);
+    expect(sentence.recall).toBeUndefined();
+    // its reading due too: a sentence cue is fine, the 默写 rates the reading card
+    const both = plan({ cards: [makeCard(id, 'recognise', hoursAgo(1), true), ...only.slice(1)], words: [sentenceWord] });
+    expect(both.recall).toEqual([{ wordId: id, at: 0, writeId: id }]);
+  });
+  it('writing off (or 练一练 off): none', () => {
+    expect(plan({ settings: settings({ newPerDay: 0, activities: { ...DEFAULT_SETTINGS.activities, writing: false } }) }).recall).toBeUndefined();
+    expect(plan({ settings: settings({ newPerDay: 0, activities: { ...DEFAULT_SETTINGS.activities, practice: false } }) }).recall).toBeUndefined();
   });
 });

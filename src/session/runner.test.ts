@@ -375,3 +375,30 @@ describe('a practice round left empty by a word sent back to learn (re-review N1
     expect(currentStep(rec)).toBe('writing');
   });
 });
+
+describe('a missed 默写 (real test spec 2026-10-23 §4)', () => {
+  it('is not asked again: its strokes were shown already', () => {
+    const rec = startPractice(finishStep(createSessionRecord(planOf({ newWordIds: [] }), '2026-10-06', 0)), ['b:a', 'b:b', 'b:c'].map((x) => p(x, { ask: 'recall', recall: { at: 0, writeId: x, ask: 'read' } })));
+    expect(afterPracticeAnswer(rec, false, 40_000).practiceQueue).toHaveLength(3);
+  });
+});
+
+describe('the time box never cuts a 默写 (real test spec 2026-10-23 §4; final review I1)', () => {
+  it('a recall item placed after the box ends is still asked, and then the step ends', () => {
+    const items = [p('b:a', { due: true }), p('b:b', { due: true }), p('b:c', { ask: 'recall', recall: { at: 0, writeId: 'b:c', ask: 'read' } }), p('b:d', { due: true })];
+    const rec = afterPracticeAnswer(startPractice(finishStep(createSessionRecord(planOf({ newWordIds: [] }), '2026-10-06', 0)), items), true, 60_000);
+    expect(currentPracticeItem(rec)).toMatchObject({ wordId: 'b:c', ask: 'recall' });
+    expect(rec.practiceLeft).toBe(2);
+    expect(currentStep(afterPracticeAnswer(rec, true, 30_000))).toBeNull();
+  });
+});
+
+describe('a 默写 that fell back to a tap (final review m3)', () => {
+  it('missed as a tap, it comes back as its tap question, practice only', () => {
+    const rec = startPractice(finishStep(createSessionRecord(planOf({ newWordIds: [] }), '2026-10-06', 0)), ['b:a', 'b:b', 'b:c'].map((x) => p(x, { ask: 'recall', recall: { at: 0, writeId: x, ask: 'read' } })));
+    const q = afterPracticeAnswer(rec, false, 3000, false, undefined, true).practiceQueue!;
+    expect(q).toHaveLength(4);
+    expect(q[3]).toMatchObject({ wordId: 'b:a', ask: 'read', retry: true, grades: null });
+    expect(q[3]!.recall).toBeUndefined();
+  });
+});

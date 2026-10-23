@@ -113,3 +113,38 @@ describe('成语, the fifth rung (spec 2026-10-05 §3.2, phase C)', () => {
     expect(items[0]).toMatchObject({ rung: 5, ask: 'idiomBuild', grades: 'use' });
   });
 });
+
+describe('earlier words first (real test spec 2026-10-23 §3)', () => {
+  const dueRev = (id: string): RoundWord => ({ wordId: id, isNew: false, from: 3, appearances: 1, gradesRecognise: true, gradesMeaning: false, due: true });
+  const day = () => [...Array.from({ length: 12 }, (_, i) => fresh(`n${i}`)), ...Array.from({ length: 10 }, (_, i) => dueRev(`d${i}`))];
+  const BOX = Math.floor((5 * 60_000) / 8000); // a 5-minute box at ITEM_MS (8 s) an item
+  it('every due revision word’s first appearance comes before any new word’s repeat, and before the 13th item', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const r = buildRound(day(), all, mulberry32(seed));
+      const dueAt = r.map((x, i) => (x.due ? i : -1)).filter((i) => i >= 0);
+      expect(dueAt, `seed ${seed}`).toHaveLength(10);
+      expect(Math.max(...dueAt), `seed ${seed}`).toBeLessThan(12);
+      const firstRepeat = r.findIndex((x, i) => x.wordId.startsWith('n') && r.slice(0, i).some((y) => y.wordId === x.wordId));
+      expect(firstRepeat, `seed ${seed}`).toBeGreaterThan(Math.max(...dueAt));
+    }
+  });
+  it('what a 5-minute box cuts is new words’ later appearances, never a due first appearance', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const cut = buildRound(day(), all, mulberry32(seed)).slice(BOX);
+      expect(cut.length, `seed ${seed}`).toBeGreaterThan(0);
+      expect(cut.every((x) => x.wordId.startsWith('n') && x.rung === 3), `seed ${seed}`).toBe(true);
+    }
+  });
+  it('a word missed in 认新字 still comes first, before due revision', () => {
+    const r = buildRound([fresh('n0', true), ...day().slice(1)], all, mulberry32(3));
+    expect(r[0]!.wordId).toBe('n0');
+    expect(r[1]!.due).toBe(true);
+  });
+  it('spacing still holds: a new word’s second appearance waits its gap behind the due revision', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      for (const [id, at] of positions(buildRound(day(), all, mulberry32(seed)))) {
+        for (let k = 1; k < at.length; k++) expect(at[k]! - at[k - 1]!, `seed ${seed} ${id}`).toBeGreaterThanOrEqual(k === 1 ? 3 : 5);
+      }
+    }
+  });
+});

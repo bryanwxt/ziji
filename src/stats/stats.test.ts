@@ -26,6 +26,7 @@ describe('summarize', () => {
     expect([k.known, k.written]).toEqual([3, 1]);
     expect([...k.knownChars].sort()).toEqual(['大', '朋', '友'].sort());
     expect(k.knownWordIds.has('p:1')).toBe(true);
+    expect([...k.begunTexts].sort()).toEqual(['人', '大', '朋友'].sort()); // begun: a Read or Hear card, passed or not (real test spec §5)
   });
   it("records each known character's reading from words whose pinyin lines up one syllable per character (final review I1)", () => {
     const now = new Date(2026, 9, 2);

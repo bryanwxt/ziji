@@ -5,7 +5,7 @@ import { bankFor } from '../content/sentenceBank';
 import { mulberry32 } from '../lib/random';
 import { makeCard, makeWord } from '../test/fixtures';
 import type { SessionPlan, Word } from '../types';
-import { askable, planFreePlay, planPractice, practiceWords, withFamily, withFish } from './practice';
+import { askable, planFreePlay, planPractice, practiceWords, withFamily, withFish, withRecall } from './practice';
 import { fishItem } from '../activities/components/zibian';
 import type { PracticeItem } from './round';
 import { createSessionRecord } from './runner';
@@ -160,5 +160,50 @@ describe('写一写 does the 组词 work (production practice spec §3)', () => 
     const asks = (r: ReturnType<typeof rec>) => Array.from({ length: 20 }, (_, s) => planPractice(r, new Map(), byId, words, false, mulberry32(s + 1))).flat();
     expect(asks(rec(zuci.slice(0, 2))).some((x) => zuci.slice(2).includes(x.wordId) && (x.ask === 'word' || x.ask === 'pair'))).toBe(true);
     expect(planPractice(rec(undefined), new Map(), byId, words, false, mulberry32(3))).toEqual(planPractice(rec([]), new Map(), byId, words, false, mulberry32(3)));
+  });
+});
+
+describe('默写 in the round (real test spec 2026-10-23 §4)', () => {
+  it('takes the word’s first appearance, in its place, rung and grading; the question it replaced is kept for a fallback', () => {
+    const items: PracticeItem[] = [{ wordId: 'b:a', rung: 1, ask: 'read', grades: 'recognise', retry: false, due: true }, { wordId: 'b:b', rung: 3, ask: 'fit', grades: 'use', retry: false }, { wordId: 'b:a', rung: 2, ask: 'word', grades: 'meaning', retry: false }];
+    expect(withRecall(items, [{ wordId: 'b:a', at: 0, writeId: 'b:a' }, { wordId: 'b:gone', at: 0, writeId: 'b:gone' }])).toEqual([
+      { wordId: 'b:a', rung: 1, ask: 'recall', grades: 'recognise', retry: false, due: true, recall: { at: 0, writeId: 'b:a', ask: 'read' } },
+      items[1], items[2],
+    ]);
+  });
+  it('a lesson planned before 默写 (no recall in its plan) asks none; a 默写 word paused since planning is asked as usual, not written', () => {
+    const due = ['草', '花', '山'].map(id);
+    expect(planPractice(createSessionRecord(plan({ reviewWordIds: due }), '2026-10-06', 0), new Map(), byId, words, false, mulberry32(1)).some((x) => x.ask === 'recall')).toBe(false);
+    const paused = { ...byId.get(id('山'))!, paused: true };
+    const rec = createSessionRecord(plan({ reviewWordIds: due, recall: [{ wordId: id('山'), at: 0, writeId: id('山') }] }), '2026-10-06', 0);
+    expect(planPractice(rec, new Map(), new Map([...byId, [paused.id, paused]]), words, false, mulberry32(1)).some((x) => x.ask === 'recall')).toBe(false);
+  });
+  it('the plan’s 默写 words come in 练一练, a due one among the first items; never a word met today', () => {
+    const due = ['草', '花', '山', '水', '火'].map(id);
+    const rec = createSessionRecord(plan({ reviewWordIds: due, recall: [{ wordId: id('山'), at: 0, writeId: id('山') }, { wordId: id('水'), at: 0, writeId: id('水') }] }), '2026-10-06', 0);
+    const items = planPractice(rec, new Map(due.map((w) => [w, 2])), byId, words, false, mulberry32(1));
+    const recall = items.filter((x) => x.ask === 'recall');
+    expect(recall.map((x) => x.wordId).sort()).toEqual([id('山'), id('水')].sort());
+    expect(recall.every((x) => items.indexOf(x) < due.length && x.grades === 'recognise' && x.due)).toBe(true);
+    const fresh = createSessionRecord(plan({ newWordIds: [id('山')], reviewWordIds: due, recall: [{ wordId: id('山'), at: 0, writeId: id('山') }] }), '2026-10-06', 0);
+    expect(planPractice({ ...fresh, flashIndex: 1 }, new Map(), byId, words, false, mulberry32(1)).some((x) => x.ask === 'recall')).toBe(false);
+  });
+});
+
+describe('a 默写 word gets no 组词 later in the round (final review m2): it would show the 组词 the 默写 just showed', () => {
+  it('like a word 写一写 covers: no 组词 gap or pairing for it, its fallback included, and the round keeps its length', () => {
+    const due = words.filter((w) => wordCue(w) && askable(w, words, false)('pair')).slice(0, 5).map((w) => w.id);
+    const picks = due.slice(0, 2).map((wordId) => ({ wordId, at: 0, writeId: wordId }));
+    const rungs = new Map(due.map((w) => [w, 2]));
+    const zuciOf = (items: PracticeItem[]) => items.filter((x) => picks.some((p) => p.wordId === x.wordId) && (x.ask === 'word' || x.ask === 'pair' || x.recall?.ask === 'word' || x.recall?.ask === 'pair'));
+    let before = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const without = planPractice(createSessionRecord(plan({ reviewWordIds: due }), '2026-10-06', 0), rungs, byId, words, false, mulberry32(seed));
+      const withPicks = planPractice(createSessionRecord(plan({ reviewWordIds: due, recall: picks }), '2026-10-06', 0), rungs, byId, words, false, mulberry32(seed));
+      before += zuciOf(without).length;
+      expect(zuciOf(withPicks)).toEqual([]);
+      expect(withPicks).toHaveLength(without.length);
+    }
+    expect(before).toBeGreaterThan(0); // without the 默写 they would have been asked
   });
 });

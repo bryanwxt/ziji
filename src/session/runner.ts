@@ -141,13 +141,16 @@ export function currentPracticeItem(rec: SessionRecord): PracticeItem | null {
   return currentStep(rec) === 'practice' ? (rec.practiceQueue?.[rec.practiceIndex ?? 0] ?? null) : null;
 }
 
-export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawElapsedMs: number, inContext = false, idiom?: string): SessionRecord {
-  const item = currentPracticeItem(rec);
-  if (!item) return rec;
+/** `tapped`: a 默写 whose strokes couldn't load was answered as the tap it replaced; a miss then comes back as that tap (final review m3). */
+export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawElapsedMs: number, inContext = false, idiom?: string, tapped = false): SessionRecord {
+  const current = currentPracticeItem(rec);
+  if (!current) return rec;
+  const { recall: _recall, ...asTap } = current;
+  const item: PracticeItem = tapped && current.ask === 'recall' && current.recall ? { ...asTap, ask: current.recall.ask } : current;
   const elapsedMs = Math.min(rawElapsedMs, MAX_CARD_MS);
   const index = rec.practiceIndex ?? 0;
   const queue = [...rec.practiceQueue!];
-  if (!correct && !item.retry && item.ask !== 'fish' && item.ask !== 'family') { // a missed 钓鱼 or 找一家人 isn't asked again: at most two a lesson (sweep; spec 2026-10-12 §5)
+  if (!correct && !item.retry && item.ask !== 'fish' && item.ask !== 'family' && item.ask !== 'recall') { // a missed 钓鱼 or 找一家人 isn't asked again: at most two a lesson (sweep; spec 2026-10-12 §5); a missed 默写 showed its strokes already (real test spec §4)
     const { due: _due, none: _none, ...again } = item; // a retry is practice only, never a due first appearance, and asks with its answer in
     let at = Math.min(index + 1 + PRACTICE_RETRY_GAP, queue.length);
     while (at < queue.length && (queue[at - 1]?.wordId === item.wordId || queue[at]?.wordId === item.wordId)) at++; // never beside the same word (sweep)
@@ -166,8 +169,9 @@ export function afterPracticeAnswer(rec: SessionRecord, correct: boolean, rawEla
   if (next.practiceElapsedMs! >= (rec.plan.practiceTimeBoxMs ?? Number.POSITIVE_INFINITY)) {
     const rest = queue.slice(next.practiceIndex!);
     const left = (rec.practiceLeft ?? 0) + rest.filter((x) => x.due).length;
-    // a weekly list's reserved item is never cut (weekly list spec §2.1): the unasked ones come next, and then the step ends
-    const owed = rest.filter((x) => x.list?.reserved && !x.retry);
+    // a weekly list's reserved item is never cut (weekly list spec §2.1), nor a 默写 (real test spec §4): the unasked ones come
+    // next, and then the step ends
+    const owed = rest.filter((x) => (x.list?.reserved || x.ask === 'recall') && !x.retry);
     if (owed.length) return { ...next, practiceQueue: [...queue.slice(0, next.practiceIndex!), ...owed], practiceLeft: left };
     return finishStep({ ...next, practiceLeft: left });
   }

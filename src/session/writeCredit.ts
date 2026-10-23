@@ -6,6 +6,8 @@ import type { WriteTask } from './runner';
 
 /** A write-list character from memory counts as right with no hint and at most this many misses. */
 export const RECALL_RIGHT_MISSES = 1;
+/** A 默写 in 练一练 is right with no hint and at most RECALL_RIGHT_MISSES misses (real test spec 2026-10-23 §4). */
+export const recallRight = (o: { totalMisses: number; hinted: boolean }): boolean => !o.hinted && o.totalMisses <= RECALL_RIGHT_MISSES;
 /** A traced read-only character counts as right with at most this many misses. */
 export const TRACE_RIGHT_MISSES = 3;
 

@@ -81,3 +81,29 @@ describe('can use (production practice spec §4)', () => {
     expect(know.canUse).toBe(1);
   });
 });
+
+describe('from memory this week (real test spec 2026-10-23 §7)', () => {
+  it('counts earlier words written from memory and the right ones, and the 只点选 words with a link to them', async () => {
+    const { fireEvent } = await import('@testing-library/preact');
+    const { vi } = await import('vitest');
+    const now = new Date(2026, 9, 23, 18);
+    const at = new Date(2026, 9, 22, 9).getTime();
+    const logs = [
+      { cardId: 'b:草:write', wordId: 'b:草', kind: 'write' as const, at, rating: 3 as const, correct: true, misses: 0, source: 'recall' as const, state: 2 as const },
+      { cardId: 'b:花:write', wordId: 'b:花', kind: 'write' as const, at, rating: 1 as const, correct: false, misses: 4, source: 'recall' as const, state: 2 as const },
+      { cardId: 'b:山:recognise', wordId: 'b:山', kind: 'recognise' as const, at, rating: 3 as const, correct: true },
+    ];
+    const onTapOnly = vi.fn();
+    render(<ProgressPanel know={summarize([makeWord('门'), makeWord('山')], [])} settings={DEFAULT_SETTINGS} now={now} logs={logs} onTapOnly={onTapOnly} />);
+    expect(screen.getByText('从记忆写出：2 个旧字，1 个写对')).toBeTruthy();
+    expect(document.querySelector('.progress__memory')!.textContent).toContain('1 word');
+    fireEvent.click(screen.getByText('Show them'));
+    expect(onTapOnly).toHaveBeenCalled();
+  });
+  it('只点选 counts only words he still has, the same set Words shows (final review m6)', () => {
+    const at = new Date(2026, 9, 22, 9).getTime();
+    const logs = ['山', '水'].map((t) => ({ cardId: `b:${t}:recognise`, wordId: `b:${t}`, kind: 'recognise' as const, at, rating: 3 as const, correct: true }));
+    render(<ProgressPanel know={summarize([makeWord('山')], [])} settings={DEFAULT_SETTINGS} now={new Date(2026, 9, 23, 18)} logs={logs} />);
+    expect(document.querySelector('.progress__memory')!.textContent).toContain(': 1 word');
+  });
+});

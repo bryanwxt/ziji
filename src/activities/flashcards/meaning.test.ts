@@ -4,6 +4,8 @@ import { meaningCue, pickSoundAlikes, usageLine, wordCue } from './meaning';
 import { bankFor } from '../../content/sentenceBank';
 import { builtinWords, HSK_WORDS } from '../../content';
 import { mulberry32 } from '../../lib/random';
+import { lookAlikeChars } from '../components/zibian';
+import { MANY_WRONG } from './distractors';
 
 describe('meaningCue', () => {
   it('blanks the character inside one of its 组词 words', () => {
@@ -185,5 +187,39 @@ describe('a school 成语 (spec 2026-10-05 §4, phase C)', () => {
   it('his class sentence still comes first', () => {
     const cue = meaningCue({ ...makeWord('五颜六色', { id: 'p:9', source: 'parent', tags: ['成语'], level: null, rank: null }), sentences: [{ text: '花园里的花五颜六色，真好看。', pinyin: '' }] })!;
     expect(cue.source).toBe('class');
+  });
+});
+
+describe('组词 gaps he can’t guess (real test spec 2026-10-23 §5)', () => {
+  const pool = builtinWords(0);
+  const cao = pool.find((w) => w.text === '草')!;
+  const di = { kind: 'word' as const, source: 'word' as const, full: '草地', pinyin: 'cǎo dì', before: '', after: '地' };
+  const begun = new Set(Array.from('草花茶菜早吃次从出车春'));
+  const makesWord = (c: string) => HSK_WORDS.has(c + '地') || pool.some((w) => w.text === c + '地' || w.examples?.some((e) => e.text === c + '地'));
+  it('with 草 begun and the cue ＿地: every choice is begun, one or two are look-alikes, none makes a word with 地', () => {
+    const alike = new Set(lookAlikeChars('草'));
+    for (let seed = 1; seed < 30; seed++) {
+      const out = pickSoundAlikes(cao, di, pool, mulberry32(seed), MANY_WRONG, begun);
+      expect(out, `seed ${seed}`).toHaveLength(5);
+      expect(out.every((c) => begun.has(c) && c !== '草'), `seed ${seed}: ${out}`).toBe(true);
+      const looks = out.filter((c) => alike.has(c)).length;
+      expect(looks, `seed ${seed}: ${out}`).toBeGreaterThanOrEqual(1);
+      expect(looks, `seed ${seed}: ${out}`).toBeLessThanOrEqual(2);
+      expect(out.filter(makesWord), `seed ${seed}`).toEqual([]);
+    }
+  });
+  it('his own words count as words: a choice that makes one of them with the cue is never offered', () => {
+    const own = [...pool, makeWord('花地', { id: 'p:花地', source: 'parent', rank: null, level: null })];
+    for (let seed = 1; seed < 20; seed++) expect(pickSoundAlikes(cao, di, own, mulberry32(seed), MANY_WRONG, begun)).not.toContain('花');
+  });
+  it('3 or 4 begun characters qualify: those only (the step shows 4 choices)', () => {
+    const out = pickSoundAlikes(cao, di, pool, mulberry32(4), MANY_WRONG, new Set(Array.from('草花茶吃次')));
+    expect(out.length).toBeGreaterThanOrEqual(3);
+    expect(out.every((c) => '花茶吃次'.includes(c))).toBe(true);
+  });
+  it('fewer than 3 begun characters qualify: the choices fill from his level, as before', () => {
+    const out = pickSoundAlikes(cao, di, pool, mulberry32(5), 3, new Set(['草', '花']));
+    expect(out).toHaveLength(3);
+    expect(out.some((c) => c !== '花')).toBe(true);
   });
 });

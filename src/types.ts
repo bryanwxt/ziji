@@ -85,7 +85,8 @@ export interface ReviewLog {
   responseMs?: number;
   misses?: number;
   placedCheck?: true; // the first recheck of a placed card (spec 2026-10-14), for the parent's count of rechecks
-  source?: 'use' | 'write'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use), or from a 组词 written in 写一写 (production practice spec §3)
+  guess?: true; // a right tap faster than GUESS_MS (real test spec 2026-10-23 §6): rated Hard, and never a day toward a pass
+  source?: 'use' | 'write' | 'recall'; // a meaning rating from 选一选/用一用 (the Skills panel counts those under Words in use), or from a 组词 written in 写一写 (production practice spec §3); recall: a 默写 in 练一练 rated it (real test spec 2026-10-23 §4)
   // the card as it was before this review (SRS tuning spec §4); logs written before it have none
   state?: State; // New, Learning, Review or Relearning
   elapsedDays?: number; // whole local days since the card's last review (0 = the same day)
@@ -172,7 +173,12 @@ export interface SessionPlan {
   listItems?: PracticeItem[]; // list items for 练一练, interleaved by withList (spec §6.4, §2.1)
   frontLoad?: boolean; // a day with list new words: 练一练 +2 minutes and more for each word over pace + 2; 写一写 as usual (spec §5.1)
   classShort?: number; // with a weekly list: his class lane's words still unstarted on homework day at today's numbers (spec §5.3, §8.3)
+  recall?: RecallPick[]; // 默写 in 练一练 (real test spec 2026-10-23 §4): earlier words written from memory; plans saved before it have none
 }
+
+/** A 默写 item (real test spec 2026-10-23 §4): the word asked, the character of it he writes (`at`, in Han characters), and the
+ *  single-character word whose write card that character is (the word itself for a character). */
+export interface RecallPick { wordId: string; at: number; writeId: string }
 
 export interface FlashItem {
   wordId: string;

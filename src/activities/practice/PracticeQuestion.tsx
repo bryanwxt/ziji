@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { noneKind } from '../../practice/noneOfThese';
 import { mulberry32, shuffle } from '../../lib/random';
 import { fitUseItem } from '../../weeklist/fit';
@@ -24,6 +24,8 @@ import { idiomFitItem, idiomGap, idiomZuju, pickIdiom } from '../../practice/idi
 import { builtinIdiom, idiomOf, idiomsFor, type Idiom } from '../../content/chengyu';
 import { FamilyQuestion } from './FamilyQuestion';
 import { familyBoard } from '../../practice/family';
+import { recallRight } from '../../session/writeCredit';
+import { RecallQuestion } from './RecallQuestion';
 
 export interface PracticeResult {
   correct: boolean;
@@ -31,10 +33,11 @@ export interface PracticeResult {
   responseMs: number;
   elapsedMs: number;
   inContext: boolean;
-  asked: 'read' | 'meaning' | 'use' | 'zibian' | 'hear' | 'understand';
+  asked: 'read' | 'meaning' | 'use' | 'zibian' | 'hear' | 'understand' | 'write';
   picked?: string;
   idiom?: string; // the 成语 a rung-5 question asked (a miss brings the same one back)
   listPairs?: { left: string; right: string; correct: boolean }[]; // a weekly list 搭配 or board: each pair asked, right or not (weekly list spec §7.5)
+  recall?: { totalMisses: number; hinted: boolean }; // a 默写 written (real test spec 2026-10-23 §4): asked 'write'
 }
 
 interface Props {
@@ -51,11 +54,35 @@ interface Props {
   confused?: string[]; // look-alikes he picked for this word (钓鱼)
   knownChars?: ReadonlySet<string>;
   level?: number; // his level, for the 成语 window (spec §4)
+  begun?: ReadonlySet<string>; // the words he has begun, by text: a 组词 gap's choices (real test spec 2026-10-23 §5)
+  newToday?: boolean; // introduced in today's 认新字: its 组词 gap keeps 4 choices (§5)
   listCard?: ListCard; // a weekly list word's card: a list verb is said as its pair (weekly list spec §7.2)
 }
 
 /** One 练一练 question (spec 2026-10-05 §3.2): 字 and 词语 on the card, a sentence on the 选一选 stage. */
-export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, confused, knownChars, level = 1, listCard }: Props) {
+export function PracticeQuestion(props: Props) {
+  const { item, word, kid, onDone } = props;
+  // a 默写 whose strokes can't load (offline, uncached) is asked as the question it replaced (real test spec 2026-10-23 §4)
+  const [fallback, setFallback] = useState(false);
+  if (item.ask === 'recall' && item.recall) {
+    if (fallback) {
+      const { recall: _gone, ...rest } = item;
+      return <AskedQuestion {...props} item={{ ...rest, ask: item.recall.ask }} />;
+    }
+    return (
+      <RecallQuestion
+        word={word}
+        at={item.recall.at}
+        kid={kid}
+        onDone={(r) => (r ? onDone({ correct: recallRight(r), hard: false, responseMs: r.elapsedMs, elapsedMs: r.elapsedMs, inContext: false, asked: 'write', recall: { totalMisses: r.totalMisses, hinted: r.hinted } }) : setFallback(true))}
+      />
+    );
+  }
+  return <AskedQuestion {...props} />;
+}
+
+/** Every question but 默写. */
+function AskedQuestion({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, confused, knownChars, level = 1, listCard, begun, newToday = false }: Props) {
   const sentence = item.ask === 'fit' || item.ask === 'usage';
   // a weekly list's own items (weekly list spec 2026-10-17 §7.3–7.5): its confirmed 选词填空 row, its pair with the parent's wrong
   // partners, or a 连一连 board of its pairs with a decoy
@@ -228,6 +255,8 @@ export function PracticeQuestion({ item, word, pool, card, voice, kid, resting, 
         word={word} pool={pool} card={card} voice={voice} kid={kid} resting={resting} combo={combo} closeupReady={closeupReady}
         noneOfThese={noneKind(item.none) ?? undefined}
         list={listCard?.lead ? listCard : undefined}
+        begun={begun}
+        few={newToday}
         onDone={(r) => onDone(r)}
       />
     );

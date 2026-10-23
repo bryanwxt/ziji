@@ -24,6 +24,7 @@ export interface Knowledge {
   written: number; // characters whose writing has passed
   canUse: number; // words whose Sentence rung has passed: he said sentences with them (production practice spec §4)
   begun: number; // words begun: heard or read (a Hear or Read card)
+  begunTexts: Set<string>; // those words' texts: a 组词 gap's choices are drawn from them (real test spec 2026-10-23 §5)
 }
 
 export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
@@ -58,6 +59,7 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
     written: cards.filter((c) => c.kind === 'write' && c.passed).length,
     canUse: [...passedRungs].filter(([id, s]) => s.has('sentence') && begunIds.has(id)).length, // only over begun words, so it never exceeds begun
     begun: begunIds.size,
+    begunTexts: new Set([...begunIds].map((id) => word(id)!.text)),
   };
 }
 

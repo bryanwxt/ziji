@@ -61,6 +61,8 @@ import { FamilyQuestion } from '../../src/activities/practice/FamilyQuestion';
 import { familyBoard } from '../../src/practice/family';
 import { fillGap, SENTENCE_BANK } from '../../src/content/sentenceBank';
 import { WritingStep } from '../../src/activities/writing/WritingStep';
+import { RecallQuestion } from '../../src/activities/practice/RecallQuestion';
+import { writingCue } from '../../src/activities/writing/cue';
 import { SentenceCard } from '../../src/activities/say/SentenceCard';
 import { wordCue } from '../../src/activities/flashcards/meaning';
 import zao from 'hanzi-writer-data/澡.json';
@@ -528,6 +530,20 @@ else if (which === 'trace') {
   window.fetch = (input, init) => (String(input).includes('hanzi-writer-data') ? Promise.resolve(new Response(JSON.stringify(zao), { headers: { 'content-type': 'application/json' } })) : real(input, init));
   const w = { ...builtinWords(0).find((x) => x.text === '澡')!, writeable: false };
   render(screen(<WritingStep word={w} kid={DEFAULT_KID} isNew pass="trace" onDone={() => {}} />), app);
+}
+else if (which === 'recall' || which === 'recall-sentence') {
+  // 默写 in 练一练 (real test spec 2026-10-23 §4): 草's 组词 gap (＿地), and the character whose sentence cue is the longest (the
+  // tallest cue over the 田字格); strokes from the package (stroke-route.ts)
+  const words = builtinWords(0).filter((x) => Array.from(x.text).length === 1);
+  const sentenceLength = (x: Word) => Array.from(writingCue(x).sentence ?? '').length;
+  const w = which === 'recall' ? words.find((x) => x.text === '草')! : [...words].sort((a, b) => sentenceLength(b) - sentenceLength(a))[0]!;
+  render(screen(<PinyinFade known={new Set()} on><RecallQuestion word={w} at={0} kid={DEFAULT_KID} onDone={() => {}} /></PinyinFade>), app);
+}
+else if (which === 'gap-six') {
+  // a revision word's 组词 gap (real test spec 2026-10-23 §5): six choices, every one a character he has begun
+  const words = builtinWords(0);
+  const w = words.find((x) => x.text === '草')!;
+  render(screen(<FlashcardStep item={{ wordId: w.id, isNew: false, retry: false, mode: 'meaning' }} ask="word" word={w} pool={words} voice={false} kid={DEFAULT_KID} resting="sulk" combo={0} closeupReady={false} begun={new Set(Array.from('草花茶菜早吃次从出车春'))} onDone={() => {}} />), app);
 }
 else if (which === 'sentence') {
   // 说一句 (production practice spec §4) for the bank word with the longest model sentence, with a pretend microphone:

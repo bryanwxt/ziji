@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Card } from 'ts-fsrs';
 import { default_w, fsrs, generatorParameters, get_fuzz_range, Rating, State } from 'ts-fsrs';
-import { isKnown, localDayGap, newCard, review, schedulerParams, seededKnownCard, setSchedulerParams, snapshot, toRating, validParams } from './scheduler';
+import { GUESS_MS, isKnown, localDayGap, newCard, review, schedulerParams, seededKnownCard, setSchedulerParams, snapshot, toRating, tooFast, validParams } from './scheduler';
 
 const now = new Date(2026, 9, 2, 9, 0);
 
@@ -179,5 +179,20 @@ describe('seededKnownCard', () => {
     const c = seededKnownCard(now);
     const next = review(c, Rating.Good, c.due);
     expect(next.due.getTime() - c.due.getTime()).toBeGreaterThan(14 * 86_400_000);
+  });
+});
+
+describe('too fast to count (real test spec 2026-10-23 §6)', () => {
+  it('a right tap under 900 ms is a guess, at 901 ms it is not', () => {
+    expect(GUESS_MS).toBe(900);
+    expect(tooFast(899)).toBe(true);
+    expect(tooFast(901)).toBe(false);
+  });
+  it('a guess rates Hard, whatever produced is; a wrong guess stays Again', () => {
+    for (const state of [State.New, State.Learning, State.Review]) {
+      expect(toRating({ kind: 'recognise', correct: true, responseMs: 899, produced: true, state, guess: true })).toBe(Rating.Hard);
+      expect(toRating({ kind: 'recognise', correct: false, responseMs: 899, produced: true, state, guess: true })).toBe(Rating.Again);
+    }
+    expect(toRating({ kind: 'recognise', correct: true, responseMs: 901, produced: true, state: State.Review })).toBe(Rating.Good);
   });
 });

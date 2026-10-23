@@ -39,7 +39,7 @@ export function passDays(logs: ReviewLog[], cardId: string, fastMs: number): num
     const day = localDateKey(new Date(l.at));
     if (!firsts.has(day)) firsts.set(day, l);
   }
-  return [...firsts.values()].filter((l) => l.correct && !(typeof l.responseMs === 'number' && l.responseMs < fastMs)).map((l) => l.at);
+  return [...firsts.values()].filter((l) => l.correct && !l.guess && !(typeof l.responseMs === 'number' && l.responseMs < fastMs)).map((l) => l.at);
 }
 
 /** When the card passed: the answer that made the second day whose first answer was right and not too fast; else null. */

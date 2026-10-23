@@ -1,16 +1,16 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
 import { default_w } from 'ts-fsrs';
 import { schedulerParams, setSchedulerParams } from '../srs/scheduler';
 import { exportBackup } from '../store/backup';
-import { allCards, allWords, getSettings, putWords, updateSettings } from '../store/repo';
+import { addReviewLog, allCards, allWords, getSettings, putWords, updateSettings } from '../store/repo';
 import { setSpeechRate } from '../audio/speech';
 import { setSfxEnabled } from '../audio/sfx';
 import { makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { BackupPanel } from './BackupPanel';
 import { SettingsPanel } from './SettingsPanel';
-import { WordsPanel } from './WordsPanel';
+import { showTapOnlyNext, WordsPanel } from './WordsPanel';
 
 vi.mock('../content/strokes', () => ({ strokeAvailability: vi.fn(async () => 'yes') }));
 vi.mock('../lib/files', () => ({ saveTextFile: vi.fn(async () => {}) }));
@@ -45,6 +45,25 @@ describe('WordsPanel', () => {
     const row = (await screen.findByText('衣', { selector: 'td' })).closest('tr')!;
     expect(row.textContent).toContain('一上·1');
     expect(screen.getByRole('columnheader', { name: 'Book lesson' })).toBeTruthy();
+  });
+});
+
+describe('WordsPanel: from memory or by tapping (real test spec 2026-10-23 §7)', () => {
+  it('a line under each word with its last 默写 and latest taps, 只点选 marked; Progress’s link opens on those words', async () => {
+    const app = await makeAppData();
+    await putWords(app.db, [makeWord('草', { listName: '听写 1' }), makeWord('花', { listName: '听写 1' })]);
+    const at = new Date(2026, 9, 1, 9).getTime();
+    await addReviewLog(app.db, { cardId: 'b:草:write', wordId: 'b:草', kind: 'write', at, rating: 3, correct: true, misses: 0, source: 'recall' });
+    await addReviewLog(app.db, { cardId: 'b:花:recognise', wordId: 'b:花', kind: 'recognise', at, rating: 3, correct: true });
+    renderWithApp(<WordsPanel />, app);
+    const row = (await screen.findByText('默写 ✓ 10/1')).closest('tr')!;
+    expect(row.previousElementSibling!.textContent).toContain('草');
+    expect(screen.getByText('点选 ✓ · 只点选')).toBeTruthy();
+    cleanup();
+    showTapOnlyNext();
+    renderWithApp(<WordsPanel />, app);
+    await screen.findByText('点选 ✓ · 只点选');
+    expect(screen.queryByText('草', { selector: 'td' })).toBeNull();
   });
 });
 
@@ -152,6 +171,18 @@ describe('BackupPanel restore', () => {
     app.db.close();
     fireEvent.click(button);
     expect(await screen.findByText(/Restore failed/)).toBeTruthy();
+  });
+});
+
+describe('Progress’s 只点选 link left unused (final review T9)', () => {
+  it('leaving the parent area clears it: a later Words panel opens on its usual filter', async () => {
+    const app = await makeAppData({ settings: { ...DEFAULT_SETTINGS, pinHash: await hashPin('1111') } });
+    showTapOnlyNext();
+    renderWithApp(<ParentArea />, app);
+    cleanup();
+    renderWithApp(<WordsPanel />, app);
+    const filter = await waitFor(() => { const f = document.querySelector<HTMLSelectElement>('select:has(option[value="tapOnly"])'); expect(f).toBeTruthy(); return f!; });
+    expect(filter.value).toBe('lists');
   });
 });
 

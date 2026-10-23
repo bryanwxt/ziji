@@ -7,6 +7,9 @@ import { classLessonAt, courseOf } from '../content/curriculum';
 import { bookLesson, pickNewWords } from './lanes';
 import { canAskRung } from '../ladder/rungs';
 import { orderWriteItems, pickWriteUnits, writeCharTarget } from './writing';
+import { pickRecall, recallTarget } from './recallPick';
+import { hanChars } from '../content';
+import type { RightHistory } from '../stats/fromMemory';
 import { activeLists, isReadyByDay, listBudget, paceRate, listCardFor, listOwner, listPracticeItems, reteachIds, schoolNeed } from '../weeklist/plan';
 import type { ActivityKind, CardKind, CardRecord, FlashItem, ListCard, SessionPlan, Settings, StepKind, WeekList, Word } from '../types';
 
@@ -36,6 +39,7 @@ export interface PlanInput {
   extra?: boolean; // an extra lesson: review only (learning rules 2026-10-17), see extraCards
   lists?: WeekList[]; // weekly lists (weekly list spec 2026-10-17 §5); active ones are picked here
   ranOut?: [boolean, boolean]; // the last two rounds ran out of time (yesterday first): no list headroom, then spill (§5.1)
+  history?: ReadonlyMap<string, RightHistory>; // how each word was last got right (real test spec 2026-10-23 §4): tap-only words are written first
 }
 
 /** Words in an extra lesson's round of his weakest words, when nothing is due or near due (learning rules 2026-10-17). */
@@ -74,7 +78,7 @@ export const SAY_PER_LESSON = 6;
 /** 说一句 cards in one lesson at most (production practice spec §4). */
 export const SENTENCE_PER_LESSON = 2;
 
-export function buildSessionPlan({ cards: stored, words, settings, now, practised = new Map(), newPerDay, extra = false, lists = [], ranOut = [false, false] }: PlanInput): SessionPlan {
+export function buildSessionPlan({ cards: stored, words, settings, now, practised = new Map(), newPerDay, extra = false, lists = [], ranOut = [false, false], history = new Map() }: PlanInput): SessionPlan {
   // weekly lists (weekly list spec 2026-10-17 §5–6): on its ready-by day a list's reading cards are the check's; from then to
   // homework day its due cards go first; an extra lesson the day before never pulls them into today
   const open = activeLists(lists, now);
@@ -162,9 +166,22 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
   for (const id of [...reteach, ...newWords.filter((w) => listIdsAll.has(w.id)).map((w) => w.id), ...listItems.map((x) => x.wordId)]) listCards[id] ??= listCardFor(byId.get(id)!, open, begunChars);
   // spec 2026-10-05 §2: no separate 用一用; a day with no new words (and no re-teaching cards) starts at 练一练 (no empty 认新字 stop, no star for it)
   const steps: StepKind[] = stepsOn(settings).filter((s) => s !== 'newwords' || newWords.length > 0 || reteach.length > 0);
-  // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level
+  const reviewWordIds = capped(dueRecognise, REVIEW_CAP).map((c) => c.wordId);
+  // only words that can be asked by ear: a card that can't be asked would stay due and hold a slot forever (final review I1)
+  const hearReviewIds = capped(dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }), HEAR_REVIEW_CAP).map((c) => c.wordId);
+  const understandReviewIds = capped(dueOf(understand).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'understand'); }), UNDERSTAND_REVIEW_CAP).map((c) => c.wordId);
+  // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
+  const meaningReviewIds = capped(dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }), MEANING_REVIEW_CAP).map((c) => c.wordId);
+  // 默写 in 练一练 (real test spec 2026-10-23 §4): earlier words written from memory, on whenever 写一写 and 练一练 are
+  const recall = settings.activities.writing && settings.activities.practice ? pickRecall({
+    dueIds: [...reviewWordIds, ...meaningReviewIds], readingIds: new Set(reviewWordIds), newIds: new Set(newWords.map((w) => w.id)), earIds: new Set([...hearReviewIds, ...understandReviewIds]),
+    words: active, cards, history, cutoff, now, n: recallTarget(settings.sessionMinutes),
+  }) : [];
+  // 写一写 (spec 2026-10-05 §5): characters, not words — due, then today's and recent lesson words, then what he reads at his level;
+  // never a character 练一练 writes from memory today (one write per character a day, real test spec §4)
+  const recalled = new Set(recall.map((r) => hanChars(byId.get(r.wordId)!.text)[r.at]!));
   const writeUnits = settings.activities.writing
-    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: writeCharTarget(settings.sessionMinutes) }) // never halved on a front-load day: the lesson runs longer (parent ruling 2026-10-18)
+    ? pickWriteUnits({ cards, words: active, newWordIds: newWords.map((w) => w.id), practised, level: learnerLevel(words, started), writeBy: { course: courseOf(settings), classAt }, cutoff, target: writeCharTarget(settings.sessionMinutes), exclude: recalled }) // never halved on a front-load day: the lesson runs longer (parent ruling 2026-10-18)
     : [];
   const writeItems = orderWriteItems(writeUnits);
   // Say (spec 2026-10-11 §4): due Say cards first, then words whose Read has passed and that have no Say card yet — his class's
@@ -198,7 +215,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
 
   const plan: SessionPlan = {
     steps,
-    reviewWordIds: capped(dueRecognise, REVIEW_CAP).map((c) => c.wordId),
+    reviewWordIds,
     newWordIds: newWords.map((w) => w.id),
     newWordLanes,
     flashTimeBoxMs: 0, // only lessons saved before 2026-10-05 time-boxed 认一认
@@ -207,11 +224,9 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     writeItems,
     writeCount: writeItems.length,
     writeWordIds: writeUnits.map((u) => u.wordId),
-    // a word whose cue is gone (its 组词 or sentence removed) can never be asked: its card doesn't hold a slot (sweep)
-    // only words that can be asked by ear: a card that can't be asked would stay due and hold a slot forever (final review I1)
-    hearReviewIds: capped(dueOf(hear).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'hear'); }), HEAR_REVIEW_CAP).map((c) => c.wordId),
-    understandReviewIds: capped(dueOf(understand).filter((c) => { const w = byId.get(c.wordId); return !!w && canAskRung(w, 'understand'); }), UNDERSTAND_REVIEW_CAP).map((c) => c.wordId),
-    meaningReviewIds: capped(dueOf(meaning).filter((c) => { const w = byId.get(c.wordId); return !!w && meaningCue(w) !== null; }), MEANING_REVIEW_CAP).map((c) => c.wordId),
+    hearReviewIds,
+    understandReviewIds,
+    meaningReviewIds,
     newMeaningIds: extra ? [] : active // an extra lesson starts nothing new, meaning practice included
       .filter((w) => readPassed.has(w.id) && !hasMeaning.has(w.id) && meaningCue(w) !== null)
       .sort(meaningOrder)
@@ -225,6 +240,7 @@ export function buildSessionPlan({ cards: stored, words, settings, now, practise
     ...(listItems.length ? { listItems } : {}),
     frontLoad,
     ...(budget ? { classShort: budget.classShort } : {}),
+    ...(recall.length ? { recall } : {}),
   };
   if (!extra) return plan;
   // nothing due or near due: a short practice-only round of his weakest words (lowest reading stability), never graded

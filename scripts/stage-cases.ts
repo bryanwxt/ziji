@@ -128,6 +128,27 @@ for (const size of SIZES) {
     if ((await page.$$('.tianzige svg path')).length === 0) problems.push(`${size.name} trace: no outline in the 田字格`);
     problems.push(...(await cardClipped(page, `${size.name} trace`)));
   }
+  // 默写 in 练一练 (real test spec 2026-10-23 §4): a 组词 gap and the longest sentence cue over an empty 田字格 (no outline), all on the card
+  for (const c of ['recall', 'recall-sentence']) {
+    await page.goto(`file://${dir}/index.html?case=${c}`);
+    await page.waitForSelector('.tianzige svg', { timeout: 5000 }).catch(() => null);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `fit-shots/stage-cases/${c}-${size.name}.png` });
+    if (!(await page.$('.tianzige svg'))) problems.push(`${size.name} ${c}: no 田字格`);
+    problems.push(...(await cardClipped(page, `${size.name} ${c}`)));
+  }
+  // a revision word's 组词 gap with six begun choices (real test spec §5): all six on the card, and the sheet after a miss
+  {
+    await page.goto(`file://${dir}/index.html?case=gap-six`);
+    await page.waitForTimeout(300);
+    const choices = await page.$$('.choice');
+    if (choices.length !== 6) problems.push(`${size.name} gap-six: ${choices.length} choices, not 6`);
+    problems.push(...(await cardClipped(page, `${size.name} gap-six`)));
+    for (const b of choices) if ((await b.textContent())?.trim() !== '草') { await b.click(); break; }
+    await page.waitForTimeout(1600);
+    await page.screenshot({ path: `fit-shots/stage-cases/gap-six-wrong-${size.name}.png` });
+    problems.push(...(await cardClipped(page, `${size.name} gap-six wrong`)), ...(await sheetFits(page, `${size.name} gap-six wrong`)), ...(await sheetScrolls(page, `${size.name} gap-six wrong`)));
+  }
   // 说一句 (production practice spec §4): the ask and its pattern, then after a take 再录一次 and 听一听例句, and the model sentence once he taps it
   {
     await page.goto(`file://${dir}/index.html?case=sentence`);

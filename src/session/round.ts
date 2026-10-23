@@ -8,8 +8,9 @@ import { TOP_RUNG, type Rung } from './ladder';
  *  idiom: complete a 成语 that uses the word · idiomFit: pick that 成语 for a sentence · idiomBuild: 组句 with it ·
  *  fish: 钓鱼 for a look-alike he confused (not a rung) · say: he reads the word aloud (the Say rung, spec 2026-10-11 §3) ·
  *  family: 找一家人, in place of a rung-2 word or pair item (spec 2026-10-12 §5; never picked by the ladder) ·
- *  sentence: 说一句, he says a sentence with the word (production practice spec §4; rung 3, never picked by the ladder). */
-export type Ask = 'read' | 'listen' | 'hear' | 'meaningRead' | 'word' | 'pair' | 'match' | 'whole' | 'fit' | 'usage' | 'understand' | 'build' | 'idiom' | 'idiomFit' | 'idiomBuild' | 'fish' | 'say' | 'family' | 'sentence';
+ *  sentence: 说一句, he says a sentence with the word (production practice spec §4; rung 3, never picked by the ladder) ·
+ *  recall: 默写, he writes the character from memory (real test spec 2026-10-23 §4; in place of a first appearance, never picked by the ladder). */
+export type Ask = 'read' | 'listen' | 'hear' | 'meaningRead' | 'word' | 'pair' | 'match' | 'whole' | 'fit' | 'usage' | 'understand' | 'build' | 'idiom' | 'idiomFit' | 'idiomBuild' | 'fish' | 'say' | 'family' | 'sentence' | 'recall';
 export const ASKS: Record<Rung, Ask[]> = {
   1: ['read', 'listen', 'hear', 'meaningRead'], // hear / meaningRead: the word ladder's English meaning (spec 2026-10-06 §3.2)
   2: ['word', 'pair', 'match', 'whole'],
@@ -22,7 +23,10 @@ export type Grades = 'recognise' | 'meaning' | 'use' | 'hear' | 'understand' | '
 
 /** none: its right answer is left out and 「都不对」 is right (production practice spec §5).
  *  due: the first appearance of a word whose revision is due today (pacing counts these when time runs out, spec §2.2). */
-export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean; missed?: boolean; idiom?: string; none?: true | 'answer' | 'decoy'; list?: import('../types').ListAsk } // missed: it came back after a wrong answer (Truffle peeks); idiom: the 成语 a missed rung-5 question asked; list: a weekly list item (weekly list spec §6.4)
+export interface PracticeItem { wordId: string; rung: Rung; ask: Ask; grades: Grades; retry: boolean; due?: boolean; missed?: boolean; idiom?: string; none?: true | 'answer' | 'decoy'; list?: import('../types').ListAsk; recall?: RecallAsk } // missed: it came back after a wrong answer (Truffle peeks); idiom: the 成语 a missed rung-5 question asked; list: a weekly list item (weekly list spec §6.4); recall: a 默写 (real test spec §4)
+
+/** A 默写 item's character (`at`, `writeId`: see RecallPick) and the question it replaced, asked instead if its strokes can't load. */
+export interface RecallAsk { at: number; writeId: string; ask: Ask }
 
 export interface RoundWord {
   wordId: string;
@@ -68,7 +72,7 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
   // words that need more appearances start sooner, so the round never ends on one word's last items crammed together;
   // due revision starts before words only starting meaning practice, so time running out never leaves the due ones behind
   const most = (list: Slot[]) => [...list].sort((a, b) => b.rungs.length - a.rungs.length);
-  const firsts: Slot[] = [...early, ...most([...news, ...revs.filter((s) => s.w.due)]), ...most(revs.filter((s) => !s.w.due))];
+  const firsts: Slot[] = [...early, ...most(revs.filter((s) => s.w.due)), ...most(news), ...most(revs.filter((s) => !s.w.due))];
 
   const out: PracticeItem[] = [];
   let lastWord: string | null = null;
@@ -77,12 +81,16 @@ export function buildRound(words: RoundWord[], canAsk: (wordId: string, ask: Ask
   while (left().length) {
     const p = out.length;
     const others = left().filter((s) => s.w.wordId !== lastWord);
-    // in order of preference: a word already climbing that is due again, then the next first appearance, then whoever is
-    // due soonest (spacing gives way before a word repeats back to back), and last of all the same word again
+    // in order of preference (real test spec 2026-10-23 §3): a word missed in 认新字 or a due revision word's first appearance, a
+    // climbing word's second appearance, the other first appearances, a climbing word's later appearances, then whoever is due
+    // soonest (spacing gives way before a word repeats back to back), and last of all the same word again
     const started = others.filter((s) => s.next > 0 && s.readyAt <= p).sort((a, b) => a.readyAt - b.readyAt);
     const fresh = firsts.filter((s) => s.next === 0 && s.w.wordId !== lastWord);
+    const first = fresh.filter((s) => s.w.early || (!s.w.isNew && s.w.due)); // missed in 认新字, then due revision (spec 2026-10-23 §3)
     const waiting = others.filter((s) => s.next > 0 && s.readyAt > p).sort((a, b) => a.readyAt - b.readyAt);
-    const order = [...started, ...fresh, ...waiting, ...left()];
+    // a climbing word's second appearance, then the other first appearances, then third and later ones: those are what time cuts
+    const second = started.filter((s) => s.next === 1);
+    const order = [...first, ...second, ...fresh.filter((s) => !first.includes(s)), ...started.filter((s) => s.next > 1), ...waiting, ...left()];
     // a due Read card is graded by reading: its first appearance is never asked by ear (final review I2)
     const noEar = (id: string, a: Ask) => a !== 'hear' && canAsk(id, a);
     // Understand takes a word's first appearance only when nothing else of it is due today: a due Read or Hear is graded first (final review I3)
