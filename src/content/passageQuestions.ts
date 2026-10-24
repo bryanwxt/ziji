@@ -7,11 +7,12 @@ import { LEGACY_QUESTIONS } from './questions/legacy';
 import { Q_P01_P25 } from './questions/q-p01-p25';
 import { Q_P26_P50 } from './questions/q-p26-p50';
 import { Q_P51_P73 } from './questions/q-p51-p73';
+import { Q_GSB } from './questions/q-gsb';
 
 export type QuestionBatch = Readonly<Record<string, readonly PassageQuestion[]>>;
 
 /** One entry per content task's file, in task order. */
-export const QUESTION_BATCHES: readonly QuestionBatch[] = [Q_P01_P25, Q_P26_P50, Q_P51_P73];
+export const QUESTION_BATCHES: readonly QuestionBatch[] = [Q_P01_P25, Q_P26_P50, Q_P51_P73, Q_GSB];
 
 export const PASSAGE_QUESTIONS: QuestionBatch = Object.assign({}, ...QUESTION_BATCHES);
 
