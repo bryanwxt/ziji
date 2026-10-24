@@ -90,4 +90,8 @@ customPinyin({
   尾巴张开: 'wěi ba zhāng kāi',
   // Task 16's review: 铺 (spreading) pū, 数 (counting) shǔ
   铺在: 'pū zài', 一边数: 'yì biān shǔ',
+  // 三下 stretch passages p124–p133 (2026-10-24 Task 17): 地 after an adverb de, 得 after a verb or adjective de,
+  // 调 (transferred) diào, 一 neutral in 一颗一颗
+  着急地: 'zháo jí de', 骄傲地: 'jiāo ào de', 轻轻地叫: 'qīng qīng de jiào', 一颗一颗地: 'yì kē yì kē de', 悄悄地: 'qiāo qiāo de',
+  修得: 'xiū de', 咸得: 'xián de', 感动得: 'gǎn dòng de', 调到: 'diào dào', 班长说: 'bān zhǎng shuō',
 });

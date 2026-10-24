@@ -12,11 +12,12 @@ import { Q_P74_P88 } from './questions/q-p74-p88';
 import { Q_P89_P100 } from './questions/q-p89-p100';
 import { Q_P101_P113 } from './questions/q-p101-p113';
 import { Q_P114_P123 } from './questions/q-p114-p123';
+import { Q_P124_P133 } from './questions/q-p124-p133';
 
 export type QuestionBatch = Readonly<Record<string, readonly PassageQuestion[]>>;
 
 /** One entry per content task's file, in task order. */
-export const QUESTION_BATCHES: readonly QuestionBatch[] = [Q_P01_P25, Q_P26_P50, Q_P51_P73, Q_GSB, Q_P74_P88, Q_P89_P100, Q_P101_P113, Q_P114_P123];
+export const QUESTION_BATCHES: readonly QuestionBatch[] = [Q_P01_P25, Q_P26_P50, Q_P51_P73, Q_GSB, Q_P74_P88, Q_P89_P100, Q_P101_P113, Q_P114_P123, Q_P124_P133];
 
 export const PASSAGE_QUESTIONS: QuestionBatch = Object.assign({}, ...QUESTION_BATCHES);
 
