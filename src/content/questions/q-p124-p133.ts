@@ -7,7 +7,7 @@ export const Q_P124_P133: QuestionBatch = {
     { q: '“难忘”是什么意思？', choices: ['很难睡好', '很快就忘了', '一直记在心里', '不想再去露营'], answer: 2, kind: 'word', sentence: 6 },
     { q: '哪一件事最先发生？', choices: ['吃面包，听海浪', '冷得发抖', '天亮了', '爸爸说别怕'], answer: 0, kind: 'order', sentence: 1 },
     { q: '这个故事主要说什么？', choices: ['海边的面包很好吃', '爸爸的新雨衣', '怎样听海浪', '露营时出了问题'], answer: 3, kind: 'main', sentences: [2, 4] },
-    { q: '我们去哪里露营？', choices: ['学校', '海边', '山上', '面包店'], answer: 1, kind: 'fact', sentence: 0 },
+    { q: '半夜，我被什么吓醒了？', choices: ['海浪的声音', '雷声', '爸爸的声音', '闹钟声'], answer: 1, kind: 'fact', sentence: 2 },
     { q: '“忽然”是什么意思？', choices: ['一下子发生', '慢慢地', '天亮的时候', '每一次'], answer: 0, kind: 'word', sentence: 2 },
   ],
   p125: [
@@ -59,11 +59,11 @@ export const Q_P124_P133: QuestionBatch = {
     { q: '陈奶奶抱着雪球的时候，怎么样？', choices: ['冷得发抖了', '高兴得哭了', '着急得跳起来', '生气得叫了'], answer: 1, kind: 'fact', sentence: 6 },
   ],
   p131: [
-    { q: '乌鸦为什么要把石子放进瓶子里？', choices: ['想把瓶子打破', '地上石子太多', '让水离嘴近一些', '想洗一洗石子'], answer: 2, kind: 'why', sentences: [1, 3] },
+    { q: '乌鸦为什么要把石子放进瓶子里？', choices: ['想把瓶子打破', '想把石子丢掉', '让水离嘴近一些', '想洗一洗石子'], answer: 2, kind: 'why', sentences: [1, 3] },
     { q: '“放弃”是什么意思？', choices: ['飞来飞去', '不再去做', '一颗一颗地放', '喝到了水'], answer: 1, kind: 'word', sentence: 2 },
     { q: '哪一件事最先发生？', choices: ['看见一个瓶子', '看看四周', '飞来飞去', '用嘴叼起石子'], answer: 0, kind: 'order', sentence: 1 },
     { q: '这个故事告诉我们什么？', choices: ['乌鸦很会飞', '口渴要多喝水', '瓶子不能太小', '要多动脑想办法'], answer: 3, kind: 'main', sentences: [2, 5] },
-    { q: '瓶底的水怎么样？', choices: ['很多', '满到瓶口', '只有一点', '一点也没有'], answer: 2, kind: 'fact', sentence: 1 },
+    { q: '瓶口怎么样？', choices: ['升高了', '很多水', '很小', '渐渐变大'], answer: 2, kind: 'fact', sentence: 1 },
     { q: '乌鸦在哪里发现了石子？', choices: ['地上', '瓶子里', '瓶口', '水里'], answer: 0, kind: 'fact', sentence: 2 },
   ],
   p132: [
