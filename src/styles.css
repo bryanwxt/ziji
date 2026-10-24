@@ -1362,12 +1362,9 @@ button.langdu__sentence { cursor: pointer; }
 .langdu__choices .choice .label__cells { flex-wrap: wrap; justify-content: center; }
 .langdu__back { font-size: clamp(14px, 2dvh, 18px); font-weight: 700; }
 .sheet .langdu__back .label__cells { flex-wrap: wrap; justify-content: flex-start; }
-@media (max-width: 599px) { /* a phone: the two sentences are long beside 完成, so a smaller face and more of the screen than other explanations get (stage case langdu-back) */
-  .stage__sheet .sheet__detail:has(.langdu__back) { max-height: 40dvh; }
-  .sheet .langdu__back { font-size: 13px; gap: 0; }
-  .sheet .langdu__back .label__cell--zh { min-width: 1em; }
-  .sheet .langdu__back .label__py { font-size: 9px; min-height: 1em; padding: 0 1px; }
-}
+/* the read-back is spoken as it shows (controller ruling): its sentences carry no pinyin, so they stay a readable size */
+.sheet .langdu__back .label__py { display: none; }
+@media (max-width: 599px) { .sheet .langdu__back { font-size: 15px; gap: 2px; } }
 /* on every phone this keeps the count and hides 想一想; the (max-height: 699px) block below hides the whole line on a small phone */
 @media (max-width: 599px) { /* a phone: the count without 想一想 (Truffle's bubble says it), a smaller question */
   .langdu__step:has(+ .langdu__q) > :not(.langdu__count) { display: none; }
