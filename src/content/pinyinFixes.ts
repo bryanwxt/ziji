@@ -72,4 +72,9 @@ customPinyin({
   一块一块: 'yí kuài yí kuài',
   // Task 13's review: 切 + 鸡 qiē, 巴刹 (pasar) bā shā in Singapore usage, 得 after 打扫 and 笑 de
   切鸡: 'qiē jī', 巴刹: 'bā shā', 打扫得: 'dǎ sǎo de', 笑得: 'xiào de',
+  // 三上 stretch passages (2026-10-24 Task 14): 只 (only) zhǐ, 子 neutral in 棒子 罐子, 得 after a verb de, 一 before 片 yí,
+  // 外婆家 jiā, 舍不得 shě bu de, 还书 (return) huán, 种起来 (planting) zhòng
+  只好: 'zhǐ hǎo', 只准时: 'zhǐ zhǔn shí', 棒子: 'bàng zi', 罐子: 'guàn zi', 冲得: 'chōng de', 看得太入迷: 'kàn de tài rù mí',
+  累得: 'lèi de', 吓得: 'xià de', 逗得: 'dòu de', 一片漆黑: 'yí piàn qī hēi', 外婆家: 'wài pó jiā', 舍不得: 'shě bu de',
+  还书: 'huán shū', 种起来: 'zhòng qǐ lái',
 });
