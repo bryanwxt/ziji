@@ -13,6 +13,8 @@ import { speak } from '../audio/speech';
 
 vi.mock('../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn(), primeSpeech: vi.fn() }));
 vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
+// the first listen's pause between sentences is LangduStep.pace.test's: here the model reads straight on
+vi.mock('../langdu/useModelReader', async (orig) => ({ ...(await orig<typeof import('../langdu/useModelReader')>()), FIRST_LISTEN: { rate: 0.8, gapMs: 0 } }));
 vi.mock('../ui/confetti', () => ({ celebrate: vi.fn() }));
 vi.mock('../audio/recorder', () => ({
   recordingSupported: () => true,
@@ -37,7 +39,7 @@ async function heardAll() {
   await waitFor(() => expect(document.querySelector('.langdu__listen[data-heard="true"]')).toBeTruthy());
 }
 
-const kid = { ...DEFAULT_KID, reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-09-25', rest: 3, q: 1 } }, lastKind: 'new' as const, lastWarmup: '2026-09-25', warmups: 3 } };
+const kid = { ...DEFAULT_KID, reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-09-25', rest: 3, q: 1, lastHow: 'not-well' as const } }, lastKind: 'new' as const, lastWarmup: '2026-09-25', warmups: 3 } };
 
 /** 朗读 is parked by default (parent, 2026-10-05); these tests switch it on. */
 const LANGDU = { ...DEFAULT_SETTINGS, placementDone: true, langdu: true };
@@ -61,7 +63,7 @@ describe('朗读 extra rounds', () => {
     renderWithApp(<LangduScreen />, app);
     expect(await screen.findByText('我爱爸爸，我爱妈妈。')).toBeTruthy(); // straight to listening: no warm-up
     expect(screen.queryByText('老师好！')).toBeNull();
-    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。')); // the model has begun (the step mounts after a load)
+    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。', { rate: 0.8 })); // the model has begun (the step mounts after a load)
     act(() => setSpeaking(true));
     act(() => setSpeaking(false));
     await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
@@ -75,7 +77,7 @@ describe('朗读 extra rounds', () => {
     expect(recs).toHaveLength(1);
     expect(recs[0]!.prompt).toEqual({ kind: 'passage', passageId: 'pp:1', extra: true }); // tagged: never the queue's take (final review I6)
     const after = (await getKid(app.db))!;
-    expect(after.reading.history['pp:1']).toEqual({ reads: 2, lastRead: '2026-10-02', rest: 3, q: 1 });
+    expect(after.reading.history['pp:1']).toEqual({ reads: 2, lastRead: '2026-10-02', rest: 3, q: 1, lastHow: 'not-well' });
     expect(after.bonusStars).toBe(0);
   });
 
@@ -88,7 +90,7 @@ describe('朗读 extra rounds', () => {
     renderWithApp(<LangduScreen />, app);
     expect(await screen.findByText('我爱爸爸，我爱妈妈。')).toBeTruthy(); // straight to listening: no warm-up
     expect(screen.queryByText('老师好！')).toBeNull();
-    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。')); // the model has begun (the step mounts after a load)
+    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。', { rate: 0.8 })); // the model has begun (the step mounts after a load)
     act(() => setSpeaking(true));
     act(() => setSpeaking(false));
     await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));

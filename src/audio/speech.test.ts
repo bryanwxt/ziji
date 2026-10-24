@@ -54,6 +54,21 @@ describe('speak', () => {
     expect(spoken).toEqual(['他', '其他']);
     expect(cancel).toHaveBeenCalledTimes(1); // only the first call clears what was playing before
   });
+  it('a rate slows (or speeds) the iPad voice by that factor, a queued line too (朗读, spec 2026-10-24 §7)', () => {
+    const spoken: SpeechSynthesisUtterance[] = [];
+    vi.stubGlobal('speechSynthesis', { cancel: vi.fn(), speak: (u: SpeechSynthesisUtterance) => spoken.push(u), getVoices: () => [] });
+    vi.stubGlobal('SpeechSynthesisUtterance', class {
+      text: string; lang = ''; rate = 1; volume = 1; voice: SpeechSynthesisVoice | null = null;
+      constructor(t: string) { this.text = t; }
+    });
+    setSpeechRate(0.8);
+    speak('我爱妈妈。', { rate: 0.8 });
+    speak('我爱爸爸。', { queue: true, rate: 0.9 });
+    speak('河', { queue: true, rate: 0.8 });
+    speak('我爱哥哥。', { queue: true });
+    expect(spoken.map((u) => [u.text, u.rate])).toEqual([['我爱妈妈。', 0.64], ['我爱爸爸。', 0.72], ['河', 0.48], ['我爱哥哥。', 0.8]]);
+  });
+
   it('does nothing where speech is unavailable', () => {
     vi.stubGlobal('speechSynthesis', undefined);
     expect(() => speak('河')).not.toThrow();

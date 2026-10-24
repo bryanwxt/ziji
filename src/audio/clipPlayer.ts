@@ -5,7 +5,8 @@ import type { ClipStep } from './clips';
 export type PlayResult = 'ended' | 'stopped' | 'failed';
 export interface ClipBackend { context(): AudioContext | null; load(id: string): Promise<ArrayBuffer> }
 export interface ClipPlayer {
-  play(steps: ClipStep[], onStart?: () => void): Promise<PlayResult>;
+  /** `rate`: the clips' playback rate (朗读's model, spec 2026-10-24 §7); 1 by default. */
+  play(steps: ClipStep[], onStart?: () => void, rate?: number): Promise<PlayResult>;
   stop(): void;
   prefetch(ids: string[]): void;
 }
@@ -82,7 +83,7 @@ export function createClipPlayer(backend: ClipBackend): ClipPlayer {
     f?.('stopped');
   }
 
-  async function play(steps: ClipStep[], onStart?: () => void): Promise<PlayResult> {
+  async function play(steps: ClipStep[], onStart?: () => void, rate = 1): Promise<PlayResult> {
     stop();
     const mine = token;
     const ac = backend.context();
@@ -107,9 +108,11 @@ export function createClipPlayer(backend: ClipBackend): ClipPlayer {
         if ('pause' in s) { t += s.pause; continue; }
         const src = ac.createBufferSource();
         src.buffer = bufs[b++]!;
+        // Web Audio has no preservesPitch: a slower clip is also a little lower (plan 2026-10-24 ruling; passages have no clips today)
+        if (rate !== 1) src.playbackRate.value = rate;
         src.connect(ac.destination);
         src.start(t);
-        t += src.buffer.duration;
+        t += src.buffer.duration / rate;
         mineSources.push(src);
       }
       sources = mineSources;

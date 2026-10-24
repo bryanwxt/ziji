@@ -1,6 +1,6 @@
 // 朗读's model reads whole sentences (spec 2026-10-12 §3): split at 。！？, never at commas or 、; a parent's "/" ends a sentence
 // only when a sentence-length stretch has come before it.
-import type { PassageQuestion } from '../types';
+import type { AskedQuestion } from '../types';
 
 const END = '。！？';
 const OPEN = '“「『';
@@ -41,7 +41,7 @@ export function splitSentences(text: string): string[] {
 }
 
 /** The sentence a miss reads again: the question's own, else the first holding the right choice; −1 when none does. */
-export function answeringSentence(q: Pick<PassageQuestion, 'choices' | 'answer' | 'sentence'>, sentences: string[]): number {
+export function answeringSentence(q: Pick<AskedQuestion, 'choices' | 'answer' | 'sentence'>, sentences: string[]): number {
   if (q.sentence !== undefined && Number.isInteger(q.sentence) && q.sentence >= 0 && q.sentence < sentences.length) return q.sentence;
   const right = q.choices[q.answer];
   return right ? sentences.findIndex((s) => s.includes(right)) : -1;

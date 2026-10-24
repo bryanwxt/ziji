@@ -3,8 +3,9 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { allTalks, getSettings, saveKid } from '../store/repo';
+import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
-import { wordStarter } from '../talk/pick';
+import { readingCard, wordStarter } from '../talk/pick';
 import { DEFAULT_KID, EMPTY_READING } from '../types';
 import { TalkCards, TalkSection } from './TalkSection';
 
@@ -28,11 +29,12 @@ describe('聊一聊 on Today', () => {
     expect(cards()).toHaveLength(3);
     expect(cards().map((c) => c.querySelector('.talk__kind')!.textContent)).toEqual(['话题 · Topic', '一起读 · Shared reading', '话题 · Topic']);
     const reading = within(cards()[1]!);
-    const q = reading.getByRole('button', { name: /牛爷爷做了什么？/ });
+    const want = readingCard({ id: 'p17', title: '小马', questions: PASSAGE_QUESTIONS.p17! }, 0); // its six
+    const q = reading.getByRole('button', { name: new RegExp(want.open.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) });
     expect(q.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(q);
     expect(q.getAttribute('aria-expanded')).toBe('true');
-    expect(reading.getByText(/小马为什么找不到家了？/).textContent).toContain('(书上：跑得很远)');
+    expect(reading.getByText(want.followUps[0]!, { exact: false }).textContent).toContain(`(书上：${want.answers![1]})`);
     expect(reading.getByText('试试用：我觉得…因为…')).toBeTruthy();
   });
   it('a topic card opens to its follow-ups, pattern and sample, and keeps its English line', async () => {

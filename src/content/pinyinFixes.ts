@@ -66,4 +66,32 @@ customPinyin({
   // a 多音字's other-reading words (zuciPicks.ts OTHER_READING_ZUCI): 背 carrying bēi, 数 counting shǔ, 系 tying jì, 刹车 shā
   背书包: 'bēi shū bāo', 背包: 'bēi bāo', 数一数: 'shǔ yi shǔ', 系鞋带: 'jì xié dài', 刹车: 'shā chē', 胡萝卜: 'hú luó bo',
   乌龟背着重重的壳: 'wū guī bēi zhe zhòng zhòng de ké', 蜗牛背着: 'wō niú bēi zhe', // carrying (bēi), heavy (zhòng)
+  // 二下 stretch passages (2026-10-24 Task 13): 得 after a verb de, 地 after an adverb de, 数 (counting) shǔ, 一 neutral in 等一等
+  慌得: 'huāng de', 洗得: 'xǐ de', 开心地: 'kāi xīn de', 静静地: 'jìng jìng de', 大声地: 'dà shēng de', 得意地: 'dé yì de',
+  难过地: 'nán guò de', 平平安安地: 'píng píng ān ān de', 数了又数: 'shǔ le yòu shǔ', 等一等: 'děng yi děng', 爸爸说: 'bà ba shuō',
+  一块一块: 'yí kuài yí kuài',
+  // Task 13's review: 切 + 鸡 qiē, 巴刹 (pasar) bā shā in Singapore usage, 得 after 打扫 and 笑 de
+  切鸡: 'qiē jī', 巴刹: 'bā shā', 打扫得: 'dǎ sǎo de', 笑得: 'xiào de',
+  // 三上 stretch passages (2026-10-24 Task 14): 只 (only) zhǐ, 子 neutral in 棒子 罐子, 得 after a verb de, 一 before 片 yí,
+  // 外婆家 jiā, 舍不得 shě bu de, 还书 (return) huán, 种起来 (planting) zhòng
+  只好: 'zhǐ hǎo', 只喂: 'zhǐ wèi', 棒子: 'bàng zi', 罐子: 'guàn zi', 冲得: 'chōng de', 看得太入迷: 'kàn de tài rù mí',
+  累得: 'lèi de', 吓得: 'xià de', 逗得: 'dòu de', 一片漆黑: 'yí piàn qī hēi', 外婆家: 'wài pó jiā', 舍不得: 'shě bu de',
+  还书: 'huán shū', 种起来: 'zhòng qǐ lái',
+  // 三上 stretch passages p101–p113 (2026-10-24 Task 15): 种 (planting) zhòng, 长 (growing) zhǎng, 得 after a verb de, 地 after
+  // an adverb de, 教 (teaching) jiāo, 卷 (rolling) juǎn, 背 (carrying) bēi, 倒 (pouring) dào, 只 (only) zhǐ, 钻 (boring) zuān,
+  // 空 (vacant) kòng, 爷爷 neutral after 老
+  种一棵: 'zhòng yì kē', 能长多高: 'néng zhǎng duō gāo', 浇得: 'jiāo de', 整齐地: 'zhěng qí de', 教您: 'jiāo nín',
+  一次又一次地: 'yí cì yòu yí cì de', 卷走: 'juǎn zǒu', 舔得: 'tiǎn de', 看得很远: 'kàn de hěn yuǎn', 牢牢地: 'láo láo de',
+  扎得: 'zhā de', 背着很重: 'bēi zhe hěn zhòng', 倒掉: 'dào diào', 只会说一点: 'zhǐ huì shuō yì diǎn', 钻出: 'zuān chū',
+  空座位: 'kòng zuò wèi', 妈妈的裤子: 'mā ma de kù zi', 位老爷爷: 'wèi lǎo yé ye',
+  // 三下 stretch passages p114–p123 (2026-10-24 Task 16): 得 after a verb de, 地 after an adverb de, 呛 (choking on water)
+  // qiāng, 粘 (sticking) zhān, 巴 neutral in 尾巴
+  游得: 'yóu de', 看得哈哈大笑: 'kàn de hā hā dà xiào', 安静地: 'ān jìng de', 呛过水: 'qiāng guò shuǐ', 粘好: 'zhān hǎo',
+  尾巴张开: 'wěi ba zhāng kāi',
+  // Task 16's review: 铺 (spreading) pū, 数 (counting) shǔ
+  铺在: 'pū zài', 一边数: 'yì biān shǔ',
+  // 三下 stretch passages p124–p133 (2026-10-24 Task 17): 地 after an adverb de, 得 after a verb or adjective de,
+  // 调 (transferred) diào, 一 neutral in 一颗一颗
+  着急地: 'zháo jí de', 骄傲地: 'jiāo ào de', 轻轻地叫: 'qīng qīng de jiào', 一颗一颗地: 'yì kē yì kē de', 悄悄地: 'qiāo qiāo de',
+  修得: 'xiū de', 咸得: 'xián de', 感动得: 'gǎn dòng de', 要调到: 'yào diào dào', 班长说: 'bān zhǎng shuō',
 });

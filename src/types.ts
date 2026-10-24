@@ -242,7 +242,8 @@ export interface Recording {
   extraDayGiven?: boolean; // its marks have acted on the passage (≥ 2 marks: due 3 days after the review, spec 2026-10-15 §4), once per take; named for the old extra day
   review?: 'ok' | 'no'; // a Say or 说一句 take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
   misreadsBefore?: number; // a passage re-read whose last take the parent had reviewed: that take's misreads; fewer on this one earn the bonus star at review (learning rules 2026-10-17)
-  meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
+  meaning?: { correct: boolean; picked: string }; // a passage take before 2026-10-24: his answer to its one question (spec 2026-10-12 §3)
+  answers?: TakeAnswer[]; // a passage take: his answers to the read's questions, in the order asked (spec 2026-10-24 §5), for the parent
   cardBefore?: CardSnapshot; // a Say or 说一句 take: its card as it was when he recorded (SRS tuning spec §4), for the verdict's log
 }
 
@@ -281,14 +282,40 @@ export interface Passage {
   credit?: PassageCredit;
 }
 
-/** A 朗读 meaning question (spec 2026-10-12 §3): 谁 / 哪里 / 什么 / 为什么, three choices, the right one marked. `sentence`: the
- *  passage's sentence (splitSentences) that answers it; a parent's question has none and is answered where its right choice is. */
+/** What a 朗读 question asks (spec 2026-10-24 §5): a reason or feeling never stated in one sentence; a word's meaning in this
+ *  passage; what happened first, next or last; the main idea or best title; who, what or where, answered by one sentence. */
+export type QuestionKind = 'why' | 'word' | 'order' | 'main' | 'fact';
+
+/** A built-in passage's question (spec 2026-10-24 §5): four choices, the right one marked in the stored order (the step shuffles
+ *  them). `sentence` (fact, word, order) is the passage's sentence (splitSentences) read again after a miss; `sentences` (why,
+ *  main) are the two that support the answer, read again instead. */
 export interface PassageQuestion {
   q: string;
-  choices: [string, string, string];
-  answer: 0 | 1 | 2;
+  choices: [string, string, string, string];
+  answer: 0 | 1 | 2 | 3;
+  kind: QuestionKind;
+  sentence?: number;
+  sentences?: [number, number];
+}
+
+/** A parent's question on a school text (spec 2026-10-12 §3): three or four choices, no kind; answered where its right choice is
+ *  unless `sentence` names one. */
+export interface ParentQuestion {
+  q: string;
+  choices: [string, string, string] | [string, string, string, string];
+  answer: 0 | 1 | 2 | 3;
   sentence?: number;
 }
+
+/** A question as the step asks it: a built-in's or a parent's. */
+export type AskedQuestion = PassageQuestion | ParentQuestion;
+
+/** His answer to one of a read's questions (spec 2026-10-24 §5): its kind (none for a parent's or an older question), whether
+ *  it was right, and the choice he picked. */
+export interface TakeAnswer { kind?: QuestionKind; correct: boolean; picked: string }
+
+/** One answer to a built-in question (spec 2026-10-24 §8): kept on the passage's history, the last 30. */
+export interface PassageAnswer { kind: QuestionKind; correct: boolean; at: string }
 
 /** A school text the parent added for 朗读. id 'pp:<uuid>'; text may hold '/' marks; an optional meaning question. */
 export interface ParentPassage {
@@ -296,7 +323,7 @@ export interface ParentPassage {
   title: string;
   text: string;
   createdAt: number;
-  question?: PassageQuestion;
+  question?: ParentQuestion;
 }
 
 /** Details for the oral-exam self-introduction (stored only on the iPad). */
@@ -316,6 +343,9 @@ export interface PassageHistory {
   lastSkipped?: string; // 下一篇 swapped it out that day: the 3-day gap applies
   skips?: number; // 下一篇 swaps, for the parent ("often skipped" at 3)
   q: number;
+  lastHow?: 'well' | 'not-well'; // how the last lesson read went (spec 2026-10-24 §6): a due 'not-well' one comes first
+  lastSet?: number[]; // the built-in questions the last lesson read asked (indices): the next read never repeats the set
+  answers?: PassageAnswer[]; // his answers to its built-in questions, the last 30 (spec 2026-10-24 §8)
 }
 
 /** 朗读 progress (spec 2026-10-15 §4): each passage's history, the kind of the last lesson read (new and revisit take turns),

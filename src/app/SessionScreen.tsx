@@ -24,7 +24,7 @@ import { SentenceCard } from '../activities/say/SentenceCard';
 import { recordSayTake, recordSentenceTake } from '../session/say';
 import { afterRead, afterSkip, afterWarmup, readHow, warmupDue } from '../langdu/history';
 import { pickPassage, swapTarget } from '../langdu/pick';
-import { withQuestion } from '../langdu/questions';
+import { withQuestions } from '../langdu/questions';
 import { readerAt } from '../langdu/level';
 import { readingPool, type ReadingPassage } from '../langdu/pool';
 import { newestByPassage, tidyPassageTakes } from '../langdu/review';
@@ -168,7 +168,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           const pool = settings.langdu ? readingPool(parentPassages, PASSAGES, readerAt(know.knownChars, today, settings)) : [];
           const passage = pickPassage(k.reading, pool, day);
           const kind = nextSpeaking(k.speakingLast, !!passage, settings.story);
-          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage: withQuestion(passage, k.reading), oral: settings.oral, warmup: warmupDue(k.reading, day), day, pool, reading: k.reading, swaps: 0 };
+          if (kind === 'langdu' && passage) return { kind: 'langdu' as const, passage: withQuestions(passage, k.reading), oral: settings.oral, warmup: warmupDue(k.reading, day), day, pool, reading: k.reading, swaps: 0 };
           return kind === 'story' ? { kind: 'story' as const, scene: sceneFor(k.story) } : null;
         })(),
       });
@@ -533,7 +533,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       const next = swapTarget(cur.reading, cur.pool, cur.passage, cur.day, cur.swaps);
       if (!next) return prev;
       const reading = afterSkip(cur.reading, cur.passage.id, cur.day);
-      return { ...prev, speaking: { ...cur, passage: withQuestion(next, reading), reading, swaps: cur.swaps + 1 } };
+      return { ...prev, speaking: { ...cur, passage: withQuestions(next, reading), reading, swaps: cur.swaps + 1 } };
     });
     void updateKid(db, (k) => ({ ...k, reading: afterSkip(k.reading, s.passage.id, s.day) })).catch(logError);
   };
@@ -554,7 +554,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         } catch (err) {
           logError(err); // his takes couldn't be read: no bonus this time
         }
-        await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'passage', passageId: reading.passage.id }, ...r.read, ...(r.meaning ? { meaning: r.meaning } : {}), ...(misreadsBefore !== undefined ? { misreadsBefore } : {}) });
+        await keepRecording(db, { id: newId(), createdAt: at.getTime(), prompt: { kind: 'passage', passageId: reading.passage.id }, ...r.read, ...(r.answers.length ? { answers: r.answers } : {}), ...(misreadsBefore !== undefined ? { misreadsBefore } : {}) });
         try {
           await tidyPassageTakes(db, at);
         } catch (err) {
@@ -564,9 +564,11 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       try {
         // every read counts, a take or none: an unrecorded 读完了 moves the passage on too (spec 2026-10-15 §1 cause 4); applied to
         // his state as stored, in one transaction, so a change saved meanwhile (a find, a star) is kept
-        const how = readHow({ extra: false, asked: !!reading.passage.question, meaning: r.meaning });
+        // 'well' at 2 of 3 (spec 2026-10-24 §5); a built-in's answers are kept by kind for the parent (§8)
+        const how = readHow({ extra: false, answers: r.answers });
+        const kinded = r.answers.flatMap((a) => (a.kind ? [{ kind: a.kind, correct: a.correct }] : []));
         const change = (fresh: KidState): KidState => {
-          const read = afterRead(fresh.reading, reading.passage.id, reading.day, how);
+          const read = afterRead(fresh.reading, reading.passage.id, reading.day, how, { set: reading.passage.askedSet ?? [], answers: kinded });
           return { ...fresh, reading: reading.warmup ? afterWarmup(read, reading.day, !!r.intro) : read, speakingLast: 'langdu', bonusStars: fresh.bonusStars + (bonus ? 1 : 0) };
         };
         if (!(await updateKid(db, change))) await saveKid(db, change(kid)); // nothing stored yet: start from the lesson's copy

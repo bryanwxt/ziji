@@ -62,4 +62,10 @@ describe('Week summary', () => {
     expect(screen.getByText(`${many.slice(0, 12).join('、')} +${many.length - 12} more`)).toBeTruthy();
     expect(screen.getByText('森林')).toBeTruthy();
   });
+  it('a read judged well shows a tick; a missed one says so (from the take\'s answers or the old meaning)', () => {
+    const s: WeekSummary = { talk: { days: 0, minutes: 0, times: 0 }, lessons: 0, langduDays: 1, newly: { read: [], write: [], say: [] }, newWords: [], shaky: [], reading: [{ passageId: 'p02', title: '上学', meaning: 'right' }, { passageId: 'p03', title: '下雨了', meaning: 'missed' }], waiting: 0, focus: { zh: '好', en: 'Good' } };
+    render(<WeekView range={weekRange(NOW)} summary={s} back={0} onBack={vi.fn()} onNavigate={vi.fn()} onShare={vi.fn()} />);
+    const reads = [...document.querySelectorAll('.week-summary__read')].map((e) => e.textContent);
+    expect(reads).toEqual(['《上学》 ✓', '《下雨了》 ✗ question missed']);
+  });
 });

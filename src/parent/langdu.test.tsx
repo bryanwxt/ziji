@@ -89,15 +89,19 @@ describe('PassagesPanel', () => {
 });
 
 describe('the Library (spec 2026-10-15 §9)', () => {
-  it('lists every built-in passage, read-only, with source, term, fit, reads, next and often skipped', async () => {
+  it('lists every built-in passage, read-only, with source, term, fit, reads, last questions, next and often skipped; then his kinds', async () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 15, 17) });
-    await saveKid(app.db, { ...DEFAULT_KID, reading: { ...EMPTY_READING, history: { p01: { reads: 2, lastRead: '2026-10-10', rest: 7, q: 2, lastSkipped: '2026-10-12', skips: 3 } } } });
+    const answers = [{ kind: 'why' as const, correct: false, at: '2026-10-10' }, { kind: 'main' as const, correct: true, at: '2026-10-10' }, { kind: 'fact' as const, correct: true, at: '2026-10-10' }];
+    await saveKid(app.db, { ...DEFAULT_KID, reading: { ...EMPTY_READING, history: { p01: { reads: 2, lastRead: '2026-10-10', rest: 7, q: 2, lastSkipped: '2026-10-12', skips: 3, answers } } } });
     renderWithApp(<PassagesPanel />, app);
     await screen.findByText('Library');
     const rows = [...document.querySelectorAll('.library__table tbody tr')];
     expect(rows).toHaveLength(PASSAGES.length);
     const p01 = rows.find((r) => r.textContent!.startsWith('我的家'))!;
-    expect([...p01.querySelectorAll('td')].map((td) => td.textContent)).toEqual(['我的家 · often skipped', 'ZiJi', '一下', '100%', '2', '2026-10-17']);
+    expect([...p01.querySelectorAll('td')].map((td) => td.textContent)).toEqual(['我的家 · often skipped', 'ZiJi', '一下', '100%', '2', '2/3', '2026-10-17']);
+    // his right share by kind over 14 days, the weakest marked (spec 2026-10-24 §8)
+    expect(document.querySelector('.library__kinds')!.textContent).toBe('Last 14 days, right by kind of question: 为什么 0/1 (weakest) · 主要意思 1/1 · 事实 1/1');
+    expect(document.querySelector('.library__weakest')!.textContent).toBe('为什么 0/1 (weakest)');
     expect(rows.some((r) => r.textContent!.includes('Global Storybooks'))).toBe(true);
     expect(document.querySelector('.library__table button')).toBeNull(); // read-only
   });

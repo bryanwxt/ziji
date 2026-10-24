@@ -20,7 +20,7 @@ describe('applyMisreads', () => {
     await applyMisreads(db, rec, ['大', '天'], now);
     expect((await getCard(db, 'b:大:recognise'))!.fsrs.due.getTime()).toBe(now.getTime());
     expect((await getWord(db, 'b:天'))!.listedAt).toBe(-now.getTime()); // ahead of every school list
-    expect((await getKid(db))!.reading.history['pp:1']).toEqual({ reads: 2, lastRead: '2026-10-01', rest: 7, q: 2 }); // 4 days since the read + 3
+    expect((await getKid(db))!.reading.history['pp:1']).toEqual({ reads: 2, lastRead: '2026-10-01', rest: 7, q: 2, lastHow: 'not-well' }); // 4 days since the read + 3
     expect((await listRecordings(db))[0]!.misread).toEqual(['大', '天']);
   });
 

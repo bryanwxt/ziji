@@ -18,6 +18,10 @@ export function passageFit(text: string, readable: ReadonlySet<string>, names: r
 export const TERM_BAR = 0.9;
 const CUMULATIVE: ReadonlySet<string>[] = MOE_TERMS.map((t) => new Set(LESSONS.filter((l) => MOE_TERMS.indexOf(l.term) <= MOE_TERMS.indexOf(t)).flatMap((l) => Array.from(l.read))));
 
+/** What a reader who has finished `term` reads: his book's 识读字 through it (spec 2026-10-24 §4: a passage's fit at its own
+ *  term); an empty set for an unknown term. */
+export const termReadable = (term: string): ReadonlySet<string> => CUMULATIVE[MOE_TERMS.indexOf(term)] ?? new Set();
+
 /** A term's place in his book's order (一上 = 0); −1 for an unknown term. */
 export const termIndex = (term: string): number => MOE_TERMS.indexOf(term);
 
@@ -29,7 +33,7 @@ export function passageTerm(text: string, names: readonly string[] = []): string
 
 /**
  * Who is reading (spec 2026-10-15 §3): K is the characters he reads in the app and the 识读字 of every lesson of his book up to
- * his class's (he meets those at school); his class's term limits the pool to a term ahead at most.
+ * his class's (he meets those at school); his class's term limits the pool to two terms ahead at most (spec 2026-10-24 §3).
  */
 export function readerAt(known: ReadonlySet<string>, now: Date, settings: Pick<Settings, 'grade' | 'gradeYear' | 'classLesson'>): Reader {
   const at = classLessonAt(now, settings);
@@ -37,5 +41,7 @@ export function readerAt(known: ReadonlySet<string>, now: Date, settings: Pick<S
   return { readable: new Set([...known, ...listedBy(at, 'both').read]), classTerm: LESSONS[at]!.term };
 }
 
-/** In the pool at all: a passage's term at most one past his class's (spec §3); any term when his class is unknown. */
-export const withinReach = (term: string, classTerm: string | null): boolean => classTerm === null || termIndex(term) <= termIndex(classTerm) + 1;
+/** Built-in passages reach this many terms past his class's (spec 2026-10-24 §3). */
+export const REACH_TERMS = 2;
+/** In the pool at all: a passage's term at most two past his class's; any term when his class is unknown. */
+export const withinReach = (term: string, classTerm: string | null): boolean => classTerm === null || termIndex(term) <= termIndex(classTerm) + REACH_TERMS;

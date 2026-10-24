@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { PASSAGES } from '../content';
+import { answersLine } from '../langdu/library';
 import { finishPassageReview, passageOf } from '../langdu/review';
 import { splitSentences } from '../langdu/sentences';
 import { useModelReader } from '../langdu/useModelReader';
@@ -38,7 +39,7 @@ function PassageRow({ r, url, texts, onDone }: { r: Recording; url: string | und
       <td colSpan={4}>
         <div class="listen__passage">
           <div><strong class="listen__title">📖 {title}</strong> <small>{new Date(r.createdAt).toLocaleString()}</small></div>
-          {r.meaning && <small class="listen__meaning">{r.meaning.correct ? 'Meaning question: right' : `Meaning question: missed (picked ${r.meaning.picked})`}</small>}
+          {r.answers?.length ? <small class="listen__meaning">{answersLine(r.answers)}</small> : r.meaning && <small class="listen__meaning">{r.meaning.correct ? 'Meaning question: right' : `Meaning question: missed (picked ${r.meaning.picked})`}</small>}
           {t && <MisreadText text={t.text} marked={marks} onToggle={toggle} />}
           <div class="row listen__actions">
             <audio ref={audio} controls preload="none" src={url} aria-label="His take" onPlay={model.stop} />
