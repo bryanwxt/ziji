@@ -95,6 +95,13 @@ describe('the shared text', () => {
     expect(todayText([null, card, null], '2026-10-19')).toBe(todayText([card], '2026-10-19'));
     expect(todayText([null, card, null], '2026-10-19')).toContain('\n\n1. 他的词 His words\n');
   });
+  it('the week says a read well (from its answers) is right', () => {
+    const s: WeekSummary = {
+      talk: { days: 0, minutes: 0, times: 0 }, lessons: 0, langduDays: 1, newly: { read: [], write: [], say: [] }, newWords: [], shaky: [],
+      reading: [{ passageId: 'p02', title: '上学', meaning: 'right' }], waiting: 0, focus: { zh: '多读。', en: 'Read more.' },
+    };
+    expect(weekText(weekRange(new Date(2026, 9, 21)), s)).toContain('朗读: 《上学》 question right');
+  });
   it('the week', () => {
     const s: WeekSummary = {
       talk: { days: 1, minutes: 10, times: 1 }, lessons: 5, langduDays: 4,

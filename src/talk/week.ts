@@ -2,6 +2,7 @@
 // progress, and one focus line for next week. Pure: weekLoad.ts reads the stores.
 import { THEME_EN, THEME_LABEL } from '../content/talkPrompts';
 import { addDays, localDateKey, parseDateKey, startOfLocalDay } from '../lib/date';
+import { readHow } from '../langdu/history';
 import { introducedNewWords } from '../session/runner';
 import { troubleWords } from '../stats/stats';
 import type { CardRecord, Recording, ReviewLog, SessionRecord, TalkLog } from '../types';
@@ -89,7 +90,8 @@ export function summarizeWeek(i: WeekInput): WeekSummary {
   const newest = new Map<string, Recording>();
   for (const r of takes) newest.set((r.prompt as { passageId: string }).passageId, r);
   const reading = [...newest].map(([passageId, r]): WeekReading => ({
-    passageId, title: i.titleOf(passageId) ?? passageId, meaning: r.meaning ? (r.meaning.correct ? 'right' : 'missed') : null,
+    // a read's questions (spec 2026-10-24 §5): 'right' when it was read well (2 of 3), else 'missed'; an older take's one question
+    passageId, title: i.titleOf(passageId) ?? passageId, meaning: r.answers?.length ? (readHow({ extra: false, answers: r.answers }) === 'well' ? 'right' : 'missed') : r.meaning ? (r.meaning.correct ? 'right' : 'missed') : null,
   }));
   const base = {
     talk: talkTotals(i.talks, range.start, range.end),

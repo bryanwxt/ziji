@@ -78,16 +78,23 @@ describe('the summary from the stores', () => {
     await addRecording(db, take('p17', 19, false));
     await addRecording(db, take('p17', 21, true)); // its newest take this week: right
     await addRecording(db, take('p20', 20, null));
+    // a take with three answers (spec 2026-10-24 §5): 1 of 3 is not read well, so 'missed'; 2 of 3 is 'right'
+    await addRecording(db, { ...take('p03', 20, null), answers: [{ kind: 'why', correct: false, picked: 'a' }, { kind: 'word', correct: true, picked: 'b' }, { kind: 'fact', correct: false, picked: 'c' }] });
+    await addRecording(db, { ...take('p02', 20, null), answers: [{ kind: 'why', correct: false, picked: 'a' }, { kind: 'word', correct: true, picked: 'b' }, { kind: 'fact', correct: true, picked: 'c' }] });
     await addTalk(db, { id: 'a', at: at(19), minutes: 10 });
     const { range, summary } = await loadWeek(db, new Date(2026, 9, 22, 20));
     expect(range.from).toBe('2026-10-19');
     expect(summary).toMatchObject({
       talk: { days: 1, minutes: 10, times: 1 }, lessons: 2, langduDays: 1,
       newly: { read: ['饿'], write: [], say: [] }, newWords: ['饿', '饱', '甜'], shaky: ['甜', '饱'],
-      reading: [{ passageId: 'p17', title: '小马', meaning: 'right' }, { passageId: 'p20', title: '我的学校', meaning: null }],
-      waiting: 2,
+      waiting: 4,
     });
-    expect(summary.focus.zh).toBe('多聊食物：这周常错的词是甜、饱，聊天的时候多用一用。');
+    expect(summary.reading).toHaveLength(4);
+    expect(summary.reading).toEqual(expect.arrayContaining([
+      { passageId: 'p17', title: '小马', meaning: 'right' }, { passageId: 'p20', title: '我的学校', meaning: null },
+      { passageId: 'p03', title: '下雨了', meaning: 'missed' }, { passageId: 'p02', title: '上学', meaning: 'right' },
+    ]));
+    expect(summary.focus.zh).toBe('多读：他这周的朗读题答错了。和他再读一次《下雨了》，轮流读，读完问问他故事里发生了什么。');
     expect((await loadWeek(db, new Date(2026, 9, 22, 20), 1)).summary).toMatchObject({ lessons: 1, newWords: ['马'], shaky: ['马'], newly: { write: ['马'] } });
   });
 });
