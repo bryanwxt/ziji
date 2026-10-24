@@ -128,7 +128,8 @@ export function questionProblems(p: Passage, q: PassageQuestion, known: Readonly
   // every wrong choice names something in the passage, so matching characters to the text never singles out the answer
   const wrong = q.choices.filter((_, i) => i !== q.answer);
   for (const w of wrong) if (!p.text.includes(w) && !content(w).some((ch) => own.has(ch))) out.push(`${tag}: the wrong choice ${w} names nothing in the passage`);
-  if (p.text.includes(right) && wrong.filter((w) => p.text.includes(w)).length < 2) out.push(`${tag}: the answer is in the passage word for word, and fewer than two wrong choices are`);
+  // ruling (fix round 2): one wrong choice found word for word is enough (was two) -- persons and places rarely give more
+  if (p.text.includes(right) && !wrong.some((w) => p.text.includes(w))) out.push(`${tag}: the answer is in the passage word for word, and no wrong choice is`);
   const lengths = q.choices.map((c) => han(c).length);
   if (Math.max(...lengths) - Math.min(...lengths) > CHOICE_SPREAD) out.push(`${tag}: choice lengths ${lengths.join('/')} differ by more than ${CHOICE_SPREAD}`);
   const leak = [...new Set(content(right).filter((ch) => q.q.includes(ch) && !quoted?.includes(ch)))];

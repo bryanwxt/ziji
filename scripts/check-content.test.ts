@@ -66,9 +66,10 @@ describe('questions (spec 2026-10-24 §5)', () => {
     expect(flags({ ...fact, choices: ['门口', '天上', '飞机', '鬱金香'] })).toContain('p08 "我们坐在哪里？": uses 鬱 in neither the passage nor the lists through 二下');
     expect(flags(word)).toEqual([]); // 意思: a frame word
   });
-  it('every wrong choice names something in the passage; an answer found word for word has two wrong ones found too', () => {
+  it('every wrong choice names something in the passage; an answer found word for word has at least one wrong one found too', () => {
     expect(flags({ ...fact, choices: ['门口', '天上', '飞机', '学校'] })).toContain('p08 "我们坐在哪里？": the wrong choice 学校 names nothing in the passage');
-    expect(flags({ ...fact, choices: ['门口', '飞机上', '星星上', '天上'] })).toContain('p08 "我们坐在哪里？": the answer is in the passage word for word, and fewer than two wrong choices are');
+    expect(flags({ ...fact, choices: ['门口', '飞机上', '星星上', '飞机里'] })).toContain('p08 "我们坐在哪里？": the answer is in the passage word for word, and no wrong choice is');
+    expect(flags({ ...fact, choices: ['门口', '飞机上', '星星上', '天上'] })).not.toContain('p08 "我们坐在哪里？": the answer is in the passage word for word, and no wrong choice is');
   });
   it('choice lengths within 3 characters', () => {
     expect(flags({ ...main, choices: ['爷爷', '晚上在门口吃饭', '天上有很多飞机', '飞到远远的星星那里'] })).toContain('p08 "哪一个题目最好？": choice lengths 2/7/7/9 differ by more than 3');
