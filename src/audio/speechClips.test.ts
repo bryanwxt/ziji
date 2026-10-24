@@ -32,6 +32,16 @@ describe('speak, with clips', () => {
     expect(calls[0]!.steps).toEqual([{ id: 't' }]);
     expect(spoken).toEqual([]);
   });
+  it('a rate goes to the clip player, a queued line\'s too; no rate plays as recorded (spec 2026-10-24 §7)', async () => {
+    speak('大门', { rate: 0.8 });
+    speak('门', { queue: true, rate: 0.9 });
+    expect(player.play).toHaveBeenLastCalledWith([{ id: 'd' }], expect.any(Function), 0.8);
+    calls[0]!.resolve('ended');
+    await tick();
+    expect(player.play).toHaveBeenLastCalledWith([{ id: 'm' }], expect.any(Function), 0.9);
+    speak('门');
+    expect(player.play).toHaveBeenLastCalledWith([{ id: 'm' }], expect.any(Function), 1);
+  });
   it('a clip that fails: the iPad voice says the whole line', async () => {
     speak('调', { reading: 'tiáo' });
     calls[0]!.resolve('failed');

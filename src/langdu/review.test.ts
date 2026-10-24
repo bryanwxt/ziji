@@ -63,7 +63,7 @@ describe('passage takes in the queue (spec 2026-10-12 §6)', () => {
     await finishPassageReview(db, r, ['爱', '我'], new Date(2026, 9, 2));
     spy.mockRestore();
     expect(await getRecording(db, 'a')).toMatchObject({ review: 'ok', misread: ['爱', '我'] });
-    expect((await getKid(db))!.reading.history.p01).toEqual({ reads: 2, lastRead: '2026-09-25', rest: 10, q: 2 }); // due 3 days after the review, once
+    expect((await getKid(db))!.reading.history.p01).toEqual({ reads: 2, lastRead: '2026-09-25', rest: 10, q: 2, lastHow: 'not-well' }); // due 3 days after the review, once
   });
 });
 

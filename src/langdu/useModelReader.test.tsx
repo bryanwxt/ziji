@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setSpeaking } from '../audio/speaking';
-import { SENTENCE_MAX_MS, START_WAIT_MS, useModelReader } from './useModelReader';
+import { FIRST_LISTEN, MODEL_RATE, REPLAY, REPLAY_RATE, SENTENCE_GAP_MS, SENTENCE_MAX_MS, START_WAIT_MS, useModelReader } from './useModelReader';
 
 vi.mock('../audio/speech', () => ({ speak: vi.fn(), stopSpeaking: vi.fn() }));
 import { speak, stopSpeaking } from '../audio/speech';
@@ -15,6 +15,8 @@ function Probe({ sentences, name = '' }: { sentences: string[]; name?: string })
       <button type="button" onClick={() => m.read(0)}>{`all${name}`}</button>
       <button type="button" onClick={() => m.read(1, true)}>one</button>
       <button type="button" onClick={() => m.stop()}>stop</button>
+      <button type="button" onClick={() => m.read(0, false, FIRST_LISTEN)}>{`first${name}`}</button>
+      <button type="button" onClick={() => m.read(2, true, REPLAY)}>replay</button>
     </div>
   );
 }
@@ -97,6 +99,64 @@ describe('useModelReader (spec 2026-10-12 §3)', () => {
     act(() => { vi.advanceTimersByTime(1); });
     expect(speak).toHaveBeenLastCalledWith('乙。');
     expect(cur()).toBe('-');
+  });
+  it('the first listen: 0.8×, with 700 ms between sentences and none after the last (spec 2026-10-24 §7)', () => {
+    expect([MODEL_RATE, SENTENCE_GAP_MS, REPLAY_RATE]).toEqual([0.8, 700, 0.9]);
+    vi.useFakeTimers();
+    render(<Probe sentences={S} />);
+    fireEvent.click(screen.getByText('first'));
+    expect(speak).toHaveBeenLastCalledWith('甲。', { rate: 0.8 });
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    expect(cur()).toBe('-');
+    act(() => { vi.advanceTimersByTime(SENTENCE_GAP_MS - 1); });
+    expect(speak).toHaveBeenCalledTimes(1); // still in the pause
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(speak).toHaveBeenLastCalledWith('乙。', { rate: 0.8 });
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    act(() => { vi.advanceTimersByTime(SENTENCE_GAP_MS); });
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    expect(all()).toBe('true'); // heard at once: no pause after the last sentence
+    expect(speak).toHaveBeenCalledTimes(3);
+  });
+  it('stop in the pause: nothing more is read', () => {
+    vi.useFakeTimers();
+    render(<Probe sentences={S} />);
+    fireEvent.click(screen.getByText('first'));
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    fireEvent.click(screen.getByText('stop'));
+    act(() => { vi.advanceTimersByTime(SENTENCE_GAP_MS * 3); });
+    expect(speak).toHaveBeenCalledTimes(1);
+  });
+  it('leaving in the pause says nothing more', () => {
+    vi.useFakeTimers();
+    vi.mocked(stopSpeaking).mockClear();
+    const { unmount } = render(<Probe sentences={S} />);
+    fireEvent.click(screen.getByText('first'));
+    act(() => setSpeaking(true));
+    act(() => setSpeaking(false));
+    unmount();
+    expect(stopSpeaking).toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(SENTENCE_GAP_MS * 3); });
+    expect(speak).toHaveBeenCalledTimes(1);
+  });
+  it('no voice at all (none starts): the first listen still reaches the end, pauses and all', () => {
+    vi.useFakeTimers();
+    render(<Probe sentences={S} />);
+    fireEvent.click(screen.getByText('first'));
+    act(() => { vi.advanceTimersByTime((START_WAIT_MS + SENTENCE_GAP_MS) * 3); });
+    expect(speak).toHaveBeenCalledTimes(3);
+    expect(all()).toBe('true');
+  });
+  it('a replay: 0.9×, no pause; with no pace, as the voice usually speaks', () => {
+    render(<Probe sentences={S} />);
+    fireEvent.click(screen.getByText('replay'));
+    expect(speak).toHaveBeenLastCalledWith('丙。', { rate: 0.9 });
+    fireEvent.click(screen.getByText('one'));
+    expect(speak).toHaveBeenLastCalledWith('乙。');
   });
   it('one reader at a time (final review I7): starting B stops A, and A never speaks again', () => {
     render(<div><Probe sentences={S} name="A" /><Probe sentences={['子。', '丑。']} name="B" /></div>);

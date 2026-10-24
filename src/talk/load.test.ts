@@ -6,6 +6,7 @@ import { getSettings, putWeekList, putWords, saveKid, saveParentPassage, saveSes
 import { freshDb } from '../test/fixtures';
 import { DEFAULT_KID, EMPTY_READING, type SessionPlan, type WeekList } from '../types';
 import { swapTalk, talkWord, talkWords, todaysPassage, todayTalk } from './load';
+import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 
 const NOW = new Date(2026, 9, 19, 20); // a Monday evening
 const words = builtinWords(0);
@@ -54,7 +55,7 @@ describe("today's passage", () => {
     const s = await getSettings(db);
     expect(await todaysPassage(db, s, NOW)).toBeNull(); // no kid yet
     await saveKid(db, readOn('p17', '2026-10-18'));
-    expect(await todaysPassage(db, s, NOW)).toMatchObject({ id: 'p17', title: '小马', questions: [expect.objectContaining({ q: '小马为什么找不到家了？' }), expect.anything()] });
+    expect(await todaysPassage(db, s, NOW)).toEqual({ id: 'p17', title: '小马', questions: PASSAGE_QUESTIONS.p17 }); // its six
     expect(await todaysPassage(db, { ...s, langdu: false }, NOW)).toBeNull();
     await saveKid(db, readOn('p17', '2026-10-17'));
     expect(await todaysPassage(db, s, NOW)).toBeNull();

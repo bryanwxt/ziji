@@ -2,15 +2,21 @@
 import { describe, expect, it } from 'vitest';
 import { BUILTIN } from '../content';
 import moe from '../content/moe2024.json';
-import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { TALK_PROMPTS } from '../content/talkPrompts';
 import { addDays, localDateKey } from '../lib/date';
-import type { PassageQuestion } from '../types';
+import type { ParentQuestion } from '../types';
 import { p2Readable } from '../../scripts/check-content';
-import { hookRank, markSeen, pickDay, readingCard, swapCard, themeForWords, THINK, wordStarter, type PickInput, type TalkWord } from './pick';
+import { hookRank, markSeen, pickDay, readingCard, swapCard, themeForWords, THINK, wordStarter, type PickInput, type TalkPassage, type TalkWord } from './pick';
 
-const P17 = { id: 'p17', title: '小马', questions: PASSAGE_QUESTIONS.p17! };
-const P01 = { id: 'p01', title: '我的家', questions: PASSAGE_QUESTIONS.p01! };
+// two passages with the questions they had before 2026-10-24, fixed here so the content batches never move these tests
+const P17: TalkPassage = { id: 'p17', title: '小马', questions: [
+  { q: '小马为什么找不到家了？', choices: ['跑得很快', '在外面玩', '跑得很远'], answer: 2, sentence: 1 },
+  { q: '牛爷爷做了什么？', choices: ['找到了小马', '带小马跑步', '给小马吃饭'], answer: 0, sentence: 2 },
+] };
+const P01: TalkPassage = { id: 'p01', title: '我的家', questions: [
+  { q: '谁是老师？', choices: ['爸爸', '妈妈', '哥哥'], answer: 1, sentence: 1 },
+  { q: '我家有什么人？', choices: ['哥哥和弟弟', '姐姐和妹妹', '哥哥和妹妹'], answer: 2, sentence: 0 },
+] };
 const YE: TalkWord = { text: '爷', gloss: 'grandfather', zuci: ['爷爷'], from: 'class' };
 const JIE: TalkWord = { text: '借', gloss: 'to borrow', example: '我可以借你的笔吗？', zuci: ['借书'], from: 'list' };
 const TODAY = '2026-10-19';
@@ -153,7 +159,7 @@ describe('review fixes (2026-10-18)', () => {
     expect(next[0]).toMatchObject({ kind: 'word', id: 't30', word: '鸡' });
   });
   it('a passage told as 「我」: the questions say whose 我 it is', () => {
-    const q = (text: string, answer: 0 | 1 | 2 = 0): PassageQuestion => ({ q: text, choices: ['a', 'b', 'c'], answer, sentence: 0 });
+    const q = (text: string, answer: 0 | 1 | 2 = 0): ParentQuestion => ({ q: text, choices: ['a', 'b', 'c'], answer, sentence: 0 });
     const card = readingCard({ id: 'x', title: '上学', questions: [q('谁给我唱生日歌？'), q('我在车上为什么站着？', 1)] }, 0);
     expect(card.open).toBe('书里，谁给「我」唱生日歌？');
     expect(card.followUps[0]).toBe('书里的「我」在车上为什么站着？');

@@ -131,6 +131,15 @@ describe('passage takes in Listen & confirm (spec 2026-10-12 §6)', () => {
     await addRecording(app.db, passageTake('p1', 'pp:1', 3, { meaning: { correct: false, picked: '老师' } }));
     return app;
   }
+  it("a new take shows its answers (kind and what he picked); an older take keeps its meaning line", async () => {
+    const app = await withPassage();
+    await addRecording(app.db, passageTake('p9', 'p01', 4, { answers: [{ kind: 'why', correct: false, picked: '老师' }, { correct: true, picked: '爸爸' }] }));
+    renderWithApp(<ListenPanel onReviewed={vi.fn()} />, app);
+    await waitFor(() => expect(document.querySelectorAll('.listen__meaning')).toHaveLength(2));
+    const lines = [...document.querySelectorAll('.listen__meaning')].map((e) => e.textContent);
+    expect(lines).toContain('Questions: 1/2 right · missed 为什么 (picked 老师)');
+    expect(lines).toContain('Meaning question: missed (picked 老师)');
+  });
   it('a row with the title, his answer, tappable characters, his take, the model and Done; Done saves the marks', async () => {
     const app = await withPassage();
     const onReviewed = vi.fn();

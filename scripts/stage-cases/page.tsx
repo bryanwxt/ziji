@@ -48,7 +48,7 @@ import { builtinIdiom, chengyuOf, idiomsFor } from '../../src/content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../../src/practice/idioms';
 import { builtinWords, PASSAGES } from '../../src/content';
 import { LangduStep, type LangduPart } from '../../src/activities/langdu/LangduStep';
-import { PASSAGE_QUESTIONS } from '../../src/content/passageQuestions';
+import { askedOf, longestBack, LONGEST_OWN, questionsOf } from './langdu';
 import { ladderWords } from '../../src/content/ladder';
 import { questionMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
@@ -378,8 +378,8 @@ else if (which === 'talk') {
   // word card (a list word with its example) and shared reading of the passage with the longest questions, the reading card
   // open; logging with Undo showing; the Week summary with every row full
   const words = builtinWords(0);
-  const qs = Object.entries(PASSAGE_QUESTIONS).sort(([, a], [, b]) => b.map((q) => q.q).join('').length - a.map((q) => q.q).join('').length)[0]!;
-  const p = PASSAGES.find((x) => x.id === qs[0])!;
+  const p = [...PASSAGES].sort((a, b) => questionsOf(b.id).map((q) => q.q).join('').length - questionsOf(a.id).map((q) => q.q).join('').length)[0]!;
+  const qs = [p.id, questionsOf(p.id)] as const;
   const cards = pickDay({ today: '2026-10-19', seen: {}, words: [talkWord(words.find((w) => w.text === '借')!, 'list')], passage: { id: p.id, title: p.title, questions: qs[1] } });
   const summary: WeekSummary = {
     talk: { days: 4, minutes: 45, times: 5 }, lessons: 6, langduDays: 5,
@@ -431,22 +431,32 @@ else if (which?.startsWith('langdu-gsb-') || which === 'langdu-words-listen') {
   const p = which === 'langdu-words-listen' ? longest(PASSAGES.filter((x) => x.words?.length)) : longest(PASSAGES.filter((x) => x.source === 'gsb'));
   const part = which.slice(which.lastIndexOf('-') + 1) as LangduPart;
   // the question: the library's longest (question and choices together), on its own passage, so the longest one is the one checked
-  const asked = Object.entries(PASSAGE_QUESTIONS).flatMap(([id, qs]) => qs.map((q) => ({ id, q }))).sort((a, b) => (b.q.q + b.q.choices.join('')).length - (a.q.q + a.q.choices.join('')).length)[0]!;
+  const asked = PASSAGES.flatMap((x) => questionsOf(x.id).map((q) => ({ id: x.id, q }))).sort((a, b) => (b.q.q + b.q.choices.join('')).length - (a.q.q + a.q.choices.join('')).length)[0]!;
   const shown = part === 'meaning' ? PASSAGES.find((x) => x.id === asked.id)! : p;
   render(screen(
     <PinyinFade known={new Set()} on>
-      <LangduStep passage={{ ...shown, question: part === 'meaning' ? asked.q : PASSAGE_QUESTIONS[p.id]?.[0] }} rng={() => 0.999} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup={false} startAt={part} onSwap={() => {}} onDone={() => {}} />
+      <LangduStep passage={{ ...shown, asked: part === 'meaning' ? [asked.q] : askedOf(p.id) }} rng={() => 0.999} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup={false} startAt={part} onSwap={() => {}} onDone={() => {}} />
+    </PinyinFade>,
+  ), app);
+}
+else if (which === 'langdu-back') {
+  // a missed why or main question (spec 2026-10-24 §5, §9): four choices, then its two supporting sentences read back in the
+  // sheet — the longest such question in the library, in stored order
+  const back = longestBack()!;
+  render(screen(
+    <PinyinFade known={new Set()} on>
+      <LangduStep passage={{ ...back.passage, asked: [back.question] }} rng={() => 0.999} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" onDone={() => {}} />
     </PinyinFade>,
   ), app);
 }
 else if (which?.startsWith('langdu-')) {
-  // 朗读's parts (spec 2026-10-12 §3, §8): the longest of our passages with every syllable showing (nothing known), each part
+  // 朗读's parts (spec 2026-10-12 §3, §8; 2026-10-24 §9: up to 140 characters): the longest of our passages with every syllable showing (nothing known), each part
   // opened directly; stage-cases.ts misses the question. In listen, the first sentence lights as its voice starts.
-  const p = [...PASSAGES.filter((x) => x.source === 'ziji')].sort((a, b) => b.text.length - a.text.length)[0]!;
+  const p = LONGEST_OWN;
   const part = (which === 'langdu-read-blocked' ? 'read' : which.slice('langdu-'.length)) as LangduPart;
   render(screen(
     <PinyinFade known={new Set()} on>
-      <LangduStep passage={{ ...p, question: PASSAGE_QUESTIONS[p.id]![0] }} rng={() => 0.999} /* no shuffle: stored order */ oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup startAt={part} micBlocked={which === 'langdu-read-blocked'} onDone={() => {}} />
+      <LangduStep passage={{ ...p, asked: askedOf(p.id) }} rng={() => 0.999} /* no shuffle: stored order */ oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup startAt={part} micBlocked={which === 'langdu-read-blocked'} onDone={() => {}} />
     </PinyinFade>,
   ), app);
   if (part === 'listen') setTimeout(() => setSpeaking(true), 50);

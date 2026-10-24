@@ -1,20 +1,22 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setSpeaking } from '../../audio/speaking';
-import { DEFAULT_KID } from '../../types';
+import { DEFAULT_KID, type PassageQuestion } from '../../types';
 import { PinyinFade } from '../../ui/pinyinFade';
 import { LangduStep } from './LangduStep';
 
 vi.mock('../../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
+// the first listen's pause between sentences is LangduStep.pace.test's: here the model reads straight on, as these tests drive it
+vi.mock('../../langdu/useModelReader', async (orig) => ({ ...(await orig<typeof import('../../langdu/useModelReader')>()), FIRST_LISTEN: { rate: 0.8, gapMs: 0 } }));
 
 import { recordingSupported, startRecording } from '../../audio/recorder';
 import { MicDeniedError } from '../../audio/micErrors';
 import { speak, stopSpeaking } from '../../audio/speech';
 
 const question = { q: '我爱谁？', choices: ['老师', '妈妈', '小马'] as [string, string, string], answer: 1 as const };
-const passage = { id: 'pp:1', title: '我家', text: '我爱爸爸。我爱妈妈。', source: 'parent' as const, question };
+const passage = { id: 'pp:1', title: '我家', text: '我爱爸爸。我爱妈妈。', source: 'parent' as const, asked: [question] };
 const oral = { name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' };
 let takes: { level: number; durationSec: number }[] = [];
 
@@ -62,14 +64,14 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     await record();
     await waitFor(() => expect(button('继续').disabled).toBe(false));
     fireEvent.click(button('继续'));
-    expect(speak).toHaveBeenLastCalledWith('我爱爸爸。');
+    expect(speak).toHaveBeenLastCalledWith('我爱爸爸。', { rate: 0.8 });
     expect(lit()).toBe(-1); // not before its voice starts
     act(() => setSpeaking(true));
     expect(lit()).toBe(0);
     expect(button('开始朗读').disabled).toBe(true);
     act(() => setSpeaking(false));
     expect(lit()).toBe(-1);
-    expect(speak).toHaveBeenLastCalledWith('我爱妈妈。');
+    expect(speak).toHaveBeenLastCalledWith('我爱妈妈。', { rate: 0.8 });
     act(() => setSpeaking(true));
     expect(lit()).toBe(1);
     act(() => setSpeaking(false));
@@ -93,7 +95,7 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     expect(onDone).toHaveBeenCalledWith({
       intro: expect.objectContaining({ durationSec: 4 }),
       read: expect.objectContaining({ level: 0.1, durationSec: 17 }),
-      meaning: { correct: true, picked: '妈妈' },
+      answers: [{ correct: true, picked: '妈妈' }],
     });
   });
 
@@ -110,19 +112,19 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     render(<LangduStep passage={passage} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
     expect(screen.queryByText('老师好！')).toBeNull();
     expect(screen.getByText('我爱爸爸。')).toBeTruthy();
-    expect(speak).toHaveBeenLastCalledWith('我爱爸爸。');
+    expect(speak).toHaveBeenLastCalledWith('我爱爸爸。', { rate: 0.8 });
   });
 
   it('a re-read cut short keeps the first take (learning rules 2026-10-17: never the quicker one)', async () => {
     takes = [{ level: 0.1, durationSec: 20 }, { level: 0.3, durationSec: 1 }];
     const onDone = vi.fn();
-    render(<LangduStep passage={{ ...passage, question: undefined }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={onDone} />);
+    render(<LangduStep passage={{ ...passage, asked: [] }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={onDone} />);
     await toCompare();
     fireEvent.click(button('再读一遍'));
     await record();
     await screen.findByRole('button', { name: '听我的' });
     fireEvent.click(button('完成')); // no question: Compare ends the step
-    expect(onDone).toHaveBeenCalledWith({ intro: null, read: expect.objectContaining({ level: 0.1, durationSec: 20 }), meaning: null });
+    expect(onDone).toHaveBeenCalledWith({ intro: null, read: expect.objectContaining({ level: 0.1, durationSec: 20 }), answers: [] });
   });
 
   it('a miss shows the right choice and reads the sentence that answers it again', async () => {
@@ -132,13 +134,13 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     expect(await screen.findByText('答案是：妈妈')).toBeTruthy();
     expect(button('妈妈').className).toContain('is-answer');
     expect(button('老师').className).toContain('is-wrong');
-    expect(speak).toHaveBeenLastCalledWith('我爱妈妈。'); // a parent question names no sentence: found by its right choice
+    expect(speak).toHaveBeenLastCalledWith('我爱妈妈。', { queue: false, rate: 0.9 }); // a parent question names no sentence: found by its right choice
     fireEvent.click(button('完成'));
-    expect(onDone).toHaveBeenCalledWith({ intro: null, read: null, meaning: { correct: false, picked: '老师' } });
+    expect(onDone).toHaveBeenCalledWith({ intro: null, read: null, answers: [{ correct: false, picked: '老师' }] });
   });
 
   it('a right choice found in no sentence: the answer shows, nothing is read again', async () => {
-    render(<LangduStep passage={{ ...passage, question: { ...question, choices: ['老师', '外婆', '小马'] } }} oral={oral} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" onDone={vi.fn()} />);
+    render(<LangduStep passage={{ ...passage, asked: [{ ...question, choices: ['老师', '外婆', '小马'] as [string, string, string] }] }} oral={oral} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" onDone={vi.fn()} />);
     vi.mocked(speak).mockClear();
     fireEvent.click(button('老师'));
     expect(await screen.findByText('答案是：外婆')).toBeTruthy();
@@ -157,7 +159,7 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     expect(screen.queryByText('听我的')).toBeNull();
     fireEvent.click(button('妈妈'));
     fireEvent.click(await screen.findByText('完成'));
-    expect(onDone).toHaveBeenCalledWith({ intro: null, read: null, meaning: { correct: true, picked: '妈妈' } });
+    expect(onDone).toHaveBeenCalledWith({ intro: null, read: null, answers: [{ correct: true, picked: '妈妈' }] });
   });
 
   it('a microphone refused earlier in the lesson is not asked for again', async () => {
@@ -191,11 +193,11 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     fireEvent.click(button('完成'));
     fireEvent.click(button('完成')); // a double tap saves the reading once
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith({ intro: null, read: expect.objectContaining({ durationSec: 10 }), meaning: null });
+    expect(onDone).toHaveBeenCalledWith({ intro: null, read: expect.objectContaining({ durationSec: 10 }), answers: [] });
   });
 
   it('谢谢老师！ is said once per step, even after a re-read brings Compare back (final review M1)', async () => {
-    const { question: _q, ...plain } = passage;
+    const { asked: _q, ...plain } = passage;
     render(<LangduStep passage={plain} oral={oral} kid={DEFAULT_KID} withWarmup startAt="listen" onDone={vi.fn()} />);
     await toCompare();
     expect(screen.getByText('谢谢老师！')).toBeTruthy();
@@ -211,15 +213,15 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
   it('a tap during the first read-through reads on from there; after it, a tap reads that sentence only', () => {
     render(<LangduStep passage={{ ...passage, text: '甲甲。乙乙。丙丙。' }} oral={oral} kid={DEFAULT_KID} withWarmup={false} onDone={vi.fn()} />);
     fireEvent.click(button('乙乙。'));
-    expect(speak).toHaveBeenLastCalledWith('乙乙。');
+    expect(speak).toHaveBeenLastCalledWith('乙乙。', { rate: 0.8 });
     modelReads(1);
-    expect(speak).toHaveBeenLastCalledWith('丙丙。');
+    expect(speak).toHaveBeenLastCalledWith('丙丙。', { rate: 0.8 });
     modelReads(1);
     expect(button('开始朗读').disabled).toBe(false);
     vi.mocked(speak).mockClear();
     fireEvent.click(button('甲甲。'));
     modelReads(1);
-    expect(vi.mocked(speak).mock.calls).toEqual([['甲甲。']]);
+    expect(vi.mocked(speak).mock.calls).toEqual([['甲甲。', { rate: 0.9 }]]); // that sentence only, at the replay pace
   });
 
   it('the model goes quiet when he starts reading', async () => {
@@ -252,7 +254,7 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
     act(() => { audio.dispatchEvent(new Event('ended')); });
     expect(screen.getByRole('button', { name: '听我的' })).toBeTruthy();
     fireEvent.click(button('听老师的')); // the model pauses his take and reads
-    expect(speak).toHaveBeenLastCalledWith('我爱爸爸。');
+    expect(speak).toHaveBeenLastCalledWith('我爱爸爸。', { rate: 0.9 });
     pause.mockClear();
     unmount();
     expect(pause).toHaveBeenCalled();
@@ -287,6 +289,88 @@ describe('LangduStep (spec 2026-10-12 §3)', () => {
   });
 });
 
+describe('three questions a read (spec 2026-10-24 §5)', () => {
+  const text = '小明的球掉进了河里。他先找来一根长竹子。然后他把球拨到岸边。最后他拿到了球，笑了。';
+  const asked: PassageQuestion[] = [
+    { q: '小明为什么笑了？', choices: ['他拿回了球', '球掉进河里', '竹子断了', '他在河里玩'], answer: 0, kind: 'why', sentences: [3, 2] },
+    { q: '他先做了什么？', choices: ['拿到了球', '找来竹子', '跳进河里', '回家了'], answer: 1, kind: 'order', sentence: 1 },
+    { q: '球掉到哪里了？', choices: ['岸边', '河里', '竹子上', '家里'], answer: 1, kind: 'fact', sentence: 0 },
+  ];
+  const own = { id: 'p90', title: '捡球', text, asked };
+  const choice = (zh: string) => [...document.querySelectorAll<HTMLButtonElement>('.langdu__choices .choice')].find((b) => [...b.querySelectorAll('.label__ch')].map((c) => c.textContent).join('') === zh)!;
+  it('only the first shows on Listen, before he reads', () => {
+    render(<LangduStep passage={own} oral={oral} kid={DEFAULT_KID} withWarmup={false} rng={() => 0.999} onDone={vi.fn()} />);
+    expect(document.querySelector('.langdu__purpose')?.textContent).toContain('小明为什么笑了？');
+    expect(document.querySelectorAll('.langdu__purpose')).toHaveLength(1);
+  });
+  it('one at a time with four choices; a miss shows the answer and reads its two sentences again, in order, at 0.9×; then on, no re-ask', async () => {
+    const onDone = vi.fn();
+    render(<LangduStep passage={own} oral={oral} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" rng={() => 0.999} onDone={onDone} />);
+    expect(screen.getByText('小明为什么笑了？')).toBeTruthy();
+    expect(document.querySelector('.langdu__count')?.textContent).toBe(' 1/3');
+    expect(document.querySelectorAll('.langdu__choices .choice')).toHaveLength(4);
+    expect(button('下一题').disabled).toBe(true);
+    vi.mocked(speak).mockClear();
+    fireEvent.click(choice('球掉进河里'));
+    expect(await screen.findByText('答案是：他拿回了球')).toBeTruthy();
+    expect(vi.mocked(speak).mock.calls).toEqual([['然后他把球拨到岸边。', { queue: false, rate: 0.9 }], ['最后他拿到了球，笑了。', { queue: true, rate: 0.9 }]]);
+    expect([...document.querySelectorAll('.langdu__back p')].map((p) => [...p.querySelectorAll('.label__ch')].map((c) => c.textContent).join(''))).toEqual(['然后他把球拨到岸边。', '最后他拿到了球，笑了。']);
+    fireEvent.click(button('下一题'));
+    expect(screen.getByText('他先做了什么？')).toBeTruthy();
+    expect(document.querySelector('.langdu__count')?.textContent).toBe(' 2/3');
+    vi.mocked(speak).mockClear();
+    fireEvent.click(choice('找来竹子'));
+    expect(await screen.findByText('对了！')).toBeTruthy();
+    expect(speak).not.toHaveBeenCalled();
+    fireEvent.click(button('下一题'));
+    fireEvent.click(choice('岸边'));
+    expect(await screen.findByText('答案是：河里')).toBeTruthy();
+    expect(speak).toHaveBeenLastCalledWith('小明的球掉进了河里。', { queue: false, rate: 0.9 }); // one sentence for a fact
+    fireEvent.click(button('完成')); // the last question ends the step
+    expect(onDone).toHaveBeenCalledWith({ intro: null, read: null, answers: [
+      { kind: 'why', correct: false, picked: '球掉进河里' },
+      { kind: 'order', correct: true, picked: '找来竹子' },
+      { kind: 'fact', correct: false, picked: '岸边' },
+    ] });
+  });
+  it('moving on stops the read-back speech (下一题 and 完成)', async () => {
+    render(<LangduStep passage={own} oral={oral} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" rng={() => 0.999} onDone={vi.fn()} />);
+    fireEvent.click(choice('球掉进河里'));
+    await screen.findByText('答案是：他拿回了球');
+    vi.mocked(stopSpeaking).mockClear();
+    fireEvent.click(button('下一题'));
+    expect(stopSpeaking).toHaveBeenCalledTimes(1);
+    fireEvent.click(choice('找来竹子'));
+    fireEvent.click(button('下一题'));
+    fireEvent.click(choice('岸边'));
+    await screen.findByText('答案是：河里');
+    vi.mocked(stopSpeaking).mockClear();
+    fireEvent.click(button('完成'));
+    expect(stopSpeaking).toHaveBeenCalledTimes(1);
+  });
+  it('a double tap on 下一题 moves on once', async () => {
+    render(<LangduStep passage={own} oral={oral} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" rng={() => 0.999} onDone={vi.fn()} />);
+    fireEvent.click(choice('他拿回了球'));
+    await screen.findByText('对了！');
+    const next = button('下一题');
+    fireEvent.click(next);
+    fireEvent.click(next);
+    expect(screen.getByText('他先做了什么？')).toBeTruthy();
+    expect(document.querySelector('.langdu__count')?.textContent).toBe(' 2/3');
+  });
+  it('谢谢老师！ waits for the last question', async () => {
+    render(<LangduStep passage={own} oral={oral} kid={DEFAULT_KID} withWarmup startAt="meaning" rng={() => 0.999} onDone={vi.fn()} />);
+    fireEvent.click(choice('他拿回了球'));
+    await screen.findByText('对了！');
+    expect(screen.queryByText('谢谢老师！')).toBeNull();
+    fireEvent.click(button('下一题'));
+    fireEvent.click(choice('找来竹子'));
+    fireEvent.click(button('下一题'));
+    fireEvent.click(choice('河里'));
+    expect(await screen.findByText('谢谢老师！')).toBeTruthy();
+  });
+});
+
 describe('朗读 on the stage (spec 2026-10-04 §3)', () => {
   const onStage = () => {
     expect(document.querySelector('.stage[data-stage="langdu"] .stage__truffle .pet')).toBeTruthy();
@@ -311,7 +395,7 @@ describe('朗读 on the stage (spec 2026-10-04 §3)', () => {
 });
 
 describe('the Listen screen of a library passage (spec 2026-10-15 §2, §5, §7)', () => {
-  const gsb = { id: 'gsb:0089-1', title: '卡莱', text: '卡莱七岁。卡莱爱我。', names: ['卡莱'], image: 'passages/gsb-0089-1.webp', question };
+  const gsb = { id: 'gsb:0089-1', title: '卡莱', text: '卡莱七岁。卡莱爱我。', names: ['卡莱'], image: 'passages/gsb-0089-1.webp', asked: [question] };
   it('a double tap on 下一篇 swaps once', () => {
     const onSwap = vi.fn();
     render(<LangduStep passage={gsb} oral={oral} kid={DEFAULT_KID} withWarmup={false} onSwap={onSwap} onDone={vi.fn()} />);
@@ -398,7 +482,7 @@ describe('the Listen screen of a library passage (spec 2026-10-15 §2, §5, §7)
     await record();
     await waitFor(() => expect(button('继续').disabled).toBe(false));
     fireEvent.click(button('继续'));
-    view.rerender(<LangduStep passage={{ ...passage, id: 'p02', text: '我爱老师。', question: undefined }} oral={oral} kid={DEFAULT_KID} withWarmup onDone={onDone} />);
+    view.rerender(<LangduStep passage={{ ...passage, id: 'p02', text: '我爱老师。', asked: [] }} oral={oral} kid={DEFAULT_KID} withWarmup onDone={onDone} />);
     expect(screen.getByText('听一听，看一看')).toBeTruthy();
     modelReads(1);
     fireEvent.click(button('开始朗读'));

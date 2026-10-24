@@ -2,6 +2,9 @@ import data from './builtin.json';
 import hsk from './hskwords.json';
 import passages from './passages.json';
 import storybooks from './storybooks.json';
+import stretch2b from './passages/二下.json';
+import stretch3a from './passages/三上.json';
+import stretch3b from './passages/三下.json';
 import type { BuiltinChar, CharInfo, Example, Passage, Word } from '../types';
 import { EXTRA_EXAMPLES } from './extraExamples';
 import { ZUCI_DROPS } from './zuciPicks';
@@ -16,8 +19,10 @@ export const CONTENT_VERSION = `${(data as unknown as { version: number }).versi
 // .11: 蚂蚁拇狐狸 and readable 组词; .12: the content audit (the blocklist, the readings his lessons use, 组词 a child knows first); .13: 该死 blocked; .14: the neutral tone on word cards (朋友 早上 名字 …); .15: 甲 and 丁 as the 1st and 4th labels (甲乙丙丁);
 // .16: review 2026-10-17 (his lesson's word and sense first: 巴士 on 士, 青菜 on 青, 一首歌 on 首; child 组词 before adult ones; no 儿化)
 // .17: 组词 for 二下–三下 characters the HSK list gave none or one (摊位 套圈 逛夜市 捡贝壳 花盆 喷水 大官), and 三下 L12's races (华族 马来族 印度族; 印 度 bound to 印度); 胡 "beard" and 李 "plum" before 姓胡 姓李
-/** 朗读's built-in passages (spec 2026-10-15 §2): ours, then the Global Storybooks chunks (scripts/import-storybooks.ts). */
-export const PASSAGES: Passage[] = [...(passages as Passage[]), ...(storybooks as unknown as { passages: Passage[] }).passages];
+/** 朗读's built-in passages (spec 2026-10-15 §2): ours (p01–p73, then the stretch passages p74 on, one file per term: spec
+ *  2026-10-24 §4), then the Global Storybooks chunks (scripts/import-storybooks.ts). */
+export const STRETCH_PASSAGES: Passage[] = [...stretch2b, ...stretch3a, ...stretch3b] as Passage[];
+export const PASSAGES: Passage[] = [...(passages as Passage[]), ...STRETCH_PASSAGES, ...(storybooks as unknown as { passages: Passage[] }).passages];
 
 const infoByChar = new Map<string, CharInfo>(
   BUILTIN.map((c) => [c.char, { char: c.char, radical: c.radical, components: c.components }]),

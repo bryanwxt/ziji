@@ -1,11 +1,11 @@
-import type { BuiltinChar, Passage, PassageQuestion, TalkPrompt, TalkTheme } from '../src/types';
+import type { BuiltinChar, Passage, PassageQuestion, QuestionKind, TalkPrompt, TalkTheme } from '../src/types';
 import { HSK_WORDS, MOE_TERMS, schoolTerm } from '../src/content';
 import { BLOCK_REASON, BLOCKED } from '../src/content/blocked';
 import { glossProblems, kidGloss } from '../src/content/kidGloss';
 import { allowedChars } from '../src/content/understand';
 import { isChildWord } from '../src/content/wordGate';
 import { tiles } from '../src/content/zuju';
-import { passageTerm } from '../src/langdu/level';
+import { passageFit, passageTerm, termReadable } from '../src/langdu/level';
 import { splitSentences } from '../src/langdu/sentences';
 
 const HAN = /\p{Script=Han}/u;
@@ -45,12 +45,30 @@ export function checkContent(chars: BuiltinChar[], passages: Passage[], hasStrok
 }
 
 const ASKS = ['谁', '哪', '什么', '怎么'];
-/** Characters a question may share with its answer (spec 2026-10-15 §6 rule 3): grammar and pronouns, never content. */
+/** Characters a question may share with its answer (spec 2026-10-15 §6 rule 3, kept by 2026-10-24 §5): grammar and pronouns, never content. */
 export const FUNCTION_CHARS: ReadonlySet<string> = new Set(Array.from('的了是在吗呢吧着过得地和也都很就还又我你他她它们个一不有'));
-export const QUESTIONS_PER_PASSAGE = 2;
+/** Spec 2026-10-24 §5: six a passage, at least one of each kind but `fact`, at most two `fact`, four choices within 3
+ *  characters of each other, no answer position more than twice, a why/main answer sharing at most 60% with any one sentence. */
+export const QUESTIONS_PER_PASSAGE = 6;
+export const KINDS: readonly QuestionKind[] = ['why', 'word', 'order', 'main', 'fact'];
+const NEEDED: readonly QuestionKind[] = ['why', 'word', 'order', 'main'];
+export const MAX_FACT = 2;
+export const CHOICE_SPREAD = 3;
+export const MAX_AT_POSITION = 2;
+export const COPY_SHARE = 0.6;
+/** The questions are read by a child at 二下 or later (spec 2026-10-24: his class), whatever the passage's term; the frame words
+ *  of a word or main question (意思, 题目) are always allowed: the pinyin fade shows them with pinyin. */
+export const QUESTION_FLOOR = '二下';
+export const FRAME_CHARS = '意思题';
+/** The characters a question on `p` may use besides the passage's own. */
+export const questionChars = (term: string): Set<string> => {
+  const at = MOE_TERMS.indexOf(term) < MOE_TERMS.indexOf(QUESTION_FLOOR) ? QUESTION_FLOOR : term;
+  return new Set([...allowedChars(at), ...Array.from(FRAME_CHARS)]);
+};
 const PUNCT_RE = /[，。！？、；：“”‘’「」『』…—]/g;
 const PARTICLES_RE = /[了吗吧呢的得着过啊呀]+$/u;
 const han = (s: string) => Array.from(s).filter((ch) => HAN.test(ch));
+const content = (s: string) => han(s).filter((ch) => !FUNCTION_CHARS.has(ch));
 
 /** The passage's most frequent word, when one word alone leads and occurs twice or more: an answer equal to it needs no reading
  *  (rule 4). A word is a tile of two characters or more, in the dictionary or not (婆婆), or two content characters side by side
@@ -81,34 +99,50 @@ export function topWord(text: string): string | null {
 }
 
 /**
- * One question's problems (spec 2026-10-15 §6): its shape, its sentence, its characters, and the guess-proofing rules 1–4.
- * Its characters are ones he knows: each is in the passage he has just read or on his book's lists through the passage's term
- * (`allowedChars`, the lists the passage itself is levelled by).
+ * One question's problems (spec 2026-10-24 §5): its shape and kind, the sentence(s) a miss reads again, its characters, and the
+ * guess-proof rules. Its characters are ones he knows: each is in the passage he has just read, or on his book's lists through
+ * the later of the passage's term and 二下 (questionChars).
  */
-export function questionProblems(p: Passage, q: PassageQuestion, known: ReadonlySet<string> = allowedChars(p.term)): string[] {
+export function questionProblems(p: Passage, q: PassageQuestion, known: ReadonlySet<string> = questionChars(p.term)): string[] {
   const out: string[] = [];
   const tag = `${p.id} "${q.q}"`;
+  if (!KINDS.includes(q.kind)) out.push(`${tag}: kind ${String(q.kind)} is not one of ${KINDS.join(' ')}`);
   if (!ASKS.some((a) => q.q.includes(a))) out.push(`${tag}: asks none of 谁 哪 什么 为什么 怎么样`);
-  if (q.choices.length !== 3 || new Set(q.choices).size !== 3) out.push(`${tag}: needs three different choices`);
+  if (q.choices.length !== 4 || new Set(q.choices).size !== 4) out.push(`${tag}: needs four different choices`);
   const right = q.choices[q.answer];
   if (right === undefined) return [...out, `${tag}: the right answer is not among the choices`];
-  const n = splitSentences(p.text).length;
-  if (q.sentence === undefined || !Number.isInteger(q.sentence) || q.sentence < 0 || q.sentence >= n) out.push(`${tag}: answering sentence ${q.sentence} is not one of its ${n} sentences`);
+  const sentences = splitSentences(p.text);
+  const n = sentences.length;
+  const real = (i: unknown): i is number => Number.isInteger(i) && (i as number) >= 0 && (i as number) < n;
+  if (q.kind === 'why' || q.kind === 'main') {
+    const [a, b] = q.sentences ?? [];
+    if (!q.sentences || q.sentences.length !== 2 || !real(a) || !real(b) || a === b) out.push(`${tag}: a ${q.kind} question needs two different supporting sentences of its ${n}`);
+  } else if (!real(q.sentence)) out.push(`${tag}: answering sentence ${q.sentence} is not one of its ${n} sentences`);
   const own = new Set(Array.from(p.text));
   const outside = [...new Set(han(q.q + q.choices.join('')).filter((ch) => !own.has(ch) && !known.has(ch)))];
-  if (outside.length) out.push(`${tag}: uses ${outside.join('')} in neither the passage nor the lists through ${p.term}`);
-  const inText = q.choices.map((c) => p.text.includes(c));
-  if (inText.some(Boolean) && !inText.every(Boolean)) out.push(`${tag}: some choices are in the passage and some not (all or none)`);
-  const lengths = q.choices.map((c) => han(c).length);
-  if (Math.max(...lengths) - Math.min(...lengths) > 2) out.push(`${tag}: choice lengths ${lengths.join('/')} differ by more than 2`);
-  const leak = [...new Set(han(right).filter((ch) => !FUNCTION_CHARS.has(ch) && q.q.includes(ch)))];
-  if (leak.length) out.push(`${tag}: the question gives away ${leak.join('')} from its answer`);
-  if (right === topWord(p.text)) out.push(`${tag}: the answer ${right} is the passage's most frequent word`);
-  // rule 5: the answer is not the only choice that looks like the passage — a child matching characters picks it unread
-  const sharesText = q.choices.map((c) => han(c).some((ch) => !FUNCTION_CHARS.has(ch) && p.text.includes(ch)));
-  if (sharesText[q.answer] && sharesText.filter(Boolean).length === 1) out.push(`${tag}: only the answer shares characters with the passage`);
-  // rule 6: the answer is not the only choice that fits the question's grammar (counted with a measure word, 很…, 在…, …了, …的)
+  if (outside.length) out.push(`${tag}: uses ${outside.join('')} in neither the passage nor the lists through ${MOE_TERMS.indexOf(p.term) < MOE_TERMS.indexOf(QUESTION_FLOOR) ? QUESTION_FLOOR : p.term}`);
+  // a word question quotes its word (“…”), which its answer explains and never repeats; the word's own characters may be shared
+  const quoted = q.kind === 'word' ? /“([^”]+)”/.exec(q.q)?.[1] : undefined;
+  if (q.kind === 'word' && (!quoted || !p.text.includes(quoted))) out.push(`${tag}: a word question quotes (“…”) a word of the passage`);
+  if (quoted && right.includes(quoted)) out.push(`${tag}: the answer repeats the word it explains`);
+  // every wrong choice names something in the passage, so matching characters to the text never singles out the answer
   const wrong = q.choices.filter((_, i) => i !== q.answer);
+  for (const w of wrong) if (!p.text.includes(w) && !content(w).some((ch) => own.has(ch))) out.push(`${tag}: the wrong choice ${w} names nothing in the passage`);
+  // ruling (fix round 2): one wrong choice found word for word is enough (was two) -- persons and places rarely give more
+  if (p.text.includes(right) && !wrong.some((w) => p.text.includes(w))) out.push(`${tag}: the answer is in the passage word for word, and no wrong choice is`);
+  const lengths = q.choices.map((c) => han(c).length);
+  if (Math.max(...lengths) - Math.min(...lengths) > CHOICE_SPREAD) out.push(`${tag}: choice lengths ${lengths.join('/')} differ by more than ${CHOICE_SPREAD}`);
+  const leak = [...new Set(content(right).filter((ch) => q.q.includes(ch) && !quoted?.includes(ch)))];
+  if (leak.length) out.push(`${tag}: the question gives away ${leak.join('')} from its answer`);
+  if (ERHUA.test(q.q + q.choices.join(''))) out.push(`${tag}: 儿化`);
+  if (right === topWord(p.text)) out.push(`${tag}: the answer ${right} is the passage's most frequent word`);
+  if (q.kind === 'why' || q.kind === 'main') {
+    const chars = han(right);
+    const share = (s: string) => chars.filter((ch) => s.includes(ch)).length / Math.max(1, chars.length);
+    const closest = [...sentences].sort((a, b) => share(b) - share(a))[0];
+    if (closest !== undefined && share(closest) > COPY_SHARE) out.push(`${tag}: the ${q.kind} answer copies "${closest}" (${Math.round(share(closest) * 100)}% of its characters)`);
+  }
+  // the answer is not the only choice that fits the question's grammar (counted with a measure word, 很…, 在…, …了, …的)
   for (const [name, has] of SHAPES) {
     const r = has(right);
     const w = wrong.map(has);
@@ -116,13 +150,13 @@ export function questionProblems(p: Passage, q: PassageQuestion, known: Readonly
   }
   const measures = q.choices.map(measureOf);
   const others = wrong.map(measureOf);
-  if (measures.every(Boolean) && others[0] === others[1] && measures[q.answer] !== others[0]) out.push(`${tag}: the answer alone is counted with ${measures[q.answer]}`);
+  if (measures.every(Boolean) && new Set(others).size === 1 && measures[q.answer] !== others[0]) out.push(`${tag}: the answer alone is counted with ${measures[q.answer]}`);
   return out;
 }
 
 const COUNTED_RE = /^[一二两三四五六七八九十几]+([个只本头条匹把张辆件次棵片朵杯位块双])/u;
 const measureOf = (c: string): string | null => COUNTED_RE.exec(c)?.[1] ?? null;
-/** The grammatical shapes a choice can have (rule 6): an answer alone in one, or alone outside one, fits the question unread. */
+/** The grammatical shapes a choice can have: an answer alone in one, or alone outside one, fits the question unread. */
 const SHAPES: readonly [string, (c: string) => boolean][] = [
   ['counted (一本…)', (c) => measureOf(c) !== null],
   ['很…', (c) => c.startsWith('很')],
@@ -131,18 +165,40 @@ const SHAPES: readonly [string, (c: string) => boolean][] = [
   ['…的', (c) => c.endsWith('的')],
 ];
 
-/** The meaning questions (spec 2026-10-15 §6): two different ones per passage, answered by different sentences, each passing
- *  questionProblems. */
-export function checkPassageQuestions(passages: Passage[], questions: Readonly<Record<string, readonly PassageQuestion[]>>): string[] {
+/** A passage's six (spec 2026-10-24 §5): different questions, every kind but `fact` at least once, `fact` at most twice, no answer
+ *  position more than twice, each passing questionProblems; and no questions for a passage that is not there. */
+export function checkPassageQuestions(passages: readonly Passage[], questions: Readonly<Record<string, readonly PassageQuestion[]>>): string[] {
   const problems: string[] = [];
   for (const p of passages) {
-    const qs = questions[p.id] ?? [];
-    if (qs.length !== QUESTIONS_PER_PASSAGE) problems.push(`${p.id}: ${qs.length} meaning questions, expected ${QUESTIONS_PER_PASSAGE}`);
+    const qs = questions[p.id];
+    if (!qs) continue; // not written yet: checkQuestionCoverage says so
+    if (qs.length !== QUESTIONS_PER_PASSAGE) problems.push(`${p.id}: ${qs.length} questions, expected ${QUESTIONS_PER_PASSAGE}`);
     if (new Set(qs.map((q) => q.q)).size !== qs.length) problems.push(`${p.id}: the same question twice`);
-    else if (qs.length > 1 && new Set(qs.map((q) => q.sentence)).size === 1) problems.push(`${p.id}: both questions are answered by sentence ${qs[0]!.sentence}`);
+    const missing = NEEDED.filter((k) => !qs.some((q) => q.kind === k));
+    if (missing.length) problems.push(`${p.id}: no ${missing.join(', ')} question`);
+    const facts = qs.filter((q) => q.kind === 'fact').length;
+    if (facts > MAX_FACT) problems.push(`${p.id}: ${facts} fact questions, at most ${MAX_FACT}`);
+    for (const at of [0, 1, 2, 3]) {
+      const n = qs.filter((q) => q.answer === at).length;
+      if (n > MAX_AT_POSITION) problems.push(`${p.id}: the answer is choice ${at + 1} in ${n} questions, at most ${MAX_AT_POSITION}`);
+    }
     for (const q of qs) problems.push(...questionProblems(p, q));
   }
   for (const id of Object.keys(questions)) if (!passages.some((p) => p.id === id)) problems.push(`${id}: questions for no passage`);
+  return problems;
+}
+
+/** Every built-in passage has its six, and no passage's six come from two batch files. */
+export function checkQuestionCoverage(passages: readonly Passage[], batches: readonly Readonly<Record<string, readonly PassageQuestion[]>>[]): string[] {
+  const problems: string[] = [];
+  const seen = new Map<string, number>();
+  batches.forEach((b, i) => {
+    for (const id of Object.keys(b)) {
+      if (seen.has(id)) problems.push(`${id}: questions in batch ${seen.get(id)! + 1} and batch ${i + 1}`);
+      seen.set(id, i);
+    }
+  });
+  for (const p of passages) if (!seen.has(p.id)) problems.push(`${p.id}: no questions`);
   return problems;
 }
 
@@ -190,7 +246,7 @@ export function checkOwnPassages(passages: Passage[]): string[] {
       if (other && other !== p.id) problems.push(`${p.id}: "${s}" opens like a sentence of ${other}`);
       openings.set(open, p.id);
     }
-    if (Number(p.id.slice(1)) < NEW_FROM) continue;
+    if (Number(p.id.slice(1)) < NEW_FROM || Number(p.id.slice(1)) >= STRETCH_FROM) continue; // p74 on: checkStretchPassages
     const chars = han(p.text);
     const n = splitSentences(p.text).length;
     if (chars.length < 50 || chars.length > 110) problems.push(`${p.id}: ${chars.length} characters, expected 50–110`);
@@ -220,6 +276,76 @@ export function checkOwnPassages(passages: Passage[]): string[] {
     }
   }
   return problems;
+}
+
+/** The stretch passages (spec 2026-10-24 §4): p74 on, 二下 15, 三上 25, 三下 20. */
+export const STRETCH_FROM = 74;
+export const STRETCH_TERMS: Readonly<Record<string, number>> = { 二下: 15, 三上: 25, 三下: 20 };
+export const STRETCH_LENGTH = [80, 140] as const;
+export const STRETCH_SENTENCES = [4, 8] as const;
+/** A stretch passage's fit for a reader who has finished its term (termReadable) lies in this window. */
+export const STRETCH_FIT = [0.8, 0.95] as const;
+/** The linking patterns (spec 2026-10-24 §4); a passage uses at least two different ones. */
+export const LINKS: readonly (readonly string[])[] = [['因为', '所以'], ['虽然', '但是'], ['先', '然后', '最后'], ['如果', '就'], ['一边', '一边'], ['不但', '而且']];
+export const MIN_LINKS = 2;
+
+/** The linking patterns a text uses, as 「因为…所以」: each part in order, a two-part pattern within one sentence; 先…然后…最后
+ *  may run across sentences. */
+export function linksIn(text: string): string[] {
+  const inOrder = (t: string, parts: readonly string[]) => {
+    let at = 0;
+    for (const part of parts) {
+      const i = t.indexOf(part, at);
+      if (i < 0) return false;
+      at = i + part.length;
+    }
+    return true;
+  };
+  return LINKS.filter((parts) => (parts.length > 2 ? inOrder(text, parts) : splitSentences(text).some((s) => inOrder(s, parts)))).map((parts) => parts.join('…'));
+}
+
+/**
+ * The stretch passages (spec 2026-10-24 §4), p74 on: at 二下, 三上 or 三下, levelling at it (checkOwnPassages); 80–140 characters
+ * in 4–8 sentences; at least two linking patterns; a fit of 0.80–0.95 for a reader who has finished its term; 1–4 生词, each in
+ * the passage with a kid gloss and a character a reader starting the term can't read; every character a built-in one (`built`).
+ * The word gate and duplicates are checkOwnPassages'.
+ */
+export function checkStretchPassages(passages: readonly Passage[], built: ReadonlySet<string>): string[] {
+  const problems: string[] = [];
+  for (const p of passages.filter((x) => x.source === 'ziji' && Number(x.id.slice(1)) >= STRETCH_FROM)) {
+    if (!(p.term in STRETCH_TERMS)) problems.push(`${p.id}: term ${p.term}, expected one of ${Object.keys(STRETCH_TERMS).join(' ')}`);
+    const chars = han(p.text);
+    const n = splitSentences(p.text).length;
+    if (chars.length < STRETCH_LENGTH[0] || chars.length > STRETCH_LENGTH[1]) problems.push(`${p.id}: ${chars.length} characters, expected ${STRETCH_LENGTH.join('–')}`);
+    if (n < STRETCH_SENTENCES[0] || n > STRETCH_SENTENCES[1]) problems.push(`${p.id}: ${n} sentences, expected ${STRETCH_SENTENCES.join('–')}`);
+    if (ERHUA.test(p.text)) problems.push(`${p.id}: 儿化`);
+    const links = linksIn(p.text);
+    if (links.length < MIN_LINKS) problems.push(`${p.id}: linking patterns ${links.join(' ') || 'none'}, expected at least ${MIN_LINKS} of ${LINKS.map((l) => l.join('…')).join(' ')}`);
+    const fit = passageFit(p.text, termReadable(p.term), p.names);
+    if (fit < STRETCH_FIT[0] || fit > STRETCH_FIT[1]) problems.push(`${p.id}: fit ${fit.toFixed(2)} at ${p.term}, expected ${STRETCH_FIT.join('–')}`);
+    const unbuilt = [...new Set(chars.filter((c) => !built.has(c)))];
+    if (unbuilt.length) problems.push(`${p.id}: ${unbuilt.join('')} not built in`);
+    const before = termReadable(MOE_TERMS[MOE_TERMS.indexOf(p.term) - 1] ?? '');
+    const words = p.words ?? [];
+    if (words.length < 1 || words.length > 4) problems.push(`${p.id}: ${words.length} 生词, expected 1–4`);
+    for (const w of words) {
+      if (!p.text.includes(w.text)) problems.push(`${p.id}: 生词 ${w.text} is not in the passage`);
+      if (!han(w.text).some((c) => !before.has(c))) problems.push(`${p.id}: 生词 ${w.text} has no character new at ${p.term}`);
+      for (const g of glossProblems(w.gloss)) problems.push(`${p.id}: 生词 ${w.text} gloss "${w.gloss}": ${g}`);
+      const known = kidGloss(w.text);
+      if (known !== undefined && known !== w.gloss) problems.push(`${p.id}: 生词 ${w.text} gloss "${w.gloss}" differs from its kid gloss "${known}"`);
+    }
+  }
+  return problems;
+}
+
+/** How many stretch passages each term has, against STRETCH_TERMS; [] when every term is full (the last content task). */
+export function stretchCounts(passages: readonly Passage[]): string[] {
+  const own = passages.filter((x) => x.source === 'ziji' && Number(x.id.slice(1)) >= STRETCH_FROM);
+  return Object.entries(STRETCH_TERMS).flatMap(([t, want]) => {
+    const n = own.filter((p) => p.term === t).length;
+    return n === want ? [] : [`${t}: ${n} stretch passages, expected ${want}`];
+  });
 }
 
 /** 儿化 the app never says (src/noErhua.test.ts): Singapore usage. */

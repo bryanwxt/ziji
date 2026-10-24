@@ -1,9 +1,15 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { readingCard, THINK, wordStarter } from './pick';
 import { shareNote, shareText, todayText, weekText } from './share';
 import { weekRange, type WeekSummary } from './week';
+import type { ParentQuestion } from '../types';
+
+/** p17's questions before 2026-10-24, fixed here so the content batches never move this test. */
+const P17_QUESTIONS: ParentQuestion[] = [
+  { q: '小马为什么找不到家了？', choices: ['跑得很快', '在外面玩', '跑得很远'], answer: 2, sentence: 1 },
+  { q: '牛爷爷做了什么？', choices: ['找到了小马', '带小马跑步', '给小马吃饭'], answer: 0, sentence: 2 },
+];
 
 const abort = () => Object.assign(new Error('closed'), { name: 'AbortError' });
 
@@ -65,7 +71,7 @@ describe('Share (parent loop spec §5)', () => {
 
 describe('the shared text', () => {
   it("today's cards, with the passage's answers beside its questions", () => {
-    const cards = [wordStarter({ text: '借', gloss: 'borrow', zuci: [], from: 'list' }), readingCard({ id: 'p17', title: '小马', questions: PASSAGE_QUESTIONS.p17! }, 1)];
+    const cards = [wordStarter({ text: '借', gloss: 'borrow', zuci: [], from: 'list' }), readingCard({ id: 'p17', title: '小马', questions: P17_QUESTIONS }, 1)];
     expect(todayText(cards, '2026-10-19')).toBe([
       '聊一聊 · 19 Oct',
       '',
@@ -88,6 +94,13 @@ describe('the shared text', () => {
     const card = wordStarter({ text: '借', gloss: 'borrow', zuci: [], from: 'list' });
     expect(todayText([null, card, null], '2026-10-19')).toBe(todayText([card], '2026-10-19'));
     expect(todayText([null, card, null], '2026-10-19')).toContain('\n\n1. 他的词 His words\n');
+  });
+  it('the week says a read well (from its answers) is right', () => {
+    const s: WeekSummary = {
+      talk: { days: 0, minutes: 0, times: 0 }, lessons: 0, langduDays: 1, newly: { read: [], write: [], say: [] }, newWords: [], shaky: [],
+      reading: [{ passageId: 'p02', title: '上学', meaning: 'right' }], waiting: 0, focus: { zh: '多读。', en: 'Read more.' },
+    };
+    expect(weekText(weekRange(new Date(2026, 9, 21)), s)).toContain('朗读: 《上学》 question right');
   });
   it('the week', () => {
     const s: WeekSummary = {
