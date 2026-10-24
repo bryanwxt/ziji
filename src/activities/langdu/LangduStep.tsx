@@ -179,10 +179,11 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
     read.reset();
     setPart('read');
   };
-  // a tap during the first read-through reads on from there at its pace; a sentence alone, or 听老师的, at the replay pace
+  // a tap during the first read-through (on Listen) reads on from there at its pace; a sentence alone, or 听老师的 on Compare
+  // (even when he began reading before the read-through ended), at the replay pace
   const replay = (i: number, only: boolean) => {
     takeAudio.current?.pause();
-    model.read(i, only, only || model.heardAll ? REPLAY : FIRST_LISTEN);
+    model.read(i, only, only || part !== 'listen' || model.heardAll ? REPLAY : FIRST_LISTEN);
   };
 
   // what a miss reads again (spec 2026-10-24 §5): a why or main question's two supporting sentences, else its one sentence
