@@ -129,8 +129,9 @@ export function setClipPlayer(p: ClipPlayer): void {
   player = p;
 }
 
-/** A line as it is said: by clips (`steps`, saying `text`), else by the iPad voice (`voiced`, also when a clip fails). */
-type Line = { text: string; voiced: string; reading?: string };
+/** A line as it is said: by clips (`steps`, saying `text`), else by the iPad voice (`voiced`, also when a clip fails); `rate`:
+ *  how much slower or faster than usual (朗读's model, spec 2026-10-24 §7). */
+type Line = { text: string; voiced: string; reading?: string; rate?: number };
 type SayOpts = { reading?: string; avoid?: readonly string[]; endings?: readonly string[]; alone?: boolean };
 
 /**
@@ -160,9 +161,10 @@ const ttsBusy = () => available() && (live.size > 0 || waiting !== null);
  * character is taught with, when the screen knows it. While he is being recorded it says nothing (final review C1): a peek or
  * a line on screen must never end up in his take.
  */
-export function speak(text: string, { queue = false, reading, avoid, endings, alone }: { queue?: boolean } & SayOpts = {}): void {
+export function speak(text: string, { queue = false, reading, avoid, endings, alone, rate }: { queue?: boolean; rate?: number } & SayOpts = {}): void {
   if (recordingNow()) return;
-  const { steps, ...line } = said(text, { reading, avoid, endings, alone });
+  const { steps, ...base } = said(text, { reading, avoid, endings, alone });
+  const line: Line = rate !== undefined && rate !== 1 ? { ...base, rate } : base;
   if (queue && (clipBusy || after.length > 0 || (ttsBusy() && steps))) {
     after.push(line);
     return;
@@ -171,7 +173,7 @@ export function speak(text: string, { queue = false, reading, avoid, endings, al
     // the iPad voice: a tap still cuts off a clip and what was queued behind it (final review). Not the whole stopSpeaking(),
     // so ttsSpeak still sees the voice busy and waits its moment after the cancel
     if (!queue) { after = []; clipBusy = false; setClipActive(false); player.stop(); }
-    ttsSpeak(line.voiced, { queue, reading });
+    ttsSpeak(line.voiced, { queue, reading, rate: line.rate });
     return;
   }
   if (!queue) stopSpeaking();
@@ -181,11 +183,11 @@ export function speak(text: string, { queue = false, reading, avoid, endings, al
 function playClip(steps: ClipStep[], line: Line): void {
   clipBusy = true;
   setClipActive(true);
-  void player.play(steps, () => setSpeaking(true)).then((r) => {
+  void player.play(steps, () => setSpeaking(true), line.rate ?? 1).then((r) => {
     if (r === 'stopped') return; // whoever stopped it has reset everything
     clipBusy = false;
     setClipActive(false);
-    if (r === 'failed') { ttsSpeak(line.voiced, { queue: true, reading: line.reading }); return; } // never silent
+    if (r === 'failed') { ttsSpeak(line.voiced, { queue: true, reading: line.reading, rate: line.rate }); return; } // never silent
     setSpeaking(false);
     drain();
   });
@@ -198,7 +200,7 @@ function drain(): void {
   if (!next) return;
   const steps = clipPlan(next.text, next.reading);
   if (steps) playClip(steps, next);
-  else ttsSpeak(next.voiced, { queue: true, reading: next.reading });
+  else ttsSpeak(next.voiced, { queue: true, reading: next.reading, rate: next.rate });
 }
 
 /** Fetch a lesson's clips ahead, so they play at once and offline (the service worker keeps them). */
@@ -213,12 +215,13 @@ export function prefetchWords(words: { text: string; pinyin?: string; examples?:
 }
 
 /** The iPad's own voice (speechSynthesis): lines with no clip, and the fallback when a clip fails. */
-function ttsSpeak(text: string, { queue = false, reading }: { queue?: boolean; reading?: string } = {}): void {
+function ttsSpeak(text: string, { queue = false, reading, rate: factor = 1 }: { queue?: boolean; reading?: string; rate?: number } = {}): void {
   if (!available()) return;
   text = spokenAs(text, reading);
+  const item: Said = { text, factor };
   if (waiting) {
     // A tap is waiting for Safari to finish cancelling: a queued line joins it, a new tap replaces it.
-    waiting.texts = queue ? [...waiting.texts, text] : [text];
+    waiting.texts = queue ? [...waiting.texts, item] : [item];
     return;
   }
   if (!queue) {
@@ -230,20 +233,21 @@ function ttsSpeak(text: string, { queue = false, reading }: { queue?: boolean; r
     if (busy) {
       // Safari drops or clips a voice started straight after cancelling one that was playing (parent, 2026-10-05: a sound
       // button tapped again was sometimes silent, sometimes cut short), so it is said a moment later.
-      const w: Waiting = { texts: [text], timer: setTimeout(() => {
+      const w: Waiting = { texts: [item], timer: setTimeout(() => {
         waiting = null;
-        for (const t of w.texts) say(t);
+        for (const t of w.texts) say(t.text, true, t.factor);
       }, AFTER_CANCEL_MS) };
       waiting = w;
       return;
     }
   }
-  say(text);
+  say(text, true, factor);
 }
 
 /** How long Safari is given to finish cancelling before the next voice starts. */
 const AFTER_CANCEL_MS = 120;
-type Waiting = { texts: string[]; timer: ReturnType<typeof setTimeout> };
+type Said = { text: string; factor: number };
+type Waiting = { texts: Said[]; timer: ReturnType<typeof setTimeout> };
 let waiting: Waiting | null = null;
 
 /** Bumped whenever the app itself cancels speech (a new tap, leaving a screen): a voice it cut off isn't said again. */
@@ -251,7 +255,7 @@ let epoch = 0;
 /** How long a voice has to start before it counts as dropped. */
 const START_CHECK_MS = 500;
 
-function say(text: string, retry = true): void {
+function say(text: string, retry = true, factor = 1): void {
   const u = new SpeechSynthesisUtterance(text);
   let started = false;
   const done = () => {
@@ -267,7 +271,7 @@ function say(text: string, retry = true): void {
   u.onerror = done;
   live.add(u);
   u.lang = 'zh-CN';
-  u.rate = isShortWord(text) ? Math.round(rate * SHORT_WORD_PACE * 100) / 100 : rate;
+  u.rate = Math.round((isShortWord(text) ? rate * SHORT_WORD_PACE : rate) * factor * 100) / 100;
   if (voice) u.voice = voice;
   speechSynthesis.speak(u);
   // Safari can drop a voice without a word (a late cancel from the tap before it): one that hasn't started, with nothing else
@@ -277,7 +281,7 @@ function say(text: string, retry = true): void {
   setTimeout(() => {
     if (started || mine !== epoch || !available() || speechSynthesis.speaking) return;
     live.delete(u);
-    say(text, false);
+    say(text, false, factor);
   }, START_CHECK_MS);
 }
 

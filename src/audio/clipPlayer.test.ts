@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createClipPlayer, LOAD_MS, PREFETCH_AT_ONCE } from './clipPlayer';
 
-class FakeSource { buffer: { duration: number } | null = null; onended: (() => void) | null = null; started: number[] = []; stopped = false; connect() {} start(t: number) { this.started.push(t); } stop() { this.stopped = true; } }
+class FakeSource { playbackRate = { value: 1 }; buffer: { duration: number } | null = null; onended: (() => void) | null = null; started: number[] = []; stopped = false; connect() {} start(t: number) { this.started.push(t); } stop() { this.stopped = true; } }
 class FakeContext {
   state = 'running'; currentTime = 10; destination = {}; sources: FakeSource[] = [];
   decodeAudioData = vi.fn(async (b: ArrayBuffer) => ({ duration: b.byteLength / 10 }));
@@ -134,5 +134,17 @@ describe('clip player keeps to the clip voice', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+  it('a rate plays each clip that much slower, the next one starting when the slowed one ends (spec 2026-10-24 §7)', async () => {
+    const { ac, player } = setup();
+    const done = player.play([{ id: 'a' }, { pause: 0.3 }, { id: 'b' }], undefined, 0.8);
+    await tick();
+    expect(ac.sources.map((s) => s.playbackRate.value)).toEqual([0.8, 0.8]);
+    expect(ac.sources.map((s) => s.started[0])).toEqual([expect.closeTo(10.02, 5), expect.closeTo(10.02 + 1 / 0.8 + 0.3, 5)]);
+    ac.sources[1]!.onended!();
+    expect(await done).toBe('ended');
+    void player.play([{ id: 'c' }]);
+    await tick();
+    expect(ac.sources[2]!.playbackRate.value).toBe(1); // no rate: as recorded
   });
 });
