@@ -1,7 +1,7 @@
 // 朗读's stage-case picks (spec 2026-10-24 §9), shared by the case page (page.tsx) and its checks (stage-cases.ts) so both
 // always mean the same passage and question.
 import { PASSAGES } from '../../src/content';
-import { LEGACY_QUESTIONS, PASSAGE_QUESTIONS } from '../../src/content/passageQuestions';
+import { PASSAGE_QUESTIONS } from '../../src/content/passageQuestions';
 import { questionSet } from '../../src/langdu/questions';
 import type { AskedQuestion, Passage } from '../../src/types';
 
@@ -11,8 +11,8 @@ const han = (s: string) => Array.from(s).filter((c) => /\p{Script=Han}/u.test(c)
 export const LONGEST_OWN: Passage = [...PASSAGES.filter((p) => p.source === 'ziji')].sort((a, b) => han(b.text) - han(a.text) || a.id.localeCompare(b.id))[0]!;
 export const longestOwnChars = (): number => han(LONGEST_OWN.text);
 
-/** A built-in passage's questions: its six, or its older two until they are written. */
-export const questionsOf = (id: string): readonly AskedQuestion[] => PASSAGE_QUESTIONS[id] ?? LEGACY_QUESTIONS[id] ?? [];
+/** A built-in passage's six questions. */
+export const questionsOf = (id: string): readonly AskedQuestion[] => PASSAGE_QUESTIONS[id] ?? [];
 
 /** What a first read of it asks, in the order asked. */
 export function askedOf(id: string): AskedQuestion[] {

@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { allTalks, getSettings, saveKid } from '../store/repo';
-import { LEGACY_QUESTIONS, PASSAGE_QUESTIONS } from '../content/passageQuestions';
+import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { readingCard, wordStarter } from '../talk/pick';
 import { DEFAULT_KID, EMPTY_READING } from '../types';
@@ -29,8 +29,7 @@ describe('聊一聊 on Today', () => {
     expect(cards()).toHaveLength(3);
     expect(cards().map((c) => c.querySelector('.talk__kind')!.textContent)).toEqual(['话题 · Topic', '一起读 · Shared reading', '话题 · Topic']);
     const reading = within(cards()[1]!);
-    // p17's six once written, its older two until then: the card is built from whichever it has
-    const want = readingCard({ id: 'p17', title: '小马', questions: PASSAGE_QUESTIONS.p17 ?? LEGACY_QUESTIONS.p17! }, 0);
+    const want = readingCard({ id: 'p17', title: '小马', questions: PASSAGE_QUESTIONS.p17! }, 0); // its six
     const q = reading.getByRole('button', { name: new RegExp(want.open.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) });
     expect(q.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(q);

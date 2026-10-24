@@ -4,11 +4,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BUILTIN, PASSAGES } from '../src/content';
 import moe from '../src/content/moe2024.json';
-import { LEGACY_QUESTIONS, PASSAGE_QUESTIONS, QUESTION_BATCHES } from '../src/content/passageQuestions';
+import { PASSAGE_QUESTIONS, QUESTION_BATCHES } from '../src/content/passageQuestions';
 import { passageFit, termReadable } from '../src/langdu/level';
 import type { Passage, PassageQuestion } from '../src/types';
 import { TALK_ALLOWED, TALK_PATTERNS, TALK_PROMPTS, TALK_THEMES } from '../src/content/talkPrompts';
-import { checkContent, checkOwnPassages, checkPassageQuestions, checkQuestionCoverage, checkStretchPassages, checkTalkPrompts, linksIn, p2Readable, questionProblems, topWord, wordProblems } from './check-content';
+import { checkContent, checkOwnPassages, checkPassageQuestions, checkQuestionCoverage, checkStretchPassages, checkTalkPrompts, linksIn, p2Readable, questionProblems, stretchCounts, topWord, wordProblems } from './check-content';
 
 const dataDir = join(process.cwd(), 'node_modules', 'hanzi-writer-data');
 const hasStrokeFile = (ch: string) => existsSync(join(dataDir, `${ch}.json`));
@@ -31,8 +31,10 @@ describe('questions (spec 2026-10-24 §5)', () => {
   it('every built-in passage with its six passes every rule', () => {
     expect(checkPassageQuestions(PASSAGES, PASSAGE_QUESTIONS)).toEqual([]);
   });
-  it('every built-in passage has its six, or its two older ones until its batch is written; never both, never neither', () => {
-    expect(checkQuestionCoverage(PASSAGES, QUESTION_BATCHES, LEGACY_QUESTIONS)).toEqual([]);
+  it('every built-in passage has its six, from one batch file: 133 of ours and 15 storybook chunks', () => {
+    expect(checkQuestionCoverage(PASSAGES, QUESTION_BATCHES)).toEqual([]);
+    expect(PASSAGES).toHaveLength(148);
+    expect(Object.keys(PASSAGE_QUESTIONS)).toHaveLength(148);
   });
   // the plan's worked example 1 (2026-10-24 plan, Content rules): p08 with six questions that pass every rule
   const p08 = PASSAGES.find((p) => p.id === 'p08')!;
@@ -96,13 +98,11 @@ describe('questions (spec 2026-10-24 §5)', () => {
     expect(checkPassageQuestions([p08], { p08: SIX.map((q, i) => (i < 3 ? { ...q, choices: [q.choices[q.answer]!, ...q.choices.filter((_, j) => j !== q.answer)] as PassageQuestion['choices'], answer: 0 as const } : q)) })).toContain('p08: the answer is choice 1 in 4 questions, at most 2');
     expect(checkPassageQuestions([p08], { p08: SIX, x9: SIX })).toEqual(['x9: questions for no passage']);
   });
-  it('coverage: six or the older two, never both or neither; a passage in one batch file only', () => {
+  it('coverage: every passage has its six, from one batch file only', () => {
     const p01 = PASSAGES.find((p) => p.id === 'p01')!;
-    const old = [{ q: '谁是老师？', choices: ['爸爸', '妈妈', '哥哥'], answer: 1, sentence: 1 }];
-    expect(checkQuestionCoverage([p01, p08], [{ p08: SIX }], { p01: old })).toEqual([]);
-    expect(checkQuestionCoverage([p01, p08], [{ p08: SIX }], { p01: old, p08: old })).toEqual(['p08: six new questions and its older ones (delete them from questions/legacy.ts)']);
-    expect(checkQuestionCoverage([p01, p08], [{ p08: SIX }], {})).toEqual(['p01: no questions']);
-    expect(checkQuestionCoverage([p08], [{ p08: SIX }, { p08: SIX }], {})).toEqual(['p08: questions in batch 1 and batch 2']);
+    expect(checkQuestionCoverage([p08], [{ p08: SIX }])).toEqual([]);
+    expect(checkQuestionCoverage([p01, p08], [{ p08: SIX }])).toEqual(['p01: no questions']);
+    expect(checkQuestionCoverage([p08], [{ p08: SIX }, { p08: SIX }])).toEqual(['p08: questions in batch 1 and batch 2']);
   });
 });
 describe('our passages (spec 2026-10-15 §2.2)', () => {
@@ -155,6 +155,10 @@ describe('stretch passages (spec 2026-10-24 §4)', () => {
   const built = new Set(BUILTIN.map((c) => c.char));
   it('every one passes: term, length, sentences, linking patterns, fit at its term, 生词, built-in characters', () => {
     expect(checkStretchPassages(PASSAGES, built)).toEqual([]);
+  });
+  it('all sixty are there: 二下 15, 三上 25, 三下 20', () => {
+    expect(stretchCounts(PASSAGES)).toEqual([]);
+    expect(stretchCounts([])).toEqual(['二下: 0 stretch passages, expected 15', '三上: 0 stretch passages, expected 25', '三下: 0 stretch passages, expected 20']);
   });
   // the plan's worked example 2 (2026-10-24 plan, Content rules): passes as written
   const p74: Passage = {

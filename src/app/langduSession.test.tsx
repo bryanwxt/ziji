@@ -5,7 +5,7 @@ import { speak } from '../audio/speech';
 import { addRecording, getKid, listRecordings, saveKid, saveParentPassage, updateSettings } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS, EMPTY_READING, type ParentQuestion } from '../types';
-import { LEGACY_QUESTIONS, PASSAGE_QUESTIONS } from '../content/passageQuestions';
+import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { questionSet } from '../langdu/questions';
 import { SessionScreen } from './SessionScreen';
 
@@ -163,8 +163,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });
     await updateSettings(app.db, { activities: speakingOnly, langdu: true });
     await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { p01: { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1, lastHow: 'not-well' } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
-    // p01's six once its batch is written, its older two until then: the test holds either way
-    const qs = PASSAGE_QUESTIONS.p01 ?? LEGACY_QUESTIONS.p01!;
+    const qs = PASSAGE_QUESTIONS.p01!; // its six
     const set = questionSet(qs, undefined, 1);
     renderWithApp(<SessionScreen free={false} />, app);
     await screen.findByText('我的家'); // p01, due and read 'not-well': before anything new

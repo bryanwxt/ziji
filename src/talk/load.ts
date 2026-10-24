@@ -3,7 +3,7 @@
 import { PASSAGES } from '../content';
 import { cardMeaning } from '../content/glossary';
 import { ladderWordsBesides } from '../content/ladder';
-import { LEGACY_QUESTIONS, PASSAGE_QUESTIONS } from '../content/passageQuestions';
+import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import { BLANK } from '../content/sentenceBank';
 import { addDays, localDateKey, startOfLocalDay } from '../lib/date';
 import { introducedNewWords } from '../session/runner';
@@ -76,7 +76,7 @@ export async function todaysPassage(db: AppDb, settings: Settings, now: Date): P
     const own = parent.find((p) => p.id === id);
     if (own) return { id, title: own.title, questions: own.question ? [own.question] : [] };
     const built = PASSAGES.find((p) => p.id === id);
-    if (built) return { id, title: built.title, questions: PASSAGE_QUESTIONS[id] ?? LEGACY_QUESTIONS[id] ?? [] };
+    if (built) return { id, title: built.title, questions: PASSAGE_QUESTIONS[id] ?? [] };
   }
   return null;
 }

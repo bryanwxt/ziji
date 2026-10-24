@@ -299,7 +299,7 @@ export interface PassageQuestion {
 }
 
 /** A parent's question on a school text (spec 2026-10-12 §3): three or four choices, no kind; answered where its right choice is
- *  unless `sentence` names one. Also the shape of the pre-2026-10-24 built-in questions (questions/legacy.ts). */
+ *  unless `sentence` names one. */
 export interface ParentQuestion {
   q: string;
   choices: [string, string, string] | [string, string, string, string];

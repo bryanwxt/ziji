@@ -188,9 +188,8 @@ export function checkPassageQuestions(passages: readonly Passage[], questions: R
   return problems;
 }
 
-/** Every built-in passage has its six, or, until its batch is written, its two older ones (never both, never neither); and no
- *  passage's six come from two batch files. */
-export function checkQuestionCoverage(passages: readonly Passage[], batches: readonly Readonly<Record<string, readonly PassageQuestion[]>>[], legacy: Readonly<Record<string, readonly unknown[]>>): string[] {
+/** Every built-in passage has its six, and no passage's six come from two batch files. */
+export function checkQuestionCoverage(passages: readonly Passage[], batches: readonly Readonly<Record<string, readonly PassageQuestion[]>>[]): string[] {
   const problems: string[] = [];
   const seen = new Map<string, number>();
   batches.forEach((b, i) => {
@@ -199,10 +198,7 @@ export function checkQuestionCoverage(passages: readonly Passage[], batches: rea
       seen.set(id, i);
     }
   });
-  for (const p of passages) {
-    if (seen.has(p.id) && legacy[p.id]) problems.push(`${p.id}: six new questions and its older ones (delete them from questions/legacy.ts)`);
-    if (!seen.has(p.id) && !legacy[p.id]) problems.push(`${p.id}: no questions`);
-  }
+  for (const p of passages) if (!seen.has(p.id)) problems.push(`${p.id}: no questions`);
   return problems;
 }
 
