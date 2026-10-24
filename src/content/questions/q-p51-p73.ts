@@ -95,7 +95,7 @@ export const Q_P51_P73: QuestionBatch = {
     { q: '“溜回家”是什么意思？', choices: ['不出声跑回家', '大声喊着回家', '和奶奶回家', '按了铃再回家'], answer: 0, kind: 'word', sentence: 1 },
     { q: '种好了花以后，我还做了什么？', choices: ['打碎花盆', '帮她浇了水', '按了门铃', '溜回家'], answer: 1, kind: 'order', sentence: 4 },
     { q: '这个故事主要说什么？', choices: ['陈奶奶家的门铃', '我最喜欢的皮球', '陈奶奶种了很多花', '我打碎东西以后怎样做'], answer: 3, kind: 'main', sentences: [0, 2] },
-    { q: '我在门外做什么？', choices: ['拍着球玩', '种花', '浇水', '按门铃'], answer: 0, kind: 'fact', sentence: 0 },
+    { q: '一开始，我在门外做什么？', choices: ['拍着球玩', '种花', '浇水', '按门铃'], answer: 0, kind: 'fact', sentence: 0 },
     { q: '“赔”是什么意思？', choices: ['送她回家', '把花种好', '帮她浇水', '买一个还给她'], answer: 3, kind: 'word', sentence: 2 },
   ],
   p63: [
