@@ -16,7 +16,7 @@ export const Q_GSB: QuestionBatch = {
     { q: '我在唱歌，接着她在做什么？', choices: ['拍手', '回答', '唱歌', '挥手'], answer: 3, kind: 'order', sentence: 1 },
     { q: '我回答以后，她在做什么？', choices: ['聆听', '唱歌', '拍手', '伸手'], answer: 0, kind: 'order', sentence: 6 },
     { q: '这个故事主要说什么？', choices: ['我们一起唱歌', '她在教我拍手', '每个人做的都不一样', '我在教她回答'], answer: 2, kind: 'main', sentences: [0, 6] },
-    { q: '谁在伸手？', choices: ['他', '我', '你', '她'], answer: 3, kind: 'fact', sentence: 3 },
+    { q: '我唱歌以后，我接着做什么？', choices: ['回答', '拍手', '聆听', '伸手'], answer: 1, kind: 'order', sentence: 2 },
   ],
   'gsb:0009-1': [
     { q: '后来，我为什么去房子外面？', choices: ['小猫猫在篮子里', '屋里哪里都找过', '沙发在房子外面', '外面更好玩'], answer: 1, kind: 'why', sentences: [5, 6] },
@@ -30,7 +30,7 @@ export const Q_GSB: QuestionBatch = {
     { q: '为什么说我的心能感受到很多事？', choices: ['会高兴也会难过', '妈妈的故事很多', '爸爸有很多钱', '我有很多好朋友'], answer: 0, kind: 'why', sentences: [1, 3] },
     { q: '“拥抱”是什么意思？', choices: ['一起说故事', '去找朋友', '紧紧地抱着', '有很多钱'], answer: 2, kind: 'word', sentence: 4 },
     { q: '说完朋友，接着说到谁？', choices: ['奶奶', '爸爸', '妈妈', '我们'], answer: 1, kind: 'order', sentence: 3 },
-    { q: '这个故事主要说什么？', choices: ['妈妈的新故事', '爸爸的新朋友', '朋友的新玩具', '心里的不同感觉'], answer: 3, kind: 'main', sentences: [0, 4] },
+    { q: '这个故事主要说什么？', choices: ['妈妈的新故事', '爸爸的新朋友', '朋友的新玩具', '我的心和家人朋友'], answer: 3, kind: 'main', sentences: [0, 4] },
     { q: '谁跟我们说故事？', choices: ['妈妈', '朋友', '爸爸', '奶奶'], answer: 3, kind: 'fact', sentence: 1 },
     { q: '“有趣”是什么意思？', choices: ['很好玩', '很有钱', '很会说话', '很爱朋友'], answer: 0, kind: 'word', sentence: 2 },
   ],
@@ -61,7 +61,7 @@ export const Q_GSB: QuestionBatch = {
   'gsb:0089-3': [
     { q: '卡莱为什么叹了一口气？', choices: ['坏人进了学校', '橙子还不能吃', '学校太远了', '她不想上学'], answer: 1, kind: 'why', sentences: [1, 2] },
     { q: '“壮壮的”是什么意思？', choices: ['坏坏的', '又大又甜', '又高又结实', '绿绿的'], answer: 2, kind: 'word', sentence: 0 },
-    { q: '卡莱什么时候去看橙子树？', choices: ['从学校回家以后', '早上去上学前', '在学校读书时', '坏人来了以后'], answer: 0, kind: 'order', sentence: 1 },
+    { q: '卡莱什么时候去看橙子树？', choices: ['从学校回家以后', '上学的路上', '在学校读书时', '坏人来了以后'], answer: 0, kind: 'order', sentence: 1 },
     { q: '这个故事主要说什么？', choices: ['卡莱把花带回家', '卡莱关心身边的树', '学校附近的新家', '卡莱回家吃橙子'], answer: 1, kind: 'main', sentences: [0, 2] },
     { q: '卡莱想让什么长得壮壮的？', choices: ['橙子树', '绿草', '学校', '灌木'], answer: 3, kind: 'fact', sentence: 0 },
     { q: '卡莱说她什么时候再来看橙子树？', choices: ['第二天', '今天晚上', '上学以前', '一会以后'], answer: 0, kind: 'fact', sentence: 2 },
@@ -111,7 +111,7 @@ export const Q_GSB: QuestionBatch = {
     { q: '“取暖”是什么意思？', choices: ['让身体变暖', '让人有力', '带人回家', '用来洗手'], answer: 0, kind: 'word', sentence: 3 },
     { q: '说完“取暖”，接着说到什么？', choices: ['力量', '神奇', '光亮', '你看'], answer: 2, kind: 'order', sentence: 4 },
     { q: '哪一个题目最好？', choices: ['红红的火', '火从哪里来', '火和冷水', '有用又神奇的火'], answer: 3, kind: 'main', sentences: [3, 6] },
-    { q: '人们用火来做什么？', choices: ['用来洗澡', '煮东西', '带来下雨', '用来喝水'], answer: 1, kind: 'fact', sentence: 2 },
+    { q: '人们用火来做什么？', choices: ['用来洗澡', '煮东西', '带来下雨', '用来种花'], answer: 1, kind: 'fact', sentence: 2 },
     { q: '“神奇”是什么意思？', choices: ['很好看', '很可怕', '很特别', '很好用'], answer: 2, kind: 'word', sentence: 6 },
   ],
   'gsb:0327-1': [
