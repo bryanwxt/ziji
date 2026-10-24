@@ -4,86 +4,6 @@
 import type { ParentQuestion } from '../../types';
 
 export const LEGACY_QUESTIONS: Readonly<Record<string, readonly ParentQuestion[]>> = {
-  p01: [
-    { q: '谁是老师？', choices: ['爸爸', '妈妈', '哥哥'], answer: 1, sentence: 1 },
-    { q: '我家有什么人？', choices: ['哥哥和弟弟', '姐姐和妹妹', '哥哥和妹妹'], answer: 2, sentence: 0 },
-  ],
-  p02: [
-    { q: '我先做什么？', choices: ['吃早饭', '坐车', '洗手'], answer: 2, sentence: 1 },
-    { q: '早上七点，我做什么？', choices: ['坐车', '起床', '吃早饭'], answer: 1, sentence: 0 },
-  ],
-  p03: [
-    { q: '下午，我们去做什么？', choices: ['打球', '看书', '听歌'], answer: 0, sentence: 2 },
-    { q: '我和弟弟在家里做什么？', choices: ['打球跑步', '看书听歌', '吃饭写字'], answer: 1, sentence: 1 },
-  ],
-  p04: [
-    { q: '小明很喜欢笑，也很喜欢做什么？', choices: ['一起玩', '帮别人', '做作业'], answer: 1, sentence: 2 },
-    { q: '我们常常一起做什么？', choices: ['玩', '笑', '帮别人'], answer: 0, sentence: 3 },
-  ],
-  p05: [
-    { q: '爸爸送我什么？', choices: ['好吃的菜', '新书', '生日歌'], answer: 1, sentence: 1 },
-    { q: '谁给我唱生日歌？', choices: ['妈妈', '哥哥', '爸爸'], answer: 1, sentence: 2 },
-  ],
-  p06: [
-    { q: '弟弟听了医生的话，怎么了？', choices: ['病了', '好了', '笑了'], answer: 2, sentence: 3 },
-    { q: '谁说“没关系”？', choices: ['妈妈', '弟弟', '医生'], answer: 2, sentence: 2 },
-  ],
-  p07: [
-    { q: '我想要什么？', choices: ['水果', '新书包', '牛奶'], answer: 1, sentence: 3 },
-    { q: '我们买了什么？', choices: ['水果和牛奶', '牛奶和书包', '书包和水果'], answer: 0, sentence: 1 },
-  ],
-  p08: [
-    { q: '我和爷爷坐在什么地方看星星？', choices: ['天上', '飞机', '门口'], answer: 2, sentence: 1 },
-    { q: '我长大了要怎么去看星星？', choices: ['坐上火车', '坐上飞机', '坐上大车'], answer: 1, sentence: 3 },
-  ],
-  p09: [
-    { q: '我写了哪两个字？', choices: ['天和地', '大和天', '大和小'], answer: 1, sentence: 2 },
-    { q: '老师说了什么？', choices: ['你写得很快', '你写得很大', '你写得很好'], answer: 2, sentence: 3 },
-  ],
-  p10: [
-    { q: '我想跟小鸟做什么？', choices: ['唱歌', '一起玩', '飞走'], answer: 1, sentence: 2 },
-    { q: '我想问小鸟什么？', choices: ['你会唱歌吗', '你会写字吗', '明天还会来吗'], answer: 2, sentence: 3 },
-  ],
-  p11: [
-    { q: '床的旁边有什么？', choices: ['桌子', '书', '作业'], answer: 0, sentence: 2 },
-    { q: '我坐在桌子前面做什么？', choices: ['画画唱歌', '看书写字', '看书画画'], answer: 1, sentence: 3 },
-  ],
-  p12: [
-    { q: '奶奶笑着说什么？', choices: ['少吃点', '多吃点', '快点吃'], answer: 1, sentence: 3 },
-    { q: '桌上有什么？', choices: ['鸡蛋和鱼', '米饭和肉', '菜和水果'], answer: 1, sentence: 1 },
-  ],
-  p13: [
-    { q: '我喝了水，又做什么？', choices: ['又去打球', '又去上课', '又去跑步'], answer: 0, sentence: 3 },
-    { q: '下课了，同学们都去做什么？', choices: ['打球、跑步', '上课、写字', '吃饭、喝水'], answer: 0, sentence: 1 },
-  ],
-  p14: [
-    { q: '我在车上为什么站着？', choices: ['我喜欢站着', '没有地方坐', '车上很热'], answer: 1, sentence: 2 },
-    { q: '同学在哪里等我？', choices: ['车上', '我家', '门口'], answer: 2, sentence: 3 },
-  ],
-  p15: [
-    { q: '我们穿上了什么？', choices: ['新的衣服', '红的衣服', '奶奶的衣服'], answer: 0, sentence: 1 },
-    { q: '谁给我们红包？', choices: ['爷爷和爸爸', '爷爷和奶奶', '奶奶和妈妈'], answer: 1, sentence: 2 },
-  ],
-  p16: [
-    { q: '我帮了妈妈什么忙？', choices: ['洗衣服', '买东西', '洗菜做饭'], answer: 2, sentence: 1 },
-    { q: '星期天，妈妈怎么了？', choices: ['很忙', '很开心', '长大了'], answer: 0, sentence: 0 },
-  ],
-  p17: [
-    { q: '小马为什么找不到家了？', choices: ['跑得很快', '在外面玩', '跑得很远'], answer: 2, sentence: 1 },
-    { q: '牛爷爷做了什么？', choices: ['找到了小马', '带小马跑步', '给小马吃饭'], answer: 0, sentence: 2 },
-  ],
-  p18: [
-    { q: '人们为什么高兴地笑了？', choices: ['风变大了', '天变热了', '天变冷了'], answer: 1, sentence: 2 },
-    { q: '风大大地吹，人们怎么了？', choices: ['热得很', '冷得很', '高兴得很'], answer: 1, sentence: 1 },
-  ],
-  p19: [
-    { q: '妈妈要我先干什么？', choices: ['看电视', '唱歌', '做作业'], answer: 2, sentence: 1 },
-    { q: '电视里的小马在做什么？', choices: ['唱歌', '做作业', '看电视'], answer: 0, sentence: 3 },
-  ],
-  p20: [
-    { q: '学校里有什么？', choices: ['看花的地方', '打球的地方', '看书的地方'], answer: 1, sentence: 1 },
-    { q: '我很喜欢谁？', choices: ['同学和老师', '同学和妈妈', '爸爸和老师'], answer: 0, sentence: 3 },
-  ],
 
   // Global Storybooks (src/content/storybooks.json)
   'gsb:0001-1': [
@@ -148,26 +68,6 @@ export const LEGACY_QUESTIONS: Readonly<Record<string, readonly ParentQuestion[]
   ],
 
   // our own 二上 passages (spec 2026-10-15 §2.2, Task 8)
-  p21: [
-    { q: '谁很亲切？', choices: ['新老师', '新朋友', '同学'], answer: 0, sentence: 2 },
-    { q: '第一天，老师帮我们找什么？', choices: ['座位', '课文', '朋友'], answer: 0, sentence: 3 },
-  ],
-  p22: [
-    { q: '舞狮在哪里？', choices: ['楼下', '门上', '婆婆家'], answer: 0, sentence: 3 },
-    { q: '我在门上贴什么？', choices: ['福字', '红包', '舞狮'], answer: 0, sentence: 1 },
-  ],
-  p23: [
-    { q: '我把什么放到桌上？', choices: ['碗和筷子', '茶和杯子', '鸡和青菜'], answer: 0, sentence: 1 },
-    { q: '谁尝了妈妈做的鸡？', choices: ['王叔叔', '王阿姨', '我'], answer: 0, sentence: 3 },
-  ],
-  p24: [
-    { q: '大树下开着什么颜色的花？', choices: ['红的和黄的', '白的和蓝的', '绿的和白的'], answer: 0, sentence: 3 },
-    { q: '小鸟是什么颜色的？', choices: ['黑的', '白的', '黄的'], answer: 0, sentence: 5 },
-  ],
-  p25: [
-    { q: '音乐室在哪里？', choices: ['三楼', '二楼', '一楼'], answer: 0, sentence: 3 },
-    { q: '我们问谁音乐室在哪里？', choices: ['班长', '老师', '好朋友'], answer: 0, sentence: 2 },
-  ],
   p26: [
     { q: '谁骑在最前面？', choices: ['哥哥', '姐姐', '我'], answer: 0, sentence: 1 },
     { q: '我们最后骑到了哪里？', choices: ['公园', '小桥', '路口'], answer: 0, sentence: 4 },
