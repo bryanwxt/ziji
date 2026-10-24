@@ -281,14 +281,36 @@ export interface Passage {
   credit?: PassageCredit;
 }
 
-/** A 朗读 meaning question (spec 2026-10-12 §3): 谁 / 哪里 / 什么 / 为什么, three choices, the right one marked. `sentence`: the
- *  passage's sentence (splitSentences) that answers it; a parent's question has none and is answered where its right choice is. */
+/** What a 朗读 question asks (spec 2026-10-24 §5): a reason or feeling never stated in one sentence; a word's meaning in this
+ *  passage; what happened first, next or last; the main idea or best title; who, what or where, answered by one sentence. */
+export type QuestionKind = 'why' | 'word' | 'order' | 'main' | 'fact';
+
+/** A built-in passage's question (spec 2026-10-24 §5): four choices, the right one marked in the stored order (the step shuffles
+ *  them). `sentence` (fact, word, order) is the passage's sentence (splitSentences) read again after a miss; `sentences` (why,
+ *  main) are the two that support the answer, read again instead. */
 export interface PassageQuestion {
   q: string;
-  choices: [string, string, string];
-  answer: 0 | 1 | 2;
+  choices: [string, string, string, string];
+  answer: 0 | 1 | 2 | 3;
+  kind: QuestionKind;
+  sentence?: number;
+  sentences?: [number, number];
+}
+
+/** A parent's question on a school text (spec 2026-10-12 §3): three or four choices, no kind; answered where its right choice is
+ *  unless `sentence` names one. Also the shape of the pre-2026-10-24 built-in questions (questions/legacy.ts). */
+export interface ParentQuestion {
+  q: string;
+  choices: [string, string, string] | [string, string, string, string];
+  answer: 0 | 1 | 2 | 3;
   sentence?: number;
 }
+
+/** A question as the step asks it: a built-in's or a parent's. */
+export type AskedQuestion = PassageQuestion | ParentQuestion;
+
+/** One answer to a built-in question (spec 2026-10-24 §8): kept on the passage's history, the last 30. */
+export interface PassageAnswer { kind: QuestionKind; correct: boolean; at: string }
 
 /** A school text the parent added for 朗读. id 'pp:<uuid>'; text may hold '/' marks; an optional meaning question. */
 export interface ParentPassage {
@@ -296,7 +318,7 @@ export interface ParentPassage {
   title: string;
   text: string;
   createdAt: number;
-  question?: PassageQuestion;
+  question?: ParentQuestion;
 }
 
 /** Details for the oral-exam self-introduction (stored only on the iPad). */

@@ -4,8 +4,8 @@ import { setSpeaking } from '../audio/speaking';
 import { speak } from '../audio/speech';
 import { addRecording, getKid, listRecordings, saveKid, saveParentPassage, updateSettings } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
-import { DEFAULT_KID, DEFAULT_SETTINGS, EMPTY_READING, type PassageQuestion } from '../types';
-import { PASSAGE_QUESTIONS } from '../content/passageQuestions';
+import { DEFAULT_KID, DEFAULT_SETTINGS, EMPTY_READING, type ParentQuestion } from '../types';
+import { LEGACY_QUESTIONS } from '../content/passageQuestions';
 import { SessionScreen } from './SessionScreen';
 
 vi.mock('../audio/speech', () => ({ prefetchWords: vi.fn(), stopSpeaking: vi.fn(), speak: vi.fn(), primeSpeech: vi.fn() }));
@@ -171,7 +171,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     fireEvent.click(screen.getByText('开始录音'));
     fireEvent.click(await screen.findByText('停止'));
     fireEvent.click(await screen.findByText('下一步'));
-    expect(await screen.findByText(PASSAGE_QUESTIONS.p01![1]!.q)).toBeTruthy();
+    expect(await screen.findByText(LEGACY_QUESTIONS.p01![1]!.q)).toBeTruthy();
   });
   it('下一篇 swaps in the next passage, saves the skip at once, and hides after two swaps (spec 2026-10-15 §5, D5)', async () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });
@@ -203,7 +203,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
   });
   it('his answer to the meaning question is kept with his take, for the parent', async () => {
     const app = await setup();
-    const question: PassageQuestion = { q: '我爱谁？', choices: ['老师', '妈妈', '小马'], answer: 1 };
+    const question: ParentQuestion = { q: '我爱谁？', choices: ['老师', '妈妈', '小马'], answer: 1 };
     await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1, question });
     renderWithApp(<SessionScreen free={false} />, app);
     await warmUp();

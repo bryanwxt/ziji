@@ -4,7 +4,7 @@
 import { TALK_PROMPTS, TALK_THEMES } from '../content/talkPrompts';
 import { parseDateKey } from '../lib/date';
 import { mulberry32, seedFromString, shuffle, type Rng } from '../lib/random';
-import type { PassageQuestion, TalkCard, TalkKind, TalkPrompt, TalkSlot, TalkTheme } from '../types';
+import type { AskedQuestion, TalkCard, TalkKind, TalkPrompt, TalkSlot, TalkTheme } from '../types';
 
 /** A card shown fewer than this many days ago (0–13) comes back only when its kind has nothing else (spec §4); 14 days ago can. */
 export const NO_REPEAT_DAYS = 14;
@@ -20,7 +20,7 @@ export const KIND_EN: Readonly<Record<TalkKind, string>> = { word: 'His words', 
 /** A word to talk about: its text, the parent's English, a sentence that uses it, its 组词, and where it came from. */
 export interface TalkWord { text: string; gloss?: string; example?: string; zuci: string[]; from: 'list' | 'class' }
 /** Today's 朗读 passage: its title and meaning questions (a parent text has one or none). */
-export interface TalkPassage { id: string; title: string; questions: readonly PassageQuestion[] }
+export interface TalkPassage { id: string; title: string; questions: readonly AskedQuestion[] }
 export interface PickInput {
   today: string; // local YYYY-MM-DD
   seen: Readonly<Record<string, string>>; // card id → last day shown
@@ -112,10 +112,12 @@ export function bookVoice(q: string): string {
  * 你觉得 — THINK[k]. `answers`: the passage's answer to each, null where the question is open.
  */
 export function readingCard(p: TalkPassage, k: number): TalkCard {
-  const isWhy = (q: PassageQuestion) => q.q.includes('为什么');
-  const answer = (q: PassageQuestion) => q.choices[q.answer];
+  // a built-in's kinds (spec 2026-10-24 §5) say which is which; a parent's or an older question is read by its words
+  const kindOf = (q: AskedQuestion) => ('kind' in q ? q.kind : undefined);
+  const isWhy = (q: AskedQuestion) => kindOf(q) === 'why' || q.q.includes('为什么');
+  const answer = (q: AskedQuestion): string | null => q.choices[q.answer] ?? null;
   const facts = p.questions.filter((q) => !isWhy(q));
-  const who = facts.find((q) => q.q.includes('谁')) ?? facts[0];
+  const who = facts.find((q) => q.q.includes('谁')) ?? facts.find((q) => kindOf(q) === 'fact') ?? facts[0];
   const why = p.questions.find(isWhy);
   const think = THINK[k % THINK.length]!;
   return {

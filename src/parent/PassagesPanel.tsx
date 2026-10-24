@@ -4,7 +4,7 @@ import { useApp } from '../app/AppContext';
 import { hanChars } from '../content';
 import { splitSentences } from '../langdu/sentences';
 import { deleteParentPassage, listParentPassages, saveParentPassage } from '../store/repo';
-import type { ParentPassage, PassageQuestion } from '../types';
+import type { ParentPassage, ParentQuestion } from '../types';
 import { LibraryList } from './LibraryList';
 
 const NO_CHOICES: [string, string, string] = ['', '', ''];
@@ -29,7 +29,7 @@ export function PassagesPanel() {
   const distinct = new Set(choices.map((c) => c.trim())).size === 3;
   const filled = complete && distinct;
   const empty = q.trim() === '' && choices.every((c) => c.trim() === '');
-  const question: PassageQuestion | undefined = filled ? { q: q.trim(), choices: choices.map((c) => c.trim()) as [string, string, string], answer: right } : undefined;
+  const question: ParentQuestion | undefined = filled ? { q: q.trim(), choices: choices.map((c) => c.trim()) as [string, string, string], answer: right } : undefined;
   const canSave = title.trim().length > 0 && hanChars(text).length > 0 && (filled || empty);
   const reset = () => {
     setEditing(null);
@@ -51,8 +51,9 @@ export function PassagesPanel() {
     setTitle(p.title);
     setText(p.text);
     setQ(p.question?.q ?? '');
-    setChoices(p.question ? [...p.question.choices] : NO_CHOICES);
-    setRight(p.question?.answer ?? 0);
+    // the editor keeps three choices (spec 2026-10-24 §2: school texts unchanged); a fourth, never saved by it, is not shown
+    setChoices(p.question ? [p.question.choices[0], p.question.choices[1], p.question.choices[2]] : NO_CHOICES);
+    setRight(p.question && p.question.answer < 3 ? (p.question.answer as 0 | 1 | 2) : 0);
   };
   const remove = async (p: ParentPassage) => {
     if (!confirm(`Delete "${p.title}"?`)) return;
