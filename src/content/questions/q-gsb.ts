@@ -56,7 +56,7 @@ export const Q_GSB: QuestionBatch = {
     { q: '长出枝叶以后，我们就可以做什么？', choices: ['在树下读书', '在花里睡觉', '把书带回家', '和野花说话'], answer: 0, kind: 'order', sentence: 1 },
     { q: '哪一个题目最好？', choices: ['卡莱在学校画画', '卡莱怎样种野花', '学校里的大树', '卡莱想要的两件事'], answer: 3, kind: 'main', sentences: [0, 1] },
     { q: '小树在学校的哪里？', choices: ['教室里面', '学校门口', '花园中间', '操场的中间'], answer: 3, kind: 'fact', sentence: 1 },
-    { q: '“枝叶”是什么意思？', choices: ['野花和花朵', '树枝和树叶', '学校和操场', '书本和头发'], answer: 1, kind: 'word', sentence: 1 },
+    { q: '“枝叶”是什么意思？', choices: ['野花和花朵', '树枝和树叶', '卡莱和野花', '书本和头发'], answer: 1, kind: 'word', sentence: 1 },
   ],
   'gsb:0089-3': [
     { q: '卡莱为什么叹了一口气？', choices: ['坏人进了学校', '橙子还不能吃', '学校太远了', '她不想上学'], answer: 1, kind: 'why', sentences: [1, 2] },

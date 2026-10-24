@@ -6,7 +6,7 @@ export const Q_P89_P100: QuestionBatch = {
     { q: '小文为什么又读了一遍线索？', choices: ['宝物被人拿走了', '走了很久也没找到', '老师叫她再读一遍', '她想读给小朋友听'], answer: 1, kind: 'why', sentences: [2, 3] },
     { q: '“仔细”是什么意思？', choices: ['认真小心', '跑得很快', '走来走去', '大声地读'], answer: 0, kind: 'word', sentence: 6 },
     { q: '哪一件事最先发生？', choices: ['小文又读了一遍线索', '我们走得满头大汗', '老师给每组线索卡', '我们找到了宝物'], answer: 2, kind: 'order', sentence: 1 },
-    { q: '哪一个题目最好？', choices: ['湖边的大石头', '小文的线索卡', '植物园的大门', '看错线索的寻宝'], answer: 3, kind: 'main', sentences: [4, 6] },
+    { q: '哪一个题目最好？', choices: ['跑得最快的一组', '小文的线索卡', '植物园的大门', '看错线索的寻宝'], answer: 3, kind: 'main', sentences: [4, 6] },
     { q: '宝物在什么地方？', choices: ['大门的右边', '线索卡的下面', '湖边石头的后面', '植物园的门口'], answer: 2, kind: 'fact', sentence: 1 },
     { q: '“满头大汗”是什么意思？', choices: ['跑得很快', '出了很多汗', '找到宝物', '头很大'], answer: 1, kind: 'word', sentence: 2 },
   ],
@@ -45,7 +45,7 @@ export const Q_P89_P100: QuestionBatch = {
   p94: [
     { q: '很多来旅游的人为什么要去看鱼尾狮？', choices: ['想看从前的小渔村', '想和新加坡的标志拍照', '想去吃新鲜的鱼', '想去看真的狮子'], answer: 1, kind: 'why', sentences: [0, 5] },
     { q: '“靠打鱼为生”是什么意思？', choices: ['很喜欢吃鱼', '在河口游泳', '打鱼来过日子', '天天来拍照'], answer: 2, kind: 'word', sentence: 3 },
-    { q: '短文说完雕像长什么样，接着说什么？', choices: ['狮子头的由来', '它站在哪里', '它有多高', '游客和它拍照'], answer: 0, kind: 'order', sentence: 2 },
+    { q: '短文说完它长得很特别，接着说什么？', choices: ['狮子头的由来', '它站在哪里', '它有多高', '游客和它拍照'], answer: 0, kind: 'order', sentence: 2 },
     { q: '这篇短文主要说什么？', choices: ['滨海湾的公园', '新加坡的游客', '从前的小渔村', '认识鱼尾狮'], answer: 3, kind: 'main', sentences: [0, 1] },
     { q: '鱼尾狮的嘴里会怎么样？', choices: ['打鱼', '喷出水来', '拍照', '有个狮子头'], answer: 1, kind: 'fact', sentence: 4 },
     { q: '新加坡也称为什么？', choices: ['渔村', '鱼城', '狮城', '滨海湾'], answer: 2, kind: 'fact', sentence: 2 },
@@ -61,7 +61,7 @@ export const Q_P89_P100: QuestionBatch = {
   p96: [
     { q: '我为什么出门前总会准备一个小袋子？', choices: ['想帮阿姨扫地', '想让阿姨轻松一点', '想帮哥哥拿饮料', '想坐在椅子上吃东西'], answer: 1, kind: 'why', sentences: [5, 6] },
     { q: '“随手”是什么意思？', choices: ['用两只手', '扔得很远', '想也不想', '走过去'], answer: 2, kind: 'word', sentence: 3 },
-    { q: '那个哥哥把罐子扔在椅子下以后，发生了什么事？', choices: ['哥哥又捡回去', '阿姨弯腰去捡', '我帮阿姨扫地', '阿姨坐在椅子上'], answer: 1, kind: 'order', sentence: 4 },
+    { q: '那个哥哥喝完饮料走了以后，发生了什么事？', choices: ['哥哥又捡回去', '阿姨弯腰去捡', '我帮阿姨扫地', '阿姨坐在椅子上'], answer: 1, kind: 'order', sentence: 4 },
     { q: '这个故事主要说什么？', choices: ['公园里的椅子', '喝饮料的哥哥', '阿姨爱扫地', '让公园更干净'], answer: 3, kind: 'main', sentences: [5, 6] },
     { q: '阿姨把草地上的什么捡起来？', choices: ['纸杯和罐子', '小袋子', '草和石头', '椅子上的书'], answer: 0, kind: 'fact', sentence: 1 },
     { q: '阿姨为什么常常满头大汗？', choices: ['她跑去追哥哥', '她喝了很多饮料', '天气热，又一直在工作', '公园里没有椅子'], answer: 2, kind: 'why', sentences: [1, 2] },
@@ -91,7 +91,7 @@ export const Q_P89_P100: QuestionBatch = {
     { q: '松鼠的松果全都掉到什么地方？', choices: ['河里', '树洞', '草地上', '小兔家'], answer: 0, kind: 'fact', sentence: 4 },
   ],
   p100: [
-    { q: '我为什么急得快要哭了？', choices: ['地铁上太热了', '离外婆家越来越远', '姐姐不见了', '找不到月台'], answer: 1, kind: 'why', sentences: [0, 2] },
+    { q: '我为什么急得快要哭了？', choices: ['地铁上太热了', '离外婆家越来越远', '姐姐不见了', '没有带地铁票'], answer: 1, kind: 'why', sentences: [0, 2] },
     { q: '“糟了”是什么意思？', choices: ['下车了', '到外婆家了', '事情不好了', '平平安安'], answer: 2, kind: 'word', sentence: 2 },
     { q: '在下一站下车以后，我们接着做什么？', choices: ['走出地铁站', '回到外婆家', '坐下来聊天', '走到对面月台'], answer: 3, kind: 'order', sentence: 5 },
     { q: '哪一个题目最好？', choices: ['坐错车也不怕', '去外婆家吃饭', '和姐姐去上学', '外婆来接我们'], answer: 0, kind: 'main', sentences: [4, 5] },

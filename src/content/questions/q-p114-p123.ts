@@ -4,7 +4,7 @@ import type { QuestionBatch } from '../passageQuestions';
 export const Q_P114_P123: QuestionBatch = {
   p114: [
     { q: '我为什么难过得快要哭了？', choices: ['同学们都没有来', '爸爸的脚受伤了', '生日蛋糕摔坏了', '饼干不好吃'], answer: 2, kind: 'why', sentences: [1, 2] },
-    { q: '“端出”是什么意思？', choices: ['平平地拿出来', '用脚踢出来', '从盘子里倒出来', '慢慢地走出去'], answer: 0, kind: 'word', sentence: 1 },
+    { q: '“端出”是什么意思？', choices: ['平平地拿出来', '用脚踢出来', '从袋子里倒出来', '慢慢地走出去'], answer: 0, kind: 'word', sentence: 1 },
     { q: '哪一件事最先发生？', choices: ['大家吓了一跳', '同学们来我家', '插上八根蜡烛', '大家说蛋糕好吃'], answer: 1, kind: 'order', sentence: 0 },
     { q: '哪一个题目最好？', choices: ['爸爸的大厨房', '八根生日蜡烛', '香蕉和奶油', '大家动手做蛋糕'], answer: 3, kind: 'main', sentences: [3, 5] },
     { q: '我们把饼干铺在什么地方？', choices: ['厨房里', '盘子里', '地上', '蛋糕上'], answer: 1, kind: 'fact', sentence: 4 },
@@ -43,7 +43,7 @@ export const Q_P114_P123: QuestionBatch = {
     { q: '小海龟在什么时候钻出来？', choices: ['大约两个月后', '一个月后', '一百天后', '两个星期后'], answer: 0, kind: 'fact', sentence: 3 },
   ],
   p119: [
-    { q: '我为什么一直抬着头？', choices: ['教练叫我抬头', '怕又被水呛到', '想看别的小朋友', '泳镜戴不好'], answer: 1, kind: 'why', sentences: [1, 2] },
+    { q: '我为什么一直抬着头？', choices: ['教练叫我抬头', '怕又被水呛到', '想看别的小朋友', '水太冷了'], answer: 1, kind: 'why', sentences: [1, 2] },
     { q: '“终于”是什么意思？', choices: ['一下子就做到', '试了很久才做到', '一边吹，一边数', '上次没有做到'], answer: 1, kind: 'word', sentence: 4 },
     { q: '教练说完以后，我先做了什么？', choices: ['抬着头', '拍拍肩膀', '戴好泳镜', '把脸放进水里'], answer: 2, kind: 'order', sentence: 4 },
     { q: '哪一个题目最好？', choices: ['爸爸教我游泳', '别的小朋友游得快', '暑假去海边玩', '学游泳的进步'], answer: 3, kind: 'main', sentences: [4, 7] },
@@ -55,7 +55,7 @@ export const Q_P114_P123: QuestionBatch = {
     { q: '“竟然”是什么意思？', choices: ['像新的一样', '没想到会这样', '常常是这样', '一起打扫'], answer: 1, kind: 'word', sentence: 3 },
     { q: '“负责”是什么意思？', choices: ['这件事交给你做', '和大家一起玩', '高兴得跳起来', '把窗户擦干净'], answer: 0, kind: 'word', sentence: 1 },
     { q: '哪一件事最先发生？', choices: ['我看到小盒子', '我跳了起来', '我把东西拿出来', '妈妈笑着说话'], answer: 2, kind: 'order', sentence: 2 },
-    { q: '哪一个题目最好？', choices: ['妈妈擦窗户', '意外的惊喜', '爸爸的新拖把', '床底下的灰尘'], answer: 1, kind: 'main', sentences: [2, 4] },
+    { q: '哪一个题目最好？', choices: ['妈妈擦窗户', '意外的惊喜', '爸爸的新衣服', '床底下的灰尘'], answer: 1, kind: 'main', sentences: [2, 4] },
     { q: '大扫除的时候，爸爸做什么？', choices: ['擦窗户', '打扫房间', '拖地', '收拾玩具'], answer: 2, kind: 'fact', sentence: 1 },
   ],
   p121: [

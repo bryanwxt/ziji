@@ -11,7 +11,7 @@ export const Q_P124_P133: QuestionBatch = {
     { q: '“忽然”是什么意思？', choices: ['一下子发生', '慢慢地', '天亮的时候', '每一次'], answer: 0, kind: 'word', sentence: 2 },
   ],
   p125: [
-    { q: '工蚁为什么要在路上留下味道？', choices: ['让小蚂蚁快长大', '把房间弄干净', '让同伴找到食物', '叫蚁后出来'], answer: 2, kind: 'why', sentences: [3, 4] },
+    { q: '工蚁为什么要在路上留下味道？', choices: ['让小蚂蚁快长大', '把房间弄干净', '让同伴找到食物', '让路变得好走'], answer: 2, kind: 'why', sentences: [3, 4] },
     { q: '“储存”是什么意思？', choices: ['分给小蚂蚁', '收好留着以后吃', '搬出房间', '找来找去'], answer: 1, kind: 'word', sentence: 4 },
     { q: '下面哪一件事最后发生？', choices: ['钻出洞去', '发现了食物', '留下味道', '把食物抬回家'], answer: 3, kind: 'order', sentence: 4 },
     { q: '这篇短文主要说什么？', choices: ['蚂蚁一家怎样生活', '隧道有多长', '怎样孵小蚂蚁', '蚂蚁爱吃什么'], answer: 0, kind: 'main', sentences: [1, 2] },
@@ -62,7 +62,7 @@ export const Q_P124_P133: QuestionBatch = {
     { q: '乌鸦为什么要把石子放进瓶子里？', choices: ['想把瓶子打破', '想把石子丢掉', '让水离嘴近一些', '想洗一洗石子'], answer: 2, kind: 'why', sentences: [1, 3] },
     { q: '“放弃”是什么意思？', choices: ['飞来飞去', '不再去做', '一颗一颗地放', '喝到了水'], answer: 1, kind: 'word', sentence: 2 },
     { q: '哪一件事最先发生？', choices: ['看见一个瓶子', '看看四周', '飞来飞去', '用嘴叼起石子'], answer: 0, kind: 'order', sentence: 1 },
-    { q: '这个故事告诉我们什么？', choices: ['乌鸦很会飞', '口渴要多喝水', '瓶子不能太小', '要多动脑想办法'], answer: 3, kind: 'main', sentences: [2, 5] },
+    { q: '这个故事告诉我们什么？', choices: ['乌鸦很会飞', '口渴要多喝水', '石子越多越好', '要多动脑想办法'], answer: 3, kind: 'main', sentences: [2, 5] },
     { q: '瓶口怎么样？', choices: ['升高了', '很多水', '很小', '渐渐变大'], answer: 2, kind: 'fact', sentence: 1 },
     { q: '乌鸦在哪里发现了石子？', choices: ['地上', '瓶子里', '瓶口', '水里'], answer: 0, kind: 'fact', sentence: 2 },
   ],

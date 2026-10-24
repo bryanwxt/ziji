@@ -32,7 +32,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我先说了好朋友叫什么，然后说了什么？', choices: ['我家有几个人', '我们一起玩', '他喜欢唱歌', '他几岁，在哪个班'], answer: 3, kind: 'order', sentence: 1 },
     { q: '哪一个题目最好？', choices: ['小明这个人', '八岁的我', '小明的家', '一个人玩'], answer: 0, kind: 'main', sentences: [0, 2] },
     { q: '我们常常一起玩，还一起做什么？', choices: ['写作业', '帮别人', '玩球', '叫朋友'], answer: 0, kind: 'fact', sentence: 3 },
-    { q: '小明是什么人？', choices: ['别班的同学', '班上的老师', '八岁的哥哥', '同班的好朋友'], answer: 3, kind: 'fact', sentence: 0 },
+    { q: '小明是什么人？', choices: ['别班的好朋友', '班上的老师', '八岁的哥哥', '同班的好朋友'], answer: 3, kind: 'fact', sentence: 0 },
   ],
   p05: [
     { q: '我今天为什么很高兴？', choices: ['大家给我过生日', '我会唱歌了', '我会做菜了', '蛋糕很好吃'], answer: 0, kind: 'why', sentences: [1, 2] },
@@ -45,7 +45,7 @@ export const Q_P01_P25: QuestionBatch = {
   p06: [
     { q: '弟弟听了医生的话，为什么笑了？', choices: ['他想去医院', '知道病会好', '医生给他糖', '头很热'], answer: 1, kind: 'why', sentences: [2, 3] },
     { q: '“没关系”在这里是什么意思？', choices: ['不用怕', '要去医院', '头很热', '去上学'], answer: 0, kind: 'word', sentence: 2 },
-    { q: '到了那里以后，谁先做了什么？', choices: ['弟弟笑了', '弟弟病了', '我们去医院', '医生看了看他'], answer: 3, kind: 'order', sentence: 2 },
+    { q: '到了那里以后，谁先做了什么？', choices: ['弟弟笑了', '弟弟病了', '弟弟去医院', '医生看了看他'], answer: 3, kind: 'order', sentence: 2 },
     { q: '哪一个题目最好？', choices: ['医生的家', '弟弟的书', '去看病', '弟弟爱笑'], answer: 2, kind: 'main', sentences: [0, 2] },
     { q: '谁送弟弟去医院？', choices: ['妈妈和我', '医生', '医生和我', '弟弟'], answer: 0, kind: 'fact', sentence: 1 },
     { q: '医生说要多做什么？', choices: ['吃饭和睡觉', '喝水和睡觉', '喝水和看书', '去医院'], answer: 1, kind: 'fact', sentence: 2 },
@@ -67,7 +67,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我想什么时候坐飞机？', choices: ['今天晚上', '明天晚上', '长大以后', '天天晚上'], answer: 2, kind: 'fact', sentence: 3 },
   ],
   p09: [
-    { q: '老师为什么说我写得很好？', choices: ['我写了很多字', '大字很好看', '我写得很快', '我听话，很认真'], answer: 3, kind: 'why', sentences: [1, 3] },
+    { q: '为什么说我写得很好？', choices: ['我写了很多字', '大字很好看', '我写得很快', '我听话，很认真'], answer: 3, kind: 'why', sentences: [1, 3] },
     { q: '“认真”是什么意思？', choices: ['用心去做', '写得很大', '写得很小', '写两个字'], answer: 0, kind: 'word', sentence: 1 },
     { q: '我写了“大”，然后又写了什么？', choices: ['“大”字', '“天”字', '汉字', '“好”字'], answer: 1, kind: 'order', sentence: 2 },
     { q: '这个故事主要说什么？', choices: ['大字和小字', '老师的汉字', '我学会写字', '天天写字'], answer: 2, kind: 'main', sentences: [0, 3] },
@@ -79,7 +79,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '“飞来飞去”是什么意思？', choices: ['飞得很快', '飞得很高', '这边飞，那边飞', '跟我一起玩'], answer: 2, kind: 'word', sentence: 1 },
     { q: '我想跟它一起玩，后来怎么了？', choices: ['小鸟吃虫', '小鸟飞来', '我和它玩', '小鸟飞走'], answer: 3, kind: 'order', sentence: 2 },
     { q: '哪一个题目最好？', choices: ['大大的树', '小鸟朋友', '明天的太阳', '我的小狗'], answer: 1, kind: 'main', sentences: [2, 3] },
-    { q: '小鸟在哪里？', choices: ['在我手上', '在天上', '在路上', '在树上'], answer: 3, kind: 'fact', sentence: 0 },
+    { q: '小鸟在哪里？', choices: ['在我手上', '在车上', '在路上', '在树上'], answer: 3, kind: 'fact', sentence: 0 },
     { q: '小鸟除了飞来飞去，还会做什么？', choices: ['一起玩', '走路', '唱歌', '会说话'], answer: 2, kind: 'fact', sentence: 1 },
   ],
   p11: [
@@ -104,13 +104,13 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我喝完水以后，做了什么？', choices: ['去上课', '又去打球', '坐下来', '喝了一杯水'], answer: 1, kind: 'order', sentence: 3 },
     { q: '哪一个题目最好？', choices: ['一大杯水', '老师的球', '下雨天', '球场上的我们'], answer: 3, kind: 'main', sentences: [0, 1] },
     { q: '同学们什么时候去球场？', choices: ['上课时', '下课后', '放学后', '打球时'], answer: 1, kind: 'fact', sentence: 0 },
-    { q: '有的同学打球，有的同学怎么样？', choices: ['跑来跑去', '喝了一大杯水', '在上课', '都坐下来'], answer: 0, kind: 'fact', sentence: 1 },
+    { q: '有的同学打球，有的同学怎么样？', choices: ['跑来跑去', '喝了一大杯水', '在上课', '跑去喝水'], answer: 0, kind: 'fact', sentence: 1 },
   ],
   p14: [
     { q: '我在车上为什么站着？', choices: ['没有位子坐', '我想站着', '车很小', '我不想坐'], answer: 0, kind: 'why', sentences: [1, 2] },
     { q: '“天天”是什么意思？', choices: ['有一天', '星期天', '今天早上', '每一天'], answer: 3, kind: 'word', sentence: 1 },
     { q: '下了车以后，我看见了什么？', choices: ['同学在门口等我', '车上人很多', '我站在车上', '我坐下了'], answer: 0, kind: 'order', sentence: 3 },
-    { q: '这个故事主要说什么？', choices: ['同学的家', '学校的花', '我每天怎样上学', '学校的朋友'], answer: 2, kind: 'main', sentences: [1, 3] },
+    { q: '这个故事主要说什么？', choices: ['同学的家', '学校的花', '上学的路上', '学校的朋友'], answer: 2, kind: 'main', sentences: [1, 3] },
     { q: '我怎么去学校？', choices: ['走路去', '坐汽车', '骑车去', '坐飞机'], answer: 1, kind: 'fact', sentence: 1 },
     { q: '我家离学校怎么样？', choices: ['不远', '非常远', '一点也不远', '就在门口'], answer: 1, kind: 'fact', sentence: 0 },
   ],
@@ -139,7 +139,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '小马天天在哪里跑？', choices: ['家外面', '家里面', '马路上', '很远的山上'], answer: 0, kind: 'fact', sentence: 0 },
   ],
   p18: [
-    { q: '人们为什么都很冷？', choices: ['太阳出来了', '有很大的风', '天热了', '人们在笑'], answer: 1, kind: 'why', sentences: [0, 1] },
+    { q: '人们为什么都很冷？', choices: ['太阳出来了', '有很大的风', '天黑了', '人们都在家'], answer: 1, kind: 'why', sentences: [0, 1] },
     { q: '“了不起”是什么意思？', choices: ['非常好', '起不来', '不能吹', '很高兴'], answer: 0, kind: 'word', sentence: 3 },
     { q: '太阳出来了，接着怎么了？', choices: ['人们都很冷', '天热了', '天黑了', '风停了'], answer: 1, kind: 'order', sentence: 2 },
     { q: '这个故事主要说什么？', choices: ['风的家', '太阳下山了', '下雨天', '谁更有力气'], answer: 3, kind: 'main', sentences: [0, 3] },
@@ -163,7 +163,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我们班有什么？', choices: ['二十个同学', '三十个同学', '四十个同学', '很多树和花'], answer: 1, kind: 'fact', sentence: 2 },
   ],
   p21: [
-    { q: '我为什么喜欢新老师？', choices: ['她对我们很好', '她说话很大声', '她找到座位', '她的班很大'], answer: 0, kind: 'why', sentences: [2, 3] },
+    { q: '我为什么喜欢新老师？', choices: ['她对我们很好', '她说话很大声', '她找到座位', '她教我们画画'], answer: 0, kind: 'why', sentences: [2, 3] },
     { q: '“温和”是什么意思？', choices: ['很大声', '说话轻又好听', '个子很大', '一起去玩'], answer: 1, kind: 'word', sentence: 2 },
     { q: '第一天，老师帮我们找座位，然后做什么？', choices: ['下课回家', '开始新学年', '教我们读课文', '教我们画画'], answer: 2, kind: 'order', sentence: 3 },
     { q: '这个故事主要说什么？', choices: ['新的操场', '新的书包', '老师的家', '二年级第一天'], answer: 3, kind: 'main', sentences: [0, 3] },
@@ -188,7 +188,7 @@ export const Q_P01_P25: QuestionBatch = {
   ],
   p24: [
     { q: '我为什么说公园的颜色真多？', choices: ['只有绿色', '爸爸有很多笔', '天快黑了', '蓝绿红黄都有'], answer: 3, kind: 'why', sentences: [1, 3] },
-    { q: '“颜色”是什么意思？', choices: ['红黄蓝这些', '一棵大树', '画画的笔', '一只小狗'], answer: 0, kind: 'word', sentence: 1 },
+    { q: '“跑来跑去”是什么意思？', choices: ['这边跑，那边跑', '跑得很快', '跑回家里', '停下来不跑'], answer: 0, kind: 'word', sentence: 4 },
     { q: '下面哪件事最先发生？', choices: ['拿出彩色笔', '去公园画画', '画小狗', '看红花'], answer: 1, kind: 'order', sentence: 0 },
     { q: '这个故事主要说什么？', choices: ['我的小狗', '天上的鸟', '画出美丽的公园', '爸爸的笔'], answer: 2, kind: 'main', sentences: [1, 6] },
     { q: '草地上的小狗什么样？', choices: ['白白的', '黑黑的', '黄黄的', '绿绿的'], answer: 0, kind: 'fact', sentence: 4 },

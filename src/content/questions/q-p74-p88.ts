@@ -46,7 +46,7 @@ export const Q_P74_P88: QuestionBatch = {
     { q: '奶奶为什么一边走一边喘气？', choices: ['她在楼下等很久', '她提的东西太重', '她找不到家', '她跟我说话'], answer: 1, kind: 'why', sentences: [2, 4] },
     { q: '“走走停停”是什么意思？', choices: ['一直走不停', '走得很快', '走一会，停一会', '停下不走了'], answer: 2, kind: 'word', sentence: 4 },
     { q: '哪一件事最先发生？', choices: ['看见电梯门上的纸', '奶奶说谢谢你', '我们走走停停', '奶奶笑了起来'], answer: 0, kind: 'order', sentence: 0 },
-    { q: '哪一个题目最好？', choices: ['邻居奶奶买菜', '我家住在八楼', '修理电梯的叔叔', '楼梯上的小帮手'], answer: 3, kind: 'main', sentences: [2, 3] },
+    { q: '哪一个题目最好？', choices: ['邻居奶奶买菜', '我家住在八楼', '奶奶的新组屋', '楼梯上的小帮手'], answer: 3, kind: 'main', sentences: [2, 3] },
     { q: '我走到什么地方时看见了邻居奶奶？', choices: ['八楼', '三楼', '一楼', '楼下'], answer: 1, kind: 'fact', sentence: 2 },
     { q: '我为什么只好自己走上去？', choices: ['电梯里人太多了', '妈妈叫我走楼梯', '电梯不能用了', '我想快点到家'], answer: 2, kind: 'why', sentences: [0, 1] },
   ],
