@@ -48,7 +48,7 @@ import { builtinIdiom, chengyuOf, idiomsFor } from '../../src/content/chengyu';
 import { idiomFitItem, idiomGap, idiomZuju } from '../../src/practice/idioms';
 import { builtinWords, PASSAGES } from '../../src/content';
 import { LangduStep, type LangduPart } from '../../src/activities/langdu/LangduStep';
-import { askedOf, LONGEST_OWN, questionsOf } from './langdu';
+import { askedOf, longestBack, LONGEST_OWN, questionsOf } from './langdu';
 import { ladderWords } from '../../src/content/ladder';
 import { questionMeaning } from '../../src/content/glossary';
 import { mulberry32 } from '../../src/lib/random';
@@ -439,8 +439,18 @@ else if (which?.startsWith('langdu-gsb-') || which === 'langdu-words-listen') {
     </PinyinFade>,
   ), app);
 }
+else if (which === 'langdu-back') {
+  // a missed why or main question (spec 2026-10-24 §5, §9): four choices, then its two supporting sentences read back in the
+  // sheet — the longest such question in the library, in stored order
+  const back = longestBack()!;
+  render(screen(
+    <PinyinFade known={new Set()} on>
+      <LangduStep passage={{ ...back.passage, asked: [back.question] }} rng={() => 0.999} oral={{ name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' }} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" onDone={() => {}} />
+    </PinyinFade>,
+  ), app);
+}
 else if (which?.startsWith('langdu-')) {
-  // 朗读's parts (spec 2026-10-12 §3, §8): the longest of our passages with every syllable showing (nothing known), each part
+  // 朗读's parts (spec 2026-10-12 §3, §8; 2026-10-24 §9: up to 140 characters): the longest of our passages with every syllable showing (nothing known), each part
   // opened directly; stage-cases.ts misses the question. In listen, the first sentence lights as its voice starts.
   const p = LONGEST_OWN;
   const part = (which === 'langdu-read-blocked' ? 'read' : which.slice('langdu-'.length)) as LangduPart;

@@ -634,7 +634,7 @@ body { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www
 .zika__char { font-size: 52px; line-height: 1.05; }
 .zika__py { font-size: 15px; font-style: italic; color: var(--ink-soft); }
 .zika__word { display: flex; justify-content: center; }
-.zika__word .label__cell--zh { min-width: 0; }
+.zika__word .label__cell--zh { min-width: 1em; }
 .zika__word .label__cells { flex-wrap: nowrap; }
 .zika__word .label__py { font-family: var(--font); font-size: min(15px, 0.45em); font-weight: 400; font-style: italic; opacity: 1; color: var(--ink-soft); min-height: 0; padding: 0 0.15em 2px; }
 .zika__foot { display: flex; gap: 6px; font-size: 14px; }
@@ -1362,6 +1362,12 @@ button.langdu__sentence { cursor: pointer; }
 .langdu__choices .choice .label__cells { flex-wrap: wrap; justify-content: center; }
 .langdu__back { font-size: clamp(14px, 2dvh, 18px); font-weight: 700; }
 .sheet .langdu__back .label__cells { flex-wrap: wrap; justify-content: flex-start; }
+@media (max-width: 599px) { /* a phone: the two sentences are long beside 完成, so a smaller face and more of the screen than other explanations get (stage case langdu-back) */
+  .stage__sheet .sheet__detail:has(.langdu__back) { max-height: 40dvh; }
+  .sheet .langdu__back { font-size: 13px; gap: 0; }
+  .sheet .langdu__back .label__cell--zh { min-width: 1em; }
+  .sheet .langdu__back .label__py { font-size: 9px; min-height: 1em; padding: 0 1px; }
+}
 /* on every phone this keeps the count and hides 想一想; the (max-height: 699px) block below hides the whole line on a small phone */
 @media (max-width: 599px) { /* a phone: the count without 想一想 (Truffle's bubble says it), a smaller question */
   .langdu__step:has(+ .langdu__q) > :not(.langdu__count) { display: none; }
@@ -1833,7 +1839,7 @@ button.langdu__sentence { cursor: pointer; }
 .intro__word { display: flex; justify-content: center; } /* the Label is a flex item: no line box around it adding a strut of the big font above */
 .intro__word .label { line-height: 1.05; }
 .intro__word .label__cells { flex-wrap: nowrap; }
-.intro__word .label__cell--zh { min-width: 0; }
+.intro__word .label__cell--zh { min-width: 1em; }
 .intro__word .label__py { --rest: 1; font-family: var(--font); font-size: min(24px, 0.34em); font-weight: 800; color: var(--ink-soft); min-height: 0; line-height: 1.25; padding: 0 0.1em; animation: later-in 300ms ease-out 2s both; }
 .intro__word .label__cell--mark .label__ch { background: none; border-radius: 0; color: var(--orange-ink); } /* a bound pair's character, as BoundWord marks it */
 

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { bundleStagePage } from './stage-cases/bundle';
 import { textChecks } from './text-checks';
 import { serveStrokeData } from './stroke-route';
-import { askedOf, LONGEST_OWN } from './stage-cases/langdu';
+import { askedOf, longestBack, longestOwnChars, LONGEST_OWN } from './stage-cases/langdu';
 import { WORLDS } from '../src/fun/worlds';
 import { CHEST_COSTUMES } from '../src/fun/costumes';
 import { SHEET_CELL_HEIGHT, SHEET_COLUMNS, SHEET_PROBE } from './stage-cases/faceProbe';
@@ -51,6 +51,8 @@ const sheetScrolls = (page: import('playwright-core').Page, name: string) => pag
 
 const SIZES = [{ name: 'iphone-se', width: 375, height: 667 }, { name: 'iphone-safari', width: 390, height: 664 }, { name: 'iphone-15', width: 390, height: 844 }, { name: 'ipad-landscape', width: 1024, height: 768 }, { name: 'ipad-portrait', width: 768, height: 1024 }];
 const problems: string[] = [];
+// 朗读 on Read with a 140-character passage (spec 2026-10-24 §9): the stretch passages are what make it that long
+if (longestOwnChars() < 130) problems.push(`langdu: the longest passage has ${longestOwnChars()} characters, under the 130 the stretch passages bring`);
 const launched = await launchWebKit();
 // every page answers stroke-data fetches from node_modules, not the CDN (scripts/stroke-route.ts)
 const browser = {
@@ -357,6 +359,23 @@ for (const size of SIZES) {
     await page.screenshot({ path: `fit-shots/stage-cases/langdu-meaning-wrong-${size.name}.png` });
     if (!(await page.$('.langdu__choices .choice.is-answer'))) problems.push(`${size.name} langdu-meaning: the miss does not show the right choice`);
     problems.push(...(await cardClipped(page, `${size.name} langdu-meaning wrong`)), ...(await sheetFits(page, `${size.name} langdu-meaning wrong`)));
+  }
+  {
+    // a missed why/main question (spec 2026-10-24 §9): four choices, the answer shown and its two sentences read back in the sheet
+    const back = longestBack();
+    if (!back) problems.push(`${size.name} langdu-back: no why or main question in the library yet`);
+    else {
+      await page.goto(`file://${dir}/index.html?case=langdu-back`);
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `fit-shots/stage-cases/langdu-back-${size.name}.png` });
+      if ((await page.$$('.langdu__choices .choice')).length !== 4) problems.push(`${size.name} langdu-back: not four choices`);
+      problems.push(...(await cardClipped(page, `${size.name} langdu-back`)));
+      await page.click(`.langdu__choices .choice >> nth=${back.question.answer === 0 ? 1 : 0}`); // a wrong choice
+      await page.waitForTimeout(1600);
+      await page.screenshot({ path: `fit-shots/stage-cases/langdu-back-wrong-${size.name}.png` });
+      if ((await page.$$('.langdu__back p')).length !== 2) problems.push(`${size.name} langdu-back: the miss does not read back two sentences`);
+      problems.push(...(await cardClipped(page, `${size.name} langdu-back wrong`)), ...(await sheetFits(page, `${size.name} langdu-back wrong`)), ...(await sheetScrolls(page, `${size.name} langdu-back wrong`)));
+    }
   }
   await page.goto(`file://${dir}/index.html?case=build`);
   for (let i = 0; i < 6 && (await page.$('.build__bank .choice')); i++) await page.click('.build__bank .choice');

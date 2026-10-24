@@ -3,7 +3,8 @@
 import { PASSAGES } from '../../src/content';
 import { PASSAGE_QUESTIONS } from '../../src/content/passageQuestions';
 import { questionSet } from '../../src/langdu/questions';
-import type { AskedQuestion, Passage } from '../../src/types';
+import { splitSentences } from '../../src/langdu/sentences';
+import type { AskedQuestion, Passage, PassageQuestion } from '../../src/types';
 
 const han = (s: string) => Array.from(s).filter((c) => /\p{Script=Han}/u.test(c)).length;
 
@@ -18,4 +19,14 @@ export const questionsOf = (id: string): readonly AskedQuestion[] => PASSAGE_QUE
 export function askedOf(id: string): AskedQuestion[] {
   const qs = questionsOf(id);
   return questionSet(qs, undefined, 0).map((i) => qs[i]!);
+}
+
+/** The why or main question whose two read-back sentences and four choices are the longest in the library, with its passage. */
+export function longestBack(): { passage: Passage; question: PassageQuestion } | null {
+  const size = (p: Passage, q: PassageQuestion) => {
+    const s = splitSentences(p.text);
+    return (q.sentences ?? []).reduce((n, i) => n + han(s[i] ?? ''), 0) + han(q.choices.join(''));
+  };
+  const all = PASSAGES.flatMap((p) => (PASSAGE_QUESTIONS[p.id] ?? []).filter((q) => q.sentences).map((question) => ({ passage: p, question })));
+  return all.sort((a, b) => size(b.passage, b.question) - size(a.passage, a.question) || a.passage.id.localeCompare(b.passage.id))[0] ?? null;
 }
