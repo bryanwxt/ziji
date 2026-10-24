@@ -63,7 +63,7 @@ export const Q_P26_P50: QuestionBatch = {
     { q: '“加油”在这里是什么意思？', choices: ['为跑的人打气', '给车加油', '在旁边吃饭', '跑第一个'], answer: 0, kind: 'word', sentence: 3 },
     { q: '下面哪件事最先发生？', choices: ['我第一个跑', '同学们大叫加油', '黄队跑得很快', '大家都很高兴'], answer: 0, kind: 'order', sentence: 2 },
     { q: '这个故事主要说什么？', choices: ['黄队的同学', '蓝色的队', '我们的红衣服', '跑步的一天'], answer: 3, kind: 'main', sentences: [0, 6] },
-    { q: '谁得了第一？', choices: ['红队', '黄队', '蓝队', '我'], answer: 2, kind: 'fact', sentence: 5 },
+    { q: '哪一组得了第一？', choices: ['红队', '黄队', '蓝队', '绿队'], answer: 2, kind: 'fact', sentence: 5 },
     { q: '黄队得了什么？', choices: ['第一', '第二', '第三', '第四'], answer: 1, kind: 'fact', sentence: 4 },
   ],
   p34: [
@@ -80,7 +80,7 @@ export const Q_P26_P50: QuestionBatch = {
     { q: '老鹰飞上了天，接着发生了什么？', choices: ['我跟爸爸去公园', '小朋友都跑过来看', '风大起来了', '爸爸买风筝'], answer: 1, kind: 'order', sentence: 3 },
     { q: '哪一个题目最好？', choices: ['公园里的人', '爸爸的星期天', '高高飞起的风筝', '一群小鸟'], answer: 2, kind: 'main', sentences: [2, 4] },
     { q: '我跟谁去公园？', choices: ['爸爸', '小朋友', '一群人', '大家'], answer: 0, kind: 'fact', sentence: 0 },
-    { q: '我的风筝是什么样的？', choices: ['一群人', '一只小鸟', '一个小朋友', '一只老鹰'], answer: 3, kind: 'fact', sentence: 1 },
+    { q: '我们什么时候去放风筝？', choices: ['星期六', '星期一', '星期五', '星期日'], answer: 3, kind: 'fact', sentence: 0 },
   ],
   p36: [
     { q: '船为什么很快就搭好了？', choices: ['盒子里的积木很少', '妈妈也来帮我们', '这条船很小很小', '小文和我一人做一半'], answer: 3, kind: 'why', sentences: [1, 2] },
@@ -88,7 +88,7 @@ export const Q_P26_P50: QuestionBatch = {
     { q: '下面哪件事最后发生？', choices: ['小文说要搭船', '我们打开积木', '我画了两个小朋友', '妈妈笑着说话'], answer: 3, kind: 'order', sentence: 5 },
     { q: '这个故事主要说什么？', choices: ['妈妈开船去大海', '纸上的小朋友', '和小文一起做玩具船', '一大盒新积木'], answer: 2, kind: 'main', sentences: [0, 2] },
     { q: '我用什么画了两个小朋友？', choices: ['积木', '纸', '盒子', '船头'], answer: 1, kind: 'fact', sentence: 4 },
-    { q: '我搭的是哪一边？', choices: ['船头', '船尾', '船上的人', '一条大船'], answer: 1, kind: 'fact', sentence: 2 },
+    { q: '小文说船上还要有什么？', choices: ['积木', '人', '大海', '船尾'], answer: 1, kind: 'fact', sentence: 3 },
   ],
   p37: [
     { q: '奶奶为什么说这是最好的礼物？', choices: ['蛋糕又大又好吃', '妈妈做了好多菜', '大家一起唱歌', '是我自己做的卡'], answer: 3, kind: 'why', sentences: [1, 4] },
@@ -139,7 +139,7 @@ export const Q_P26_P50: QuestionBatch = {
     { q: '我最喜欢吃什么？', choices: ['烤鸡翅', '香肠', '饮料', '鸡蛋'], answer: 1, kind: 'fact', sentence: 5 },
   ],
   p43: [
-    { q: '这一天，我们为什么玩得很开心？', choices: ['爸爸买了新车', '捡了贝壳，又去游泳', '哥哥送我贝壳', '妈妈给我们做饭'], answer: 1, kind: 'why', sentences: [2, 4] },
+    { q: '这一天，我们为什么玩得很开心？', choices: ['爸爸买了新车', '海边有很多有趣的事', '哥哥送我贝壳', '妈妈给我们做饭'], answer: 1, kind: 'why', sentences: [2, 4] },
     { q: '“光着脚”是什么意思？', choices: ['没有穿鞋子', '脚上很亮', '在沙上跑', '脚很大'], answer: 0, kind: 'word', sentence: 2 },
     { q: '捡完贝壳以后，爸爸带我们做什么？', choices: ['去东海岸公园', '在沙上走', '去海里游泳', '开车去买东西'], answer: 2, kind: 'order', sentence: 4 },
     { q: '哪一个题目最好？', choices: ['爸爸的车', '粉红色的贝壳', '送给哥哥的东西', '海边的一天'], answer: 3, kind: 'main', sentences: [1, 4] },
@@ -171,17 +171,17 @@ export const Q_P26_P50: QuestionBatch = {
     { q: '大家什么时候笑起来？', choices: ['妈妈买票', '它一说话', '妹妹说话', '电影院黑了'], answer: 1, kind: 'fact', sentence: 3 },
   ],
   p47: [
-    { q: '妹妹为什么叫哥哥快来看？', choices: ['窗前有小鸟', '下大雨了', '妈妈来了', '天上出现了彩虹'], answer: 3, kind: 'why', sentences: [1, 2] },
+    { q: '窗上为什么满是小水滴？', choices: ['太阳出来了', '妹妹跑到窗前', '天上有小星星', '下过一场大雨'], answer: 3, kind: 'why', sentences: [0, 3] },
     { q: '“亮晶晶”是什么意思？', choices: ['一闪一闪的', '小小的', '红红的', '紫紫的'], answer: 0, kind: 'word', sentence: 3 },
     { q: '下面哪件事最先发生？', choices: ['妈妈走过来了', '大雨停了', '妹妹跑到窗前', '我想走上桥'], answer: 1, kind: 'order', sentence: 0 },
-    { q: '这个故事主要说什么？', choices: ['雨后看到美丽的彩虹', '窗上的小水滴', '天上的小星星', '走上一座大桥'], answer: 0, kind: 'main', sentences: [0, 2] },
+    { q: '这个故事主要说什么？', choices: ['看见美丽的彩虹', '窗上的小水滴', '天上的小星星', '走上一座大桥'], answer: 0, kind: 'main', sentences: [0, 2] },
     { q: '妈妈说彩虹像什么？', choices: ['小星星', '小水滴', '一座桥', '太阳'], answer: 2, kind: 'fact', sentence: 4 },
-    { q: '窗上有什么？', choices: ['一座桥', '太阳', '小水滴', '红红的花'], answer: 2, kind: 'fact', sentence: 3 },
+    { q: '妹妹跑到哪里？', choices: ['天上', '窗前', '桥上', '妈妈身边'], answer: 1, kind: 'fact', sentence: 1 },
   ],
   p48: [
-    { q: '我为什么会梦见自己在小岛上飞？', choices: ['野猪追我们', '那天玩得真开心', '我想坐飞机', '巴士开得太快'], answer: 1, kind: 'why', sentences: [2, 4] },
+    { q: '我为什么会梦见自己在小岛上飞？', choices: ['野猪追我们', '白天听到很多鸟叫', '我想坐飞机', '巴士开得太快'], answer: 1, kind: 'why', sentences: [1, 4] },
     { q: '“欢迎”是什么意思？', choices: ['高兴地迎接', '大声地叫', '飞来飞去', '在树上吃草'], answer: 0, kind: 'word', sentence: 1 },
-    { q: '我们坐巴士到海边以后，再坐什么？', choices: ['巴士', '脚踏车', '小船', '飞机'], answer: 2, kind: 'order', sentence: 0 },
+    { q: '我们坐巴士到海边以后，再坐什么？', choices: ['汽车', '脚踏车', '小船', '飞机'], answer: 2, kind: 'order', sentence: 0 },
     { q: '哪一个题目最好？', choices: ['野猪吃草', '我的巴士', '借脚踏车', '小岛一日游'], answer: 3, kind: 'main', sentences: [0, 2] },
     { q: '岛上的树上有什么？', choices: ['野猪', '小鸟', '小船', '大鱼'], answer: 1, kind: 'fact', sentence: 1 },
     { q: '野猪在路边做什么？', choices: ['吃草', '飞来飞去', '在树上叫', '骑脚踏车'], answer: 0, kind: 'fact', sentence: 3 },
@@ -197,7 +197,7 @@ export const Q_P26_P50: QuestionBatch = {
   p50: [
     { q: '大家为什么说植物园真好玩？', choices: ['花园很小', '看了很多花和树', '老师给了礼物', '河里有很多鱼'], answer: 1, kind: 'why', sentences: [2, 4] },
     { q: '“整整齐齐”是什么意思？', choices: ['一排一排很好看', '花开得很多很多', '很大很大的花', '长得很粗的树'], answer: 0, kind: 'word', sentence: 2 },
-    { q: '看完花以后，我们去看什么？', choices: ['花园', '小河', '大树', '午饭'], answer: 2, kind: 'order', sentence: 3 },
+    { q: '看完花以后，我们去看什么？', choices: ['花园', '小河', '大树', '紫色的花'], answer: 2, kind: 'order', sentence: 3 },
     { q: '这个故事主要说什么？', choices: ['老师的花园', '一棵很粗的树', '小河里的鱼', '植物园里的一天'], answer: 3, kind: 'main', sentences: [0, 5] },
     { q: '花园里的花是什么颜色的？', choices: ['红的和紫的', '红的和绿的', '紫的和白的', '黄的和紫的'], answer: 0, kind: 'fact', sentence: 2 },
     { q: '我们最后在哪里吃午饭？', choices: ['花园', '小河边', '大树下', '植物园门口'], answer: 1, kind: 'fact', sentence: 5 },
