@@ -335,7 +335,7 @@ for (const size of SIZES) {
       if (!box || Math.min(box.width, box.height) < 43.5) problems.push(`${size.name} ${c}: 下一篇 under 44px (${box ? `${Math.round(box.width)}×${Math.round(box.height)}` : 'missing'})`);
       // the passage keeps room to read: at least three lines of it show (spec 2026-10-15 Ruling: in the card, picture + 下一篇 squeezed it to nothing)
       const room = await page.evaluate(() => { const p = document.querySelector('.langdu__passage'); const line = p?.querySelector('.langdu__sentence .label__cell')?.getBoundingClientRect().height ?? 0; return p && line ? p.getBoundingClientRect().height / line : 0; });
-      if (room < 2.5) problems.push(`${size.name} ${c}: the passage shows ${room.toFixed(1)} lines`);
+      if (process.env.DEBUG_CASES) console.log(`room ${size.name} ${c} ${room.toFixed(2)}`); if (room < 2.5) problems.push(`${size.name} ${c}: the passage shows ${room.toFixed(1)} lines`);
     }
     if (c === 'langdu-gsb-listen' && !(await page.$('.langdu__credit summary'))) problems.push(`${size.name} ${c}: no credit line`);
     if (c === 'langdu-words-listen' && !(await page.$('.langdu__words li'))) problems.push(`${size.name} ${c}: no 生词 strip`);

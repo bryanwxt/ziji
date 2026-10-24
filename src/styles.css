@@ -2025,3 +2025,4 @@ button.langdu__sentence { cursor: pointer; }
 .try-this__head { flex-basis: 100%; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
 .try-this__text { flex: 1 1 18em; min-width: 0; font-size: 17px; font-weight: 700; }
 .week-summary__newly { display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 599px) and (max-height: 699px) { .langdu__purpose { font-size: 14px; line-height: 1.25; padding: 0 10px 2px; } .langdu__purpose > :last-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; } } /* a short phone (SE): a long why-question takes at most two small lines, so the passage keeps its room */
