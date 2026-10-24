@@ -53,7 +53,7 @@ export const Q_P74_P88: QuestionBatch = {
   p80: [
     { q: '中秋节的晚上为什么特别美？', choices: ['大人们都去买月饼', '有圆月亮，也有灯笼', '亲人都来送月饼', '组屋楼下有很多人'], answer: 1, kind: 'why', sentences: [1, 4] },
     { q: '“亲人”是什么意思？', choices: ['新朋友', '卖月饼的人', '家里的人', '楼下的人'], answer: 2, kind: 'word', sentence: 2 },
-    { q: '中秋节快到时，买了月饼还会做什么？', choices: ['送给亲人和朋友', '把月饼放进冰箱', '自己做一个灯笼', '拿到楼下卖掉'], answer: 0, kind: 'order', sentence: 2 },
+    { q: '短文说完大人们送礼，接着说什么？', choices: ['月饼的样子', '小朋友去玩', '中秋节的日子', '大家看月亮'], answer: 0, kind: 'order', sentence: 3 },
     { q: '哪一个题目最好？', choices: ['中秋节怎样做月饼', '中秋节的组屋', '大人们的朋友', '热闹开心的中秋节'], answer: 3, kind: 'main', sentences: [2, 5] },
     { q: '中秋节是农历什么时候？', choices: ['八月一日', '五月十八日', '八月十五日', '十月五日'], answer: 2, kind: 'fact', sentence: 0 },
     { q: '“走来走去”是什么意思？', choices: ['走回家去', '到处走', '走得很远', '一直不走'], answer: 1, kind: 'word', sentence: 4 },
@@ -88,12 +88,12 @@ export const Q_P74_P88: QuestionBatch = {
     { q: '“面前”是什么意思？', choices: ['后面', '前面', '里面', '上面'], answer: 1, kind: 'word', sentence: 4 },
     { q: '哪一个题目最好？', choices: ['我的华文作业本', '老师很爱生气', '说真话的孩子', '弟弟和我的书桌'], answer: 2, kind: 'main', sentences: [3, 4] },
     { q: '老师叫我什么时候带来？', choices: ['昨天', '早上', '晚上', '明天'], answer: 3, kind: 'fact', sentence: 5 },
-    { q: '我走到老师面前以后，老师怎么样？', choices: ['很生气地骂我', '叫弟弟过来', '叫我写作业', '一点也不生气'], answer: 3, kind: 'order', sentence: 5 },
+    { q: '我把真话告诉老师以后，接着发生什么事？', choices: ['她骂了我', '她叫来弟弟', '她看我的书包', '她说了谢谢'], answer: 3, kind: 'order', sentence: 5 },
   ],
   p85: [
     { q: '下大雨了，蚂蚁们为什么一点也不怕？', choices: ['雨下得很小', '它们已经搬到高处', '乌云都走开了', '它们不想搬家'], answer: 1, kind: 'why', sentences: [1, 5] },
     { q: '“出力”是什么意思？', choices: ['走出家门', '出来玩', '用上力气', '力气变小'], answer: 2, kind: 'word', sentence: 2 },
-    { q: '蚂蚁们搬家时，最先运走的是什么？', choices: ['小宝宝', '吃的东西', '长长的树枝', '干干的树叶'], answer: 0, kind: 'order', sentence: 3 },
+    { q: '蚂蚁们搬家时，最先搬出来的是什么？', choices: ['小宝宝', '吃的东西', '长长的树枝', '干干的树叶'], answer: 0, kind: 'order', sentence: 3 },
     { q: '哪一个题目最好？', choices: ['老蚂蚁爱说话', '小身体也能做大事', '蚂蚁宝宝怕下雨', '乌云和大雨'], answer: 1, kind: 'main', sentences: [2, 3] },
     { q: '小蚂蚁们看见了什么，就知道要下雨？', choices: ['新家很干', '树洞里有水', '排着长队', '乌云越来越多'], answer: 3, kind: 'fact', sentence: 0 },
     { q: '谁说要赶快搬家？', choices: ['小蚂蚁', '蚂蚁宝宝', '老蚂蚁', '大家'], answer: 2, kind: 'fact', sentence: 1 },
@@ -104,7 +104,7 @@ export const Q_P74_P88: QuestionBatch = {
     { q: '我把小球丢进水盆以后，接着做什么？', choices: ['拿出水盆', '在水盆里放水', '在旁边拍手叫它', '给豆豆买小球'], answer: 2, kind: 'order', sentence: 3 },
     { q: '这个故事主要说什么？', choices: ['豆豆最爱玩小球', '豆豆的大尾巴', '给豆豆买新床', '我想办法帮豆豆洗澡'], answer: 3, kind: 'main', sentences: [2, 6] },
     { q: '豆豆不想洗澡，会躲到哪里？', choices: ['水盆里', '我家门口', '沙发底下', '床底下'], answer: 2, kind: 'fact', sentence: 1 },
-    { q: '我给豆豆身上擦了什么？', choices: ['香皂', '清水', '尾巴', '小毛巾'], answer: 0, kind: 'fact', sentence: 5 },
+    { q: '我给豆豆身上擦了什么？', choices: ['香皂', '热水', '水', '小毛巾'], answer: 0, kind: 'fact', sentence: 5 },
   ],
   p87: [
     { q: '为什么不要站在大树下面？', choices: ['会被雨淋湿', '会被闪电打到', '树上有很多虫', '听不到雷声'], answer: 1, kind: 'why', sentences: [3, 4] },

@@ -70,4 +70,6 @@ customPinyin({
   慌得: 'huāng de', 洗得: 'xǐ de', 开心地: 'kāi xīn de', 静静地: 'jìng jìng de', 大声地: 'dà shēng de', 得意地: 'dé yì de',
   难过地: 'nán guò de', 平平安安地: 'píng píng ān ān de', 数了又数: 'shǔ le yòu shǔ', 等一等: 'děng yi děng', 爸爸说: 'bà ba shuō',
   一块一块: 'yí kuài yí kuài',
+  // Task 13's review: 切 + 鸡 qiē, 巴刹 (pasar) bā shā in Singapore usage, 得 after 打扫 and 笑 de
+  切鸡: 'qiē jī', 巴刹: 'bā shā', 打扫得: 'dǎ sǎo de', 笑得: 'xiào de',
 });
