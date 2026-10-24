@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PASSAGES } from '../content';
-import { passageFit, passageTerm, readerAt, stripNames, termIndex, withinReach } from './level';
+import { passageFit, passageTerm, readerAt, stripNames, termIndex, termReadable, withinReach } from './level';
 
 describe('passageFit (spec 2026-10-15 §3)', () => {
   it('the share of character tokens he can read, punctuation ignored', () => {
@@ -46,5 +46,14 @@ describe("readerAt: what he can read (spec 2026-10-15 §3, K)", () => {
   });
   it('the pool reaches one term past his class at most', () => {
     expect([withinReach('三上', '二下'), withinReach('三下', '二下'), withinReach('三下', null)]).toEqual([true, false, true]);
+  });
+});
+
+describe('termReadable (spec 2026-10-24 §4: a reader who has finished a term)', () => {
+  it("his book's 识读字 through the term; nothing for an unknown term", () => {
+    expect(termReadable('二上').has('筝')).toBe(false); // 筝 is first read in 二下
+    expect(termReadable('二下').has('筝')).toBe(true);
+    expect(termReadable('二下').has('我')).toBe(true);
+    expect(termReadable('x').size).toBe(0);
   });
 });

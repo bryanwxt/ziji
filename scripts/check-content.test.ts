@@ -5,9 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { BUILTIN, PASSAGES } from '../src/content';
 import moe from '../src/content/moe2024.json';
 import { LEGACY_QUESTIONS, PASSAGE_QUESTIONS, QUESTION_BATCHES } from '../src/content/passageQuestions';
+import { passageFit, termReadable } from '../src/langdu/level';
 import type { Passage, PassageQuestion } from '../src/types';
 import { TALK_ALLOWED, TALK_PATTERNS, TALK_PROMPTS, TALK_THEMES } from '../src/content/talkPrompts';
-import { checkContent, checkOwnPassages, checkPassageQuestions, checkQuestionCoverage, checkTalkPrompts, p2Readable, questionProblems, topWord, wordProblems } from './check-content';
+import { checkContent, checkOwnPassages, checkPassageQuestions, checkQuestionCoverage, checkStretchPassages, checkTalkPrompts, linksIn, p2Readable, questionProblems, topWord, wordProblems } from './check-content';
 
 const dataDir = join(process.cwd(), 'node_modules', 'hanzi-writer-data');
 const hasStrokeFile = (ch: string) => existsSync(join(dataDir, `${ch}.json`));
@@ -146,6 +147,51 @@ describe('our passages (spec 2026-10-15 §2.2)', () => {
   it('no duplicate text, no two sentences opening alike', () => {
     expect(checkOwnPassages([p21, { ...p21, id: 'p22' }])).toContain('p22: the same text as p21');
     expect(checkOwnPassages([p49, { ...p33, id: 'p34', text: '今天早上，闹钟没有响，' + p33.text }])).toContain('p34: "今天早上，闹钟没有响，星期天，天气很好，我跟爸爸去公园放风筝。" opens like a sentence of p49');
+  });
+});
+
+describe('stretch passages (spec 2026-10-24 §4)', () => {
+  const built = new Set(BUILTIN.map((c) => c.char));
+  it('every one passes: term, length, sentences, linking patterns, fit at its term, 生词, built-in characters', () => {
+    expect(checkStretchPassages(PASSAGES, built)).toEqual([]);
+  });
+  // the plan's worked example 2 (2026-10-24 plan, Content rules): passes as written
+  const p74: Passage = {
+    id: 'p74', title: '在巴刹走散了', term: '二下', source: 'ziji',
+    text: '星期六早上，奶奶带我去巴刹买菜。巴刹里人很多，又热闹又拥挤。我一边走，一边看两旁的水果摊，走着走着，奶奶不在我身边了！我心里很慌张，差一点哭了出来。但是我想起妈妈说过：“如果找不到大人，就站着别走，等大人来找你。”所以我镇定下来，站在鱼摊旁边，没有乱跑。过了一会，奶奶果然找到了我。她摸摸我的头说：“你真聪明！”',
+    words: [{ text: '拥挤', gloss: 'crowded' }, { text: '慌张', gloss: 'flustered' }, { text: '镇定', gloss: 'calm' }],
+  };
+  const flags = (over: Partial<Passage>) => checkStretchPassages([{ ...p74, ...over }], built);
+  it('the worked example passes', () => {
+    expect(checkStretchPassages([p74], built)).toEqual([]);
+    expect(checkOwnPassages([p74])).toEqual([]);
+  });
+  it('its term is one of 二下 三上 三下', () => {
+    expect(flags({ term: '二上' })).toContain('p74: term 二上, expected one of 二下 三上 三下');
+  });
+  it('80–140 characters in 4–8 sentences', () => {
+    expect(flags({ text: '因为下雨，所以我在家。虽然很闷，但是我看书。' })).toEqual(expect.arrayContaining(['p74: 18 characters, expected 80–140', 'p74: 2 sentences, expected 4–8']));
+  });
+  it('at least two linking patterns, two-part ones within one sentence', () => {
+    expect(linksIn('因为下雨，所以我在家。虽然很闷。但是我看书。我先吃饭，然后洗澡。最后睡觉。')).toEqual(['因为…所以', '先…然后…最后']);
+    expect(linksIn('我一边走，一边唱。如果下雨，我就回家。不但好看，而且好吃。')).toEqual(['如果…就', '一边…一边', '不但…而且']);
+    expect(flags({ text: p74.text.replace('如果', '要是') })).toContain('p74: linking patterns 一边…一边, expected at least 2 of 因为…所以 虽然…但是 先…然后…最后 如果…就 一边…一边 不但…而且');
+  });
+  it('a fit of 0.80–0.95 for a reader who has finished its term', () => {
+    expect(passageFit(p74.text, termReadable('二下'))).toBeCloseTo(0.93, 2);
+    expect(flags({ text: p74.text.replace('又热闹又拥挤', '又热闹又好玩').replace('慌张', '害怕').replace('镇定下来', '不哭了') })).toContain('p74: fit 0.96 at 二下, expected 0.8–0.95');
+  });
+  it('1–4 生词, each in the passage, glossed, with a character new at its term', () => {
+    expect(flags({ words: [] })).toContain('p74: 0 生词, expected 1–4');
+    expect(flags({ words: [{ text: '星星', gloss: 'star' }] })).toEqual(expect.arrayContaining(['p74: 生词 星星 is not in the passage', 'p74: 生词 星星 has no character new at 二下']));
+    expect(flags({ words: [{ text: '拥挤', gloss: 'so many people that you cannot move' }] })).toContain('p74: 生词 拥挤 gloss "so many people that you cannot move": 7 words (at most 4)');
+  });
+  it('no 儿化, and every character a built-in one', () => {
+    expect(flags({ text: p74.text.replace('过了一会', '过了一会儿') })).toContain('p74: 儿化');
+    expect(checkStretchPassages([p74], new Set(Array.from('星期六')))).toEqual(expect.arrayContaining([expect.stringMatching(/^p74: .+ not built in$/)]));
+  });
+  it('the first 73 are not held to these rules', () => {
+    expect(checkStretchPassages(PASSAGES.filter((p) => Number(p.id.slice(1)) < 74), built)).toEqual([]);
   });
 });
 

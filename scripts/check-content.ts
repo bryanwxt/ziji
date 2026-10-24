@@ -5,7 +5,7 @@ import { glossProblems, kidGloss } from '../src/content/kidGloss';
 import { allowedChars } from '../src/content/understand';
 import { isChildWord } from '../src/content/wordGate';
 import { tiles } from '../src/content/zuju';
-import { passageTerm } from '../src/langdu/level';
+import { passageFit, passageTerm, termReadable } from '../src/langdu/level';
 import { splitSentences } from '../src/langdu/sentences';
 
 const HAN = /\p{Script=Han}/u;
@@ -249,7 +249,7 @@ export function checkOwnPassages(passages: Passage[]): string[] {
       if (other && other !== p.id) problems.push(`${p.id}: "${s}" opens like a sentence of ${other}`);
       openings.set(open, p.id);
     }
-    if (Number(p.id.slice(1)) < NEW_FROM) continue;
+    if (Number(p.id.slice(1)) < NEW_FROM || Number(p.id.slice(1)) >= STRETCH_FROM) continue; // p74 on: checkStretchPassages
     const chars = han(p.text);
     const n = splitSentences(p.text).length;
     if (chars.length < 50 || chars.length > 110) problems.push(`${p.id}: ${chars.length} characters, expected 50–110`);
@@ -279,6 +279,76 @@ export function checkOwnPassages(passages: Passage[]): string[] {
     }
   }
   return problems;
+}
+
+/** The stretch passages (spec 2026-10-24 §4): p74 on, 二下 15, 三上 25, 三下 20. */
+export const STRETCH_FROM = 74;
+export const STRETCH_TERMS: Readonly<Record<string, number>> = { 二下: 15, 三上: 25, 三下: 20 };
+export const STRETCH_LENGTH = [80, 140] as const;
+export const STRETCH_SENTENCES = [4, 8] as const;
+/** A stretch passage's fit for a reader who has finished its term (termReadable) lies in this window. */
+export const STRETCH_FIT = [0.8, 0.95] as const;
+/** The linking patterns (spec 2026-10-24 §4); a passage uses at least two different ones. */
+export const LINKS: readonly (readonly string[])[] = [['因为', '所以'], ['虽然', '但是'], ['先', '然后', '最后'], ['如果', '就'], ['一边', '一边'], ['不但', '而且']];
+export const MIN_LINKS = 2;
+
+/** The linking patterns a text uses, as 「因为…所以」: each part in order, a two-part pattern within one sentence; 先…然后…最后
+ *  may run across sentences. */
+export function linksIn(text: string): string[] {
+  const inOrder = (t: string, parts: readonly string[]) => {
+    let at = 0;
+    for (const part of parts) {
+      const i = t.indexOf(part, at);
+      if (i < 0) return false;
+      at = i + part.length;
+    }
+    return true;
+  };
+  return LINKS.filter((parts) => (parts.length > 2 ? inOrder(text, parts) : splitSentences(text).some((s) => inOrder(s, parts)))).map((parts) => parts.join('…'));
+}
+
+/**
+ * The stretch passages (spec 2026-10-24 §4), p74 on: at 二下, 三上 or 三下, levelling at it (checkOwnPassages); 80–140 characters
+ * in 4–8 sentences; at least two linking patterns; a fit of 0.80–0.95 for a reader who has finished its term; 1–4 生词, each in
+ * the passage with a kid gloss and a character a reader starting the term can't read; every character a built-in one (`built`).
+ * The word gate and duplicates are checkOwnPassages'.
+ */
+export function checkStretchPassages(passages: readonly Passage[], built: ReadonlySet<string>): string[] {
+  const problems: string[] = [];
+  for (const p of passages.filter((x) => x.source === 'ziji' && Number(x.id.slice(1)) >= STRETCH_FROM)) {
+    if (!(p.term in STRETCH_TERMS)) problems.push(`${p.id}: term ${p.term}, expected one of ${Object.keys(STRETCH_TERMS).join(' ')}`);
+    const chars = han(p.text);
+    const n = splitSentences(p.text).length;
+    if (chars.length < STRETCH_LENGTH[0] || chars.length > STRETCH_LENGTH[1]) problems.push(`${p.id}: ${chars.length} characters, expected ${STRETCH_LENGTH.join('–')}`);
+    if (n < STRETCH_SENTENCES[0] || n > STRETCH_SENTENCES[1]) problems.push(`${p.id}: ${n} sentences, expected ${STRETCH_SENTENCES.join('–')}`);
+    if (ERHUA.test(p.text)) problems.push(`${p.id}: 儿化`);
+    const links = linksIn(p.text);
+    if (links.length < MIN_LINKS) problems.push(`${p.id}: linking patterns ${links.join(' ') || 'none'}, expected at least ${MIN_LINKS} of ${LINKS.map((l) => l.join('…')).join(' ')}`);
+    const fit = passageFit(p.text, termReadable(p.term), p.names);
+    if (fit < STRETCH_FIT[0] || fit > STRETCH_FIT[1]) problems.push(`${p.id}: fit ${fit.toFixed(2)} at ${p.term}, expected ${STRETCH_FIT.join('–')}`);
+    const unbuilt = [...new Set(chars.filter((c) => !built.has(c)))];
+    if (unbuilt.length) problems.push(`${p.id}: ${unbuilt.join('')} not built in`);
+    const before = termReadable(MOE_TERMS[MOE_TERMS.indexOf(p.term) - 1] ?? '');
+    const words = p.words ?? [];
+    if (words.length < 1 || words.length > 4) problems.push(`${p.id}: ${words.length} 生词, expected 1–4`);
+    for (const w of words) {
+      if (!p.text.includes(w.text)) problems.push(`${p.id}: 生词 ${w.text} is not in the passage`);
+      if (!han(w.text).some((c) => !before.has(c))) problems.push(`${p.id}: 生词 ${w.text} has no character new at ${p.term}`);
+      for (const g of glossProblems(w.gloss)) problems.push(`${p.id}: 生词 ${w.text} gloss "${w.gloss}": ${g}`);
+      const known = kidGloss(w.text);
+      if (known !== undefined && known !== w.gloss) problems.push(`${p.id}: 生词 ${w.text} gloss "${w.gloss}" differs from its kid gloss "${known}"`);
+    }
+  }
+  return problems;
+}
+
+/** How many stretch passages each term has, against STRETCH_TERMS; [] when every term is full (the last content task). */
+export function stretchCounts(passages: readonly Passage[]): string[] {
+  const own = passages.filter((x) => x.source === 'ziji' && Number(x.id.slice(1)) >= STRETCH_FROM);
+  return Object.entries(STRETCH_TERMS).flatMap(([t, want]) => {
+    const n = own.filter((p) => p.term === t).length;
+    return n === want ? [] : [`${t}: ${n} stretch passages, expected ${want}`];
+  });
 }
 
 /** 儿化 the app never says (src/noErhua.test.ts): Singapore usage. */

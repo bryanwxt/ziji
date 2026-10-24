@@ -18,6 +18,10 @@ export function passageFit(text: string, readable: ReadonlySet<string>, names: r
 export const TERM_BAR = 0.9;
 const CUMULATIVE: ReadonlySet<string>[] = MOE_TERMS.map((t) => new Set(LESSONS.filter((l) => MOE_TERMS.indexOf(l.term) <= MOE_TERMS.indexOf(t)).flatMap((l) => Array.from(l.read))));
 
+/** What a reader who has finished `term` reads: his book's 识读字 through it (spec 2026-10-24 §4: a passage's fit at its own
+ *  term); an empty set for an unknown term. */
+export const termReadable = (term: string): ReadonlySet<string> => CUMULATIVE[MOE_TERMS.indexOf(term)] ?? new Set();
+
 /** A term's place in his book's order (一上 = 0); −1 for an unknown term. */
 export const termIndex = (term: string): number => MOE_TERMS.indexOf(term);
 
