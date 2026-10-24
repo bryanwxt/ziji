@@ -3,12 +3,12 @@ import type { QuestionBatch } from '../passageQuestions';
 
 export const Q_P01_P25: QuestionBatch = {
   p01: [
-    { q: '我说起家人，心里怎么样？', choices: ['怕爸爸', '想做医生', '觉得很幸福', '不喜欢妹妹'], answer: 2, kind: 'why', sentences: [0, 2] },
+    { q: '我为什么很爱我的家？', choices: ['怕爸爸', '想做医生', '觉得很幸福', '不喜欢妹妹'], answer: 2, kind: 'why', sentences: [0, 2] },
     { q: '“医生”是做什么的？', choices: ['给人看病', '教学生读书', '在家做饭', '照顾妹妹'], answer: 0, kind: 'word', sentence: 1 },
     { q: '我先说了家里有几个人，然后说了什么？', choices: ['哥哥几岁了', '爸爸妈妈的工作', '妹妹爱吃什么', '我家在哪里'], answer: 1, kind: 'order', sentence: 1 },
     { q: '哪一个题目最好？', choices: ['爸爸的医院', '妈妈的学校', '哥哥和妹妹', '一家五口'], answer: 3, kind: 'main', sentences: [0, 2] },
     { q: '谁是医生？', choices: ['妈妈', '爸爸', '哥哥', '妹妹'], answer: 1, kind: 'fact', sentence: 1 },
-    { q: '妈妈做什么工作？', choices: ['医生', '工人', '老师', '妹妹'], answer: 2, kind: 'fact', sentence: 1 },
+    { q: '妈妈做什么工作？', choices: ['医生', '爸爸', '老师', '学生'], answer: 2, kind: 'fact', sentence: 1 },
   ],
   p02: [
     { q: '妈妈为什么叫我快一点？', choices: ['早饭不好吃', '怕我去学校太晚', '车子坏了', '我还没洗手'], answer: 1, kind: 'why', sentences: [2, 3] },
@@ -16,7 +16,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我先洗手，然后做什么？', choices: ['吃早饭', '起床', '坐车', '洗脸'], answer: 0, kind: 'order', sentence: 1 },
     { q: '哪一个题目最好？', choices: ['妈妈的早饭', '学校的车', '上学前', '七点起床了'], answer: 2, kind: 'main', sentences: [0, 3] },
     { q: '我怎么去学校？', choices: ['妈妈带我走', '坐着车', '吃完早饭走', '跑着去'], answer: 1, kind: 'fact', sentence: 3 },
-    { q: '谁叫我快一点？', choices: ['妈妈', '我', '车', '学校'], answer: 0, kind: 'fact', sentence: 2 },
+    { q: '谁叫我快一点？', choices: ['我的妈妈', '我', '同学', '开车的人'], answer: 0, kind: 'fact', sentence: 2 },
   ],
   p03: [
     { q: '我们为什么不能去外面玩？', choices: ['弟弟病了', '那时在下雨', '要在家看书', '球场太远'], answer: 1, kind: 'why', sentences: [0, 1] },
@@ -24,7 +24,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '下午不下雨了，我们做了什么？', choices: ['去打球', '在家看书', '去外面听歌', '去买雨伞'], answer: 0, kind: 'order', sentence: 2 },
     { q: '哪一个题目最好？', choices: ['我的弟弟', '在家里听歌', '雨停了就去玩', '去球场'], answer: 2, kind: 'main', sentences: [1, 2] },
     { q: '天气怎么样？', choices: ['下午很热', '没有下雨', '天很蓝', '又阴又冷'], answer: 3, kind: 'fact', sentence: 0 },
-    { q: '谁和我在家里看书？', choices: ['弟弟', '我们', '球场', '外面'], answer: 0, kind: 'fact', sentence: 1 },
+    { q: '谁和我在家里看书？', choices: ['我的弟弟', '外面的同学', '在家的妈妈', '打球的人'], answer: 0, kind: 'fact', sentence: 1 },
   ],
   p04: [
     { q: '我为什么喜欢跟小明做朋友？', choices: ['他八岁了', '他在别的班', '他爱笑又爱帮人', '他会做作业'], answer: 2, kind: 'why', sentences: [2, 3] },
@@ -32,7 +32,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我先说小明几岁，然后说了什么？', choices: ['他叫小明', '我们一起玩', '他的好朋友', '他喜欢笑和帮人'], answer: 3, kind: 'order', sentence: 2 },
     { q: '哪一个题目最好？', choices: ['小明这个人', '八岁的我', '一起做作业', '我的班'], answer: 0, kind: 'main', sentences: [0, 2] },
     { q: '谁很喜欢帮别人？', choices: ['我', '小明', '我们', '别人'], answer: 1, kind: 'fact', sentence: 2 },
-    { q: '小明是什么人？', choices: ['一个班', '别人', '八岁', '我的好朋友'], answer: 3, kind: 'fact', sentence: 0 },
+    { q: '小明是什么人？', choices: ['别人', '一个班', '爱笑的小狗', '好朋友'], answer: 3, kind: 'fact', sentence: 0 },
   ],
   p05: [
     { q: '我今天为什么很高兴？', choices: ['大家给我过生日', '我会唱歌了', '哥哥九岁了', '新书很好看'], answer: 0, kind: 'why', sentences: [1, 2] },
@@ -45,7 +45,7 @@ export const Q_P01_P25: QuestionBatch = {
   p06: [
     { q: '弟弟听了医生的话，为什么笑了？', choices: ['他想喝水', '知道病会好', '妈妈来了', '头很热'], answer: 1, kind: 'why', sentences: [2, 3] },
     { q: '“没关系”在这里是什么意思？', choices: ['不用怕', '要去医院', '头很热', '多睡觉'], answer: 0, kind: 'word', sentence: 2 },
-    { q: '到了那里以后，谁先做了什么？', choices: ['弟弟笑了', '头很热', '多喝水', '医生看了看他'], answer: 3, kind: 'order', sentence: 2 },
+    { q: '到了那里以后，谁先做了什么？', choices: ['弟弟笑了', '弟弟病了', '多喝水', '医生看了看他'], answer: 3, kind: 'order', sentence: 2 },
     { q: '哪一个题目最好？', choices: ['妈妈的医院', '多喝水', '去看病', '弟弟爱笑'], answer: 2, kind: 'main', sentences: [0, 2] },
     { q: '谁送弟弟去医院？', choices: ['妈妈和我', '医生', '医生和我', '弟弟'], answer: 0, kind: 'fact', sentence: 1 },
     { q: '医生说要多做什么？', choices: ['吃饭和睡觉', '喝水和睡觉', '喝水和看书', '去医院'], answer: 1, kind: 'fact', sentence: 2 },
@@ -53,7 +53,7 @@ export const Q_P01_P25: QuestionBatch = {
   p07: [
     { q: '妈妈为什么问我？', choices: ['米没有买到', '我在吃水果', '她想给我买东西', '商店关门了'], answer: 2, kind: 'why', sentences: [0, 2] },
     { q: '“东西”在这里是什么意思？', choices: ['吃的和用的', '东边和西边', '妈妈买的', '一个商店'], answer: 0, kind: 'word', sentence: 0 },
-    { q: '哪一件事最先发生？', choices: ['去商店', '买了米', '新书包', '妈妈问我'], answer: 0, kind: 'order', sentence: 0 },
+    { q: '哪一件事最先发生？', choices: ['去商店', '买了米', '说想要书包', '妈妈问我'], answer: 0, kind: 'order', sentence: 0 },
     { q: '哪一个题目最好？', choices: ['牛奶和水果', '我的新书', '商店的米', '买了很多东西'], answer: 3, kind: 'main', sentences: [0, 1] },
     { q: '我想要什么？', choices: ['牛奶', '新书包', '水果', '鸡蛋'], answer: 1, kind: 'fact', sentence: 3 },
     { q: '我们去哪里买东西？', choices: ['水果店', '一家商店', '书包店', '牛奶店'], answer: 1, kind: 'fact', sentence: 0 },
@@ -64,7 +64,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我和爷爷在门口做了什么以后，我才想坐飞机？', choices: ['看星星', '坐飞机', '长大了', '吃晚饭'], answer: 0, kind: 'order', sentence: 1 },
     { q: '哪一个题目最好？', choices: ['爷爷的新飞机', '晚上在门口吃饭', '天上有很多飞机', '飞到远远的星星那里'], answer: 3, kind: 'main', sentences: [1, 3] },
     { q: '我们坐在哪里？', choices: ['门口', '天上', '飞机', '星星'], answer: 0, kind: 'fact', sentence: 1 },
-    { q: '谁说星星很远？', choices: ['我', '爷爷', '星星', '飞机'], answer: 1, kind: 'fact', sentence: 2 },
+    { q: '谁说星星很远？', choices: ['长大的我', '我的爷爷', '开飞机的人', '星星上的人'], answer: 1, kind: 'fact', sentence: 2 },
   ],
   p09: [
     { q: '老师为什么说我写得很好？', choices: ['我写了很多字', '大字很好看', '天天写汉字', '我听话，很认真'], answer: 3, kind: 'why', sentences: [1, 3] },
@@ -80,14 +80,14 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我想跟它一起玩，后来怎么了？', choices: ['小鸟唱歌', '小鸟飞来', '我上了树', '小鸟飞走'], answer: 3, kind: 'order', sentence: 2 },
     { q: '哪一个题目最好？', choices: ['会唱歌的树', '飞走的小鸟', '明天的朋友', '我的一只鸟'], answer: 1, kind: 'main', sentences: [2, 3] },
     { q: '小鸟在哪里？', choices: ['在我手上', '在天上', '在歌里', '在树上'], answer: 3, kind: 'fact', sentence: 0 },
-    { q: '小鸟还会做什么？', choices: ['一起玩', '飞走了', '唱歌', '飞来飞去'], answer: 2, kind: 'fact', sentence: 1 },
+    { q: '小鸟除了飞来飞去，还会做什么？', choices: ['一起玩', '飞走了', '唱歌', '上树'], answer: 2, kind: 'fact', sentence: 1 },
   ],
   p11: [
     { q: '房间不大，我为什么还很喜欢它？', choices: ['房间里有床', '能在这里读书', '桌子很大', '书都是新的'], answer: 1, kind: 'why', sentences: [3, 4] },
-    { q: '“旁边”是什么意思？', choices: ['桌子前面', '床的上面', '房间外面', '近近的地方'], answer: 3, kind: 'word', sentence: 2 },
-    { q: '我坐下来，看完书以后做什么？', choices: ['写作业', '看书', '上床', '有很多书'], answer: 0, kind: 'order', sentence: 3 },
+    { q: '“旁边”是什么意思？', choices: ['桌子前面', '床的上面', '房间外面', '不远的地方'], answer: 3, kind: 'word', sentence: 2 },
+    { q: '我坐下来，看完书以后做什么？', choices: ['写作业', '看书', '上床', '坐在桌子前'], answer: 0, kind: 'order', sentence: 3 },
     { q: '哪一个题目最好？', choices: ['一张大床', '很多书', '看书的地方', '桌子的前面'], answer: 2, kind: 'main', sentences: [3, 4] },
-    { q: '桌子在哪里？', choices: ['床的旁边', '房间里', '桌子前面', '床上面'], answer: 0, kind: 'fact', sentence: 2 },
+    { q: '桌子在哪里？', choices: ['床旁边', '房间外面', '桌子前面', '床上面'], answer: 0, kind: 'fact', sentence: 2 },
     { q: '房间里有什么？', choices: ['桌子和球', '书和小狗', '只有一张床', '床、桌子和书'], answer: 3, kind: 'fact', sentence: 1 },
   ],
   p12: [
@@ -95,7 +95,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '“快快长高”是什么意思？', choices: ['吃得很快', '早一点长大', '跑得很快', '坐得很高'], answer: 1, kind: 'word', sentence: 3 },
     { q: '我们坐在一起以后，先做什么？', choices: ['吃饭', '笑', '长高', '做菜'], answer: 0, kind: 'order', sentence: 0 },
     { q: '哪一个题目最好？', choices: ['鸡蛋和肉', '奶奶的米', '开心的一餐', '快快长高'], answer: 2, kind: 'main', sentences: [0, 3] },
-    { q: '中午，我们在做什么？', choices: ['奶奶做菜', '全家一起吃饭', '我们长高', '吃鸡蛋'], answer: 1, kind: 'fact', sentence: 0 },
+    { q: '中午，我们在做什么？', choices: ['奶奶做菜', '全家一起吃饭', '我们长高', '喝牛奶'], answer: 1, kind: 'fact', sentence: 0 },
     { q: '桌上有什么？', choices: ['饭、蛋、肉和菜', '米饭和水果', '鸡蛋和牛奶', '肉和汤'], answer: 0, kind: 'fact', sentence: 1 },
   ],
   p13: [
@@ -104,7 +104,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '我喝完水以后，做了什么？', choices: ['去球场', '又去打球', '下课了', '喝了一杯水'], answer: 1, kind: 'order', sentence: 3 },
     { q: '哪一个题目最好？', choices: ['一大杯水', '同学的球', '累坏的我', '球场上的我们'], answer: 3, kind: 'main', sentences: [0, 1] },
     { q: '下课了，同学们去哪里？', choices: ['打球的地方', '喝水的地方', '上课的地方', '回家的路上'], answer: 0, kind: 'fact', sentence: 0 },
-    { q: '我跑了很久，觉得怎么样？', choices: ['想打球', '有点累', '不想跑', '很想喝水'], answer: 1, kind: 'fact', sentence: 2 },
+    { q: '我跑了很久，觉得怎么样？', choices: ['想打球', '有点累', '不想跑', '想回家'], answer: 1, kind: 'fact', sentence: 2 },
   ],
   p14: [
     { q: '我在车上为什么站着？', choices: ['每个位子都有人', '学校很远', '同学在等我', '我想看门口'], answer: 0, kind: 'why', sentences: [1, 2] },
@@ -112,12 +112,12 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '下了车以后，我看见了什么？', choices: ['同学在门口等我', '车上人很多', '公共汽车', '我家很远'], answer: 0, kind: 'order', sentence: 3 },
     { q: '这个故事主要说什么？', choices: ['同学的家', '汽车的门口', '我每天怎样上学', '学校的朋友'], answer: 2, kind: 'main', sentences: [1, 3] },
     { q: '我怎么去学校？', choices: ['走路去', '坐公共汽车', '站着', '到学校'], answer: 1, kind: 'fact', sentence: 1 },
-    { q: '谁在门口等我？', choices: ['我家', '学校', '公共汽车', '同学'], answer: 3, kind: 'fact', sentence: 3 },
+    { q: '谁在门口等我？', choices: ['家里的人', '开车的人', '同学', '车上的人'], answer: 3, kind: 'fact', sentence: 3 },
   ],
   p15: [
     { q: '我为什么说谢谢？', choices: ['穿了新衣服', '拿到了红包', '去了奶奶家', '大家很高兴'], answer: 1, kind: 'why', sentences: [1, 2] },
     { q: '“红包”是什么东西？', choices: ['红色的衣服', '新年的书包', '爷爷的包', '红色的小纸包'], answer: 3, kind: 'word', sentence: 2 },
-    { q: '我们穿上新衣服以后，去了哪里？', choices: ['爷爷奶奶家', '新衣服', '红包', '我们家'], answer: 0, kind: 'order', sentence: 1 },
+    { q: '我们穿上新衣服，然后做了什么？', choices: ['去爷爷奶奶家', '过新年', '说谢谢', '大家都很高兴'], answer: 0, kind: 'order', sentence: 1 },
     { q: '这个故事主要说什么？', choices: ['爷爷的衣服', '谢谢奶奶', '新年去拜年', '红色的包'], answer: 2, kind: 'main', sentences: [0, 1] },
     { q: '谁给我们红包？', choices: ['爷爷奶奶', '我们', '大家', '我'], answer: 0, kind: 'fact', sentence: 2 },
     { q: '大家觉得怎么样？', choices: ['想回家', '很想穿新衣', '不想去', '非常开心'], answer: 3, kind: 'fact', sentence: 3 },
@@ -133,33 +133,33 @@ export const Q_P01_P25: QuestionBatch = {
   p17: [
     { q: '小马为什么说“谢谢您”？', choices: ['它跑得很快', '它喜欢在外面', '牛爷爷带它回家', '天天有人和它玩'], answer: 2, kind: 'why', sentences: [1, 2] },
     { q: '“跑来跑去”是什么意思？', choices: ['跑得太远', '这里跑，那里跑', '找不到家', '在家里'], answer: 1, kind: 'word', sentence: 0 },
-    { q: '小马跑得太远以后，怎么了？', choices: ['找不到家了', '跑得太远了', '天天在外面', '谢谢您'], answer: 0, kind: 'order', sentence: 1 },
+    { q: '小马跑得太远以后，先怎么了？', choices: ['找不到家了', '跑得太远了', '天天在外面', '牛爷爷找到了它'], answer: 0, kind: 'order', sentence: 1 },
     { q: '这个故事主要说什么？', choices: ['牛爷爷的家', '跑得快的马', '外面的天', '走丢的小马'], answer: 3, kind: 'main', sentences: [1, 2] },
     { q: '小马说了什么？', choices: ['找不到家了', '跑来跑去', '谢谢您', '我想回家'], answer: 2, kind: 'fact', sentence: 2 },
     { q: '小马天天在哪里跑？', choices: ['家外面', '家里面', '牛爷爷家里', '很远的山上'], answer: 0, kind: 'fact', sentence: 0 },
   ],
   p18: [
-    { q: '风为什么说太阳了不起？', choices: ['风吹得很大', '人们很冷', '天热了', '大家不冷了'], answer: 3, kind: 'why', sentences: [1, 2] },
+    { q: '风为什么说太阳了不起？', choices: ['风吹得很大', '人们很冷', '太阳出来晚了', '大家不冷了'], answer: 3, kind: 'why', sentences: [1, 2] },
     { q: '“了不起”是什么意思？', choices: ['非常好', '起不来', '不能吹', '力气小'], answer: 0, kind: 'word', sentence: 3 },
-    { q: '风大大地吹以后，发生了什么？', choices: ['太阳出来了', '人们都很冷', '天热了', '风停了'], answer: 0, kind: 'order', sentence: 2 },
+    { q: '风大大地吹以后，发生了什么？', choices: ['太阳也出来了', '人们都笑了', '天热了', '风停了'], answer: 0, kind: 'order', sentence: 2 },
     { q: '这个故事主要说什么？', choices: ['风的朋友', '谁更有力', '太阳下山', '人们怕冷'], answer: 1, kind: 'main', sentences: [0, 3] },
     { q: '风吹的时候，人们觉得怎么样？', choices: ['很热', '高兴', '很冷', '力气大'], answer: 2, kind: 'fact', sentence: 1 },
     { q: '最后，谁说了话？', choices: ['太阳', '风', '人们', '天'], answer: 1, kind: 'fact', sentence: 3 },
   ],
   p19: [
-    { q: '我为什么很快地做好作业？', choices: ['妈妈要看电视', '作业很少', '想早点去看小马', '我想唱歌'], answer: 2, kind: 'why', sentences: [1, 2] },
+    { q: '我为什么很快地做好作业？', choices: ['妈妈要看电视', '作业很少', '想早点看节目', '我想唱歌'], answer: 2, kind: 'why', sentences: [1, 2] },
     { q: '“跟着唱”是什么意思？', choices: ['和小马一起唱', '先做作业', '看电视', '自己写歌'], answer: 0, kind: 'word', sentence: 3 },
     { q: '看电视以前，妈妈要我怎么样？', choices: ['晚饭后', '先做作业', '跟着唱', '去唱歌'], answer: 1, kind: 'order', sentence: 1 },
     { q: '这个故事主要说什么？', choices: ['小马唱的歌', '妈妈的晚饭', '电视里的我', '先学习后玩'], answer: 3, kind: 'main', sentences: [1, 2] },
     { q: '电视里，谁在唱歌？', choices: ['小马', '妈妈', '我', '电视'], answer: 0, kind: 'fact', sentence: 3 },
-    { q: '我什么时候想看电视？', choices: ['做作业以前', '吃完晚饭', '唱歌的时候', '妈妈说话后'], answer: 1, kind: 'fact', sentence: 0 },
+    { q: '我什么时候想看电视？', choices: ['做作业的时候', '吃完晚饭', '唱歌的时候', '妈妈说话后'], answer: 1, kind: 'fact', sentence: 0 },
   ],
   p20: [
-    { q: '我为什么喜欢我的学校？', choices: ['班上只有三个人', '学校很小', '没有球场', '它又大又好玩'], answer: 3, kind: 'why', sentences: [0, 1] },
+    { q: '我为什么喜欢我的学校？', choices: ['老师送我书', '学校离家近', '妈妈在学校', '地方大，花也多'], answer: 3, kind: 'why', sentences: [0, 1] },
     { q: '“同学”是什么意思？', choices: ['一起上课的人', '学校的老师', '球场上的树', '花和树'], answer: 0, kind: 'word', sentence: 2 },
     { q: '我先说学校有树和花，然后说学校里有什么？', choices: ['一个大球场', '三十个同学', '很多树和花', '我的老师'], answer: 0, kind: 'order', sentence: 1 },
     { q: '这个故事主要说什么？', choices: ['三班的老师', '学校的样子', '球场上的花', '三十个人'], answer: 1, kind: 'main', sentences: [0, 3] },
-    { q: '学校里有什么？', choices: ['三十个同学', '树和花', '大球场', '二年级'], answer: 2, kind: 'fact', sentence: 1 },
+    { q: '学校里有什么？', choices: ['一家大商店', '打球的地方', '一座大医院', '一个大花店'], answer: 2, kind: 'fact', sentence: 1 },
     { q: '我们班有什么？', choices: ['一个大球场', '三十个同学', '很多树和花', '老师和同学'], answer: 1, kind: 'fact', sentence: 2 },
   ],
   p21: [
@@ -183,7 +183,7 @@ export const Q_P01_P25: QuestionBatch = {
     { q: '“尝了一口”是什么意思？', choices: ['喝了一杯茶', '吃一点试试', '放到桌上', '做了一只鸡'], answer: 1, kind: 'word', sentence: 3 },
     { q: '客人到了以后，我做了什么？', choices: ['放好筷子', '帮妈妈做菜', '给大家递茶', '吃了鸡'], answer: 2, kind: 'order', sentence: 2 },
     { q: '这个故事主要说什么？', choices: ['王叔叔的鸡', '一杯好茶', '妈妈的盘子', '我做小帮手'], answer: 3, kind: 'main', sentences: [1, 4] },
-    { q: '谁尝了妈妈做的鸡？', choices: ['王叔叔', '王阿姨', '客人', '妈妈'], answer: 0, kind: 'fact', sentence: 3 },
+    { q: '谁尝了妈妈做的鸡？', choices: ['王叔叔', '王阿姨', '我', '妈妈'], answer: 0, kind: 'fact', sentence: 3 },
     { q: '我把什么放到桌上？', choices: ['一杯茶', '碗、盘子和筷子', '妈妈做的鸡', '鸡和茶'], answer: 1, kind: 'fact', sentence: 1 },
   ],
   p24: [
