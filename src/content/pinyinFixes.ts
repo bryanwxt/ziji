@@ -66,4 +66,8 @@ customPinyin({
   // a 多音字's other-reading words (zuciPicks.ts OTHER_READING_ZUCI): 背 carrying bēi, 数 counting shǔ, 系 tying jì, 刹车 shā
   背书包: 'bēi shū bāo', 背包: 'bēi bāo', 数一数: 'shǔ yi shǔ', 系鞋带: 'jì xié dài', 刹车: 'shā chē', 胡萝卜: 'hú luó bo',
   乌龟背着重重的壳: 'wū guī bēi zhe zhòng zhòng de ké', 蜗牛背着: 'wō niú bēi zhe', // carrying (bēi), heavy (zhòng)
+  // 二下 stretch passages (2026-10-24 Task 13): 得 after a verb de, 地 after an adverb de, 数 (counting) shǔ, 一 neutral in 等一等
+  慌得: 'huāng de', 洗得: 'xǐ de', 开心地: 'kāi xīn de', 静静地: 'jìng jìng de', 大声地: 'dà shēng de', 得意地: 'dé yì de',
+  难过地: 'nán guò de', 平平安安地: 'píng píng ān ān de', 数了又数: 'shǔ le yòu shǔ', 等一等: 'děng yi děng', 爸爸说: 'bà ba shuō',
+  一块一块: 'yí kuài yí kuài',
 });
