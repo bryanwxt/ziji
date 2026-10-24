@@ -1,6 +1,6 @@
 // 朗读's pool (spec 2026-10-15 §3–§4): his school texts first, in the order added, then the built-in passages, each with how much
-// of it he can read now (fit) and its meaning questions. pickPassage (pick.ts) chooses from it; withQuestion (questions.ts) gives
-// the chosen one this read's question.
+// of it he can read now (fit) and its questions. pickPassage (pick.ts) chooses from it; withQuestions (questions.ts) gives the
+// chosen one this read's three.
 import { LEGACY_QUESTIONS, PASSAGE_QUESTIONS } from '../content/passageQuestions';
 import type { AskedQuestion, ParentPassage, Passage, PassageQuestion, ParentQuestion } from '../types';
 import { passageFit, withinReach } from './level';
@@ -11,11 +11,12 @@ export interface ReadingPassage extends Candidate, Pick<Passage, 'names' | 'word
   text: string;
   term?: string; // a built-in's (a parent text has none)
   questions?: readonly AskedQuestion[]; // a built-in's six (or its legacy two), a parent text's one
-  question?: AskedQuestion; // this read's (withQuestion)
+  asked?: readonly AskedQuestion[]; // this read's, in the order asked (withQuestions)
+  askedSet?: readonly number[]; // their indices in `questions`, for the history
 }
 
 /** What the 朗读 step itself needs of a passage (where it came from and its fit are the picker's). */
-export type LangduPassage = Omit<ReadingPassage, 'fit' | 'source' | 'story' | 'questions'>;
+export type LangduPassage = Omit<ReadingPassage, 'fit' | 'source' | 'story' | 'questions' | 'askedSet'>;
 
 /** Who is reading: the characters he can read (K, spec §3) and his class's term (null: unknown). */
 export interface Reader { readable: ReadonlySet<string>; classTerm: string | null }

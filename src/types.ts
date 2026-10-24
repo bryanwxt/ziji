@@ -242,7 +242,8 @@ export interface Recording {
   extraDayGiven?: boolean; // its marks have acted on the passage (≥ 2 marks: due 3 days after the review, spec 2026-10-15 §4), once per take; named for the old extra day
   review?: 'ok' | 'no'; // a Say or 说一句 take the parent confirmed (✓) or rejected (✗), or a passage take listened to ('ok'); absent: waiting (spec 2026-10-11 §6)
   misreadsBefore?: number; // a passage re-read whose last take the parent had reviewed: that take's misreads; fewer on this one earn the bonus star at review (learning rules 2026-10-17)
-  meaning?: { correct: boolean; picked: string }; // a passage take: his answer to the meaning question (spec 2026-10-12 §3), for the parent
+  meaning?: { correct: boolean; picked: string }; // a passage take before 2026-10-24: his answer to its one question (spec 2026-10-12 §3)
+  answers?: TakeAnswer[]; // a passage take: his answers to the read's questions, in the order asked (spec 2026-10-24 §5), for the parent
   cardBefore?: CardSnapshot; // a Say or 说一句 take: its card as it was when he recorded (SRS tuning spec §4), for the verdict's log
 }
 
@@ -308,6 +309,10 @@ export interface ParentQuestion {
 
 /** A question as the step asks it: a built-in's or a parent's. */
 export type AskedQuestion = PassageQuestion | ParentQuestion;
+
+/** His answer to one of a read's questions (spec 2026-10-24 §5): its kind (none for a parent's or an older question), whether
+ *  it was right, and the choice he picked. */
+export interface TakeAnswer { kind?: QuestionKind; correct: boolean; picked: string }
 
 /** One answer to a built-in question (spec 2026-10-24 §8): kept on the passage's history, the last 30. */
 export interface PassageAnswer { kind: QuestionKind; correct: boolean; at: string }

@@ -13,6 +13,8 @@ import { speak } from '../audio/speech';
 
 vi.mock('../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn(), primeSpeech: vi.fn() }));
 vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
+// the first listen's pause between sentences is LangduStep.pace.test's: here the model reads straight on
+vi.mock('../langdu/useModelReader', async (orig) => ({ ...(await orig<typeof import('../langdu/useModelReader')>()), FIRST_LISTEN: { rate: 0.8, gapMs: 0 } }));
 vi.mock('../ui/confetti', () => ({ celebrate: vi.fn() }));
 vi.mock('../audio/recorder', () => ({
   recordingSupported: () => true,
@@ -61,7 +63,7 @@ describe('朗读 extra rounds', () => {
     renderWithApp(<LangduScreen />, app);
     expect(await screen.findByText('我爱爸爸，我爱妈妈。')).toBeTruthy(); // straight to listening: no warm-up
     expect(screen.queryByText('老师好！')).toBeNull();
-    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。')); // the model has begun (the step mounts after a load)
+    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。', { rate: 0.8 })); // the model has begun (the step mounts after a load)
     act(() => setSpeaking(true));
     act(() => setSpeaking(false));
     await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
@@ -88,7 +90,7 @@ describe('朗读 extra rounds', () => {
     renderWithApp(<LangduScreen />, app);
     expect(await screen.findByText('我爱爸爸，我爱妈妈。')).toBeTruthy(); // straight to listening: no warm-up
     expect(screen.queryByText('老师好！')).toBeNull();
-    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。')); // the model has begun (the step mounts after a load)
+    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。', { rate: 0.8 })); // the model has begun (the step mounts after a load)
     act(() => setSpeaking(true));
     act(() => setSpeaking(false));
     await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));

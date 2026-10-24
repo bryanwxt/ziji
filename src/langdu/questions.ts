@@ -5,15 +5,6 @@ import type { AskedQuestion, QuestionKind, ReadingHistory } from '../types';
 import { entryOf } from './history';
 import type { ReadingPassage } from './pool';
 
-/** The question for this turn: its questions in turn; none when it has none. */
-export const questionFor = (qs: readonly AskedQuestion[] | undefined, turn: number): AskedQuestion | undefined => (qs?.length ? qs[turn % qs.length] : undefined);
-
-/** The passage with the question this read asks (history's `q`). */
-export function withQuestion<T extends ReadingPassage>(p: T, r: ReadingHistory): T {
-  const question = questionFor(p.questions, entryOf(r, p.id).q);
-  return question ? { ...p, question } : p;
-}
-
 /** Questions a read asks (spec 2026-10-24 §5). */
 export const PER_READ = 3;
 /** The order a read's questions are asked in: the first is also shown before he reads (「读的时候想一想」), so the deepest

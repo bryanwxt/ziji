@@ -5,11 +5,14 @@ import { speak } from '../audio/speech';
 import { addRecording, getKid, listRecordings, saveKid, saveParentPassage, updateSettings } from '../store/repo';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
 import { DEFAULT_KID, DEFAULT_SETTINGS, EMPTY_READING, type ParentQuestion } from '../types';
-import { LEGACY_QUESTIONS } from '../content/passageQuestions';
+import { LEGACY_QUESTIONS, PASSAGE_QUESTIONS } from '../content/passageQuestions';
+import { questionSet } from '../langdu/questions';
 import { SessionScreen } from './SessionScreen';
 
 vi.mock('../audio/speech', () => ({ prefetchWords: vi.fn(), stopSpeaking: vi.fn(), speak: vi.fn(), primeSpeech: vi.fn() }));
 vi.mock('../audio/sfx', () => ({ playSfx: vi.fn() }));
+// the first listen's pause between sentences is LangduStep.pace.test's: here the model reads straight on
+vi.mock('../langdu/useModelReader', async (orig) => ({ ...(await orig<typeof import('../langdu/useModelReader')>()), FIRST_LISTEN: { rate: 0.8, gapMs: 0 } }));
 vi.mock('../ui/confetti', () => ({ celebrate: vi.fn() }));
 vi.mock('../audio/recorder', () => ({
   recordingSupported: () => true,
@@ -56,7 +59,7 @@ async function warmUp() {
 /** The model reads the passage's one sentence, he reads it: on Compare. */
 async function listenAndRead() {
   await screen.findByText('我爱爸爸，我爱妈妈。');
-  await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。')); // the model has begun (with no warm-up the step mounts straight into listening)
+  await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。', { rate: 0.8 })); // the model has begun (with no warm-up the step mounts straight into listening)
   act(() => setSpeaking(true));
   act(() => setSpeaking(false));
   await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
@@ -134,7 +137,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1, lastHow: 'not-well' } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
     renderWithApp(<SessionScreen free={false} />, app);
     await screen.findByText('我爱爸爸，我爱妈妈。');
-    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。'));
+    await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。', { rate: 0.8 }));
     act(() => setSpeaking(true));
     act(() => setSpeaking(false));
     await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
@@ -156,22 +159,30 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     expect(screen.queryByText('我爱爸爸，我爱妈妈。')).toBeNull();
   });
 
-  it("a revisit asks the passage's other question (spec 2026-10-15 §6)", async () => {
+  it("a revisit asks its questions one after another, and the history keeps the set and his answers (spec 2026-10-24 §5, §8)", async () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });
     await updateSettings(app.db, { activities: speakingOnly, langdu: true });
     await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { p01: { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1, lastHow: 'not-well' } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
+    // p01's six once its batch is written, its older two until then: the test holds either way
+    const qs = PASSAGE_QUESTIONS.p01 ?? LEGACY_QUESTIONS.p01!;
+    const set = questionSet(qs, undefined, 1);
     renderWithApp(<SessionScreen free={false} />, app);
-    await screen.findByText('我的家'); // p01, due: after a new passage comes a revisit
-    for (let i = 0; i < 3; i++) {
-      act(() => setSpeaking(true));
-      act(() => setSpeaking(false));
-    }
-    await waitFor(() => expect(btn('开始朗读').disabled).toBe(false));
+    await screen.findByText('我的家'); // p01, due and read 'not-well': before anything new
+    await heardAll();
     fireEvent.click(btn('开始朗读'));
     fireEvent.click(screen.getByText('开始录音'));
     fireEvent.click(await screen.findByText('停止'));
     fireEvent.click(await screen.findByText('下一步'));
-    expect(await screen.findByText(LEGACY_QUESTIONS.p01![1]!.q)).toBeTruthy();
+    for (const [n, i] of set.entries()) {
+      const q = qs[i]!;
+      expect(await screen.findByText(q.q)).toBeTruthy();
+      fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.langdu__choices .choice')].find((b) => [...b.querySelectorAll('.label__ch')].map((c) => c.textContent).join('') === q.choices[q.answer])!);
+      fireEvent.click(await screen.findByText(n === set.length - 1 ? '完成' : '下一题'));
+    }
+    expect(await screen.findByText('太棒了！')).toBeTruthy();
+    const e = (await getKid(app.db))!.reading.history.p01!;
+    expect(e).toMatchObject({ reads: 2, lastHow: 'well', rest: 21, lastSet: set });
+    expect(e.answers ?? []).toEqual(set.flatMap((i) => { const q = qs[i]!; return 'kind' in q ? [{ kind: q.kind, correct: true, at: '2026-10-05' }] : []; }));
   });
   it('下一篇 swaps in the next passage, saves the skip at once, and hides after two swaps (spec 2026-10-15 §5, D5)', async () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });
@@ -201,7 +212,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     await screen.findByText('我爱爸爸，我爱妈妈。');
     expect(document.querySelector('.langdu__next')).toBeNull();
   });
-  it('his answer to the meaning question is kept with his take, for the parent', async () => {
+  it('his answers are kept with his take, for the parent; a missed school-text question makes the read not-well', async () => {
     const app = await setup();
     const question: ParentQuestion = { q: '我爱谁？', choices: ['老师', '妈妈', '小马'], answer: 1 };
     await saveParentPassage(app.db, { id: 'pp:1', title: '我家', text: '我爱爸爸，我爱妈妈。', createdAt: 1, question });
@@ -212,7 +223,8 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     fireEvent.click(btn('小马'));
     fireEvent.click(await screen.findByText('完成'));
     expect(await screen.findByText('太棒了！')).toBeTruthy();
-    expect((await listRecordings(app.db)).find((r) => r.prompt.kind === 'passage')!.meaning).toEqual({ correct: false, picked: '小马' });
+    expect((await listRecordings(app.db)).find((r) => r.prompt.kind === 'passage')!.answers).toEqual([{ correct: false, picked: '小马' }]);
+    expect((await getKid(app.db))!.reading.history['pp:1']).toMatchObject({ lastHow: 'not-well', rest: 3 }); // 0 of 1 right
   });
 
   it("saving a take tidies the passage's takes older than 14 days, reviewed or not, keeping the newest", async () => {

@@ -7,6 +7,8 @@ import { LangduStep } from './LangduStep';
 vi.mock('../../audio/recorder', () => ({ recordingSupported: vi.fn(() => true), startRecording: vi.fn() }));
 vi.mock('../../audio/speech', () => ({ stopSpeaking: vi.fn(), speak: vi.fn() }));
 vi.mock('../../audio/sfx', () => ({ playSfx: vi.fn() }));
+// the first listen's pause between sentences is LangduStep.pace.test's: here the model reads straight on, as these tests drive it
+vi.mock('../../langdu/useModelReader', async (orig) => ({ ...(await orig<typeof import('../../langdu/useModelReader')>()), FIRST_LISTEN: { rate: 0.8, gapMs: 0 } }));
 
 const passage = { id: 'pp:2', title: '我家', text: '我爱爸爸。我爱妈妈。我爱妹妹。我爱松露。', source: 'parent' as const };
 const oral = { name: '小明', age: '8', school: '光明小学', className: '二年级', customIntro: '' };

@@ -9,9 +9,9 @@ import type { LangduPassage } from '../../langdu/pool';
 import { shuffleQuestion } from '../../langdu/questions';
 import { answeringSentence, readLimitMs, splitSentences } from '../../langdu/sentences';
 import { betterTake } from '../../langdu/stars';
-import { useModelReader } from '../../langdu/useModelReader';
+import { FIRST_LISTEN, REPLAY, REPLAY_RATE, useModelReader } from '../../langdu/useModelReader';
 import type { Rng } from '../../lib/random';
-import type { KidState, OralInfo, PassageCredit, PassageWord } from '../../types';
+import type { AskedQuestion, KidState, OralInfo, PassageCredit, PassageWord, TakeAnswer } from '../../types';
 import { FeedbackSheet } from '../../ui/stage/FeedbackSheet';
 import { Stage } from '../../ui/stage/Stage';
 import { Label } from '../../ui/Label';
@@ -22,7 +22,7 @@ import { BlockedNote, MicButton, useRecorder } from '../shared/recording';
 export interface LangduResult {
   intro: FinishedRecording | null; // the warm-up, when it ran and was recorded
   read: FinishedRecording | null; // the better of his takes; null when the microphone was blocked or missing
-  meaning: { correct: boolean; picked: string } | null; // null: no question (an extra round, a parent text without one)
+  answers: TakeAnswer[]; // his answers to the read's questions, in the order asked; none on an extra round or with no questions
 }
 
 export type LangduPart = 'warmup' | 'listen' | 'read' | 'compare' | 'meaning';
@@ -52,8 +52,9 @@ export const START_AFTER_MS = 10_000;
 const BUBBLE: Record<LangduPart, string> = { warmup: '你好！', listen: '听我读！', read: '大声读！', compare: '比一比！', meaning: '想一想！' };
 
 /**
- * 朗读 (spec 2026-10-12 §3, 2026-10-15): the warm-up when due → listen and follow → read alone → compare, one re-read → one
- * meaning question. The warm-up lives here; the passage's parts live in PassageParts, keyed by the passage, so 下一篇 can swap the
+ * 朗读 (spec 2026-10-12 §3, 2026-10-15, 2026-10-24): the warm-up when due → listen and follow (slower, with a pause after each
+ * sentence) → read alone → compare, one re-read → the read's questions, one at a time. The warm-up lives here; the passage's
+ * parts live in PassageParts, keyed by the passage, so 下一篇 can swap the
  * passage under a kept warm-up take.
  */
 export function LangduStep({ passage, oral, kid, withWarmup, extra = false, micBlocked = false, startAt, rng = Math.random, onSwap, onDone }: Props) {
@@ -117,10 +118,14 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
   const model = useModelReader(sentences);
   const read = useRecorder(micBlocked, readLimitMs(passage.text)); // long passages get longer (spec 2026-10-15 §8)
   const [takes, setTakes] = useState<FinishedRecording[]>([]);
-  const [picked, setPicked] = useState<number | null>(null);
   const takeAudio = useRef<HTMLAudioElement>(null);
-  // the choices in a new order each time it is shown: the right one's place is never learnt (spec 2026-10-15 §6)
-  const question = useMemo(() => (extra || !passage.question ? undefined : shuffleQuestion(passage.question, rng)), [passage.question, extra]);
+  // the read's questions (spec 2026-10-24 §5), each with its choices in a new order: the right one's place is never learnt
+  const questions = useMemo<AskedQuestion[]>(() => (extra ? [] : (passage.asked ?? []).map((q) => shuffleQuestion(q, rng))), [passage.asked, extra]);
+  const [at, setAt] = useState(0); // the question being asked
+  const [picked, setPicked] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<TakeAnswer[]>([]);
+  const question = questions[at];
+  const lastQuestion = at === questions.length - 1;
   // names always show their pinyin (spec 2026-10-15 §3)
   const nameChars = useMemo(() => new Set((passage.names ?? []).flatMap((n) => Array.from(n))), [passage.names]);
   const readBlocked = read.state === 'blocked';
@@ -129,7 +134,7 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
   useEffect(() => () => { if (playbackUrl) URL.revokeObjectURL(playbackUrl); }, [playbackUrl]);
 
   useEffect(() => {
-    if (part === 'listen') model.read(0);
+    if (part === 'listen') model.read(0, false, FIRST_LISTEN); // the first listen: slower, a pause after each sentence (spec 2026-10-24 §7)
     else model.stop(); // he reads, compares or answers: the model is quiet until asked
   }, [part]);
 
@@ -155,11 +160,11 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
   }, [read.state]);
 
   const finished = useRef(false);
-  const finish = (meaning: LangduResult['meaning']) => {
+  const finish = (given: TakeAnswer[]) => {
     if (finished.current) return; // a double tap on 完成 saves the reading once
     finished.current = true;
     model.stop();
-    onDone({ read: betterTake(takes, passage.text), meaning });
+    onDone({ read: betterTake(takes, passage.text), answers: given });
   };
   const swapped = useRef(false);
   const swap = () => {
@@ -168,28 +173,39 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
     model.stop();
     onSwap();
   };
-  const afterReading = () => (question ? setPart('meaning') : finish(null));
+  const afterReading = () => (question ? setPart('meaning') : finish([]));
   const reread = () => {
     takeAudio.current?.pause();
     read.reset();
     setPart('read');
   };
+  // a tap during the first read-through reads on from there at its pace; a sentence alone, or 听老师的, at the replay pace
   const replay = (i: number, only: boolean) => {
     takeAudio.current?.pause();
-    model.read(i, only);
+    model.read(i, only, only || model.heardAll ? REPLAY : FIRST_LISTEN);
   };
 
-  const answerAt = question ? answeringSentence(question, sentences) : -1;
+  // what a miss reads again (spec 2026-10-24 §5): a why or main question's two supporting sentences, else its one sentence
+  const readBack = question ? backSentences(question, sentences) : [];
   const pick = (i: number) => {
     if (!question || picked !== null) return;
     setPicked(i);
     const right = i === question.answer;
+    setAnswers((a) => [...a, { ...('kind' in question ? { kind: question.kind } : {}), correct: right, picked: question.choices[i]! }]);
     playSfx(right ? 'correct' : 'wrong');
-    if (!right && answerAt >= 0) speak(sentences[answerAt]!); // the sentence that answers it, read again
+    if (!right) readBack.forEach((n, k) => speak(sentences[n]!, { queue: k > 0, rate: REPLAY_RATE })); // read again, no re-ask
+  };
+  const moved = useRef(-1); // the question 下一题 last moved on from: a double tap moves on once
+  const nextQuestion = () => {
+    if (picked === null || moved.current === at) return;
+    moved.current = at;
+    if (lastQuestion) { finish(answers); return; }
+    setAt((n) => n + 1);
+    setPicked(null);
   };
 
   // 谢谢老师！ closes a warm-up day, on the step's last screen; said once, though a re-read brings Compare back (final review M1)
-  const closing = !!thanksLine && ((part === 'meaning' && picked !== null) || (part === 'compare' && !question));
+  const closing = !!thanksLine && ((part === 'meaning' && picked !== null && lastQuestion) || (part === 'compare' && !question));
   const thanked = useRef(false);
   useEffect(() => {
     if (!closing || thanked.current || !thanksLine) return;
@@ -222,8 +238,8 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
             {passage.image && <Picture src={passage.image} />}
             <h2 class="langdu__title"><Label zh={passage.title} /></h2>
           </div>
-          {/* the question he answers after reading, shown first: a purpose to read for (Therrien 2004; learning rules 2026-10-17) */}
-          {question && <p class="langdu__purpose"><Label zh="读的时候想一想：" /><Label zh={question.q} fade /></p>}
+          {/* the first question he answers after reading, shown first: a purpose to read for (Therrien 2004; learning rules 2026-10-17) */}
+          {questions[0] && <p class="langdu__purpose"><Label zh="读的时候想一想：" /><Label zh={questions[0].q} fade /></p>}
           {passage.words?.length ? <NewWords words={passage.words} /> : null}
           <KeepPinyin chars={nameChars}>
             <Sentences sentences={sentences} current={model.current} onTap={(i) => replay(i, model.heardAll)} />
@@ -270,27 +286,28 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
     );
   }
 
-  // the question: no picture, so the picture can't answer it (spec 2026-10-15 §7)
+  // the questions, one at a time: no picture, so the picture can't answer them (spec 2026-10-15 §7)
   if (!question) return null; // the meaning part only opens with a question
   const right = picked === question.answer;
+  const action = lastQuestion ? '完成' : '下一题';
   const mark = (i: number) => (picked === null ? '' : i === question.answer ? (i === picked ? ' is-right' : ' is-answer') : i === picked ? ' is-wrong' : ' is-dim');
   const sheet =
     picked === null ? (
-      <FeedbackSheet actionLabel="完成" disabled onAction={() => {}} />
+      <FeedbackSheet actionLabel={action} disabled onAction={() => {}} />
     ) : (
       <FeedbackSheet
         tone={right ? 'good' : 'oops'}
         title={right ? '对了！' : `答案是：${question.choices[question.answer]}`}
-        detail={!right && answerAt >= 0 ? <Label zh={sentences[answerAt]!} /> : undefined}
-        actionLabel="完成"
+        detail={!right && readBack.length ? <div class="langdu__back">{readBack.map((n) => <p key={n}><Label zh={sentences[n]!} /></p>)}</div> : undefined}
+        actionLabel={action}
         auto={false}
-        onAction={() => finish({ correct: right, picked: question.choices[picked]! })}
+        onAction={nextQuestion}
       />
     );
   return (
     <Stage activity="langdu" truffle={pet} sheet={sheet}>
-      <div class="langdu">
-        <p class="langdu__step"><Label zh="想一想" /></p>
+      <div class="langdu" key={at}>
+        <p class="langdu__step"><Label zh="想一想" />{questions.length > 1 && <span class="langdu__count"> {at + 1}/{questions.length}</span>}</p>
         <p class="langdu__q"><Label zh={question.q} fade /></p>
         <div class="choices langdu__choices">
           {question.choices.map((c, i) => (
@@ -303,6 +320,14 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
       </div>
     </Stage>
   );
+}
+
+/** The sentences a miss reads again: a why or main question's two (in passage order), else the one that answers it; none when
+ *  no sentence does (a parent question whose right choice is in none). */
+function backSentences(q: AskedQuestion, sentences: string[]): number[] {
+  if ('sentences' in q && q.sentences) return [...q.sentences].filter((n) => n >= 0 && n < sentences.length).sort((a, b) => a - b);
+  const one = answeringSentence(q, sentences);
+  return one >= 0 ? [one] : [];
 }
 
 /** The passage's picture (Global Storybooks): a picture that fails to load hides itself, never a broken box. */

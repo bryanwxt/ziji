@@ -4,15 +4,11 @@ import { join } from 'node:path';
 import { bundleStagePage } from './stage-cases/bundle';
 import { textChecks } from './text-checks';
 import { serveStrokeData } from './stroke-route';
-import { PASSAGE_QUESTIONS } from '../src/content/passageQuestions';
-import { PASSAGES } from '../src/content';
+import { askedOf, LONGEST_OWN } from './stage-cases/langdu';
 import { WORLDS } from '../src/fun/worlds';
 import { CHEST_COSTUMES } from '../src/fun/costumes';
 import { SHEET_CELL_HEIGHT, SHEET_COLUMNS, SHEET_PROBE } from './stage-cases/faceProbe';
 import { launchWebKit } from './launch-webkit';
-
-/** The case page's 朗读 passage: the longest of ours (page.tsx picks it the same way). */
-const LONGEST_OWN = [...PASSAGES.filter((p) => p.source === 'ziji')].sort((a, b) => b.text.length - a.text.length)[0]!;
 
 const dir = await bundleStagePage();
 
@@ -355,7 +351,7 @@ for (const size of SIZES) {
   {
     await page.goto(`file://${dir}/index.html?case=langdu-meaning`);
     await page.waitForTimeout(300);
-    const asked = PASSAGE_QUESTIONS[LONGEST_OWN.id]![0]!; // shown in stored order (page.tsx's rng)
+    const asked = askedOf(LONGEST_OWN.id)[0]!; // its first question, shown in stored order (page.tsx's rng)
     await page.click(`.langdu__choices .choice >> nth=${asked.answer === 0 ? 1 : 0}`); // a wrong choice
     await page.waitForTimeout(1600);
     await page.screenshot({ path: `fit-shots/stage-cases/langdu-meaning-wrong-${size.name}.png` });
