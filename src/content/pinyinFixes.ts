@@ -88,4 +88,6 @@ customPinyin({
   // qiāng, 粘 (sticking) zhān, 巴 neutral in 尾巴
   游得: 'yóu de', 看得哈哈大笑: 'kàn de hā hā dà xiào', 安静地: 'ān jìng de', 呛过水: 'qiāng guò shuǐ', 粘好: 'zhān hǎo',
   尾巴张开: 'wěi ba zhāng kāi',
+  // Task 16's review: 铺 (spreading) pū, 数 (counting) shǔ
+  铺在: 'pū zài', 一边数: 'yì biān shǔ',
 });
