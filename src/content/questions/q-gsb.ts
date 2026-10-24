@@ -11,7 +11,7 @@ export const Q_GSB: QuestionBatch = {
     { q: '他的什么太低了？', choices: ['锄头', '床', '自行车', '门口'], answer: 3, kind: 'fact', sentence: 1 },
   ],
   'gsb:0008-1': [
-    { q: '我为什么在回答？', choices: ['她拍了手', '他叫了我', '她唱了歌', '他听了歌'], answer: 1, kind: 'why', sentences: [4, 5] },
+    { q: '我为什么在回答？', choices: ['她拍了手', '他叫了我', '她唱了歌', '大家在唱歌'], answer: 1, kind: 'why', sentences: [4, 5] },
     { q: '“伸手”是什么意思？', choices: ['大声地唱歌', '认真地回答', '把手伸出去', '一起拍拍手'], answer: 2, kind: 'word', sentence: 3 },
     { q: '我在唱歌，接着她在做什么？', choices: ['拍手', '回答', '唱歌', '挥手'], answer: 3, kind: 'order', sentence: 1 },
     { q: '我回答以后，她在做什么？', choices: ['聆听', '唱歌', '拍手', '伸手'], answer: 0, kind: 'order', sentence: 6 },
