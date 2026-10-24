@@ -84,4 +84,8 @@ customPinyin({
   一次又一次地: 'yí cì yòu yí cì de', 卷走: 'juǎn zǒu', 舔得: 'tiǎn de', 看得很远: 'kàn de hěn yuǎn', 牢牢地: 'láo láo de',
   扎得: 'zhā de', 背着很重: 'bēi zhe hěn zhòng', 倒掉: 'dào diào', 只会说一点: 'zhǐ huì shuō yì diǎn', 钻出: 'zuān chū',
   空座位: 'kòng zuò wèi', 妈妈的裤子: 'mā ma de kù zi', 位老爷爷: 'wèi lǎo yé ye',
+  // 三下 stretch passages p114–p123 (2026-10-24 Task 16): 得 after a verb de, 地 after an adverb de, 呛 (choking on water)
+  // qiāng, 粘 (sticking) zhān, 巴 neutral in 尾巴
+  游得: 'yóu de', 看得哈哈大笑: 'kàn de hā hā dà xiào', 安静地: 'ān jìng de', 呛过水: 'qiāng guò shuǐ', 粘好: 'zhān hǎo',
+  尾巴张开: 'wěi ba zhāng kāi',
 });
