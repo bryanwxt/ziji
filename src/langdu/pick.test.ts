@@ -51,6 +51,18 @@ describe('pickPassage (spec 2026-10-15 §4, 2026-10-24 §6)', () => {
     expect(ids(pickOrder({ ...two, lastKind: 'revisit' }, [c('p05', 0.9), c('p06', 0.9), c('p07', 0.88)], T))).toEqual(['p07', 'p05', 'p06']);
     expect(ids(pickOrder({ ...two, lastKind: 'new' }, [c('p05', 0.9), c('p06', 0.9), c('p07', 0.88)], T))).toEqual(['p05', 'p06', 'p07']);
   });
+  it('a due school text takes the alternating slot: back within two picks though 30 fresh passages wait', () => {
+    const fresh = Array.from({ length: 30 }, (_, i) => c(`p${String(i + 1).padStart(2, '0')}`, 0.88));
+    let r: ReadingHistory = afterRead(H0, 'pp:a', '2026-08-01', 'well'); // long since due
+    const pool = [c('pp:a', 0.5), ...fresh];
+    const got: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const pick = pickPassage(r, pool, T)!;
+      got.push(pick.id);
+      r = afterRead(r, pick.id, T, 'well');
+    }
+    expect(got.slice(0, 2)).toContain('pp:a');
+  });
   it('a history from before 2026-10-24 (no lastHow) waits behind new passages like one read well', () => {
     const r: ReadingHistory = { ...H0, lastKind: 'new', history: { p01: { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1 } } };
     expect(ids(pickOrder(r, [c('p01', 0.88), c('p02', 0.9)], T))).toEqual(['p02', 'p01']);

@@ -2,7 +2,7 @@ import { Pause, Play, Volume2 } from 'lucide-preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { FinishedRecording } from '../../audio/recorder';
 import { playSfx } from '../../audio/sfx';
-import { speak } from '../../audio/speech';
+import { speak, stopSpeaking } from '../../audio/speech';
 import { creditLine, LICENCE_URL } from '../../langdu/credit';
 import { introLines } from '../../langdu/intro';
 import type { LangduPassage } from '../../langdu/pool';
@@ -200,6 +200,7 @@ function PassageParts({ passage, kid, extra, micBlocked, startAt, rng, thanks: t
   const nextQuestion = () => {
     if (picked === null || moved.current === at) return;
     moved.current = at;
+    stopSpeaking(); // the read-back doesn't run on into the next question
     if (lastQuestion) { finish(answers); return; }
     setAt((n) => n + 1);
     setPicked(null);

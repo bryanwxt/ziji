@@ -15,5 +15,5 @@ for (const p of PASSAGES.filter((x) => x.source === 'ziji' && Number(x.id.slice(
   const qs = PASSAGE_QUESTIONS[p.id] ?? [];
   lines.push([p.id, p.term, p.title, p.text, (p.words ?? []).map((w) => `${w.text} = ${w.gloss}`).join('; '), ...Array.from({ length: QUESTIONS_PER_PASSAGE }, (_, i) => (qs[i] ? ask(qs[i]!) : ''))].map(q).join(','));
 }
-writeFileSync(out, '﻿' + lines.join('\n') + '\n'); // a BOM, so Excel and Numbers read the Chinese
+writeFileSync(out, '\uFEFF' + lines.join('\n') + '\n'); // a BOM, so Excel and Numbers read the Chinese
 console.log(`${lines.length - 1} passages written to ${out}`);

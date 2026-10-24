@@ -38,7 +38,7 @@ export function pickOrder<T extends Candidate>(r: ReadingHistory, pool: readonly
     .sort((a, b) => overdue(e(b), today)! - overdue(e(a), today)! || a.id.localeCompare(b.id));
   // a due passage he read 'not-well' comes before anything new; the others wait behind new ones (spec 2026-10-24 §6). A history
   // from before 2026-10-24 has no lastHow: it waits like one read well
-  const struggled = due.filter((c) => e(c).lastHow === 'not-well');
+  const struggled = due.filter((c) => c.source === 'parent' || e(c).lastHow === 'not-well'); // a due school text alternates too
   const started = unread.filter((c) => c.source !== 'parent' && !!c.story && c.story.part > 1 && c.fit >= BAND_LOW);
   const readFrom = (s: Candidate['source']) => pool.filter((c) => c.source === s && e(c).reads > 0).length;
   const turn: Candidate['source'] = readFrom('gsb') < readFrom('ziji') ? 'gsb' : 'ziji';

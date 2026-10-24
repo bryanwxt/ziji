@@ -45,6 +45,17 @@ describe("what the parent sees of his questions (spec 2026-10-24 §8)", () => {
     expect(kindShares(EMPTY_READING, '2026-10-24')).toEqual([]);
     expect(kindShares({ ...EMPTY_READING, history: { p01: { reads: 1, lastRead: '2026-10-20', rest: 3, q: 1, answers: [a('why', false, '2026-10-20')] } } }, '2026-10-24')).toEqual([{ kind: 'why', label: '为什么', right: 0, total: 1, weakest: false }]); // one kind: nothing to compare
   });
+  it('no kind is marked weakest when every share is equal', () => {
+    const r: ReadingHistory = { ...EMPTY_READING, history: { p01: { reads: 1, lastRead: '2026-10-20', rest: 3, q: 1, answers: [a('why', true, '2026-10-20'), a('main', true, '2026-10-20'), a('fact', true, '2026-10-20')] } } };
+    expect(kindShares(r, '2026-10-24').map((x) => x.weakest)).toEqual([false, false, false]);
+  });
+  it("qs follows the newest answer's day: a later 多读一遍 doesn't blank it, and an earlier day's answers aren't pooled", () => {
+    const base = { reads: 3, rest: 21, q: 3 };
+    const later: ReadingHistory = { ...EMPTY_READING, history: { p01: { ...base, lastRead: '2026-10-12', answers: [a('why', true, '2026-10-10'), a('word', false, '2026-10-10')] } } }; // re-read on 10-12 asked nothing
+    expect(libraryRows([p('p01', '二下')], later, new Set())[0]!.qs).toBe('1/2');
+    const two: ReadingHistory = { ...EMPTY_READING, history: { p01: { ...base, lastRead: '2026-10-12', answers: [a('why', false, '2026-10-10'), a('why', true, '2026-10-12'), a('word', true, '2026-10-12')] } } };
+    expect(libraryRows([p('p01', '二下')], two, new Set())[0]!.qs).toBe('2/2'); // the newest answers' day only
+  });
   it("a take's answers for Listen & confirm", () => {
     expect(answersLine([{ kind: 'why', correct: false, picked: '球掉进河里' }, { kind: 'order', correct: true, picked: '找来竹子' }, { kind: 'fact', correct: true, picked: '河里' }])).toBe('Questions: 2/3 right · missed 为什么 (picked 球掉进河里)');
     expect(answersLine([{ correct: false, picked: '小马' }])).toBe('Questions: 0/1 right · missed (picked 小马)');

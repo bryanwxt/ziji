@@ -333,6 +333,21 @@ describe('three questions a read (spec 2026-10-24 §5)', () => {
       { kind: 'fact', correct: false, picked: '岸边' },
     ] });
   });
+  it('moving on stops the read-back speech (下一题 and 完成)', async () => {
+    render(<LangduStep passage={own} oral={oral} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" rng={() => 0.999} onDone={vi.fn()} />);
+    fireEvent.click(choice('球掉进河里'));
+    await screen.findByText('答案是：他拿回了球');
+    vi.mocked(stopSpeaking).mockClear();
+    fireEvent.click(button('下一题'));
+    expect(stopSpeaking).toHaveBeenCalledTimes(1);
+    fireEvent.click(choice('找来竹子'));
+    fireEvent.click(button('下一题'));
+    fireEvent.click(choice('岸边'));
+    await screen.findByText('答案是：河里');
+    vi.mocked(stopSpeaking).mockClear();
+    fireEvent.click(button('完成'));
+    expect(stopSpeaking).toHaveBeenCalledTimes(1);
+  });
   it('a double tap on 下一题 moves on once', async () => {
     render(<LangduStep passage={own} oral={oral} kid={DEFAULT_KID} withWarmup={false} startAt="meaning" rng={() => 0.999} onDone={vi.fn()} />);
     fireEvent.click(choice('他拿回了球'));

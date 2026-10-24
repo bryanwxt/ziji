@@ -17,7 +17,8 @@ export function libraryRows(passages: readonly Passage[], r: ReadingHistory, rea
     .map((p) => {
       const e = entryOf(r, p.id);
       const next = !e.reads || !e.lastRead ? 'not read yet' : isRetired(e) ? 'retired' : localDateKey(addDays(parseDateKey(e.lastRead), e.rest));
-      const last = (e.answers ?? []).filter((a) => a.at === e.lastRead);
+      const newest = (e.answers ?? []).reduce((m, a) => (a.at > m ? a.at : m), ''); // the day of the last read that asked questions
+      const last = (e.answers ?? []).filter((a) => a.at === newest);
       const qs = last.length ? `${last.filter((a) => a.correct).length}/${last.length}` : '—';
       return { id: p.id, title: p.title, source: p.source === 'gsb' ? 'Global Storybooks' : 'ZiJi', term: p.term, fit: passageFit(p.text, readable, p.names), reads: e.reads, qs, next, oftenSkipped: (e.skips ?? 0) >= OFTEN_SKIPPED };
     });
@@ -31,7 +32,7 @@ export const KIND_LABEL: Readonly<Record<QuestionKind, string>> = { why: '为什
 export interface KindShare { kind: QuestionKind; label: string; right: number; total: number; weakest: boolean }
 
 /** His answers over the last 14 days, every passage's, by kind: right of asked, kinds he met only, in KIND_LABEL's order; the
- *  lowest share is the weakest (the first of a tie), marked only when he has met two kinds or more. */
+ *  lowest share is the weakest (the first of a tie), marked only when he has met two kinds or more and it is strictly below the best. */
 export function kindShares(r: ReadingHistory, today: string): KindShare[] {
   const recent = Object.values(r.history).flatMap((e) => e.answers ?? []).filter((a) => {
     const ago = daysBetween(a.at, today);
@@ -46,7 +47,8 @@ export function kindShares(r: ReadingHistory, today: string): KindShare[] {
   if (rows.length < 2) return rows;
   const share = (x: KindShare) => x.right / x.total;
   const low = rows.reduce((a, b) => (share(b) < share(a) ? b : a));
-  return rows.map((x) => (x === low ? { ...x, weakest: true } : x));
+  const best = Math.max(...rows.map(share));
+  return rows.map((x) => (x === low && share(x) < best ? { ...x, weakest: true } : x));
 }
 
 /** A take's answers for Listen & confirm: right of asked, then each miss with its kind and what he picked. */
