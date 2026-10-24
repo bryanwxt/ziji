@@ -44,8 +44,8 @@ describe("readerAt: what he can read (spec 2026-10-15 §3, K)", () => {
     expect([...r.readable]).toEqual(['我']);
     expect(r.classTerm).toBeNull();
   });
-  it('the pool reaches one term past his class at most', () => {
-    expect([withinReach('三上', '二下'), withinReach('三下', '二下'), withinReach('三下', null)]).toEqual([true, false, true]);
+  it('the pool reaches two terms past his class at most (spec 2026-10-24 §3)', () => {
+    expect([withinReach('三上', '二下'), withinReach('三下', '二下'), withinReach('三下', '二上'), withinReach('三下', null)]).toEqual([true, true, false, true]);
   });
 });
 

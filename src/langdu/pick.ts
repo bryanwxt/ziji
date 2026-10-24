@@ -1,12 +1,15 @@
-// Which passage 朗读 reads (spec 2026-10-15 §4): an unread school text first; then new and revisit in turn — the next part of a
-// story he has started, else the new passage nearest 0.93 of his reading, ZiJi and Global Storybooks taking turns, else an unread
-// easy one; then any due revisit; then a resting one nearest its due day; retired ones last. 下一篇 takes the next in the same order.
+// Which passage 朗读 reads (spec 2026-10-15 §4, 2026-10-24 §3, §6): an unread school text first; then a new passage — the next
+// part of a story he has started, else the new passage nearest 0.88 of his reading, ZiJi and Global Storybooks taking turns,
+// else an unread easy one — except that a due passage he read 'not-well' comes first, taking turns with new ones; then any other
+// due revisit; then a resting one nearest its due day; retired ones last. Nothing under 0.85 unless it is his school text.
+// 下一篇 takes the next in the same order.
 import type { ReadingHistory } from '../types';
 import { afterSkip, entryOf, inGap, isRetired, overdue } from './history';
 
-export const BAND_LOW = 0.9;
-export const BAND_HIGH = 0.97;
-export const BAND_AIM = 0.93;
+/** The stretch band (spec 2026-10-24 §3): 85–92% of a passage readable, aiming at 88%; above it "easy", below it never offered. */
+export const BAND_LOW = 0.85;
+export const BAND_HIGH = 0.92;
+export const BAND_AIM = 0.88;
 
 export type PassageSource = 'parent' | 'ziji' | 'gsb';
 export interface StoryPart { id: string; part: number; parts: number }
@@ -31,8 +34,11 @@ export function pickOrder<T extends Candidate>(r: ReadingHistory, pool: readonly
   const unread = open.filter((c) => e(c).reads === 0);
   const parentNew = unread.filter((c) => c.source === 'parent');
   const due = open
-    .filter((c) => (overdue(e(c), today) ?? -1) >= 0)
+    .filter((c) => (overdue(e(c), today) ?? -1) >= 0 && readable(c))
     .sort((a, b) => overdue(e(b), today)! - overdue(e(a), today)! || a.id.localeCompare(b.id));
+  // a due passage he read 'not-well' comes before anything new; the others wait behind new ones (spec 2026-10-24 §6). A history
+  // from before 2026-10-24 has no lastHow: it waits like one read well
+  const struggled = due.filter((c) => e(c).lastHow === 'not-well');
   const started = unread.filter((c) => c.source !== 'parent' && !!c.story && c.story.part > 1 && c.fit >= BAND_LOW);
   const readFrom = (s: Candidate['source']) => pool.filter((c) => c.source === s && e(c).reads > 0).length;
   const turn: Candidate['source'] = readFrom('gsb') < readFrom('ziji') ? 'gsb' : 'ziji';
@@ -50,7 +56,8 @@ export function pickOrder<T extends Candidate>(r: ReadingHistory, pool: readonly
   const retired = open
     .filter((c) => isRetired(e(c)) && readable(c))
     .sort((a, b) => (e(a).lastRead ?? '').localeCompare(e(b).lastRead ?? '') || a.id.localeCompare(b.id));
-  return [...new Set([...parentNew, ...(r.lastKind === 'new' ? [...due, ...fresh] : [...fresh, ...due]), ...rest, ...retired])];
+  // new and a 'not-well' revisit take turns (lastKind); every other due revisit comes after the new ones
+  return [...new Set([...parentNew, ...(r.lastKind === 'revisit' ? [...fresh, ...struggled] : [...struggled, ...fresh]), ...due, ...rest, ...retired])];
 }
 
 export const pickPassage = <T extends Candidate>(r: ReadingHistory, pool: readonly T[], today: string): T | null => pickOrder(r, pool, today)[0] ?? null;

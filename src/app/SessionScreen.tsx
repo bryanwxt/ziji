@@ -564,7 +564,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       try {
         // every read counts, a take or none: an unrecorded 读完了 moves the passage on too (spec 2026-10-15 §1 cause 4); applied to
         // his state as stored, in one transaction, so a change saved meanwhile (a find, a star) is kept
-        const how = readHow({ extra: false, asked: !!reading.passage.question, meaning: r.meaning });
+        const how = readHow({ extra: false, answers: r.meaning ? [r.meaning] : reading.passage.question ? [{ correct: false }] : [] });
         const change = (fresh: KidState): KidState => {
           const read = afterRead(fresh.reading, reading.passage.id, reading.day, how);
           return { ...fresh, reading: reading.warmup ? afterWarmup(read, reading.day, !!r.intro) : read, speakingLast: 'langdu', bonusStars: fresh.bonusStars + (bonus ? 1 : 0) };

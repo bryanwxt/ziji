@@ -1,12 +1,17 @@
-// 朗读's reading history (spec 2026-10-15 §4): each passage's reads and rest, so a passage comes back on a spaced schedule —
-// never within 3 days, then 3 → 7 → 18 → 45 days while he reads it well, back to 3 on a miss — and retires after that.
+// 朗读's reading history (spec 2026-10-15 §4, 2026-10-24 §6): each passage's reads and rest, so a passage comes back on a spaced
+// schedule — never within 3 days; a read judged well rests 21 days, then 45, then retires; a read not judged well rests 3 days,
+// so he re-reads what he struggled with.
 import { parseDateKey } from '../lib/date';
-import { EMPTY_READING, type PassageHistory, type ReadingHistory } from '../types';
+import { EMPTY_READING, type PassageAnswer, type PassageHistory, type QuestionKind, type ReadingHistory } from '../types';
 
 /** No passage comes back within this many days of its last read or skip; the same day counts (D6, D7). */
 export const GAP_DAYS = 3;
-/** Rest after a read: a first read and a miss give the first step; a good read climbs one step (D6). */
-export const REST_LADDER = [3, 7, 18, 45] as const;
+/** Rest after a read not judged well, from any rest (spec 2026-10-24 §6). */
+export const MISS_REST = 3;
+/** Rest after a read judged well: the first step, then the next; past the last the passage retires (spec 2026-10-24 §6). */
+export const WELL_LADDER = [21, 45] as const;
+/** His answers kept on a passage's history (spec 2026-10-24 §8). */
+export const ANSWERS_KEPT = 30;
 /** Rest past this retires a passage: offered again only when nothing else is. */
 export const RETIRE_AFTER = 60;
 /** The rest a good read past 45 days gives (45 × 2.5): over RETIRE_AFTER, so retired. */
@@ -39,33 +44,45 @@ export function overdue(e: PassageHistory, today: string): number | null {
 
 export const readToday = (r: ReadingHistory, today: string): boolean => Object.values(r.history).some((e) => e.lastRead === today);
 
-/** How a read went: 'well' (the question right first time, or no question), 'not-well' (missed), 'extra' (多读一遍). */
+/** How a read went: 'well', 'not-well', or 'extra' (多读一遍). */
 export type ReadHow = 'well' | 'not-well' | 'extra';
 
-/** Never from the recording: an unrecorded 读完了 is a read like any other (spec §1 cause 4). */
-export function readHow(o: { extra: boolean; asked: boolean; meaning: { correct: boolean } | null }): ReadHow {
+/** From his answers, never the recording (spec 2026-10-15 §1 cause 4; 2026-10-24 §5): 'well' at two thirds right or more (2 of
+ *  3; a parent text's one question right), and with no question asked; 'not-well' below that. */
+export function readHow(o: { extra: boolean; answers: readonly { correct: boolean }[] }): ReadHow {
   if (o.extra) return 'extra';
-  if (!o.asked) return 'well';
-  return o.meaning?.correct ? 'well' : 'not-well';
+  const right = o.answers.filter((a) => a.correct).length;
+  return right * 3 >= o.answers.length * 2 ? 'well' : 'not-well';
 }
 
 export function nextRest(rest: number, well: boolean): number {
-  if (!well) return REST_LADDER[0];
-  return REST_LADDER.find((s) => s > rest) ?? RETIRED_REST;
+  if (!well) return MISS_REST;
+  return WELL_LADDER.find((s) => s > rest) ?? RETIRED_REST;
 }
 
-/** A read: the first rests 3 days; then a good read climbs the ladder (a read before its rest is over keeps it) and a miss goes back to 3. 多读一遍 ('extra') counts for
- *  the gap and the reads only. A lesson read moves the question turn on and says whether it was new or a revisit. */
-export function afterRead(r: ReadingHistory, id: string, today: string, how: ReadHow): ReadingHistory {
+/** What a lesson read asked: the built-in questions' indices (the next read never asks the same set) and his answers, by kind. */
+export interface ReadAsked { set: readonly number[]; answers: readonly { kind: QuestionKind; correct: boolean }[] }
+
+/** A read: one judged well climbs the ladder (21, 45, retired; a read before its rest is over keeps it), one not judged well
+ *  rests 3 days. 多读一遍 ('extra') counts for the gap and the reads only; a first read in it rests 3 days. A lesson read moves
+ *  the question turn on, keeps how it went, the set it asked and his answers (the last 30), and says whether it was new or a
+ *  revisit. */
+export function afterRead(r: ReadingHistory, id: string, today: string, how: ReadHow, asked?: ReadAsked): ReadingHistory {
   const e = entryOf(r, id);
   // a second lesson read of it today (two tabs): one more read, no second climb, turn or kind
   if (how !== 'extra' && e.reads > 0 && e.lastRead === today) return { ...r, history: { ...r.history, [id]: { ...e, reads: e.reads + 1 } } };
   const first = e.reads === 0;
   // an early read (offered before its rest was over, when nothing else was there) keeps its rest: the ladder climbs on spaced reads
   const early = !!e.lastRead && daysBetween(e.lastRead, today) < e.rest;
-  const rest = first ? REST_LADDER[0] : how === 'extra' || (how === 'well' && early) ? e.rest : nextRest(e.rest, how === 'well');
-  const entry: PassageHistory = { ...e, reads: e.reads + 1, lastRead: today, rest, q: how === 'extra' ? e.q : e.q + 1 };
-  return { ...r, history: { ...r.history, [id]: entry }, lastKind: how === 'extra' ? r.lastKind : first ? 'new' : 'revisit' };
+  const rest = how === 'extra' ? (first ? MISS_REST : e.rest) : how === 'well' && early ? e.rest : nextRest(first ? 0 : e.rest, how === 'well');
+  if (how === 'extra') return { ...r, history: { ...r.history, [id]: { ...e, reads: e.reads + 1, lastRead: today, rest } } };
+  const answers: PassageAnswer[] = [...(e.answers ?? []), ...(asked?.answers ?? []).map((a) => ({ kind: a.kind, correct: a.correct, at: today }))].slice(-ANSWERS_KEPT);
+  const entry: PassageHistory = {
+    ...e, reads: e.reads + 1, lastRead: today, rest, q: e.q + 1, lastHow: how,
+    ...(asked?.set.length ? { lastSet: [...asked.set] } : {}),
+    ...(answers.length ? { answers } : {}),
+  };
+  return { ...r, history: { ...r.history, [id]: entry }, lastKind: first ? 'new' : 'revisit' };
 }
 
 /** 下一篇 swapped it out before he read it: the 3-day gap applies; its reads and rest are untouched (spec §5). */
@@ -79,14 +96,21 @@ export function afterSkip(r: ReadingHistory, id: string, today: string): Reading
 export function restFromReview(r: ReadingHistory, id: string, reviewDay: string): ReadingHistory {
   const e = r.history[id];
   if (!e?.reads || !e.lastRead) return r;
-  const rest = Math.max(0, daysBetween(e.lastRead, reviewDay)) + REST_LADDER[0];
-  const entry = rest > RETIRE_AFTER ? { ...e, lastRead: reviewDay, rest: REST_LADDER[0] } : { ...e, rest };
+  const rest = Math.max(0, daysBetween(e.lastRead, reviewDay)) + MISS_REST;
+  // he struggled with it: it comes back as a 'not-well' revisit, first in line (spec 2026-10-24 §6)
+  const entry: PassageHistory = rest > RETIRE_AFTER ? { ...e, lastRead: reviewDay, rest: MISS_REST, lastHow: 'not-well' } : { ...e, rest, lastHow: 'not-well' };
   return { ...r, history: { ...r.history, [id]: entry } };
 }
 
 export const warmupDue = (r: ReadingHistory, today: string): boolean => !r.lastWarmup || daysBetween(r.lastWarmup, today) >= WARMUP_EVERY;
 /** The warm-up ran today; `recorded`: his self-introduction was kept (warm-ups count recorded ones). */
 export const afterWarmup = (r: ReadingHistory, today: string, recorded: boolean): ReadingHistory => ({ ...r, lastWarmup: today, warmups: r.warmups + (recorded ? 1 : 0) });
+
+const KINDS: readonly QuestionKind[] = ['why', 'word', 'order', 'main', 'fact'];
+const isAnswer = (v: unknown): v is PassageAnswer => {
+  const a = v as Partial<PassageAnswer> | null;
+  return !!a && typeof a === 'object' && KINDS.includes(a.kind as QuestionKind) && typeof a.correct === 'boolean' && day(a.at) !== null;
+};
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0);
 const day = (v: unknown): string | null => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
@@ -107,7 +131,14 @@ export function migrateReading(raw: unknown): ReadingHistory {
       const e = v as Record<string, unknown>;
       const lastSkipped = day(e.lastSkipped);
       const skips = num(e.skips);
-      history[id] = { reads: num(e.reads), lastRead: day(e.lastRead), rest: num(e.rest), q: num(e.q), ...(lastSkipped ? { lastSkipped } : {}), ...(skips ? { skips } : {}) };
+      const lastHow = e.lastHow === 'well' || e.lastHow === 'not-well' ? e.lastHow : null;
+      const lastSet = Array.isArray(e.lastSet) ? e.lastSet.filter((i): i is number => Number.isInteger(i) && i >= 0) : [];
+      const answers = Array.isArray(e.answers) ? e.answers.filter(isAnswer).slice(-ANSWERS_KEPT) : [];
+      history[id] = {
+        reads: num(e.reads), lastRead: day(e.lastRead), rest: num(e.rest), q: num(e.q),
+        ...(lastSkipped ? { lastSkipped } : {}), ...(skips ? { skips } : {}), ...(lastHow ? { lastHow } : {}),
+        ...(lastSet.length ? { lastSet } : {}), ...(answers.length ? { answers } : {}),
+      };
     }
     const lastKind = x.lastKind === 'new' || x.lastKind === 'revisit' ? x.lastKind : null;
     return { history, lastKind, lastWarmup: day(x.lastWarmup), warmups };
@@ -116,7 +147,7 @@ export function migrateReading(raw: unknown): ReadingHistory {
   const lastRead = x.lastRead && typeof x.lastRead === 'object' ? (x.lastRead as Record<string, unknown>) : {};
   for (const [id, d] of Object.entries(lastRead)) {
     const at = day(d);
-    if (at) history[id] = { reads: 1, lastRead: at, rest: REST_LADDER[0], q: 1 };
+    if (at) history[id] = { reads: 1, lastRead: at, rest: MISS_REST, q: 1 };
   }
   const days = num(x.days);
   const current = typeof x.passageId === 'string' ? x.passageId : null;

@@ -338,6 +338,9 @@ export interface PassageHistory {
   lastSkipped?: string; // 下一篇 swapped it out that day: the 3-day gap applies
   skips?: number; // 下一篇 swaps, for the parent ("often skipped" at 3)
   q: number;
+  lastHow?: 'well' | 'not-well'; // how the last lesson read went (spec 2026-10-24 §6): a due 'not-well' one comes first
+  lastSet?: number[]; // the built-in questions the last lesson read asked (indices): the next read never repeats the set
+  answers?: PassageAnswer[]; // his answers to its built-in questions, the last 30 (spec 2026-10-24 §8)
 }
 
 /** 朗读 progress (spec 2026-10-15 §4): each passage's history, the kind of the last lesson read (new and revisit take turns),

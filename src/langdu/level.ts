@@ -33,7 +33,7 @@ export function passageTerm(text: string, names: readonly string[] = []): string
 
 /**
  * Who is reading (spec 2026-10-15 §3): K is the characters he reads in the app and the 识读字 of every lesson of his book up to
- * his class's (he meets those at school); his class's term limits the pool to a term ahead at most.
+ * his class's (he meets those at school); his class's term limits the pool to two terms ahead at most (spec 2026-10-24 §3).
  */
 export function readerAt(known: ReadonlySet<string>, now: Date, settings: Pick<Settings, 'grade' | 'gradeYear' | 'classLesson'>): Reader {
   const at = classLessonAt(now, settings);
@@ -41,5 +41,7 @@ export function readerAt(known: ReadonlySet<string>, now: Date, settings: Pick<S
   return { readable: new Set([...known, ...listedBy(at, 'both').read]), classTerm: LESSONS[at]!.term };
 }
 
-/** In the pool at all: a passage's term at most one past his class's (spec §3); any term when his class is unknown. */
-export const withinReach = (term: string, classTerm: string | null): boolean => classTerm === null || termIndex(term) <= termIndex(classTerm) + 1;
+/** Built-in passages reach this many terms past his class's (spec 2026-10-24 §3). */
+export const REACH_TERMS = 2;
+/** In the pool at all: a passage's term at most two past his class's; any term when his class is unknown. */
+export const withinReach = (term: string, classTerm: string | null): boolean => classTerm === null || termIndex(term) <= termIndex(classTerm) + REACH_TERMS;

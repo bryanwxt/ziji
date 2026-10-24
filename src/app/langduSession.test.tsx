@@ -78,7 +78,7 @@ describe('daily 朗读 step', () => {
     await readThrough();
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     const kid = (await getKid(app.db))!;
-    expect(kid.reading).toEqual({ history: { 'pp:1': { reads: 1, lastRead: '2026-10-05', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-05', warmups: 1 });
+    expect(kid.reading).toEqual({ history: { 'pp:1': { reads: 1, lastRead: '2026-10-05', rest: 21, q: 1, lastHow: 'well' } }, lastKind: 'new', lastWarmup: '2026-10-05', warmups: 1 });
     const recs = await listRecordings(app.db);
     expect(recs.map((r) => r.prompt.kind).sort()).toEqual(['intro', 'passage']);
     expect(recs.find((r) => r.prompt.kind === 'passage')!.level).toBe(0.1);
@@ -114,16 +114,16 @@ describe('daily 朗读 step', () => {
 });
 
 describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
-  it('a warm-up 1 day ago: no warm-up, straight to listening; only the read is saved, and a revisit read well rests 7 days', async () => {
+  it('a warm-up 1 day ago: no warm-up, straight to listening; only the read is saved, and a revisit read well rests 21 days', async () => {
     const app = await setup();
-    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1, lastHow: 'not-well' } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
     renderWithApp(<SessionScreen free={false} />, app);
     await listenAndRead();
     expect(screen.queryByText('老师好！')).toBeNull();
     fireEvent.click(btn('完成'));
     expect(await screen.findByText('太棒了！')).toBeTruthy();
     expect((await listRecordings(app.db)).map((r) => r.prompt.kind)).toEqual(['passage']);
-    expect((await getKid(app.db))!.reading).toMatchObject({ history: { 'pp:1': { reads: 2, lastRead: '2026-10-05', rest: 7, q: 2 } }, lastKind: 'revisit', lastWarmup: '2026-10-04', warmups: 1 });
+    expect((await getKid(app.db))!.reading).toMatchObject({ history: { 'pp:1': { reads: 2, lastRead: '2026-10-05', rest: 21, q: 2, lastHow: 'well' } }, lastKind: 'revisit', lastWarmup: '2026-10-04', warmups: 1 });
   });
 
   it('no take (the mic refused): the read still counts, so the passage moves on (spec 2026-10-15 §1 cause 4)', async () => {
@@ -131,7 +131,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
     const { MicDeniedError } = await import('../audio/micErrors');
     vi.mocked(startRecording).mockRejectedValueOnce(new MicDeniedError());
     const app = await setup();
-    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1, lastHow: 'not-well' } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
     renderWithApp(<SessionScreen free={false} />, app);
     await screen.findByText('我爱爸爸，我爱妈妈。');
     await waitFor(() => expect(speak).toHaveBeenLastCalledWith('我爱爸爸，我爱妈妈。'));
@@ -150,7 +150,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
   it('a second lesson the same day reads a different passage (D7)', async () => {
     const app = await setup();
     await saveParentPassage(app.db, { id: 'pp:2', title: '我的猫', text: '我爱我的猫。', createdAt: 2 });
-    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-05', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-05', warmups: 1 } });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { 'pp:1': { reads: 1, lastRead: '2026-10-05', rest: 3, q: 1, lastHow: 'not-well' } }, lastKind: 'new', lastWarmup: '2026-10-05', warmups: 1 } });
     renderWithApp(<SessionScreen free={false} />, app);
     expect(await screen.findByText('我爱我的猫。')).toBeTruthy();
     expect(screen.queryByText('我爱爸爸，我爱妈妈。')).toBeNull();
@@ -159,7 +159,7 @@ describe('朗读 in the lesson (spec 2026-10-12 §3, §6)', () => {
   it("a revisit asks the passage's other question (spec 2026-10-15 §6)", async () => {
     const app = await makeAppData({ now: () => new Date(2026, 9, 5, 17) });
     await updateSettings(app.db, { activities: speakingOnly, langdu: true });
-    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { p01: { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1 } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
+    await saveKid(app.db, { ...DEFAULT_KID, speakingLast: 'story', reading: { history: { p01: { reads: 1, lastRead: '2026-10-01', rest: 3, q: 1, lastHow: 'not-well' } }, lastKind: 'new', lastWarmup: '2026-10-04', warmups: 1 } });
     renderWithApp(<SessionScreen free={false} />, app);
     await screen.findByText('我的家'); // p01, due: after a new passage comes a revisit
     for (let i = 0; i < 3; i++) {

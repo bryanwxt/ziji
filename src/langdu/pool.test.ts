@@ -26,8 +26,9 @@ describe('readingPool (spec 2026-10-15 §4)', () => {
     const [p] = readingPool([], [{ id: 'gsb:0001-1', title: '好', text: '卡莱爱我。', term: '一下', source: 'gsb', names: ['卡莱'], image: 'passages/gsb-0001-1.webp', story: { id: '0001', part: 1, parts: 1 }, credit }], reader('爱我'), {}, {}); // no questions: the step's parts only
     expect(p).toEqual({ id: 'gsb:0001-1', title: '好', text: '卡莱爱我。', term: '一下', source: 'gsb', fit: 1, names: ['卡莱'], image: 'passages/gsb-0001-1.webp', story: { id: '0001', part: 1, parts: 1 }, credit });
   });
-  it('no built-in more than a term past his class (spec §3)', () => {
+  it('no built-in more than two terms past his class (spec 2026-10-24 §3)', () => {
     const b = (id: string, term: string) => ({ id, title: id, text: '我。', term, source: 'ziji' as const });
-    expect(readingPool([], [b('p01', '二下'), b('p02', '三上'), b('p03', '三下')], { readable: new Set(['我']), classTerm: '二下' }).map((p) => p.id)).toEqual(['p01', 'p02']);
+    expect(readingPool([], [b('p01', '二下'), b('p02', '三上'), b('p03', '三下')], { readable: new Set(['我']), classTerm: '二上' }).map((p) => p.id)).toEqual(['p01', 'p02']);
+    expect(readingPool([], [b('p01', '二下'), b('p02', '三上'), b('p03', '三下')], { readable: new Set(['我']), classTerm: '二下' }).map((p) => p.id)).toEqual(['p01', 'p02', 'p03']);
   });
 });
