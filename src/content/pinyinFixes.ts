@@ -77,4 +77,11 @@ customPinyin({
   只好: 'zhǐ hǎo', 只喂: 'zhǐ wèi', 棒子: 'bàng zi', 罐子: 'guàn zi', 冲得: 'chōng de', 看得太入迷: 'kàn de tài rù mí',
   累得: 'lèi de', 吓得: 'xià de', 逗得: 'dòu de', 一片漆黑: 'yí piàn qī hēi', 外婆家: 'wài pó jiā', 舍不得: 'shě bu de',
   还书: 'huán shū', 种起来: 'zhòng qǐ lái',
+  // 三上 stretch passages p101–p113 (2026-10-24 Task 15): 种 (planting) zhòng, 长 (growing) zhǎng, 得 after a verb de, 地 after
+  // an adverb de, 教 (teaching) jiāo, 卷 (rolling) juǎn, 背 (carrying) bēi, 倒 (pouring) dào, 只 (only) zhǐ, 钻 (boring) zuān,
+  // 空 (vacant) kòng, 爷爷 neutral after 老
+  种一棵: 'zhòng yì kē', 能长多高: 'néng zhǎng duō gāo', 浇得: 'jiāo de', 整齐地: 'zhěng qí de', 教您: 'jiāo nín',
+  一次又一次地: 'yí cì yòu yí cì de', 卷走: 'juǎn zǒu', 舔得: 'tiǎn de', 看得很远: 'kàn de hěn yuǎn', 牢牢地: 'láo láo de',
+  扎得: 'zhā de', 背着很重: 'bēi zhe hěn zhòng', 倒掉: 'dào diào', 只会说一点: 'zhǐ huì shuō yì diǎn', 钻出: 'zuān chū',
+  空座位: 'kòng zuò wèi', 妈妈的裤子: 'mā ma de kù zi', 位老爷爷: 'wèi lǎo yé ye',
 });
