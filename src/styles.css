@@ -871,15 +871,26 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__cards .goal__body { flex-direction: row; align-items: center; gap: 10px; }
 .home__cards .goal__body .progress { flex: 1; min-width: 60px; }
 .home__cards .goal__count { white-space: nowrap; }
-/* the reward card (rewards spec §3): the small river meter first, the parent's goal beside it */
-.reward-card__meter { display: inline-flex; align-items: center; flex: 0 1 220px; min-width: 96px; } /* the meter gives way before the goal does */
-.home__cards .reward-card .river--mini { width: 100%; }
-.home__cards .reward-card--alone { justify-self: center; padding: 6px 16px; } /* no parent goal: the card is the meter's size, and the meter fills it */
-.home__cards .reward-card--alone .reward-card__meter { flex-basis: min(300px, 72vw); }
+/* the reward card (rewards spec §3; redrawn 2026-10-25): the river meter fills the card; with a parent's goal, the meter has
+   its own full-width row and the goal sits on the line under it */
+.reward-card__meter { display: flex; justify-content: center; align-items: center; }
+.home__cards .reward-card .river--mini { width: min(100%, 300px, 72vw); }
+.home__cards .reward-card--alone { justify-self: center; padding: 6px 16px; } /* no parent goal: the card is the meter's size */
+.home__cards .reward-card:not(.reward-card--alone) { flex-wrap: wrap; row-gap: 2px; padding-top: 8px; }
+.home__cards .reward-card:not(.reward-card--alone) .reward-card__meter { flex: 1 1 100%; }
+.home__cards .reward-card:not(.reward-card--alone) .goal__body { flex: 1; min-width: 0; }
 .home__cards .reward-card .goal__body strong .label__cells { flex-wrap: nowrap; }
 @media (max-width: 600px) {
-  .home__cards .reward-card:not(.reward-card--alone) .reward-card__meter { flex-basis: 116px; }
   .home__cards .reward-card .goal__body .progress { min-width: 36px; }
+}
+/* an iPhone SE-height screen: a smaller river keeps Home on one screen */
+@media (max-height: 700px) { .home__cards .reward-card .river--mini { width: min(100%, 220px); } }
+/* a short landscape iPad (1024 × 768): the meter sits beside the goal again, smaller, so the word of the day stays clear of the path */
+@media (min-aspect-ratio: 1/1) and (max-height: 820px) {
+  .home__cards .reward-card .river--mini { width: 180px; }
+  .home__cards .reward-card:not(.reward-card--alone) { flex-wrap: nowrap; padding-top: 4px; padding-bottom: 4px; }
+  .home__cards .reward-card:not(.reward-card--alone) .reward-card__meter { flex: none; }
+  .home__cards .reward-card--alone { padding-top: 4px; padding-bottom: 4px; }
 }
 .home__cards .done-card { justify-content: space-between; padding: 8px 10px 8px 16px; }
 .home__cards .done-today { font-size: 22px; }

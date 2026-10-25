@@ -33,18 +33,17 @@ const BANK_X = 297;
 const BANK = `M272 ${WATER_Y + 12} Q274 ${WATER_Y - 3} 290 ${WATER_Y - 5} L304 ${WATER_Y - 5} Q318 ${WATER_Y - 4} 318 ${WATER_Y + 8} Q318 ${WATER_Y + 14} 300 ${WATER_Y + 14} L282 ${WATER_Y + 14} Q272 ${WATER_Y + 14} 272 ${WATER_Y + 12} Z`;
 const BANK_SHADE = `M318 ${WATER_Y + 4} Q318 ${WATER_Y + 14} 300 ${WATER_Y + 14} L282 ${WATER_Y + 14} Q274 ${WATER_Y + 14} 273 ${WATER_Y + 9} Q296 ${WATER_Y + 10} 318 ${WATER_Y + 4} Z`;
 const SAND = '#f3d9a1';
-/** The chest in cel (outline, lid, gold band and lock), drawn round its ground point; `glint`: ajar with light in the gap and two sparkles. */
+/** The chest in cel (outline, lid, gold band and lock), drawn round its ground point; `glint`: sparkles round it, the lid still
+ *  shut (Celebration's chest is the one that opens). */
 const WOOD = '#c77b30';
 const LID = '#d98a3d';
 const GOLD = '#f6c343';
 const chestMark = (glint: boolean) => {
   const w = 2.4;
-  const lidLift = glint ? 'translate(-2 -5) rotate(-7 -18 -20)' : '';
   return (
     celPath('M-18 -20 H18 V-3 Q18 0 15 0 H-15 Q-18 0 -18 -3 Z', WOOD, 'M6 -20 H18 V-3 Q18 0 15 0 H-4 Q4 -9 6 -20 Z', { w }) +
     `<rect x="-3.5" y="-20" width="7" height="20" fill="${GOLD}" ${line(1.6)}/>` +
-    (glint ? `<path d="M-18 -20 L18 -20 L17 -29 L-19 -22 Z" fill="#ffe27a" ${line(1.6)}/>` : '') +
-    `<g transform="${lidLift}">` +
+    `<g>` +
     celPath('M-19 -20 V-27 Q-19 -36 0 -36 Q19 -36 19 -27 V-20 Z', LID, 'M8 -35 Q19 -34 19 -27 V-20 H10 Q13 -28 8 -35 Z', { w }) +
     `<rect x="-3.5" y="-35.6" width="7" height="15.6" fill="${GOLD}" ${line(1.6)}/>` +
     `<path d="M-13 -29 Q-8 -33 -2 -33.5" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>` +
