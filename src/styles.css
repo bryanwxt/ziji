@@ -346,8 +346,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 /* the river meter (rewards spec 2026-10-15 §3): a short river, the paper boat, the chest at its end */
 .river { display: block; width: min(86vw, 380px, 40dvh); height: auto; overflow: visible; } /* by height too: the chest phase fits a landscape iPad */
-.river--mini { width: 116px; }
-.celebrate .river { margin: -10px 0 -4px; } /* the track's box is empty above the chest mark: no gap spent on it */
+.river--mini { width: 240px; max-width: 100%; }
+/* the full chest glints (redraw 2026-10-25); still under reduced motion */
+.river__glint { transform-box: fill-box; transform-origin: center; animation: river-glint 1.6s ease-in-out infinite; }
+.river--still .river__glint { animation: none; }
+@keyframes river-glint { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.8); } }
+@media (prefers-reduced-motion: reduce) { .river__glint { animation: none; } }
 /* the chest shows once the boat reaches it; hidden (not removed) so nothing below it moves */
 .chest-slot.is-waiting { visibility: hidden; }
 /* almost there (rewards spec §4): up to three lines, each with its ink icon */
@@ -868,12 +872,13 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__cards .goal__body .progress { flex: 1; min-width: 60px; }
 .home__cards .goal__count { white-space: nowrap; }
 /* the reward card (rewards spec §3): the small river meter first, the parent's goal beside it */
-.reward-card__meter { display: inline-flex; align-items: center; }
-.home__cards .reward-card .river--mini { width: 116px; }
-.home__cards .reward-card--alone { justify-self: center; padding: 6px 18px; } /* no parent goal: the card is the meter's size */
+.reward-card__meter { display: inline-flex; align-items: center; flex: 0 1 220px; min-width: 96px; } /* the meter gives way before the goal does */
+.home__cards .reward-card .river--mini { width: 100%; }
+.home__cards .reward-card--alone { justify-self: center; padding: 6px 16px; } /* no parent goal: the card is the meter's size, and the meter fills it */
+.home__cards .reward-card--alone .reward-card__meter { flex-basis: min(300px, 72vw); }
 .home__cards .reward-card .goal__body strong .label__cells { flex-wrap: nowrap; }
 @media (max-width: 600px) {
-  .home__cards .reward-card:not(.reward-card--alone) .river--mini { width: 84px; }
+  .home__cards .reward-card:not(.reward-card--alone) .reward-card__meter { flex-basis: 116px; }
   .home__cards .reward-card .goal__body .progress { min-width: 36px; }
 }
 .home__cards .done-card { justify-content: space-between; padding: 8px 10px 8px 16px; }

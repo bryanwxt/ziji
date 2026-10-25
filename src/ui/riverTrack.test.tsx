@@ -12,7 +12,7 @@ describe('the river track (rewards spec §3)', () => {
     const arrived = vi.fn();
     render(<RiverTrack from={0} to={2} onArrive={arrived} />);
     expect(boatX()).toBe('translateX(0px)');
-    await waitFor(() => expect(boatX()).toBe('translateX(244px)'));
+    await waitFor(() => expect(boatX()).toBe('translateX(210px)'));
     await waitFor(() => expect(arrived).toHaveBeenCalledTimes(1), { timeout: 2000 });
     expect(document.querySelector('svg.river')!.getAttribute('data-halves')).toBe('2');
   });
@@ -20,7 +20,7 @@ describe('the river track (rewards spec §3)', () => {
     motion.reduced = true;
     const arrived = vi.fn();
     render(<RiverTrack from={0} to={1} onArrive={arrived} />);
-    expect(boatX()).toBe('translateX(122px)');
+    expect(boatX()).toBe('translateX(105px)');
   });
   it('is drawn in light cel: the paper boat, no gradient, no clip-path', () => {
     const { container } = render(<RiverTrack from={1} to={1} mini />);
@@ -33,7 +33,23 @@ describe('the river track (rewards spec §3)', () => {
     const { rerender } = render(<RiverTrack mini from={0} to={0} />);
     expect(boatX()).toBe('translateX(0px)');
     rerender(<RiverTrack mini from={1} to={1} />);
-    await waitFor(() => expect(boatX()).toBe('translateX(122px)'));
+    await waitFor(() => expect(boatX()).toBe('translateX(105px)'));
     expect(document.querySelector('svg.river')!.getAttribute('data-halves')).toBe('1');
+  });
+  it('a full meter shows the chest glinting, still with reduced motion; a part-full one does not', () => {
+    motion.reduced = true;
+    const { container, rerender } = render(<RiverTrack mini from={1} to={1} />);
+    expect(container.querySelector('.river__glint')).toBeNull();
+    expect(container.querySelector('svg.river--still')).toBeTruthy(); // the CSS holds the sparkle still
+    rerender(<RiverTrack mini from={2} to={2} />);
+    expect(container.querySelector('svg.river--full .river__chest .river__glint')).toBeTruthy();
+  });
+  it('the water already sailed grows with the boat', () => {
+    motion.reduced = true;
+    const sailed = () => (document.querySelector('.river__sailed') as SVGRectElement).style.transform;
+    const { rerender } = render(<RiverTrack from={0} to={0} />);
+    expect(sailed()).toBe('scaleX(0)');
+    rerender(<RiverTrack from={2} to={2} />);
+    expect(sailed()).toBe('scaleX(1)');
   });
 });

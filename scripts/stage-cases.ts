@@ -554,6 +554,33 @@ for (const size of SIZES) {
     const shown = await page.evaluate(() => { const r = document.querySelector('.world-scene svg')!.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !!document.querySelector('.world-props .tap'); });
     if (!shown) problems.push(`river ${w.id} ${time} ${name}: the world or its props did not draw`);
   }
+  // the river meter (parent 2026-10-25: redrawn to fit the cel look): Home's reward card alone and beside a goal, and
+  // Celebration's full track, at halves 0–2; the card holds its meter and goal, the track sits on the screen
+  for (const [name, width, height] of [['iphone-se', 375, 667], ['iphone-15', 390, 844], ['ipad-landscape', 1024, 768], ['ipad-portrait', 768, 1024]] as const) {
+    await page.setViewportSize({ width, height });
+    for (const h of [0, 1, 2]) for (const [tag, q] of [['alone', ''], ['goal', '&goal=1'], ['celebrate', '&at=celebrate']] as const) {
+      await page.goto(`file://${dir}/index.html?case=meter&halves=${h}${q}`);
+      await page.waitForSelector('svg.river');
+      await page.waitForTimeout(250);
+      await page.screenshot({ path: `fit-shots/stage-cases/meter-${tag}-${h}-${name}.png` });
+      problems.push(...(await page.evaluate(([n, halves]) => {
+        const out: string[] = [];
+        const river = document.querySelector('svg.river')!;
+        const r = river.getBoundingClientRect();
+        if (river.getAttribute('data-halves') !== String(halves)) out.push(`${n}: the meter shows ${river.getAttribute('data-halves')} halves`);
+        if (r.left < 0 || r.right > innerWidth || r.top < 0 || r.bottom > innerHeight) out.push(`${n}: the river runs off the screen`);
+        const card = document.querySelector('.reward-card')?.getBoundingClientRect();
+        if (card) {
+          if (r.width < 90) out.push(`${n}: the meter is only ${Math.round(r.width)}px wide`);
+          for (const el of document.querySelectorAll('.reward-card > *, .reward-card .goal__body > *')) {
+            const e = el.getBoundingClientRect();
+            if (e.left < card.left - 1 || e.right > card.right + 1 || e.top < card.top - 1 || e.bottom > card.bottom + 1) out.push(`${n}: ${el.className || el.tagName} spills out of the reward card`);
+          }
+        }
+        return out;
+      }, [`meter ${tag} ${h} ${name}`, h] as const)));
+    }
+  }
   await page.setViewportSize({ width: 1000, height: 640 });
   await page.goto(`file://${dir}/index.html?case=bursts`);
   await page.waitForTimeout(300);
