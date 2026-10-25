@@ -446,6 +446,10 @@ export interface KidState {
   starredUpTo?: number; // passes up to this time have earned their stars (spec 2026-10-11 §5); absent: none yet
   meter: Meter; // the river meter toward the chest (rewards spec 2026-10-15 §3)
   bank?: number; // halves earned past the day's 2 chests, waiting for tomorrow (at most one full meter)
+  /** what the journey kept from its count before it counted only words learned in the app (2026-10-25): set once, so the
+   *  switch never lowers the count he has seen; absent: not yet switched */
+  journeyCarry?: number;
+  confirmNewsSaid?: boolean; // Truffle has said once that the placement guesses get confirmed one by one (2026-10-25)
 }
 
 export const DEFAULT_KID: KidState = {

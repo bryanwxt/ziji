@@ -10,6 +10,7 @@ import { WeekReadiness } from './WeekReadiness';
 import { takeWord, waitingTakes } from '../session/say';
 import type { ReviewLog, SessionRecord } from '../types';
 import { MinutesChart } from './MinutesChart';
+import { toConfirmLine } from './progress';
 import type { ParentPlace } from './ParentArea';
 
 const KEEP_RECORDINGS = 100;
@@ -50,6 +51,7 @@ export function Dashboard({ onNavigate, waiting, talk, quietWeak }: { onNavigate
   }, []);
 
   if (!d) return <p>Loading…</p>;
+  const toConfirm = toConfirmLine(d.know.known - d.know.confirmed); // placement's guesses still to recheck (2026-10-25)
   const takes = waiting ?? d.takes;
 
   const t = now();
@@ -97,9 +99,11 @@ export function Dashboard({ onNavigate, waiting, talk, quietWeak }: { onNavigate
       <div class="tiles">
         <div class="tile"><span class="tile__value">{streak(d.sessions, today, d.practised)} 🔥</span><span class="tile__label">Day streak</span></div>
         <div class="tile">
-          <span class="tile__value">{d.know.known} / {settings.targetRecognise}</span>
+          {/* confirmed, as he sees it (2026-10-25); placement's guesses on a line of their own */}
+          <span class="tile__value">{d.know.confirmed} / {settings.targetRecognise}</span>
           <span class="tile__label">Characters recognised</span>
-          <div class="progress"><div class="progress__fill" style={{ width: pct(d.know.known, settings.targetRecognise) }} /></div>
+          {toConfirm && <small class="muted">{toConfirm}</small>}
+          <div class="progress"><div class="progress__fill" style={{ width: pct(d.know.confirmed, settings.targetRecognise) }} /></div>
         </div>
         <div class="tile">
           <span class="tile__value">{d.know.written} / {settings.targetWrite}</span>

@@ -44,7 +44,7 @@ export function Wardrobe() {
   useEffect(() => {
     void loadKnowledge(db).then(async (know) => {
       setProgress(powerProgress(powerFamilies(BUILTIN), know.knownChars));
-      setLearned(await journeyCount(db, know.known));
+      setLearned(await journeyCount(db, know));
     });
   }, []);
 

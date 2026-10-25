@@ -16,6 +16,11 @@ export interface Knowledge {
   /** each known character's syllables in those words, tone-marked and lowercased (只 → {zhī} from 一只): pinyin fades per reading (final review I1) */
   knownReadings: ReadonlyMap<string, ReadonlySet<string>>;
   known: number; // = knownChars.size
+  /** known words whose reading is confirmed (parent decision 2026-10-25): learned in lessons, or a placement guess its first
+   *  recheck got right. A guess not yet rechecked still counts in known (reading support), never here. */
+  confirmedWordIds: Set<string>;
+  confirmedChars: Set<string>; // characters in confirmed words: what his own numbers count, so they only ever go up
+  confirmed: number; // = confirmedChars.size
   heard: number;
   understood: number; // understood in a sentence he heard (plan 2b)
   read: number;
@@ -39,6 +44,9 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
   }
   const count = (r: RungKind) => [...passedRungs.values()].filter((s) => s.has(r)).length;
   const knownWordIds = new Set([...passedRungs].filter(([, s]) => s.has('read')).map(([id]) => id));
+  const unconfirmed = new Set(cards.filter((c) => c.kind === 'recognise' && c.placed === true).map((c) => c.wordId));
+  const confirmedWordIds = new Set([...knownWordIds].filter((id) => !unconfirmed.has(id)));
+  const confirmedChars = new Set([...confirmedWordIds].flatMap((id) => Array.from(word(id)!.text).filter((ch) => /\p{Script=Han}/u.test(ch))));
   const knownChars = new Set<string>();
   const knownReadings = new Map<string, Set<string>>();
   for (const id of knownWordIds) {
@@ -54,6 +62,7 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
     words, cards, wordsById, ladderById, passedRungs,
     cardsById: new Map(cards.map((c) => [c.id, c])),
     knownWordIds, knownChars, knownReadings, known: knownChars.size,
+    confirmedWordIds, confirmedChars, confirmed: confirmedChars.size,
     heard: count('hear'), understood: count('understand'), read: count('read'), used: count('use'),
     owned: [...passedRungs].filter(([id, s]) => isOwned(word(id)!, s)).length,
     written: cards.filter((c) => c.kind === 'write' && c.passed).length,

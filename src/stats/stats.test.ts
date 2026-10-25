@@ -160,3 +160,27 @@ describe('stars (deferred minor, plan 13)', () => {
 it('练一练 counts two stars (it replaces three starred steps), so a full lesson stays at 5', () => {
   expect(starsOf(['newwords', 'practice', 'writing', 'speaking'])).toBe(5);
 });
+
+describe('summarize: confirmed characters (parent decision 2026-10-25)', () => {
+  const now = new Date(2026, 9, 25);
+  const words = [makeWord('大'), makeWord('朋友', { id: 'p:1' }), makeWord('人'), makeWord('山')];
+  const placed = (id: string) => ({ ...makeCard(id, 'recognise', now, true), placed: true as const });
+  it('counts only words learned in lessons or rechecked right; placement guesses stay in known', () => {
+    const cards = [
+      makeCard('p:1', 'recognise', now, true), // learned in a lesson: never placed
+      placed('b:大'), // a placement guess not yet rechecked
+      makeCard('b:人', 'recognise', now, true), // a placement guess its first recheck got right: `placed` is cleared
+      makeCard('b:山', 'recognise', now, false), // not passed
+    ];
+    const k = summarize(words, cards);
+    expect(k.known).toBe(4); // 大 朋 友 人: reading support still has the guesses
+    expect([...k.confirmedChars].sort()).toEqual(['人', '朋', '友'].sort());
+    expect(k.confirmed).toBe(3);
+  });
+  it('a missed first recheck (the cards go) lowers known but never confirmed', () => {
+    const before = summarize(words, [makeCard('p:1', 'recognise', now, true), placed('b:大')]);
+    const after = summarize(words, [makeCard('p:1', 'recognise', now, true)]);
+    expect([before.known, after.known]).toEqual([3, 2]);
+    expect([before.confirmed, after.confirmed]).toEqual([2, 2]);
+  });
+});

@@ -179,6 +179,8 @@ export async function answeredCardIds(db: AppDb): Promise<Set<string>> {
 
 export const logsSince = (db: AppDb, sinceMs: number) =>
   db.getAllFromIndex('reviewLogs', 'byAt', IDBKeyRange.lowerBound(sinceMs));
+export const logsUntil = (db: AppDb, untilMs: number) =>
+  db.getAllFromIndex('reviewLogs', 'byAt', IDBKeyRange.upperBound(untilMs));
 
 export const getSession = (db: AppDb, date: string) => db.get('sessions', date);
 export const allSessions = (db: AppDb) => db.getAll('sessions');

@@ -10,7 +10,7 @@ import { produceChars } from '../stats/produce';
 import { EVIDENCE_DAYS, weekFromMemory, wordEvidence } from '../stats/fromMemory';
 import { logsSince } from '../store/repo';
 import type { ReviewLog, Settings } from '../types';
-import { weeklyTrend } from './progress';
+import { toConfirmLine, weeklyTrend } from './progress';
 
 const pct = (n: number, of: number) => `${((n / of) * 100).toFixed(1)}%`;
 const count = (have: ReadonlySet<string>, list: Iterable<string>) => [...list].filter((ch) => have.has(ch)).length;
@@ -59,7 +59,9 @@ export function ProgressPanel({ know, settings, now, logs, onTapOnly }: { know: 
   // can produce (spec 2026-10-11 §3): he writes it (write passed) or says it (Say passed); a 词语 said counts for itself only;
   // can use (production practice spec §4): words he said sentences with (Sentence passed)
   const { write: written, say: said } = produceChars(know.cards, (id) => wordOf(know, id));
-  const read = target ? count(know.knownChars, target.read) : know.known;
+  // confirmed, as he sees it (2026-10-25); placement's guesses in the same list on a line of their own
+  const read = target ? count(know.confirmedChars, target.read) : know.confirmed;
+  const toConfirm = toConfirmLine((target ? count(know.knownChars, target.read) : know.known) - read);
   const wrote = target ? count(written, target.write) : know.written;
   const says = target ? count(said, target.read) : said.size;
   const terms = end === undefined ? [] : MOE_TERMS.slice(0, MOE_TERMS.indexOf(endTerm) + 1);
@@ -70,7 +72,7 @@ export function ProgressPanel({ know, settings, now, logs, onTapOnly }: { know: 
       <h3>MOE progress</h3>
       <p class="muted">A step counts only after he gets it right on two different days.</p>
       <dl class="progress__counts">
-        <dt>Characters recognised</dt><dd>{target ? `${read} of ${target.read.size} by the end of ${endTerm}` : know.known}</dd>
+        <dt>Characters recognised</dt><dd>{target ? `${read} of ${target.read.size} by the end of ${endTerm}` : read}{toConfirm && <><br /><small class="muted">{toConfirm}</small></>}</dd>
         <dt>Characters written</dt><dd>{target ? `${wrote} of ${target.write.size}` : know.written}</dd>
         <dt>Characters he can say</dt><dd>{target ? `${says} of ${target.read.size}` : says}</dd>
         {know.begun > 0 && <><dt>Words he can use in a sentence</dt><dd>{`${know.canUse} of ${know.begun} begun`}</dd></>}
