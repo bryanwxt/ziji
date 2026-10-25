@@ -5,7 +5,7 @@ import { pinyin } from 'pinyin-pro';
 import { primeSpeech, speak } from '../audio/speech';
 import { lessonStops, pathNodes } from '../fun/path';
 import { wordOfTheDay } from '../fun/wordOfDay';
-import { goalKnown, goalProgress, nextGoal } from '../fun/rewards';
+import { goalKnown, goalProgress, nextGoal, type GoalProgress } from '../fun/rewards';
 import { localDateKey } from '../lib/date';
 import { stepsOn } from '../session/plan';
 import { practisedDays, streak, totalStars, weekDays } from '../stats/stats';
@@ -258,27 +258,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       </header>
       <main class="home__main">
         <div class="home__cards">
-          {/* the reward card (rewards spec §3): the river meter toward the chest, and the parent's goal beside it when there is one */}
-          <div class={`goal reward-card${goal && progress ? '' : ' reward-card--alone'}${progress?.reached ? ' goal--reached' : ''}`}>
-            <span class="reward-card__meter"><RiverTrack key={shown.halves} mini from={shown.halves} to={shown.halves} /></span>
-            {goal && progress && (
-              <>
-                {/* what he sees is Chinese with an ink icon; the parent's English note and older emoji stay in the parent area (spec 2026-10-04 §3) */}
-                <span class="goal__icon"><InkIcon name={goal.icon ?? 'gift'} size={34} /></span>
-                <div class="goal__body">
-                  <strong><Label zh={goal.zh ?? '我的奖励'} /></strong>
-                  {progress.reached ? (
-                    <span><Label zh="你做到了！找爸爸妈妈拿奖励吧！" /></span>
-                  ) : (
-                    <>
-                      <div class="progress"><div class="progress__fill" style={{ width: `${Math.round(progress.fraction * 100)}%` }} /></div>
-                      <small class="goal__count">{progress.value} / {goal.target} {goal.metric === 'stars' ? <InkIcon name="star" size={16} /> : '字'}</small>
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+          <RewardCard halves={shown.halves} goal={goal} progress={progress} />
           {/* this week's word list (weekly list spec 2026-10-17 §9): one line, or on its ready-by day the 考考自己 card */}
           <WeekCountdown onShown={setWeekShown} />
           {doneToday && chestOpened && (
@@ -351,6 +331,32 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         </div>
       )}
       <TabBar active="home" />
+    </div>
+  );
+}
+
+/** The reward card (rewards spec §3): the river meter toward the chest, and the parent's goal beside it when there is one. */
+export function RewardCard({ halves, goal, progress }: { halves: number; goal: RewardGoal | null; progress: GoalProgress | null }) {
+  return (
+    <div class={`goal reward-card${goal && progress ? '' : ' reward-card--alone'}${progress?.reached ? ' goal--reached' : ''}`}>
+      <span class="reward-card__meter"><RiverTrack key={halves} mini from={halves} to={halves} /></span>
+      {goal && progress && (
+        <>
+          {/* what he sees is Chinese with an ink icon; the parent's English note and older emoji stay in the parent area (spec 2026-10-04 §3) */}
+          <span class="goal__icon"><InkIcon name={goal.icon ?? 'gift'} size={34} /></span>
+          <div class="goal__body">
+            <strong><Label zh={goal.zh ?? '我的奖励'} /></strong>
+            {progress.reached ? (
+              <span><Label zh="你做到了！找爸爸妈妈拿奖励吧！" /></span>
+            ) : (
+              <>
+                <div class="progress"><div class="progress__fill" style={{ width: `${Math.round(progress.fraction * 100)}%` }} /></div>
+                <small class="goal__count">{progress.value} / {goal.target} {goal.metric === 'stars' ? <InkIcon name="star" size={16} /> : '字'}</small>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

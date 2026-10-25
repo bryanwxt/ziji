@@ -78,6 +78,8 @@ import { WeekView } from '../../src/parent/WeekSummaryPanel';
 import { pickDay } from '../../src/talk/pick';
 import { talkWord } from '../../src/talk/load';
 import { weekRange, type WeekSummary } from '../../src/talk/week';
+import { RewardCard } from '../../src/app/HomeScreen';
+import { RiverTrack } from '../../src/ui/RiverTrack';
 
 const screen = (body: preact.ComponentChildren) => (
   <div class="screen">
@@ -337,6 +339,21 @@ else if (which === 'bursts') {
     </div>,
     app,
   );
+}
+else if (which === 'meter') {
+  // the river meter (rewards spec §3, parent 2026-10-25 "fit the aesthetic"): Home's reward card on the world at halves 0–2,
+  // alone or beside a parent's goal, and Celebration's full-size track above its title
+  const q = new URLSearchParams(location.search);
+  const halves = Number(q.get('halves') ?? 0);
+  const goal = q.get('goal') ? { id: 'g', title: 'Lego', zh: '乐高', icon: 'gift', metric: 'stars', target: 40, createdAt: 0 } as unknown as Parameters<typeof RewardCard>[0]['goal'] : null;
+  render(q.get('at') === 'celebrate' ? (
+    <div class="screen"><div class="burst" style={burstStyle('home')} /><div class="celebrate celebrate--burst"><h1><Label zh="小船走到一半了！" /></h1><RiverTrack from={halves} to={halves} /><p class="celebrate__line"><Label zh="多学会几个字，小船就走！" /></p></div></div>
+  ) : (
+    <div class="screen home">
+      <WorldScene world="home" time="afternoon" />
+      <main class="home__main"><div class="home__cards"><RewardCard halves={halves} goal={goal} progress={goal ? { value: 23, fraction: 23 / 40, reached: false } : null} /></div></main>
+    </div>
+  ), app);
 }
 else if (which === 'moments' || which === 'river') {
   // Home's world with its props and a live Truffle: each moment is tapped and its frames timed (spec 2026-10-04 §6); `river` is
