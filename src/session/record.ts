@@ -254,6 +254,7 @@ export interface RecallGrade { wordId: string; writeId: string; reading: boolean
 export async function recordRecall(db: AppDb, g: RecallGrade, o: { totalMisses: number; hinted: boolean }, now: Date): Promise<CardRecord[]> {
   const right = recallRight(o);
   const out: CardRecord[] = [];
+  let sentBack = false; // a placed card's wrong 默写 sends the word back to learn: its meaning isn't graded either
   if (ratedToday(await getCard(db, `${g.writeId}:write`), now)) {
     if (!right) await bringForward(db, g.writeId, 'write', endOfLocalDay(now));
   } else out.push(await recordWriting(db, g.writeId, o.totalMisses, now, { source: 'recall', correct: right }));
@@ -266,9 +267,10 @@ export async function recordRecall(db: AppDb, g: RecallGrade, o: { totalMisses: 
       await addReviewLog(db, { cardId: card.id, wordId: g.wordId, kind: 'recognise', at: now.getTime(), rating, correct: right, source: 'recall', ...before, ...(placed ? { placedCheck: true as const } : {}) });
       const settled = (await settleRung(db, g.wordId, 'recognise', now)) ?? card;
       out.push(placed ? await endPlacement(db, g.wordId, settled, right) : settled);
+      sentBack = placed && !right;
     } else if (!right) await bringForward(db, g.wordId, 'recognise', endOfLocalDay(now));
   }
-  if (g.meaning) out.push(await recordWrittenMeaning(db, g.wordId, right, now));
+  if (g.meaning && !sentBack) out.push(await recordWrittenMeaning(db, g.wordId, right, now)); // no lone meaning card for it
   return out;
 }
 

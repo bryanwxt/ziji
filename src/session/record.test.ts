@@ -330,4 +330,9 @@ describe('a 默写 reading on a placed card is its recheck (review M5)', () => {
     expect(await getCard(db, 'b:草:recognise')).toBeUndefined();
     expect(await getCard(db, 'b:草:write')).toBeDefined();
   });
+  it('wrong, with a 组词 cue: no lone meaning card is made for a word sent back to learn', async () => {
+    const db = await setup();
+    await recordRecall(db, { ...g, meaning: true }, { totalMisses: 4, hinted: true }, now);
+    expect(await getCard(db, 'b:草:meaning')).toBeUndefined();
+  });
 });
