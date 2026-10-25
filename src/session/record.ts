@@ -91,9 +91,13 @@ async function rateTap(db: AppDb, wordId: string, kind: TapKind, o: TapOutcome, 
 export async function recordRecognition(db: AppDb, wordId: string, outcome: TapOutcome, now: Date): Promise<CardRecord> {
   const placed = (await getCard(db, `${wordId}:recognise`))?.placed === true;
   const card = await rateTap(db, wordId, 'recognise', outcome, outcome.responseMs, now, placed ? { placedCheck: true } : {});
-  if (!placed) return card;
+  return placed ? endPlacement(db, wordId, card, outcome.correct) : card;
+}
+
+/** A placed card's first recheck answered (spec 2026-10-14): right, the guess is confirmed; missed, the word goes back to learn. */
+async function endPlacement(db: AppDb, wordId: string, card: CardRecord, correct: boolean): Promise<CardRecord> {
   const { placed: _done, ...rest } = card;
-  if (outcome.correct) {
+  if (correct) {
     await putCards(db, [rest]);
     return rest;
   }
@@ -250,18 +254,23 @@ export interface RecallGrade { wordId: string; writeId: string; reading: boolean
 export async function recordRecall(db: AppDb, g: RecallGrade, o: { totalMisses: number; hinted: boolean }, now: Date): Promise<CardRecord[]> {
   const right = recallRight(o);
   const out: CardRecord[] = [];
+  let sentBack = false; // a placed card's wrong 默写 sends the word back to learn: its meaning isn't graded either
   if (ratedToday(await getCard(db, `${g.writeId}:write`), now)) {
     if (!right) await bringForward(db, g.writeId, 'write', endOfLocalDay(now));
   } else out.push(await recordWriting(db, g.writeId, o.totalMisses, now, { source: 'recall', correct: right }));
   if (g.reading) {
-    if (!ratedToday(await getCard(db, `${g.wordId}:recognise`), now)) {
+    const was = await getCard(db, `${g.wordId}:recognise`);
+    if (!ratedToday(was, now)) {
       const rating = right ? Rating.Good : Rating.Again;
+      const placed = was?.placed === true; // a placed card's first answer is its recheck, a 默写 too (review M5)
       const { card, before } = await reviewCard(db, g.wordId, 'recognise', rating, now);
-      await addReviewLog(db, { cardId: card.id, wordId: g.wordId, kind: 'recognise', at: now.getTime(), rating, correct: right, source: 'recall', ...before });
-      out.push((await settleRung(db, g.wordId, 'recognise', now)) ?? card);
+      await addReviewLog(db, { cardId: card.id, wordId: g.wordId, kind: 'recognise', at: now.getTime(), rating, correct: right, source: 'recall', ...before, ...(placed ? { placedCheck: true as const } : {}) });
+      const settled = (await settleRung(db, g.wordId, 'recognise', now)) ?? card;
+      out.push(placed ? await endPlacement(db, g.wordId, settled, right) : settled);
+      sentBack = placed && !right;
     } else if (!right) await bringForward(db, g.wordId, 'recognise', endOfLocalDay(now));
   }
-  if (g.meaning) out.push(await recordWrittenMeaning(db, g.wordId, right, now));
+  if (g.meaning && !sentBack) out.push(await recordWrittenMeaning(db, g.wordId, right, now)); // no lone meaning card for it
   return out;
 }
 

@@ -4,6 +4,9 @@ import type { CardKind, CardRecord } from '../types';
 /** His school year now (P1 = 1): lives with the book's positions. */
 export { schoolYear } from '../content/curriculum';
 
+/** The line under a confirmed count (parent decision 2026-10-25): placement's guesses still waiting for their first recheck. */
+export const toConfirmLine = (n: number): string | null => (n > 0 ? `+${n} from placement, still to confirm` : null);
+
 /** Rungs of one kind passed by the end of each of the last `weeks` weeks, oldest first. */
 export function weeklyTrend(cards: CardRecord[], kind: CardKind, now: Date, weeks = 8): { week: string; count: number }[] {
   const passed = cards.filter((c) => c.kind === kind && c.passed).map((c) => c.passed!);

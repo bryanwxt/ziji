@@ -171,6 +171,14 @@ export const answersSince = (db: AppDb, sinceMs: number) => db.getAllFromIndex('
 export const logsForWord = (db: AppDb, wordId: string) => db.getAllFromIndex('reviewLogs', 'byWord', wordId);
 
 /** The cards with at least one answer logged, by id (keys only: no log is read). */
+/** Each answered card's first review log time: the byCard index visits each card once (logs go in as he answers, so a card's
+ *  first log by key is its earliest), not every log. */
+export async function firstLogByCard(db: AppDb): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  for (let c = await db.transaction('reviewLogs').store.index('byCard').openCursor(null, 'nextunique'); c; c = await c.continue()) out.set(c.value.cardId, c.value.at);
+  return out;
+}
+
 export async function answeredCardIds(db: AppDb): Promise<Set<string>> {
   const out = new Set<string>();
   for (let c = await db.transaction('reviewLogs').store.index('byCard').openKeyCursor(null, 'nextunique'); c; c = await c.continue()) out.add(c.key);

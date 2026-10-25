@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { loadKnowledge } from '../app/knowledge';
-import { goalProgress } from '../fun/rewards';
+import { goalKnown, goalProgress } from '../fun/rewards';
 import { totalStars } from '../stats/stats';
+import { toConfirmLine } from './progress';
 import { allSessions, deleteReward, getKid, listRewards, saveReward } from '../store/repo';
 import type { RewardGoal } from '../types';
 import { newId } from '../lib/id';
@@ -18,7 +19,9 @@ const NOT_CHINESE = 'Use Chinese characters — this is the title he sees on Hom
 export function RewardsPanel() {
   const { db, now } = useApp();
   const [goals, setGoals] = useState<RewardGoal[]>([]);
-  const [stats, setStats] = useState({ stars: 0, known: 0 });
+  const [stats, setStats] = useState({ stars: 0, known: 0 }); // known: confirmed characters, as Home counts a goal (2026-10-25)
+  const [toConfirm, setToConfirm] = useState<string | null>(null);
+  const [goalCounts, setGoalCounts] = useState<{ known: number; atSwitch?: { count: number; at: number } }>({ known: 0 }); // for goals set before the switch
   const [title, setTitle] = useState('');
   const [zh, setZh] = useState('');
   const [icon, setIcon] = useState<IconName>('gift');
@@ -31,7 +34,9 @@ export function RewardsPanel() {
   const load = async () => {
     const [g, sessions, know, kid] = await Promise.all([listRewards(db), allSessions(db), loadKnowledge(db), getKid(db)]);
     setGoals(g);
-    setStats({ stars: totalStars(sessions, kid?.bonusStars ?? 0), known: know.known });
+    setStats({ stars: totalStars(sessions, kid?.bonusStars ?? 0), known: know.confirmed });
+    setToConfirm(toConfirmLine(know.known - know.confirmed));
+    setGoalCounts({ known: know.known, atSwitch: kid?.knownAtSwitch });
   };
   useEffect(() => {
     void load();
@@ -96,6 +101,7 @@ export function RewardsPanel() {
               <option value="stars">Stars ⭐ (now {stats.stars})</option>
               <option value="known">Characters known (now {stats.known})</option>
             </select>
+            {toConfirm && <small class="muted">{toConfirm}</small>}
           </div>
           <div class="field">
             <label for="rw-target">Target</label>
@@ -112,7 +118,7 @@ export function RewardsPanel() {
           <table class="table">
             <tbody>
               {goals.map((g) => {
-                const p = goalProgress(g, stats);
+                const p = goalProgress(g, { ...stats, known: goalKnown(g, { confirmed: stats.known, known: goalCounts.known }, goalCounts.atSwitch) }); // as Home counts it
                 return (
                   <tr key={g.id}>
                     <td>{g.icon ? <InkIcon name={g.icon} size={30} /> : <span style={{ fontSize: '28px' }}>{g.emoji}</span>}</td>

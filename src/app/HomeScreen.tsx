@@ -5,7 +5,7 @@ import { pinyin } from 'pinyin-pro';
 import { primeSpeech, speak } from '../audio/speech';
 import { lessonStops, pathNodes } from '../fun/path';
 import { wordOfTheDay } from '../fun/wordOfDay';
-import { goalProgress, nextGoal } from '../fun/rewards';
+import { goalKnown, goalProgress, nextGoal } from '../fun/rewards';
 import { localDateKey } from '../lib/date';
 import { stepsOn } from '../session/plan';
 import { practisedDays, streak, totalStars, weekDays } from '../stats/stats';
@@ -29,7 +29,7 @@ import { dayMood } from '../ui/truffle/greeting';
 import { applyFind } from '../fun/finds';
 import { REACTIONS, type ReactionKind } from '../ui/truffle/timelines';
 import { paintingHref } from '../ui/worlds/scene';
-import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId, resetWorlds } from '../fun/worlds';
+import { currentWorld, timeOfDay, updateWorlds, worldById, worldLine, type WorldId } from '../fun/worlds';
 import { settleJourney } from '../placement/journey';
 import { TabBar } from '../ui/TabBar';
 import { useApp } from './AppContext';
@@ -56,6 +56,8 @@ const SLEEP_AFTER_MS = 20_000;
 const OFFER = '想再学一课吗？';
 /** What Truffle says once when the paper worlds have become One River (spec 2026-10-13 §8). */
 export const RIVER_NEWS = '我们的世界变成一条河了！';
+/** What Truffle says once when his count became confirmed characters and placement's guesses wait for their rechecks (2026-10-25). */
+export const CONFIRM_NEWS = '我们来一个一个确认你认识的字！';
 
 export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: number }) {
   const { db, now, go, kid, settings, refresh } = useApp();
@@ -97,23 +99,31 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   useEffect(() => {
     if (!data) return;
     void (async () => {
-      // worlds count what he learns after placement (src/placement/journey.ts); an older install's worlds are redone once
+      // worlds count what he learns in the app (src/placement/journey.ts); the first time after the switch to confirmed words
+      // the carry is kept, so the count he has seen never goes down — his reached worlds are never redone
       const first = (await getKid(db)) ?? kid;
       if (!first) return; // no kid yet: nothing to record
-      const j = await settleJourney(db, first, data.know.known);
-      const redo = j.kid !== first;
+      const j = await settleJourney(db, first, data.know, now());
+      const { journeyCarry: carry, knownAtSwitch } = j.kid;
+      const unconfirmed = data.know.known > data.know.confirmed; // placement guesses still to recheck
       // then build on what's stored now, in one transaction (a just-saved costume, star or find must not be overwritten — sweep)
       const day = localDateKey(now());
       let changed = false;
       let arrived: ReturnType<typeof updateWorlds>['arrived'] | undefined;
       let mood: ReturnType<typeof dayMood> | null = null;
       let river = false;
+      let confirmNews = false;
       const plan = (stored: KidState): KidState | null => {
-        const u = updateWorlds(redo ? resetWorlds(stored, j.count) : stored, j.count);
+        const settle = stored.journeyCarry === undefined && carry !== undefined;
+        const u = updateWorlds(settle ? { ...stored, journeyCarry: carry, knownAtSwitch } : stored, j.count);
         let next = u.kid;
         // his paper worlds were just mapped onto the river (spec 2026-10-13 §8): Truffle says so once, with no arrival card
         river = next.riverNews;
         if (river) next = { ...next, riverNews: false };
+        // his count became confirmed characters (2026-10-25): once, while there are guesses to confirm, Truffle says why. The
+        // river news goes first; this waits for the next Home
+        confirmNews = !river && unconfirmed && !next.confirmNewsSaid;
+        if (confirmNews) next = { ...next, confirmNewsSaid: true };
         // once a day he shows how he feels about it (spec 2026-10-04 §4.6): a little sulk after days away, extra bouncy on a streak
         const greet = next.greetedOn !== day;
         mood = null;
@@ -124,7 +134,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         }
         changed = u.changed;
         arrived = u.arrived;
-        return u.changed || greet || redo || river ? next : null;
+        return u.changed || greet || settle || river || confirmNews ? next : null;
       };
       let saved = await updateKid(db, plan);
       if (!saved && kid && !(await getKid(db))) { // nothing stored yet: start from the one on screen
@@ -138,6 +148,12 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         setSaid(m === 'missed' ? '你去哪里了？我好想你！' : '又见面了！');
         clearTimeout(saidTimer.current);
         saidTimer.current = setTimeout(() => setSaid(null), 2600);
+      }
+      if (confirmNews) { // over the day's greeting, like the river news
+        setPropPlay((p) => ({ react: { kind: 'excited', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
+        setSaid(CONFIRM_NEWS);
+        clearTimeout(saidTimer.current);
+        saidTimer.current = setTimeout(() => setSaid(null), 3600);
       }
       if (river) { // the news wins over the day's greeting
         setPropPlay((p) => ({ react: { kind: 'excited', key: (p.react?.key ?? 0) + 1 }, lookAt: 0 }));
@@ -155,7 +171,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
 
   const stars = data ? totalStars(data.sessions, k.bonusStars) : 0;
   const goal = data ? nextGoal(data.goals) : null;
-  const progress = goal && data ? goalProgress(goal, { stars, known: data.know.known }) : null;
+  const progress = goal && data ? goalProgress(goal, { stars, known: goalKnown(goal, data.know, k.knownAtSwitch) }) : null;
   useEffect(() => {
     if (progress?.reached) celebrate();
   }, [progress?.reached]);
@@ -237,7 +253,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
         <span class="spacer" />
         <span class="home__who">
           <strong><Label zh="松露" /></strong>
-          <Label zh={`认识 ${data.know.known} 个字`} />
+          <Label zh={`认识 ${data.know.confirmed} 个字`} />{/* confirmed only (parent decision 2026-10-25): it never goes down */}
         </span>
       </header>
       <main class="home__main">

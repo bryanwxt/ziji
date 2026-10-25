@@ -16,6 +16,12 @@ export interface Knowledge {
   /** each known character's syllables in those words, tone-marked and lowercased (只 → {zhī} from 一只): pinyin fades per reading (final review I1) */
   knownReadings: ReadonlyMap<string, ReadonlySet<string>>;
   known: number; // = knownChars.size
+  /** known words whose reading is confirmed (parent decision 2026-10-25): learned in lessons, or a placement guess its first
+   *  recheck got right — never `placed`, and he has answered the reading card. A guess not yet rechecked, or a pass he never
+   *  answered (an older placement's, stamped by the ladder migration: review I2), still counts in known, never here. */
+  confirmedWordIds: Set<string>;
+  confirmedChars: Set<string>; // characters in confirmed words: what his own numbers count, so they only ever go up
+  confirmed: number; // = confirmedChars.size
   heard: number;
   understood: number; // understood in a sentence he heard (plan 2b)
   read: number;
@@ -27,7 +33,9 @@ export interface Knowledge {
   begunTexts: Set<string>; // those words' texts: a 组词 gap's choices are drawn from them (real test spec 2026-10-23 §5)
 }
 
-export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
+/** `answered`: the card ids with a review log (firstLogByCard's keys; loadKnowledge passes them). Absent, as in a test without
+ *  logs: every card counts as answered. */
+export function summarize(words: Word[], cards: CardRecord[], answered?: ReadonlySet<string>): Knowledge {
   const wordsById = new Map(words.map((w) => [w.id, w]));
   const ladderById = new Map(ladderWords().map((w) => [w.id, w]));
   const word = (id: string) => wordsById.get(id) ?? ladderById.get(id);
@@ -39,6 +47,9 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
   }
   const count = (r: RungKind) => [...passedRungs.values()].filter((s) => s.has(r)).length;
   const knownWordIds = new Set([...passedRungs].filter(([, s]) => s.has('read')).map(([id]) => id));
+  const unconfirmed = new Set(cards.filter((c) => c.kind === 'recognise' && (c.placed === true || (answered && !answered.has(c.id)))).map((c) => c.wordId));
+  const confirmedWordIds = new Set([...knownWordIds].filter((id) => !unconfirmed.has(id)));
+  const confirmedChars = new Set([...confirmedWordIds].flatMap((id) => Array.from(word(id)!.text).filter((ch) => /\p{Script=Han}/u.test(ch))));
   const knownChars = new Set<string>();
   const knownReadings = new Map<string, Set<string>>();
   for (const id of knownWordIds) {
@@ -54,6 +65,7 @@ export function summarize(words: Word[], cards: CardRecord[]): Knowledge {
     words, cards, wordsById, ladderById, passedRungs,
     cardsById: new Map(cards.map((c) => [c.id, c])),
     knownWordIds, knownChars, knownReadings, known: knownChars.size,
+    confirmedWordIds, confirmedChars, confirmed: confirmedChars.size,
     heard: count('hear'), understood: count('understand'), read: count('read'), used: count('use'),
     owned: [...passedRungs].filter(([id, s]) => isOwned(word(id)!, s)).length,
     written: cards.filter((c) => c.kind === 'write' && c.passed).length,

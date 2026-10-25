@@ -34,7 +34,7 @@ export async function settleMeter(db: AppDb, rec: SessionRecord, today: string):
 
 /** The facts the goals are worked out from (rewards spec §4), read once as the Celebration loads. */
 export async function loadGoalFacts(db: AppDb, know: Knowledge, counted: boolean, now: Date): Promise<GoalFacts> {
-  const [journey, logs] = await Promise.all([journeyCount(db, know.known), logsSince(db, now.getTime() - 60 * 86_400_000)]);
+  const [journey, logs] = await Promise.all([journeyCount(db, know), logsSince(db, now.getTime() - 60 * 86_400_000)]);
   const dayStart = startOfLocalDay(now).getTime();
   const lessonChars = new Set(know.cards.filter((c) => c.kind === 'recognise' && (c.passed ?? 0) >= dayStart).flatMap((c) => hanChars(know.wordsById.get(c.wordId)?.text ?? '')));
   return { journey, oneDay: oneDayAway(know.cards, logs, (id) => know.wordsById.get(id)), lessonChars, counted, families: stickerFamilies(BUILTIN), powers: powerFamilies(BUILTIN) };
