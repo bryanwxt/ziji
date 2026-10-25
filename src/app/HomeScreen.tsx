@@ -5,7 +5,7 @@ import { pinyin } from 'pinyin-pro';
 import { primeSpeech, speak } from '../audio/speech';
 import { lessonStops, pathNodes } from '../fun/path';
 import { wordOfTheDay } from '../fun/wordOfDay';
-import { goalProgress, nextGoal } from '../fun/rewards';
+import { goalKnown, goalProgress, nextGoal } from '../fun/rewards';
 import { localDateKey } from '../lib/date';
 import { stepsOn } from '../session/plan';
 import { practisedDays, streak, totalStars, weekDays } from '../stats/stats';
@@ -103,8 +103,8 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       // the carry is kept, so the count he has seen never goes down — his reached worlds are never redone
       const first = (await getKid(db)) ?? kid;
       if (!first) return; // no kid yet: nothing to record
-      const j = await settleJourney(db, first, data.know);
-      const carry = j.kid.journeyCarry;
+      const j = await settleJourney(db, first, data.know, now());
+      const { journeyCarry: carry, knownAtSwitch } = j.kid;
       const unconfirmed = data.know.known > data.know.confirmed; // placement guesses still to recheck
       // then build on what's stored now, in one transaction (a just-saved costume, star or find must not be overwritten — sweep)
       const day = localDateKey(now());
@@ -115,7 +115,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
       let confirmNews = false;
       const plan = (stored: KidState): KidState | null => {
         const settle = stored.journeyCarry === undefined && carry !== undefined;
-        const u = updateWorlds(settle ? { ...stored, journeyCarry: carry } : stored, j.count);
+        const u = updateWorlds(settle ? { ...stored, journeyCarry: carry, knownAtSwitch } : stored, j.count);
         let next = u.kid;
         // his paper worlds were just mapped onto the river (spec 2026-10-13 §8): Truffle says so once, with no arrival card
         river = next.riverNews;
@@ -171,7 +171,7 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
 
   const stars = data ? totalStars(data.sessions, k.bonusStars) : 0;
   const goal = data ? nextGoal(data.goals) : null;
-  const progress = goal && data ? goalProgress(goal, { stars, known: data.know.confirmed }) : null;
+  const progress = goal && data ? goalProgress(goal, { stars, known: goalKnown(goal, data.know, k.knownAtSwitch) }) : null;
   useEffect(() => {
     if (progress?.reached) celebrate();
   }, [progress?.reached]);

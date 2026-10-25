@@ -62,6 +62,7 @@ describe('Dashboard', () => {
     const app = await makeAppData();
     await putWords(app.db, [makeWord('大')]);
     await putCards(app.db, [makeCard('b:大', 'recognise', new Date(2026, 9, 20), true)]);
+    await addReviewLog(app.db, { cardId: 'b:大:recognise', wordId: 'b:大', kind: 'recognise', at: new Date(2026, 9, 20).getTime(), rating: 3, correct: true }); // answered: confirmed (review I2)
     await saveSession(app.db, { ...createSessionRecord(emptyPlan, '2026-10-01', 0), completed: true, activeMs: 15 * 60_000 });
     renderWithApp(<Dashboard onNavigate={vi.fn()} />, app);
     expect(await screen.findByText('1 / 500')).toBeTruthy();

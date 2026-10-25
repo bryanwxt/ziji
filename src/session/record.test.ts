@@ -307,3 +307,27 @@ describe('默写 in 练一练: what it grades (real test spec 2026-10-23 §4)', 
     expect((await getCard(db, 'b:草:write'))!.fsrs.due.getTime()).toBeLessThanOrEqual(new Date(2026, 9, 2, 23, 59, 59, 999).getTime());
   });
 });
+
+describe('a 默写 reading on a placed card is its recheck (review M5)', () => {
+  const g = { wordId: 'b:草', writeId: 'b:草', reading: true, meaning: false };
+  const setup = async () => {
+    const db = await freshDb();
+    await putWords(db, [makeWord('草')]);
+    await putCards(db, [{ id: 'b:草:recognise', wordId: 'b:草', kind: 'recognise', fsrs: seededKnownCard(new Date(2026, 8, 20), 12), passed: new Date(2026, 8, 20).getTime(), placed: true }]);
+    return db;
+  };
+  it('right: the guess is confirmed (placed cleared), its log marked as the placed check', async () => {
+    const db = await setup();
+    await recordRecall(db, g, { totalMisses: 0, hinted: false }, now);
+    const card = await getCard(db, 'b:草:recognise');
+    expect(card?.placed).toBeUndefined();
+    expect(card?.passed).toBeDefined();
+    expect((await logsSince(db, now.getTime())).find((l) => l.kind === 'recognise')).toMatchObject({ placedCheck: true, source: 'recall' });
+  });
+  it('wrong: it goes back to learn, as a missed recheck does — its reading card goes, his answered write card stays', async () => {
+    const db = await setup();
+    await recordRecall(db, g, { totalMisses: 4, hinted: true }, now);
+    expect(await getCard(db, 'b:草:recognise')).toBeUndefined();
+    expect(await getCard(db, 'b:草:write')).toBeDefined();
+  });
+});

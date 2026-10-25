@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/preact';
 import { describe, expect, it, vi } from 'vitest';
-import { putCards, putWords } from '../store/repo';
+import { addReviewLog, putCards, putWords } from '../store/repo';
 import { summarize } from '../stats/stats';
 import { makeCard, makeWord } from '../test/fixtures';
 import { makeAppData, renderWithApp } from '../test/renderWithApp';
@@ -17,6 +17,7 @@ async function seeded() {
   const app = await makeAppData();
   await putWords(app.db, words);
   await putCards(app.db, cards);
+  await addReviewLog(app.db, { cardId: 'b:大:recognise', wordId: 'b:大', kind: 'recognise', at: at.getTime(), rating: 3, correct: true });
   return app;
 }
 
@@ -30,6 +31,7 @@ describe('the confirmed count in the parent area', () => {
     const app = await makeAppData();
     await putWords(app.db, words);
     await putCards(app.db, [makeCard('b:大', 'recognise', at, true)]);
+    await addReviewLog(app.db, { cardId: 'b:大:recognise', wordId: 'b:大', kind: 'recognise', at: at.getTime(), rating: 3, correct: true });
     renderWithApp(<Dashboard onNavigate={vi.fn()} />, app);
     expect(await screen.findByText('1 / 500')).toBeTruthy();
     expect(screen.queryByText(/from placement, still to confirm/)).toBeNull();

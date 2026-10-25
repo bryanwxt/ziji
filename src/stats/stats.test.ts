@@ -183,4 +183,10 @@ describe('summarize: confirmed characters (parent decision 2026-10-25)', () => {
     expect([before.known, after.known]).toEqual([3, 2]);
     expect([before.confirmed, after.confirmed]).toEqual([2, 2]);
   });
+  it('a passed card he never answered (a placement guess the ladder migration stamped) is not confirmed (review I2)', () => {
+    const cards = [makeCard('p:1', 'recognise', now, true), makeCard('b:人', 'recognise', now, true)];
+    const k = summarize(words, cards, new Set(['p:1:recognise'])); // only 朋友 has a reading answer
+    expect(k.known).toBe(3);
+    expect([...k.confirmedChars].sort()).toEqual(['朋', '友'].sort());
+  });
 });
