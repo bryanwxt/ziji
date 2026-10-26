@@ -883,10 +883,12 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__cards .reward-card--alone { justify-self: center; padding: 6px 16px; } /* no parent goal: a small pill round the meter */
 .home__cards .reward-card:not(.reward-card--alone) .goal__body { flex: 1; min-width: 0; }
 .home__cards .reward-card .goal__body strong .label__cells { flex-wrap: nowrap; }
+/* the goal bar gives way first, so the count is never pushed out of the card (CI's Linux fonts run a little wider) */
+.home__cards .reward-card .goal__body .progress { min-width: 28px; }
+.home__cards .reward-card .goal__count { flex: none; }
 @media (max-width: 600px) {
   .home__cards .reward-card:not(.reward-card--alone) { gap: 8px; padding: 6px 10px; }
   .home__cards .reward-card .goal__body { gap: 6px; }
-  .home__cards .reward-card .goal__body .progress { min-width: 28px; }
   .home__cards .reward-card .stones { width: 90px; }
 }
 .home__cards .done-card { justify-content: space-between; padding: 8px 10px 8px 16px; }
