@@ -341,8 +341,8 @@ else if (which === 'bursts') {
   );
 }
 else if (which === 'meter') {
-  // the river meter (rewards spec §3, parent 2026-10-25 "fit the aesthetic"): Home's reward card on the world at halves 0–2,
-  // alone or beside a parent's goal, and Celebration's full-size track above its title
+  // the reward meter (rewards spec §3; parent 2026-10-26 stepping stones on Home): Home's reward card on the world at halves
+  // 0–2, alone or beside a parent's goal, and Celebration's full-size river track above its title
   const q = new URLSearchParams(location.search);
   const halves = Number(q.get('halves') ?? 0);
   const goal = q.get('goal') ? { id: 'g', title: 'Lego', zh: '乐高', icon: 'gift', metric: 'stars', target: 40, createdAt: 0 } as unknown as Parameters<typeof RewardCard>[0]['goal'] : null;

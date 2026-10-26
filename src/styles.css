@@ -346,12 +346,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 /* the river meter (rewards spec 2026-10-15 §3): a short river, the paper boat, the chest at its end */
 .river { display: block; width: min(86vw, 380px, 40dvh); height: auto; overflow: visible; } /* by height too: the chest phase fits a landscape iPad */
-.river--mini { width: 240px; max-width: 100%; }
 /* the full chest glints (redraw 2026-10-25); still under reduced motion */
 .river__glint { transform-box: fill-box; transform-origin: center; animation: river-glint 1.6s ease-in-out infinite; }
 .river--still .river__glint { animation: none; }
 @keyframes river-glint { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.8); } }
 @media (prefers-reduced-motion: reduce) { .river__glint { animation: none; } }
+/* Home's stepping-stone meter (parent 2026-10-26: "more subtle"): a line's height; a stone just reached pops, the full chest
+   glints like the river's (still under reduced motion) */
+.stones { display: block; width: 104px; height: auto; overflow: visible; }
+.stones__stone { transform-box: fill-box; transform-origin: center; }
+.stones__stone.is-new { animation: stone-pop 0.5s var(--spring-bouncy, ease-out) 0.2s both; }
+.stones--still .stones__stone, .stones--still .river__glint { animation: none; }
+@keyframes stone-pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .stones__stone.is-new { animation: none; } }
 /* the chest shows once the boat reaches it; hidden (not removed) so nothing below it moves */
 .chest-slot.is-waiting { visibility: hidden; }
 /* almost there (rewards spec §4): up to three lines, each with its ink icon */
@@ -871,26 +878,16 @@ html:has(.screen--scroll), html:has(.screen--scroll) body { overflow: auto; }
 .home__cards .goal__body { flex-direction: row; align-items: center; gap: 10px; }
 .home__cards .goal__body .progress { flex: 1; min-width: 60px; }
 .home__cards .goal__count { white-space: nowrap; }
-/* the reward card (rewards spec §3; redrawn 2026-10-25): the river meter fills the card; with a parent's goal, the meter has
-   its own full-width row and the goal sits on the line under it */
-.reward-card__meter { display: flex; justify-content: center; align-items: center; }
-.home__cards .reward-card .river--mini { width: min(100%, 300px, 72vw); }
-.home__cards .reward-card--alone { justify-self: center; padding: 6px 16px; } /* no parent goal: the card is the meter's size */
-.home__cards .reward-card:not(.reward-card--alone) { flex-wrap: wrap; row-gap: 2px; padding-top: 8px; }
-.home__cards .reward-card:not(.reward-card--alone) .reward-card__meter { flex: 1 1 100%; }
+/* the reward card (rewards spec §3; stepping stones 2026-10-26): the small stone meter, then the parent's goal on the same row */
+.reward-card__meter { display: inline-flex; align-items: center; flex: none; }
+.home__cards .reward-card--alone { justify-self: center; padding: 6px 16px; } /* no parent goal: a small pill round the meter */
 .home__cards .reward-card:not(.reward-card--alone) .goal__body { flex: 1; min-width: 0; }
 .home__cards .reward-card .goal__body strong .label__cells { flex-wrap: nowrap; }
 @media (max-width: 600px) {
-  .home__cards .reward-card .goal__body .progress { min-width: 36px; }
-}
-/* an iPhone SE-height screen: a smaller river keeps Home on one screen */
-@media (max-height: 700px) { .home__cards .reward-card .river--mini { width: min(100%, 220px); } }
-/* a short landscape iPad (1024 × 768): the meter sits beside the goal again, smaller, so the word of the day stays clear of the path */
-@media (min-aspect-ratio: 1/1) and (max-height: 820px) {
-  .home__cards .reward-card .river--mini { width: 180px; }
-  .home__cards .reward-card:not(.reward-card--alone) { flex-wrap: nowrap; padding-top: 4px; padding-bottom: 4px; }
-  .home__cards .reward-card:not(.reward-card--alone) .reward-card__meter { flex: none; }
-  .home__cards .reward-card--alone { padding-top: 4px; padding-bottom: 4px; }
+  .home__cards .reward-card:not(.reward-card--alone) { gap: 8px; padding: 6px 10px; }
+  .home__cards .reward-card .goal__body { gap: 6px; }
+  .home__cards .reward-card .goal__body .progress { min-width: 28px; }
+  .home__cards .reward-card .stones { width: 90px; }
 }
 .home__cards .done-card { justify-content: space-between; padding: 8px 10px 8px 16px; }
 .home__cards .done-today { font-size: 22px; }

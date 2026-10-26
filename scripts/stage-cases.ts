@@ -554,31 +554,36 @@ for (const size of SIZES) {
     const shown = await page.evaluate(() => { const r = document.querySelector('.world-scene svg')!.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !!document.querySelector('.world-props .tap'); });
     if (!shown) problems.push(`river ${w.id} ${time} ${name}: the world or its props did not draw`);
   }
-  // the river meter (parent 2026-10-25: redrawn to fit the cel look): Home's reward card alone and beside a goal, and
-  // Celebration's full track, at halves 0–2; the card holds its meter and goal, the track sits on the screen
+  // the reward meter (parent 2026-10-26: stepping stones on Home, "something more subtle"): Home's reward card alone and beside
+  // a goal at halves 0–2, a line's height and on one row; Celebration keeps its full river track, which sits on the screen
   for (const [name, width, height] of [['iphone-se', 375, 667], ['iphone-15', 390, 844], ['ipad-landscape', 1024, 768], ['ipad-portrait', 768, 1024]] as const) {
     await page.setViewportSize({ width, height });
     for (const h of [0, 1, 2]) for (const [tag, q] of [['alone', ''], ['goal', '&goal=1'], ['celebrate', '&at=celebrate']] as const) {
+      const sel = tag === 'celebrate' ? 'svg.river' : 'svg.stones';
       await page.goto(`file://${dir}/index.html?case=meter&halves=${h}${q}`);
-      await page.waitForSelector('svg.river');
+      await page.waitForSelector(sel);
       await page.waitForTimeout(250);
       await page.screenshot({ path: `fit-shots/stage-cases/meter-${tag}-${h}-${name}.png` });
-      problems.push(...(await page.evaluate(([n, halves]) => {
+      problems.push(...(await page.evaluate(([n, halves, s]) => {
         const out: string[] = [];
-        const river = document.querySelector('svg.river')!;
-        const r = river.getBoundingClientRect();
-        if (river.getAttribute('data-halves') !== String(halves)) out.push(`${n}: the meter shows ${river.getAttribute('data-halves')} halves`);
-        if (r.left < 0 || r.right > innerWidth || r.top < 0 || r.bottom > innerHeight) out.push(`${n}: the river runs off the screen`);
+        const meter = document.querySelector(s)!;
+        const r = meter.getBoundingClientRect();
+        if (meter.getAttribute('data-halves') !== String(halves)) out.push(`${n}: the meter shows ${meter.getAttribute('data-halves')} halves`);
+        if (r.left < 0 || r.right > innerWidth || r.top < 0 || r.bottom > innerHeight) out.push(`${n}: the meter runs off the screen`);
         const card = document.querySelector('.reward-card')?.getBoundingClientRect();
         if (card) {
-          if (r.width < 90) out.push(`${n}: the meter is only ${Math.round(r.width)}px wide`);
+          if (r.width < 80 || r.width > 120) out.push(`${n}: the stones are ${Math.round(r.width)}px wide`);
+          if (r.height < 20 || r.height > 32) out.push(`${n}: the stones are ${Math.round(r.height)}px tall`);
+          if (card.height > 64) out.push(`${n}: the reward card is ${Math.round(card.height)}px tall (one row)`);
+          const mid = r.top + r.height / 2;
           for (const el of document.querySelectorAll('.reward-card > *, .reward-card .goal__body > *')) {
             const e = el.getBoundingClientRect();
             if (e.left < card.left - 1 || e.right > card.right + 1 || e.top < card.top - 1 || e.bottom > card.bottom + 1) out.push(`${n}: ${el.className || el.tagName} spills out of the reward card`);
+            if (el.parentElement?.classList.contains('reward-card') && (e.top > mid || e.bottom < mid)) out.push(`${n}: ${el.className || el.tagName} is not on the meter's row`);
           }
         }
         return out;
-      }, [`meter ${tag} ${h} ${name}`, h] as const)));
+      }, [`meter ${tag} ${h} ${name}`, h, sel] as const)));
     }
   }
   await page.setViewportSize({ width: 1000, height: 640 });
