@@ -389,6 +389,7 @@ async function sweep(size: Size) {
   await run('home-done', AFTERNOON, { doneToday: true }, (p) => check(p, size, 'home-done', 0));
   await run('home-done-later', AFTERNOON, { doneToday: true, doneMinutesAgo: 30 }, (p) => check(p, size, 'home-done-later', 0)); // 下午再来！ in 再学一课's place (learning rules 2026-10-17)
   await run('home-evening', EVENING, { world: 'home' }, (p) => check(p, size, 'home-evening', 0)); // the first world's evening
+  await run('home-half', AFTERNOON, { doneToday: true, meter: { halves: 1, chestsToday: 1 } }, (p) => check(p, size, 'home-half', 0)); // one stepping stone lit beside the goal (2026-10-26)
   for (const w of WORLDS) {
     await run(`home-${w.id}`, AFTERNOON, { world: w.id }, (p) => check(p, size, `home-${w.id}`, 0));
     await run(`home-done-${w.id}`, AFTERNOON, { world: w.id, doneToday: true }, (p) => check(p, size, `home-done-${w.id}`, 0)); // the done card and 再玩一会 sit differently

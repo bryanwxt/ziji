@@ -38,7 +38,7 @@ const SAND = '#f3d9a1';
 const WOOD = '#c77b30';
 const LID = '#d98a3d';
 const GOLD = '#f6c343';
-const chestMark = (glint: boolean) => {
+export const chestMark = (glint: boolean) => {
   const w = 2.4;
   return (
     celPath('M-18 -20 H18 V-3 Q18 0 15 0 H-15 Q-18 0 -18 -3 Z', WOOD, 'M6 -20 H18 V-3 Q18 0 15 0 H-4 Q4 -9 6 -20 Z', { w }) +

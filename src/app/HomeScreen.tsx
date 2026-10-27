@@ -40,7 +40,7 @@ import { CHAPTERS } from '../story/chapters';
 import { storyStep } from '../story/progress';
 import { InkIcon } from '../ui/icons/InkIcon';
 import { meterShown, normalizeMeter } from '../fun/meter';
-import { RiverTrack } from '../ui/RiverTrack';
+import { StoneMeter } from '../ui/StoneMeter';
 import { extraOpensAt, extraWaitLine } from '../session/extraGap';
 
 interface HomeData {
@@ -335,11 +335,20 @@ export function HomeScreen({ sleepAfterMs = SLEEP_AFTER_MS }: { sleepAfterMs?: n
   );
 }
 
-/** The reward card (rewards spec §3): the river meter toward the chest, and the parent's goal beside it when there is one. */
+/** The halves the reward card last showed in this visit to the app (module scope outlives Home remounting after a lesson), so a
+ *  stone earned since pops in. */
+let cardHalves: number | null = null;
+
+/** The reward card (rewards spec §3; stepping stones 2026-10-26): the small stone meter toward the chest, and the parent's goal
+ *  beside it on the same row when there is one. */
 export function RewardCard({ halves, goal, progress }: { halves: number; goal: RewardGoal | null; progress: GoalProgress | null }) {
+  const [from] = useState(() => cardHalves ?? halves);
+  useEffect(() => {
+    cardHalves = halves;
+  }, [halves]);
   return (
     <div class={`goal reward-card${goal && progress ? '' : ' reward-card--alone'}${progress?.reached ? ' goal--reached' : ''}`}>
-      <span class="reward-card__meter"><RiverTrack key={halves} mini from={halves} to={halves} /></span>
+      <span class="reward-card__meter"><StoneMeter from={from} halves={halves} /></span>
       {goal && progress && (
         <>
           {/* what he sees is Chinese with an ink icon; the parent's English note and older emoji stay in the parent area (spec 2026-10-04 §3) */}
