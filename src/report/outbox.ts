@@ -116,7 +116,7 @@ export async function flushReports(target: Target | null = reportTarget(), send:
   try {
     const res = await send(`${target.url}/rest/v1/reports`, {
       method: 'POST',
-      headers: { apikey: target.key, Authorization: `Bearer ${target.key}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      headers: { apikey: target.key, ...(target.key.startsWith('eyJ') ? { Authorization: `Bearer ${target.key}` } : {}), 'Content-Type': 'application/json', Prefer: 'return=minimal' }, // a legacy anon key is a JWT and goes as the bearer too; a publishable key (sb_publishable_…) goes alone
       body: JSON.stringify(batch),
     });
     if (!res.ok) return 0;
