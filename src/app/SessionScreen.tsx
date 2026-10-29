@@ -63,6 +63,7 @@ import { sessionProgress } from '../session/progress';
 import { ProgressBar } from '../ui/ProgressBar';
 import { useApp } from './AppContext';
 import { logError } from './errorLog';
+import { report } from '../report/outbox';
 import { Celebration } from './Celebration';
 import { loadKnowledge, type Knowledge } from './knowledge';
 import { newId } from '../lib/id';
@@ -204,6 +205,10 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
     const next = !step.free && step.completed && !was?.completed ? await settleOrFloor(step) : step;
     latest.current = next;
     if (!next.free && !next.extra) await saveSession(db, next); // an extra lesson never replaces the day's record
+    if (!next.free && next.completed && !was?.completed) {
+      // beta: one line per finished lesson, nothing about who (src/report/outbox.ts)
+      report('lesson', { minutes: Math.round(next.activeMs / 6000) / 10, stars: next.stars ?? null, steps: next.completedSteps, newWords: next.plan.newWordIds.length, extra: !!next.extra });
+    }
     if (!next.free && !next.extra && next.completed && !was?.completed) {
       // a finished daily lesson hatches a dino egg he tapped in 恐龙谷
       const fresh = await getKid(db);

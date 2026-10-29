@@ -6,6 +6,7 @@ import { BackupPanel } from './BackupPanel';
 import { Credits } from './Credits';
 import { Dashboard } from './Dashboard';
 import { ExtraLessonButton } from './ExtraLessonButton';
+import { HelpPanel } from './HelpPanel';
 import { ImportPanel } from './ImportPanel';
 import { ListenPanel } from './ListenPanel';
 import { waitingTakes } from '../session/say';
@@ -28,14 +29,14 @@ export type ParentTab = 'today' | 'progress' | 'content' | 'rewards' | 'settings
 /** The five parts of Content, picked by its segmented control; 本周词语 first (weekly list spec 2026-10-17 §3.1). */
 export type ContentPart = 'week' | 'words' | 'import' | 'passages' | 'pictures';
 /** A place a shortcut can go: each of the old tabs, now a section of one of the five. */
-export type ParentPlace = 'dashboard' | 'talk' | 'listen' | 'recordings' | 'summary' | 'school' | 'skills' | 'memory' | ContentPart | 'rewards' | 'settings' | 'backup' | 'credits';
+export type ParentPlace = 'dashboard' | 'talk' | 'listen' | 'recordings' | 'summary' | 'school' | 'skills' | 'memory' | ContentPart | 'rewards' | 'help' | 'settings' | 'backup' | 'credits';
 
 export const HOME: Record<ParentPlace, ParentTab> = {
   dashboard: 'today', talk: 'today', listen: 'today', recordings: 'today',
   summary: 'progress', school: 'progress', skills: 'progress', memory: 'progress',
   week: 'content', words: 'content', import: 'content', passages: 'content', pictures: 'content',
   rewards: 'rewards',
-  settings: 'settings', backup: 'settings', credits: 'settings',
+  help: 'settings', settings: 'settings', backup: 'settings', credits: 'settings',
 };
 /** A place's element: its section, scrolled to when a shortcut goes there. */
 export const placeId = (p: ParentPlace) => `parent-${p}`;
@@ -154,6 +155,7 @@ export function ParentArea() {
           {tab === 'rewards' && <div id={placeId('rewards')} class="parent__section"><RewardsPanel /></div>}
           {tab === 'settings' && (
             <>
+              <div id={placeId('help')} class="parent__section"><HelpPanel /></div>
               <div id={placeId('settings')} class="parent__section"><SettingsPanel /></div>
               <div id={placeId('backup')} class="parent__section">
                 <h2 class="parent__section-title">Backup &amp; restore</h2>

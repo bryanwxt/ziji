@@ -110,7 +110,7 @@ describe('the parent area in five tabs', () => {
 
   it('every old tab has a home, and its section is there', () => {
     expect(new Set(Object.values(HOME))).toEqual(new Set(['today', 'progress', 'content', 'rewards', 'settings']));
-    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'summary', 'talk', 'week', 'words'].sort());
+    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'help', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'summary', 'talk', 'week', 'words'].sort());
   });
 });
 
