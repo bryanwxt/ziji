@@ -104,12 +104,18 @@ export function loneSpoken(text: string, reading?: string, avoid: readonly strin
     const parts = text.split('，');
     // a cue whose word already says it (了，为了的，了): its lone pieces stay bare (review 2026-10-15), for their clips. Not on
     // the iPad voice (`voice`): there bare 爪 is zhǎo beside 爪子's zhuǎ (parent 2026-10-15), so it is said as its word too
-    return parts.map((part, i) => {
+    const said = parts.map((part, i) => {
       const ch = part.trim();
       if (Array.from(ch).length !== 1) return part;
       const keep = !(voice && words?.[ch]) && parts.some((p, j) => j !== i && Array.from(p.trim()).length > 1 && p.includes(ch));
       return keep ? part : loneSpoken(part, reading, avoid, endings, { alone });
-    }).join('，');
+    });
+    // a lone piece the voice says as the cue's own word (爪，爪子的，爪 → 爪子 three times: "爪子的爪子", parent 2026-10-29) is
+    // left out, and the word is said once on its own: 爪子
+    const dup = (i: number) => Array.from(parts[i]!.trim()).length === 1 && said[i]!.trim() !== parts[i]!.trim() && said.some((p, j) => j !== i && Array.from(parts[j]!.trim()).length > 1 && p.includes(said[i]!.trim()));
+    if (!voice || !said.some((_, i) => dup(i))) return said.join('，');
+    const rest = said.filter((_, i) => !dup(i));
+    return rest.length === 1 ? rest[0]!.replace(/的$/, '') : rest.join('，');
   }
   const t = text.trim();
   // a bound character (kidGloss.ts: 番 lives only in 番茄) is said as its pair, the word his card and questions teach it in

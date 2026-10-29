@@ -43,7 +43,7 @@ export const tooFast = (responseMs: number): boolean => responseMs < GUESS_MS;
 
 export type Outcome =
   | { kind: TapKind; correct: boolean; responseMs: number; produced: boolean; state: State; slowMs?: number; guess?: boolean }
-  | { kind: 'write'; totalMisses: number };
+  | { kind: 'write'; totalMisses: number; state?: State };
 
 /**
  * The one rating rule (spec §3.1): a write by its misses; a tap wrong → Again, right but slower than his line → Hard, right before
@@ -51,14 +51,16 @@ export type Outcome =
  * the step, so a card rated Hard daily would never graduate), otherwise Good. `state` is the card's state before this review.
  */
 export function toRating(o: Outcome): Grade {
+  // in (Re)Learning a Hard would repeat the step: written with a slip or answered slowly every day, 爪 came back every day for
+  // weeks (parent 2026-10-29). There it counts as Good; Hard is for New and Review cards
+  const learning = o.state === State.Learning || o.state === State.Relearning;
   if (o.kind === 'write') {
     if (o.totalMisses === 0) return Rating.Good;
-    return o.totalMisses <= 3 ? Rating.Hard : Rating.Again;
+    return o.totalMisses <= 3 ? (learning ? Rating.Good : Rating.Hard) : Rating.Again;
   }
   if (!o.correct) return Rating.Again;
   if (o.guess) return Rating.Hard; // too fast to have read it: Hard, whatever produced is (real test spec §6)
-  if (o.responseMs > (o.slowMs ?? SLOW_ANSWER_MS)) return Rating.Hard;
-  const learning = o.state === State.Learning || o.state === State.Relearning;
+  if (o.responseMs > (o.slowMs ?? SLOW_ANSWER_MS)) return learning ? Rating.Good : Rating.Hard;
   return o.produced || learning ? Rating.Good : Rating.Hard;
 }
 

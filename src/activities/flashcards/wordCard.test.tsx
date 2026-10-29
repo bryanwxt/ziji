@@ -88,6 +88,14 @@ describe('the re-teaching card (spec §2.1)', () => {
     expect(document.querySelector('.intro__card')).toBeTruthy();
     expect(document.querySelector('.pet__bubble .label')!.getAttribute('data-zh')).toBe('再认一次！');
   });
+  it('a word a missed placement recheck sent back says 再认一次！ too, not 新词来了！ (parent 2026-10-29)', () => {
+    const w = makeWord('照顾', { id: 'p:照顾', source: 'parent', pinyin: 'zhào gù' });
+    render(<FlashcardStep {...base} word={w} item={{ wordId: w.id, isNew: true, retry: false }} onDone={vi.fn()} list={{}} ask="read" back />);
+    expect(document.querySelector('.pet__bubble .label')!.getAttribute('data-zh')).toBe('再认一次！');
+    cleanup();
+    card(w, {});
+    expect(document.querySelector('.pet__bubble .label')!.getAttribute('data-zh')).toBe('新词来了！');
+  });
 });
 
 describe('a list verb\'s questions (fix round 2026-10-17)', () => {

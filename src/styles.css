@@ -1442,8 +1442,9 @@ button.langdu__sentence { cursor: pointer; }
 
 /* 组句 (spec 2026-10-05 §3.2 rung 4) */
 .build { display: flex; flex-direction: column; gap: 16px; width: 100%; align-items: center; }
-.build__answer { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 64px; width: 100%; padding: 8px; border-bottom: 3px dashed var(--line, #d8cfbf); }
-.build__placed { font-size: var(--sentence, 28px); padding: 4px 10px; border-radius: 12px; border: 2px solid var(--ink); background: var(--surface); }
+.build__answer { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 10px; min-height: 96px; width: 100%; padding: 12px; border: 3px dashed var(--line, #d8cfbf); border-radius: 20px; background: rgba(0, 0, 0, 0.025); }
+.build__placed { padding: 4px 10px; }
+.build__placed:disabled { opacity: 1; }
 .build__bank { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .build__tile { font-size: var(--sentence, 28px); min-width: 64px; }
 

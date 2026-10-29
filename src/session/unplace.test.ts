@@ -7,7 +7,7 @@ import { allCards, getCard, logsSince, practisedWords, putCards, putWords } from
 import { freshDb, makeCard } from '../test/fixtures';
 import { DEFAULT_SETTINGS } from '../types';
 import { buildSessionPlan } from './plan';
-import { beginNewWord, openMissingRungs, recordHear, recordRecognition, recordWriting } from './record';
+import { beginNewWord, openMissingRungs, recordHear, recordRecognition, recordWriting, sentBackIds } from './record';
 
 // Un-place on a miss (spec 2026-10-14): a placed character's first recheck rated Again sends it back to learn.
 const now = new Date(2026, 9, 5, 9);
@@ -42,6 +42,12 @@ describe('un-place on a missed first recheck (spec 2026-10-14)', () => {
     const plan = buildSessionPlan({ cards: await allCards(db), words, settings, now: later, practised: await practisedWords(db), newPerDay: 4 });
     expect(plan.newWordIds).toContain(char.id);
     expect(plan.newWordLanes![char.id]).toBe('catchup');
+  });
+  it('next lesson knows it as sent back (认新字 says 再认一次！); a right recheck or a never-placed word is not (parent 2026-10-29)', async () => {
+    const { db, words, char } = await placedDb();
+    const kept = words.find((w) => w.id !== char.id && w.text.length === 1)!;
+    await recordRecognition(db, char.id, miss, later);
+    expect([...(await sentBackIds(db, [char.id, kept.id, 'b:none']))]).toEqual([char.id]);
   });
   it('a right first recheck keeps the card and ends its placement: a later miss is an ordinary lapse', async () => {
     const { db, char } = await placedDb();

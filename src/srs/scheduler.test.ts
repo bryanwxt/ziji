@@ -12,6 +12,23 @@ describe('toRating', () => {
     expect(toRating({ kind: 'write', totalMisses: 3 })).toBe(Rating.Hard);
     expect(toRating({ kind: 'write', totalMisses: 4 })).toBe(Rating.Again);
   });
+  it('a slip or three in a learning state is Good, not Hard: Hard repeats the step, so 爪 came back daily (parent 2026-10-29)', () => {
+    for (const state of [State.Learning, State.Relearning]) {
+      expect(toRating({ kind: 'write', totalMisses: 2, state })).toBe(Rating.Good);
+      expect(toRating({ kind: 'write', totalMisses: 4, state })).toBe(Rating.Again);
+    }
+    expect(toRating({ kind: 'write', totalMisses: 2, state: State.Review })).toBe(Rating.Hard);
+  });
+  it('a write card slipped on once every day leaves the learning steps (it no longer comes back daily for weeks)', () => {
+    let t = new Date(2026, 9, 1, 17);
+    let c = newCard(t);
+    for (let day = 0; day < 6; day++) {
+      c = review(c, toRating({ kind: 'write', totalMisses: 1, state: c.state }), t);
+      t = new Date(Math.max(c.due.getTime(), t.getTime() + 86_400_000));
+    }
+    expect(c.state).toBe(State.Review);
+    expect(c.due.getTime() - t.getTime()).toBeGreaterThanOrEqual(0);
+  });
   // SRS tuning spec §3.1: every row of the table, for every tap kind
   for (const kind of ['recognise', 'meaning', 'hear', 'understand'] as const) {
     it(`${kind}: wrong is Again, produced or not`, () => {
@@ -35,9 +52,9 @@ describe('toRating', () => {
       expect(right(State.Learning)).toBe(Rating.Good);
       expect(right(State.Relearning)).toBe(Rating.Good);
     });
-    it(`${kind}: slow stays Hard and wrong stays Again in a learning state`, () => {
+    it(`${kind}: slow is Good and wrong stays Again in a learning state (Hard would repeat the step daily, parent 2026-10-29)`, () => {
       for (const state of [State.Learning, State.Relearning]) {
-        expect(toRating({ kind, correct: true, responseMs: 6001, produced: true, state })).toBe(Rating.Hard);
+        expect(toRating({ kind, correct: true, responseMs: 6001, produced: true, state })).toBe(Rating.Good);
         expect(toRating({ kind, correct: false, responseMs: 500, produced: false, state })).toBe(Rating.Again);
       }
     });
