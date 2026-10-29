@@ -14,7 +14,7 @@ import type { IconName } from '../ui/icons/icons';
 export const GOAL_ICONS: IconName[] = ['gift', 'star', 'car', 'food', 'party', 'heart', 'medal', 'paw', 'fish', 'tree', 'sun'];
 /** What he sees must be Chinese: at least one character, and no Latin letters (digits and punctuation are fine). */
 const isChineseTitle = (t: string) => /\p{Script=Han}/u.test(t) && !/[A-Za-z]/.test(t);
-const NOT_CHINESE = 'Use Chinese characters — this is the title he sees on Home.';
+const NOT_CHINESE = 'Use Chinese characters — this is the title they see on Home.';
 
 export function RewardsPanel() {
   const { db, now } = useApp();
@@ -83,7 +83,7 @@ export function RewardsPanel() {
           <input id="rw-title" value={title} placeholder="e.g. Ice cream outing" onInput={(e) => setTitle(e.currentTarget.value)} />
         </div>
         <div class="field">
-          <label for="rw-zh">Shown to him (Chinese)</label>
+          <label for="rw-zh">Shown to your child (Chinese)</label>
           <input id="rw-zh" lang="zh" value={zh} placeholder="e.g. 冰淇淋" onInput={(e) => setZh(e.currentTarget.value)} />
         </div>
         {zhError && <p role="alert">{zhError}</p>}
@@ -134,7 +134,7 @@ export function RewardsPanel() {
                         ) : null;
                         return (
                           <div class="row" style={{ justifyContent: 'flex-start', gap: '6px' }}>
-                            <input aria-label={`Chinese title for ${g.title}`} lang="zh" placeholder="Shown to him in Chinese" value={e.zh} onInput={(ev) => setFix({ ...fix, [g.id]: { ...e, zh: ev.currentTarget.value } })} />
+                            <input aria-label={`Chinese title for ${g.title}`} lang="zh" placeholder="Shown to your child in Chinese" value={e.zh} onInput={(ev) => setFix({ ...fix, [g.id]: { ...e, zh: ev.currentTarget.value } })} />
                             <select aria-label={`Icon for ${g.title}`} value={e.icon} onChange={(ev) => setFix({ ...fix, [g.id]: { ...e, icon: ev.currentTarget.value as IconName } })}>
                               {GOAL_ICONS.map((n) => <option key={n} value={n}>{n}</option>)}
                             </select>

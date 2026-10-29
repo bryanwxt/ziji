@@ -10,8 +10,10 @@ import { registerSW } from 'virtual:pwa-register';
 import { App } from './App';
 import { armAudioWake } from './audio/sfx';
 import { initPwa } from './pwa';
+import { startReports } from './report/outbox';
 import './styles.css';
 
 initPwa(registerSW);
 armAudioWake();
+startReports();
 render(<App />, document.getElementById('app')!);

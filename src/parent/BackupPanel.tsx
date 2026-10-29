@@ -107,7 +107,7 @@ export function BackupPanel() {
   return (
     <>
       <section class="panel">
-        <h2>Where his progress is kept</h2>
+        <h2>Where your child's progress is kept</h2>
         {/* review 2026-10-17: on iOS only the Home Screen app escapes Safari's clearing of a site unused for 7 days */}
         <p class="storage-status">
           Installed on Home Screen: {isInstalled() ? 'yes' : 'no'} · Storage kept: {kept === undefined ? '…' : kept === null ? 'unknown' : kept ? 'yes' : 'no'} · Last backup:{' '}
@@ -145,7 +145,7 @@ export function BackupPanel() {
               {preview.counts.words} words, {preview.counts.cards} cards, {preview.counts.sessions} sessions,{' '}
               {preview.hasMedia ? `${preview.counts.recordings} recordings` : 'no recordings'}.
             </p>
-            {preview.listsMissing && <p>This backup is from before weekly lists and has no weekly lists: restoring it removes this week’s lists (本周词语) from this device. His words and progress in the backup are restored as usual.</p>}
+            {preview.listsMissing && <p>This backup is from before weekly lists and has no weekly lists: restoring it removes this week’s lists (本周词语) from this device. Your child's words and progress in the backup are restored as usual.</p>}
             {preview.talksMissing && <p>This backup is from before the talk log (聊一聊): the talks logged on this device are kept.</p>}
             <p>Restoring replaces the current data of the same kinds. What is here now is kept on this device first, so the restore can be undone.</p>
             <button type="button" class={`btn ${differs.length ? 'btn--red' : 'btn--primary'}`} onClick={() => void restore()}>Replace with this backup</button>

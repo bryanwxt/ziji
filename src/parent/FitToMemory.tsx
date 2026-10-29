@@ -16,7 +16,7 @@ const num = (n: number) => n.toLocaleString('en-US');
 const day = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
 /**
- * Fit to his memory (SRS tuning spec §6.2): at 1,000 reviews the parent fits FSRS's parameters to his own logs, sees what changes
+ * Fit to memory (SRS tuning spec §6.2): at 1,000 reviews the parent fits FSRS's parameters to his own logs, sees what changes
  * for one sample word, and uses them or keeps the default. The optimizer loads only on the tap.
  */
 export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewLog[]; cards: CardRecord[]; settings: Settings; onChange: () => Promise<void> }) {
@@ -47,7 +47,7 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
   const use = async (w: number[]) => {
     await updateSettings(db, { fsrs: { w, fittedAt: now().getTime(), reviews: data.count } });
     setSchedulerParams(w); // new parameters apply from each card's next review; cards keep their state
-    setPhase({ kind: 'message', text: 'Using his fitted memory.' });
+    setPhase({ kind: 'message', text: "Using your child's fitted memory." });
     await refresh();
     await onChange();
   };
@@ -61,7 +61,7 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
 
   return (
     <div class="skills__fit">
-      <h3>Fit to his memory</h3>
+      <h3>Fit to your child's memory</h3>
       {fitted ? (
         <p>
           Fitted on {num(fitted.reviews)} reviews, {day(fitted.fittedAt)}{' '}
@@ -71,8 +71,8 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
         </p>
       ) : (
         <p>
-          {data.count < FIT_MIN_REVIEWS ? `Fit to his memory: ${num(data.count)} / ${num(FIT_MIN_REVIEWS)} reviews` : `${num(data.count)} reviews to fit on.`}{' '}
-          <button type="button" class="small-btn" disabled={!canFit || phase.kind === 'fitting'} onClick={() => void fit()}>Fit to his memory</button>
+          {data.count < FIT_MIN_REVIEWS ? `Fit to your child's memory: ${num(data.count)} / ${num(FIT_MIN_REVIEWS)} reviews` : `${num(data.count)} reviews to fit on.`}{' '}
+          <button type="button" class="small-btn" disabled={!canFit || phase.kind === 'fitting'} onClick={() => void fit()}>Fit to your child's memory</button>
         </p>
       )}
       {phase.kind === 'fitting' && <p role="status">Fitting…</p>}

@@ -27,6 +27,9 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /ziji/
+          # beta reports (src/report/outbox.ts): the Supabase project and its public insert key, as repo variables; unset, reports stay on the iPad
+          VITE_REPORT_URL: ${{ vars.REPORT_URL }}
+          VITE_REPORT_KEY: ${{ vars.REPORT_KEY }}
       - name: Add the audio clips (the iPad voice speaks until there are any)
         env:
           GH_TOKEN: ${{ github.token }}

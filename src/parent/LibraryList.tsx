@@ -26,7 +26,7 @@ export function LibraryList() {
   return (
     <section class="library">
       <h3>Library</h3>
-      <p>Built-in passages, by school term. "Reads now" is how much of each he can read today; 85–92% is his band. "Qs" is his last read's questions right. Passages come back on their own schedule.</p>
+      <p>Built-in passages, by school term. "Reads now" is how much of each they can read today; 85–92% is their band. "Qs" is their last read's questions right. Passages come back on their own schedule.</p>
       <div class="scroll-panel library__scroll">
         <table class="table library__table">
           <thead>

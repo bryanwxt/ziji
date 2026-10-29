@@ -34,7 +34,7 @@ import { kidGloss } from '../content/kidGloss';
  * the new words start tomorrow.
  */
 export function planLine(i: { newCount: number; known: number; placed: number; days: { date: string; n: number; minutes: number }[]; readyBy: string; homeworkDue: string; names: string[]; today?: 'done' | 'begun' | null }): string {
-  const counts = `${i.newCount} new · ${i.known} he knows (quick check) · ${i.placed} to recheck.`;
+  const counts = `${i.newCount} new · ${i.known} known (quick check) · ${i.placed} to recheck.`;
   const tomorrow = i.today ? ` Today’s lesson ${i.today === 'done' ? 'is done' : 'has begun'}, so the new words start tomorrow.` : '';
   const when = `check ${weekdayZh(i.readyBy)}, homework ${weekdayZh(i.homeworkDue)}`;
   // runs of days with the same lesson length: "Sun–Mon lessons about 22 min, Tue’s about 17 min"
@@ -423,7 +423,7 @@ export function WeekPanel() {
       <WeekReadiness lists={lists} />
       {!draft && (
         <>
-          <p class="week__how">Copy the text from a photo of the sheet with Live Text: long-press the text → Select All → Copy. Then paste it here. ZiJi finds the words and 搭配, and gets him ready by the day you pick.</p>
+          <p class="week__how">Copy the text from a photo of the sheet with Live Text: long-press the text → Select All → Copy. Then paste it here. ZiJi finds the words and 搭配, and gets your child ready by the day you pick.</p>
           <div class="field">
             <label for="week-paste">Paste the sheet</label>
             <textarea id="week-paste" rows={7} lang="zh-CN" value={text} onInput={(e) => setText((e.currentTarget as HTMLTextAreaElement).value)} />
@@ -452,19 +452,19 @@ export function WeekPanel() {
           {!past && effReady && (
             <div class="week__plan">
               <p>{planLine({ newCount: counts.new, known: counts.known, placed: counts.placed, days: schedule.days, readyBy: effReady, homeworkDue: homework, names: late, today: todayLesson })}</p>
-              {lessonDays === 1 && <p class="week__warn">Only 1 day — he’ll see the new words {todayLesson ? 'tomorrow' : 'today'} and the check {daysBetween(today, effReady) === 1 ? 'tomorrow' : day(effReady)}.</p>}
+              {lessonDays === 1 && <p class="week__warn">Only 1 day — they’ll see the new words {todayLesson ? 'tomorrow' : 'today'} and the check {daysBetween(today, effReady) === 1 ? 'tomorrow' : day(effReady)}.</p>}
               {late.length > 0 && later > effReady && <button type="button" class="small-btn" onClick={() => { setReadyBy(later); setReadyTouched(true); }}>Move ready-by later ({day(later)})</button>}
             </div>
           )}
 
-          <h3 id="week-new">New to him ({fresh.length})</h3>
+          <h3 id="week-new">New to them ({fresh.length})</h3>
           <p class="week__hint">English is optional: type up to four words where there is none.</p>
-          <ul class="week__items" aria-label={`New to him (${fresh.length})`}>{fresh.map(itemRow)}</ul>
+          <ul class="week__items" aria-label={`New to them (${fresh.length})`}>{fresh.map(itemRow)}</ul>
           {knownItems.length > 0 && (
             <>
-              <h3>He knows ({knownItems.length})</h3>
+              <h3>They know ({knownItems.length})</h3>
               <p class="week__hint">A quick check before the day, nothing to teach.</p>
-              <ul class="week__items" aria-label={`He knows (${knownItems.length})`}>{knownItems.map(itemRow)}</ul>
+              <ul class="week__items" aria-label={`They know (${knownItems.length})`}>{knownItems.map(itemRow)}</ul>
             </>
           )}
           {(draft.unpaired.length > 0 || draft.notes.length > 0) && (
@@ -607,8 +607,8 @@ function WeekLists({ lists, now, onChanged, db, words }: { lists: WeekList[]; no
               ? (
                 <div class="week__confirm" role="group" aria-label={running ? 'Close the list?' : 'Delete the list?'}>
                   {running
-                    ? <p>Close “{l.name}”? It stops being practised and moves to Past lists. His words and progress stay.</p>
-                    : <p>Delete “{l.name}” for good? His words and progress stay.</p>}
+                    ? <p>Close “{l.name}”? It stops being practised and moves to Past lists. Their words and progress stay.</p>
+                    : <p>Delete “{l.name}” for good? Their words and progress stay.</p>}
                   {running
                     ? <button type="button" class="small-btn week__danger" onClick={() => void close(l.id)}>Close the list</button>
                     : <button type="button" class="small-btn week__danger" onClick={() => void del(l.id)}>Delete the list</button>}
@@ -680,7 +680,7 @@ function ListEditor({ list, now, db, onDone }: { list: WeekList; now: Date; db: 
       {earlier && <p class="week__refuse" role="alert">Homework day can only move later now: {day(list.homeworkDue)} or after.</p>}
       {past && !earlier && <p class="week__refuse" role="alert">Homework day is already past. Pick today or a later day.</p>}
       {!past && !locked && eff !== readyBy && <p class="week__note">Ready by moves to {day(eff)}.</p>}
-      <p class="week__hint">Tap a word or 搭配 to take it off the list. His progress on it stays. To add words, paste the sheet again with this name and these days.</p>
+      <p class="week__hint">Tap a word or 搭配 to take it off the list. Their progress on it stays. To add words, paste the sheet again with this name and these days.</p>
       <div class="week__wrongs">
         {list.items.map((i) => (
           <button key={i.wordId} type="button" class={`week__chip week__chip--plain ${gone.has(i.wordId) ? 'is-off' : ''}`} lang="zh-CN" aria-label={`${gone.has(i.wordId) ? 'Put back' : 'Remove'} ${i.text}`} onClick={() => setGone((s) => toggled(s, i.wordId))}>

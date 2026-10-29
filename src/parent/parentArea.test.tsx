@@ -60,7 +60,7 @@ describe('the parent area in five tabs', () => {
     expect(await heading('Recordings')).toBeTruthy();
     // Progress: School (his book's lists and the placement), Skills, Memory
     fireEvent.click(tab(/Progress/));
-    for (const h of ['School', 'MOE progress', 'Placement', 'Skills', 'Memory', 'Fit to his memory', /Remembered after a gap/, /Missed most/]) expect(await heading(h)).toBeTruthy();
+    for (const h of ['School', 'MOE progress', 'Placement', 'Skills', 'Memory', "Fit to your child's memory", /Remembered after a gap/, /Missed most/]) expect(await heading(h)).toBeTruthy();
     expect(await heading('Week summary')).toBeTruthy();
     const order = [...document.querySelectorAll('.parent__section-title')].map((h) => h.textContent);
     expect(order).toEqual(['Week summary', 'School', 'Skills', 'Memory']);
@@ -110,7 +110,7 @@ describe('the parent area in five tabs', () => {
 
   it('every old tab has a home, and its section is there', () => {
     expect(new Set(Object.values(HOME))).toEqual(new Set(['today', 'progress', 'content', 'rewards', 'settings']));
-    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'summary', 'talk', 'week', 'words'].sort());
+    expect(Object.keys(HOME).sort()).toEqual(['backup', 'credits', 'dashboard', 'help', 'import', 'listen', 'memory', 'passages', 'pictures', 'recordings', 'rewards', 'school', 'settings', 'skills', 'summary', 'talk', 'week', 'words'].sort());
   });
 });
 

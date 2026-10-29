@@ -38,12 +38,12 @@ describe('the week (parent loop spec §5)', () => {
 
 describe('the focus line, the first that applies', () => {
   it('a 朗读 question missed', () => {
-    expect(focusLine({ ...empty, shaky: ['饿'], reading: [{ passageId: 'p17', title: '小马', meaning: 'missed' }] }).zh).toBe('多读：他这周的朗读题答错了。和他再读一次《小马》，轮流读，读完问问他故事里发生了什么。');
+    expect(focusLine({ ...empty, shaky: ['饿'], reading: [{ passageId: 'p17', title: '小马', meaning: 'missed' }] }).zh).toBe('多读：孩子这周的朗读题答错了。和孩子再读一次《小马》，轮流读，读完问问孩子故事里发生了什么。');
   });
   it('words he missed, in the theme they lean to', () => {
     expect(focusLine({ ...empty, shaky: ['饿', '饱', '甜', '马'] })).toEqual({
       zh: '多聊食物：这周常错的词是饿、饱、甜，聊天的时候多用一用。',
-      en: 'Talk more about food: the words he missed most were 饿, 饱, 甜. Use them in conversation.',
+      en: 'Talk more about food: the words they missed most were 饿, 饱, 甜. Use them in conversation.',
     });
   });
   it('fewer than 3 talk days', () => {
@@ -94,7 +94,7 @@ describe('the summary from the stores', () => {
       { passageId: 'p17', title: '小马', meaning: 'right' }, { passageId: 'p20', title: '我的学校', meaning: null },
       { passageId: 'p03', title: '下雨了', meaning: 'missed' }, { passageId: 'p02', title: '上学', meaning: 'right' },
     ]));
-    expect(summary.focus.zh).toBe('多读：他这周的朗读题答错了。和他再读一次《下雨了》，轮流读，读完问问他故事里发生了什么。');
+    expect(summary.focus.zh).toBe('多读：孩子这周的朗读题答错了。和孩子再读一次《下雨了》，轮流读，读完问问孩子故事里发生了什么。');
     expect((await loadWeek(db, new Date(2026, 9, 22, 20), 1)).summary).toMatchObject({ lessons: 1, newWords: ['马'], shaky: ['马'], newly: { write: ['马'] } });
   });
 });

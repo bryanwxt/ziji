@@ -29,7 +29,7 @@ async function read(text = SHEET) {
   const button = screen.getByRole('button', { name: 'Read' }) as HTMLButtonElement;
   await waitFor(() => expect(button.disabled).toBe(false)); // his words and cards loaded
   fireEvent.click(button);
-  await screen.findByRole('heading', { name: /New to him/ });
+  await screen.findByRole('heading', { name: /New to them/ });
 }
 const save = () => screen.getByRole('button', { name: /^Save/ }) as HTMLButtonElement;
 const allFineButton = () => screen.getByRole('button', { name: /^(All fine|Accept all anyway)/ }) as HTMLButtonElement;
@@ -49,8 +49,8 @@ describe('WeekPanel: paste and preview (spec §3.2–3.5)', () => {
   it('splits new words from ones he knows, and asks English only for a new word without one', async () => {
     await setup();
     await read();
-    const fresh = screen.getByRole('list', { name: /New to him/ });
-    const known = screen.getByRole('list', { name: /He knows/ });
+    const fresh = screen.getByRole('list', { name: /New to them/ });
+    const known = screen.getByRole('list', { name: /They know/ });
     expect(within(known).getByText('跑步')).toBeTruthy();
     expect(within(fresh).queryByText('跑步')).toBeNull();
     expect(within(fresh).getByText('蝌蚪')).toBeTruthy();
@@ -92,19 +92,19 @@ describe('WeekPanel: paste and preview (spec §3.2–3.5)', () => {
     await read();
     expect(screen.getByLabelText('Ready by')).toHaveProperty('value', '2026-10-21');
     expect(screen.getByLabelText('Homework due')).toHaveProperty('value', '2026-10-23');
-    expect(screen.getByText(/he knows \(quick check\)/).textContent).toMatch(/check 星期三, homework 星期五/);
+    expect(screen.getByText(/known \(quick check\)/).textContent).toMatch(/check 星期三, homework 星期五/);
   });
 
   it('the plan line: the new words from today\'s lesson, or from tomorrow once it is done (parent ruling 2026-10-18)', async () => {
     const app = await setup();
     await read();
-    expect(screen.getByText(/he knows \(quick check\)/).textContent).toMatch(/New words: \d+ on Mon · check 星期三/);
+    expect(screen.getByText(/known \(quick check\)/).textContent).toMatch(/New words: \d+ on Mon · check 星期三/);
     cleanup();
     const done = { ...createSessionRecord(buildSessionPlan({ cards: [], words: [], settings: DEFAULT_SETTINGS, now: MONDAY }), '2026-10-19', MONDAY.getTime()), completed: true };
     await saveSession(app.db, done);
     renderWithApp(<WeekPanel />, app);
     await read();
-    await waitFor(() => expect(screen.getByText(/he knows \(quick check\)/).textContent).toMatch(/Today’s lesson is done, so the new words start tomorrow\. New words: \d+ on Tue · check 星期三/));
+    await waitFor(() => expect(screen.getByText(/known \(quick check\)/).textContent).toMatch(/Today’s lesson is done, so the new words start tomorrow\. New words: \d+ on Tue · check 星期三/));
   });
 
   it('a past homework day is refused, with a reason', async () => {
@@ -120,7 +120,7 @@ describe('WeekPanel: paste and preview (spec §3.2–3.5)', () => {
     await setup(new Date(2026, 9, 22, 9));
     await read();
     expect(screen.getByLabelText('Ready by')).toHaveProperty('value', '2026-10-23');
-    expect(screen.getByText(/Only 1 day — he’ll see the new words today and the check tomorrow/)).toBeTruthy();
+    expect(screen.getByText(/Only 1 day — they’ll see the new words today and the check tomorrow/)).toBeTruthy();
   });
 });
 
@@ -247,7 +247,7 @@ describe('WeekPanel: the lists', () => {
     const l = await saved(app);
     const native = vi.spyOn(window, 'confirm');
     fireEvent.click(await screen.findByRole('button', { name: 'Close P9-L01' }));
-    expect(screen.getByText(/His words and progress stay/)).toBeTruthy();
+    expect(screen.getByText(/Their words and progress stay/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Keep it' }));
     expect((await getWeekList(app.db, l.id))?.closedAt).toBeUndefined();
     fireEvent.click(screen.getByRole('button', { name: 'Close P9-L01' }));
@@ -259,7 +259,7 @@ describe('WeekPanel: the lists', () => {
     fireEvent.click(past);
     expect(within(await screen.findByRole('article', { name: 'P9-L01' })).getByText('Closed')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Delete P9-L01' }));
-    expect(screen.getByText(/Delete “P9-L01” for good\? His words and progress stay/)).toBeTruthy();
+    expect(screen.getByText(/Delete “P9-L01” for good\? Their words and progress stay/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Delete the list' }));
     await waitFor(async () => expect(await allWeekLists(app.db)).toHaveLength(0));
     expect((await allWords(app.db)).map((w) => w.text)).toContain('蝌蚪');
@@ -419,23 +419,23 @@ describe('planLine and listStatus', () => {
   const d = (date: string, n: number, minutes: number) => ({ date, n, minutes });
   it('the plan line says each day\'s new words and lesson length (parent rulings 2026-10-18)', () => {
     expect(planLine({ newCount: 27, known: 3, placed: 0, days: [d('2026-10-18', 12, 22), d('2026-10-19', 12, 22), d('2026-10-20', 3, 17)], readyBy: '2026-10-21', homeworkDue: '2026-10-23', names: [] }))
-      .toBe('27 new · 3 he knows (quick check) · 0 to recheck. New words: 12 on Sun, 12 on Mon, 3 on Tue · check 星期三, homework 星期五 · Sun–Mon lessons about 22 min, Tue’s about 17 min.');
+      .toBe('27 new · 3 known (quick check) · 0 to recheck. New words: 12 on Sun, 12 on Mon, 3 on Tue · check 星期三, homework 星期五 · Sun–Mon lessons about 22 min, Tue’s about 17 min.');
   });
   it('today\'s lesson done: the new words start tomorrow, and it says so', () => {
     expect(planLine({ newCount: 24, known: 0, placed: 0, days: [d('2026-10-19', 12, 22), d('2026-10-20', 12, 22)], readyBy: '2026-10-21', homeworkDue: '2026-10-23', names: [], today: 'done' }))
-      .toBe('24 new · 0 he knows (quick check) · 0 to recheck. Today’s lesson is done, so the new words start tomorrow. New words: 12 on Mon, 12 on Tue · check 星期三, homework 星期五 · Mon–Tue lessons about 22 min.');
+      .toBe('24 new · 0 known (quick check) · 0 to recheck. Today’s lesson is done, so the new words start tomorrow. New words: 12 on Mon, 12 on Tue · check 星期三, homework 星期五 · Mon–Tue lessons about 22 min.');
     expect(planLine({ newCount: 5, known: 0, placed: 0, days: [d('2026-10-20', 5, 17)], readyBy: '2026-10-21', homeworkDue: '2026-10-23', names: [], today: 'begun' }))
       .toMatch(/Today’s lesson has begun, so the new words start tomorrow\. New words: 5 on Tue · check 星期三, homework 星期五 · Tue’s lesson about 17 min\.$/);
   });
   it('names the words that won\'t be taught before the check, even at 20 a lesson', () => {
     expect(planLine({ newCount: 22, known: 0, placed: 0, days: [d('2026-10-20', 20, 30)], readyBy: '2026-10-21', homeworkDue: '2026-10-23', names: ['甲', '乙'] }))
-      .toBe('22 new · 0 he knows (quick check) · 0 to recheck. New words: 20 on Tue · check 星期三, homework 星期五 · Tue’s lesson about 30 min. 2 new words won’t be taught before 星期三: 甲, 乙. They’ll still be in the check, and come after it.');
+      .toBe('22 new · 0 known (quick check) · 0 to recheck. New words: 20 on Tue · check 星期三, homework 星期五 · Tue’s lesson about 30 min. 2 new words won’t be taught before 星期三: 甲, 乙. They’ll still be in the check, and come after it.');
   });
   it('no new words, or no lesson day left before the check', () => {
     expect(planLine({ newCount: 0, known: 4, placed: 0, days: [], readyBy: '2026-10-21', homeworkDue: '2026-10-23', names: [] }))
-      .toBe('0 new · 4 he knows (quick check) · 0 to recheck. Check 星期三, homework 星期五.');
+      .toBe('0 new · 4 known (quick check) · 0 to recheck. Check 星期三, homework 星期五.');
     expect(planLine({ newCount: 1, known: 0, placed: 0, days: [], readyBy: '2026-10-21', homeworkDue: '2026-10-23', names: ['甲'], today: 'done' }))
-      .toBe('1 new · 0 he knows (quick check) · 0 to recheck. Today’s lesson is done, so the new words start tomorrow. No lesson for new words before the check · check 星期三, homework 星期五. 1 new word won’t be taught before 星期三: 甲. They’ll still be in the check, and come after it.');
+      .toBe('1 new · 0 known (quick check) · 0 to recheck. Today’s lesson is done, so the new words start tomorrow. No lesson for new words before the check · check 星期三, homework 星期五. 1 new word won’t be taught before 星期三: 甲. They’ll still be in the check, and come after it.');
   });
   const list = (over: Partial<WeekList> = {}): WeekList => ({ id: 'wl:1', name: 'x', createdAt: 0, readyBy: '2026-10-21', homeworkDue: '2026-10-23', items: [{ wordId: 'b:a', text: 'a', from: 'grid', addedStatus: 'new' }, { wordId: 'b:b', text: 'b', from: 'grid', addedStatus: 'new' }], pairs: [], fits: [], ...over });
   it('says where a list stands', () => {

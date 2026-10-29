@@ -66,7 +66,7 @@ export function PassagesPanel() {
   return (
     <section class="panel">
       <h2>Reading texts (朗读)</h2>
-      <p>Texts here come first in the daily 朗读 step, in the order added. Once read, each comes back after a rest (3 days, longer each time he reads it well), like the built-in passages.</p>
+      <p>Texts here come first in the daily 朗读 step, in the order added. Once read, each comes back after a rest (3 days, longer each time they read it well), like the built-in passages.</p>
       {list.length > 0 && (
         <table class="table">
           <tbody>
@@ -107,7 +107,7 @@ export function PassagesPanel() {
             <input aria-label={`Choice ${i + 1}`} value={choices[i]} onInput={(e) => setChoice(i, e.currentTarget.value)} />
           </div>
         ))}
-        <small>After reading he answers it. Mark the right choice; a miss shows it and reads again the sentence that has it.</small>
+        <small>After reading, they answer it. Mark the right choice; a miss shows it and reads again the sentence that has it.</small>
         {complete && !distinct && <p class="hint" role="status">The three choices must be different.</p>}
         {!complete && !empty && <p class="hint" role="status">Fill in the question and all three choices, or leave them all empty.</p>}
       </fieldset>

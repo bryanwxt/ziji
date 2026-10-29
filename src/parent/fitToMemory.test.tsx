@@ -31,13 +31,13 @@ afterEach(() => {
 describe('Fit to his memory (SRS tuning spec §6.2)', () => {
   it('under 1,000 reviews: the count, and the button disabled', async () => {
     await show(412);
-    expect(screen.getByText(/Fit to his memory: 412 \/ 1,000 reviews/)).toBeTruthy();
-    expect((screen.getByRole('button', { name: 'Fit to his memory' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/Fit to your child's memory: 412 \/ 1,000 reviews/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: "Fit to your child's memory" }) as HTMLButtonElement).disabled).toBe(true);
   });
   it('fit → before/after → Use these: saved, and the scheduler uses them', async () => {
     fit.mockResolvedValue({ ok: true, w: FITTED });
     const { app, onChange } = await show(1000);
-    fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
+    fireEvent.click(screen.getByRole('button', { name: "Fit to your child's memory" }));
     expect(await screen.findByText('Right 3 times')).toBeTruthy();
     expect(fit.mock.calls[0]![0].count).toBe(1000);
     fireEvent.click(screen.getByRole('button', { name: 'Use these' }));
@@ -49,7 +49,7 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
     let finish: (r: unknown) => void = () => {};
     fit.mockReturnValue(new Promise((r) => (finish = r)));
     await show(1000);
-    const button = screen.getByRole('button', { name: 'Fit to his memory' });
+    const button = screen.getByRole('button', { name: "Fit to your child's memory" });
     fireEvent.click(button);
     fireEvent.click(button); // both before any re-render: only the busy guard can stop the second
     expect(await screen.findByText('Fitting…')).toBeTruthy();
@@ -62,7 +62,7 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
     let finish: (r: unknown) => void = () => {};
     fit.mockReturnValue(new Promise((r) => (finish = r)));
     const { app, onChange } = await show(1000);
-    fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
+    fireEvent.click(screen.getByRole('button', { name: "Fit to your child's memory" }));
     expect(await screen.findByText('Fitting…')).toBeTruthy();
     await new Promise((r) => setTimeout(r, 80)); // the optimizer is running
     cleanup();
@@ -74,7 +74,7 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
   it('Keep default: nothing is saved', async () => {
     fit.mockResolvedValue({ ok: true, w: FITTED });
     const { app } = await show(1200);
-    fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
+    fireEvent.click(screen.getByRole('button', { name: "Fit to your child's memory" }));
     fireEvent.click(await screen.findByRole('button', { name: 'Keep default' }));
     expect(screen.queryByText('Right 3 times')).toBeNull();
     expect((await getSettings(app.db)).fsrs).toBeUndefined();
@@ -83,9 +83,9 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
   it('a failed fit keeps the default and says so; offline says it needs the internet', async () => {
     fit.mockResolvedValueOnce({ ok: false, reason: 'failed' }).mockResolvedValueOnce({ ok: false, reason: 'offline' });
     const { app } = await show(1000);
-    fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
+    fireEvent.click(screen.getByRole('button', { name: "Fit to your child's memory" }));
     expect(await screen.findByText("Couldn't fit — keeping the default")).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Fit to his memory' }));
+    fireEvent.click(screen.getByRole('button', { name: "Fit to your child's memory" }));
     expect(await screen.findByText(/needs the internet the first time\. Try again when online\. If it still fails, close and reopen the app\./)).toBeTruthy();
     expect((await getSettings(app.db)).fsrs).toBeUndefined();
   });
@@ -103,7 +103,7 @@ describe('Fit to his memory (SRS tuning spec §6.2)', () => {
     await show(1000, { fsrs: { w: [1, 2, 3], fittedAt: 0, reviews: 900 } });
     expect(screen.queryByText(/Fitted on/)).toBeNull();
     expect(screen.getByText(/1,000 reviews to fit on\./)).toBeTruthy();
-    expect((screen.getByRole('button', { name: 'Fit to his memory' }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole('button', { name: "Fit to your child's memory" }) as HTMLButtonElement).disabled).toBe(false);
   });
   it('Fit again is enabled at 500 more reviews', async () => {
     await show(1532, { fsrs: { w: FITTED, fittedAt: 0, reviews: 1032 } });

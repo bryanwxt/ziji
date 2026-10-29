@@ -162,7 +162,7 @@ export function WordsPanel() {
 
       <section class="panel">
         <h2>School 听写 mistakes</h2>
-        <p>Words he wrote wrong in a school 听写 — often with a same-sound character (新家坡 for 新加坡). Type the right word, one per line. Each comes back first in 写一写.</p>
+        <p>Words your child wrote wrong in a school 听写 — often with a same-sound character (新家坡 for 新加坡). Type the right word, one per line. Each comes back first in 写一写.</p>
         <div class="field">
           <label for="tx-mistakes">The right words, one per line</label>
           <textarea id="tx-mistakes" rows={3} value={mistakes} onInput={(e) => setMistakes(e.currentTarget.value)} />
@@ -177,7 +177,7 @@ export function WordsPanel() {
             const r = await applyDictationMistakes(db, mistakes, now()).finally(() => (busy.current = false));
             const parts = [r.marked.length ? `${r.marked.join('、')} ${r.marked.length > 1 ? 'come' : 'comes'} back first in 写一写.` : 'Nothing to bring back.'];
             if (r.noStrokes.length) parts.push(`${r.noStrokes.join('、')}: no stroke data, so it can't be written in the app.`);
-            if (r.added.length) parts.push(`${r.added.join('、')} is new to the app — check the spelling (type the right word, not what he wrote).`);
+            if (r.added.length) parts.push(`${r.added.join('、')} is new to the app — check the spelling (type the right word, not what they wrote).`);
             if (r.skipped.length) parts.push(`Skipped: ${r.skipped.join(', ')} (not 1–4 Chinese characters).`);
             setMistakeMessage(parts.join(' '));
             setMistakes('');
@@ -191,7 +191,7 @@ export function WordsPanel() {
 
       <section class="panel">
         <h2>School 成语</h2>
-        <p>成语 from his class. Each comes up as a new word first, then in 练一练 (filling in a character, a sentence, 组句). They stay on this iPad. The app knows the meaning of common ones; for others, add one after = if you like.</p>
+        <p>成语 from their class. Each comes up as a new word first, then in 练一练 (filling in a character, a sentence, 组句). They stay on this iPad. The app knows the meaning of common ones; for others, add one after = if you like.</p>
         <div class="field">
           <label for="tx-idioms">School 成语, one a line (成语 = English meaning)</label>
           <textarea id="tx-idioms" rows={3} value={idioms} placeholder="一心一意 = with all your heart" onInput={(e) => setIdioms(e.currentTarget.value)} />

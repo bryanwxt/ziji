@@ -93,7 +93,7 @@ describe('RewardsPanel', () => {
     await saveSession(app.db, { ...createSessionRecord(emptyPlan, '2026-10-01', 0), completed: true, completedSteps: ['flashcards'], stars: 1 });
     renderWithApp(<RewardsPanel />, app);
     fireEvent.input(await screen.findByLabelText('Reward'), { target: { value: 'Ice cream' } });
-    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '冰淇淋' } });
+    fireEvent.input(screen.getByLabelText(/Shown to your child/), { target: { value: '冰淇淋' } });
     fireEvent.input(screen.getByLabelText('Target'), { target: { value: '1' } });
     fireEvent.click(screen.getByText('Add goal'));
     fireEvent.click(await screen.findByText('Mark as given'));
@@ -108,7 +108,7 @@ describe('RewardsPanel: what he sees (spec 2026-10-04 §3, phase D)', () => {
     fireEvent.input(await screen.findByLabelText('Reward'), { target: { value: 'Lego set' } });
     fireEvent.click(screen.getByText('Add goal'));
     expect(await listRewards(app.db)).toHaveLength(0); // no Chinese title yet
-    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '乐高' } });
+    fireEvent.input(screen.getByLabelText(/Shown to your child/), { target: { value: '乐高' } });
     fireEvent.click(screen.getByRole('button', { name: 'car' }));
     expect(screen.getByRole('button', { name: 'car' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(screen.getByText('Add goal'));
@@ -118,13 +118,13 @@ describe('RewardsPanel: what he sees (spec 2026-10-04 §3, phase D)', () => {
     const app = await makeAppData();
     renderWithApp(<RewardsPanel />, app);
     fireEvent.input(await screen.findByLabelText('Reward'), { target: { value: 'Movie' } });
-    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: 'Lego' } });
+    fireEvent.input(screen.getByLabelText(/Shown to your child/), { target: { value: 'Lego' } });
     fireEvent.click(screen.getByText('Add goal'));
     expect(await screen.findByText(/Use Chinese characters/)).toBeTruthy();
-    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '！' } });
+    fireEvent.input(screen.getByLabelText(/Shown to your child/), { target: { value: '！' } });
     fireEvent.click(screen.getByText('Add goal'));
     expect(await listRewards(app.db)).toHaveLength(0);
-    fireEvent.input(screen.getByLabelText(/Shown to him/), { target: { value: '看电影2次!' } });
+    fireEvent.input(screen.getByLabelText(/Shown to your child/), { target: { value: '看电影2次!' } });
     fireEvent.click(screen.getByText('Add goal'));
     await waitFor(async () => expect((await listRewards(app.db))[0]).toMatchObject({ zh: '看电影2次!' }));
   });

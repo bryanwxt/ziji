@@ -2042,3 +2042,23 @@ button.langdu__sentence { cursor: pointer; }
 .try-this__text { flex: 1 1 18em; min-width: 0; font-size: 17px; font-weight: 700; }
 .week-summary__newly { display: flex; flex-direction: column; gap: 2px; }
 @media (max-width: 599px) and (max-height: 699px) { .langdu__purpose { font-size: 14px; line-height: 1.25; padding: 0 10px 2px; } .langdu__purpose > :last-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; } } /* a short phone (SE): a long why-question takes at most two small lines, so the passage keeps its room */
+
+/* Beta reports (2026-10-29): a quiet flag in the question card's corner, and its one-tap sheet */
+.report-flag {
+  position: absolute; top: 6px; right: 6px; z-index: 5; width: 36px; height: 36px; display: grid; place-items: center;
+  border: none; border-radius: 12px; background: transparent; color: var(--line-strong); cursor: pointer;
+}
+.report-flag:active { color: var(--muted); }
+.report-sheet__backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgba(43, 58, 42, 0.45); }
+.report-sheet {
+  width: min(100%, 440px); display: flex; flex-direction: column; gap: 14px; padding: 20px;
+  background: var(--surface); border-radius: 22px; box-shadow: 0 8px 22px rgba(43, 58, 42, 0.25);
+}
+.report-sheet h2 { margin: 0; text-align: center; }
+.report-sheet__reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.report-sheet__reasons .choice { min-height: 56px; font-size: 20px; }
+.report-sheet__reasons .choice.is-picked { background: var(--green-soft); border-color: var(--green-ink); color: var(--green-ink); }
+.report-sheet__note { width: 100%; box-sizing: border-box; font: inherit; font-size: 16px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; resize: none; }
+.report-sheet__actions { display: flex; gap: 10px; justify-content: flex-end; }
+.report-sheet__thanks { margin: 12px 0; text-align: center; font-size: 28px; font-weight: 900; color: var(--green-ink); }
+.help__steps { margin: 8px 0 0; padding-left: 22px; display: grid; gap: 8px; line-height: 1.45; }

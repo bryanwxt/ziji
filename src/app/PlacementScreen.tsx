@@ -201,8 +201,8 @@ function ConfirmJump({ p, pinHash, onUse, onKeep }: { p: Pending; pinHash: strin
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const aboveClass = p.cls !== null && TERMS.indexOf(p.result) > TERMS.indexOf(p.cls) + 1;
-  const above = aboveClass ? `his class (${p.cls})` : `his earlier result (${p.earlier ?? 'none'})`;
-  const keepLabel = p.capped ? `Start at his class (${p.cls})` : `Keep his earlier result${p.earlier ? ` (${p.earlier})` : ''}`;
+  const above = aboveClass ? `their class (${p.cls})` : `their earlier result (${p.earlier ?? 'none'})`;
+  const keepLabel = p.capped ? `Start at their class (${p.cls})` : `Keep their earlier result${p.earlier ? ` (${p.earlier})` : ''}`;
   const check = async (pin: string) => {
     if ((await hashPin(pin)) === pinHash) onUse();
     else setError('That PIN is not right. Try again.');
@@ -213,9 +213,9 @@ function ConfirmJump({ p, pinHash, onUse, onKeep }: { p: Pending; pinHash: strin
         <p class="placement-confirm__kid"><Label zh="请爸爸妈妈来看一看！" /></p>
         <h2>For a grown-up</h2>
         <p class="placement-confirm__msg">
-          This says {p.result} — that's well above {above}. {p.capped ? `Use it, or start him at his class level (${p.cls})?` : 'Use it, or keep his earlier result?'}
+          This says {p.result} — that's well above {above}. {p.capped ? `Use it, or start at their class level (${p.cls})?` : 'Use it, or keep their earlier result?'}
         </p>
-        <p class="placement-confirm__note">Using it counts about {p.assumed} more characters as known without asking him; each comes back as a recheck in his lessons.</p>
+        <p class="placement-confirm__note">Using it counts about {p.assumed} more characters as known without asking; each comes back as a recheck in their lessons.</p>
         {asking ? (
           <div class="placement-confirm__pin">
             <p>Enter your PIN to use {p.result}.</p>
