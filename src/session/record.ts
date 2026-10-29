@@ -122,7 +122,7 @@ export const recordMeaning = (db: AppDb, wordId: string, outcome: TapOutcome & {
 /** A word written from memory, rated by its misses. `source: 'recall'`: a 默写 in 练一练 (real test spec 2026-10-23 §4), logged
  *  with its own right (no hint, at most 1 miss) as `correct`, so the parent can tell it from 写一写's. */
 export async function recordWriting(db: AppDb, wordId: string, totalMisses: number, now: Date, opts: { source?: 'recall'; correct?: boolean } = {}): Promise<CardRecord> {
-  const rating = toRating({ kind: 'write', totalMisses });
+  const rating = toRating({ kind: 'write', totalMisses, state: (await getCard(db, `${wordId}:write`))?.fsrs.state ?? State.New });
   const { card, before } = await reviewCard(db, wordId, 'write', rating, now);
   await addReviewLog(db, { cardId: card.id, wordId, kind: 'write', at: now.getTime(), rating, correct: opts.correct ?? totalMisses <= 3, misses: totalMisses, ...before, ...(opts.source ? { source: opts.source } : {}) });
   // written now: a day its strokes failed to load no longer keeps it at the back of the queue (final review I1)

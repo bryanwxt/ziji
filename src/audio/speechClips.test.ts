@@ -127,10 +127,12 @@ describe('a lone character no voice can be steered on is said as its first 组�
     speak('爪', { reading: 'zhuǎ' });
     expect(calls[0]!.steps).toEqual([{ id: 'z' }]);
   });
-  it('in a dictation cue on the iPad voice each lone piece is the word too (parent 2026-10-15: bare 爪 is zhǎo, 爪子 zhuǎ), and prefetch fetches the word', () => {
+  it('in a dictation cue on the iPad voice the lone pieces are never said bare (parent 2026-10-15: bare 爪 is zhǎo, 爪子 zhuǎ) nor as the word thrice (2026-10-29: "爪子的爪子"): the word once; prefetch fetches the word', () => {
     speak('爪，爪子的，爪', { reading: 'zhuǎ' });
     speak('了', { reading: 'le', queue: true });
-    expect(spoken).toEqual(['爪子，爪子的，爪子', '为了']);
+    speak('切，切菜的，切', { reading: 'qiē', queue: true });
+    speak('长，长城的，长', { reading: 'cháng', queue: true });
+    expect(spoken).toEqual(['爪子', '为了', '切菜', '常，长城的，常']); // 长 is steered (常 is cháng), not collapsed
     setClipIndex({ v: 1, voice: 't', clips: { 爪子: 'z' } });
     prefetchWords([{ text: '爪', pinyin: 'zhuǎ' }]);
     expect(player.prefetch).toHaveBeenCalledWith(['z']);

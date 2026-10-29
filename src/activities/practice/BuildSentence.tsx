@@ -68,10 +68,11 @@ export function BuildSentence({ item, word, kid, onDone }: Props) {
       )}
     >
       <div class="build">
-        <span class="build__listen"><SpeakButton text={item.full} /></span>
+        <span class="build__listen"><SpeakButton text={item.full} big /></span>
         <div class="build__answer hanzi" aria-label="句子">
           {placed.map((i) => (
-            <button key={i} type="button" class="build__placed" disabled={done} onClick={() => setPlaced(placed.filter((p) => p !== i))}>
+            // the same tile as the bank's and every other question's; marked right or wrong like theirs (parent 2026-10-29: one look)
+            <button key={i} type="button" class={`choice press build__tile build__placed${done ? (result.correct ? ' is-answer' : ' is-wrong') : ''}`} disabled={done} onClick={() => setPlaced(placed.filter((p) => p !== i))}>
               <Label zh={item.tiles[i]!} py={tilePy[i]} fade peek={false} />
             </button>
           ))}
