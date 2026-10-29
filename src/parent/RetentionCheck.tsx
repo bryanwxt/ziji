@@ -3,7 +3,7 @@ import { RETENTION_MIN, RETENTION_TARGET, retention, type Retention, type Retent
 import type { ReviewLog } from '../types';
 
 const LINE_LABEL: Record<RetentionLine, string> = { taps: 'Taps (reading, meaning, listening)', writing: 'Writing (写一写)' };
-const NOTE = { low: "He's forgetting more than planned — reviews may be too far apart.", high: 'Reviews come sooner than he needs.' } as const;
+const NOTE = { low: "They're forgetting more than planned — reviews may be too far apart.", high: 'Reviews come sooner than they need.' } as const;
 
 function figure(r: Retention): string {
   if (r.rate === null) return `Measuring — ${r.counted} of ${RETENTION_MIN} reviews`;

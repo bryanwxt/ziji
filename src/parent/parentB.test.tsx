@@ -81,7 +81,7 @@ describe('SettingsPanel', () => {
     const app = await makeAppData();
     await updateSettings(app.db, { langdu: false });
     renderWithApp(<SettingsPanel />, app);
-    fireEvent.change(screen.getByLabelText('New words per day: the most (the app finds his number, from 3 up to this)'), { target: { value: '15' } });
+    fireEvent.change(screen.getByLabelText('New words per day: the most (the app finds their number, from 3 up to this)'), { target: { value: '15' } });
     await waitFor(async () => expect((await getSettings(app.db)).newPerDay).toBe(10));
     fireEvent.click(screen.getByLabelText('听写 writing'));
     await waitFor(async () => expect((await getSettings(app.db)).activities.writing).toBe(false));

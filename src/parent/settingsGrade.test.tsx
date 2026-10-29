@@ -17,6 +17,6 @@ describe('the school year in Settings follows the calendar', () => {
   it('says the school year was picked at setup and can be changed here', async () => {
     renderWithApp(<SettingsPanel />, await makeAppData());
     const select = await screen.findByLabelText('School year');
-    expect(select.closest('.field')!.textContent).toContain('He picked his school year when he first met Truffle; change it here.');
+    expect(select.closest('.field')!.textContent).toContain('Your child picked their school year when they first met Truffle; change it here.');
   });
 });

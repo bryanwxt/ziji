@@ -32,10 +32,10 @@ describe('the Progress tab against his book (spec 2026-10-11 §8)', () => {
   });
   it('each bar has a mark where his class is now (二下·17: 707 to read, 413 to write)', () => {
     show();
-    expect(screen.getByText(/where his class is now: 二下·17/)).toBeTruthy();
+    expect(screen.getByText(/where their class is now: 二下·17/)).toBeTruthy();
     const marks = [...document.querySelectorAll<HTMLElement>('.pbar__mark')].map((m) => m.style.left);
     expect(marks).toEqual(['94.8%', '94.9%', '94.8%']);
-    expect(screen.getByRole('img', { name: '认读 reads (taps): 1 of 746; his class is at 707' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '认读 reads (taps): 1 of 746; their class is at 707' })).toBeTruthy();
   });
   it('a row per term from 一上 to the end of his year: still to read and still to write', () => {
     show();
@@ -56,8 +56,8 @@ describe('can write and can say (spec 2026-10-11 §6)', () => {
     const know = summarize([makeWord('门'), makeWord('介'), makeWord('大'), makeWord('门口', { id: 'w:门口' })], [passed('b:门', 'recognise'), passed('b:门', 'write'), passed('b:门', 'say'), passed('b:大', 'say'), passed('w:门口', 'say')]);
     render(<ProgressPanel know={know} settings={{ ...DEFAULT_SETTINGS, grade: 2, gradeYear: 2026 }} now={new Date('2026-10-11T09:00:00')} />);
     expect([...document.querySelectorAll('.pbar__label')].map((l) => l.textContent)).toEqual(['认读 reads (taps)', '会写 Can write', '会说 Can say', '会用 Can use']);
-    expect(screen.getByRole('img', { name: '会写 Can write: 1 of 435; his class is at 413' })).toBeTruthy();
-    expect(screen.getByRole('img', { name: '会说 Can say: 2 of 746; his class is at 707' })).toBeTruthy(); // 门 and 大; 门口 counts for itself, not its characters
+    expect(screen.getByRole('img', { name: '会写 Can write: 1 of 435; their class is at 413' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '会说 Can say: 2 of 746; their class is at 707' })).toBeTruthy(); // 门 and 大; 门口 counts for itself, not its characters
     expect(screen.getByText('2 of 746')).toBeTruthy();
   });
 });
@@ -72,7 +72,7 @@ describe('can use (production practice spec §4)', () => {
   it('hides the count row until a word has begun', () => {
     const know = summarize([makeWord('很')], []);
     render(<ProgressPanel know={know} settings={{ ...DEFAULT_SETTINGS, grade: 2, gradeYear: 2026 }} now={new Date('2026-10-11T09:00:00')} />);
-    expect(screen.queryByText('Words he can use in a sentence')).toBeNull();
+    expect(screen.queryByText('Words they can use in a sentence')).toBeNull();
     expect(document.body.textContent).not.toContain('0 of 0 begun');
   });
   it('counts can-use only over begun words, so it never passes begun', () => {

@@ -42,7 +42,7 @@ function PassageRow({ r, url, texts, onDone }: { r: Recording; url: string | und
           {r.answers?.length ? <small class="listen__meaning">{answersLine(r.answers)}</small> : r.meaning && <small class="listen__meaning">{r.meaning.correct ? 'Meaning question: right' : `Meaning question: missed (picked ${r.meaning.picked})`}</small>}
           {t && <MisreadText text={t.text} marked={marks} onToggle={toggle} />}
           <div class="row listen__actions">
-            <audio ref={audio} controls preload="none" src={url} aria-label="His take" onPlay={model.stop} />
+            <audio ref={audio} controls preload="none" src={url} aria-label="Their take" onPlay={model.stop} />
             {t && <button type="button" class="small-btn listen__model" onClick={() => { audio.current?.pause(); model.read(0); }}>听老师的</button>}
             <button type="button" class="small-btn listen__done" aria-label={`Done: ${title}`} onClick={() => onDone(r, [...marks])}>Done</button>
           </div>
@@ -68,7 +68,7 @@ export function ListenRows({ takes, words, texts = new Map(), onJudge, onDone = 
     for (const [id, u] of cache.current) if (!listed.has(id)) { URL.revokeObjectURL(u); cache.current.delete(id); }
   }, [takes]);
   useEffect(() => () => { cache.current.forEach((u) => URL.revokeObjectURL(u)); cache.current.clear(); }, []);
-  if (takes.length === 0) return <p>Nothing to listen to. New takes appear here after his lessons.</p>;
+  if (takes.length === 0) return <p>Nothing to listen to. New takes appear here after their lessons.</p>;
   return (
     <table class="table">
       <tbody>
@@ -86,7 +86,7 @@ export function ListenRows({ takes, words, texts = new Map(), onJudge, onDone = 
                   <br />
                   <small>{new Date(r.createdAt).toLocaleString()}</small>
                 </td>
-                <td><audio controls preload="none" src={urls.get(r.id)} aria-label="His sentence" onPlay={stopSpeaking} /></td>
+                <td><audio controls preload="none" src={urls.get(r.id)} aria-label="Their sentence" onPlay={stopSpeaking} /></td>
                 <td>{model && <span onClickCapture={(e) => (e.currentTarget.closest('tr')?.querySelector('audio') as HTMLAudioElement | null)?.pause()}><SpeakButton text={model} /></span>}</td>
                 <td class="listen__verdict">
                   <button type="button" class="small-btn" aria-label={`A good sentence: ${label}`} onClick={() => onJudge(r, 'ok')}>✓</button>{' '}
@@ -102,7 +102,7 @@ export function ListenRows({ takes, words, texts = new Map(), onJudge, onDone = 
                 <br />
                 <small>{new Date(r.createdAt).toLocaleString()}</small>
               </td>
-              <td><audio controls preload="none" src={urls.get(r.id)} aria-label="His take" /></td>
+              <td><audio controls preload="none" src={urls.get(r.id)} aria-label="Their take" /></td>
               <td>{w && <SpeakButton text={w.text} reading={w.pinyin} />}</td>
               <td class="listen__verdict">
                 <button type="button" class="small-btn" aria-label={`Said right: ${label}`} onClick={() => onJudge(r, 'ok')}>✓</button>{' '}
@@ -166,7 +166,7 @@ export function ListenPanel({ onReviewed }: { onReviewed?: () => void }) {
   return (
     <section class="panel listen">
       <h2>Listen & confirm</h2>
-      <p class="muted">He read words aloud in 练一练, said sentences with words (说一句), and read today's text in 朗读. A word: play his take, then the model: ✓ if he said it right, ✗ if not; it counts as “can say” after ✓ on two different days, and ✗ brings it back soon. A sentence: play his take; the model sentence is one way to say it. ✓ if his own sentence uses the word sensibly, ✗ if not, or if he only repeated the model sentence; ✓ on two different days counts as “can use”. A text: play his take and the model, tap any character he misread (it comes up in practice), then Done.</p>
+      <p class="muted">Your child read words aloud in 练一练, said sentences with words (说一句), and read today's text in 朗读. A word: play their take, then the model: ✓ if they said it right, ✗ if not; it counts as “can say” after ✓ on two different days, and ✗ brings it back soon. A sentence: play their take; the model sentence is one way to say it. ✓ if their own sentence uses the word sensibly, ✗ if not, or if they only repeated the model sentence; ✓ on two different days counts as “can use”. A text: play their take and the model, tap any character they misread (it comes up in practice), then Done.</p>
       {micToday && <p class="warning listen__mic">{micFailureLine(micToday, 'today')}</p>}
       {error && <p class="muted" role="alert">Something went wrong reading or saving the takes. Try again.</p>}
       {takes ? (

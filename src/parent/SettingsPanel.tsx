@@ -71,7 +71,7 @@ export function SettingsPanel() {
           onChange={(e) => void save({ sessionMinutes: clampInt(e.currentTarget.value, 10, 40, s.sessionMinutes) })} />
       </div>
       <div class="field">
-        <label for="st-new">New words per day: the most (the app finds his number, from 3 up to this)</label>
+        <label for="st-new">New words per day: the most (the app finds their number, from 3 up to this)</label>
         <input id="st-new" type="number" min={0} max={10} value={s.newPerDay}
           onChange={(e) => void save({ newPerDay: clampInt(e.currentTarget.value, 0, 10, s.newPerDay) })} />
       </div>
@@ -89,7 +89,7 @@ export function SettingsPanel() {
         <select id="st-grade" value={String(schoolYear(s, now()))} onChange={(e) => void save({ grade: Number(e.currentTarget.value), gradeYear: now().getFullYear(), classLesson: null })}>
           {[1, 2, 3, 4, 5, 6].map((g) => <option key={g} value={String(g)}>P{g}</option>)}
         </select>
-        <p class="hint">He picked his school year when he first met Truffle; change it here. It moves up each January. Progress compares him with the MOE lists to the end of his school year (lists go up to P3).</p>
+        <p class="hint">Your child picked their school year when they first met Truffle; change it here. It moves up each January. Progress compares them with the MOE lists to the end of their school year (lists go up to P3).</p>
       </div>
       <ClassLessonField settings={s} now={now()} onSave={save} />
       <div class="field">
@@ -118,25 +118,25 @@ export function SettingsPanel() {
           <input type="checkbox" checked={s.sayCards !== false} onChange={(e) => void save({ sayCards: e.currentTarget.checked })} />{' '}
           Say cards
         </label>
-        <p class="hint">In 练一练 he reads some words aloud (about one in three, at most 6 a lesson). You confirm his takes under Listen &amp; confirm; a word he can say counts toward his stars and Progress. Off: 练一练 is taps only.</p>
+        <p class="hint">In 练一练 they read some words aloud (about one in three, at most 6 a lesson). You confirm their takes under Listen &amp; confirm; a word they can say counts toward his stars and Progress. Off: 练一练 is taps only.</p>
       </div>
       <div class="field">
         <label>
           <input type="checkbox" checked={s.fadePinyin !== false} onChange={(e) => void save({ fadePinyin: e.currentTarget.checked })} />{' '}
           拼音渐隐 Fade pinyin
         </label>
-        <p class="hint">Pinyin hides over characters he already reads, at the readings he knows; he taps one to see it for 3 seconds. New characters, pinyin answer choices and the right answer's own line after a miss always show it. Off: pinyin over every character, as before.</p>
+        <p class="hint">Pinyin hides over characters they already read, at the readings they know; they tap one to see it for 3 seconds. New characters, pinyin answer choices and the right answer's own line after a miss always show it. Off: pinyin over every character, as before.</p>
       </div>
       <div class="field">
         <label>
           <input type="checkbox" checked={s.langdu} onChange={(e) => void save(e.currentTarget.checked ? { langdu: true, activities: { ...s.activities, speaking: true } } : { langdu: false })} />{' '}
           朗读 Read aloud
         </label>
-        <p class="hint">The last step of every lesson (about 3 minutes): the iPad reads today's text a sentence at a time, he reads it alone while it records, compares the two, and answers one question. Each text is read 3 days; on its first day he warms up with his self-introduction. His takes come to Listen &amp; confirm. Off: no 朗读 step.</p>
+        <p class="hint">The last step of every lesson (about 3 minutes): the iPad reads today's text a sentence at a time, they read it alone while it records, compares the two, and answer one question. Each text is read 3 days; on its first day they warm up with their self-introduction. Their takes come to Listen &amp; confirm. Off: no 朗读 step.</p>
       </div>
       <div class="field">
         <label>Microphone</label>
-        <p class="hint">Records 2 seconds, then Play it back lets you hear them. If the iPad asks, tap Allow. Use it when his takes are missing.</p>
+        <p class="hint">Records 2 seconds, then Play it back lets you hear them. If the iPad asks, tap Allow. Use it when their takes are missing.</p>
         <MicTest />
       </div>
       <details class="field">

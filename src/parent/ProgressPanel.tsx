@@ -1,5 +1,5 @@
 // What he can really do (spec 2026-10-06 §3.4), against his book's lists (spec 2026-10-11 §8): the end of his school year as the
-// target, where his class is now, and what each term still asks of him. "Learned" is passed: right first answers on two days.
+// target, where their class is now, and what each term still asks of him. "Learned" is passed: right first answers on two days.
 import { useEffect, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { loadKnowledge } from '../app/knowledge';
@@ -15,12 +15,12 @@ import { toConfirmLine, weeklyTrend } from './progress';
 const pct = (n: number, of: number) => `${((n / of) * 100).toFixed(1)}%`;
 const count = (have: ReadonlySet<string>, list: Iterable<string>) => [...list].filter((ch) => have.has(ch)).length;
 
-/** A bar: how far he is toward his year's target, with a mark where his class is now. */
+/** A bar: how far he is toward his year's target, with a mark where their class is now. */
 function Bar({ label, have, of, mark }: { label: string; have: number; of: number; mark: number | null }) {
   return (
     <div class="pbar">
       <span class="pbar__label">{label}</span>
-      <div class="pbar__track" role="img" aria-label={`${label}: ${have} of ${of}${mark === null ? '' : `; his class is at ${mark}`}`}>
+      <div class="pbar__track" role="img" aria-label={`${label}: ${have} of ${of}${mark === null ? '' : `; their class is at ${mark}`}`}>
         <div class="pbar__fill" style={{ width: pct(Math.min(have, of), of) }} />
         {mark !== null && <div class="pbar__mark" style={{ left: pct(mark, of) }} />}
       </div>
@@ -40,7 +40,7 @@ function MemoryLine({ logs, now, ids, onTapOnly }: { logs: ReviewLog[]; now: Dat
   return (
     <div class="progress__memory">
       <p lang="zh-CN">从记忆写出：{week.words} 个旧字，{week.right} 个写对</p>
-      <p class="muted">This week (the last 7 days): earlier words written from memory, and how many he got right.</p>
+      <p class="muted">This week (the last 7 days): earlier words written from memory, and how many they got right.</p>
       <p>
         <span lang="zh-CN">只点选</span> (right by tapping, never from memory, last 14 days): {tapOnly} word{tapOnly === 1 ? '' : 's'}
         {tapOnly > 0 && onTapOnly && <> <button type="button" class="small-btn" onClick={onTapOnly}>Show them</button></>}
@@ -70,12 +70,12 @@ export function ProgressPanel({ know, settings, now, logs, onTapOnly }: { know: 
     <section class="panel progress-panel">
       {logs && <MemoryLine logs={logs} now={now} ids={new Set(know.words.map((w) => w.id))} onTapOnly={onTapOnly} />}
       <h3>MOE progress</h3>
-      <p class="muted">A step counts only after he gets it right on two different days.</p>
+      <p class="muted">A step counts only after they get it right on two different days.</p>
       <dl class="progress__counts">
         <dt>Characters recognised</dt><dd>{target ? `${read} of ${target.read.size} by the end of ${endTerm}` : read}{toConfirm && <><br /><small class="muted">{toConfirm}</small></>}</dd>
         <dt>Characters written</dt><dd>{target ? `${wrote} of ${target.write.size}` : know.written}</dd>
-        <dt>Characters he can say</dt><dd>{target ? `${says} of ${target.read.size}` : says}</dd>
-        {know.begun > 0 && <><dt>Words he can use in a sentence</dt><dd>{`${know.canUse} of ${know.begun} begun`}</dd></>}
+        <dt>Characters they can say</dt><dd>{target ? `${says} of ${target.read.size}` : says}</dd>
+        {know.begun > 0 && <><dt>Words they can use in a sentence</dt><dd>{`${know.canUse} of ${know.begun} begun`}</dd></>}
         <dt>Heard (understands it by ear)</dt><dd>{know.heard}</dd>
         <dt>Understood in a sentence</dt><dd>{know.understood}</dd>
         <dt>Read</dt><dd>{know.read}</dd>
@@ -84,7 +84,7 @@ export function ProgressPanel({ know, settings, now, logs, onTapOnly }: { know: 
       </dl>
       {target && (
         <div class="progress__bars">
-          {classAt !== null && <p class="muted">The mark is where his class is now: {lessonLabel(classAt)}.</p>}
+          {classAt !== null && <p class="muted">The mark is where their class is now: {lessonLabel(classAt)}.</p>}
           <Bar label="认读 reads (taps)" have={read} of={target.read.size} mark={atClass ? atClass.read.size : null} />
           <Bar label="会写 Can write" have={wrote} of={target.write.size} mark={atClass ? atClass.write.size : null} />
           <Bar label="会说 Can say" have={says} of={target.read.size} mark={atClass ? atClass.read.size : null} />

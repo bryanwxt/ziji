@@ -116,8 +116,8 @@ export const TALK_DAYS_AIM = 3;
 export function focusLine(s: Omit<WeekSummary, 'focus'>): { zh: string; en: string } {
   const missed = s.reading.find((r) => r.meaning === 'missed');
   if (missed) return {
-    zh: `多读：他这周的朗读题答错了。和他再读一次《${missed.title}》，轮流读，读完问问他故事里发生了什么。`,
-    en: `Read more: he missed the question on 《${missed.title}》 this week. Read it again together, taking turns, then ask what happened.`,
+    zh: `多读：孩子这周的朗读题答错了。和孩子再读一次《${missed.title}》，轮流读，读完问问孩子故事里发生了什么。`,
+    en: `Read more: they missed the question on 《${missed.title}》 this week. Read it again together, taking turns, then ask what happened.`,
   };
   const about = (words: string[], zhWhat: string, enWhat: string) => {
     const list = words.slice(0, 3);
@@ -126,7 +126,7 @@ export function focusLine(s: Omit<WeekSummary, 'focus'>): { zh: string; en: stri
       ? { zh: `多聊${THEME_LABEL[theme]}：${zhWhat}${list.join('、')}，聊天的时候多用一用。`, en: `Talk more about ${THEME_EN[theme]}: ${enWhat} ${list.join(', ')}. Use them in conversation.` }
       : { zh: `多用这些词聊天：${zhWhat}${list.join('、')}。`, en: `Use these in conversation: ${enWhat} ${list.join(', ')}.` };
   };
-  if (s.shaky.length) return about(s.shaky, '这周常错的词是', 'the words he missed most were');
+  if (s.shaky.length) return about(s.shaky, '这周常错的词是', 'the words they missed most were');
   if (s.talk.days < TALK_DAYS_AIM) return {
     zh: `多聊：这周聊了${s.talk.days}天。试试每天聊五分钟，吃饭的时候就可以。`,
     en: `Talk more: ${s.talk.days} day${s.talk.days === 1 ? '' : 's'} this week. Try five minutes a day; dinner is enough.`,

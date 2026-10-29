@@ -12,7 +12,7 @@ export function Credits() {
       <ul>
         <li>HSK 3.0 character and word lists — elkmovie/hsk30, MIT License, © 2021 Pleco Inc.</li>
         <li>Make Me a Hanzi dictionary (meanings, radicals, components) — GNU LGPL v3 or later.</li>
-        <li>English for his school characters and words: short glosses written for this app from CC-CEDICT (MDBG and contributors) — CC BY-SA 4.0, shared under the same licence. Other words show CC-CEDICT's own English, shortened; the weekly list checks pasted words against its headwords.</li>
+        <li>English for school characters and words: short glosses written for this app from CC-CEDICT (MDBG and contributors) — CC BY-SA 4.0, shared under the same licence. Other words show CC-CEDICT's own English, shortened; the weekly list checks pasted words against its headwords.</li>
         <li>Hanzi Writer — MIT License. Stroke data (hanzi-writer-data) — Arphic Public License.</li>
         <li>pinyin-pro, ts-fsrs, Preact — MIT License. idb, canvas-confetti — ISC License.</li>
         <li>Lucide icons — ISC License (portions MIT, from Feather).</li>

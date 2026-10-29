@@ -27,17 +27,17 @@ describe('Remembered after a gap (SRS tuning spec §5)', () => {
   it('a note under 85%', () => {
     render(<RetentionCheck logs={[...logs(24, { kind: 'write' }), ...logs(6, { kind: 'write', rating: Rating.Again })]} now={now} />);
     expect(screen.getByText(/Writing \(写一写\): 80% of 30 reviews/)).toBeTruthy();
-    expect(screen.getByText("He's forgetting more than planned — reviews may be too far apart.")).toBeTruthy();
+    expect(screen.getByText("They're forgetting more than planned — reviews may be too far apart.")).toBeTruthy();
   });
   it('a note over 95%', () => {
     render(<RetentionCheck logs={logs(30)} now={now} />);
-    expect(screen.getByText('Reviews come sooner than he needs.')).toBeTruthy();
+    expect(screen.getByText('Reviews come sooner than they need.')).toBeTruthy();
   });
   it('the Skills panel shows it, and the fit, from his stored logs', async () => {
     const app = await makeAppData({ now: () => now });
     for (const l of logs(3)) await addReviewLog(app.db, l);
     renderWithApp(<SkillsPanel />, app);
     expect(await screen.findByText(/Measuring — 3 of 30 reviews/)).toBeTruthy();
-    expect(screen.getByText(/Fit to his memory: 0 \/ 1,000 reviews/)).toBeTruthy();
+    expect(screen.getByText(/Fit to memory: 0 \/ 1,000 reviews/)).toBeTruthy();
   });
 });

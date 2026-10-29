@@ -70,8 +70,8 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={SEED} />, app);
     const n = await walkThrough(() => document.querySelector<HTMLElement>('[data-answer="true"]')!);
     expect(n).toBeLessThanOrEqual(20);
-    // 三下 is well above his class (二下): the parent's check comes first, and nothing is saved yet
-    expect(confirm()!.textContent).toContain("This says 三下 — that's well above his class (二下).");
+    // 三下 is well above their class (二下): the parent's check comes first, and nothing is saved yet
+    expect(confirm()!.textContent).toContain("This says 三下 — that's well above their class (二下).");
     expect((await allCards(app.db)).filter((c) => c.kind === 'recognise')).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: 'Use 三下' }));
     for (const d of '1111') fireEvent.click(screen.getByRole('button', { name: d }));
@@ -87,8 +87,8 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     app.settings = { ...app.settings, placementDone: false, pinHash: await hashPin('2468') };
     renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={SEED} />, app);
     await walkThrough(() => document.querySelector<HTMLElement>('[data-answer="true"]')!);
-    expect(confirm()!.textContent).toContain('Use it, or start him at his class level (二下)?');
-    fireEvent.click(screen.getByRole('button', { name: 'Start at his class (二下)' })); // no PIN: it can only place less
+    expect(confirm()!.textContent).toContain('Use it, or start at their class level (二下)?');
+    fireEvent.click(screen.getByRole('button', { name: 'Start at their class (二下)' })); // no PIN: it can only place less
     expect(await screen.findByText('开始！', {}, LONG)).toBeTruthy();
     expect((await getSettings(app.db)).placementResult).toMatchObject({ readsUpTo: '二下' });
   }, 30_000);
@@ -99,8 +99,8 @@ describe('PlacementScreen (spec §19 part 6)', () => {
     await updateSettings(app.db, { placementDone: true, placementResult: earlier });
     renderWithApp(<PlacementScreen tapGuardMs={0} voice={false} seed={SEED} />, app);
     await walkThrough(() => document.querySelector<HTMLElement>('[data-answer="true"]')!);
-    expect(confirm()!.textContent).toContain("This says 三下 — that's well above his class (二下). Use it, or keep his earlier result?");
-    fireEvent.click(screen.getByRole('button', { name: 'Keep his earlier result (一下)' }));
+    expect(confirm()!.textContent).toContain("This says 三下 — that's well above their class (二下). Use it, or keep their earlier result?");
+    fireEvent.click(screen.getByRole('button', { name: 'Keep their earlier result (一下)' }));
     expect(await screen.findByText('开始！', {}, LONG)).toBeTruthy();
     expect((await getSettings(app.db)).placementResult).toEqual(earlier);
     expect(await allCards(app.db)).toEqual([]);

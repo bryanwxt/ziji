@@ -14,8 +14,8 @@ export const THEME_GAP_DAYS = 6;
 export const SEEN_KEEP_DAYS = 60;
 /** The day's three slots, in order. */
 export const SLOTS: readonly TalkKind[] = ['word', 'reading', 'theme'];
-export const KIND_LABEL: Readonly<Record<TalkKind, string>> = { word: '他的词', reading: '一起读', theme: '话题' };
-export const KIND_EN: Readonly<Record<TalkKind, string>> = { word: 'His words', reading: 'Shared reading', theme: 'Topic' };
+export const KIND_LABEL: Readonly<Record<TalkKind, string>> = { word: '孩子的词', reading: '一起读', theme: '话题' };
+export const KIND_EN: Readonly<Record<TalkKind, string>> = { word: 'Their words', reading: 'Shared reading', theme: 'Topic' };
 
 /** A word to talk about: its text, the parent's English, a sentence that uses it, its 组词, and where it came from. */
 export interface TalkWord { text: string; gloss?: string; example?: string; zuci: string[]; from: 'list' | 'class' }
@@ -81,7 +81,7 @@ export function wordStarter(w: TalkWord): TalkCard {
   return {
     kind: 'word', id: `w:${w.text}`, word: w.text,
     open: `你在哪里看到过${x}，或者听人说过${x}？`,
-    en: `${where}: ${w.text}${w.gloss ? ` (${w.gloss})` : ''}. Where has he met it? Get him using it about his own day.`,
+    en: `${where}: ${w.text}${w.gloss ? ` (${w.gloss})` : ''}. Where has your child met it? Get them using it about their own day.`,
     followUps,
     pattern: `…${w.text}…`,
     sample: w.example ?? (w.zuci.length ? w.zuci.slice(0, 2).join('、') : w.text),
@@ -91,9 +91,9 @@ export function wordStarter(w: TalkWord): TalkCard {
 /** The 你觉得 question a shared-reading card ends on; 「换一个」 moves to the next. */
 export const THINK: readonly { zh: string; en: string }[] = [
   { zh: '你觉得书里谁做得最好？为什么？', en: 'Who in the story did best? Why?' },
-  { zh: '如果你是书里的人，你会怎么做？', en: 'If he were in the story, what would he do?' },
-  { zh: '你有没有碰到过这样的事？说一说。', en: 'Has something like this happened to him?' },
-  { zh: '你觉得书里的事后来会怎么样？', en: 'What does he think happens next?' },
+  { zh: '如果你是书里的人，你会怎么做？', en: 'If they were in the story, what would they do?' },
+  { zh: '你有没有碰到过这样的事？说一说。', en: 'Has something like this happened to them?' },
+  { zh: '你觉得书里的事后来会怎么样？', en: 'What do they think happens next?' },
 ];
 const WHY_OPEN = '书里的人做了一件什么事？他为什么这样做？你从哪一句知道的？';
 
@@ -123,7 +123,7 @@ export function readingCard(p: TalkPassage, k: number): TalkCard {
   return {
     kind: 'reading', id: `r:${p.id}:${k % THINK.length}`, passageId: p.id,
     open: who ? bookVoice(who.q) : `《${p.title}》里有谁？`,
-    en: `Shared reading: read 《${p.title}》 together, taking turns a sentence each, then ask who, why, and what he thinks. Last question: ${think.en}`,
+    en: `Shared reading: read 《${p.title}》 together, taking turns a sentence each, then ask who, why, and what they think. Last question: ${think.en}`,
     followUps: [why ? bookVoice(why.q) : WHY_OPEN, think.zh],
     pattern: '我觉得…因为…',
     sample: '',

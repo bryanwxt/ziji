@@ -12,7 +12,7 @@ import { RetentionCheck } from './RetentionCheck';
 import { isLegacyPlacement, type AnswerLog, type CardRecord, type Recording, type ReviewLog, type Settings, type Skill, type Word } from '../types';
 
 const LABEL: Record<Skill, string> = {
-  listening: 'Listening (understands the word when he hears it)',
+  listening: 'Listening (understands the word when they hear it)',
   reading: 'Reading (认一认)',
   meaning: 'Meaning (认一认)',
   use: 'Words in use (选一选/用一用)',

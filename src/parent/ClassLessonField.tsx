@@ -8,7 +8,7 @@ export function ClassLessonField({ settings, now, onSave }: { settings: Settings
   const options = gradeTerms(schoolYear(settings, now)).flatMap(termLessons);
   const [pick, setPick] = useState<number | null>(null);
   if (at === null || !options.length) {
-    const why = options.length ? `No school calendar for ${now.getFullYear()} yet — new words keep coming from catch-up.` : 'No MOE list for his school year: new words follow the book from 一上.';
+    const why = options.length ? `No school calendar for ${now.getFullYear()} yet — new words keep coming from catch-up.` : 'No MOE list for their school year: new words follow the book from 一上.';
     return <div class="field"><p class="hint" id="st-class-now">{why}</p></div>;
   }
   const setOn = correctionApplies(now, settings) ? new Date(settings.classLesson!.setAt) : null;
@@ -24,7 +24,7 @@ export function ClassLessonField({ settings, now, onSave }: { settings: Settings
         <button type="button" class="btn" onClick={() => void onSave({ classLesson: { term: LESSONS[chosen]!.term, lesson: LESSONS[chosen]!.lesson, setAt: now.getTime() } })}>Set</button>
         <button type="button" class="btn btn--secondary" disabled={!settings.classLesson} onClick={() => { setPick(null); void onSave({ classLesson: null }); }}>Use the estimate</button>
       </div>
-      <p class="hint">New words each day come half from this lesson and the one before, half from what he hasn't met since 一上. The estimate spreads each semester's lessons over its school weeks; a correction holds until the next semester.</p>
+      <p class="hint">New words each day come half from this lesson and the one before, half from what they haven't met since 一上. The estimate spreads each semester's lessons over its school weeks; a correction holds until the next semester.</p>
     </div>
   );
 }

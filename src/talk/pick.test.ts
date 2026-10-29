@@ -36,7 +36,7 @@ describe("the day's three cards (parent loop spec §4)", () => {
     expect(pickDay({ ...base, words: [JIE] })[0]).toEqual({
       kind: 'word', id: 'w:借', word: '借',
       open: '你在哪里看到过『借』，或者听人说过『借』？',
-      en: "This week's list word: 借 (to borrow). Where has he met it? Get him using it about his own day.",
+      en: "This week's list word: 借 (to borrow). Where has your child met it? Get them using it about their own day.",
       followUps: ['用『借』说一说你自己的事。', '书上有一句：「我可以借你的笔吗？」你也用『借』说一句。', '『借』还可以和哪些字一起用？'],
       pattern: '…借…',
       sample: '我可以借你的笔吗？',

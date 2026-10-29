@@ -39,7 +39,7 @@ describe('Settings: where his class is (spec 2026-10-11 §8)', () => {
   it('past the lists (P4) there is no lesson to pick', async () => {
     const app = await appOn({ grade: 4, gradeYear: 2026 });
     renderWithApp(<SettingsPanel />, app);
-    await waitFor(() => expect(shown()).toMatch(/^No MOE list for his school year/));
+    await waitFor(() => expect(shown()).toMatch(/^No MOE list for their school year/));
     expect(screen.queryByLabelText('Class lesson')).toBeNull();
   });
   it('past the school calendar (2028) it says the dates are missing, not the list (review focus 1)', async () => {

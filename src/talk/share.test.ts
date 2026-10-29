@@ -75,16 +75,16 @@ describe('the shared text', () => {
     expect(todayText(cards, '2026-10-19')).toBe([
       '聊一聊 · 19 Oct',
       '',
-      '1. 他的词 His words',
+      '1. 孩子的词 Their words',
       '你在哪里看到过『借』，或者听人说过『借』？',
-      "This week's list word: 借 (borrow). Where has he met it? Get him using it about his own day.",
+      "This week's list word: 借 (borrow). Where has your child met it? Get them using it about their own day.",
       '· 用『借』说一说你自己的事。',
       '· 『借』可以和哪些字一起用？',
       '试试用：…借…',
       '',
       '2. 一起读 Shared reading',
       '牛爷爷做了什么？（书上：找到了小马）',
-      `Shared reading: read 《小马》 together, taking turns a sentence each, then ask who, why, and what he thinks. Last question: ${THINK[1]!.en}`,
+      `Shared reading: read 《小马》 together, taking turns a sentence each, then ask who, why, and what they think. Last question: ${THINK[1]!.en}`,
       '· 小马为什么找不到家了？（书上：跑得很远）',
       `· ${THINK[1]!.zh}`, // 你觉得 is pick's THINK[1], its wording pick's own
       '试试用：我觉得…因为…',
@@ -93,7 +93,7 @@ describe('the shared text', () => {
   it('an empty slot is left out and the rest are numbered in turn', () => {
     const card = wordStarter({ text: '借', gloss: 'borrow', zuci: [], from: 'list' });
     expect(todayText([null, card, null], '2026-10-19')).toBe(todayText([card], '2026-10-19'));
-    expect(todayText([null, card, null], '2026-10-19')).toContain('\n\n1. 他的词 His words\n');
+    expect(todayText([null, card, null], '2026-10-19')).toContain('\n\n1. 孩子的词 Their words\n');
   });
   it('the week says a read well (from its answers) is right', () => {
     const s: WeekSummary = {

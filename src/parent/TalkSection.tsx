@@ -134,7 +134,7 @@ export function TalkSection({ onNavigate, onLogged, undoMs = UNDO_MS }: { onNavi
   return (
     <section class="panel talk" aria-labelledby="talk-title">
       <h2 id="talk-title"><span lang="zh-CN">聊一聊</span> Talk</h2>
-      <p class="hint">Three things to talk about today, in Mandarin. Follow his answers; the pattern is something to nudge toward, not a script.</p>
+      <p class="hint">Three things to talk about today, in Mandarin. Follow their answers; the pattern is something to nudge toward, not a script.</p>
       {nudge && <p class="talk__nudge">{nudge}</p>}
       <TalkCards cards={cards} onSwap={(i) => void swap(i)} busy={busy} />
       <div class="talk__share">

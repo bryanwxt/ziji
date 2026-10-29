@@ -49,18 +49,18 @@ export function tryThis(s: TrySignals): TryAction {
   const soon = gaps.find((l) => { const d = between(s.today, l.readyBy); return d >= 0 && d <= LIST_SOON_DAYS; });
   if (soon) {
     const when = soon.readyBy === s.today ? 'today' : weekday(soon.readyBy);
-    const go = soon.weak.length ? ` Go over ${soon.weak.slice(0, 3).join(', ')} with him.` : '';
+    const go = soon.weak.length ? ` Go over ${soon.weak.slice(0, 3).join(', ')} with them.` : '';
     const text = `${soon.name}: ${soon.notReady} of ${soon.total} not ready for the check ${when === 'today' ? 'today' : `on ${when}`}.${go}`;
     return { text, button: 'Open 本周词语', place: 'week', ...(go ? { weakOf: soon.name } : {}) };
   }
   if (!s.lastTalk) return { text: 'Try one of today’s talk prompts below, then tap ✓ 聊了.', button: 'Go to 聊一聊', place: 'talk' };
   if (between(s.lastTalk, s.today) >= TALK_GAP_DAYS) return { text: `No talk logged since ${weekday(s.lastTalk)}. Try today’s shared reading questions at dinner.`, button: 'Go to 聊一聊', place: 'talk' };
-  if (s.takes > 0) return { text: `${s.takes} take${s.takes === 1 ? '' : 's'} waiting in Listen & confirm. His Say words move on once you confirm them.`, button: 'Listen & confirm', place: 'listen' };
+  if (s.takes > 0) return { text: `${s.takes} take${s.takes === 1 ? '' : 's'} waiting in Listen & confirm. Their Say words move on once you confirm them.`, button: 'Listen & confirm', place: 'listen' };
   if (s.backupDays !== null) return backup(s.backupDays);
   const listed = s.lists[0];
   if (s.classLeft && listed) {
     return s.classLeft > CLASS_BEHIND_AT
-      ? { text: 'He is behind his class. See where he is.', button: 'See Progress', place: 'school' }
+      ? { text: "They're behind their class. See where they are.", button: 'See Progress', place: 'school' }
       : { text: `${s.classLeft} class word${s.classLeft === 1 ? '' : 's'} still to start before ${weekday(listed.homeworkDue)}.`, button: 'See Progress', place: 'school' };
   }
   const later = gaps[0];
