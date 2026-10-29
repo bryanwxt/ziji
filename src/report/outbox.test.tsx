@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logError } from '../app/errorLog';
+import { Label } from '../ui/Label';
 import { Stage } from '../ui/stage/Stage';
 import { flushReports, MAX_QUEUED, MAX_TEXT, queuedReports, report, reportTarget, setReportsOn } from './outbox';
 
@@ -92,6 +93,14 @@ describe('the corner flag sends the question it sits on', () => {
     expect(r).toMatchObject({ kind: 'mistake', body: { activity: 'use', reason: 'meaning', note: '朋友 means friend' } });
     expect(r!.body.card).toContain('朋友');
     expect(screen.getByText(/谢谢/)).toBeTruthy();
+  });
+
+  it('the card reads as characters and choices, without pinyin', () => {
+    render(<Stage activity="use" truffle={null} sheet={null}><Label zh="风筝" /><button type="button"><Label zh="也" /></button><button type="button">kite</button></Stage>);
+    fireEvent.click(screen.getByRole('button', { name: '这题有问题' }));
+    fireEvent.click(screen.getByRole('button', { name: /别的/ }));
+    fireEvent.click(screen.getByRole('button', { name: /发送/ }));
+    expect(queuedReports()[0]!.body.card).toBe('风筝也 | kite');
   });
 
   it('取消 closes it and sends nothing', () => {
