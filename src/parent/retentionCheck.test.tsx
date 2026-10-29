@@ -38,6 +38,6 @@ describe('Remembered after a gap (SRS tuning spec §5)', () => {
     for (const l of logs(3)) await addReviewLog(app.db, l);
     renderWithApp(<SkillsPanel />, app);
     expect(await screen.findByText(/Measuring — 3 of 30 reviews/)).toBeTruthy();
-    expect(screen.getByText(/Fit to memory: 0 \/ 1,000 reviews/)).toBeTruthy();
+    expect(screen.getByText(/Fit to your child's memory: 0 \/ 1,000 reviews/)).toBeTruthy();
   });
 });

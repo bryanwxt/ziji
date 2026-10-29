@@ -60,7 +60,7 @@ describe('the parent area in five tabs', () => {
     expect(await heading('Recordings')).toBeTruthy();
     // Progress: School (his book's lists and the placement), Skills, Memory
     fireEvent.click(tab(/Progress/));
-    for (const h of ['School', 'MOE progress', 'Placement', 'Skills', 'Memory', 'Fit to memory', /Remembered after a gap/, /Missed most/]) expect(await heading(h)).toBeTruthy();
+    for (const h of ['School', 'MOE progress', 'Placement', 'Skills', 'Memory', "Fit to your child's memory", /Remembered after a gap/, /Missed most/]) expect(await heading(h)).toBeTruthy();
     expect(await heading('Week summary')).toBeTruthy();
     const order = [...document.querySelectorAll('.parent__section-title')].map((h) => h.textContent);
     expect(order).toEqual(['Week summary', 'School', 'Skills', 'Memory']);

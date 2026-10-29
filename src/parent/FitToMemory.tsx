@@ -47,7 +47,7 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
   const use = async (w: number[]) => {
     await updateSettings(db, { fsrs: { w, fittedAt: now().getTime(), reviews: data.count } });
     setSchedulerParams(w); // new parameters apply from each card's next review; cards keep their state
-    setPhase({ kind: 'message', text: 'Using the fitted memory.' });
+    setPhase({ kind: 'message', text: "Using your child's fitted memory." });
     await refresh();
     await onChange();
   };
@@ -61,7 +61,7 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
 
   return (
     <div class="skills__fit">
-      <h3>Fit to memory</h3>
+      <h3>Fit to your child's memory</h3>
       {fitted ? (
         <p>
           Fitted on {num(fitted.reviews)} reviews, {day(fitted.fittedAt)}{' '}
@@ -71,8 +71,8 @@ export function FitToMemory({ logs, cards, settings, onChange }: { logs: ReviewL
         </p>
       ) : (
         <p>
-          {data.count < FIT_MIN_REVIEWS ? `Fit to memory: ${num(data.count)} / ${num(FIT_MIN_REVIEWS)} reviews` : `${num(data.count)} reviews to fit on.`}{' '}
-          <button type="button" class="small-btn" disabled={!canFit || phase.kind === 'fitting'} onClick={() => void fit()}>Fit to memory</button>
+          {data.count < FIT_MIN_REVIEWS ? `Fit to your child's memory: ${num(data.count)} / ${num(FIT_MIN_REVIEWS)} reviews` : `${num(data.count)} reviews to fit on.`}{' '}
+          <button type="button" class="small-btn" disabled={!canFit || phase.kind === 'fitting'} onClick={() => void fit()}>Fit to your child's memory</button>
         </p>
       )}
       {phase.kind === 'fitting' && <p role="status">Fitting…</p>}
