@@ -60,6 +60,8 @@ interface Props {
   idiom?: Idiom | null;
   /** 练一练: a 组词 gap or English meaning asked without its answer, 「都不对」 right (production practice spec §5) */
   noneOfThese?: 'answer' | 'decoy';
+  /** 认新字: a word taught again after a missed placement recheck (parent 2026-10-29): 「再认一次！」, not 「新字来了！」 */
+  back?: boolean;
   /** a weekly list word's card (weekly list spec 2026-10-17 §7.1–7.2): its pair for a verb, an example sentence, the new character marked */
   list?: ListCard;
   /** 考考自己 (weekly list spec 2026-10-17 §8.1): no pinyin, nothing said, no right or wrong or usage line shown; a pick answers at once */
@@ -84,7 +86,7 @@ function missedPick(choice: string | null, quiz: { cue: MeaningCue | null; mode:
   return pinyinPickNote(word, choice, pool);
 }
 
-export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese, list, bare = false, begun, few = false }: Props) {
+export function FlashcardStep({ item, word, pool, card, voice, kid, resting, combo, closeupReady, onDone, ask, reintroOnMiss = false, idiom = null, noneOfThese, list, back = false, bare = false, begun, few = false }: Props) {
   // a bound character (kidGloss.ts): its card and its English questions show and say its pair, 番茄 for 番
   const pair = list?.lead ?? boundPair(word.text); // a list verb's English questions show its list pair the same way (fix round 2026-10-17)
   const pairPy = list?.lead ? list.leadReading : pair ? kidGlossReading(pair) : undefined;
@@ -199,7 +201,7 @@ export function FlashcardStep({ item, word, pool, card, voice, kid, resting, com
   const mood: TruffleMood = phase === 'feedback' ? resting : 'neutral'; // still while he answers (spec 2026-10-11 §5)
   const REACTION_LINES: Partial<Record<TruffleMood, string>> = { side: '记住它！', wow: '咦！好厉害！', content: '呼噜～' };
   // a list word or pair is a 词, not a 字 (weekly list spec §7.1)
-  const bubble = phase === 'intro' ? (item.reteach ? '再认一次！' : again ? '再看一遍！' : list && (list.lead || Array.from(word.text).length > 1) ? '新词来了！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? (quiz.shown ? '听一听，看一看，是什么意思？' : '听一听，是什么意思？') : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : Array.from(word.text).length > 1 ? '这个词怎么读？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
+  const bubble = phase === 'intro' ? (item.reteach || back ? '再认一次！' : again ? '再看一遍！' : list && (list.lead || Array.from(word.text).length > 1) ? '新词来了！' : '新字来了！') : phase === 'quiz' ? (quiz.mode === 'hear' ? (quiz.shown ? '听一听，看一看，是什么意思？' : '听一听，是什么意思？') : quiz.mode === 'meaningRead' ? '这个词是什么意思？' : quiz.cue ? '哪个字对？' : quiz.listen ? '听一听，我想吃哪个字？' : Array.from(word.text).length > 1 ? '这个词怎么读？' : '这个字怎么读？') : (reaction && REACTION_LINES[reaction]) ?? null;
   const showCloseup = phase === 'feedback' && !!result?.correct && result.hard && closeupReady;
   const next = () => {
     if (result) onDone({ ...result, elapsedMs: Math.round(performance.now() - shownAt.current), inContext: quiz.cue?.kind === 'sentence', asked: quiz.cue ? 'meaning' : quiz.mode === 'hear' ? 'hear' : 'read', picked: choice ?? undefined });

@@ -94,6 +94,12 @@ export async function recordRecognition(db: AppDb, wordId: string, outcome: TapO
   return placed ? endPlacement(db, wordId, card, outcome.correct) : card;
 }
 
+/** Of these words, the ones a missed placement recheck sent back to learn (parent 2026-10-29): 认新字 says 「再认一次！」, not 「新字来了！」. */
+export async function sentBackIds(db: AppDb, wordIds: readonly string[]): Promise<Set<string>> {
+  const missed = await Promise.all(wordIds.map(async (id) => (await logsForWord(db, id)).some((l) => l.placedCheck && !l.correct)));
+  return new Set(wordIds.filter((_, i) => missed[i]));
+}
+
 /** A placed card's first recheck answered (spec 2026-10-14): right, the guess is confirmed; missed, the word goes back to learn. */
 async function endPlacement(db: AppDb, wordId: string, card: CardRecord, correct: boolean): Promise<CardRecord> {
   const { placed: _done, ...rest } = card;

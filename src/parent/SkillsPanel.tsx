@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { useApp } from '../app/AppContext';
 import { ladderWords } from '../content/ladder';
 import { addDays } from '../lib/date';
-import { legacyPlacementLine, placementLine, recheckLine, recheckProgress } from '../placement/summary';
+import { legacyPlacementLine, placementLine, recentSentBack, recheckLine, recheckProgress, sentBackLine } from '../placement/summary';
 import { bringForward } from '../session/record';
 import { SKILL_CARD, SKILLS, skillAccuracy, topMissed } from '../stats/skills';
 import { allCards, allWords, answersSince, getSettings, listRecordings, logsSince, updateSettings } from '../store/repo';
@@ -95,6 +95,7 @@ export function SkillsPanel({ school }: { school?: ComponentChildren } = {}) {
               : 'Placement: not done yet'}
           </p>
           {p && <p>{recheckLine(recheckProgress(d.cards, d.allLogs, p.at))}</p>}
+          {(() => { const back = recentSentBack(d.allLogs, byId, now()); return back.length > 0 && <p class="hanzi skills__sentback">{sentBackLine(back)}</p>; })()}
           {d.settings.pace && <p>New words: {Math.min(d.settings.pace.perDay, d.settings.newPerDay)} a day — {d.settings.pace.reason} (most {d.settings.newPerDay})</p>}
           {p && p.missed.length > 0 && <p class="hanzi">Missed in placement: {p.missed.slice(0, 12).map((id) => byId.get(id)?.text ?? '').join(' ')}</p>}
         </section>

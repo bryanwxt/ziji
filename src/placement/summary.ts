@@ -1,6 +1,7 @@
 // What the parent reads about a placement (spec 2026-10-14): the term he reads up to, how many characters were tested and
 // assumed, and how the rechecks of placed characters are going.
 import { schoolTerm } from '../content';
+import { localDateKey } from '../lib/date';
 import type { CardRecord, LegacyPlacementResult, PlacementResult, ReviewLog, Word } from '../types';
 
 type Counts = Pick<PlacementResult, 'readsUpTo' | 'tested' | 'assumed'>;
@@ -33,6 +34,31 @@ export function recheckProgress(cards: CardRecord[], logs: ReviewLog[], at: numb
 
 /** "Placement rechecks: 40 of 360 done, 3 sent back to learn." */
 export const recheckLine = (p: RecheckProgress): string => `Placement rechecks: ${p.done} of ${p.total} done, ${p.sentBack} sent back to learn.`;
+
+export interface SentBack { text: string; missed: string; taught?: string }
+
+/**
+ * Words a missed placement recheck sent back to learn in the last `days` days (parent 2026-10-29: they come back in 认新字 the next
+ * lesson, which looked like a repeat): each with the day it was missed and the day 认新字 taught it again, if it has yet.
+ */
+export function recentSentBack(logs: ReviewLog[], words: ReadonlyMap<string, Word>, now: Date, days = 7): SentBack[] {
+  const since = now.getTime() - days * 86_400_000;
+  const last = new Map<string, ReviewLog>();
+  for (const l of logs) if (l.placedCheck && !l.correct && l.at >= since && l.at > (last.get(l.wordId)?.at ?? -1)) last.set(l.wordId, l);
+  return [...last.values()].sort((a, b) => a.at - b.at).flatMap((miss) => {
+    const w = words.get(miss.wordId);
+    if (!w) return [];
+    const missed = localDateKey(new Date(miss.at));
+    const again = logs.filter((l) => l.wordId === miss.wordId && l.at > miss.at && localDateKey(new Date(l.at)) > missed).sort((a, b) => a.at - b.at)[0];
+    return [{ text: w.text, missed, ...(again ? { taught: localDateKey(new Date(again.at)) } : {}) }];
+  });
+}
+
+const md = (day: string) => day.slice(5); // 2026-10-28 → 10-28
+
+/** "Missed on a recheck, taught again in 认新字: 照顾 (missed 10-27, retaught 10-28) · 碰 (missed 10-28, next lesson)." */
+export const sentBackLine = (back: SentBack[]): string =>
+  `Missed on a recheck, taught again in 认新字: ${back.map((b) => `${b.text} (missed ${md(b.missed)}, ${b.taught ? `retaught ${md(b.taught)}` : 'next lesson'})`).join(' · ')}.`;
 
 /** A band result saved before 2026-10-14, read-only: each band (100 characters in rank order) by its last character's term. */
 export function legacyPlacementLine(r: LegacyPlacementResult, words: Word[]): string {

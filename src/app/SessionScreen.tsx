@@ -42,7 +42,7 @@ import { PracticeQuestion, type PracticeResult } from '../activities/practice/Pr
 import { planFreePlay, planPractice } from '../session/practice';
 import { idiomsFor, learnerLevel, type Idiom } from '../content/chengyu';
 import { requestGreeting } from '../ui/truffle/greeting';
-import { beginNewWord, bringForward, recordMeaningOnce, recordRecall, recordRecognitionOnce, ratedToday, setLessonLists, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
+import { beginNewWord, bringForward, sentBackIds, recordMeaningOnce, recordRecall, recordRecognitionOnce, ratedToday, setLessonLists, lessonSlowLines, markTraced, markWriteSkipped, recordHear, recordMeaning, recordUnderstand, recordRecognition, recordUse, recordWriting, recordWrittenMeaning, startExtraLesson, startOrResumeSession, USE_READING_MS } from '../session/record';
 import type { SlowLines } from '../srs/slow';
 import { meaningCredit } from '../session/writeCredit';
 import { writingCue } from '../activities/writing/cue';
@@ -103,6 +103,7 @@ interface Loaded {
   speaking: LangduSpeaking | { kind: 'story'; scene: Scene } | null;
   confusions: Map<string, string[]>; // look-alikes he picked, per word (钓鱼, spec 2026-10-05 §3.4)
   slow: SlowLines; // his slow line per tap kind, worked out once as the lesson loads (SRS tuning spec §3.2)
+  back: ReadonlySet<string>; // today's new words he missed on a placement recheck: taught again, so 「再认一次！」 (parent 2026-10-29)
 }
 
 export function SessionScreen({ free, extra = false }: { free: boolean; extra?: boolean }) {
@@ -145,6 +146,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
       if (!free && rec.stepIndex === 0 && rec.activeMs === 0 && rec.flashIndex === 0 && !rec.practiceIndex && rec.plan.steps[0] === 'newwords' && rec.flashQueue.length > 0) requestGreeting('你好！我们开始吧！'); // it opens on a new word's card, never on a question (spec §4.3)
       // the lesson's clips (neural voice): fetched now, so they play at once and offline
       for (const w of ladderWordsBesides(know.words)) if (!know.wordsById.has(w.id)) know.wordsById.set(w.id, w); // the ladder's 词语 aren't stored
+      const back = free ? new Set<string>() : await sentBackIds(db, rec.plan.newWordIds);
       const want = new Set([...rec.plan.newWordIds, ...rec.plan.reviewWordIds, ...(rec.plan.hearReviewIds ?? []), ...(rec.plan.understandReviewIds ?? []), ...(rec.plan.sayIds ?? [])]);
       prefetchWords([...want].map((id) => know.wordsById.get(id)).filter((w): w is Word => !!w));
       latest.current = rec;
@@ -159,6 +161,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
         wrapup: null,
         confusions,
         slow,
+        back,
         speaking: (() => {
           const k = kid ?? DEFAULT_KID;
           // 朗读 and 看图说话 only when switched back on (both parked, parent 2026-10-05). Nothing to run: the step is skipped, so a
@@ -602,6 +605,7 @@ export function SessionScreen({ free, extra = false }: { free: boolean; extra?: 
           // a new word is first heard: he picks its meaning (spec 2026-10-06 §3.2); a weekly list word begins on Read (weekly list spec §6.4)
           ask={step === 'newwords' ? (flashItem.reteach || rec.plan.listNewIds?.includes(flashWord.id) ? 'read' : 'hear') : undefined}
           list={rec.plan.listCards?.[flashWord.id]}
+          back={flashItem.isNew && state.back.has(flashWord.id)}
           reintroOnMiss={step === 'newwords'}
           idiom={step === 'newwords' ? introIdiom(flashWord, idiomsFor(flashWord, level, know.words)) : null}
           word={flashWord}
